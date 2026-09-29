@@ -1,0 +1,530 @@
+package plugin_ui
+
+import "github.com/goccy/go-json"
+
+/////////////////////////////////////////////////////////////////////////////////////
+// Client to server
+/////////////////////////////////////////////////////////////////////////////////////
+
+type ClientEventType string
+
+// ClientPluginEvent is an event received from the client
+type ClientPluginEvent struct {
+	// ExtensionID is the "sent to"
+	// If not set, the event is being sent to all plugins
+	ExtensionID string          `json:"extensionId,omitempty"`
+	Type        ClientEventType `json:"type"`
+	Payload     interface{}     `json:"payload"`
+}
+
+const (
+	ClientRenderTrayEvent                              ClientEventType = "tray:render"     // Client wants to render the tray
+	ClientListTrayIconsEvent                           ClientEventType = "tray:list-icons" // Client wants to list all icons from all plugins
+	ClientTrayOpenedEvent                              ClientEventType = "tray:opened"     // When the tray is opened
+	ClientTrayClosedEvent                              ClientEventType = "tray:closed"     // When the tray is closed
+	ClientTrayClickedEvent                             ClientEventType = "tray:clicked"    // When the tray is clicked
+	ClientWebviewSidebarMountedEvent                   ClientEventType = "webview:sidebar-mounted"
+	ClientWebviewMountedEvent                          ClientEventType = "webview:mounted"
+	ClientWebviewLoadedEvent                           ClientEventType = "webview:loaded"
+	ClientWebviewUnmountedEvent                        ClientEventType = "webview:unmounted"
+	ClientWebviewPostMessageEvent                      ClientEventType = "webview:post-message"
+	ClientListCommandPalettesEvent                     ClientEventType = "command-palette:list"                          // When the client wants to list all command palettes
+	ClientCommandPaletteOpenedEvent                    ClientEventType = "command-palette:opened"                        // When the client opens the command palette
+	ClientCommandPaletteClosedEvent                    ClientEventType = "command-palette:closed"                        // When the client closes the command palette
+	ClientRenderCommandPaletteEvent                    ClientEventType = "command-palette:render"                        // When the client requests the command palette to render
+	ClientCommandPaletteInputEvent                     ClientEventType = "command-palette:input"                         // The client sends the current input of the command palette
+	ClientCommandPaletteItemSelectedEvent              ClientEventType = "command-palette:item-selected"                 // When the client selects an item from the command palette
+	ClientActionRenderAnimePageButtonsEvent            ClientEventType = "action:anime-page-buttons:render"              // When the client requests the buttons to display on the anime page
+	ClientActionRenderAnimePageDropdownItemsEvent      ClientEventType = "action:anime-page-dropdown-items:render"       // When the client requests the dropdown items to display on the anime page
+	ClientActionRenderMangaPageButtonsEvent            ClientEventType = "action:manga-page-buttons:render"              // When the client requests the buttons to display on the manga page
+	ClientActionRenderMangaPageDropdownItemsEvent      ClientEventType = "action:manga-page-dropdown-items:render"       // When the client requests the dropdown items to display on the manga page
+	ClientActionRenderMangaLibraryDropdownItemsEvent   ClientEventType = "action:manga-library-dropdown-items:render"    // When the client requests the dropdown items to display on the manga library
+	ClientActionRenderMediaCardContextMenuItemsEvent   ClientEventType = "action:media-card-context-menu-items:render"   // When the client requests the context menu items to display on the media card
+	ClientActionRenderAnimeLibraryDropdownItemsEvent   ClientEventType = "action:anime-library-dropdown-items:render"    // When the client requests the dropdown items to display on the anime library
+	ClientActionRenderEpisodeCardContextMenuItemsEvent ClientEventType = "action:episode-card-context-menu-items:render" // When the client requests the context menu items to display on the episode card
+	ClientActionRenderEpisodeGridItemMenuItemsEvent    ClientEventType = "action:episode-grid-item-menu-items:render"    // When the client requests the context menu items to display on the episode grid item
+	ClientActionClickedEvent                           ClientEventType = "action:clicked"                                // When the user clicks on an action
+	ClientAnimeEntryEpisodeTabsRenderEvent             ClientEventType = "anime:entry-episode-tabs:render"
+	ClientAnimeEntryEpisodeTabOpenEvent                ClientEventType = "anime:entry-episode-tab:open"
+	ClientAnimeEntryEpisodeTabSelectEpisodeEvent       ClientEventType = "anime:entry-episode-tab:select-episode"
+	ClientAnimeEntryEpisodeTabStateChangedEvent        ClientEventType = "anime:entry-episode-tab:state-changed"
+	ClientFormSubmittedEvent                           ClientEventType = "form:submitted"       // When the form registered by the tray is submitted
+	ClientScreenChangedEvent                           ClientEventType = "screen:changed"       // When the current screen changes
+	ClientEventHandlerTriggeredEvent                   ClientEventType = "handler:triggered"    // When a custom event registered by the plugin is triggered
+	ClientFieldRefSendValueEvent                       ClientEventType = "field-ref:send-value" // When the client sends the value of a field that has a ref
+
+	ClientDOMQueryResultEvent    ClientEventType = "dom:query-result"     // Result of a DOM query
+	ClientDOMQueryOneResultEvent ClientEventType = "dom:query-one-result" // Result of a DOM query for one element
+	ClientDOMObserveResultEvent  ClientEventType = "dom:observe-result"   // Result of a DOM observation
+	ClientDOMStopObserveEvent    ClientEventType = "dom:stop-observe"     // Stop observing DOM elements
+	ClientDOMCreateResultEvent   ClientEventType = "dom:create-result"    // Result of creating a DOM element
+	ClientDOMElementUpdatedEvent ClientEventType = "dom:element-updated"  // When a DOM element is updated
+	ClientDOMEventTriggeredEvent ClientEventType = "dom:event-triggered"  // When a DOM event is triggered
+	ClientDOMReadyEvent          ClientEventType = "dom:ready"            // When a DOM element is ready
+	ClientDOMMainTabReadyEvent   ClientEventType = "dom:main-tab-ready"   // When the main tab has changed
+	ClientDOMViewportSizeEvent   ClientEventType = "dom:viewport-size"
+)
+
+type ClientRenderTrayEventPayload struct{}
+type ClientListTrayIconsEventPayload struct{}
+type ClientTrayOpenedEventPayload struct{}
+type ClientTrayClosedEventPayload struct{}
+type ClientTrayClickedEventPayload struct{}
+type ClientWebviewSidebarMountedEventPayload struct{}
+type ClientWebviewMountedEventPayload struct {
+	Slot string `json:"slot"`
+}
+type ClientWebviewLoadedEventPayload struct {
+	Slot string `json:"slot"`
+}
+type ClientWebviewUnmountedEventPayload struct {
+	Slot string `json:"slot"`
+}
+type ClientWebviewPostMessageEventPayload struct {
+	Slot      string      `json:"slot"`
+	EventName string      `json:"eventName"`
+	Event     interface{} `json:"event"`
+}
+type ClientActionRenderAnimePageButtonsEventPayload struct{}
+type ClientActionRenderAnimePageDropdownItemsEventPayload struct{}
+type ClientActionRenderMangaPageButtonsEventPayload struct{}
+type ClientActionRenderMangaPageDropdownItemsEventPayload struct{}
+type ClientActionRenderMangaLibraryDropdownItemsEventPayload struct{}
+type ClientActionRenderMediaCardContextMenuItemsEventPayload struct{}
+type ClientActionRenderAnimeLibraryDropdownItemsEventPayload struct{}
+type ClientActionRenderEpisodeCardContextMenuItemsEventPayload struct{}
+type ClientActionRenderEpisodeGridItemMenuItemsEventPayload struct{}
+type ClientAnimeEntryEpisodeTabsRenderEventPayload struct {
+	MediaID int `json:"mediaId"`
+}
+
+type ClientAnimeEntryEpisodeTabOpenEventPayload struct {
+	MediaID int `json:"mediaId"`
+}
+
+type ClientAnimeEntryEpisodeTabSelectEpisodeEventPayload struct {
+	MediaID       int         `json:"mediaId"`
+	EpisodeNumber int         `json:"episodeNumber"`
+	AniDbEpisode  string      `json:"aniDbEpisode,omitempty"`
+	Episode       interface{} `json:"episode,omitempty"`
+}
+
+type ClientAnimeEntryEpisodeTabStateChangedEventPayload struct {
+	IsOpen bool `json:"isOpen"`
+}
+
+type ClientListCommandPalettesEventPayload struct{}
+
+type ClientCommandPaletteOpenedEventPayload struct{}
+
+type ClientCommandPaletteClosedEventPayload struct{}
+
+type ClientActionClickedEventPayload struct {
+	ActionID string                 `json:"actionId"`
+	Event    map[string]interface{} `json:"event"`
+}
+
+type ClientEventHandlerTriggeredEventPayload struct {
+	HandlerName string      `json:"handlerName"`
+	Event       interface{} `json:"event"`
+}
+
+type ClientFormSubmittedEventPayload struct {
+	FormName string                 `json:"formName"`
+	Data     map[string]interface{} `json:"data"`
+}
+
+type ClientScreenChangedEventPayload struct {
+	Pathname string `json:"pathname"`
+	Query    string `json:"query"`
+}
+
+type ClientFieldRefSendValueEventPayload struct {
+	FieldRef string      `json:"fieldRef"`
+	Value    interface{} `json:"value"`
+}
+
+type ClientRenderCommandPaletteEventPayload struct{}
+
+type ClientCommandPaletteItemSelectedEventPayload struct {
+	ItemID string `json:"itemId"`
+}
+
+type ClientCommandPaletteInputEventPayload struct {
+	Value string `json:"value"`
+}
+
+type ClientDOMEventTriggeredEventPayload struct {
+	ElementId string                 `json:"elementId"`
+	EventType string                 `json:"eventType"`
+	Event     map[string]interface{} `json:"event"`
+}
+
+type ClientDOMQueryResultEventPayload struct {
+	RequestID string        `json:"requestId"`
+	Elements  []interface{} `json:"elements"`
+}
+
+type ClientDOMQueryOneResultEventPayload struct {
+	RequestID string      `json:"requestId"`
+	Element   interface{} `json:"element"`
+}
+
+type ClientDOMObserveResultEventPayload struct {
+	ObserverId string        `json:"observerId"`
+	Elements   []interface{} `json:"elements"`
+}
+
+type ClientDOMCreateResultEventPayload struct {
+	RequestID string      `json:"requestId"`
+	Element   interface{} `json:"element"`
+}
+
+type ClientDOMElementUpdatedEventPayload struct {
+	ElementId string      `json:"elementId"`
+	Action    string      `json:"action"`
+	Result    interface{} `json:"result"`
+	RequestID string      `json:"requestId"`
+}
+
+type ClientDOMStopObserveEventPayload struct {
+	ObserverId string `json:"observerId"`
+}
+
+type ClientDOMReadyEventPayload struct {
+}
+
+type ClientDOMMainTabReadyEventPayload struct {
+}
+
+type ClientDOMViewportSizeEventPayload struct {
+	Width  int `json:"width"`
+	Height int `json:"height"`
+}
+
+/////////////////////////////////////////////////////////////////////////////////////
+// Server to client
+/////////////////////////////////////////////////////////////////////////////////////
+
+type ServerEventType string
+
+// ServerPluginEvent is an event sent to the client
+type ServerPluginEvent struct {
+	ExtensionID string          `json:"extensionId"` // Extension ID must be set
+	Type        ServerEventType `json:"type"`
+	Payload     interface{}     `json:"payload"`
+}
+
+const (
+	ServerTrayUpdatedEvent      ServerEventType = "tray:updated"       // When the trays are updated
+	ServerTrayIconEvent         ServerEventType = "tray:icon"          // When the tray sends its icon to the client
+	ServerTrayBadgeUpdatedEvent ServerEventType = "tray:badge-updated" // When the tray badge is updated
+	ServerTrayOpenEvent         ServerEventType = "tray:open"          // When the tray is opened
+	ServerTrayCloseEvent        ServerEventType = "tray:close"         // When the tray is closed
+
+	ServerWebviewUpdatedEvent   ServerEventType = "webview:updated"    // When the webviews are updated
+	ServerWebviewIframeEvent    ServerEventType = "webview:iframe"     // When the webviews are updated
+	ServerWebviewSidebarEvent   ServerEventType = "webview:sidebar"    // Returns the webview sidebar data
+	ServerWebviewSyncStateEvent ServerEventType = "webview:sync-state" // When a state is synced to the webview
+	ServerWebviewCloseEvent     ServerEventType = "webview:close"      // When a webview should be closed
+
+	ServerCommandPaletteInfoEvent                      ServerEventType = "command-palette:info"                           // When the command palette sends its state to the client
+	ServerCommandPaletteUpdatedEvent                   ServerEventType = "command-palette:updated"                        // When the command palette is updated
+	ServerCommandPaletteOpenEvent                      ServerEventType = "command-palette:open"                           // When the command palette is opened
+	ServerCommandPaletteCloseEvent                     ServerEventType = "command-palette:close"                          // When the command palette is closed
+	ServerCommandPaletteGetInputEvent                  ServerEventType = "command-palette:get-input"                      // When the command palette requests the input from the client
+	ServerCommandPaletteSetInputEvent                  ServerEventType = "command-palette:set-input"                      // When the command palette sets the input
+	ServerActionRenderAnimePageButtonsEvent            ServerEventType = "action:anime-page-buttons:updated"              // When the server renders the anime page buttons
+	ServerActionRenderAnimePageDropdownItemsEvent      ServerEventType = "action:anime-page-dropdown-items:updated"       // When the server renders the anime page dropdown items
+	ServerActionRenderMangaPageButtonsEvent            ServerEventType = "action:manga-page-buttons:updated"              // When the server renders the manga page buttons
+	ServerActionRenderMangaPageDropdownItemsEvent      ServerEventType = "action:manga-page-dropdown-items:updated"       // When the server renders the manga page dropdown items
+	ServerActionRenderMangaLibraryDropdownItemsEvent   ServerEventType = "action:manga-library-dropdown-items:updated"    // When the server renders the manga library dropdown items
+	ServerActionRenderMediaCardContextMenuItemsEvent   ServerEventType = "action:media-card-context-menu-items:updated"   // When the server renders the media card context menu items
+	ServerActionRenderEpisodeCardContextMenuItemsEvent ServerEventType = "action:episode-card-context-menu-items:updated" // When the server renders the episode card context menu items
+	ServerActionRenderEpisodeGridItemMenuItemsEvent    ServerEventType = "action:episode-grid-item-menu-items:updated"    // When the server renders the episode grid item menu items
+	ServerActionRenderAnimeLibraryDropdownItemsEvent   ServerEventType = "action:anime-library-dropdown-items:updated"    // When the server renders the anime library dropdown items
+	ServerAnimeEntryEpisodeTabsUpdatedEvent            ServerEventType = "anime:entry-episode-tabs:updated"
+	ServerAnimeEntryEpisodeTabEpisodeCollectionEvent   ServerEventType = "anime:entry-episode-tab:episode-collection"
+	ServerFormResetEvent                               ServerEventType = "form:reset"
+	ServerFormSetValuesEvent                           ServerEventType = "form:set-values"
+	ServerFieldRefSetValueEvent                        ServerEventType = "field-ref:set-value" // Set the value of a field (not in a form)
+	ServerFatalErrorEvent                              ServerEventType = "fatal-error"         // When the UI encounters a fatal error
+	ServerScreenNavigateToEvent                        ServerEventType = "screen:navigate-to"  // Navigate to a new screen
+	ServerScreenReloadEvent                            ServerEventType = "screen:reload"       // Reload the current screen
+	ServerScreenGetCurrentEvent                        ServerEventType = "screen:get-current"  // Get the current screen
+
+	ServerDOMQueryEvent           ServerEventType = "dom:query"        // When the server queries for DOM elements
+	ServerDOMQueryOneEvent        ServerEventType = "dom:query-one"    // When the server queries for a single DOM element
+	ServerDOMObserveEvent         ServerEventType = "dom:observe"      // When the server starts observing DOM elements
+	ServerDOMStopObserveEvent     ServerEventType = "dom:stop-observe" // When the server stops observing DOM elements
+	ServerDOMCreateEvent          ServerEventType = "dom:create"       // When the server creates a DOM element
+	ServerDOMManipulateEvent      ServerEventType = "dom:manipulate"   // When the server manipulates a DOM element
+	ServerDOMObserveInViewEvent   ServerEventType = "dom:observe-in-view"
+	ServerDOMGetViewportSizeEvent ServerEventType = "dom:get-viewport-size"
+
+	ServerDOMClipboardWriteEvent ServerEventType = "dom:clipboard:write"
+	ServerDebugLogEvent          ServerEventType = "debug:log"
+	ServerDebugClearEvent        ServerEventType = "debug:clear"
+)
+
+type ServerTrayUpdatedEventPayload struct {
+	Components interface{} `json:"components"`
+}
+
+type ServerCommandPaletteUpdatedEventPayload struct {
+	Placeholder string      `json:"placeholder"`
+	Items       interface{} `json:"items"`
+}
+
+type ServerTrayOpenEventPayload struct {
+	ExtensionID string `json:"extensionId"`
+}
+
+type ServerTrayCloseEventPayload struct {
+	ExtensionID string `json:"extensionId"`
+}
+
+type ServerTrayIconEventPayload struct {
+	ExtensionID   string `json:"extensionId"`
+	ExtensionName string `json:"extensionName"`
+	IconURL       string `json:"iconUrl"`
+	WithContent   bool   `json:"withContent"`
+	TooltipText   string `json:"tooltipText"`
+	BadgeNumber   int    `json:"badgeNumber"`
+	BadgeIntent   string `json:"badgeIntent"`
+	Width         string `json:"width,omitempty"`
+	MinHeight     string `json:"minHeight,omitempty"`
+	IsDrawer      bool   `json:"isDrawer,omitempty"`
+}
+
+type ServerTrayBadgeUpdatedEventPayload struct {
+	BadgeNumber int    `json:"badgeNumber"`
+	BadgeIntent string `json:"badgeIntent"`
+}
+
+type ServerWebviewUpdatedEventPayload struct {
+	Slot       string      `json:"slot"`
+	Components interface{} `json:"components"`
+}
+
+type ServerWebviewIframeEventPayload struct {
+	Slot    string      `json:"slot"`
+	Content string      `json:"content"`
+	ID      string      `json:"id"`
+	Options interface{} `json:"options,omitempty"`
+}
+
+type ServerWebviewSidebarEventPayload struct {
+	Label string `json:"label"`
+	Icon  string `json:"icon"`
+}
+
+type ServerWebviewCloseEventPayload struct {
+	WebviewID string `json:"webviewId"`
+}
+
+type ServerWebviewSyncStateEventPayload struct {
+	WebviewID string      `json:"webviewId"`
+	Key       string      `json:"key"`
+	Value     interface{} `json:"value"`
+	Token     string      `json:"token"`
+}
+
+type ServerFormResetEventPayload struct {
+	FormName     string `json:"formName"`
+	FieldToReset string `json:"fieldToReset"` // If not set, the form will be reset
+}
+
+type ServerFormSetValuesEventPayload struct {
+	FormName string                 `json:"formName"`
+	Data     map[string]interface{} `json:"data"`
+}
+
+type ServerFieldRefSetValueEventPayload struct {
+	FieldRef string      `json:"fieldRef"`
+	Value    interface{} `json:"value"`
+}
+
+type ServerFieldRefGetValueEventPayload struct {
+	FieldRef string `json:"fieldRef"`
+}
+
+type ServerFatalErrorEventPayload struct {
+	Error string `json:"error"`
+}
+
+type ServerScreenNavigateToEventPayload struct {
+	Path string `json:"path"`
+}
+
+type ServerActionRenderAnimePageButtonsEventPayload struct {
+	Buttons interface{} `json:"buttons"`
+}
+
+type ServerActionRenderAnimePageDropdownItemsEventPayload struct {
+	Items interface{} `json:"items"`
+}
+
+type ServerActionRenderMangaPageButtonsEventPayload struct {
+	Buttons interface{} `json:"buttons"`
+}
+
+type ServerActionRenderMangaPageDropdownItemsEventPayload struct {
+	Items interface{} `json:"items"`
+}
+
+type ServerActionRenderMangaLibraryDropdownItemsEventPayload struct {
+	Items interface{} `json:"items"`
+}
+
+type ServerActionRenderMediaCardContextMenuItemsEventPayload struct {
+	Items interface{} `json:"items"`
+}
+
+type ServerActionRenderAnimeLibraryDropdownItemsEventPayload struct {
+	Items interface{} `json:"items"`
+}
+
+type ServerActionRenderEpisodeCardContextMenuItemsEventPayload struct {
+	Items interface{} `json:"items"`
+}
+
+type ServerActionRenderEpisodeGridItemMenuItemsEventPayload struct {
+	Items interface{} `json:"items"`
+}
+
+type ServerAnimeEntryEpisodeTabsUpdatedEventPayload struct {
+	Tabs interface{} `json:"tabs"`
+}
+
+type ServerAnimeEntryEpisodeTabEpisodeCollectionEventPayload struct {
+	EpisodeCollection interface{} `json:"episodeCollection"`
+}
+
+type ServerScreenReloadEventPayload struct{}
+
+type ServerCommandPaletteInfoEventPayload struct {
+	Placeholder      string `json:"placeholder"`
+	KeyboardShortcut string `json:"keyboardShortcut"`
+}
+
+type ServerCommandPaletteOpenEventPayload struct{}
+
+type ServerCommandPaletteCloseEventPayload struct{}
+
+type ServerCommandPaletteGetInputEventPayload struct{}
+
+type ServerCommandPaletteSetInputEventPayload struct {
+	Value string `json:"value"`
+}
+
+type ServerScreenGetCurrentEventPayload struct{}
+
+type ServerDOMClipboardWriteEventPayload struct {
+	Text string `json:"text"`
+}
+
+type ServerDebugLogEventPayload struct {
+	At      int64         `json:"at"`
+	Level   string        `json:"level"`
+	Message string        `json:"message"`
+	Values  []interface{} `json:"values,omitempty"`
+}
+
+type ServerDebugClearEventPayload struct{}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+func NewClientPluginEvent(data map[string]interface{}) *ClientPluginEvent {
+	extensionID, ok := data["extensionId"].(string)
+	if !ok {
+		extensionID = ""
+	}
+
+	eventType, ok := data["type"].(string)
+	if !ok {
+		return nil
+	}
+
+	payload, ok := data["payload"]
+	if !ok {
+		return nil
+	}
+
+	return &ClientPluginEvent{
+		ExtensionID: extensionID,
+		Type:        ClientEventType(eventType),
+		Payload:     payload,
+	}
+}
+
+func (e *ClientPluginEvent) ParsePayload(ret interface{}) bool {
+	data, err := json.Marshal(e.Payload)
+	if err != nil {
+		return false
+	}
+	if err := json.Unmarshal(data, &ret); err != nil {
+		return false
+	}
+	return true
+}
+
+func (e *ClientPluginEvent) ParsePayloadAs(t ClientEventType, ret interface{}) bool {
+	if e.Type != t {
+		return false
+	}
+	return e.ParsePayload(ret)
+}
+
+// Add DOM event payloads
+type ServerDOMQueryEventPayload struct {
+	Selector         string `json:"selector"`
+	RequestID        string `json:"requestId"`
+	WithInnerHTML    bool   `json:"withInnerHTML"`
+	WithOuterHTML    bool   `json:"withOuterHTML"`
+	IdentifyChildren bool   `json:"identifyChildren"`
+}
+
+type ServerDOMQueryOneEventPayload struct {
+	Selector         string `json:"selector"`
+	RequestID        string `json:"requestId"`
+	WithInnerHTML    bool   `json:"withInnerHTML"`
+	WithOuterHTML    bool   `json:"withOuterHTML"`
+	IdentifyChildren bool   `json:"identifyChildren"`
+}
+
+type ServerDOMObserveEventPayload struct {
+	Selector         string `json:"selector"`
+	ObserverId       string `json:"observerId"`
+	WithInnerHTML    bool   `json:"withInnerHTML"`
+	WithOuterHTML    bool   `json:"withOuterHTML"`
+	IdentifyChildren bool   `json:"identifyChildren"`
+}
+
+type ServerDOMStopObserveEventPayload struct {
+	ObserverId string `json:"observerId"`
+}
+
+type ServerDOMCreateEventPayload struct {
+	TagName   string `json:"tagName"`
+	RequestID string `json:"requestId"`
+}
+
+type ServerDOMManipulateEventPayload struct {
+	ElementId string                 `json:"elementId"`
+	Action    string                 `json:"action"`
+	Params    map[string]interface{} `json:"params"`
+	RequestID string                 `json:"requestId"`
+}
+
+type ServerDOMObserveInViewEventPayload struct {
+	Selector         string `json:"selector"`
+	ObserverId       string `json:"observerId"`
+	WithInnerHTML    bool   `json:"withInnerHTML"`
+	WithOuterHTML    bool   `json:"withOuterHTML"`
+	IdentifyChildren bool   `json:"identifyChildren"`
+	Margin           string `json:"margin"`
+}
+
+type ServerDOMGetViewportSizePayload struct {
+}

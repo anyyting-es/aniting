@@ -1,0 +1,456 @@
+package handlers
+
+import (
+	"errors"
+	"os"
+	"path/filepath"
+	"runtime"
+	"seanime/internal/database/db"
+	"seanime/internal/database/models"
+	"seanime/internal/torrents/torrent"
+	"seanime/internal/util"
+	"strings"
+	"time"
+
+	"github.com/labstack/echo/v4"
+	"github.com/samber/lo"
+)
+
+// HandleGetSettings
+//
+//	@summary returns the app settings.
+//	@route /api/v1/settings [GET]
+//	@returns models.Settings
+func (h *Handler) HandleGetSettings(c echo.Context) error {
+
+	settings, err := h.App.Database.GetSettings()
+	if err != nil {
+		return h.RespondWithError(c, err)
+	}
+	if settings.ID == 0 {
+		return h.RespondWithError(c, errors.New(runtime.GOOS))
+	}
+
+	clientSettings := db.CloneSettings(settings)
+	db.VirtualizeSettingsPaths(clientSettings)
+
+	return h.RespondWithData(c, clientSettings)
+}
+
+// HandleGettingStarted
+//
+//	@summary updates the app settings.
+//	@desc This will update the app settings.
+//	@desc The client should re-fetch the server status after this.
+//	@route /api/v1/start [POST]
+//	@returns handlers.Status
+func (h *Handler) HandleGettingStarted(c echo.Context) error {
+
+	type body struct {
+		Library                models.LibrarySettings      `json:"library"`
+		MediaPlayer            models.MediaPlayerSettings  `json:"mediaPlayer"`
+		Torrent                models.TorrentSettings      `json:"torrent"`
+		Anilist                models.AnilistSettings      `json:"anilist"`
+		Discord                models.DiscordSettings      `json:"discord"`
+		Manga                  models.MangaSettings        `json:"manga"`
+		Notifications          models.NotificationSettings `json:"notifications"`
+		Nakama                 models.NakamaSettings       `json:"nakama"`
+		EnableTranscode        bool                        `json:"enableTranscode"`
+		EnableTorrentStreaming bool                        `json:"enableTorrentStreaming"`
+		DebridProvider         string                      `json:"debridProvider"`
+		DebridApiKey           string                      `json:"debridApiKey"`
+	}
+	var b body
+
+	if err := c.Bind(&b); err != nil {
+		return h.RespondWithError(c, err)
+	}
+
+	// Resolve incoming virtual paths to physical paths on iOS
+	if b.Library.LibraryPath != "" {
+		b.Library.LibraryPath = util.ResolvePhysicalPath(b.Library.LibraryPath)
+	}
+	for i, p := range b.Library.LibraryPaths {
+		b.Library.LibraryPaths[i] = util.ResolvePhysicalPath(p)
+	}
+	if b.Manga.LocalSourceDirectory != "" {
+		b.Manga.LocalSourceDirectory = util.ResolvePhysicalPath(b.Manga.LocalSourceDirectory)
+	}
+
+	prevSettings, _ := h.App.Database.GetSettings()
+	if err := h.guardStrictSettingsMutation(c, prevSettings, &b.Library, &b.Manga); err != nil {
+		return err
+	}
+	if err := h.guardPrivilegedSettingsMutation(c, prevSettings, &b.MediaPlayer, &b.Torrent); err != nil {
+		return err
+	}
+
+	// Check settings
+	if b.Library.LibraryPaths == nil {
+		b.Library.LibraryPaths = []string{}
+	}
+	b.Library.LibraryPath = filepath.ToSlash(b.Library.LibraryPath)
+
+	b.Library.IncludeOnlineStreamingInLibrary = b.Library.EnableOnlinestream
+
+	settings, err := h.App.Database.UpsertSettings(&models.Settings{
+		BaseModel: models.BaseModel{
+			ID:        1,
+			UpdatedAt: time.Now(),
+		},
+		Library:       &b.Library,
+		MediaPlayer:   &b.MediaPlayer,
+		Torrent:       &b.Torrent,
+		Anilist:       &b.Anilist,
+		Discord:       &b.Discord,
+		Manga:         &b.Manga,
+		Notifications: &b.Notifications,
+		Nakama:        &b.Nakama,
+		AutoDownloader: &models.AutoDownloaderSettings{
+			Provider:              b.Library.TorrentProvider,
+			Interval:              20,
+			Enabled:               false,
+			DownloadAutomatically: true,
+			EnableEnhancedQueries: true,
+		},
+	})
+
+	if err != nil {
+		return h.RespondWithError(c, err)
+	}
+
+	if b.EnableTorrentStreaming {
+		go func() {
+			defer util.HandlePanicThen(func() {})
+			prev, found := h.App.Database.GetTorrentstreamSettings()
+			if found {
+				prev.Enabled = true
+				prev.IncludeInLibrary = true
+				_, _ = h.App.Database.UpsertTorrentstreamSettings(prev)
+			}
+		}()
+	}
+
+	if b.EnableTranscode {
+		go func() {
+			defer util.HandlePanicThen(func() {})
+			prev, found := h.App.Database.GetMediastreamSettings()
+			if found {
+				prev.TranscodeEnabled = true
+				_, _ = h.App.Database.UpsertMediastreamSettings(prev)
+			}
+		}()
+	}
+
+	if b.DebridProvider != "" && b.DebridProvider != "none" {
+		go func() {
+			defer util.HandlePanicThen(func() {})
+			prev, found := h.App.Database.GetDebridSettings()
+			if found {
+				prev.Enabled = true
+				prev.Provider = b.DebridProvider
+				prev.ApiKey = b.DebridApiKey
+				prev.IncludeDebridStreamInLibrary = true
+				_, _ = h.App.Database.UpsertDebridSettings(prev)
+			}
+		}()
+	}
+
+	h.App.WSEventManager.SendEvent("settings", settings)
+
+	status := h.NewStatus(c)
+
+	// Refresh modules that depend on the settings
+	h.App.InitOrRefreshModules()
+
+	return h.RespondWithData(c, status)
+}
+
+// HandleSaveSettings
+//
+//	@summary updates the app settings.
+//	@desc This will update the app settings.
+//	@desc The client should re-fetch the server status after this.
+//	@route /api/v1/settings [PATCH]
+//	@returns handlers.Status
+func (h *Handler) HandleSaveSettings(c echo.Context) error {
+
+	type body struct {
+		Library       models.LibrarySettings      `json:"library"`
+		MediaPlayer   models.MediaPlayerSettings  `json:"mediaPlayer"`
+		Torrent       models.TorrentSettings      `json:"torrent"`
+		Anilist       models.AnilistSettings      `json:"anilist"`
+		Discord       models.DiscordSettings      `json:"discord"`
+		Manga         models.MangaSettings        `json:"manga"`
+		Notifications models.NotificationSettings `json:"notifications"`
+		Nakama        models.NakamaSettings       `json:"nakama"`
+	}
+	var b body
+
+	if err := c.Bind(&b); err != nil {
+		return h.RespondWithError(c, err)
+	}
+
+	// Resolve incoming virtual paths to physical paths on iOS
+	if util.IsIOS() {
+		if b.Library.LibraryPath != "" {
+			b.Library.LibraryPath = util.ResolvePhysicalPath(b.Library.LibraryPath)
+		}
+		for i, p := range b.Library.LibraryPaths {
+			b.Library.LibraryPaths[i] = util.ResolvePhysicalPath(p)
+		}
+		if b.Manga.LocalSourceDirectory != "" {
+			b.Manga.LocalSourceDirectory = util.ResolvePhysicalPath(b.Manga.LocalSourceDirectory)
+		}
+	}
+
+	prevSettings, _ := h.App.Database.GetSettings()
+	if err := h.guardStrictSettingsMutation(c, prevSettings, &b.Library, &b.Manga); err != nil {
+		return err
+	}
+	if err := h.guardPrivilegedSettingsMutation(c, prevSettings, &b.MediaPlayer, &b.Torrent); err != nil {
+		return err
+	}
+
+	b.MediaPlayer.VlcPath = strings.TrimSpace(strings.Trim(b.MediaPlayer.VlcPath, "\""))
+	b.MediaPlayer.MpcPath = strings.TrimSpace(strings.Trim(b.MediaPlayer.MpcPath, "\""))
+	b.MediaPlayer.MpvPath = strings.TrimSpace(strings.Trim(b.MediaPlayer.MpvPath, "\""))
+	b.MediaPlayer.IinaPath = strings.TrimSpace(strings.Trim(b.MediaPlayer.IinaPath, "\""))
+
+	b.Torrent.QBittorrentPath = strings.TrimSpace(strings.Trim(b.Torrent.QBittorrentPath, "\""))
+	b.Torrent.TransmissionPath = strings.TrimSpace(strings.Trim(b.Torrent.TransmissionPath, "\""))
+
+	if b.Library.LibraryPath != "" {
+		b.Library.LibraryPath = filepath.ToSlash(filepath.Clean(b.Library.LibraryPath))
+	}
+
+	if b.Library.LibraryPaths == nil || b.Library.LibraryPath == "" {
+		b.Library.LibraryPaths = []string{}
+	}
+
+	for i, path := range b.Library.LibraryPaths {
+		b.Library.LibraryPaths[i] = filepath.ToSlash(filepath.Clean(path))
+	}
+
+	b.Library.LibraryPaths = lo.Filter(b.Library.LibraryPaths, func(s string, _ int) bool {
+		if s == "" || util.IsSameDir(s, b.Library.LibraryPath) {
+			return false
+		}
+		info, err := os.Stat(util.ResolvePhysicalPath(s))
+		if err != nil {
+			return false
+		}
+		return info.IsDir()
+	})
+
+	// Check that any library paths are not subdirectories of each other
+	for i, path1 := range b.Library.LibraryPaths {
+		if util.IsSubdirectory(b.Library.LibraryPath, path1) || util.IsSubdirectory(path1, b.Library.LibraryPath) {
+			return h.RespondWithError(c, errors.New("library paths cannot be subdirectories of each other"))
+		}
+		for j, path2 := range b.Library.LibraryPaths {
+			if i != j && util.IsSubdirectory(path1, path2) {
+				return h.RespondWithError(c, errors.New("library paths cannot be subdirectories of each other"))
+			}
+		}
+	}
+
+	autoDownloaderSettings := models.AutoDownloaderSettings{}
+	if prevSettings != nil && prevSettings.AutoDownloader != nil {
+		autoDownloaderSettings = *prevSettings.AutoDownloader
+	}
+	// Disable auto-downloader if the torrent provider is set to none
+	if b.Library.TorrentProvider == torrent.ProviderNone && autoDownloaderSettings.Enabled {
+		h.App.Logger.Debug().Msg("app: Disabling auto-downloader because the torrent provider is set to none")
+		autoDownloaderSettings.Enabled = false
+	}
+
+	settings, err := h.App.Database.UpsertSettings(&models.Settings{
+		BaseModel: models.BaseModel{
+			ID:        1,
+			UpdatedAt: time.Now(),
+		},
+		Library:        &b.Library,
+		MediaPlayer:    &b.MediaPlayer,
+		Torrent:        &b.Torrent,
+		Anilist:        &b.Anilist,
+		Manga:          &b.Manga,
+		Discord:        &b.Discord,
+		Notifications:  &b.Notifications,
+		Nakama:         &b.Nakama,
+		AutoDownloader: &autoDownloaderSettings,
+	})
+
+	if err != nil {
+		return h.RespondWithError(c, err)
+	}
+
+	h.App.WSEventManager.SendEvent("settings", settings)
+
+	status := h.NewStatus(c)
+
+	// Refresh modules that depend on the settings
+	h.App.InitOrRefreshModules()
+
+	return h.RespondWithData(c, status)
+}
+
+// HandlePatchSetting
+//
+//	@summary patches a specific app setting.
+//	@desc This updates a single setting path and refreshes the server status.
+//	@route /api/v1/settings/path [PATCH]
+//	@returns handlers.Status
+func (h *Handler) HandlePatchSetting(c echo.Context) error {
+	type body struct {
+		Path  string      `json:"path"`
+		Value interface{} `json:"value"`
+	}
+
+	var b body
+	if err := c.Bind(&b); err != nil {
+		return h.RespondWithError(c, err)
+	}
+
+	b.Path = strings.TrimSpace(b.Path)
+	if b.Path == "" {
+		return h.RespondWithError(c, errors.New("settings path is empty"))
+	}
+
+	prevSettings, err := h.App.Database.GetSettings()
+	if err != nil {
+		return h.RespondWithError(c, err)
+	}
+
+	nextSettings, err := models.SetSettingsPath(prevSettings, b.Path, b.Value)
+	if err != nil {
+		return h.RespondWithError(c, err)
+	}
+
+	if err := h.guardStrictSettingsMutation(c, prevSettings, nextSettings.Library, nextSettings.Manga); err != nil {
+		return err
+	}
+	if err := h.guardPrivilegedSettingsMutation(c, prevSettings, nextSettings.MediaPlayer, nextSettings.Torrent); err != nil {
+		return err
+	}
+
+	nextSettings.BaseModel = models.BaseModel{
+		ID:        1,
+		UpdatedAt: time.Now(),
+	}
+
+	settings, err := h.App.Database.UpsertSettings(nextSettings)
+	if err != nil {
+		return h.RespondWithError(c, err)
+	}
+
+	h.App.WSEventManager.SendEvent("settings", settings)
+
+	status := h.NewStatus(c)
+
+	h.App.InitOrRefreshModules()
+
+	return h.RespondWithData(c, status)
+}
+
+// HandleSaveAutoDownloaderSettings
+//
+//	@summary updates the auto-downloader settings.
+//	@route /api/v1/settings/auto-downloader [PATCH]
+//	@returns bool
+func (h *Handler) HandleSaveAutoDownloaderSettings(c echo.Context) error {
+
+	type body struct {
+		Provider              string `json:"provider"`
+		Interval              int    `json:"interval"`
+		Enabled               bool   `json:"enabled"`
+		DownloadAutomatically bool   `json:"downloadAutomatically"`
+		EnableEnhancedQueries bool   `json:"enableEnhancedQueries"`
+		EnableSeasonCheck     bool   `json:"enableSeasonCheck"`
+		UseDebrid             bool   `json:"useDebrid"`
+	}
+
+	var b body
+
+	if err := c.Bind(&b); err != nil {
+		return h.RespondWithError(c, err)
+	}
+
+	currSettings, err := h.App.Database.GetSettings()
+	if err != nil {
+		return h.RespondWithError(c, err)
+	}
+
+	// Validation
+	if b.Interval < 15 {
+		return h.RespondWithError(c, errors.New("interval must be at least 15 minutes"))
+	}
+
+	autoDownloaderSettings := &models.AutoDownloaderSettings{
+		Provider:              b.Provider,
+		Interval:              b.Interval,
+		Enabled:               b.Enabled,
+		DownloadAutomatically: b.DownloadAutomatically,
+		EnableEnhancedQueries: b.EnableEnhancedQueries,
+		EnableSeasonCheck:     b.EnableSeasonCheck,
+		UseDebrid:             b.UseDebrid,
+	}
+
+	currSettings.AutoDownloader = autoDownloaderSettings
+	currSettings.BaseModel = models.BaseModel{
+		ID:        1,
+		UpdatedAt: time.Now(),
+	}
+
+	_, err = h.App.Database.UpsertSettings(currSettings)
+	if err != nil {
+		return h.RespondWithError(c, err)
+	}
+
+	// Update Auto Downloader settings
+	h.App.AutoDownloader.SetSettings(autoDownloaderSettings)
+
+	return h.RespondWithData(c, true)
+}
+
+// HandleSaveMediaPlayerSettings
+//
+//	@summary updates the media player settings.
+//	@route /api/v1/settings/media-player [PATCH]
+//	@returns bool
+func (h *Handler) HandleSaveMediaPlayerSettings(c echo.Context) error {
+
+	type body struct {
+		MediaPlayer *models.MediaPlayerSettings `json:"mediaPlayer"`
+	}
+
+	var b body
+
+	if err := c.Bind(&b); err != nil {
+		return h.RespondWithError(c, err)
+	}
+
+	currSettings, err := h.App.Database.GetSettings()
+	if err != nil {
+		return h.RespondWithError(c, err)
+	}
+
+	if err := h.guardPrivilegedSettingsMutation(c, currSettings, b.MediaPlayer, nil); err != nil {
+		return err
+	}
+
+	currSettings.MediaPlayer = b.MediaPlayer
+	currSettings.BaseModel = models.BaseModel{
+		ID:        1,
+		UpdatedAt: time.Now(),
+	}
+
+	_, err = h.App.Database.UpsertSettings(currSettings)
+	if err != nil {
+		return h.RespondWithError(c, err)
+	}
+
+	h.App.InitOrRefreshModules()
+
+	return h.RespondWithData(c, true)
+}

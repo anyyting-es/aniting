@@ -1,0 +1,512 @@
+query AnimeCollection ($userName: String) {
+  MediaListCollection(userName: $userName, forceSingleCompletedList: true, type: ANIME) {
+    lists {
+      status
+      name
+      isCustomList
+      entries {
+        id
+        score(format: POINT_100)
+        progress
+        status
+        notes
+        repeat
+        private
+        startedAt {
+          year
+          month
+          day
+        }
+        completedAt {
+          year
+          month
+          day
+        }
+        media {
+          ...baseAnime
+        }
+      }
+    }
+  }
+}
+
+query AnimeCollectionTags ($userName: String) {
+  MediaListCollection(userName: $userName, forceSingleCompletedList: true, type: ANIME) {
+    lists {
+      entries {
+        media {
+          id
+          tags {
+            name
+          }
+        }
+      }
+    }
+  }
+}
+
+query AnimeCollectionWithRelations ($userName: String) {
+  MediaListCollection(userName: $userName, forceSingleCompletedList: true, type: ANIME) {
+    lists {
+      status
+      name
+      isCustomList
+      entries {
+        id
+        score(format: POINT_100)
+        progress
+        status
+        notes
+        repeat
+        private
+        startedAt {
+          year
+          month
+          day
+        }
+        completedAt {
+          year
+          month
+          day
+        }
+        media {
+          ...completeAnime
+        }
+      }
+    }
+  }
+}
+
+query BaseAnimeByMalId ($id: Int) {
+  Media(idMal: $id, type: ANIME) {
+    ...baseAnime
+  }
+}
+
+query BaseAnimeById ($id: Int) {
+  Media(id: $id, type: ANIME) {
+    ...baseAnime
+  }
+}
+
+query SearchBaseAnimeByIds ($ids: [Int], $page: Int, $perPage: Int, $status: [MediaStatus], $inCollection: Boolean, $sort: [MediaSort], $season: MediaSeason, $year: Int, $genre: String, $format: MediaFormat) {
+  Page(page: $page, perPage: $perPage) {
+    pageInfo {
+      hasNextPage
+    },
+    media(id_in: $ids, type: ANIME, status_in: $status, onList: $inCollection, sort: $sort, season: $season, seasonYear: $year, genre: $genre, format: $format) {
+      ...baseAnime
+    }
+  }
+}
+
+query CompleteAnimeById ($id: Int) {
+  Media(id: $id, type: ANIME) {
+    ...completeAnime
+  }
+}
+
+# For view (will be cached)
+query AnimeDetailsById ($id: Int) {
+  Media(id: $id, type: ANIME) {
+    siteUrl
+    id
+    duration
+    genres
+    averageScore
+    popularity
+    meanScore
+    description
+    trailer {
+      id
+      site
+      thumbnail
+    }
+    startDate {
+      year
+      month
+      day
+    }
+    endDate {
+      year
+      month
+      day
+    }
+    studios(isMain: true) {
+      nodes {
+        name
+        id
+      }
+    }
+    characters(sort: [ROLE]) {
+      edges {
+        id
+        role
+        name
+        node {
+          ...baseCharacter
+        }
+      }
+    }
+    staff(sort: [RELEVANCE]) {
+      edges {
+        role
+        node {
+          name {
+            full
+          }
+          id
+        }
+      }
+    }
+    rankings {
+      context
+      type
+      rank
+      year
+      format
+      allTime
+      season
+    }
+    recommendations(page: 1, perPage: 8, sort: RATING_DESC) {
+      edges {
+        node {
+          mediaRecommendation {
+            id
+            idMal
+            siteUrl
+            status(version: 2)
+            isAdult
+            season
+            type
+            format
+            meanScore
+            description
+            episodes
+            trailer {
+              id
+              site
+              thumbnail
+            }
+            startDate {
+              year
+              month
+              day
+            }
+            coverImage {
+              extraLarge
+              large
+              medium
+              color
+            }
+            bannerImage
+            title {
+              romaji
+              english
+              native
+              userPreferred
+            }
+          }
+        }
+      }
+    }
+    relations {
+      edges {
+        relationType(version: 2)
+        node {
+          ...baseAnime
+        }
+      }
+    }
+  }
+}
+
+query ListAnime(
+  $page: Int
+  $search: String
+  $perPage: Int
+  $sort: [MediaSort]
+  $status: [MediaStatus]
+  $genres: [String]
+  $tags: [String]
+  $averageScore_greater: Int
+  $season: MediaSeason
+  $seasonYear: Int
+  $format: MediaFormat
+  $isAdult: Boolean
+) {
+  Page(page: $page, perPage: $perPage) {
+    pageInfo {
+      hasNextPage
+      total
+      perPage
+      currentPage
+      lastPage
+    }
+    media(
+      type: ANIME
+      search: $search
+      sort: $sort
+      status_in: $status
+      isAdult: $isAdult
+      format: $format
+      genre_in: $genres
+      tag_in: $tags
+      averageScore_greater: $averageScore_greater
+      season: $season
+      seasonYear: $seasonYear
+      format_not: MUSIC
+    ) {
+      ...baseAnime
+    }
+  }
+}
+
+query ListAnimeAll(
+  $page: Int
+  $search: String
+  $perPage: Int
+  $sort: [MediaSort]
+  $status: [MediaStatus]
+  $genres: [String]
+  $tags: [String]
+  $averageScore_greater: Int
+  $season: MediaSeason
+  $seasonYear: Int
+  $format: MediaFormat
+) {
+  Page(page: $page, perPage: $perPage) {
+    pageInfo {
+      hasNextPage
+      total
+      perPage
+      currentPage
+      lastPage
+    }
+    media(
+      type: ANIME
+      search: $search
+      sort: $sort
+      status_in: $status
+      format: $format
+      genre_in: $genres
+      tag_in: $tags
+      averageScore_greater: $averageScore_greater
+      season: $season
+      seasonYear: $seasonYear
+      format_not: MUSIC
+    ) {
+      ...baseAnime
+    }
+  }
+}
+
+query ListRecentAnime ($page: Int, $perPage: Int, $airingAt_greater: Int, $airingAt_lesser: Int, $notYetAired: Boolean = false) {
+  Page(page: $page, perPage: $perPage) {
+    pageInfo {
+      hasNextPage
+      total
+      perPage
+      currentPage
+      lastPage
+    }
+    airingSchedules(notYetAired: $notYetAired, sort: TIME_DESC, airingAt_greater: $airingAt_greater, airingAt_lesser: $airingAt_lesser) {
+      id
+      airingAt
+      episode
+      timeUntilAiring
+      media {
+        ... baseAnime
+      }
+    }
+  }
+}
+
+fragment baseAnime on Media {
+  id
+  idMal
+  siteUrl
+  status(version: 2)
+  season
+  type
+  format
+  seasonYear
+  bannerImage
+  episodes
+  synonyms
+  isAdult
+  countryOfOrigin
+  meanScore
+  description
+  genres
+  duration
+  trailer {
+    id
+    site
+    thumbnail
+  }
+  title {
+    userPreferred
+    romaji
+    english
+    native
+  }
+  coverImage {
+    extraLarge
+    large
+    medium
+    color
+  }
+  startDate {
+    year
+    month
+    day
+  }
+  endDate {
+    year
+    month
+    day
+  }
+  nextAiringEpisode {
+    airingAt
+    timeUntilAiring
+    episode
+  }
+}
+
+fragment completeAnime on Media {
+  id
+  idMal
+  siteUrl
+  status(version: 2)
+  season
+  seasonYear
+  type
+  format
+  bannerImage
+  episodes
+  synonyms
+  isAdult
+  countryOfOrigin
+  meanScore
+  description
+  genres
+  duration
+  trailer {
+    id
+    site
+    thumbnail
+  }
+  title {
+    userPreferred
+    romaji
+    english
+    native
+  }
+  coverImage {
+    extraLarge
+    large
+    medium
+    color
+  }
+  startDate {
+    year
+    month
+    day
+  }
+  endDate {
+    year
+    month
+    day
+  }
+  nextAiringEpisode {
+    airingAt
+    timeUntilAiring
+    episode
+  }
+  relations {
+    edges {
+      relationType(version: 2)
+      node {
+        ...baseAnime
+      }
+    }
+  }
+}
+
+fragment baseCharacter on Character {
+  id
+  isFavourite
+  gender
+  age
+  dateOfBirth {
+    year
+    month
+    day
+  }
+  name {
+    full
+    native
+    alternative
+  }
+  image {
+    large
+  }
+  description
+  siteUrl
+}
+
+query AnimeAiringSchedule($ids: [Int],$season: MediaSeason, $seasonYear: Int, $previousSeason: MediaSeason, $previousSeasonYear: Int, $nextSeason: MediaSeason, $nextSeasonYear: Int) {
+  ongoing: Page {
+    media(id_in: $ids, type: ANIME, season: $season, seasonYear: $seasonYear, onList: true) {
+      ...animeSchedule
+    }
+  }
+  ongoingNext: Page(page: 2) {
+    media(id_in: $ids, type: ANIME, season: $season, seasonYear: $seasonYear, onList: true) {
+      ...animeSchedule
+    }
+  }
+  upcoming: Page {
+    media(id_in: $ids, type: ANIME, season: $nextSeason, seasonYear: $nextSeasonYear, sort: [START_DATE], onList: true) {
+      ...animeSchedule
+    }
+  }
+  upcomingNext: Page(page: 2) {
+    media(id_in: $ids, type: ANIME, season: $nextSeason, seasonYear: $nextSeasonYear, sort: [START_DATE], onList: true) {
+      ...animeSchedule
+    }
+  }
+  preceding: Page {
+    media(id_in: $ids, type: ANIME, season: $previousSeason, seasonYear: $previousSeasonYear, onList: true) {
+      ...animeSchedule
+    }
+  }
+}
+
+query AnimeAiringScheduleRaw($ids: [Int]) {
+  Page {
+    media(id_in: $ids, type: ANIME, onList: true) {
+      ...animeSchedule
+    }
+  }
+}
+
+fragment animeSchedule on Media {
+  id,
+  idMal
+  previous: airingSchedule(notYetAired: false, perPage: 30) {
+    nodes {
+      airingAt
+      timeUntilAiring
+      episode
+    }
+  },
+  upcoming: airingSchedule(notYetAired: true, perPage: 30) {
+    nodes {
+      airingAt
+      timeUntilAiring
+      episode
+    }
+  }
+}

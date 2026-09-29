@@ -1,0 +1,222 @@
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:seanime_app/core/preferences/title_language_provider.dart';
+import 'package:seanime_app/core/theme/app_theme_colors.dart';
+import 'package:seanime_app/core/theme/theme_provider.dart';
+import 'package:seanime_app/data/models/anime_entry.dart';
+import 'package:seanime_app/presentation/providers/app_providers.dart';
+
+class ContinueWatchingCard extends ConsumerStatefulWidget {
+  final AnimeEntry entry;
+  final VoidCallback onTap;
+  final double width;
+  final double height;
+
+  const ContinueWatchingCard({
+    super.key,
+    required this.entry,
+    required this.onTap,
+    this.width = 285,
+    this.height = 168,
+  });
+
+  @override
+  ConsumerState<ContinueWatchingCard> createState() => _ContinueWatchingCardState();
+}
+
+class _ContinueWatchingCardState extends ConsumerState<ContinueWatchingCard> {
+  bool _isHovered = false;
+  bool _isFocused = false;
+
+  bool get _isActive => _isHovered || _isFocused;
+
+  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is KeyDownEvent) {
+      if (event.logicalKey == LogicalKeyboardKey.enter ||
+          event.logicalKey == LogicalKeyboardKey.select ||
+          event.logicalKey == LogicalKeyboardKey.numpadEnter ||
+          event.logicalKey == LogicalKeyboardKey.gameButtonA) {
+        widget.onTap();
+        return KeyEventResult.handled;
+      }
+    }
+    return KeyEventResult.ignored;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = context.themeColors;
+    final titleLang = ref.watch(titleLanguageProvider);
+
+    final epNum = widget.entry.episodeNumber ?? (widget.entry.progress + 1);
+
+    // Always watch AniZip for duration and episode metadata
+    final aniZipAsync = widget.entry.mediaId > 0
+        ? ref.watch(aniZipDataProvider(widget.entry.mediaId))
+        : null;
+    final aniZipData = aniZipAsync?.asData?.value;
+    final aniZipEpisode = aniZipData?.getEpisode(epNum);
+
+    final String? resolvedThumbnail = (aniZipEpisode?.image != null &&
+            aniZipEpisode!.image!.trim().isNotEmpty)
+        ? aniZipEpisode.image!.trim()
+        : (widget.entry.episodeThumbnail != null &&
+                widget.entry.episodeThumbnail != widget.entry.bannerImage
+            ? widget.entry.episodeThumbnail
+            : null);
+
+    final imageUrl = resolvedThumbnail ?? widget.entry.bannerImage ?? widget.entry.coverImage;
+
+    final String resolvedEpTitle = (aniZipEpisode != null &&
+            aniZipEpisode.displayTitle.isNotEmpty &&
+            !aniZipEpisode.displayTitle.startsWith('Episodio'))
+        ? aniZipEpisode.displayTitle
+        : (widget.entry.episodeTitle != null &&
+                widget.entry.episodeTitle!.isNotEmpty &&
+                !widget.entry.episodeTitle!.startsWith('Episodio')
+            ? widget.entry.episodeTitle!
+            : '');
+
+    final String titleLine = resolvedEpTitle.isNotEmpty
+        ? 'EP $epNum • $resolvedEpTitle'
+        : 'EP $epNum';
+
+    final animeTitle = widget.entry.displayTitle(titleLang);
+    final String? episodeDuration = aniZipEpisode?.formattedDuration;
+
+    final double progressFraction = (widget.entry.totalEpisodes != null && widget.entry.totalEpisodes! > 0)
+        ? (widget.entry.progress / widget.entry.totalEpisodes!).clamp(0.0, 1.0)
+        : 0.5;
+
+    final isCompact = widget.width < 270;
+
+    return RepaintBoundary(
+      child: Focus(
+        onFocusChange: (val) => setState(() => _isFocused = val),
+        onKeyEvent: _handleKeyEvent,
+        child: MouseRegion(
+          onEnter: (_) => setState(() => _isHovered = true),
+          onExit: (_) => setState(() => _isHovered = false),
+          cursor: SystemMouseCursors.click,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: widget.onTap,
+            child: SizedBox(
+              width: widget.width,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // 1. Clean Cover Image Container
+                  AspectRatio(
+                    aspectRatio: 16 / 9,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 160),
+                      curve: Curves.easeOut,
+                      decoration: BoxDecoration(
+                        color: colors.surface,
+                        borderRadius: BorderRadius.circular(isCompact ? (colors.borderRadius * 0.8).clamp(0.0, 16.0) : colors.borderRadius),
+                        border: Border.all(
+                          color: _isActive ? Colors.white : colors.border.withValues(alpha: 0.5),
+                          width: _isActive ? 2.0 : 1.0,
+                        ),
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          if (imageUrl != null)
+                            CachedNetworkImage(
+                              imageUrl: imageUrl,
+                              fit: BoxFit.cover,
+                              memCacheWidth: isCompact ? 450 : 600,
+                              memCacheHeight: isCompact ? 260 : 340,
+                              placeholder: (context, url) => Container(
+                                color: theme.colorScheme.surfaceContainerHighest,
+                              ),
+                              errorWidget: (context, url, error) => Container(
+                                color: theme.colorScheme.surfaceContainerHighest,
+                                child: Icon(Icons.movie_rounded, color: theme.colorScheme.outline, size: isCompact ? 28 : 36),
+                              ),
+                            )
+                          else
+                            Container(
+                              color: theme.colorScheme.surfaceContainerHighest,
+                              child: Icon(Icons.movie_rounded, color: theme.colorScheme.outline, size: isCompact ? 28 : 36),
+                            ),
+                          // Subtle progress indicator at the bottom edge
+                          if (progressFraction > 0)
+                            Positioned(
+                              bottom: 0,
+                              left: 0,
+                              right: 0,
+                              child: LinearProgressIndicator(
+                                value: progressFraction,
+                                backgroundColor: Colors.black.withValues(alpha: 0.35),
+                                valueColor: AlwaysStoppedAnimation<Color>(colors.accent),
+                                minHeight: isCompact ? 2.5 : 3.0,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: isCompact ? 6 : 8),
+                  // 2. Info Below the Cover
+                  Text(
+                    titleLine,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: _isActive
+                          ? theme.colorScheme.primary
+                          : (theme.brightness == Brightness.dark
+                              ? colors.textPrimary
+                              : const Color(0xFF111418)),
+                      fontSize: isCompact ? 12.0 : 13.0,
+                      fontWeight: FontWeight.bold,
+                      height: 1.25,
+                      fontFamilyFallback: kJapaneseFontFallbacks,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          animeTitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: colors.textSecondary,
+                            fontSize: isCompact ? 10.5 : 11.5,
+                            fontWeight: FontWeight.w500,
+                            fontFamilyFallback: kJapaneseFontFallbacks,
+                          ),
+                        ),
+                      ),
+                      if (episodeDuration != null && episodeDuration.isNotEmpty) ...[
+                        const SizedBox(width: 6),
+                        Text(
+                          episodeDuration,
+                          style: TextStyle(
+                            color: colors.textMuted,
+                            fontSize: isCompact ? 9.5 : 10.5,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

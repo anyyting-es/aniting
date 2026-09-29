@@ -1,0 +1,916 @@
+package plugin_ui
+
+import (
+	"fmt"
+	"seanime/internal/util/result"
+
+	"github.com/dop251/goja"
+	"github.com/goccy/go-json"
+	"github.com/google/uuid"
+)
+
+const (
+	MaxActionsPerType = 3 // A plugin can only at most X actions of a certain type
+)
+
+// ActionManager
+//
+// Actions are buttons, dropdown items, and context menu items that are displayed in certain places in the UI.
+// They are defined in the plugin code and are used to trigger events.
+//
+// The ActionManager is responsible for registering, rendering, and handling events for actions.
+type ActionManager struct {
+	ctx *Context
+
+	animePageButtons            *result.Map[string, *AnimePageButton]
+	animePageDropdownItems      *result.Map[string, *AnimePageDropdownMenuItem]
+	animeLibraryDropdownItems   *result.Map[string, *AnimeLibraryDropdownMenuItem]
+	mangaPageButtons            *result.Map[string, *MangaPageButton]
+	mangaPageDropdownItems      *result.Map[string, *MangaPageDropdownMenuItem]
+	mangaLibraryDropdownItems   *result.Map[string, *MangaLibraryDropdownMenuItem]
+	mediaCardContextMenuItems   *result.Map[string, *MediaCardContextMenuItem]
+	episodeCardContextMenuItems *result.Map[string, *EpisodeCardContextMenuItem]
+	episodeGridItemMenuItems    *result.Map[string, *EpisodeGridItemMenuItem]
+}
+
+type BaseActionProps struct {
+	ID       string            `json:"id"`
+	Label    string            `json:"label"`
+	Style    map[string]string `json:"style,omitempty"`
+	Loading  bool              `json:"loading,omitempty"`
+	Disabled bool              `json:"disabled,omitempty"`
+}
+
+// Base action struct that all action types embed
+type BaseAction struct {
+	BaseActionProps
+}
+
+// GetProps returns the base action properties
+func (a *BaseAction) GetProps() BaseActionProps {
+	return a.BaseActionProps
+}
+
+// SetProps sets the base action properties
+func (a *BaseAction) SetProps(props BaseActionProps) {
+	a.BaseActionProps = props
+}
+func (a *BaseAction) SetLabel(label string) {
+	a.BaseActionProps.Label = label
+}
+func (a *BaseAction) SetStyle(style map[string]string) {
+	a.BaseActionProps.Style = style
+}
+func (a *BaseAction) SetLoading(loading bool) {
+	a.BaseActionProps.Loading = loading
+}
+func (a *BaseAction) SetDisabled(disabled bool) {
+	a.BaseActionProps.Disabled = disabled
+}
+
+// UnmountAll unmounts all actions
+// It should be called when the plugin is unloaded
+func (a *ActionManager) UnmountAll() {
+
+	if a.animePageButtons.ClearN() > 0 {
+		a.renderAnimePageButtons()
+	}
+	if a.animePageDropdownItems.ClearN() > 0 {
+		a.renderAnimePageDropdownItems()
+	}
+	if a.animeLibraryDropdownItems.ClearN() > 0 {
+		a.renderAnimeLibraryDropdownItems()
+	}
+	if a.mangaPageButtons.ClearN() > 0 {
+		a.renderMangaPageButtons()
+	}
+	if a.mangaPageDropdownItems.ClearN() > 0 {
+		a.renderMangaPageDropdownItems()
+	}
+	if a.mangaLibraryDropdownItems.ClearN() > 0 {
+		a.renderMangaLibraryDropdownItems()
+	}
+	if a.mediaCardContextMenuItems.ClearN() > 0 {
+		a.renderMediaCardContextMenuItems()
+	}
+	if a.episodeCardContextMenuItems.ClearN() > 0 {
+		a.renderEpisodeCardContextMenuItems()
+	}
+	if a.episodeGridItemMenuItems.ClearN() > 0 {
+		a.renderEpisodeGridItemMenuItems()
+	}
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+type AnimePageButton struct {
+	BaseAction
+	Intent      string `json:"intent,omitempty"`
+	TooltipText string `json:"tooltipText,omitempty"`
+}
+
+func (a *AnimePageButton) CreateObject(actionManager *ActionManager) *goja.Object {
+	obj := actionManager.ctx.vm.NewObject()
+	actionManager.bindSharedToObject(obj, a)
+
+	_ = obj.Set("setIntent", func(intent string) {
+		a.Intent = intent
+	})
+
+	return obj
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+type EpisodeCardContextMenuItem struct {
+	BaseAction
+	Type string `json:"type,omitempty"` // library, torrentstream, debridstream, etc.
+}
+
+func (a *EpisodeCardContextMenuItem) CreateObject(actionManager *ActionManager) *goja.Object {
+	obj := actionManager.ctx.vm.NewObject()
+	actionManager.bindSharedToObject(obj, a)
+	return obj
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+type EpisodeGridItemMenuItem struct {
+	BaseAction
+	Type string `json:"type"`
+}
+
+func (a *EpisodeGridItemMenuItem) CreateObject(actionManager *ActionManager) *goja.Object {
+	obj := actionManager.ctx.vm.NewObject()
+	actionManager.bindSharedToObject(obj, a)
+	return obj
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+type MangaPageButton struct {
+	BaseAction
+	Intent      string `json:"intent,omitempty"`
+	TooltipText string `json:"tooltipText,omitempty"`
+}
+
+func (a *MangaPageButton) CreateObject(actionManager *ActionManager) *goja.Object {
+	obj := actionManager.ctx.vm.NewObject()
+	actionManager.bindSharedToObject(obj, a)
+
+	_ = obj.Set("setIntent", func(intent string) {
+		a.Intent = intent
+	})
+
+	return obj
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+type AnimePageDropdownMenuItem struct {
+	BaseAction
+}
+
+func (a *AnimePageDropdownMenuItem) CreateObject(actionManager *ActionManager) *goja.Object {
+	obj := actionManager.ctx.vm.NewObject()
+	actionManager.bindSharedToObject(obj, a)
+	return obj
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+type AnimeLibraryDropdownMenuItem struct {
+	BaseAction
+}
+
+func (a *AnimeLibraryDropdownMenuItem) CreateObject(actionManager *ActionManager) *goja.Object {
+	obj := actionManager.ctx.vm.NewObject()
+	actionManager.bindSharedToObject(obj, a)
+	return obj
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+type MangaPageDropdownMenuItem struct {
+	BaseAction
+}
+
+func (a *MangaPageDropdownMenuItem) CreateObject(actionManager *ActionManager) *goja.Object {
+	obj := actionManager.ctx.vm.NewObject()
+	actionManager.bindSharedToObject(obj, a)
+	return obj
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+type MangaLibraryDropdownMenuItem struct {
+	BaseAction
+}
+
+func (a *MangaLibraryDropdownMenuItem) CreateObject(actionManager *ActionManager) *goja.Object {
+	obj := actionManager.ctx.vm.NewObject()
+	actionManager.bindSharedToObject(obj, a)
+	return obj
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+type MediaCardContextMenuItemFor string
+
+const (
+	MediaCardContextMenuItemForAnime MediaCardContextMenuItemFor = "anime"
+	MediaCardContextMenuItemForManga MediaCardContextMenuItemFor = "manga"
+	MediaCardContextMenuItemForBoth  MediaCardContextMenuItemFor = "both"
+)
+
+type MediaCardContextMenuItem struct {
+	BaseAction
+	For MediaCardContextMenuItemFor `json:"for"` // anime, manga, both
+}
+
+func (a *MediaCardContextMenuItem) CreateObject(actionManager *ActionManager) *goja.Object {
+	obj := actionManager.ctx.vm.NewObject()
+	actionManager.bindSharedToObject(obj, a)
+
+	_ = obj.Set("setFor", func(_for MediaCardContextMenuItemFor) {
+		a.For = _for
+	})
+
+	return obj
+}
+
+// ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+func NewActionManager(ctx *Context) *ActionManager {
+	return &ActionManager{
+		ctx: ctx,
+
+		animePageButtons:            result.NewMap[string, *AnimePageButton](),
+		animeLibraryDropdownItems:   result.NewMap[string, *AnimeLibraryDropdownMenuItem](),
+		animePageDropdownItems:      result.NewMap[string, *AnimePageDropdownMenuItem](),
+		mangaPageButtons:            result.NewMap[string, *MangaPageButton](),
+		mangaPageDropdownItems:      result.NewMap[string, *MangaPageDropdownMenuItem](),
+		mangaLibraryDropdownItems:   result.NewMap[string, *MangaLibraryDropdownMenuItem](),
+		mediaCardContextMenuItems:   result.NewMap[string, *MediaCardContextMenuItem](),
+		episodeCardContextMenuItems: result.NewMap[string, *EpisodeCardContextMenuItem](),
+		episodeGridItemMenuItems:    result.NewMap[string, *EpisodeGridItemMenuItem](),
+	}
+}
+
+// renderAnimePageButtons is called when the client requests the buttons to display on the anime page.
+func (a *ActionManager) renderAnimePageButtons() {
+	buttons := make([]*AnimePageButton, 0)
+	a.animePageButtons.Range(func(key string, value *AnimePageButton) bool {
+		buttons = append(buttons, value)
+		return true
+	})
+
+	a.ctx.SendEventToClient(ServerActionRenderAnimePageButtonsEvent, ServerActionRenderAnimePageButtonsEventPayload{
+		Buttons: buttons,
+	})
+}
+
+func (a *ActionManager) renderAnimePageDropdownItems() {
+	items := make([]*AnimePageDropdownMenuItem, 0)
+	a.animePageDropdownItems.Range(func(key string, value *AnimePageDropdownMenuItem) bool {
+		items = append(items, value)
+		return true
+	})
+
+	a.ctx.SendEventToClient(ServerActionRenderAnimePageDropdownItemsEvent, ServerActionRenderAnimePageDropdownItemsEventPayload{
+		Items: items,
+	})
+}
+
+func (a *ActionManager) renderAnimeLibraryDropdownItems() {
+	items := make([]*AnimeLibraryDropdownMenuItem, 0)
+	a.animeLibraryDropdownItems.Range(func(key string, value *AnimeLibraryDropdownMenuItem) bool {
+		items = append(items, value)
+		return true
+	})
+
+	a.ctx.SendEventToClient(ServerActionRenderAnimeLibraryDropdownItemsEvent, ServerActionRenderAnimeLibraryDropdownItemsEventPayload{
+		Items: items,
+	})
+}
+
+func (a *ActionManager) renderMangaPageButtons() {
+	buttons := make([]*MangaPageButton, 0)
+	a.mangaPageButtons.Range(func(key string, value *MangaPageButton) bool {
+		buttons = append(buttons, value)
+		return true
+	})
+
+	a.ctx.SendEventToClient(ServerActionRenderMangaPageButtonsEvent, ServerActionRenderMangaPageButtonsEventPayload{
+		Buttons: buttons,
+	})
+}
+
+func (a *ActionManager) renderMangaPageDropdownItems() {
+	items := make([]*MangaPageDropdownMenuItem, 0)
+	a.mangaPageDropdownItems.Range(func(key string, value *MangaPageDropdownMenuItem) bool {
+		items = append(items, value)
+		return true
+	})
+
+	a.ctx.SendEventToClient(ServerActionRenderMangaPageDropdownItemsEvent, ServerActionRenderMangaPageDropdownItemsEventPayload{
+		Items: items,
+	})
+}
+
+func (a *ActionManager) renderMangaLibraryDropdownItems() {
+	items := make([]*MangaLibraryDropdownMenuItem, 0)
+	a.mangaLibraryDropdownItems.Range(func(key string, value *MangaLibraryDropdownMenuItem) bool {
+		items = append(items, value)
+		return true
+	})
+
+	a.ctx.SendEventToClient(ServerActionRenderMangaLibraryDropdownItemsEvent, ServerActionRenderMangaLibraryDropdownItemsEventPayload{
+		Items: items,
+	})
+}
+
+func (a *ActionManager) renderMediaCardContextMenuItems() {
+	items := make([]*MediaCardContextMenuItem, 0)
+	a.mediaCardContextMenuItems.Range(func(key string, value *MediaCardContextMenuItem) bool {
+		items = append(items, value)
+		return true
+	})
+
+	a.ctx.SendEventToClient(ServerActionRenderMediaCardContextMenuItemsEvent, ServerActionRenderMediaCardContextMenuItemsEventPayload{
+		Items: items,
+	})
+}
+
+func (a *ActionManager) renderEpisodeCardContextMenuItems() {
+	items := make([]*EpisodeCardContextMenuItem, 0)
+	a.episodeCardContextMenuItems.Range(func(key string, value *EpisodeCardContextMenuItem) bool {
+		items = append(items, value)
+		return true
+	})
+
+	a.ctx.SendEventToClient(ServerActionRenderEpisodeCardContextMenuItemsEvent, ServerActionRenderEpisodeCardContextMenuItemsEventPayload{
+		Items: items,
+	})
+}
+
+func (a *ActionManager) renderEpisodeGridItemMenuItems() {
+	items := make([]*EpisodeGridItemMenuItem, 0)
+	a.episodeGridItemMenuItems.Range(func(key string, value *EpisodeGridItemMenuItem) bool {
+		items = append(items, value)
+		return true
+	})
+
+	a.ctx.SendEventToClient(ServerActionRenderEpisodeGridItemMenuItemsEvent, ServerActionRenderEpisodeGridItemMenuItemsEventPayload{
+		Items: items,
+	})
+}
+
+// bind binds 'action' to the ctx object
+//
+//	Example:
+//	ctx.action.newAnimePageButton(...)
+func (a *ActionManager) bind(ctxObj *goja.Object) {
+	actionObj := a.ctx.vm.NewObject()
+	_ = actionObj.Set("newAnimePageButton", a.jsNewAnimePageButton)
+	_ = actionObj.Set("newAnimePageDropdownItem", a.jsNewAnimePageDropdownItem)
+	_ = actionObj.Set("newAnimeLibraryDropdownItem", a.jsNewAnimeLibraryDropdownItem)
+	_ = actionObj.Set("newMediaCardContextMenuItem", a.jsNewMediaCardContextMenuItem)
+	_ = actionObj.Set("newMangaPageButton", a.jsNewMangaPageButton)
+	_ = actionObj.Set("newMangaPageDropdownItem", a.jsNewMangaPageDropdownItem)
+	_ = actionObj.Set("newMangaLibraryDropdownItem", a.jsNewMangaLibraryDropdownItem)
+	_ = actionObj.Set("newEpisodeCardContextMenuItem", a.jsNewEpisodeCardContextMenuItem)
+	_ = actionObj.Set("newEpisodeGridItemMenuItem", a.jsNewEpisodeGridItemMenuItem)
+	_ = ctxObj.Set("action", actionObj)
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+// Actions
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+// jsNewEpisodeCardContextMenuItem
+//
+//	Example:
+//	const downloadButton = ctx.newEpisodeCardContextMenuItem({
+//		label: "Download",
+//		onClick: "download-button-clicked",
+//	})
+func (a *ActionManager) jsNewEpisodeCardContextMenuItem(call goja.FunctionCall) goja.Value {
+	// Create a new action
+	action := &EpisodeCardContextMenuItem{}
+
+	// Get the props
+	a.unmarshalProps(call, action)
+	action.ID = uuid.New().String()
+
+	// Create the object
+	obj := action.CreateObject(a)
+	return obj
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// jsNewEpisodeGridItemMenuItem
+//
+//	Example:
+//	const downloadButton = ctx.newEpisodeGridItemContextMenuItem({
+//		label: "Download",
+//		onClick: "download-button-clicked",
+//		type: "library",
+//	})
+func (a *ActionManager) jsNewEpisodeGridItemMenuItem(call goja.FunctionCall) goja.Value {
+	// Create a new action
+	action := &EpisodeGridItemMenuItem{}
+
+	// Get the props
+	a.unmarshalProps(call, action)
+	action.ID = uuid.New().String()
+
+	// Create the object
+	obj := action.CreateObject(a)
+	return obj
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// jsNewAnimePageButton
+//
+//	Example:
+//	const downloadButton = ctx.newAnimePageButton({
+//		label: "Download",
+//		intent: "primary",
+//		onClick: "download-button-clicked",
+//	})
+func (a *ActionManager) jsNewAnimePageButton(call goja.FunctionCall) goja.Value {
+	// Create a new action
+	action := &AnimePageButton{}
+
+	// Get the props
+	a.unmarshalProps(call, action)
+	action.ID = uuid.New().String()
+
+	// Create the object
+	obj := action.CreateObject(a)
+	return obj
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// jsNewAnimePageDropdownItem
+//
+//	Example:
+//	const downloadButton = ctx.newAnimePageDropdownItem({
+//		label: "Download",
+//		onClick: "download-button-clicked",
+//	})
+func (a *ActionManager) jsNewAnimePageDropdownItem(call goja.FunctionCall) goja.Value {
+	// Create a new action
+	action := &AnimePageDropdownMenuItem{}
+
+	// Get the props
+	a.unmarshalProps(call, action)
+	action.ID = uuid.New().String()
+
+	// Create the object
+	obj := action.CreateObject(a)
+	return obj
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// jsNewAnimeLibraryDropdownItem
+//
+//	Example:
+//	const downloadButton = ctx.newAnimeLibraryDropdownItem({
+//		label: "Download",
+//		onClick: "download-button-clicked",
+//	})
+func (a *ActionManager) jsNewAnimeLibraryDropdownItem(call goja.FunctionCall) goja.Value {
+	// Create a new action
+	action := &AnimeLibraryDropdownMenuItem{}
+
+	// Get the props
+	a.unmarshalProps(call, action)
+	action.ID = uuid.New().String()
+
+	// Create the object
+	obj := action.CreateObject(a)
+	return obj
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// jsNewMediaCardContextMenuItem
+//
+//	Example:
+//	const downloadButton = ctx.newMediaCardContextMenuItem({
+//		label: "Download",
+//		onClick: "download-button-clicked",
+//	})
+func (a *ActionManager) jsNewMediaCardContextMenuItem(call goja.FunctionCall) goja.Value {
+	// Create a new action
+	action := &MediaCardContextMenuItem{}
+
+	// Get the props
+	a.unmarshalProps(call, action)
+	action.ID = uuid.New().String()
+
+	// Create the object
+	obj := action.CreateObject(a)
+	return obj
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// jsNewMangaPageButton
+//
+//	Example:
+//	const downloadButton = ctx.newMangaPageButton({
+//		label: "Download",
+//		onClick: "download-button-clicked",
+//	})
+func (a *ActionManager) jsNewMangaPageButton(call goja.FunctionCall) goja.Value {
+	// Create a new action
+	action := &MangaPageButton{}
+
+	// Get the props
+	a.unmarshalProps(call, action)
+	action.ID = uuid.New().String()
+
+	// Create the object
+	obj := action.CreateObject(a)
+	return obj
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// jsNewMangaPageDropdownItem
+//
+//	Example:
+//	const downloadButton = ctx.newMangaPageDropdownItem({
+//		label: "Download",
+//		onClick: "download-button-clicked",
+//	})
+func (a *ActionManager) jsNewMangaPageDropdownItem(call goja.FunctionCall) goja.Value {
+	// Create a new action
+	action := &MangaPageDropdownMenuItem{}
+
+	// Get the props
+	a.unmarshalProps(call, action)
+	action.ID = uuid.New().String()
+
+	// Create the object
+	obj := action.CreateObject(a)
+	return obj
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// jsNewMangaLibraryDropdownItem
+//
+//	Example:
+//	const downloadButton = ctx.newMangaLibraryDropdownItem({
+//		label: "Download",
+//		onClick: "download-button-clicked",
+//	})
+func (a *ActionManager) jsNewMangaLibraryDropdownItem(call goja.FunctionCall) goja.Value {
+	// Create a new action
+	action := &MangaLibraryDropdownMenuItem{}
+
+	// Get the props
+	a.unmarshalProps(call, action)
+	action.ID = uuid.New().String()
+
+	// Create the object
+	obj := action.CreateObject(a)
+	return obj
+}
+
+// ///////////////////////////////////////////////////////////////////////////////////
+// Shared
+// ///////////////////////////////////////////////////////////////////////////////////
+// bindSharedToObject binds shared methods to action objects
+//
+//	Example:
+//	const downloadButton = ctx.newAnimePageButton(...)
+//	downloadButton.mount()
+//	downloadButton.unmount()
+//	downloadButton.setLabel("Downloading...")
+func (a *ActionManager) bindSharedToObject(obj *goja.Object, action interface{}) {
+	var id string
+	//var props BaseActionProps
+	var mapToUse interface{}
+
+	switch act := action.(type) {
+	case *AnimePageButton:
+		id = act.ID
+		//props = act.GetProps()
+		mapToUse = a.animePageButtons
+	case *MangaPageButton:
+		id = act.ID
+		//props = act.GetProps()
+		mapToUse = a.mangaPageButtons
+	case *MangaPageDropdownMenuItem:
+		id = act.ID
+		//props = act.GetProps()
+		mapToUse = a.mangaPageDropdownItems
+	case *MangaLibraryDropdownMenuItem:
+		id = act.ID
+		//props = act.GetProps()
+		mapToUse = a.mangaLibraryDropdownItems
+	case *AnimePageDropdownMenuItem:
+		id = act.ID
+		//props = act.GetProps()
+		mapToUse = a.animePageDropdownItems
+	case *AnimeLibraryDropdownMenuItem:
+		id = act.ID
+		//props = act.GetProps()
+		mapToUse = a.animeLibraryDropdownItems
+	case *MediaCardContextMenuItem:
+		id = act.ID
+		//props = act.GetProps()
+		mapToUse = a.mediaCardContextMenuItems
+	case *EpisodeCardContextMenuItem:
+		id = act.ID
+		//props = act.GetProps()
+		mapToUse = a.episodeCardContextMenuItems
+	case *EpisodeGridItemMenuItem:
+		id = act.ID
+		//props = act.GetProps()
+		mapToUse = a.episodeGridItemMenuItems
+	}
+
+	_ = obj.Set("mount", func() {
+		switch m := mapToUse.(type) {
+		case *result.Map[string, *AnimePageButton]:
+			if btn, ok := action.(*AnimePageButton); ok {
+				m.Set(id, btn)
+				a.renderAnimePageButtons()
+			}
+		case *result.Map[string, *MangaPageButton]:
+			if btn, ok := action.(*MangaPageButton); ok {
+				m.Set(id, btn)
+				a.renderMangaPageButtons()
+			}
+		case *result.Map[string, *MangaPageDropdownMenuItem]:
+			if item, ok := action.(*MangaPageDropdownMenuItem); ok {
+				m.Set(id, item)
+				a.renderMangaPageDropdownItems()
+			}
+		case *result.Map[string, *MangaLibraryDropdownMenuItem]:
+			if item, ok := action.(*MangaLibraryDropdownMenuItem); ok {
+				m.Set(id, item)
+				a.renderMangaLibraryDropdownItems()
+			}
+		case *result.Map[string, *AnimePageDropdownMenuItem]:
+			if item, ok := action.(*AnimePageDropdownMenuItem); ok {
+				m.Set(id, item)
+				a.renderAnimePageDropdownItems()
+			}
+		case *result.Map[string, *AnimeLibraryDropdownMenuItem]:
+			if item, ok := action.(*AnimeLibraryDropdownMenuItem); ok {
+				m.Set(id, item)
+				a.renderAnimeLibraryDropdownItems()
+			}
+		case *result.Map[string, *MediaCardContextMenuItem]:
+			if item, ok := action.(*MediaCardContextMenuItem); ok {
+				if item.For == "" {
+					item.For = MediaCardContextMenuItemForBoth
+				}
+				m.Set(id, item)
+				a.renderMediaCardContextMenuItems()
+			}
+		case *result.Map[string, *EpisodeCardContextMenuItem]:
+			if item, ok := action.(*EpisodeCardContextMenuItem); ok {
+				m.Set(id, item)
+				a.renderEpisodeCardContextMenuItems()
+			}
+		case *result.Map[string, *EpisodeGridItemMenuItem]:
+			if item, ok := action.(*EpisodeGridItemMenuItem); ok {
+				m.Set(id, item)
+				a.renderEpisodeGridItemMenuItems()
+			}
+		}
+	})
+
+	_ = obj.Set("unmount", func() {
+		switch m := mapToUse.(type) {
+		case *result.Map[string, *AnimePageButton]:
+			m.Delete(id)
+			a.renderAnimePageButtons()
+		case *result.Map[string, *MangaPageButton]:
+			m.Delete(id)
+			a.renderMangaPageButtons()
+		case *result.Map[string, *MangaPageDropdownMenuItem]:
+			m.Delete(id)
+			a.renderMangaPageDropdownItems()
+		case *result.Map[string, *MangaLibraryDropdownMenuItem]:
+			m.Delete(id)
+			a.renderMangaLibraryDropdownItems()
+		case *result.Map[string, *AnimePageDropdownMenuItem]:
+			m.Delete(id)
+			a.renderAnimePageDropdownItems()
+		case *result.Map[string, *AnimeLibraryDropdownMenuItem]:
+			m.Delete(id)
+			a.renderAnimeLibraryDropdownItems()
+		case *result.Map[string, *MediaCardContextMenuItem]:
+			m.Delete(id)
+			a.renderMediaCardContextMenuItems()
+		case *result.Map[string, *EpisodeCardContextMenuItem]:
+			m.Delete(id)
+			a.renderEpisodeCardContextMenuItems()
+		case *result.Map[string, *EpisodeGridItemMenuItem]:
+			m.Delete(id)
+			a.renderEpisodeGridItemMenuItems()
+		}
+	})
+
+	_ = obj.Set("setLabel", func(label string) {
+		switch act := action.(type) {
+		case *AnimePageButton:
+			act.SetLabel(label)
+			a.renderAnimePageButtons()
+		case *MangaPageButton:
+			act.SetLabel(label)
+			a.renderMangaPageButtons()
+		case *MangaPageDropdownMenuItem:
+			act.SetLabel(label)
+			a.renderMangaPageDropdownItems()
+		case *MangaLibraryDropdownMenuItem:
+			act.SetLabel(label)
+			a.renderMangaLibraryDropdownItems()
+		case *AnimePageDropdownMenuItem:
+			act.SetLabel(label)
+			a.renderAnimePageDropdownItems()
+		case *AnimeLibraryDropdownMenuItem:
+			act.SetLabel(label)
+			a.renderAnimeLibraryDropdownItems()
+		case *MediaCardContextMenuItem:
+			act.SetLabel(label)
+			a.renderMediaCardContextMenuItems()
+		case *EpisodeCardContextMenuItem:
+			act.SetLabel(label)
+			a.renderEpisodeCardContextMenuItems()
+		case *EpisodeGridItemMenuItem:
+			act.SetLabel(label)
+			a.renderEpisodeGridItemMenuItems()
+		}
+	})
+
+	_ = obj.Set("setLoading", func(loading bool) {
+		switch act := action.(type) {
+		case *AnimePageButton:
+			act.SetLoading(loading)
+			a.renderAnimePageButtons()
+		case *MangaPageButton:
+			act.SetLoading(loading)
+			a.renderMangaPageButtons()
+		case *MangaPageDropdownMenuItem:
+			act.SetLoading(loading)
+			a.renderMangaPageDropdownItems()
+		case *MangaLibraryDropdownMenuItem:
+			act.SetLoading(loading)
+			a.renderMangaLibraryDropdownItems()
+		case *AnimePageDropdownMenuItem:
+			act.SetLoading(loading)
+			a.renderAnimePageDropdownItems()
+		case *AnimeLibraryDropdownMenuItem:
+			act.SetLoading(loading)
+			a.renderAnimeLibraryDropdownItems()
+		case *MediaCardContextMenuItem:
+			act.SetLoading(loading)
+			a.renderMediaCardContextMenuItems()
+		case *EpisodeCardContextMenuItem:
+			act.SetLoading(loading)
+			a.renderEpisodeCardContextMenuItems()
+		case *EpisodeGridItemMenuItem:
+			act.SetLoading(loading)
+			a.renderEpisodeGridItemMenuItems()
+		}
+	})
+
+	_ = obj.Set("setDisabled", func(disabled bool) {
+		switch act := action.(type) {
+		case *AnimePageButton:
+			act.SetDisabled(disabled)
+			a.renderAnimePageButtons()
+		case *MangaPageButton:
+			act.SetDisabled(disabled)
+			a.renderMangaPageButtons()
+		case *MangaPageDropdownMenuItem:
+			act.SetDisabled(disabled)
+			a.renderMangaPageDropdownItems()
+		case *MangaLibraryDropdownMenuItem:
+			act.SetDisabled(disabled)
+			a.renderMangaLibraryDropdownItems()
+		case *AnimePageDropdownMenuItem:
+			act.SetDisabled(disabled)
+			a.renderAnimePageDropdownItems()
+		case *AnimeLibraryDropdownMenuItem:
+			act.SetDisabled(disabled)
+			a.renderAnimeLibraryDropdownItems()
+		case *MediaCardContextMenuItem:
+			act.SetDisabled(disabled)
+			a.renderMediaCardContextMenuItems()
+		case *EpisodeCardContextMenuItem:
+			act.SetDisabled(disabled)
+			a.renderEpisodeCardContextMenuItems()
+		case *EpisodeGridItemMenuItem:
+			act.SetDisabled(disabled)
+			a.renderEpisodeGridItemMenuItems()
+		}
+	})
+
+	_ = obj.Set("setStyle", func(style map[string]string) {
+		switch act := action.(type) {
+		case *AnimePageButton:
+			act.SetStyle(style)
+			a.renderAnimePageButtons()
+		case *MangaPageButton:
+			act.SetStyle(style)
+			a.renderMangaPageButtons()
+		case *MangaPageDropdownMenuItem:
+			act.SetStyle(style)
+			a.renderMangaPageDropdownItems()
+		case *MangaLibraryDropdownMenuItem:
+			act.SetStyle(style)
+			a.renderMangaLibraryDropdownItems()
+		case *AnimePageDropdownMenuItem:
+			act.SetStyle(style)
+			a.renderAnimePageDropdownItems()
+		case *AnimeLibraryDropdownMenuItem:
+			act.SetStyle(style)
+			a.renderAnimeLibraryDropdownItems()
+		case *MediaCardContextMenuItem:
+			act.SetStyle(style)
+			a.renderMediaCardContextMenuItems()
+		case *EpisodeCardContextMenuItem:
+			act.SetStyle(style)
+			a.renderEpisodeCardContextMenuItems()
+		case *EpisodeGridItemMenuItem:
+			act.SetStyle(style)
+			a.renderEpisodeGridItemMenuItems()
+		}
+	})
+
+	_ = obj.Set("setTooltipText", func(text string) {
+		switch act := action.(type) {
+		case *AnimePageButton:
+			act.TooltipText = text
+			a.renderAnimePageButtons()
+		case *MangaPageButton:
+			act.TooltipText = text
+			a.renderMangaPageButtons()
+		}
+	})
+
+	_ = obj.Set("onClick", func(call goja.FunctionCall) goja.Value {
+		if len(call.Arguments) < 1 {
+			a.ctx.handleTypeError("onClick requires a callback function")
+		}
+
+		callback, ok := goja.AssertFunction(call.Argument(0))
+		if !ok {
+			a.ctx.handleTypeError("onClick requires a callback function")
+		}
+
+		eventListener := a.ctx.RegisterEventListener(ClientActionClickedEvent)
+
+		eventListener.SetCallback(func(event *ClientPluginEvent) {
+			payload := ClientActionClickedEventPayload{}
+			if event.ParsePayloadAs(ClientActionClickedEvent, &payload) && payload.ActionID == id {
+				a.ctx.scheduler.ScheduleAsync(func() error {
+					_, err := callback(goja.Undefined(), a.ctx.vm.ToValue(payload.Event))
+					return err
+				})
+			}
+		})
+
+		return goja.Undefined()
+	})
+}
+
+/////////////////////////////////////////////////////////////////////////////////////
+// Utils
+/////////////////////////////////////////////////////////////////////////////////////
+
+func (a *ActionManager) unmarshalProps(call goja.FunctionCall, ret interface{}) {
+	if len(call.Arguments) < 1 {
+		a.ctx.handleException(fmt.Errorf("expected 1 argument"))
+	}
+
+	props := call.Arguments[0].Export()
+	if props == nil {
+		a.ctx.handleException(fmt.Errorf("expected props object"))
+	}
+
+	marshaled, err := json.Marshal(props)
+	if err != nil {
+		a.ctx.handleException(err)
+	}
+
+	err = json.Unmarshal(marshaled, ret)
+	if err != nil {
+		a.ctx.handleException(err)
+	}
+}

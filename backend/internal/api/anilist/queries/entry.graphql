@@ -1,0 +1,56 @@
+mutation UpdateMediaListEntry (
+    $mediaId: Int
+    $status: MediaListStatus
+    $scoreRaw: Int
+    $progress: Int
+    $startedAt: FuzzyDateInput
+    $completedAt: FuzzyDateInput
+) {
+    SaveMediaListEntry(
+        mediaId: $mediaId
+        status: $status
+        scoreRaw: $scoreRaw
+        progress: $progress
+        startedAt: $startedAt
+        completedAt: $completedAt
+    ) {
+        id
+    }
+}
+
+mutation UpdateMediaListEntryProgress (
+    $mediaId: Int
+    $progress: Int
+    $status: MediaListStatus
+) {
+    SaveMediaListEntry(
+        mediaId: $mediaId
+        progress: $progress
+        status: $status
+    ) {
+        id
+    }
+}
+
+mutation DeleteEntry (
+    $mediaListEntryId: Int
+) {
+    DeleteMediaListEntry(
+        id: $mediaListEntryId
+    ) {
+        deleted
+    }
+}
+
+
+mutation UpdateMediaListEntryRepeat (
+  $mediaId: Int
+  $repeat: Int
+) {
+  SaveMediaListEntry(
+    mediaId: $mediaId
+    repeat: $repeat
+  ) {
+    id
+  }
+}

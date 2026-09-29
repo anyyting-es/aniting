@@ -1,0 +1,118 @@
+package events
+
+type WebsocketClientEventType string
+
+const (
+	NativePlayerEventType WebsocketClientEventType = "native-player"
+	VideoCoreEventType    WebsocketClientEventType = "videocore"
+	MpvCoreEventType      WebsocketClientEventType = "mpvcore"
+	NakamaEventType       WebsocketClientEventType = "nakama"
+	PluginEvent           WebsocketClientEventType = "plugin"
+	PlaylistEvent         WebsocketClientEventType = "playlist"
+)
+
+type WebsocketClientEvent struct {
+	ClientID string                   `json:"clientId"`
+	Type     WebsocketClientEventType `json:"type"`
+	Payload  interface{}              `json:"payload"`
+}
+
+const (
+	ServerReady = "server-ready" // The anilist data has been loaded
+
+	ServerLoggedOutAnilist = "server-logged-out-anilist" // The server has logged out of anilist (without the client requesting it)
+
+	EventScanProgress               = "scan-progress"                      // Progress of the scan
+	EventScanStatus                 = "scan-status"                        // Status text of the scan
+	RefreshedAnilistAnimeCollection = "refreshed-anilist-anime-collection" // The anilist collection has been refreshed
+	RefreshedAnilistMangaCollection = "refreshed-anilist-manga-collection" // The manga collection has been refreshed
+	LibraryWatcherFileAdded         = "library-watcher-file-added"         // A new file has been added to the library
+	LibraryWatcherFileRemoved       = "library-watcher-file-removed"       // A file has been removed from the library
+	AutoDownloaderItemAdded         = "auto-downloader-item-added"         // An item has been added to the auto downloader queue
+
+	AutoScanStarted   = "auto-scan-started"   // The auto scan has started
+	AutoScanCompleted = "auto-scan-completed" // The auto scan has stopped
+
+	PlaybackManagerProgressTrackingStarted     = "playback-manager-progress-tracking-started"      // The video progress tracking has started
+	PlaybackManagerProgressTrackingStopped     = "playback-manager-progress-tracking-stopped"      // The video progress tracking has stopped
+	PlaybackManagerProgressVideoCompleted      = "playback-manager-progress-video-completed"       // The video progress has been completed
+	PlaybackManagerProgressPlaybackState       = "playback-manager-progress-playback-state"        // Dispatches the current playback state
+	PlaybackManagerProgressUpdated             = "playback-manager-progress-updated"               // Signals that the progress has been updated
+	PlaybackManagerPlaylistState               = "playback-manager-playlist-state"                 // Dispatches the current playlist state
+	PlaybackManagerManualTrackingPlaybackState = "playback-manager-manual-tracking-playback-state" // Dispatches the current playback state
+	PlaybackManagerManualTrackingStopped       = "playback-manager-manual-tracking-stopped"        // The manual tracking has been stopped
+
+	ExternalPlayerOpenURL = "external-player-open-url" // Open a URL to send media to an external media player
+
+	InfoToast    = "info-toast"
+	ErrorToast   = "error-toast"
+	WarningToast = "warning-toast"
+	SuccessToast = "success-toast"
+
+	CheckForUpdates       = "check-for-updates"
+	CheckForAnnouncements = "check-for-announcements"
+
+	RefreshedMangaDownloadData  = "refreshed-manga-download-data"
+	ChapterDownloadQueueUpdated = "chapter-download-queue-updated"
+	OfflineSnapshotCreated      = "offline-snapshot-created"
+	MangaPreferencesUpdated     = "manga-preferences-updated"
+	MangaSourceRefreshUpdated   = "manga-source-refresh-job-updated"
+
+	MediastreamShutdownStream = "mediastream-shutdown-stream"
+
+	ExtensionsReloaded      = "extensions-reloaded"
+	ExtensionUpdatesFound   = "extension-updates-found"
+	PluginUnloaded          = "plugin-unloaded"
+	PluginLoaded            = "plugin-loaded"
+	ExtensionPrompt         = "extension-prompt"
+	ExtensionPromptSync     = "extension-prompt-sync"
+	ExtensionPromptResponse = "extension-prompt-response"
+
+	ActiveTorrentCountUpdated = "active-torrent-count-updated"
+
+	SyncLocalQueueState = "sync-local-queue-state"
+	SyncLocalFinished   = "sync-local-finished"
+	SyncAnilistFinished = "sync-anilist-finished"
+
+	TorrentStreamState = "torrentstream-state"
+
+	DebridDownloadProgress = "debrid-download-progress"
+	DebridStreamState      = "debrid-stream-state"
+
+	StreamAutoSelectStatus = "stream-auto-select-status"
+
+	InvalidateQueries = "invalidate-queries"
+	ConsoleLog        = "console-log"
+	ConsoleWarn       = "console-warn"
+
+	ShowIndefiniteLoader = "show-indefinite-loader"
+	HideIndefiniteLoader = "hide-indefinite-loader"
+	AnilistRateLimit     = "anilist-rate-limit"
+	ClientIdentity       = "client-identity"
+
+	// Nakama events
+	NakamaHostStarted          = "nakama-host-started"
+	NakamaHostStopped          = "nakama-host-stopped"
+	NakamaPeerConnected        = "nakama-peer-connected"
+	NakamaPeerDisconnected     = "nakama-peer-disconnected"
+	NakamaHostConnected        = "nakama-host-connected"
+	NakamaHostDisconnected     = "nakama-host-disconnected"
+	NakamaError                = "nakama-error"
+	NakamaAnimeLibraryReceived = "nakama-anime-library-received"
+	NakamaCustomMessage        = "nakama-custom-message"
+	NakamaStatusRequested      = "nakama-status-requested"
+	NakamaStatus               = "nakama-status"
+	NakamaRoomCreated          = "nakama-room-created"
+	NakamaRoomClosed           = "nakama-room-closed"
+	NakamaRoomReconnected      = "nakama-room-reconnected"
+
+	NakamaOnlineStreamEvent = "nakama-online-stream-event"
+
+	// Nakama Watch Party events
+	NakamaWatchPartyState                                 = "nakama-watch-party-state"
+	NakamaWatchPartyEnableRelayMode                       = "nakama-watch-party-enable-relay-mode"
+	NakamaWatchPartyRelayModeToggleShareLibraryWithOrigin = "nakama-watch-party-relay-mode-toggle-share-library-with-origin"
+	NakamaWatchPartyChatMessage                           = "nakama-watch-party-chat-message"
+
+	SettingsChanged = "settings-changed"
+)
