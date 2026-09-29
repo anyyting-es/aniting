@@ -189,8 +189,8 @@ class _FloatingResumeCompanionState extends State<FloatingResumeCompanion> {
     required ThemeData theme,
     required String? coverUrl,
   }) {
-    const ringDiameter = 46.0;
-    const coverDiameter = 40.0;
+    const ringDiameter = 50.0;
+    const coverDiameter = 44.0;
 
     return Center(
       child: Stack(
@@ -216,7 +216,7 @@ class _FloatingResumeCompanionState extends State<FloatingResumeCompanion> {
             width: coverDiameter,
             height: coverDiameter,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(11),
               color: theme.colorScheme.surfaceContainerHighest,
             ),
             clipBehavior: Clip.antiAlias,
@@ -233,33 +233,33 @@ class _FloatingResumeCompanionState extends State<FloatingResumeCompanion> {
                     fit: BoxFit.cover,
                     placeholder: (_, _) => Icon(
                       widget.session.isAnime ? Icons.movie_rounded : Icons.menu_book_rounded,
-                      size: 18,
+                      size: 19,
                       color: theme.colorScheme.primary,
                     ),
                     errorWidget: (_, _, _) => Icon(
                       widget.session.isAnime ? Icons.movie_rounded : Icons.menu_book_rounded,
-                      size: 18,
+                      size: 19,
                       color: theme.colorScheme.primary,
                     ),
                   )
                 else
                   Icon(
                     widget.session.isAnime ? Icons.movie_rounded : Icons.menu_book_rounded,
-                    size: 18,
+                    size: 19,
                     color: theme.colorScheme.primary,
                   ),
 
                 // Tiny subtle play indicator badge
                 Center(
                   child: Container(
-                    padding: const EdgeInsets.all(3),
+                    padding: const EdgeInsets.all(3.5),
                     decoration: BoxDecoration(
                       color: Colors.black.withValues(alpha: 0.5),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
                       Icons.play_arrow_rounded,
-                      size: 14,
+                      size: 15,
                       color: Colors.white,
                     ),
                   ),
@@ -280,12 +280,12 @@ class _FloatingResumeCompanionState extends State<FloatingResumeCompanion> {
     required String subTitle,
     required double contentOpacity,
   }) {
-    // 38w x 48h vertical poster
-    const posterWidth = 38.0;
-    const posterHeight = 48.0;
+    // 40w x 52h vertical poster
+    const posterWidth = 40.0;
+    const posterHeight = 52.0;
 
     return Padding(
-      padding: const EdgeInsets.only(left: 10.0, right: 10.0, bottom: 3.0),
+      padding: const EdgeInsets.only(left: 12.0, right: 12.0, bottom: 3.0),
       child: Row(
         children: [
           // 1. Poster Cover Thumbnail (Left edge)
@@ -293,7 +293,7 @@ class _FloatingResumeCompanionState extends State<FloatingResumeCompanion> {
             width: posterWidth,
             height: posterHeight,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(9),
               color: theme.colorScheme.surfaceContainerHighest,
               boxShadow: [
                 BoxShadow(
@@ -314,18 +314,18 @@ class _FloatingResumeCompanionState extends State<FloatingResumeCompanion> {
                     fit: BoxFit.cover,
                     placeholder: (_, _) => Icon(
                       widget.session.isAnime ? Icons.movie_rounded : Icons.menu_book_rounded,
-                      size: 18,
+                      size: 19,
                       color: theme.colorScheme.primary,
                     ),
                     errorWidget: (_, _, _) => Icon(
                       widget.session.isAnime ? Icons.movie_rounded : Icons.menu_book_rounded,
-                      size: 18,
+                      size: 19,
                       color: theme.colorScheme.primary,
                     ),
                   )
                 : Icon(
                     widget.session.isAnime ? Icons.movie_rounded : Icons.menu_book_rounded,
-                    size: 18,
+                    size: 19,
                     color: theme.colorScheme.primary,
                   ),
           ),
@@ -343,7 +343,7 @@ class _FloatingResumeCompanionState extends State<FloatingResumeCompanion> {
                   Text(
                     mainTitle,
                     style: TextStyle(
-                      fontSize: 13.0,
+                      fontSize: 13.8,
                       fontWeight: FontWeight.bold,
                       color: theme.colorScheme.onSurface,
                       letterSpacing: -0.2,
@@ -352,11 +352,11 @@ class _FloatingResumeCompanionState extends State<FloatingResumeCompanion> {
                     overflow: TextOverflow.ellipsis,
                   ),
                   if (subTitle.isNotEmpty) ...[
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 2.5),
                     Text(
                       subTitle,
                       style: TextStyle(
-                        fontSize: 11.0,
+                        fontSize: 11.5,
                         fontWeight: FontWeight.w500,
                         color: theme.colorScheme.onSurfaceVariant,
                         letterSpacing: -0.1,
@@ -376,8 +376,8 @@ class _FloatingResumeCompanionState extends State<FloatingResumeCompanion> {
           Opacity(
             opacity: contentOpacity,
             child: Container(
-              width: 38,
-              height: 38,
+              width: 42,
+              height: 42,
               decoration: BoxDecoration(
                 color: theme.colorScheme.primaryContainer,
                 shape: BoxShape.circle,
@@ -394,7 +394,7 @@ class _FloatingResumeCompanionState extends State<FloatingResumeCompanion> {
                   widget.session.isAnime
                       ? Icons.play_arrow_rounded
                       : Icons.menu_book_rounded,
-                  size: 22,
+                  size: 24,
                   color: theme.colorScheme.onPrimaryContainer,
                 ),
               ),

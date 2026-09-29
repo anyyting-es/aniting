@@ -40,10 +40,10 @@ class MobileFloatingNav extends ConsumerStatefulWidget {
 
 class _MobileFloatingNavState extends ConsumerState<MobileFloatingNav>
     with SingleTickerProviderStateMixin {
-  static const double _kDockHeight = 64.0;
-  static const double _kExpandedBarHeight = 64.0;
+  static const double _kDockHeight = 68.0;
+  static const double _kExpandedBarHeight = 68.0;
   static const double _kVerticalGap = 8.0;
-  static const double _kCompanionWidth = 64.0;
+  static const double _kCompanionWidth = 68.0;
   static const double _kCompanionGap = 10.0;
   static const double _kBottomMargin = 8.0;
 
@@ -100,7 +100,7 @@ class _MobileFloatingNavState extends ConsumerState<MobileFloatingNav>
       child: LayoutBuilder(
         builder: (context, constraints) {
           final totalWidth = constraints.maxWidth;
-          const marginH = 16.0;
+          const marginH = 26.0;
           final availableWidth = totalWidth - (marginH * 2);
 
           // If no active session or resume disabled, render simple standalone dock
@@ -118,7 +118,7 @@ class _MobileFloatingNavState extends ConsumerState<MobileFloatingNav>
                 items: widget.items,
                 labelProgress: 1.0,
                 height: _kDockHeight,
-                borderRadius: BorderRadius.circular(24.0),
+                borderRadius: BorderRadius.circular(34.0),
               ),
             );
           }
@@ -183,7 +183,7 @@ class _MobileFloatingNavState extends ConsumerState<MobileFloatingNav>
                         items: widget.items,
                         labelProgress: tWidth,
                         height: _kDockHeight,
-                        borderRadius: BorderRadius.circular(24.0),
+                        borderRadius: BorderRadius.circular(34.0),
                       ),
                     ),
 
@@ -198,7 +198,7 @@ class _MobileFloatingNavState extends ConsumerState<MobileFloatingNav>
                         tWidth: tWidth,
                         width: resumeWidth,
                         height: _kDockHeight,
-                        borderRadius: BorderRadius.circular(24.0),
+                        borderRadius: BorderRadius.circular(34.0),
                         l10n: l10n,
                         onTap: () => FloatingResumeBar.resumePlayback(
                           context,

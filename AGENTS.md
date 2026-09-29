@@ -307,23 +307,26 @@ seanime_app/
   - **Zero Transparency / Solid M3 Aesthetic**:
     - Completely eliminates all glassmorphism, blur, and opacity washes in the floating dock and resume companion.
     - Uses 100% opaque `theme.colorScheme.surfaceContainer` with crisp outline border (`outlineVariant`) and Material 3 elevation shadow.
-  - **Selected Pill with Text to the Right (`FloatingDockPill`)**:
+  - **Selected Pill with Text to the Right & Fluid Pill Animation (`FloatingDockPill`)**:
+    - **Proportions & Ergonomics**: Narrowed dock horizontal margins (`marginH = 26.0`) with increased height (`68.0dp`) and capsule border radius (`34.0dp`). Navigation elements are generously sized to eliminate excessive dead white space: larger icons (26.5dp), prominent button targets (50dp height, 52dp base width), and crisp typography (14.5sp `FontWeight.w600`).
+    - **Fluid Animated Pill Expansion**: Tapping a destination smoothly expands its width (`TweenAnimationBuilder`, 280ms, `Curves.easeOutCubic`) while gracefully pushing neighboring icons outward; deselecting smoothly contracts back to a compact button.
     - **Standalone / Expanded Mode**: Unselected items display clean monochrome icons only. The selected item expands into an active pill (`theme.colorScheme.secondaryContainer`) revealing `[Icon]  [Label]` with text deployed to the right of the icon.
     - **Collapsed Companion Mode (Sharing Bottom Row)**: When the resume companion sits in the bottom row beside the dock, the dock contracts and all destinations switch to **icon-only mode** with an active pill indicator (`[Icon]`), preventing text deployment and layout crowding.
   - **Resume Companion Card Architecture (`FloatingResumeCompanion`)**:
+    - **Coordinated Dimensions**: Height: 68dp with 34dp capsule radius. Poster thumbnail: 40x52dp (`borderRadius: 9dp`). Typography: bold 13.8sp main title and 11.5sp subTitle. Action button: 42x42dp circular target with 24dp play icon.
     - **Cover Poster Only**: Exclusively displays the anime or manga cover poster (`coverImage`), omitting character art.
     - **Title Hierarchy**:
-      - Top line (bold 13sp): Episode title/number for anime; Manga title for manga.
-      - Bottom line (11sp `onSurfaceVariant`): Anime series title for anime; Chapter info for manga.
+      - Top line (bold 13.8sp): Episode title/number for anime; Manga title for manga.
+      - Bottom line (11.5sp `onSurfaceVariant`): Anime series title for anime; Chapter info for manga.
     - **Full-Width Bottom Progress Bar**: Spans 100% of the card width along the bottom edge with `LinearProgressIndicator` (height: 3dp).
     - **Distinctive Play Action Button**: Prominent circular play action button (`primaryContainer` / `onPrimaryContainer`) on the far right edge clearly indicating continuation.
   - **2-Phase Staged Zero-Overlap Trajectory**:
     - Completely eliminates trajectory overlap where the card previously flew or rendered over the navigation dock.
     - **Phase 1 (Horizontal Shrink/Expand, value 0.5 to 1.0)**:
-      - When scrolling down, the resume card first shrinks horizontally into a compact 64x64 square on the right side while remaining parked above the dock (`bottom: _kDockHeight + _kVerticalGap`).
+      - When scrolling down, the resume card first shrinks horizontally into a compact 68x68 square on the right side while remaining parked above the dock (`bottom: _kDockHeight + _kVerticalGap`).
       - Simultaneously, the dock contracts its width and smoothly hides the selected label to enter icon-only mode.
     - **Phase 2 (Vertical Drop/Rise, value 0.0 to 0.5)**:
-      - The compact 64x64 square glides vertically straight down into the empty column beside the dock without ever crossing or passing over any pixel of the dock.
+      - The compact 68x68 square glides vertically straight down into the empty column beside the dock without ever crossing or passing over any pixel of the dock.
       - When scrolling up, it rises vertically in that slot before expanding horizontally across the top.
     - **Gestures**: Tap resumes playback (`FloatingResumeBar.resumePlayback`); swipe down clears the session with haptic feedback.
   - **Fast-Path Local PC Resume & Revived Torrent Stream Architecture (`FloatingResumeBar`, `DesktopSidebar`, `MobileFloatingNav`, `AnimeDetailDesktopLayout`, `AnimeDetailTvLayout`)**:

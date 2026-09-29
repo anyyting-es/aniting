@@ -8,8 +8,8 @@ import 'package:seanime_app/presentation/widgets/desktop_sidebar.dart';
 /// Features:
 /// - 100% solid background (zero transparency/blur) using `theme.colorScheme.surfaceContainer`.
 /// - Material 3 elevation shadow and crisp subtle outline.
-/// - Cohesive centered layout ("todo más junto, más acomodado") instead of stretching across the screen.
-/// - Prominent, larger icons (25dp) and comfortable pill height (46dp).
+/// - Cohesive, well-proportioned layout with generous touch targets.
+/// - Prominent, larger icons (26.5dp), comfortable pill height (50dp), and larger typography (14.5sp).
 /// - Fluid animated pill expansion on tab selection:
 ///   - When tapping a destination, the pill smoothly expands horizontally, pushing adjacent icons aside
 ///     with organic, physics-based easing (`Curves.easeOutCubic`).
@@ -29,7 +29,7 @@ class FloatingDockPill extends StatefulWidget {
     required this.onDestinationSelected,
     required this.items,
     this.labelProgress = 1.0,
-    this.height = 64.0,
+    this.height = 68.0,
     required this.borderRadius,
   });
 
@@ -100,7 +100,7 @@ class _FloatingDockPillState extends State<FloatingDockPill> {
             scrollDirection: Axis.horizontal,
             physics: const NeverScrollableScrollPhysics(),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10.0),
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -142,14 +142,14 @@ class _FloatingDockPillState extends State<FloatingDockPill> {
         : 0.0;
 
     const labelStyle = TextStyle(
-      fontSize: 13.5,
+      fontSize: 14.5,
       fontWeight: FontWeight.w600,
       letterSpacing: -0.2,
     );
 
     final textWidth = _measureTextWidth(item.label, labelStyle);
-    const baseButtonWidth = 48.0;
-    const buttonHeight = 46.0;
+    const baseButtonWidth = 52.0;
+    const buttonHeight = 50.0;
     // Expanded width = base button + gap (8) + text width + right margin (14)
     final expandedButtonWidth = baseButtonWidth + textWidth + 18.0;
 
@@ -189,7 +189,7 @@ class _FloatingDockPillState extends State<FloatingDockPill> {
                 duration: const Duration(milliseconds: 280),
                 curve: Curves.easeOutCubic,
                 builder: (context, selectValue, _) {
-                  // Width smoothly animates between 48.0 (compact icon) and expandedButtonWidth (pill with text)
+                  // Width smoothly animates between 52.0 (compact icon) and expandedButtonWidth (pill with text)
                   final currentWidth = lerpDouble(
                     baseButtonWidth,
                     expandedButtonWidth,
@@ -224,10 +224,10 @@ class _FloatingDockPillState extends State<FloatingDockPill> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Icon (prominent 25dp)
+                        // Icon (larger 26.5dp)
                         Icon(
                           selectValue > 0.5 ? item.selectedIcon : item.icon,
-                          size: 25,
+                          size: 26.5,
                           color: iconColor,
                         ),
 
