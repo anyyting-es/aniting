@@ -1,16 +1,20 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:seanime_app/presentation/widgets/desktop_sidebar.dart';
 
-/// A solid Material Design 3 floating navigation dock.
+/// A solid Material Design 3 floating navigation dock with fluid animated pill expansion.
 ///
 /// Features:
 /// - 100% solid background (zero transparency/blur) using `theme.colorScheme.surfaceContainer`.
 /// - Material 3 elevation shadow and crisp subtle outline.
-/// - Active item display:
-///   - When [labelProgress] > 0: shows an active pill with `[Icon]  [Label]` smoothly expanded to the right.
-///   - When [labelProgress] == 0 (e.g. when resume companion shares the row): icon-only mode with active indicator.
-/// - Unselected items: clean monochrome icon.
+/// - Cohesive centered layout ("todo más junto, más acomodado") instead of stretching across the screen.
+/// - Prominent, larger icons (25dp) and comfortable pill height (46dp).
+/// - Fluid animated pill expansion on tab selection:
+///   - When tapping a destination, the pill smoothly expands horizontally, pushing adjacent icons aside
+///     with organic, physics-based easing (`Curves.easeOutCubic`).
+///   - The previous active pill smoothly contracts back to a circular icon button.
+///   - When [labelProgress] == 0 (e.g. sharing row with resume companion), operates in icon-only mode.
 class FloatingDockPill extends StatefulWidget {
   final int selectedIndex;
   final ValueChanged<int> onDestinationSelected;
@@ -49,6 +53,15 @@ class _FloatingDockPillState extends State<FloatingDockPill> {
     return KeyEventResult.ignored;
   }
 
+  double _measureTextWidth(String text, TextStyle style) {
+    final TextPainter textPainter = TextPainter(
+      text: TextSpan(text: text, style: style),
+      maxLines: 1,
+      textDirection: TextDirection.ltr,
+    )..layout(minWidth: 0, maxWidth: double.infinity);
+    return textPainter.size.width;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -69,7 +82,7 @@ class _FloatingDockPillState extends State<FloatingDockPill> {
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.08),
-            blurRadius: 14,
+            blurRadius: 16,
             spreadRadius: 0,
             offset: const Offset(0, 4),
           ),
@@ -82,18 +95,28 @@ class _FloatingDockPillState extends State<FloatingDockPill> {
       ),
       child: ClipRRect(
         borderRadius: widget.borderRadius,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 6.0),
-          child: Row(
-            children: [
-              for (int i = 0; i < widget.items.length; i++)
-                _buildNavItem(
-                  index: i,
-                  item: widget.items[i],
-                  isSelected: widget.selectedIndex == i,
-                  theme: theme,
-                ),
-            ],
+        child: Center(
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            physics: const NeverScrollableScrollPhysics(),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10.0),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  for (int i = 0; i < widget.items.length; i++) ...[
+                    if (i > 0) const SizedBox(width: 8.0),
+                    _buildNavItem(
+                      index: i,
+                      item: widget.items[i],
+                      isSelected: widget.selectedIndex == i,
+                      theme: theme,
+                    ),
+                  ],
+                ],
+              ),
+            ),
           ),
         ),
       ),
@@ -109,139 +132,134 @@ class _FloatingDockPillState extends State<FloatingDockPill> {
     final isHovered = _hoveredIndex == index;
     final isFocused = _focusedIndex == index;
     final isActive = isHovered || isFocused;
-    final progress = widget.labelProgress.clamp(0.0, 1.0);
 
-    // Flex weight: when selected and label is expanding, allocate more flex space
-    // 100 flex points base, plus up to 90 additional points for selected item when expanded
-    final flex = isSelected ? (100 + (90 * progress).round()) : 100;
+    // Target values for animations:
+    // 1. selectionTarget: 1.0 if selected, 0.0 if not (controls background pill highlight and colors)
+    final selectionTarget = isSelected ? 1.0 : 0.0;
+    // 2. labelTarget: 1.0 if selected AND dock is in label mode; 0.0 if unselected or icon-only mode
+    final labelTarget = (isSelected && widget.labelProgress > 0.05)
+        ? widget.labelProgress.clamp(0.0, 1.0)
+        : 0.0;
 
-    return Expanded(
-      flex: flex,
-      child: Focus(
-        onFocusChange: (val) {
-          setState(() {
-            _focusedIndex = val ? index : (_focusedIndex == index ? null : _focusedIndex);
-          });
+    const labelStyle = TextStyle(
+      fontSize: 13.5,
+      fontWeight: FontWeight.w600,
+      letterSpacing: -0.2,
+    );
+
+    final textWidth = _measureTextWidth(item.label, labelStyle);
+    const baseButtonWidth = 48.0;
+    const buttonHeight = 46.0;
+    // Expanded width = base button + gap (8) + text width + right margin (14)
+    final expandedButtonWidth = baseButtonWidth + textWidth + 18.0;
+
+    return Focus(
+      onFocusChange: (val) {
+        setState(() {
+          _focusedIndex = val ? index : (_focusedIndex == index ? null : _focusedIndex);
+        });
+      },
+      onKeyEvent: (node, event) => _handleActionKey(event, () {
+        if (widget.selectedIndex != index) {
+          HapticFeedback.lightImpact();
+          widget.onDestinationSelected(index);
+        }
+      }),
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _hoveredIndex = index),
+        onExit: (_) {
+          if (_hoveredIndex == index) setState(() => _hoveredIndex = null);
         },
-        onKeyEvent: (node, event) => _handleActionKey(event, () {
-          if (widget.selectedIndex != index) {
-            HapticFeedback.lightImpact();
-            widget.onDestinationSelected(index);
-          }
-        }),
-        child: MouseRegion(
-          onEnter: (_) => setState(() => _hoveredIndex = index),
-          onExit: (_) {
-            if (_hoveredIndex == index) setState(() => _hoveredIndex = null);
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () {
+            if (widget.selectedIndex != index) {
+              HapticFeedback.lightImpact();
+              widget.onDestinationSelected(index);
+            }
           },
-          cursor: SystemMouseCursors.click,
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () {
-              if (widget.selectedIndex != index) {
-                HapticFeedback.lightImpact();
-                widget.onDestinationSelected(index);
-              }
+          child: TweenAnimationBuilder<double>(
+            tween: Tween<double>(end: labelTarget),
+            duration: const Duration(milliseconds: 280),
+            curve: Curves.easeOutCubic,
+            builder: (context, labelValue, _) {
+              return TweenAnimationBuilder<double>(
+                tween: Tween<double>(end: selectionTarget),
+                duration: const Duration(milliseconds: 280),
+                curve: Curves.easeOutCubic,
+                builder: (context, selectValue, _) {
+                  // Width smoothly animates between 48.0 (compact icon) and expandedButtonWidth (pill with text)
+                  final currentWidth = lerpDouble(
+                    baseButtonWidth,
+                    expandedButtonWidth,
+                    labelValue,
+                  )!;
+
+                  final pillBgColor = Color.lerp(
+                    isActive
+                        ? theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5)
+                        : Colors.transparent,
+                    theme.colorScheme.secondaryContainer,
+                    selectValue,
+                  );
+
+                  final iconColor = Color.lerp(
+                    isActive
+                        ? theme.colorScheme.onSurface
+                        : theme.colorScheme.onSurfaceVariant,
+                    theme.colorScheme.onSecondaryContainer,
+                    selectValue,
+                  );
+
+                  return Container(
+                    width: currentWidth,
+                    height: buttonHeight,
+                    decoration: BoxDecoration(
+                      color: pillBgColor,
+                      borderRadius: BorderRadius.circular(buttonHeight / 2),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Icon (prominent 25dp)
+                        Icon(
+                          selectValue > 0.5 ? item.selectedIcon : item.icon,
+                          size: 25,
+                          color: iconColor,
+                        ),
+
+                        // Animated expanding text label
+                        if (labelValue > 0.01) ...[
+                          SizedBox(width: 8.0 * labelValue),
+                          ClipRect(
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              widthFactor: labelValue,
+                              child: Opacity(
+                                opacity: labelValue.clamp(0.0, 1.0),
+                                child: Text(
+                                  item.label,
+                                  style: labelStyle.copyWith(
+                                    color: theme.colorScheme.onSecondaryContainer,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.clip,
+                                ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 4.0 * labelValue),
+                        ],
+                      ],
+                    ),
+                  );
+                },
+              );
             },
-            child: Center(
-              child: isSelected
-                  ? _buildSelectedPill(
-                      item: item,
-                      theme: theme,
-                      progress: progress,
-                      isActive: isActive,
-                    )
-                  : _buildUnselectedItem(
-                      item: item,
-                      theme: theme,
-                      isActive: isActive,
-                    ),
-            ),
           ),
-        ),
-      ),
-    );
-  }
-
-  /// Active pill container showing [Icon] and optionally [Label] to the right
-  Widget _buildSelectedPill({
-    required DesktopSidebarItem item,
-    required ThemeData theme,
-    required double progress,
-    required bool isActive,
-  }) {
-    final showText = progress > 0.05;
-
-    return Container(
-      height: 40,
-      padding: EdgeInsets.symmetric(
-        horizontal: showText ? (10 + (4 * progress)) : 14,
-      ),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.secondaryContainer,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            item.selectedIcon,
-            size: 22,
-            color: theme.colorScheme.onSecondaryContainer,
-          ),
-          if (showText) ...[
-            SizedBox(width: 6 * progress),
-            Flexible(
-              child: ClipRect(
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  widthFactor: progress,
-                  child: Opacity(
-                    opacity: progress,
-                    child: Text(
-                      item.label,
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w600,
-                        color: theme.colorScheme.onSecondaryContainer,
-                        letterSpacing: -0.2,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  /// Unselected item showing only icon
-  Widget _buildUnselectedItem({
-    required DesktopSidebarItem item,
-    required ThemeData theme,
-    required bool isActive,
-  }) {
-    return Container(
-      width: 44,
-      height: 38,
-      decoration: BoxDecoration(
-        color: isActive
-            ? theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.6)
-            : Colors.transparent,
-        borderRadius: BorderRadius.circular(19),
-      ),
-      child: Center(
-        child: Icon(
-          item.icon,
-          size: 22,
-          color: isActive
-              ? theme.colorScheme.onSurface
-              : theme.colorScheme.onSurfaceVariant,
         ),
       ),
     );
