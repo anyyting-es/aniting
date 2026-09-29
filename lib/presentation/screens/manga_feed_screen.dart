@@ -260,7 +260,7 @@ class _MangaFeedScreenState extends ConsumerState<MangaFeedScreen> {
                       cacheExtent: 500,
                       slivers: [
                         SliverToBoxAdapter(
-                          child: SizedBox(height: topPadding + 6),
+                          child: SizedBox(height: isDesktop ? 40.0 : (topPadding + 6)),
                         ),
                         SliverToBoxAdapter(
                           key: const ValueKey('manga_feed_search_bar_sliver'),

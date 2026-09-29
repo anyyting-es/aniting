@@ -633,7 +633,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Padding(
-                              padding: EdgeInsets.fromLTRB(16, topPadding + 6, 16, 6),
+                              padding: EdgeInsets.fromLTRB(16, isDesktop ? 40.0 : (topPadding + 6), 16, 6),
                               child: Row(
                                 children: [
                                   Expanded(

@@ -446,6 +446,13 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
 
     // Determine initial orientation and fullscreen mode based on TV mode
     final isTv = _isTvActive;
+    final isDesktop = !Platform.isAndroid && !Platform.isIOS;
+    if (isDesktop) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ref.read(desktopTitleBarBrightnessOverrideProvider.notifier).setBrightness(Brightness.dark);
+      });
+    }
     int initialTop = 0;
     int initialHeight = -1;
     if (isTv) {
@@ -867,6 +874,10 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     if (_isFullscreen) {
       defaultExitNativeFullscreen();
     }
+    try {
+      ref.read(desktopTitleBarVisibleProvider.notifier).setVisible(true);
+      ref.read(desktopTitleBarBrightnessOverrideProvider.notifier).setBrightness(null);
+    } catch (_) {}
 
     widget.onDispose?.call();
 

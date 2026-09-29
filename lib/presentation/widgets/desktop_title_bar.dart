@@ -15,6 +15,18 @@ class DesktopTitleBarVisibleNotifier extends Notifier<bool> {
 final desktopTitleBarVisibleProvider =
     NotifierProvider<DesktopTitleBarVisibleNotifier, bool>(DesktopTitleBarVisibleNotifier.new);
 
+/// Global notifier to override caption button brightness (e.g. forced white icons over video player)
+class DesktopTitleBarBrightnessNotifier extends Notifier<Brightness?> {
+  @override
+  Brightness? build() => null;
+
+  void setBrightness(Brightness? brightness) => state = brightness;
+}
+
+final desktopTitleBarBrightnessOverrideProvider =
+    NotifierProvider<DesktopTitleBarBrightnessNotifier, Brightness?>(
+        DesktopTitleBarBrightnessNotifier.new);
+
 /// Modern, sleek Windows/Desktop title bar embedded directly inside the Flutter app.
 class DesktopTitleBar extends ConsumerStatefulWidget implements PreferredSizeWidget {
   const DesktopTitleBar({super.key});
@@ -92,12 +104,14 @@ class _DesktopTitleBarState extends ConsumerState<DesktopTitleBar> with WindowLi
     }
 
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final brightnessOverride = ref.watch(desktopTitleBarBrightnessOverrideProvider);
+    final effectiveBrightness = brightnessOverride ?? theme.brightness;
+    final isDark = effectiveBrightness == Brightness.dark;
     final fgColor = isDark ? Colors.white.withValues(alpha: 0.85) : Colors.black.withValues(alpha: 0.85);
 
     return Container(
       height: DesktopTitleBar.height,
-      color: theme.scaffoldBackgroundColor,
+      color: Colors.transparent,
       child: Row(
         children: [
           // Entire left & center area is a draggable space (double click maximizes/restores)
@@ -299,10 +313,16 @@ class DesktopWindowFrame extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: Colors.transparent,
-      body: Column(
+      body: Stack(
+        fit: StackFit.expand,
         children: [
-          const DesktopTitleBar(),
-          Expanded(child: child),
+          child,
+          const Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: DesktopTitleBar(),
+          ),
         ],
       ),
     );

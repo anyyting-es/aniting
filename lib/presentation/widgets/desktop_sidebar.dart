@@ -91,7 +91,7 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
       height: double.infinity,
       color: Colors.transparent,
       padding: EdgeInsets.only(
-        top: 24,
+        top: 38,
         bottom: 24 + bottomInset,
         left: 8,
         right: 8,

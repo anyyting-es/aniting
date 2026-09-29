@@ -27,9 +27,9 @@ class DesktopRelationsTab extends StatelessWidget {
             itemCount: 6,
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: crossAxisCount,
-              childAspectRatio: 0.58,
+              childAspectRatio: 0.52,
               crossAxisSpacing: 14,
-              mainAxisSpacing: 14,
+              mainAxisSpacing: 16,
             ),
             itemBuilder: (context, index) => _buildSkeletonCard(),
           );
@@ -38,18 +38,20 @@ class DesktopRelationsTab extends StatelessWidget {
     }
 
     if (relations.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 48),
+      final theme = Theme.of(context);
+      final isDark = theme.brightness == Brightness.dark;
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 48),
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.hub_outlined, color: Colors.white38, size: 32),
-              SizedBox(height: 10),
+              Icon(Icons.hub_outlined, color: isDark ? Colors.white38 : theme.colorScheme.outline, size: 32),
+              const SizedBox(height: 10),
               Text(
                 'No hay relaciones disponibles',
                 style: TextStyle(
-                  color: Colors.white70,
+                  color: isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
                   fontSize: 13.5,
                   fontWeight: FontWeight.w500,
                 ),
@@ -69,9 +71,9 @@ class DesktopRelationsTab extends StatelessWidget {
           itemCount: relations.length,
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: crossAxisCount,
-            childAspectRatio: 0.58,
+            childAspectRatio: 0.52,
             crossAxisSpacing: 14,
-            mainAxisSpacing: 14,
+            mainAxisSpacing: 16,
           ),
           itemBuilder: (context, index) {
             final edge = relations[index] as Map<String, dynamic>?;
@@ -83,34 +85,37 @@ class DesktopRelationsTab extends StatelessWidget {
   }
 
   Widget _buildSkeletonCard() {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF14171B),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Container(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AspectRatio(
+          aspectRatio: 0.70,
+          child: Container(
+            decoration: BoxDecoration(
               color: const Color(0xFF1A1D23),
+              borderRadius: BorderRadius.circular(10),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(10),
-            child: Container(
-              height: 12,
-              width: 80,
-              decoration: BoxDecoration(
-                color: const Color(0xFF22262E),
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          height: 10,
+          width: 50,
+          decoration: BoxDecoration(
+            color: const Color(0xFF22262E),
+            borderRadius: BorderRadius.circular(4),
           ),
-        ],
-      ),
+        ),
+        const SizedBox(height: 4),
+        Container(
+          height: 12,
+          width: 90,
+          decoration: BoxDecoration(
+            color: const Color(0xFF22262E),
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -169,6 +174,10 @@ class _DesktopRelationCardState extends State<_DesktopRelationCard> {
     final coverUrl = coverMap?['large'] ?? coverMap?['medium'];
     final relationLabel = _formatRelationLabel(relationType);
 
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final titleColor = isDark ? Colors.white : theme.colorScheme.onSurface;
+
     return MouseRegion(
       cursor: relId > 0 ? SystemMouseCursors.click : SystemMouseCursors.basic,
       onEnter: (_) => setState(() => _isHovered = true),
@@ -209,33 +218,38 @@ class _DesktopRelationCardState extends State<_DesktopRelationCard> {
                 }
               : null,
           borderRadius: BorderRadius.circular(10),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 260),
-            curve: Curves.easeInOut,
-            decoration: BoxDecoration(
-              color: const Color(0xFF14171B),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: _isHovered ? 0.18 : 0.07),
-                width: 1.0,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: _isHovered ? 0.45 : 0.25),
-                  blurRadius: _isHovered ? 12 : 6,
-                  offset: Offset(0, _isHovered ? 4 : 2),
-                ),
-              ],
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Clean Poster Image (no badges on top of the image)
-                Expanded(
-                  child: ClipRRect(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(9)),
-                    child: SizedBox.expand(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 1. Poster Container with border & shadow
+              AspectRatio(
+                aspectRatio: 0.70,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 260),
+                  curve: Curves.easeInOut,
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF14171B) : theme.colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: _isHovered
+                          ? theme.colorScheme.primary
+                          : (isDark ? Colors.white.withValues(alpha: 0.08) : theme.colorScheme.outlineVariant.withValues(alpha: 0.3)),
+                      width: 1.0,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: _isHovered ? 0.45 : 0.20),
+                        blurRadius: _isHovered ? 12 : 6,
+                        offset: Offset(0, _isHovered ? 4 : 2),
+                      ),
+                    ],
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: ClipRect(
+                    child: AnimatedScale(
+                      scale: _isHovered ? 1.04 : 1.0,
+                      duration: const Duration(milliseconds: 280),
+                      curve: Curves.easeInOut,
                       child: coverUrl != null
                           ? CachedNetworkImage(
                               imageUrl: coverUrl as String,
@@ -247,45 +261,36 @@ class _DesktopRelationCardState extends State<_DesktopRelationCard> {
                     ),
                   ),
                 ),
+              ),
+              const SizedBox(height: 8),
 
-                // Details Below Poster: Relation Tag + Name
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(9, 8, 9, 8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Relation type label (e.g. "Precuela", "Secuela")
-                      if (relationLabel.isNotEmpty) ...[
-                        Text(
-                          relationLabel.toUpperCase(),
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.4,
-                            color: Colors.white.withValues(alpha: 0.55),
-                          ),
-                        ),
-                        const SizedBox(height: 3),
-                      ],
-
-                      // Relation Anime Title
-                      Text(
-                        relTitle as String,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                          height: 1.25,
-                        ),
-                      ),
-                    ],
+              // 2. Relation type label outside container
+              if (relationLabel.isNotEmpty) ...[
+                Text(
+                  relationLabel.toUpperCase(),
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.4,
+                    color: theme.colorScheme.primary,
                   ),
                 ),
+                const SizedBox(height: 2),
               ],
-            ),
+
+              // 3. Relation Anime Title outside container
+              Text(
+                relTitle as String,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                  color: titleColor,
+                  height: 1.25,
+                ),
+              ),
+            ],
           ),
         ),
       ),

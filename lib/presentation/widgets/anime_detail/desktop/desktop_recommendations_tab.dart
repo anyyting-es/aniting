@@ -27,9 +27,9 @@ class DesktopRecommendationsTab extends StatelessWidget {
             itemCount: 6,
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: crossAxisCount,
-              childAspectRatio: 0.62,
+              childAspectRatio: 0.54,
               crossAxisSpacing: 14,
-              mainAxisSpacing: 14,
+              mainAxisSpacing: 16,
             ),
             itemBuilder: (context, index) => _buildSkeletonCard(),
           );
@@ -38,18 +38,20 @@ class DesktopRecommendationsTab extends StatelessWidget {
     }
 
     if (recommendations.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 48),
+      final theme = Theme.of(context);
+      final isDark = theme.brightness == Brightness.dark;
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 48),
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.auto_awesome_outlined, color: Colors.white38, size: 32),
-              SizedBox(height: 10),
+              Icon(Icons.auto_awesome_outlined, color: isDark ? Colors.white38 : theme.colorScheme.outline, size: 32),
+              const SizedBox(height: 10),
               Text(
                 'No hay recomendaciones disponibles',
                 style: TextStyle(
-                  color: Colors.white70,
+                  color: isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
                   fontSize: 13.5,
                   fontWeight: FontWeight.w500,
                 ),
@@ -69,9 +71,9 @@ class DesktopRecommendationsTab extends StatelessWidget {
           itemCount: recommendations.length,
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: crossAxisCount,
-            childAspectRatio: 0.62,
+            childAspectRatio: 0.54,
             crossAxisSpacing: 14,
-            mainAxisSpacing: 14,
+            mainAxisSpacing: 16,
           ),
           itemBuilder: (context, index) {
             final edge = recommendations[index] as Map<String, dynamic>?;
@@ -83,34 +85,28 @@ class DesktopRecommendationsTab extends StatelessWidget {
   }
 
   Widget _buildSkeletonCard() {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF14171B),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Container(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AspectRatio(
+          aspectRatio: 0.70,
+          child: Container(
+            decoration: BoxDecoration(
               color: const Color(0xFF1A1D23),
+              borderRadius: BorderRadius.circular(10),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(10),
-            child: Container(
-              height: 12,
-              width: 80,
-              decoration: BoxDecoration(
-                color: const Color(0xFF22262E),
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          height: 12,
+          width: 90,
+          decoration: BoxDecoration(
+            color: const Color(0xFF22262E),
+            borderRadius: BorderRadius.circular(4),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -138,6 +134,10 @@ class _DesktopRecommendationCardState extends State<_DesktopRecommendationCard> 
     final recTitle = titleMap?['userPreferred'] ?? titleMap?['romaji'] ?? titleMap?['english'] ?? 'Sin título';
     final coverMap = mediaRec['coverImage'] as Map<String, dynamic>?;
     final coverUrl = coverMap?['large'] ?? coverMap?['medium'];
+
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final titleColor = isDark ? Colors.white : theme.colorScheme.onSurface;
 
     return MouseRegion(
       cursor: recId > 0 ? SystemMouseCursors.click : SystemMouseCursors.basic,
@@ -175,33 +175,38 @@ class _DesktopRecommendationCardState extends State<_DesktopRecommendationCard> 
                 }
               : null,
           borderRadius: BorderRadius.circular(10),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 260),
-            curve: Curves.easeInOut,
-            decoration: BoxDecoration(
-              color: const Color(0xFF14171B),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: _isHovered ? 0.18 : 0.07),
-                width: 1.0,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: _isHovered ? 0.45 : 0.25),
-                  blurRadius: _isHovered ? 12 : 6,
-                  offset: Offset(0, _isHovered ? 4 : 2),
-                ),
-              ],
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Clean Poster Image (nothing on top of it)
-                Expanded(
-                  child: ClipRRect(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(9)),
-                    child: SizedBox.expand(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 1. Poster Art Container (enclosed with border, radius, shadow)
+              AspectRatio(
+                aspectRatio: 0.70,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 260),
+                  curve: Curves.easeInOut,
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF14171B) : theme.colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: _isHovered
+                          ? theme.colorScheme.primary
+                          : (isDark ? Colors.white.withValues(alpha: 0.08) : theme.colorScheme.outlineVariant.withValues(alpha: 0.3)),
+                      width: 1.0,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: _isHovered ? 0.45 : 0.20),
+                        blurRadius: _isHovered ? 12 : 6,
+                        offset: Offset(0, _isHovered ? 4 : 2),
+                      ),
+                    ],
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: ClipRect(
+                    child: AnimatedScale(
+                      scale: _isHovered ? 1.04 : 1.0,
+                      duration: const Duration(milliseconds: 280),
+                      curve: Curves.easeInOut,
                       child: coverUrl != null
                           ? CachedNetworkImage(
                               imageUrl: coverUrl as String,
@@ -213,24 +218,22 @@ class _DesktopRecommendationCardState extends State<_DesktopRecommendationCard> 
                     ),
                   ),
                 ),
+              ),
+              const SizedBox(height: 8),
 
-                // Name below poster
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 8),
-                  child: Text(
-                    recTitle as String,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                      height: 1.25,
-                    ),
-                  ),
+              // 2. Anime Title OUTSIDE container
+              Text(
+                recTitle as String,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                  color: titleColor,
+                  height: 1.25,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

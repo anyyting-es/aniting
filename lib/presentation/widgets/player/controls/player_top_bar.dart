@@ -177,9 +177,11 @@ class PlayerTopBar extends ConsumerWidget {
       left: false,
       right: false,
       child: Padding(
-        padding: EdgeInsets.symmetric(
-          horizontal: isFullscreen ? 16 : 8,
-          vertical: 4,
+        padding: EdgeInsets.only(
+          left: isFullscreen ? 16 : 8,
+          right: isFullscreen ? 16 : 8,
+          bottom: 4,
+          top: isDesktop && !isFullscreen ? 38 : 4,
         ),
         child: Stack(
           alignment: Alignment.center,

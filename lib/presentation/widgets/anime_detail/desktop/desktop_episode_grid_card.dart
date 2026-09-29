@@ -27,6 +27,9 @@ class _DesktopGridEpisodeCardState extends State<DesktopGridEpisodeCard> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final titleColor = isDark ? Colors.white : theme.colorScheme.onSurface;
     final double cardOpacity = widget.ep.isWatched ? (_isHovered ? 0.75 : 0.45) : 1.0;
 
     return MouseRegion(
@@ -137,15 +140,15 @@ class _DesktopGridEpisodeCardState extends State<DesktopGridEpisodeCard> {
                 ),
                 const SizedBox(height: 8),
 
-                // Title: "EP X. Title" (Clean white)
+                // Title: "EP X. Title" (Theme-aware)
                 Text(
                   widget.formattedTitle,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w700,
-                    color: Colors.white,
+                    color: titleColor,
                     height: 1.25,
                   ),
                 ),

@@ -555,10 +555,15 @@ Inspired by **Plezy** (`edde746/plezy`), the player focuses on high performance,
 - **Integrated Desktop Titlebar (`DesktopTitleBar` & `window_manager`)**:
   - Hides native OS titlebar frame via `window_manager` (`TitleBarStyle.hidden`) on Windows and macOS.
   - On Linux, desktop environments (KDE KWin, GNOME Shell, XFCE) manage window decorations directly (SSD/CSD); therefore, `DesktopWindowFrame` skips rendering `DesktopTitleBar` on Linux (`Platform.isWindows || Platform.isMacOS`), using `TitleBarStyle.normal` in `main.dart` to prevent duplicate stacked titlebars.
-  - Seamless 34dp client-area top bar (`lib/presentation/widgets/desktop_title_bar.dart` wrapped via `DesktopWindowFrame`) rendered cleanly inside Flutter on Windows/macOS:
-    - Seamless, borderless background perfectly matching `theme.scaffoldBackgroundColor` with zero dividing lines.
-    - Full width `DragToMoveArea` across the entire bar (no intrusive logos or text), allowing dragging anywhere to move the window and double-clicking to maximize/restore.
-  - Background color dynamically matches `theme.scaffoldBackgroundColor` across all dark, light, and OLED themes.
+  - **Transparent Stack Overlay Architecture (`DesktopWindowFrame`)**:
+    - Embedded as a floating `Positioned` overlay atop a `Stack` (`lib/presentation/widgets/desktop_title_bar.dart`), allowing media content (Anime Detail hero banners, Video Player viewport, and Explore hero carousels) to bleed edge-to-edge behind the titlebar with zero solid gaps or white bars.
+    - Draggable `DragToMoveArea` spans the client area while leaving interactive navigation elements (e.g. back buttons, sidebar icons, search bars) with comfortable top clearance (~38-42dp).
+    - Windows caption buttons feature adaptive contrast (`desktopTitleBarBrightnessOverrideProvider`) so video playback enforces crisp white caption controls even when the global theme is Light mode.
+  - **Desktop Anime Detail Experience (`anime_detail_desktop_layout.dart`)**:
+    - **Bottom-Aligned Header**: Season, title, genres, and synopsis sit in a `ConstrainedBox(minHeight: 360)` with `MainAxisAlignment.end`, aligning perfectly above the action bar and tabs at the bottom of the poster without empty white space when synopsis is short.
+    - **Adaptive Theme Typography**: Title, season, synopsis, sidebar metadata rows, and tab indicators seamlessly adapt between dark and light themes (high-contrast text in light mode rather than washed-out white text).
+    - **Multiple Online Sources Modal**: Clicking an episode in online mode with multiple servers/qualities opens a sleek desktop selection modal instead of immediately jumping to the first source, harmonized with mobile behavior.
+    - **External Card Titles for Relations & Recommendations**: `_DesktopRelationCard` and `_DesktopRecommendationCard` place anime titles and relation badges outside the poster container, conforming to standard `AnimeCard` styling.
 - **Linux Wayland & Desktop Integration (`linux/runner/my_application.cc`)**:
   - Implements automatic `setup_application_icons(window)` on startup to guarantee reliable icon display across all Wayland compositors (KDE KWin, GNOME Shell) and X11:
     - **Wayland `app_id` Integration**: Auto-installs `com.seanime.app.seanime_app.png` into `~/.local/share/icons/hicolor/256x256/apps/` and generates `~/.local/share/applications/com.seanime.app.seanime_app.desktop` if not present. Solves the fallback "W" Wayland placeholder icon in KDE's titlebar and Alt-Tab window switcher.

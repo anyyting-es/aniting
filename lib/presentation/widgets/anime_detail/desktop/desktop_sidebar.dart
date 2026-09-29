@@ -57,6 +57,12 @@ class DesktopSidebar extends StatelessWidget {
   }
 
   Widget _buildMetaItem(ThemeData theme, String label, String value) {
+    final isDark = theme.brightness == Brightness.dark;
+    final labelColor = isDark
+        ? Colors.white.withValues(alpha: 0.55)
+        : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.85);
+    final valueColor = isDark ? Colors.white : theme.colorScheme.onSurface;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: Column(
@@ -67,16 +73,16 @@ class DesktopSidebar extends StatelessWidget {
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w500,
-              color: Colors.white.withValues(alpha: 0.5),
+              color: labelColor,
             ),
           ),
           const SizedBox(height: 3),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13.5,
               fontWeight: FontWeight.w600,
-              color: Colors.white,
+              color: valueColor,
             ),
           ),
         ],

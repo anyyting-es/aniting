@@ -27,6 +27,12 @@ class _DesktopListEpisodeCardState extends State<DesktopListEpisodeCard> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final titleColor = isDark ? Colors.white : theme.colorScheme.onSurface;
+    final descColor = isDark
+        ? Colors.white.withValues(alpha: 0.65)
+        : theme.colorScheme.onSurfaceVariant;
     final double cardOpacity = widget.ep.isWatched ? (_isHovered ? 0.75 : 0.45) : 1.0;
 
     return MouseRegion(
@@ -154,10 +160,10 @@ class _DesktopListEpisodeCardState extends State<DesktopListEpisodeCard> {
                           widget.formattedTitle,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                            color: titleColor,
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -169,7 +175,7 @@ class _DesktopListEpisodeCardState extends State<DesktopListEpisodeCard> {
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontSize: 12.5,
-                            color: Colors.white.withValues(alpha: 0.65),
+                            color: descColor,
                             height: 1.35,
                           ),
                         ),

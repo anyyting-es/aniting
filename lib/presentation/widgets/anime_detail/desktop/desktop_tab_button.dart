@@ -21,6 +21,12 @@ class _DesktopTabButtonState extends State<DesktopTabButton> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final selectedColor = isDark ? Colors.white : theme.colorScheme.onSurface;
+    final unselectedColor = isDark ? Colors.white60 : theme.colorScheme.onSurfaceVariant;
+    final indicatorColor = isDark ? Colors.white : theme.colorScheme.primary;
+
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _isHovered = true),
@@ -40,8 +46,8 @@ class _DesktopTabButtonState extends State<DesktopTabButton> {
                   fontSize: 14.5,
                   fontWeight: widget.isSelected ? FontWeight.w800 : FontWeight.w500,
                   color: widget.isSelected
-                      ? Colors.white
-                      : (_isHovered ? Colors.white : Colors.white60),
+                      ? selectedColor
+                      : (_isHovered ? selectedColor : unselectedColor),
                 ),
               ),
               const SizedBox(height: 6),
@@ -50,7 +56,7 @@ class _DesktopTabButtonState extends State<DesktopTabButton> {
                 height: 2,
                 width: widget.isSelected ? 26 : 0,
                 color: widget.isSelected
-                    ? Colors.white
+                    ? indicatorColor
                     : Colors.transparent,
               ),
             ],

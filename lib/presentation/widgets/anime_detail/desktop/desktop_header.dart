@@ -23,8 +23,20 @@ class _DesktopHeaderState extends State<DesktopHeader> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final titleColor = isDark ? Colors.white : theme.colorScheme.onSurface;
+    final seasonColor = isDark ? Colors.white.withValues(alpha: 0.7) : theme.colorScheme.primary;
+    final descColor = isDark ? Colors.white.withValues(alpha: 0.75) : theme.colorScheme.onSurfaceVariant;
+    final textShadows = isDark
+        ? const [
+            Shadow(color: Colors.black87, blurRadius: 8, offset: Offset(0, 1)),
+          ]
+        : null;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
         // Season Year
         if (widget.seasonYearStr.isNotEmpty) ...[
@@ -34,7 +46,8 @@ class _DesktopHeaderState extends State<DesktopHeader> {
               fontSize: 12,
               fontWeight: FontWeight.w700,
               letterSpacing: 1.1,
-              color: Colors.white.withValues(alpha: 0.7),
+              color: seasonColor,
+              shadows: textShadows,
             ),
           ),
           const SizedBox(height: 6),
@@ -43,12 +56,13 @@ class _DesktopHeaderState extends State<DesktopHeader> {
         // Big Anime Title
         Text(
           widget.title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 27,
             fontWeight: FontWeight.w900,
             letterSpacing: -0.3,
             height: 1.15,
-            color: Colors.white,
+            color: titleColor,
+            shadows: textShadows,
           ),
         ),
         const SizedBox(height: 12),
@@ -90,7 +104,8 @@ class _DesktopHeaderState extends State<DesktopHeader> {
               style: TextStyle(
                 fontSize: 13.5,
                 height: 1.5,
-                color: Colors.white.withValues(alpha: 0.72),
+                color: descColor,
+                shadows: textShadows,
               ),
             ),
           ),

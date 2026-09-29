@@ -453,7 +453,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                     ),
                   ],
                   SliverToBoxAdapter(
-                    child: SizedBox(height: topPadding + 6),
+                    child: SizedBox(height: isDesktop ? 40.0 : (topPadding + 6)),
                   ),
                         SliverToBoxAdapter(
                           key: const ValueKey('anime_feed_search_bar_sliver'),
