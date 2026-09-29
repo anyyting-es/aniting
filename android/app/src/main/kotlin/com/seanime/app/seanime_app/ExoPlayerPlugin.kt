@@ -336,21 +336,16 @@ class ExoPlayerPlugin :
 
     private fun ensureInitialized(initialTop: Int = 0, initialHeight: Int = -1) {
         if (exoPlayer != null) {
-            if (initialHeight > 0 || (initialTop == 0 && initialHeight == -1)) {
+            // Player already initialized: only update bounds if an explicit positive height is provided.
+            // Never reset to MATCH_PARENT when openMedia calls ensureInitialized() with default parameters.
+            if (initialHeight > 0) {
                 surfaceContainer?.let { container ->
                     val lp = container.layoutParams as? FrameLayout.LayoutParams
                     if (lp != null) {
-                        if (initialHeight > 0) {
-                            lp.topMargin = initialTop
-                            lp.height = initialHeight
-                            lp.width = FrameLayout.LayoutParams.MATCH_PARENT
-                            lp.gravity = android.view.Gravity.TOP
-                        } else {
-                            lp.topMargin = 0
-                            lp.height = FrameLayout.LayoutParams.MATCH_PARENT
-                            lp.width = FrameLayout.LayoutParams.MATCH_PARENT
-                            lp.gravity = android.view.Gravity.FILL
-                        }
+                        lp.topMargin = initialTop
+                        lp.height = initialHeight
+                        lp.width = FrameLayout.LayoutParams.MATCH_PARENT
+                        lp.gravity = android.view.Gravity.TOP
                         container.layoutParams = lp
                         container.requestLayout()
                         videoSurfaceView?.let { surf ->

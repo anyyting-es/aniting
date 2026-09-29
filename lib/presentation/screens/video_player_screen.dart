@@ -475,8 +475,6 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
             if (physicalHeight > physicalWidth && physicalWidth > 0) {
               initialTop = view.padding.top.round();
               initialHeight = (physicalWidth / (16 / 9)).round();
-              _lastExoTop = initialTop;
-              _lastExoHeight = initialHeight;
             }
           }
         } catch (_) {}
