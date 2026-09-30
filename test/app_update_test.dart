@@ -18,6 +18,26 @@ void main() {
         isTrue,
       );
       expect(
+        AppUpdateInfo.isVersionNewer(remoteVersion: '1.0.1-beta', currentVersion: '1.0.0'),
+        isTrue,
+      );
+      expect(
+        AppUpdateInfo.isVersionNewer(remoteVersion: 'v1.0.1-beta', currentVersion: '1.0.0'),
+        isTrue,
+      );
+      expect(
+        AppUpdateInfo.isVersionNewer(remoteVersion: 'v1.0.1-beta', currentVersion: '1.0.0-beta'),
+        isTrue,
+      );
+      expect(
+        AppUpdateInfo.isVersionNewer(remoteVersion: '1.0.0', currentVersion: '1.0.0-beta'),
+        isTrue,
+      );
+      expect(
+        AppUpdateInfo.isVersionNewer(remoteVersion: '1.0.0-beta.2', currentVersion: '1.0.0-beta.1'),
+        isTrue,
+      );
+      expect(
         AppUpdateInfo.isVersionNewer(remoteVersion: 'v1.1.0', currentVersion: '1.0.0'),
         isTrue,
       );
@@ -38,6 +58,14 @@ void main() {
       );
       expect(
         AppUpdateInfo.isVersionNewer(remoteVersion: 'v1.0.0', currentVersion: '1.0.0'),
+        isFalse,
+      );
+      expect(
+        AppUpdateInfo.isVersionNewer(remoteVersion: 'v1.0.1-beta', currentVersion: '1.0.1-beta'),
+        isFalse,
+      );
+      expect(
+        AppUpdateInfo.isVersionNewer(remoteVersion: '1.0.0-beta', currentVersion: '1.0.0'),
         isFalse,
       );
       expect(

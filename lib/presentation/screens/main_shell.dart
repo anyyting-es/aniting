@@ -16,6 +16,8 @@ import 'package:seanime_app/presentation/screens/settings_screen.dart';
 import 'package:seanime_app/presentation/widgets/desktop_sidebar.dart';
 import 'package:seanime_app/presentation/widgets/floating_resume_bar.dart';
 import 'package:seanime_app/presentation/widgets/mobile_floating_nav.dart';
+import 'package:seanime_app/presentation/providers/app_update_provider.dart';
+import 'package:seanime_app/presentation/widgets/update/app_update_dialog.dart';
 
 class MainShell extends ConsumerStatefulWidget {
   const MainShell({super.key});
@@ -53,6 +55,30 @@ class _MainShellState extends ConsumerState<MainShell> {
         ),
       ),
     ];
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAutoUpdate();
+    });
+  }
+
+  static bool _hasCheckedForUpdatesOnStartup = false;
+
+  Future<void> _checkAutoUpdate() async {
+    if (_hasCheckedForUpdatesOnStartup) return;
+    _hasCheckedForUpdatesOnStartup = true;
+
+    // Small delay to allow the shell layout and feed warm-up to finish smoothly
+    await Future.delayed(const Duration(milliseconds: 1500));
+    if (!mounted) return;
+
+    try {
+      final info = await ref.read(appUpdateNotifierProvider.notifier).checkForUpdate();
+      if (mounted && info != null && info.hasUpdate) {
+        AppUpdateDialog.show(context, info);
+      }
+    } catch (_) {
+      // Silently ignore network or offline issues on startup
+    }
   }
 
   @override

@@ -11,12 +11,20 @@ class AppUpdateDialog extends ConsumerWidget {
 
   const AppUpdateDialog({super.key, required this.updateInfo});
 
-  static Future<void> show(BuildContext context, AppUpdateInfo updateInfo) {
-    return showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => AppUpdateDialog(updateInfo: updateInfo),
-    );
+  static bool _isShowing = false;
+
+  static Future<void> show(BuildContext context, AppUpdateInfo updateInfo) async {
+    if (_isShowing) return;
+    _isShowing = true;
+    try {
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => AppUpdateDialog(updateInfo: updateInfo),
+      );
+    } finally {
+      _isShowing = false;
+    }
   }
 
   String _formatBytes(int bytes) {

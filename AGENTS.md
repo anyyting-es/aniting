@@ -915,9 +915,24 @@ Inspired by **Plezy** (`edde746/plezy`), the player focuses on high performance,
 - **Extended Timeout for Online Stream Sources (`seanime_repository.dart`)**:
   - `getOnlinestreamSource` now specifies `Options(receiveTimeout: const Duration(seconds: 45))` and `getOnlinestreamEpisodes`/`searchOnlinestreamManual` use `35s`. This prevents premature `DioException [receive timeout]` in Flutter when upstream hosts (like MP4Upload, Voe, UPNShare) take longer to respond or when multiple embeds are processed by Goja JS extensions.
 - **Installed Extension Card Zero-Overflow (`installed_extension_card.dart`)**:
-  - Switched metadata cluster (version, author, and `Actualización disponible` badge) from a rigid inner `Row` to a responsive `Wrap(crossAxisAlignment: WrapCrossAlignment.center, spacing: 6, runSpacing: 4)`. This guarantees zero horizontal RenderFlex overflows on narrow device viewports regardless of title/author length or badge visibility.
+  - Switched metadata cluster (version, author, and `Actualización disponible` badge) from a responsive `Wrap(crossAxisAlignment: WrapCrossAlignment.center, spacing: 6, runSpacing: 4)`. This guarantees zero horizontal RenderFlex overflows on narrow device viewports regardless of title/author length or badge visibility.
 - **Off-Screen Floating SnackBar Elimination (`extensions_marketplace_screen.dart`)**:
   - Centralized user notifications via `_showFeedback(message)` calling `messenger.clearSnackBars()`. This clears pending floating SnackBars before enqueueing new ones, preventing off-screen positioning warnings during soft keyboard or modal sheet transitions.
 - **AnimeAV1 Spanish Extension Architecture**:
   - AnimeAV1 updated its upstream embeds (`UPNShare`, `Voe`, `Byse`, `MP4Upload`). Version 1.2.1+ in the official repository contains extractors for `UPNShare` and `Voe`, resolving `Error: No se encontró servidor Byse para sub` on series where Byse is not present.
+
+### 7.7. In-App Updates & Version Management Architecture (2026-09-30)
+- **Semantic Version Parser with Prerelease & Beta Tag Support (`app_update_models.dart`)**:
+  - `AppUpdateInfo.isVersionNewer` accurately compares semantic version strings containing tags like `v1.0.1-beta`, `1.0.0-beta.2`, `1.0.0+2`, and stable releases.
+  - Decomposes versions into `[major, minor, patch, isStable, preReleaseNum, buildNum]`, ensuring patch releases with `-beta` (e.g. `1.0.1-beta`) correctly register as newer than previous base releases (e.g. `1.0.0`), while stable releases outrank pre-releases of the same version.
+- **Automatic Startup Update Check (`MainShell`, `main_shell.dart`)**:
+  - When `MainShell` mounts on app startup, an asynchronous update check runs 1.5s post-frame (avoiding UI jank or slowing down feed initialization).
+  - If a newer release is published on GitHub Releases, `AppUpdateDialog.show(context, info)` opens directly without requiring the user to navigate to Settings.
+  - Guarded by `static bool _hasCheckedForUpdatesOnStartup` and `AppUpdateDialog._isShowing` to prevent duplicate modal prompts.
+- **Device-Specific ABI Asset Resolution (`app_update_models.dart`)**:
+  - Queries `Abi.current()` (`dart:ffi`) to match the exact hardware architecture of the user's Android device:
+    - `arm64-v8a`: downloads `app-arm64-v8a-release.apk` (~109 MB, saving bandwidth and storage over universal builds).
+    - `x86_64`: downloads `app-x86_64-release.apk`.
+    - Fallback: automatically resolves to `app-release.apk` (universal APK) or first available `.apk`.
+
 
