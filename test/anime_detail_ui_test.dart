@@ -323,17 +323,24 @@ void main() {
       expect(find.byIcon(Icons.folder_outlined), findsOneWidget);
       expect(find.byIcon(Icons.info_outline_rounded), findsOneWidget);
 
-      // Check bottom tabs have only Torrent and Online (Local is NOT in the tab row)
-      expect(find.text('Torrent'), findsOneWidget);
+      // Check mode dropdown chip is present with Online
       expect(find.text('Online'), findsOneWidget);
-      expect(find.text('Local'), findsNothing);
+
+      // Tap mode chip to open popup menu with Torrent option
+      await tester.tap(find.text('Online'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text('Torrent'), findsOneWidget);
+      await tester.tapAt(const Offset(10, 10));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
 
       // Tap the local button in top bar to switch to Local mode
       await tester.tap(find.byIcon(Icons.folder_outlined));
       await tester.pump(const Duration(milliseconds: 100));
 
-      // Check local folder icon is now filled (active)
-      expect(find.byIcon(Icons.folder_rounded), findsOneWidget);
+      // Check local folder icon is now filled (active in top bar and mode chip)
+      expect(find.byIcon(Icons.folder_rounded), findsWidgets);
 
       await tester.pump(const Duration(seconds: 1));
 

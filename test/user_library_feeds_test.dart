@@ -10,6 +10,10 @@ import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/widgets/continue_watching_card.dart';
 import 'package:seanime_app/presentation/widgets/continue_reading_card.dart';
 import 'package:seanime_app/presentation/widgets/desktop_sidebar.dart';
+import 'package:seanime_app/presentation/widgets/feed_empty_state.dart';
+import 'package:seanime_app/presentation/widgets/floating_nav/floating_resume_companion.dart';
+import 'package:seanime_app/core/i18n/translations/es.dart';
+import 'package:seanime_app/core/preferences/resume_bar_preferences_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class MockServerNotifier extends ServerNotifier {
@@ -232,6 +236,96 @@ void main() {
 
       expect(find.byType(CachedNetworkImage), findsNothing);
       expect(find.byIcon(Icons.person), findsOneWidget);
+    });
+
+    testWidgets('FeedEmptyState renders AniList login CTA when user is not logged in',
+        (tester) async {
+      bool explored = false;
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: FeedEmptyState(
+                isLoggedIn: false,
+                isManga: false,
+                onExplore: () => explored = true,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('Conectar con AniList'), findsOneWidget);
+      expect(find.text('Explorar'), findsOneWidget);
+      expect(find.text('Conecta tu cuenta de AniList para sincronizar tus listas'), findsOneWidget);
+
+      await tester.tap(find.text('Explorar'));
+      expect(explored, isTrue);
+    });
+
+    testWidgets('FeedEmptyState renders empty library CTA when user is logged in',
+        (tester) async {
+      bool explored = false;
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: FeedEmptyState(
+                isLoggedIn: true,
+                isManga: false,
+                onExplore: () => explored = true,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('Tu lista de anime está vacía'), findsOneWidget);
+      expect(find.text('Explorar'), findsOneWidget);
+
+      await tester.tap(find.text('Explorar'));
+      expect(explored, isTrue);
+    });
+
+    testWidgets('FloatingResumeCompanion handles zero width without assertion crash',
+        (tester) async {
+      final session = LastSessionItem(
+        mediaType: 'ANIME',
+        mediaId: 101,
+        title: 'Frieren: Beyond Journey\'s End',
+        episodeNumber: 1,
+        positionMs: 50000,
+        durationMs: 100000,
+        updatedAt: DateTime.now().millisecondsSinceEpoch,
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: SizedBox(
+                width: 0,
+                height: 0,
+                child: FloatingResumeCompanion(
+                  session: session,
+                  tWidth: 1.0,
+                  width: -52.0, // test negative constraint handling
+                  height: 68.0,
+                  borderRadius: BorderRadius.circular(34),
+                  l10n: const SpanishTranslations(),
+                  onTap: () {},
+                  onDismiss: () {},
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      // Should build without throwing negative constraint assertion error
+      expect(find.byType(FloatingResumeCompanion), findsOneWidget);
     });
   });
 }

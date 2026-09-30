@@ -53,7 +53,7 @@ seanime_app/
 │   │   ├── player/                   # Video playback service wrappers
 │   │   │   ├── exo_player_service.dart   # Android Media3 platform channel bridge
 │   │   │   └── mpv_player_service.dart   # media_kit / libmpv service with Plezy optimizations
-│   │   ├── preferences/              # PlayerEngineProvider, TitleLanguageProvider, EpisodeViewModeProvider, OnboardingProvider, DownloadPreferencesProvider, LayoutModeProvider, PlaybackProgressPreferencesProvider
+│   │   ├── preferences/              # PlayerEngineProvider, TitleLanguageProvider, EpisodeViewModeProvider, OnboardingProvider, DownloadPreferencesProvider, LayoutModeProvider, PlaybackProgressPreferencesProvider, AnimeFavoritesProvider
 │   │   ├── server/                   # ServerManager, AndroidServerChannel, DesktopServer
 │   │   ├── storage/                  # AppStoragePaths (Aniting/Downloads resolution for Android and Desktop)
 │   │   └── theme/                    # AppTheme, ThemeProvider, AppPalette, AppThemeColors, AppScrollBehavior, custom_route_transitions (WebPageTransitionsBuilder, SmoothPageRoute)
@@ -117,6 +117,7 @@ seanime_app/
 │           ├── manga_card.dart       # Card displays for manga items
 │           ├── continue_watching_card.dart # 16:9 episode progress card
 │           ├── continue_reading_card.dart  # Manga continue reading progress card
+│           ├── feed_empty_state.dart       # Expressive M3 empty state for unauthenticated or empty anime/manga feeds
 │           ├── desktop_sidebar.dart  # Desktop floating icon-only sidebar
 │           ├── desktop_title_bar.dart # Integrated modern Windows client-area title bar with drag & caption buttons
 │           ├── floating_nav/         # Modular floating navigation dock & resume companion
@@ -182,9 +183,26 @@ seanime_app/
     - `ContinueReadingCard` renders a progress bar calculated from `progress / totalChapters` (only when `totalChapters > 0`).
     - The subtitle below the title clearly displays `${l10n.chapter} $nextChapter - $totalCaps` (e.g. `Capítulo 71 - 150`).
     - Added dedicated Manga Recommendations pipeline (`getMangaRecommendationsForUser`, `kCacheMangaRecommendations`, `mangaRecommendationsProvider`) mirroring anime recommendations.
+  - **Unauthenticated & Empty Library State Architecture (`feed_empty_state.dart`, `feed_screen.dart`, `manga_feed_screen.dart`)**:
+    - Previously, when a user was not logged in to AniList or had an empty library/watching list, all feed section slivers rendered `SizedBox.shrink()`, leaving an empty black screen under the search bar.
+    - Added dedicated `FeedEmptyState` widget rendered inside `SliverFillRemaining`:
+      - **Compact & Top-Aligned**: Aligned towards the top (`Align(alignment: Alignment.topCenter)`) with a compact ~85px cute illustration (`assets/images/confused.png`), avoiding invasive full-screen centering or oversized elements.
+      - **Default Text Contract**: "Conecta tu cuenta de AniList para sincronizar tus listas" identically in both anime and manga feeds.
+      - **Minimalist Action Buttons**: Compact pills with reduced density and visual footprint: primary "Conectar con AniList" and secondary "Explorar".
+  - **Zero-Width & Negative Constraints Protection in Floating Navigation (`mobile_floating_nav.dart`, `floating_resume_companion.dart`)**:
+    - During initial window frames (e.g. Waydroid initialization or Android split-screen mapping), `constraints.maxWidth` can transiently report `0.0`. Subtracting margins (`totalWidth - marginH * 2`) previously created negative box constraints (`w=-52.0`), throwing a Flutter `BoxConstraints has a negative minimum width` rendering assertion.
+    - Added guard conditions: `totalWidth <= 0 || constraints.maxHeight <= 0` yields `SizedBox.shrink()`, `availableWidth` and `resumeWidth` are clamped to `math.max(0.0, ...)`, and `FloatingResumeCompanion` Container enforces non-negative width/height, eliminating initialization crashes.
   - **Desktop Sidebar Profile Avatar (`desktop_sidebar.dart`, `main_shell.dart`)**:
     - `DesktopSidebarItem` supports an optional `avatarUrl`.
     - When logged in with an AniList avatar, the sidebar renders a circular avatar image with an active selection ring; if unavailable, it smoothly falls back to the profile icon.
+- **Mobile Beta 1.0.0 Defaults & UI Refinements (`mobile_nav_style_provider.dart`, `resume_bar_preferences_provider.dart`, `theme_provider.dart`)**:
+  - **Floating Dock Navigation as Default**: Mobile navigation style is defaulted to `MobileNavStyle.floating` for a sleek, non-intrusive bottom navigation dock.
+  - **Resume Companion Disabled by Default**: The "Sigue donde estabas" resume companion is turned off by default (`resume_bar_enabled = false`) to keep the interface clean and spacious for first-time users.
+  - **OLED Pure Black as Default Theme**: Default theme mode is dark with OLED True Black enabled (`isOled: true`, `paletteId: AppPalettes.oledBlackId`). Selecting another palette dynamically disables OLED mode and adopts the chosen palette's colors.
+  - **Anime Detail Mobile Action Bar**:
+    - Clean horizontal action cluster: Primary "Comenzar a ver" / "Continuar" pill button flanked by Trailer, AniList Status Edit, and Favorites toggle icons.
+    - Minimalist mode dropdown (`PopupMenuButton` anchored below the mode button with compact options "Online" and "Torrent").
+    - Clean and discreet AniList edit icon without oversized background boxes.
 - **Feed Initial Loading Barrier, Cache-First & SWR Anti-CLS Architecture (`feed_screen.dart`, `FeedCacheService`, `app_providers.dart`)**:
   - **Zero Content Layout Shift (CLS) via Persistent SWR**:
     - Rather than letting fast public providers (`trendingAnimeProvider`, `popularAnimeProvider`) resolve first and render at the top while slow private providers (`continueWatchingProvider`, `animeCollectionProvider`) pop in seconds later to violently push content down, the feed employs a high-performance **Stale-While-Revalidate (SWR) cache-first pipeline**:
@@ -205,6 +223,22 @@ seanime_app/
       2. Go Backend (`stream.go`): `r.client.mu.Unlock()` is now deferred (`defer r.client.mu.Unlock()`) and `mediaPlayerRepository` is guarded with `if r.client.repository.mediaPlayerRepository != nil` in both `StopStream` and `DropLastTorrent`, making the Go backend impervious to mutex leaks.
   - Extended Dio `receiveTimeout` to 90 seconds (from the default 15s) for `startTorrentStream` (`/api/v1/torrentstream/start`). BitTorrent DHT discovery, tracker queries, peer handshakes, and file piece prioritization frequently exceed 15 seconds on less active swarms. The previous 15s timeout caused premature client abortions while the Go engine was still connecting, leading to infinite retry timeout loops.
   - In `video_player_screen.dart`, wrapped `LastSessionNotifier.saveSession()` inside `Future.microtask(...)` and guarded `_savePlaybackProgress()` / `_syncAnimeProgressIfNeeded()` with `try/catch` during `dispose()`. Prevents Riverpod's `Tried to modify a provider while the widget tree was building` exception from aborting the player widget unmount sequence and skipping native controller / coordinator cleanup.
+- **Torrent Batch Inspection & Intelligent Episode Auto-Matching Architecture (`torrent_batch_files_sheet.dart`, `torrent_selector_sheet.dart`, `seanime_repository.dart`, `torrent_file_preview.dart`)**:
+  - **Batch Identification & Badging**: Automatically identifies batch torrents via `torrent.isBatch == true` or regex pattern matching on title (`[01-12]`, `Batch`, `Complete`, `Season`, etc.) and renders an expressive purple "Batch" badge.
+  - **Pre-Flight File Inspection (`/api/v1/torrentstream/torrent-file-previews`)**:
+    - When tapping a batch torrent (or pressing the dedicated "Ver archivos" folder button on any torrent card), the app queries the Go backend to inspect all torrent files before starting the stream.
+  - **Intelligent Episode Auto-Matching (`TorrentBatchFilesSheet.findBestMatch`)**:
+    - 4-tier comparison pipeline:
+      1. Server-parsed `isLikely == true` flag.
+      2. Exact parsed `episodeNumber == targetEpisodeNumber`.
+      3. Client-side regex heuristic on filename (e.g. `E02`, `- 02 `, `[02]`, `Ep 2`).
+      4. Fallback to first video file (`.mkv`, `.mp4`, `.avi`, etc.).
+    - The matching file is pre-selected by default and badged with a gold "Episodio actual" chip.
+  - **User Flexibility & Manual File Selection**:
+    - Displays the complete file list with search filter input (`Filtrar archivos o episodio...`), file names, parsed episode titles, and radio selection.
+    - User can seamlessly tap any other file (e.g., OVAs, movies, or alternative episodes) to override selection.
+  - **Targeted File Streaming (`fileIndex`)**:
+    - Starts the stream passing `fileIndex: selectedFile.index` to `startTorrentStream`, ensuring the embedded Go engine streams the exact chosen file from the swarm.
 - **Header Alignment between Feeds**:
   - `feed_screen.dart` and `manga_feed_screen.dart` share an identical vertical layout hierarchy:
     - Top spacer (`topPadding + 6`), `CompactSearchBar` (`Padding(horizontal: 16, vertical: 4)`), separator (`SizedBox(height: 8)`).
@@ -754,6 +788,18 @@ Inspired by **Plezy** (`edde746/plezy`), the player focuses on high performance,
           - **Instant Navigation**: Tapping related or recommended media forwards `initialEntry: AnimeEntry.fromJson(...)` to `AnimeDetailScreen.navigate`, ensuring destination detail screens immediately display cover artwork, title, format, and score without blank states.
     - **Mobile Layout (`AnimeDetailMobileLayout`)**:
       - Compact, vertically stacked single-column design optimized for touch and one-handed phone usage.
+      - **Unified Primary Action Bar**:
+        - Features an expanded `FilledButton.icon` for primary playback ("Continuar Ep. X" / "Comenzar a ver"), accompanied horizontally by clean icon-only buttons:
+          - **Trailer**: `IconButton` (`Icons.smart_display_outlined`) launching external YouTube/Dailymotion trailers when `trailerId` is available.
+          - **Favoritos**: `IconButton` (`Icons.favorite_rounded` / `Icons.favorite_border_rounded`) connected to `animeFavoritesProvider` (`SharedPreferences` backed `user_favorite_anime_ids_v1`).
+          - **Editar Lista (AniList)**: `IconButton` (`Icons.edit_outlined`) launching the AniList status/score modal without square borders or clunky bounding boxes.
+      - **Anchored Mode Dropdown Menu (`PopupMenuButton<String>`)**:
+        - Instead of opening an intrusive center dialog, the mode chip anchors a compact, rounded (`borderRadius: 16`) popup menu right underneath the chip.
+        - Displays clean, concise options without verbose paragraphs: `'Online'` and `'Torrent'` (and `'Local'` if local files exist).
+      - **100% Adaptive Theme Palette & Color Harmonization**:
+        - Popups (`AnimeDetailSourcePopup`), sheets (`AnimeDetailAdvancedSheet`), and menus strictly inherit the anime's dynamic palette generated by `effectiveTheme` from the poster artwork.
+        - Eliminated hardcoded background colors (e.g. `Color(0xFF1E1E24)`), replacing them with `theme.colorScheme.surfaceContainerHigh`.
+        - Online provider list language and DUB badges use monochrome/adaptive surface tokens, eliminating visual clutter and competing colors.
     - **TV Layout (`AnimeDetailTvLayout`)**:
       - 10-foot user interface optimized for remote control and D-Pad navigation:
       - Oversized focusable buttons with primary focus on "Continuar Viendo (Ep X)".

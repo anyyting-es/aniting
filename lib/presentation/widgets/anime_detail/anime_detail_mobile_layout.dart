@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
@@ -17,8 +18,9 @@ import 'package:seanime_app/presentation/screens/video_player_screen.dart';
 import 'package:seanime_app/presentation/widgets/anizip_episode_list.dart';
 import 'package:seanime_app/presentation/widgets/local_library_view.dart';
 import 'package:seanime_app/presentation/widgets/online_stream_view.dart';
+import 'package:url_launcher/url_launcher_string.dart';
+import 'package:seanime_app/core/preferences/anime_favorites_provider.dart';
 
-import 'mobile/anime_detail_mode_popup.dart';
 import 'mobile/anime_detail_source_popup.dart';
 
 enum AnimeDetailTab { online, torrent }
@@ -225,6 +227,22 @@ class _AnimeDetailMobileLayoutState
     return 'Comenzar a ver';
   }
 
+  Future<void> _launchTrailer(String? trailerId, String? trailerSite) async {
+    if (trailerId == null || trailerId.isEmpty) return;
+    String url = '';
+    final site = trailerSite?.toLowerCase();
+    if (site == 'youtube' || site == null) {
+      url = 'https://www.youtube.com/watch?v=$trailerId';
+    } else if (site == 'dailymotion') {
+      url = 'https://www.dailymotion.com/video/$trailerId';
+    }
+    if (url.isNotEmpty) {
+      try {
+        await launchUrlString(url, mode: LaunchMode.externalApplication);
+      } catch (_) {}
+    }
+  }
+
   Widget _buildModeDropdownChip(ThemeData theme, AnimeDetailTab effectiveTab) {
     final isTorrent = !widget.isLocalMode && effectiveTab == AnimeDetailTab.torrent;
     final isLocal = widget.isLocalMode;
@@ -236,19 +254,37 @@ class _AnimeDetailMobileLayoutState
         ? 'Local'
         : (isTorrent ? 'Torrent' : 'Online');
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: () {
-          AnimeDetailModePopup.show(
-            context: context,
-            currentTab: effectiveTab,
-            isLocalMode: widget.isLocalMode,
-            hasLocalFiles: widget.hasLocalFiles,
-            onTabChanged: widget.onTabChanged,
-            onToggleLocalMode: widget.onToggleLocalMode,
-          );
+    return Theme(
+      data: theme.copyWith(
+        popupMenuTheme: PopupMenuThemeData(
+          color: theme.colorScheme.surfaceContainerHigh,
+          surfaceTintColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(
+              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
+              width: 1.0,
+            ),
+          ),
+          elevation: 6,
+          shadowColor: Colors.black.withValues(alpha: 0.4),
+        ),
+      ),
+      child: PopupMenuButton<String>(
+        tooltip: 'Modo de reproducción',
+        position: PopupMenuPosition.under,
+        offset: const Offset(0, 6),
+        onSelected: (value) {
+          HapticFeedback.lightImpact();
+          if (value == 'online') {
+            if (widget.isLocalMode) widget.onToggleLocalMode();
+            widget.onTabChanged(AnimeDetailTab.online);
+          } else if (value == 'torrent') {
+            if (widget.isLocalMode) widget.onToggleLocalMode();
+            widget.onTabChanged(AnimeDetailTab.torrent);
+          } else if (value == 'local') {
+            if (!widget.isLocalMode) widget.onToggleLocalMode();
+          }
         },
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
@@ -262,25 +298,115 @@ class _AnimeDetailMobileLayoutState
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(modeIcon, size: 15, color: theme.colorScheme.primary),
-            const SizedBox(width: 6),
-            Text(
-              modeLabel,
-              style: TextStyle(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w600,
-                color: theme.colorScheme.onSurface,
+            children: [
+              Icon(modeIcon, size: 15, color: theme.colorScheme.primary),
+              const SizedBox(width: 6),
+              Text(
+                modeLabel,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Icon(Icons.arrow_drop_down_rounded, size: 18, color: theme.colorScheme.onSurfaceVariant),
+            ],
+          ),
+        ),
+        itemBuilder: (context) {
+          final isOnlineSelected = !widget.isLocalMode && effectiveTab == AnimeDetailTab.online;
+          final isTorrentSelected = !widget.isLocalMode && effectiveTab == AnimeDetailTab.torrent;
+          final isLocalSelected = widget.isLocalMode;
+
+          return [
+            PopupMenuItem<String>(
+              value: 'online',
+              height: 38,
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.public_rounded,
+                    size: 16,
+                    color: isOnlineSelected ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    'Online',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: isOnlineSelected ? FontWeight.bold : FontWeight.w500,
+                      color: isOnlineSelected ? theme.colorScheme.primary : theme.colorScheme.onSurface,
+                    ),
+                  ),
+                  if (isOnlineSelected) ...[
+                    const SizedBox(width: 14),
+                    Icon(Icons.check_rounded, size: 16, color: theme.colorScheme.primary),
+                  ],
+                ],
               ),
             ),
-            const SizedBox(width: 4),
-            Icon(Icons.arrow_drop_down_rounded, size: 18, color: theme.colorScheme.onSurfaceVariant),
-          ],
-        ),
+            PopupMenuItem<String>(
+              value: 'torrent',
+              height: 38,
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.cloud_download_rounded,
+                    size: 16,
+                    color: isTorrentSelected ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    'Torrent',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: isTorrentSelected ? FontWeight.bold : FontWeight.w500,
+                      color: isTorrentSelected ? theme.colorScheme.primary : theme.colorScheme.onSurface,
+                    ),
+                  ),
+                  if (isTorrentSelected) ...[
+                    const SizedBox(width: 14),
+                    Icon(Icons.check_rounded, size: 16, color: theme.colorScheme.primary),
+                  ],
+                ],
+              ),
+            ),
+            if (widget.hasLocalFiles)
+              PopupMenuItem<String>(
+                value: 'local',
+                height: 38,
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.folder_rounded,
+                      size: 16,
+                      color: isLocalSelected ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      'Local',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: isLocalSelected ? FontWeight.bold : FontWeight.w500,
+                        color: isLocalSelected ? theme.colorScheme.primary : theme.colorScheme.onSurface,
+                      ),
+                    ),
+                    if (isLocalSelected) ...[
+                      const SizedBox(width: 14),
+                      Icon(Icons.check_rounded, size: 16, color: theme.colorScheme.primary),
+                    ],
+                  ],
+                ),
+              ),
+          ];
+        },
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildProviderDropdownChip(ThemeData theme) {
     final providerName = _selectedProvider?.name ?? 'Fuente';
@@ -316,59 +442,23 @@ class _AnimeDetailMobileLayoutState
               if (_isDubbed) ...[
                 const SizedBox(width: 4),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                   decoration: BoxDecoration(
-                    color: Colors.amber.withValues(alpha: 0.2),
+                    color: theme.colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(4),
                   ),
-                  child: const Text(
+                  child: Text(
                     'DUB',
                     style: TextStyle(
                       fontSize: 8.5,
                       fontWeight: FontWeight.bold,
-                      color: Colors.amber,
+                      color: theme.colorScheme.primary,
                     ),
                   ),
                 ),
               ],
               const SizedBox(width: 4),
               Icon(Icons.arrow_drop_down_rounded, size: 18, color: theme.colorScheme.onSurfaceVariant),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAniListStatusChip(ThemeData theme, String title, String progressText, String watchStatusText) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: () => widget.onOpenEditEntryModal(title),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
-              width: 1.0,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.bookmark_border_rounded, size: 15, color: theme.colorScheme.primary),
-              const SizedBox(width: 6),
-              Text(
-                watchStatusText.isNotEmpty ? '$watchStatusText • $progressText' : 'Editar lista',
-                style: TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.onSurface,
-                ),
-              ),
             ],
           ),
         ),
@@ -441,6 +531,14 @@ class _AnimeDetailMobileLayoutState
 
     final genresList = widget.details?.genres ?? [];
     final genresString = genresList.take(3).join('  ');
+
+    final rawMedia = widget.details?.rawMedia ?? <String, dynamic>{};
+    final trailer = rawMedia['trailer'] as Map<String, dynamic>?;
+    final trailerId = trailer?['id'] as String?;
+    final trailerSite = trailer?['site'] as String?;
+    final hasTrailer = trailerId != null && trailerId.isNotEmpty;
+
+    final isFavorite = ref.watch(animeFavoritesProvider).contains(widget.mediaId);
 
     final liveCollectionEntry = ref.watch(animeCollectionProvider).whenOrNull(
           data: (entries) =>
@@ -768,62 +866,33 @@ class _AnimeDetailMobileLayoutState
                                     ),
                                     const SizedBox(height: 7),
 
-                                    Row(
-                                      children: [
-                                        InkWell(
-                                          onTap: () =>
-                                              widget.onOpenEditEntryModal(title),
-                                          borderRadius: BorderRadius.circular(
-                                              (colors.borderRadius * 0.5)
-                                                  .clamp(0.0, 8.0)),
-                                          child: Container(
-                                            padding: const EdgeInsets.all(4),
-                                            decoration: BoxDecoration(
-                                              color: isDark
-                                                  ? Colors.white
-                                                      .withValues(alpha: 0.1)
-                                                  : theme.colorScheme
-                                                      .primaryContainer
-                                                      .withValues(alpha: 0.6),
-                                              borderRadius:
-                                                  BorderRadius.circular(
-                                                      (colors.borderRadius * 0.5)
-                                                          .clamp(0.0, 8.0)),
-                                              border: Border.all(
-                                                color: isDark
-                                                    ? Colors.white
-                                                        .withValues(alpha: 0.2)
-                                                    : theme.colorScheme
-                                                        .outlineVariant
-                                                        .withValues(alpha: 0.5),
-                                              ),
-                                            ),
-                                            child: Icon(
-                                              Icons.edit_note_rounded,
-                                              size: 15,
-                                              color: isDark
-                                                  ? Colors.white
-                                                  : theme.colorScheme.primary,
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        GestureDetector(
-                                          onTap: () =>
-                                              widget.onOpenEditEntryModal(title),
-                                          behavior: HitTestBehavior.opaque,
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
+                                    if (progressText.isNotEmpty || watchStatusText.isNotEmpty)
+                                      GestureDetector(
+                                        onTap: () =>
+                                            widget.onOpenEditEntryModal(title),
+                                        behavior: HitTestBehavior.opaque,
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            if (progressText.isNotEmpty)
                                               Text(
                                                 progressText,
                                                 style: TextStyle(
                                                   color: titleColor,
-                                                  fontSize: 14,
+                                                  fontSize: 13.5,
                                                   fontWeight: FontWeight.bold,
                                                 ),
                                               ),
-                                              const SizedBox(width: 8),
+                                            if (progressText.isNotEmpty && watchStatusText.isNotEmpty)
+                                              Text(
+                                                '  •  ',
+                                                style: TextStyle(
+                                                  color: subtitleColor,
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w400,
+                                                ),
+                                              ),
+                                            if (watchStatusText.isNotEmpty)
                                               Text(
                                                 watchStatusText,
                                                 style: TextStyle(
@@ -832,11 +901,9 @@ class _AnimeDetailMobileLayoutState
                                                   fontWeight: FontWeight.w500,
                                                 ),
                                               ),
-                                            ],
-                                          ),
+                                          ],
                                         ),
-                                      ],
-                                    ),
+                                      ),
                                   ],
                                 ),
                               ),
@@ -846,31 +913,77 @@ class _AnimeDetailMobileLayoutState
 
                         const SizedBox(height: 16),
 
-                        // Primary Action: Continuar viendo / Comenzar ("Primerito")
-                        SizedBox(
-                          width: double.infinity,
-                          height: 41,
-                          child: FilledButton.icon(
-                            style: FilledButton.styleFrom(
-                              backgroundColor: theme.colorScheme.primary,
-                              foregroundColor: theme.colorScheme.onPrimary,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(22),
+                        // Primary Action: Continuar viendo / Comenzar ("Primerito") + Trailer, Fav & Edit
+                        Row(
+                          children: [
+                            Expanded(
+                              child: SizedBox(
+                                height: 42,
+                                child: FilledButton.icon(
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: theme.colorScheme.primary,
+                                    foregroundColor: theme.colorScheme.onPrimary,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(22),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                                    elevation: 0,
+                                  ),
+                                  onPressed: () => _handlePlayNext(progress),
+                                  icon: const Icon(Icons.play_arrow_rounded, size: 22),
+                                  label: Text(
+                                    _formatPlayButtonLabel(progress, totalEps),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13.5,
+                                      letterSpacing: -0.2,
+                                    ),
+                                  ),
+                                ),
                               ),
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
-                              elevation: 0,
                             ),
-                            onPressed: () => _handlePlayNext(progress),
-                            icon: const Icon(Icons.play_arrow_rounded, size: 21),
-                            label: Text(
-                              _formatPlayButtonLabel(progress, totalEps),
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 13.5,
-                                letterSpacing: -0.2,
+                            if (hasTrailer) ...[
+                              const SizedBox(width: 4),
+                              IconButton(
+                                tooltip: 'Ver tráiler',
+                                icon: const Icon(Icons.smart_display_outlined, size: 22),
+                                onPressed: () => _launchTrailer(trailerId, trailerSite),
                               ),
+                            ],
+                            const SizedBox(width: 2),
+                            IconButton(
+                              tooltip: isFavorite ? 'En favoritos' : 'Añadir a favoritos',
+                              icon: Icon(
+                                isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                                size: 22,
+                                color: isFavorite ? Colors.redAccent : theme.colorScheme.onSurfaceVariant,
+                              ),
+                              onPressed: () {
+                                HapticFeedback.lightImpact();
+                                final nowFav = ref
+                                    .read(animeFavoritesProvider.notifier)
+                                    .toggleFavorite(widget.mediaId);
+                                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      nowFav ? 'Añadido a favoritos' : 'Eliminado de favoritos',
+                                    ),
+                                    duration: const Duration(seconds: 2),
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                              },
                             ),
-                          ),
+                            const SizedBox(width: 2),
+                            IconButton(
+                              tooltip: 'Editar en AniList',
+                              icon: const Icon(Icons.edit_outlined, size: 22),
+                              onPressed: () => widget.onOpenEditEntryModal(title),
+                            ),
+                          ],
                         ),
 
                         const SizedBox(height: 10),
@@ -886,8 +999,6 @@ class _AnimeDetailMobileLayoutState
                                 const SizedBox(width: 8),
                                 _buildProviderDropdownChip(theme),
                               ],
-                              const SizedBox(width: 8),
-                              _buildAniListStatusChip(theme, title, progressText, watchStatusText),
                             ],
                           ),
                         ),

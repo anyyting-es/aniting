@@ -8,6 +8,7 @@ import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/screens/manga_detail_screen.dart';
 import 'package:seanime_app/presentation/widgets/compact_search_bar.dart';
 import 'package:seanime_app/presentation/widgets/continue_reading_card.dart';
+import 'package:seanime_app/presentation/widgets/feed_empty_state.dart';
 import 'package:seanime_app/presentation/widgets/manga_card.dart';
 import 'package:seanime_app/presentation/widgets/server_status_banner.dart';
 import 'package:seanime_app/presentation/widgets/top_status_bar_glass.dart';
@@ -114,6 +115,12 @@ class _MangaFeedScreenState extends ConsumerState<MangaFeedScreen> {
     final continueReadingAsync = ref.watch(continueReadingMangaProvider);
     final mangaCollectionAsync = ref.watch(mangaCollectionProvider);
     final mangaRecommendationsAsync = ref.watch(mangaRecommendationsProvider);
+    final isLoggedIn = serverState.status?.isLoggedIn ?? false;
+
+    final hasContinueReading = continueReadingAsync.value?.isNotEmpty ?? false;
+    final hasCompleted = mangaCollectionAsync.value?.any((e) => e.status.toUpperCase() == 'COMPLETED') ?? false;
+    final hasMangaRecs = mangaRecommendationsAsync.value?.isNotEmpty ?? false;
+    final hasAnyMangaContent = hasContinueReading || hasCompleted || hasMangaRecs;
 
     final isDesktop = MediaQuery.of(context).size.width >= 720;
     final mangaCardWidth = isDesktop ? 180.0 : 125.0;
@@ -256,13 +263,24 @@ class _MangaFeedScreenState extends ConsumerState<MangaFeedScreen> {
                               },
                             ),
                         ] else ...[
-                          // ─── 1. Seguir Leyendo (Continue Reading) ───
-                          ..._buildContinueReadingSlivers(
-                            continueReadingAsync: continueReadingAsync,
-                            l10n: l10n,
-                            theme: theme,
-                            isDesktop: isDesktop,
-                          ),
+                          if (!hasAnyMangaContent) ...[
+                            SliverFillRemaining(
+                              hasScrollBody: false,
+                              child: FeedEmptyState(
+                                isLoggedIn: isLoggedIn,
+                                isManga: true,
+                                iconPack: iconPack,
+                                onExplore: widget.onOpenSearch,
+                              ),
+                            ),
+                          ] else ...[
+                            // ─── 1. Seguir Leyendo (Continue Reading) ───
+                            ..._buildContinueReadingSlivers(
+                              continueReadingAsync: continueReadingAsync,
+                              l10n: l10n,
+                              theme: theme,
+                              isDesktop: isDesktop,
+                            ),
 
                           // ─── 2. Mangas Completados (Completed Manga) ───
                           mangaCollectionAsync.when(
@@ -346,8 +364,9 @@ class _MangaFeedScreenState extends ConsumerState<MangaFeedScreen> {
                           ),
                         ],
                       ],
-                    ),
+                    ],
                   ),
+                ),
             ValueListenableBuilder<bool>(
               valueListenable: _isScrolledNotifier,
               builder: (context, isScrolled, child) {

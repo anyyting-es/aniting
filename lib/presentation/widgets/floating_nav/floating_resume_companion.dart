@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -111,8 +112,8 @@ class _FloatingResumeCompanionState extends State<FloatingResumeCompanion> {
             duration: const Duration(milliseconds: 140),
             scale: _isHovered ? 1.02 : 1.0,
             child: Container(
-              width: widget.width,
-              height: widget.height,
+              width: math.max(0.0, widget.width),
+              height: math.max(0.0, widget.height),
               decoration: BoxDecoration(
                 // Solid M3 surface container - 100% opaque, zero transparency
                 color: theme.colorScheme.surfaceContainer,

@@ -36,11 +36,10 @@ class _AnimeDetailAdvancedSheetState extends State<AnimeDetailAdvancedSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     final safeBottom = MediaQuery.of(context).padding.bottom;
 
-    final sheetBg = isDark ? const Color(0xFF1E1E24) : theme.colorScheme.surface;
+    final sheetBg = theme.colorScheme.surfaceContainerHigh;
 
     return Container(
       decoration: BoxDecoration(

@@ -124,11 +124,11 @@ class ThemeSettings {
 
   const ThemeSettings({
     this.themeMode = AppThemeMode.dark,
-    this.isOled = false,
+    this.isOled = true,
     this.customAccentIndex,
     this.fontId = 'system',
     this.animeDynamicTheme = true,
-    this.paletteId = AppPalettes.systemId,
+    this.paletteId = AppPalettes.oledBlackId,
     this.borderRadius = 10.0,
   });
 
@@ -193,9 +193,7 @@ class ThemeNotifier extends Notifier<ThemeSettings> {
   }
 
   static String _defaultPaletteId() {
-    final dms = AppPalettes.detectSystemPalette();
-    if (dms != null) return AppPalettes.systemId;
-    return AppPalettes.catppuccinId;
+    return AppPalettes.oledBlackId;
   }
 
   @override
@@ -203,7 +201,7 @@ class ThemeNotifier extends Notifier<ThemeSettings> {
     final cached = _cachedPrefs;
     if (cached != null) {
       final modeIndex = cached.getInt(_keyThemeMode) ?? 2;
-      var isOled = cached.getBool(_keyIsOled) ?? false;
+      var isOled = cached.getBool(_keyIsOled) ?? true;
       var mode = AppThemeMode.dark;
       if (modeIndex == 3) {
         mode = AppThemeMode.dark;
@@ -232,14 +230,17 @@ class ThemeNotifier extends Notifier<ThemeSettings> {
     }
 
     _loadFromPrefs();
-    return ThemeSettings(paletteId: _defaultPaletteId());
+    return ThemeSettings(
+      isOled: true,
+      paletteId: _defaultPaletteId(),
+    );
   }
 
   Future<void> _loadFromPrefs() async {
     final prefs = await SharedPreferences.getInstance();
     _cachedPrefs = prefs;
     final modeIndex = prefs.getInt(_keyThemeMode) ?? 2;
-    var isOled = prefs.getBool(_keyIsOled) ?? false;
+    var isOled = prefs.getBool(_keyIsOled) ?? true;
     var mode = AppThemeMode.dark;
     if (modeIndex == 3) {
       mode = AppThemeMode.dark;
@@ -297,13 +298,16 @@ class ThemeNotifier extends Notifier<ThemeSettings> {
   }
 
   Future<void> setPaletteId(String paletteId, {bool resetCustomAccent = true}) async {
+    final willBeOled = paletteId == AppPalettes.oledBlackId;
     state = state.copyWith(
       paletteId: paletteId,
+      isOled: willBeOled,
       clearCustomAccent: resetCustomAccent,
     );
     final prefs = _cachedPrefs ?? await SharedPreferences.getInstance();
     _cachedPrefs = prefs;
     await prefs.setString(_keyPaletteId, paletteId);
+    await prefs.setBool(_keyIsOled, willBeOled);
     if (resetCustomAccent) {
       await prefs.setInt(_keyAccentIndex, -1);
     }

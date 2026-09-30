@@ -12,6 +12,7 @@ import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
 import 'package:seanime_app/presentation/widgets/anime_card.dart';
 import 'package:seanime_app/presentation/widgets/compact_search_bar.dart';
 import 'package:seanime_app/presentation/widgets/continue_watching_card.dart';
+import 'package:seanime_app/presentation/widgets/feed_empty_state.dart';
 import 'package:seanime_app/presentation/widgets/top_status_bar_glass.dart';
 
 class FeedScreen extends ConsumerStatefulWidget {
@@ -265,6 +266,13 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
 
     final showFeedSkeleton = !_hasCompletedInitialLoad;
 
+    final hasContinueWatching = continueWatchingAsync.value?.isNotEmpty ?? false;
+    final hasWatching = collectionAsync.value?.any((e) =>
+        e.status.toUpperCase() == 'CURRENT' || e.status.toUpperCase() == 'WATCHING') ?? false;
+    final hasMissedSequels = missedSequelsAsync.value?.isNotEmpty ?? false;
+    final hasRecommendations = recommendationsAsync.value?.isNotEmpty ?? false;
+    final hasAnyContent = hasContinueWatching || hasWatching || hasMissedSequels || hasRecommendations;
+
     return PopScope(
       canPop: !_isSearching && _searchController.text.isEmpty,
       onPopInvokedWithResult: (didPop, _) {
@@ -423,6 +431,16 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                           carouselHeight: carouselHeight,
                           cardSpacing: carouselSpacing,
                           animeCardWidth: animeCardWidth,
+                        ),
+                      ),
+                    ] else if (!hasAnyContent) ...[
+                      SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: FeedEmptyState(
+                          isLoggedIn: isLoggedIn,
+                          isManga: false,
+                          iconPack: iconPack,
+                          onExplore: widget.onOpenSearch,
                         ),
                       ),
                     ] else ...[

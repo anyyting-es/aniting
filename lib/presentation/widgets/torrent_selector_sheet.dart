@@ -4,6 +4,7 @@ import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/data/models/anime_details.dart';
 import 'package:seanime_app/data/models/torrent_models.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
+import 'package:seanime_app/presentation/widgets/torrent_batch_files_sheet.dart';
 
 class TorrentStreamLaunchInfo {
   final int mediaId;
@@ -160,7 +161,95 @@ class _TorrentSelectorSheetState extends ConsumerState<TorrentSelectorSheet> {
     }
   }
 
-  Future<void> _startStream(TorrentItem torrent, {bool useExternalPlayer = false}) async {
+  bool _isBatchTorrent(TorrentItem torrent) {
+    if (torrent.isBatch) return true;
+    final name = torrent.name.toLowerCase();
+    return RegExp(r'(?:batch|complete|temporada|season|\b0*1\s*[-~]\s*\d+|\b\d+\s*[-~]\s*\d+\b)')
+        .hasMatch(name);
+  }
+
+  Future<void> _handleTorrentTap(TorrentItem torrent) async {
+    if (_isBatchTorrent(torrent)) {
+      await _inspectBatchAndStream(torrent);
+    } else {
+      await _startStream(torrent);
+    }
+  }
+
+  Future<void> _inspectBatchAndStream(TorrentItem torrent, {bool defaultExternalPlayer = false}) async {
+    final l10n = ref.read(translationsProvider);
+    final isOnline = ref.read(serverNotifierProvider).isOnline;
+
+    if (!isOnline) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.serverNotOnline),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _startingTorrentName = torrent.name;
+    });
+
+    final repo = ref.read(repositoryProvider);
+    final files = await repo.getTorrentFilePreviews(
+      torrent: torrent,
+      episodeNumber: widget.episodeNumber,
+      mediaId: widget.mediaId,
+      animeDetails: widget.animeDetails,
+    );
+
+    if (!mounted) return;
+    setState(() {
+      _startingTorrentName = null;
+    });
+
+    if (files.length > 1) {
+      final result = await showModalBottomSheet<TorrentBatchSelectionResult>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (ctx) => TorrentBatchFilesSheet(
+          torrent: torrent,
+          files: files,
+          targetEpisodeNumber: widget.episodeNumber,
+        ),
+      );
+
+      if (result != null && mounted) {
+        await _startStream(
+          torrent,
+          fileIndex: result.file.index,
+          fileTitle: result.file.displayTitle.isNotEmpty
+              ? result.file.displayTitle
+              : result.file.fileName,
+          useExternalPlayer: result.useExternalPlayer,
+        );
+      }
+    } else if (files.length == 1) {
+      await _startStream(
+        torrent,
+        fileIndex: files.first.index,
+        fileTitle: files.first.displayTitle.isNotEmpty
+            ? files.first.displayTitle
+            : files.first.fileName,
+        useExternalPlayer: defaultExternalPlayer,
+      );
+    } else {
+      // Fallback: start directly without fileIndex if fetching previews failed
+      await _startStream(torrent, useExternalPlayer: defaultExternalPlayer);
+    }
+  }
+
+  Future<void> _startStream(
+    TorrentItem torrent, {
+    int? fileIndex,
+    String? fileTitle,
+    bool useExternalPlayer = false,
+  }) async {
     final l10n = ref.read(translationsProvider);
     setState(() {
       _startingTorrentName = torrent.name;
@@ -186,6 +275,7 @@ class _TorrentSelectorSheetState extends ConsumerState<TorrentSelectorSheet> {
       episodeNumber: widget.episodeNumber,
       aniDBEpisode: widget.aniDBEpisode ?? widget.episodeNumber.toString(),
       torrent: torrent,
+      fileIndex: fileIndex,
       autoSelect: false,
       playbackType: useExternalPlayer ? 'default' : 'none',
     );
@@ -207,6 +297,10 @@ class _TorrentSelectorSheetState extends ConsumerState<TorrentSelectorSheet> {
         final streamUrl =
             'http://${serverManager.host}:${serverManager.port}/api/v1/torrentstream/stream/video.mkv';
 
+        final sourceLabel = fileTitle != null && fileTitle.isNotEmpty
+            ? 'Torrent • $fileTitle'
+            : 'Torrent • ${torrent.name}';
+
         Navigator.of(context).pop(
           TorrentStreamLaunchInfo(
             mediaId: widget.mediaId,
@@ -214,7 +308,7 @@ class _TorrentSelectorSheetState extends ConsumerState<TorrentSelectorSheet> {
             title: animeTitle,
             episodeTitle: widget.episodeTitle,
             episodeNumber: widget.episodeNumber,
-            videoSource: 'Torrent • ${torrent.name}',
+            videoSource: sourceLabel,
             onDispose: () {
               repo.stopTorrentStream();
             },
@@ -618,7 +712,7 @@ class _TorrentSelectorSheetState extends ConsumerState<TorrentSelectorSheet> {
           color: theme.colorScheme.surfaceContainerLow,
           child: InkWell(
             borderRadius: BorderRadius.circular(12),
-            onTap: isStarting ? null : () => _startStream(torrent),
+            onTap: isStarting ? null : () => _handleTorrentTap(torrent),
             child: Padding(
               padding: const EdgeInsets.all(12),
               child: Column(
@@ -647,16 +741,35 @@ class _TorrentSelectorSheetState extends ConsumerState<TorrentSelectorSheet> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       else
-                        IconButton(
-                          tooltip: l10n.openInExternalPlayer,
-                          padding: const EdgeInsets.all(4),
-                          constraints: const BoxConstraints(),
-                          icon: Icon(
-                            Icons.open_in_new_rounded,
-                            size: 19,
-                            color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
-                          ),
-                          onPressed: () => _startStream(torrent, useExternalPlayer: true),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              tooltip: 'Ver archivos del torrent',
+                              padding: const EdgeInsets.all(4),
+                              constraints: const BoxConstraints(),
+                              icon: Icon(
+                                Icons.folder_open_rounded,
+                                size: 19,
+                                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+                              ),
+                              onPressed: () => _inspectBatchAndStream(torrent),
+                            ),
+                            const SizedBox(width: 4),
+                            IconButton(
+                              tooltip: l10n.openInExternalPlayer,
+                              padding: const EdgeInsets.all(4),
+                              constraints: const BoxConstraints(),
+                              icon: Icon(
+                                Icons.open_in_new_rounded,
+                                size: 19,
+                                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+                              ),
+                              onPressed: () => _isBatchTorrent(torrent)
+                                  ? _inspectBatchAndStream(torrent, defaultExternalPlayer: true)
+                                  : _startStream(torrent, useExternalPlayer: true),
+                            ),
+                          ],
                         ),
                     ],
                   ),
@@ -668,6 +781,31 @@ class _TorrentSelectorSheetState extends ConsumerState<TorrentSelectorSheet> {
                     runSpacing: 4,
                     crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
+                      // Batch Release
+                      if (_isBatchTorrent(torrent))
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.purple.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.folder_zip_rounded, size: 11, color: Colors.purpleAccent),
+                              SizedBox(width: 3),
+                              Text(
+                                'Batch',
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.purpleAccent,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
                       // Best Release
                       if (torrent.isBestRelease)
                         Container(

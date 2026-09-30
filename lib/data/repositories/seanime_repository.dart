@@ -15,6 +15,7 @@ import 'package:seanime_app/data/models/library_entry_details.dart';
 import 'package:seanime_app/data/models/manga_entry.dart';
 import 'package:seanime_app/data/models/onlinestream_models.dart';
 import 'package:seanime_app/data/models/server_status.dart';
+import 'package:seanime_app/data/models/torrent_file_preview.dart';
 import 'package:seanime_app/data/models/torrent_models.dart';
 
 class SeanimeRepository {
@@ -2188,6 +2189,48 @@ class SeanimeRepository {
       }
     } catch (e) {
       debugPrint('Error searching torrents for $mediaId: $e');
+    }
+    return [];
+  }
+
+  Future<List<TorrentFilePreview>> getTorrentFilePreviews({
+    required TorrentItem torrent,
+    required int episodeNumber,
+    required int mediaId,
+    AnimeDetails? animeDetails,
+  }) async {
+    try {
+      final payload = <String, dynamic>{
+        'torrent': torrent.toJson(),
+        'episodeNumber': episodeNumber,
+        'media': animeDetails?.rawMedia ??
+            {
+              'id': mediaId,
+              'episodes': animeDetails?.totalEpisodes ?? 0,
+            },
+      };
+
+      final response = await _apiClient.post(
+        ApiEndpoints.torrentstreamFilePreviews,
+        data: payload,
+        options: Options(
+          receiveTimeout: const Duration(seconds: 45),
+          sendTimeout: const Duration(seconds: 20),
+        ),
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        final data = response.data;
+        final list = data is Map<String, dynamic> ? data['data'] : data;
+        if (list is List) {
+          return list
+              .whereType<Map<String, dynamic>>()
+              .map(TorrentFilePreview.fromJson)
+              .toList();
+        }
+      }
+    } catch (e) {
+      debugPrint('Error getting torrent file previews for $mediaId: $e');
     }
     return [];
   }

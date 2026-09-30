@@ -28,6 +28,7 @@ class AnimeDetailModePopup extends StatelessWidget {
     required ValueChanged<AnimeDetailTab> onTabChanged,
     required VoidCallback onToggleLocalMode,
   }) {
+    final parentTheme = Theme.of(context);
     return showGeneralDialog(
       context: context,
       barrierDismissible: true,
@@ -40,19 +41,22 @@ class AnimeDetailModePopup extends StatelessWidget {
           curve: Curves.easeOutBack,
         );
         return ScaleTransition(
-          scale: Tween<double>(begin: 0.75, end: 1.0).animate(bounceCurve),
+          scale: Tween<double>(begin: 0.85, end: 1.0).animate(bounceCurve),
           child: FadeTransition(
             opacity: CurvedAnimation(parent: anim, curve: Curves.easeOut),
             child: child,
           ),
         );
       },
-      pageBuilder: (ctx, anim, secondaryAnim) => AnimeDetailModePopup(
-        currentTab: currentTab,
-        isLocalMode: isLocalMode,
-        hasLocalFiles: hasLocalFiles,
-        onTabChanged: onTabChanged,
-        onToggleLocalMode: onToggleLocalMode,
+      pageBuilder: (ctx, anim, secondaryAnim) => Theme(
+        data: parentTheme,
+        child: AnimeDetailModePopup(
+          currentTab: currentTab,
+          isLocalMode: isLocalMode,
+          hasLocalFiles: hasLocalFiles,
+          onTabChanged: onTabChanged,
+          onToggleLocalMode: onToggleLocalMode,
+        ),
       ),
     );
   }
@@ -60,9 +64,7 @@ class AnimeDetailModePopup extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    final dialogBg = isDark ? const Color(0xFF1E1E24) : theme.colorScheme.surface;
+    final dialogBg = theme.colorScheme.surfaceContainerHigh;
     final isTorrent = !isLocalMode && currentTab == AnimeDetailTab.torrent;
     final isOnline = !isLocalMode && currentTab == AnimeDetailTab.online;
 

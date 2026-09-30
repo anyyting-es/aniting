@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -100,8 +101,11 @@ class _MobileFloatingNavState extends ConsumerState<MobileFloatingNav>
       child: LayoutBuilder(
         builder: (context, constraints) {
           final totalWidth = constraints.maxWidth;
+          if (totalWidth <= 0 || constraints.maxHeight <= 0) {
+            return const SizedBox.shrink();
+          }
           const marginH = 26.0;
-          final availableWidth = totalWidth - (marginH * 2);
+          final availableWidth = math.max(0.0, totalWidth - (marginH * 2));
 
           // If no active session or resume disabled, render simple standalone dock
           if (!hasResume) {
@@ -151,11 +155,15 @@ class _MobileFloatingNavState extends ConsumerState<MobileFloatingNav>
               );
 
               // Resume Companion Geometry
-              final resumeWidth = lerpDouble(
-                _kCompanionWidth,
-                availableWidth,
-                tWidth,
-              )!;
+              final targetAvailableWidth = math.max(_kCompanionWidth, availableWidth);
+              final resumeWidth = math.max(
+                0.0,
+                lerpDouble(
+                  _kCompanionWidth,
+                  targetAvailableWidth,
+                  tWidth,
+                ) ?? _kCompanionWidth,
+              );
 
               // Vertical offset for Resume Companion:
               // - At value 0.0: bottom is 0.0 (same row as the dock, side-by-side)

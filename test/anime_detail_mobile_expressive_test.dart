@@ -101,21 +101,22 @@ void main() {
 
       await tester.pump(const Duration(milliseconds: 100));
 
-      // 1. Play button primerito (Comenzar a ver)
+      // 1. Play button primerito (Comenzar a ver) + Actions (Favorite, Edit)
       expect(find.text('Comenzar a ver'), findsOneWidget);
       expect(find.byIcon(Icons.play_arrow_rounded), findsOneWidget);
+      expect(find.byIcon(Icons.favorite_border_rounded), findsOneWidget);
+      expect(find.byIcon(Icons.edit_outlined), findsOneWidget);
 
-      // 2. Dropdown Chips (Modo, Fuente, AniList)
+      // 2. Dropdown Chips (Modo, Fuente)
       expect(find.text('Online'), findsOneWidget);
       expect(find.text('AnimeFlv'), findsOneWidget);
-      expect(find.byIcon(Icons.bookmark_border_rounded), findsOneWidget);
 
-      // 3. Tap on Mode chip opens PopupMenu with Online and Torrent
+      // 3. Tap on Mode chip opens anchored PopupMenu with Online and Torrent
       await tester.tap(find.text('Online'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
-      expect(find.text('Online Streaming'), findsOneWidget);
-      expect(find.text('Torrent Swarm'), findsOneWidget);
+      expect(find.text('Torrent'), findsOneWidget);
+      expect(find.text('Online'), findsNWidgets(2));
 
       // Dismiss menu
       await tester.tapAt(const Offset(10, 10));

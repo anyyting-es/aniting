@@ -17,6 +17,7 @@ class ApiEndpoints {
   // Playback & Torrent
   static const String torrentstreamStart = '/torrentstream/start';
   static const String torrentstreamStop = '/torrentstream/stop';
+  static const String torrentstreamFilePreviews = '/torrentstream/torrent-file-previews';
   static const String torrentSearch = '/torrent/search';
   static const String mediastream = '/mediastream';
 

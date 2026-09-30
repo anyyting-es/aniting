@@ -38,6 +38,7 @@ class AnimeDetailSourcePopup extends ConsumerStatefulWidget {
     VoidCallback? onOpenManualMapping,
     VoidCallback? onRefreshCache,
   }) {
+    final parentTheme = Theme.of(context);
     return showGeneralDialog(
       context: context,
       barrierDismissible: true,
@@ -50,21 +51,24 @@ class AnimeDetailSourcePopup extends ConsumerStatefulWidget {
           curve: Curves.easeOutBack,
         );
         return ScaleTransition(
-          scale: Tween<double>(begin: 0.75, end: 1.0).animate(bounceCurve),
+          scale: Tween<double>(begin: 0.85, end: 1.0).animate(bounceCurve),
           child: FadeTransition(
             opacity: CurvedAnimation(parent: anim, curve: Curves.easeOut),
             child: child,
           ),
         );
       },
-      pageBuilder: (ctx, anim, secondaryAnim) => AnimeDetailSourcePopup(
-        providers: providers,
-        selectedProvider: selectedProvider,
-        isDubbed: isDubbed,
-        onProviderChanged: onProviderChanged,
-        onToggleDubbed: onToggleDubbed,
-        onOpenManualMapping: onOpenManualMapping,
-        onRefreshCache: onRefreshCache,
+      pageBuilder: (ctx, anim, secondaryAnim) => Theme(
+        data: parentTheme,
+        child: AnimeDetailSourcePopup(
+          providers: providers,
+          selectedProvider: selectedProvider,
+          isDubbed: isDubbed,
+          onProviderChanged: onProviderChanged,
+          onToggleDubbed: onToggleDubbed,
+          onOpenManualMapping: onOpenManualMapping,
+          onRefreshCache: onRefreshCache,
+        ),
       ),
     );
   }
@@ -83,17 +87,21 @@ class _AnimeDetailSourcePopupState extends ConsumerState<AnimeDetailSourcePopup>
   }
 
   void _openAdvancedSheet() {
+    final parentTheme = Theme.of(context);
     Navigator.pop(context);
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (ctx) => AnimeDetailAdvancedSheet(
-        selectedProvider: _selectedProv,
-        isDubbed: widget.isDubbed,
-        onToggleDubbed: widget.onToggleDubbed,
-        onOpenManualMapping: widget.onOpenManualMapping,
-        onRefreshCache: widget.onRefreshCache,
+      builder: (ctx) => Theme(
+        data: parentTheme,
+        child: AnimeDetailAdvancedSheet(
+          selectedProvider: _selectedProv,
+          isDubbed: widget.isDubbed,
+          onToggleDubbed: widget.onToggleDubbed,
+          onOpenManualMapping: widget.onOpenManualMapping,
+          onRefreshCache: widget.onRefreshCache,
+        ),
       ),
     );
   }
@@ -102,11 +110,8 @@ class _AnimeDetailSourcePopupState extends ConsumerState<AnimeDetailSourcePopup>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = ref.watch(translationsProvider);
-    final isDark = theme.brightness == Brightness.dark;
 
-    final dialogBg = isDark
-        ? const Color(0xFF1E1E24)
-        : theme.colorScheme.surface;
+    final dialogBg = theme.colorScheme.surfaceContainerHigh;
 
     return Center(
       child: Material(
@@ -142,7 +147,7 @@ class _AnimeDetailSourcePopupState extends ConsumerState<AnimeDetailSourcePopup>
                     Container(
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.primaryContainer,
+                        color: theme.colorScheme.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(
@@ -217,7 +222,7 @@ class _AnimeDetailSourcePopupState extends ConsumerState<AnimeDetailSourcePopup>
                             padding: const EdgeInsets.symmetric(vertical: 2),
                             child: Material(
                               color: isSelected
-                                  ? theme.colorScheme.primaryContainer.withValues(alpha: 0.45)
+                                  ? theme.colorScheme.primaryContainer.withValues(alpha: 0.35)
                                   : Colors.transparent,
                               borderRadius: BorderRadius.circular(14),
                               child: InkWell(
@@ -260,18 +265,17 @@ class _AnimeDetailSourcePopupState extends ConsumerState<AnimeDetailSourcePopup>
                                       if (p.lang.isNotEmpty)
                                         Container(
                                           padding: const EdgeInsets.symmetric(
-                                              horizontal: 5, vertical: 1),
+                                              horizontal: 6, vertical: 1.5),
                                           decoration: BoxDecoration(
-                                            color: theme.colorScheme.secondaryContainer
-                                                .withValues(alpha: 0.6),
-                                            borderRadius: BorderRadius.circular(5),
+                                            color: theme.colorScheme.surfaceContainerHighest,
+                                            borderRadius: BorderRadius.circular(6),
                                           ),
                                           child: Text(
                                             p.lang.toUpperCase(),
                                             style: TextStyle(
-                                              fontSize: 8.5,
-                                              fontWeight: FontWeight.bold,
-                                              color: theme.colorScheme.onSecondaryContainer,
+                                              fontSize: 9,
+                                              fontWeight: FontWeight.w600,
+                                              color: theme.colorScheme.onSurfaceVariant,
                                             ),
                                           ),
                                         ),
@@ -279,17 +283,17 @@ class _AnimeDetailSourcePopupState extends ConsumerState<AnimeDetailSourcePopup>
                                         const SizedBox(width: 4),
                                         Container(
                                           padding: const EdgeInsets.symmetric(
-                                              horizontal: 4, vertical: 1),
+                                              horizontal: 5, vertical: 1.5),
                                           decoration: BoxDecoration(
-                                            color: Colors.amber.withValues(alpha: 0.2),
-                                            borderRadius: BorderRadius.circular(5),
+                                            color: theme.colorScheme.surfaceContainerHighest,
+                                            borderRadius: BorderRadius.circular(6),
                                           ),
-                                          child: const Text(
+                                          child: Text(
                                             'DUB',
                                             style: TextStyle(
-                                              fontSize: 8,
+                                              fontSize: 8.5,
                                               fontWeight: FontWeight.bold,
-                                              color: Colors.amber,
+                                              color: theme.colorScheme.primary,
                                             ),
                                           ),
                                         ),

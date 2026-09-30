@@ -19,8 +19,8 @@ enum MobileNavStyle {
   }
 
   static MobileNavStyle fromKey(String? key) {
-    if (key == 'floating') return MobileNavStyle.floating;
-    return MobileNavStyle.classic;
+    if (key == 'classic') return MobileNavStyle.classic;
+    return MobileNavStyle.floating;
   }
 }
 
@@ -30,7 +30,7 @@ class MobileNavStyleNotifier extends Notifier<MobileNavStyle> {
   @override
   MobileNavStyle build() {
     _load();
-    return MobileNavStyle.classic;
+    return MobileNavStyle.floating;
   }
 
   Future<void> _load() async {
