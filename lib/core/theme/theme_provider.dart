@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:seanime_app/core/theme/app_palette.dart';
 import 'package:seanime_app/core/theme/app_theme_colors.dart';
+import 'package:seanime_app/core/theme/custom_route_transitions.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 enum AppThemeMode {
@@ -491,6 +492,16 @@ class AppThemeBuilder {
           color: effectivePalette.textPrimary,
           fontSize: 12,
         ),
+      ),
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: WebPageTransitionsBuilder(),
+          TargetPlatform.iOS: WebPageTransitionsBuilder(),
+          TargetPlatform.linux: WebPageTransitionsBuilder(),
+          TargetPlatform.macOS: WebPageTransitionsBuilder(),
+          TargetPlatform.windows: WebPageTransitionsBuilder(),
+          TargetPlatform.fuchsia: WebPageTransitionsBuilder(),
+        },
       ),
     );
   }

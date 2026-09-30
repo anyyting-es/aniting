@@ -20,6 +20,7 @@ class FloatingDockPill extends StatefulWidget {
   final ValueChanged<int> onDestinationSelected;
   final List<DesktopSidebarItem> items;
   final double labelProgress; // 0.0 = icon-only, 1.0 = label fully deployed
+  final double? width;
   final double height;
   final BorderRadius borderRadius;
 
@@ -29,9 +30,52 @@ class FloatingDockPill extends StatefulWidget {
     required this.onDestinationSelected,
     required this.items,
     this.labelProgress = 1.0,
+    this.width,
     this.height = 68.0,
     required this.borderRadius,
   });
+
+  static double measureTextWidth(String text, TextStyle style) {
+    final TextPainter textPainter = TextPainter(
+      text: TextSpan(text: text, style: style),
+      maxLines: 1,
+      textDirection: TextDirection.ltr,
+    )..layout(minWidth: 0, maxWidth: double.infinity);
+    return textPainter.size.width;
+  }
+
+  /// Calculates the exact intrinsic width of the dock pill given current items,
+  /// selected tab, and label deployment progress.
+  static double calculateWidth({
+    required List<DesktopSidebarItem> items,
+    required int selectedIndex,
+    double labelProgress = 1.0,
+  }) {
+    const baseButtonWidth = 52.0;
+    const itemGap = 8.0;
+    const horizontalPadding = 16.0; // 8.0 left + 8.0 right
+    const borderWidth = 2.0; // 1.0 left border + 1.0 right border
+    const labelStyle = TextStyle(
+      fontSize: 14.5,
+      fontWeight: FontWeight.w600,
+      letterSpacing: -0.2,
+    );
+
+    double total = horizontalPadding + borderWidth;
+    if (items.isNotEmpty) {
+      total += (items.length - 1) * itemGap;
+      for (int i = 0; i < items.length; i++) {
+        if (i == selectedIndex && labelProgress > 0.05) {
+          final textWidth = measureTextWidth(items[i].label, labelStyle);
+          final expandedButtonWidth = baseButtonWidth + textWidth + 18.0;
+          total += lerpDouble(baseButtonWidth, expandedButtonWidth, labelProgress.clamp(0.0, 1.0))!;
+        } else {
+          total += baseButtonWidth;
+        }
+      }
+    }
+    return total;
+  }
 
   @override
   State<FloatingDockPill> createState() => _FloatingDockPillState();
@@ -53,21 +97,13 @@ class _FloatingDockPillState extends State<FloatingDockPill> {
     return KeyEventResult.ignored;
   }
 
-  double _measureTextWidth(String text, TextStyle style) {
-    final TextPainter textPainter = TextPainter(
-      text: TextSpan(text: text, style: style),
-      maxLines: 1,
-      textDirection: TextDirection.ltr,
-    )..layout(minWidth: 0, maxWidth: double.infinity);
-    return textPainter.size.width;
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
     return Container(
+      width: widget.width,
       height: widget.height,
       decoration: BoxDecoration(
         // Solid M3 surface container - 100% opaque, zero transparency
@@ -96,11 +132,12 @@ class _FloatingDockPillState extends State<FloatingDockPill> {
       child: ClipRRect(
         borderRadius: widget.borderRadius,
         child: Center(
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            physics: const NeverScrollableScrollPhysics(),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+          widthFactor: widget.width == null ? 1.0 : null,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.center,
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -147,7 +184,7 @@ class _FloatingDockPillState extends State<FloatingDockPill> {
       letterSpacing: -0.2,
     );
 
-    final textWidth = _measureTextWidth(item.label, labelStyle);
+    final textWidth = FloatingDockPill.measureTextWidth(item.label, labelStyle);
     const baseButtonWidth = 52.0;
     const buttonHeight = 50.0;
     // Expanded width = base button + gap (8) + text width + right margin (14)

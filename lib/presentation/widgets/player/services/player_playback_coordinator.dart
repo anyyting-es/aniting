@@ -270,14 +270,16 @@ class PlayerPlaybackCoordinator {
     exo.initialize(top: initialSurfaceTop, height: initialSurfaceHeight).then((_) {
       if (exoService != exo) return;
       exo.setFitMode(fitMode.name);
-      exo.open(
-        videoUrl,
-        headers: headers,
-        mimeType: mime,
-        startPosition: startPosition,
-        autoPlay: true,
-        subtitles: externalSubs,
-      );
+      if (videoUrl.isNotEmpty) {
+        exo.open(
+          videoUrl,
+          headers: headers,
+          mimeType: mime,
+          startPosition: startPosition,
+          autoPlay: true,
+          subtitles: externalSubs,
+        );
+      }
     });
   }
 
@@ -366,29 +368,31 @@ class PlayerPlaybackCoordinator {
       // Stream track updates
     });
 
-    mpv.open(
-      videoUrl,
-      title: title,
-      episodeTitle: episodeTitle,
-      startPosition: startPosition,
-      httpHeaders: headers,
-      isOnlineStream: isOnlineStream,
-    );
+    if (videoUrl.isNotEmpty) {
+      mpv.open(
+        videoUrl,
+        title: title,
+        episodeTitle: episodeTitle,
+        startPosition: startPosition,
+        httpHeaders: headers,
+        isOnlineStream: isOnlineStream,
+      );
 
-    // Auto-load default external subtitle if provided
-    if (externalSubtitles != null && externalSubtitles.isNotEmpty) {
-      final defaultIdx = externalSubtitles.indexWhere((s) => _getSubIsDefault(s));
-      final idxToUse = defaultIdx >= 0 ? defaultIdx : 0;
-      final subToUse = externalSubtitles[idxToUse];
-      final url = _getSubUrl(subToUse);
-      final lang = _getSubLanguage(subToUse);
-      final label = _getSubLabel(subToUse);
-      if (url.isNotEmpty) {
-        mpv.setSubtitleTrack(mk.SubtitleTrack.uri(
-          url,
-          title: label.isNotEmpty ? label : lang,
-          language: lang,
-        ));
+      // Auto-load default external subtitle if provided
+      if (externalSubtitles != null && externalSubtitles.isNotEmpty) {
+        final defaultIdx = externalSubtitles.indexWhere((s) => _getSubIsDefault(s));
+        final idxToUse = defaultIdx >= 0 ? defaultIdx : 0;
+        final subToUse = externalSubtitles[idxToUse];
+        final url = _getSubUrl(subToUse);
+        final lang = _getSubLanguage(subToUse);
+        final label = _getSubLabel(subToUse);
+        if (url.isNotEmpty) {
+          mpv.setSubtitleTrack(mk.SubtitleTrack.uri(
+            url,
+            title: label.isNotEmpty ? label : lang,
+            language: lang,
+          ));
+        }
       }
     }
 

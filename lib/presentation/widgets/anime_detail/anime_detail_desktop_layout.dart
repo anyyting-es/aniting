@@ -183,217 +183,29 @@ class _AnimeDetailDesktopLayoutState
     }
   }
 
-  void _launchSource(OnlinestreamVideoSource chosenSource, int epNum, String epTitle) {
+
+
+  void _playOnlineEpisode(int epNum, String epTitle) {
+    if (_selectedProvider == null) return;
     final titleLang = ref.read(titleLanguageProvider);
     final mediaTitle = widget.details?.displayTitle(titleLang) ?? 'Anime';
     final providerName = _selectedProvider?.name ?? 'Online';
-    final serverPart = chosenSource.server.isNotEmpty ? ' • ${chosenSource.server.toUpperCase()}' : '';
-    final qualityPart = chosenSource.quality.isNotEmpty ? ' (${chosenSource.quality})' : '';
-    final sourceDesc = '$providerName$serverPart$qualityPart';
 
     Navigator.of(context, rootNavigator: true).push(
       VideoPlayerScreen.route(
         mediaId: widget.mediaId,
-        videoUrl: chosenSource.url,
+        videoUrl: '',
         title: mediaTitle,
         episodeTitle: epTitle,
         episodeNumber: epNum,
-        videoSource: sourceDesc,
-        headers: chosenSource.headers,
-        mimeType: chosenSource.isHls ? 'application/x-mpegURL' : null,
-        externalSubtitles: chosenSource.subtitles,
+        videoSource: providerName,
         onlineStreamProvider: _selectedProvider?.id,
         onlineStreamDubbed: _isDubbed,
-        onlineStreamServer: chosenSource.server,
+        onlineStreamServer: null,
         animeDetails: widget.details,
         aniZipData: widget.aniZipData ?? widget.details?.aniZipData,
       ),
     );
-  }
-
-  void _showSourcePickerModal(List<OnlinestreamVideoSource> sources, int epNum, String epTitle) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final l10n = ref.read(translationsProvider);
-
-    showDialog(
-      context: context,
-      builder: (dialogCtx) {
-        return Dialog(
-          backgroundColor: isDark ? const Color(0xFF1B1E24) : theme.colorScheme.surface,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 460),
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.primaryContainer,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Icon(
-                          Icons.settings_input_composite_rounded,
-                          color: theme.colorScheme.primary,
-                          size: 20,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              l10n.selectServerQuality,
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              'Episodio $epNum: $epTitle',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close_rounded, size: 20),
-                        onPressed: () => Navigator.pop(dialogCtx),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                  const Divider(height: 1),
-                  const SizedBox(height: 12),
-                  Flexible(
-                    child: ListView.separated(
-                      shrinkWrap: true,
-                      itemCount: sources.length,
-                      separatorBuilder: (_, _) => const SizedBox(height: 8),
-                      itemBuilder: (ctx, i) {
-                        final src = sources[i];
-                        final serverName = src.server.isNotEmpty ? src.server.toUpperCase() : l10n.server;
-                        final qualityText = src.quality.isNotEmpty ? src.quality : 'Auto';
-                        return InkWell(
-                          onTap: () {
-                            Navigator.pop(dialogCtx);
-                            _launchSource(src, epNum, epTitle);
-                          },
-                          borderRadius: BorderRadius.circular(12),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                            decoration: BoxDecoration(
-                              color: isDark
-                                  ? const Color(0xFF22262E)
-                                  : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: isDark
-                                    ? Colors.white.withValues(alpha: 0.08)
-                                    : theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(7),
-                                  decoration: BoxDecoration(
-                                    color: theme.colorScheme.primaryContainer,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Icon(
-                                    Icons.play_arrow_rounded,
-                                    color: theme.colorScheme.primary,
-                                    size: 20,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        serverName,
-                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        '${l10n.quality}: $qualityText',
-                                        style: TextStyle(
-                                          fontSize: 11.5,
-                                          color: theme.colorScheme.onSurfaceVariant,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const Icon(Icons.chevron_right, size: 20),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Future<void> _playOnlineEpisode(int epNum, String epTitle) async {
-    if (_selectedProvider == null) return;
-    setState(() => _loadingEpisodeNumber = epNum);
-    final repo = ref.read(repositoryProvider);
-    try {
-      final sources = await repo.getOnlinestreamSource(
-        mediaId: widget.mediaId,
-        episodeNumber: epNum,
-        provider: _selectedProvider!.id,
-        dubbed: _isDubbed,
-      );
-      if (!mounted) return;
-      setState(() => _loadingEpisodeNumber = null);
-      if (sources.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('No se encontraron fuentes de video para el episodio $epNum'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-        return;
-      }
-
-      if (sources.length == 1) {
-        _launchSource(sources.first, epNum, epTitle);
-      } else {
-        _showSourcePickerModal(sources, epNum, epTitle);
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _loadingEpisodeNumber = null);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error al cargar stream: $e'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    }
   }
 
   void _onEpisodeClicked(DesktopEpisodeItemData ep) {

@@ -11,16 +11,36 @@ import 'package:seanime_app/presentation/screens/extensions_marketplace_screen.d
 import 'package:seanime_app/presentation/screens/video_player_screen.dart';
 import 'package:seanime_app/presentation/widgets/episode_item_widget.dart';
 
+class OnlineStreamViewController {
+  _OnlineStreamViewState? _state;
+  void refresh() => _state?._refreshAndClearCache();
+  void openManualMapping(BuildContext context) => _state?._showManualMappingSheet(context);
+}
+
 class OnlineStreamView extends ConsumerStatefulWidget {
   final int mediaId;
   final AnimeDetails? animeDetails;
   final int progress;
+  final bool hideTopBar;
+  final OnlineStreamViewController? controller;
+  final OnlinestreamProvider? selectedProvider;
+  final bool? isDubbed;
+  final ValueChanged<List<OnlinestreamProvider>>? onProvidersLoaded;
+  final ValueChanged<OnlinestreamProvider?>? onProviderChanged;
+  final ValueChanged<bool>? onDubbedChanged;
 
   const OnlineStreamView({
     super.key,
     required this.mediaId,
     this.animeDetails,
     this.progress = 0,
+    this.hideTopBar = false,
+    this.controller,
+    this.selectedProvider,
+    this.isDubbed,
+    this.onProvidersLoaded,
+    this.onProviderChanged,
+    this.onDubbedChanged,
   });
 
   @override
@@ -41,6 +61,7 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
 
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
+  bool _isSearchExpanded = false;
 
   static const int _listPageSize = 24;
   int _currentListPage = 0;
@@ -50,7 +71,33 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
   @override
   void initState() {
     super.initState();
+    widget.controller?._state = this;
+    if (widget.selectedProvider != null) {
+      _selectedProvider = widget.selectedProvider;
+    }
+    if (widget.isDubbed != null) {
+      _isDubbed = widget.isDubbed!;
+    }
     _loadProviders();
+  }
+
+  @override
+  void didUpdateWidget(covariant OnlineStreamView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    widget.controller?._state = this;
+    if (widget.selectedProvider != null &&
+        widget.selectedProvider?.id != _selectedProvider?.id) {
+      setState(() {
+        _selectedProvider = widget.selectedProvider;
+      });
+      _loadEpisodes();
+    }
+    if (widget.isDubbed != null && widget.isDubbed != _isDubbed) {
+      setState(() {
+        _isDubbed = widget.isDubbed!;
+      });
+      _loadEpisodes();
+    }
   }
 
   @override
@@ -80,13 +127,16 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
       }
 
       if (mounted) {
+        final chosen = widget.selectedProvider ?? initialProvider;
         setState(() {
           _providers = list;
-          _selectedProvider = initialProvider;
+          _selectedProvider = chosen;
           _isLoadingProviders = false;
         });
 
-        if (_selectedProvider != null) {
+        widget.onProvidersLoaded?.call(list);
+        if (chosen != null) {
+          widget.onProviderChanged?.call(chosen);
           _loadEpisodes();
         }
       }
@@ -494,185 +544,25 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
     );
   }
 
-  Future<void> _handleEpisodeTap(OnlinestreamEpisode ep) async {
+  void _handleEpisodeTap(OnlinestreamEpisode ep) {
     if (_selectedProvider == null) return;
 
-    setState(() {
-      _loadingEpisodeNumber = ep.number;
-    });
-
-    final repo = ref.read(repositoryProvider);
-    try {
-      final sources = await repo.getOnlinestreamSource(
-        mediaId: widget.mediaId,
-        episodeNumber: ep.number,
-        provider: _selectedProvider!.id,
-        dubbed: _isDubbed,
-      );
-
-      if (!mounted) return;
-      setState(() {
-        _loadingEpisodeNumber = null;
-      });
-
-      if (sources.isEmpty) {
-        final l10n = ref.read(translationsProvider);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${l10n.noVideoSourcesFound} ${ep.number}.'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-        return;
-      }
-
-      if (sources.length == 1) {
-        _playSource(sources.first, ep);
-      } else {
-        _showSourcePickerSheet(sources, ep);
-      }
-    } catch (e) {
-      if (mounted) {
-        final l10n = ref.read(translationsProvider);
-        setState(() {
-          _loadingEpisodeNumber = null;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${l10n.errorGettingSources} $e'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    }
-  }
-
-  void _showSourcePickerSheet(List<OnlinestreamVideoSource> sources, OnlinestreamEpisode ep) {
-    final theme = Theme.of(context);
-    final l10n = ref.read(translationsProvider);
-
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 18),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primaryContainer,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(
-                        Icons.settings_input_composite_rounded,
-                        color: theme.colorScheme.primary,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            l10n.selectServerQuality,
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            '${l10n.episode} ${ep.number}: ${ep.displayTitle}',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                const Divider(height: 1),
-                const SizedBox(height: 8),
-                Flexible(
-                  child: ListView.separated(
-                    shrinkWrap: true,
-                    itemCount: sources.length,
-                    separatorBuilder: (context, index) => const SizedBox(height: 6),
-                    itemBuilder: (ctx, i) {
-                      final src = sources[i];
-                      return ListTile(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(context.themeColors.borderRadius),
-                          side: BorderSide(
-                            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
-                          ),
-                        ),
-                        tileColor: theme.colorScheme.surfaceContainerLow,
-                        leading: CircleAvatar(
-                          backgroundColor: theme.colorScheme.primaryContainer,
-                          child: Icon(Icons.play_arrow_rounded, color: theme.colorScheme.primary),
-                        ),
-                        title: Text(
-                          src.server.toUpperCase(),
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                        ),
-                        subtitle: Text(
-                          src.quality.isNotEmpty ? '${l10n.quality} ${src.quality}' : l10n.server,
-                          style: TextStyle(fontSize: 11, color: theme.colorScheme.onSurfaceVariant),
-                        ),
-                        trailing: const Icon(Icons.chevron_right, size: 20),
-                        onTap: () {
-                          Navigator.pop(ctx);
-                          _playSource(src, ep);
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  void _playSource(OnlinestreamVideoSource source, OnlinestreamEpisode ep) {
     final animeTitle = widget.animeDetails?.title ?? 'Anime';
     final providerName = _selectedProvider?.name ?? 'Online';
-    final serverPart = source.server.isNotEmpty ? ' • ${source.server.toUpperCase()}' : '';
-    final qualityPart = source.quality.isNotEmpty ? ' (${source.quality})' : '';
-    final sourceDesc = '$providerName$serverPart$qualityPart';
 
     Navigator.of(context).push(
       VideoPlayerScreen.route(
         mediaId: widget.mediaId,
-        videoUrl: source.url,
+        videoUrl: '',
         title: animeTitle,
         episodeTitle: ep.displayTitle,
         episodeNumber: ep.number,
-        headers: source.headers,
-        mimeType: source.isHls ? 'application/x-mpegURL' : null,
-        videoSource: sourceDesc,
-        externalSubtitles: source.subtitles,
+        videoSource: providerName,
         animeDetails: widget.animeDetails,
         aniZipData: widget.animeDetails?.aniZipData,
         onlineStreamProvider: _selectedProvider?.id,
         onlineStreamDubbed: _isDubbed,
-        onlineStreamServer: source.server,
+        onlineStreamServer: null,
       ),
     );
   }
@@ -765,9 +655,10 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Top Bar: Provider Selector, Dub Toggle, Refresh
-        Container(
-          padding: const EdgeInsets.all(12),
+        if (!widget.hideTopBar) ...[
+          // Top Bar: Provider Selector, Dub Toggle, Refresh
+          Container(
+            padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: theme.colorScheme.surfaceContainerLow,
             borderRadius: BorderRadius.circular(context.themeColors.borderRadius),
@@ -958,45 +849,109 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
             ],
           ),
         ),
-
         const SizedBox(height: 12),
+      ],
 
-        // Count / Info Header + ViewMode toggle
-        Row(
-          children: [
-            Text(
-              '${l10n.episodes} (${_selectedProvider?.name ?? ''})',
-              style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            if (!_isLoadingEpisodes) ...[
-              const SizedBox(width: 8),
-              Text(
-                '• ${filtered.length} ${l10n.availableCount}',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: theme.colorScheme.primary,
-                  fontWeight: FontWeight.w600,
+      // Count / Info Header + ViewMode toggle
+      Row(
+        children: [
+          Expanded(
+            child: Row(
+              children: [
+                Flexible(
+                  child: Text(
+                    '${l10n.episodes} (${_selectedProvider?.name ?? ''})',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                  ),
                 ),
-              ),
-            ],
-            const Spacer(),
+                if (!_isLoadingEpisodes) ...[
+                  const SizedBox(width: 6),
+                  Text(
+                    '• ${filtered.length} ${l10n.availableCount}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          if (widget.hideTopBar && _episodes.isNotEmpty) ...[
             IconButton(
               icon: Icon(
-                ref.watch(episodeViewModeProvider) == EpisodeViewMode.grid
-                    ? Icons.view_list_rounded
-                    : Icons.grid_view_rounded,
+                _isSearchExpanded ? Icons.search_off_rounded : Icons.search_rounded,
                 size: 20,
-                color: theme.colorScheme.onSurfaceVariant,
+                color: _searchQuery.isNotEmpty
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.onSurfaceVariant,
               ),
-              tooltip: ref.watch(episodeViewModeProvider) == EpisodeViewMode.grid
-                  ? l10n.switchToList
-                  : l10n.switchToGrid,
+              tooltip: l10n.search,
               onPressed: () {
-                ref.read(episodeViewModeProvider.notifier).toggleMode();
+                setState(() => _isSearchExpanded = !_isSearchExpanded);
               },
             ),
+            const SizedBox(width: 2),
           ],
+          IconButton(
+            icon: Icon(
+              ref.watch(episodeViewModeProvider) == EpisodeViewMode.grid
+                  ? Icons.view_list_rounded
+                  : Icons.grid_view_rounded,
+              size: 20,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            tooltip: ref.watch(episodeViewModeProvider) == EpisodeViewMode.grid
+                ? l10n.switchToList
+                : l10n.switchToGrid,
+            onPressed: () {
+              ref.read(episodeViewModeProvider.notifier).toggleMode();
+            },
+          ),
+        ],
+      ),
+
+      if (widget.hideTopBar && _isSearchExpanded && _episodes.isNotEmpty) ...[
+        const SizedBox(height: 8),
+        TextField(
+          controller: _searchController,
+          style: const TextStyle(fontSize: 13),
+          decoration: InputDecoration(
+            hintText: l10n.filterEpisodesHint,
+            isDense: true,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(context.themeColors.borderRadius),
+              borderSide: BorderSide(
+                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+              ),
+            ),
+            prefixIcon: const Icon(Icons.search, size: 18),
+            suffixIcon: _searchQuery.isNotEmpty
+                ? IconButton(
+                    icon: const Icon(Icons.clear, size: 16),
+                    onPressed: () {
+                      _searchController.clear();
+                      setState(() {
+                        _searchQuery = '';
+                        _currentListPage = 0;
+                      });
+                    },
+                  )
+                : null,
+          ),
+          onChanged: (val) => setState(() {
+            _searchQuery = val;
+            _currentListPage = 0;
+          }),
         ),
+      ],
 
         const SizedBox(height: 4),
 

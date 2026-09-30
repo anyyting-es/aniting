@@ -105,20 +105,22 @@ class _MobileFloatingNavState extends ConsumerState<MobileFloatingNav>
 
           // If no active session or resume disabled, render simple standalone dock
           if (!hasResume) {
-            return Container(
-              height: _kDockHeight + _kBottomMargin,
-              padding: const EdgeInsets.only(
-                left: marginH,
-                right: marginH,
-                bottom: _kBottomMargin,
-              ),
-              child: FloatingDockPill(
-                selectedIndex: widget.selectedIndex,
-                onDestinationSelected: widget.onDestinationSelected,
-                items: widget.items,
-                labelProgress: 1.0,
-                height: _kDockHeight,
-                borderRadius: BorderRadius.circular(34.0),
+            return Align(
+              alignment: Alignment.bottomCenter,
+              child: Padding(
+                padding: const EdgeInsets.only(
+                  left: 16.0,
+                  right: 16.0,
+                  bottom: _kBottomMargin,
+                ),
+                child: FloatingDockPill(
+                  selectedIndex: widget.selectedIndex,
+                  onDestinationSelected: widget.onDestinationSelected,
+                  items: widget.items,
+                  labelProgress: 1.0,
+                  height: _kDockHeight,
+                  borderRadius: BorderRadius.circular(34.0),
+                ),
               ),
             );
           }
@@ -141,13 +143,12 @@ class _MobileFloatingNavState extends ConsumerState<MobileFloatingNav>
                 tHeight,
               )!;
 
-              // Dock Geometry
-              final contractedDockWidth = availableWidth - _kCompanionWidth - _kCompanionGap;
-              final dockWidth = lerpDouble(
-                contractedDockWidth,
-                availableWidth,
-                tWidth,
-              )!;
+              // Dock Geometry: strictly contracted to its intrinsic items width
+              final dockWidth = FloatingDockPill.calculateWidth(
+                items: widget.items,
+                selectedIndex: widget.selectedIndex,
+                labelProgress: tWidth,
+              );
 
               // Resume Companion Geometry
               final resumeWidth = lerpDouble(
@@ -165,15 +166,33 @@ class _MobileFloatingNavState extends ConsumerState<MobileFloatingNav>
                 tHeight,
               )!;
 
+              // Horizontal Geometry:
+              // When collapsed (tHeight = 0, tWidth = 0):
+              //   Dock & Companion are centered together side-by-side with _kCompanionGap between them
+              final combinedWidth = dockWidth + _kCompanionGap + _kCompanionWidth;
+              final collapsedStartX = (totalWidth - combinedWidth) / 2;
+              final dockLeftCollapsed = collapsedStartX;
+              final companionLeftCollapsed = collapsedStartX + dockWidth + _kCompanionGap;
+
+              // When expanded above (tHeight = 1):
+              //   - Dock is centered alone: (totalWidth - dockWidth) / 2
+              //   - Companion parked above: right edge aligned to marginH, or full availableWidth
+              final dockLeftExpanded = (totalWidth - dockWidth) / 2;
+              final companionLeftParked = totalWidth - marginH - _kCompanionWidth;
+              final companionLeftAtTop = lerpDouble(companionLeftParked, marginH, tWidth)!;
+
+              final dockLeft = lerpDouble(dockLeftCollapsed, dockLeftExpanded, tHeight)!;
+              final companionLeft = lerpDouble(companionLeftCollapsed, companionLeftAtTop, tHeight)!;
+
               return SizedBox(
                 width: totalWidth,
                 height: totalHeight + _kBottomMargin,
                 child: Stack(
                   clipBehavior: Clip.none,
                   children: [
-                    // 1. Mobile Navigation Dock (Anchored to bottom-left)
+                    // 1. Mobile Navigation Dock
                     Positioned(
-                      left: marginH,
+                      left: dockLeft,
                       bottom: _kBottomMargin,
                       width: dockWidth,
                       height: _kDockHeight,
@@ -182,14 +201,15 @@ class _MobileFloatingNavState extends ConsumerState<MobileFloatingNav>
                         onDestinationSelected: widget.onDestinationSelected,
                         items: widget.items,
                         labelProgress: tWidth,
+                        width: dockWidth,
                         height: _kDockHeight,
                         borderRadius: BorderRadius.circular(34.0),
                       ),
                     ),
 
-                    // 2. Resume Card / Companion (Anchored to bottom-right, never passes over dock)
+                    // 2. Resume Card / Companion (never passes over dock)
                     Positioned(
-                      right: marginH,
+                      left: companionLeft,
                       bottom: _kBottomMargin + resumeBottom,
                       width: resumeWidth,
                       height: _kDockHeight,

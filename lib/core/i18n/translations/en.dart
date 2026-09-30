@@ -9,6 +9,8 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get navExplore => 'Explore';
   @override
+  String get navCalendar => 'Calendar';
+  @override
   String get navProfile => 'Library';
   @override
   String get navSettings => 'Settings';
@@ -605,6 +607,32 @@ class EnglishTranslations implements AppTranslations {
   String get playbackSpeed => 'Speed';
   @override
   String get shaders => 'GLSL Shaders';
+  @override
+  String get mode => 'Mode';
+  @override
+  String get nextEpisode => 'Next episode';
+  @override
+  String get mute => 'Mute';
+  @override
+  String get unmute => 'Unmute';
+  @override
+  String get showInfo => 'Show info';
+  @override
+  String get collapsePanel => 'Collapse panel';
+  @override
+  String get playbackSources => 'Playback options';
+  @override
+  String get searchingSources => 'Searching options...';
+  @override
+  String get playingFirstAvailable => 'Playing first available option';
+  @override
+  String get tapToChangeSource => 'Tap to switch server or quality';
+  @override
+  String get reloadSourcesTooltip => 'Reload sources';
+  @override
+  String get noSourcesFoundForEpisode => 'No playback options found for this episode';
+  @override
+  String get availableSourcesCount => 'available options';
   @override
   String get aspectRatio => 'Screen Fit';
   @override

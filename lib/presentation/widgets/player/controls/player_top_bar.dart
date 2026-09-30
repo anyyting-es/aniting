@@ -253,7 +253,7 @@ class PlayerTopBar extends ConsumerWidget {
                       color: Colors.white,
                       size: sidebarIconSize,
                     ),
-                    tooltip: isSidePanelCollapsed ? 'Mostrar información' : 'Colapsar panel',
+                    tooltip: isSidePanelCollapsed ? l10n.showInfo : l10n.collapsePanel,
                     onPressed: onToggleSidePanel,
                   ),
                   const SizedBox(width: 8),

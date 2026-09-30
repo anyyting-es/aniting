@@ -9,7 +9,6 @@ import 'package:seanime_app/core/theme/custom_route_transitions.dart';
 import 'package:seanime_app/data/models/anime_entry.dart';
 import 'package:seanime_app/data/models/manga_entry.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/screens/airing_calendar_screen.dart';
 import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
 import 'package:seanime_app/presentation/screens/genre_detail_screen.dart';
 import 'package:seanime_app/presentation/screens/genres_screen.dart';
@@ -838,18 +837,6 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                                   onPressed: _openFilterSheet,
                                 ),
                               ),
-                              if (isAnime)
-                                IconButton(
-                                  tooltip: l10n.airingCalendar,
-                                  icon: Icon(AppIcons.calendar(iconPack), size: 20),
-                                  visualDensity: VisualDensity.compact,
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      SlideRightToLeftPageRoute(child: const AiringCalendarScreen()),
-                                    );
-                                  },
-                                ),
                               IconButton(
                                 tooltip: l10n.genresTitle,
                                 icon: Icon(AppIcons.category(iconPack), size: 20),

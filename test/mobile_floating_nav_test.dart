@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:seanime_app/core/preferences/resume_bar_preferences_provider.dart';
 import 'package:seanime_app/presentation/widgets/desktop_sidebar.dart';
+import 'package:seanime_app/presentation/widgets/floating_nav/floating_dock_pill.dart';
 import 'package:seanime_app/presentation/widgets/mobile_floating_nav.dart';
 
 void main() {
@@ -21,6 +22,11 @@ void main() {
       icon: Icons.explore_rounded,
       selectedIcon: Icons.explore_rounded,
       label: 'Explorar',
+    ),
+    const DesktopSidebarItem(
+      icon: Icons.calendar_month_rounded,
+      selectedIcon: Icons.calendar_month_rounded,
+      label: 'Calendario',
     ),
     const DesktopSidebarItem(
       icon: Icons.person_rounded,
@@ -65,12 +71,14 @@ void main() {
     // Unselected items are icon-only
     expect(find.text('Manga'), findsNothing);
     expect(find.text('Explorar'), findsNothing);
+    expect(find.text('Calendario'), findsNothing);
     expect(find.text('Perfil'), findsNothing);
 
     // All icons are present
     expect(find.byIcon(Icons.home_rounded), findsOneWidget);
     expect(find.byIcon(Icons.menu_book_rounded), findsOneWidget);
     expect(find.byIcon(Icons.explore_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.calendar_month_rounded), findsOneWidget);
     expect(find.byIcon(Icons.person_rounded), findsOneWidget);
 
     // Verify no session title is shown
@@ -210,6 +218,52 @@ void main() {
     );
 
     expect(sessionWithOnlyCover.displayImage, 'https://example.com/cover.jpg');
+  });
+
+  testWidgets('Floating dock pill contracts tightly to content without excess lateral whitespace', (tester) async {
+    tester.view.physicalSize = const Size(600, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          lastSessionProvider.overrideWith(() => _MockLastSessionNotifier(null)),
+        ],
+        child: MaterialApp(
+          home: Scaffold(
+            bottomNavigationBar: MobileFloatingNav(
+              selectedIndex: 0,
+              onDestinationSelected: (_) {},
+              items: testItems,
+              isResumeExpanded: true,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    // Verify dock pill contracted size is narrower than screen width (600) and availableWidth (548)
+    final dockFinder = find.byType(FloatingDockPill);
+    expect(dockFinder, findsOneWidget);
+    final dockSize = tester.getSize(dockFinder);
+    expect(dockSize.width, lessThan(450.0));
+    expect(dockSize.width, greaterThan(280.0));
+
+    // Verify the first icon is snug within ~25px of the dock's left edge (8px padding + 1px border + half button width)
+    final dockTopLeft = tester.getTopLeft(dockFinder);
+    final firstIconTopLeft = tester.getTopLeft(find.byIcon(Icons.home_rounded));
+    final leftGap = firstIconTopLeft.dx - dockTopLeft.dx;
+    expect(leftGap, lessThanOrEqualTo(25.0));
+
+    // Verify the last icon is similarly snug to the dock's right edge
+    final dockTopRight = tester.getTopRight(dockFinder);
+    final lastIconTopRight = tester.getTopRight(find.byIcon(Icons.person_rounded));
+    final rightGap = dockTopRight.dx - lastIconTopRight.dx;
+    expect(rightGap, lessThanOrEqualTo(25.0));
   });
 }
 

@@ -45,44 +45,57 @@ class ShaderPreset {
   const ShaderPreset({
     required this.id,
     required this.name,
-    required this.description,
+    this.description = '',
     this.glslPath,
   });
 
   bool get isNone => id == 'none';
 
+  String localizedName(AppTranslations l10n) {
+    switch (id) {
+      case 'none':
+        return l10n.disabled;
+      case 'anime4k_mode_a':
+        return 'Anime4K - ${l10n.mode} A';
+      case 'anime4k_mode_b':
+        return 'Anime4K - ${l10n.mode} B';
+      case 'anime4k_mode_c':
+        return 'Anime4K - ${l10n.mode} C';
+      case 'nvscaler':
+        return 'NVScaler';
+      case 'artcnn':
+        return 'ArtCNN C4F16';
+      default:
+        return name;
+    }
+  }
+
   static const ShaderPreset none = ShaderPreset(
     id: 'none',
-    name: 'Desactivado',
-    description: 'Sin post-procesado GLSL (por defecto, mayor rendimiento)',
+    name: 'Disabled',
   );
 
   static const List<ShaderPreset> presets = [
     none,
     ShaderPreset(
       id: 'anime4k_mode_a',
-      name: 'Anime4K - Modo A',
-      description: 'Restauración y realce de líneas nítidas (optimizado para anime)',
+      name: 'Anime4K - Mode A',
     ),
     ShaderPreset(
       id: 'anime4k_mode_b',
-      name: 'Anime4K - Modo B',
-      description: 'Reescalado balanceado con reducción de ruido y artefactos',
+      name: 'Anime4K - Mode B',
     ),
     ShaderPreset(
       id: 'anime4k_mode_c',
-      name: 'Anime4K - Modo C',
-      description: 'Reescalado ultraligero de alto rendimiento',
+      name: 'Anime4K - Mode C',
     ),
     ShaderPreset(
       id: 'nvscaler',
       name: 'NVScaler',
-      description: 'Algoritmo de reescalado y nitidez NVIDIA Image Scaling',
     ),
     ShaderPreset(
       id: 'artcnn',
       name: 'ArtCNN C4F16',
-      description: 'Modelo neuronal ligero para super-resolución de arte 2D',
     ),
   ];
 }

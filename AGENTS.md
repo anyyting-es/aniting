@@ -56,7 +56,7 @@ seanime_app/
 │   │   ├── preferences/              # PlayerEngineProvider, TitleLanguageProvider, EpisodeViewModeProvider, OnboardingProvider, DownloadPreferencesProvider, LayoutModeProvider
 │   │   ├── server/                   # ServerManager, AndroidServerChannel, DesktopServer
 │   │   ├── storage/                  # AppStoragePaths (Aniting/Downloads resolution for Android and Desktop)
-│   │   └── theme/                    # AppTheme, ThemeProvider, AppPalette, AppThemeColors, AppScrollBehavior
+│   │   └── theme/                    # AppTheme, ThemeProvider, AppPalette, AppThemeColors, AppScrollBehavior, custom_route_transitions (WebPageTransitionsBuilder, SmoothPageRoute)
 │   ├── data/
 │   │   ├── models/                   # Data models (AnimeEntry, MangaEntry, ExtensionItem, Torrent, etc.)
 │   │   ├── repositories/             # SeanimeRepository (API methods, marketplace fetching, cache)
@@ -94,7 +94,11 @@ seanime_app/
 │           │   │   ├── desktop_characters_tab.dart     # Character cards grid with gentle neutral hover
 │           │   │   ├── desktop_relations_tab.dart      # Relations grid with clean covers & below labels
 │           │   │   └── desktop_recommendations_tab.dart# Recommendations grid with clean covers & titles below
-│           │   ├── anime_detail_mobile_layout.dart  # Compact vertical mobile layout
+│           │   ├── mobile/           # Modular mobile subcomponents
+│           │   │   ├── anime_detail_mode_popup.dart    # Expressive spring-animated mode popup (Online/Torrent/Local)
+│           │   │   ├── anime_detail_source_popup.dart  # Expressive spring-animated online sources popup
+│           │   │   └── anime_detail_advanced_sheet.dart# Full modal sheet for advanced options (Sub/Dub, link, reload)
+│           │   ├── anime_detail_mobile_layout.dart  # Compact vertical mobile layout with inline Action Hub
 │           │   └── anime_detail_tv_layout.dart      # 10-foot remote / D-Pad focused TV layout
 │           ├── manga_detail/         # Modular adaptive layouts for manga details
 │           │   ├── manga_detail_desktop_layout.dart # Desktop layout coordinator (~280 lines)
@@ -124,7 +128,17 @@ seanime_app/
 │           ├── extensions/           # Modular extension & marketplace widgets
 │           ├── player/               # Modular video player UI components
 │           │   ├── layouts/          # Responsive desktop & mobile player layouts
-│           │   ├── services/         # Playback coordinator, shader service, episode resolver
+│           │   ├── panels/           # Player info panel, source card & next episode card
+│           │   │   ├── player_info_panel.dart    # YouTube-style info panel & side drawer
+│           │   │   ├── player_source_card.dart   # Interactive playback source card & modal switcher
+│           │   │   └── next_episode_card.dart    # 16:9 next episode card
+│           │   ├── services/         # Playback coordinator, shader service, episode resolver, player progress manager, player window manager, player source controller
+│           │   │   ├── player_playback_coordinator.dart # Dual-engine orchestration (ExoPlayer + libmpv)
+│           │   │   ├── player_progress_manager.dart     # Continuity periodic updates, LastSession, AniList watch sync
+│           │   │   ├── player_window_manager.dart       # Window state, fullscreen, orientation rotation & ExoPlayer surface bounds sync
+│           │   │   ├── player_source_controller.dart    # Online stream source resolution, auto-streaming, live switcher & episode transition
+│           │   │   ├── player_episode_resolver.dart     # Media source resolution and background prefetching
+│           │   │   └── player_shader_service.dart       # Real-time mpv GLSL shader presets and pipeline
 │           │   └── sheets/           # Unified settings launcher & settings subviews
 │           ├── manga/                # Manga reader widgets & keep-alive components
 │           │   ├── manga_keep_alive_page.dart # Preserves offscreen manga pages in memory
@@ -149,11 +163,12 @@ seanime_app/
 
 ### 4.1. Navigation, Feeds & Explore Architecture
 - **Navigation Hierarchy**:
-  - `main_shell.dart` organizes navigation into 4 primary views:
+  - `main_shell.dart` organizes navigation into 5 primary views:
     0. **Inicio (`feed_screen.dart`)**: Anime feed, continue watching, currently watching, missed sequels, trending, discover anime.
     1. **Manga (`manga_feed_screen.dart`)**: Manga feed, continue reading, completed manga, trending manga, discover manga.
-    2. **Explorar (`search_screen.dart`)**: Comprehensive exploration hub with hero banner carousel, genre chips, non-wrapping media type toggle (Anime/Manga), filters (season, year, sort), airing calendar.
-    3. **Perfil (`library_screen.dart`)**: User profile stats, AniList account, collection lists.
+    2. **Explorar (`search_screen.dart`)**: Comprehensive exploration hub with hero banner carousel, genre chips, non-wrapping media type toggle (Anime/Manga), filters (season, year, sort), genres hub.
+    3. **Calendario (`airing_calendar_screen.dart`)**: Dedicated airing calendar page tracking upcoming broadcast schedules and episode countdowns.
+    4. **Perfil (`library_screen.dart`)**: User profile stats, AniList account, collection lists.
 - **Feed Initial Loading Barrier, Cache-First & SWR Anti-CLS Architecture (`feed_screen.dart`, `FeedCacheService`, `app_providers.dart`)**:
   - **Zero Content Layout Shift (CLS) via Persistent SWR**:
     - Rather than letting fast public providers (`trendingAnimeProvider`, `popularAnimeProvider`) resolve first and render at the top while slow private providers (`continueWatchingProvider`, `animeCollectionProvider`) pop in seconds later to violently push content down, the feed employs a high-performance **Stale-While-Revalidate (SWR) cache-first pipeline**:
@@ -256,8 +271,26 @@ seanime_app/
   - **System Navigation Inset Extension**: Automatically queries `MediaQuery.of(context).viewPadding.bottom` and adds it to the bottom padding (`24 + bottomInset`), ensuring the sidebar canvas extends fully behind the system gesture navigation bar on Android foldables, tablets, and convertibles with zero bottom gaps.
   - **Desktop Tooltips**: Hovering any destination (Search, Home, Manga, Profile, Continue Watching/Reading, Settings) displays a standard desktop `Tooltip` after 400ms for instant identification without visual clutter.
   - **Full Keyboard / DPAD Support**: Full focus traversal and activation handling (`Enter`, `Select`, `Space`, gamepad `A`).
-- **Mobile Episode List & System Gesture Navigation (`anime_detail_mobile_layout.dart`)**:
-  - Automatically incorporates `MediaQuery.of(context).viewPadding.bottom + 16` into the scrollable content padding, ensuring the last episode item and the pagination row ("Anterior" / "Siguiente") clear the Android gesture navigation pill with comfortable breathing room.
+- **Mobile Anime Detail Architecture & Minimalist Inline Action Hub (`anime_detail_mobile_layout.dart`, `AnimeDetailModePopup`, `AnimeDetailSourcePopup`, `AnimeDetailAdvancedSheet`)**:
+  - **Compact Primary Play Button ("Primerito")**:
+    - Prominent primary action button (`FilledButton.icon`, height 41dp, `BorderRadius.circular(22)`, `Icons.play_arrow_rounded` size 21) placed directly beneath the header metadata.
+    - Dynamic label (`▶ Continuar Ep. X`, `▶ Comenzar a ver`, or `↺ Ver de nuevo` upon completion).
+    - Tapping launches immediate playback without requiring extra navigation.
+  - **Dynamic Next Airing Episode Badge**:
+    - Removed redundant static tags like `FINALIZADO` / `EN EMISIÓN` next to the poster. When an anime is currently airing and has schedule data, dynamically displays a gentle badge (e.g. `Ep. 5 pronto`).
+  - **Minimalist Dropdown Chips Row**:
+    - Located directly below the play button in a horizontal scrollable row:
+      1. **Mode Dropdown Chip**: Displays active mode (`🌐 Online ▾`, `⚡ Torrent ▾`, or `📁 Local ▾`). Tapping opens `AnimeDetailModePopup` with a bouncy spring animation (`Curves.easeOutBack`).
+      2. **Provider & Audio Dropdown Chip** (Online mode): Shows active provider and audio tag (`AnimeFlv • SUB ▾` / `DUB`). Tapping opens `AnimeDetailSourcePopup`.
+      3. **AniList Status Chip**: Displays watch status and progress (`🔖 Viendo • Ep. 4/12`). Tapping opens the edit modal.
+    - **Zero Default Clutter**: Eliminates bulky mid-screen tab bars and intrusive dropdown containers; all controls are compact and open on demand.
+  - **Bouncy Spring Expressive Popups (`AnimeDetailModePopup`, `AnimeDetailSourcePopup`)**:
+    - Opens with a lively bounce/spring transition using `Curves.easeOutBack` (scale 0.75 -> 1.0).
+    - **Mode Popup (`AnimeDetailModePopup`)**: Fast 1-tap switching between Streaming Online, Torrents, and Local Media.
+    - **Sources Popup (`AnimeDetailSourcePopup`)**: Displays ONLY available providers with clear radio selection without distracting controls.
+    - **Advanced Options Sheet (`AnimeDetailAdvancedSheet`)**: Accessible via the "Opciones avanzadas" button at the bottom of the source popup. Hosts Sub/Dub audio toggle pills, manual linking (`Vincular`), cache refresh (`Recargar`), and extension marketplace navigation.
+  - **Unobstructed Episode List & Natural Scroll**:
+    - Completely eliminates bottom floating docks so episodes and pagination controls flow cleanly and unobstructed from top to bottom with standard bottom inset padding (`bottomPadding + 24`).
 - **SliverGrid Zero-Width Viewport Protection (`feed_screen.dart`, `manga_feed_screen.dart`)**:
   - Wrapped `SliverGrid.builder` elements inside `SliverLayoutBuilder`. When initial window frames (e.g. Linux GTK, Windows launch before mapping) or tiled layouts supply `constraints.crossAxisExtent <= 32.0`, it returns an empty `SliverToBoxAdapter` rather than triggering Flutter's `assert(constraints.crossAxisExtent > 0.0)` layout assertion crash.
 - **Card Typography & Japanese Fallback Font Pipeline (`theme_provider.dart`, `AnimeCard`, `MangaCard`)**:
@@ -308,10 +341,11 @@ seanime_app/
     - Completely eliminates all glassmorphism, blur, and opacity washes in the floating dock and resume companion.
     - Uses 100% opaque `theme.colorScheme.surfaceContainer` with crisp outline border (`outlineVariant`) and Material 3 elevation shadow.
   - **Selected Pill with Text to the Right & Fluid Pill Animation (`FloatingDockPill`)**:
-    - **Proportions & Ergonomics**: Narrowed dock horizontal margins (`marginH = 26.0`) with increased height (`68.0dp`) and capsule border radius (`34.0dp`). Navigation elements are generously sized to eliminate excessive dead white space: larger icons (26.5dp), prominent button targets (50dp height, 52dp base width), and crisp typography (14.5sp `FontWeight.w600`).
+    - **Contracted Intrinsic Width & Zero Dead Space**: Dock tightly hugs its navigation destinations without stretching across the viewport or creating awkward empty margins beside the outer icons. In standalone and expanded modes, the pill width is calculated intrinsically (`FloatingDockPill.calculateWidth`) and bottom-centered with uniform 8dp padding surrounding the lateral buttons.
+    - **Proportions & Ergonomics**: Compact height (`68.0dp`) with capsule border radius (`34.0dp`). Navigation elements are generously sized to eliminate excessive dead white space: larger icons (26.5dp), prominent button targets (50dp height, 52dp base width), and crisp typography (14.5sp `FontWeight.w600`).
     - **Fluid Animated Pill Expansion**: Tapping a destination smoothly expands its width (`TweenAnimationBuilder`, 280ms, `Curves.easeOutCubic`) while gracefully pushing neighboring icons outward; deselecting smoothly contracts back to a compact button.
     - **Standalone / Expanded Mode**: Unselected items display clean monochrome icons only. The selected item expands into an active pill (`theme.colorScheme.secondaryContainer`) revealing `[Icon]  [Label]` with text deployed to the right of the icon.
-    - **Collapsed Companion Mode (Sharing Bottom Row)**: When the resume companion sits in the bottom row beside the dock, the dock contracts and all destinations switch to **icon-only mode** with an active pill indicator (`[Icon]`), preventing text deployment and layout crowding.
+    - **Collapsed Companion Mode (Sharing Bottom Row)**: When the resume companion sits in the bottom row beside the dock, the dock contracts and all destinations switch to **icon-only mode** with an active pill indicator (`[Icon]`), preventing text deployment and layout crowding. Both the dock and the 68x68 companion are centered together as a compact pair.
   - **Resume Companion Card Architecture (`FloatingResumeCompanion`)**:
     - **Coordinated Dimensions**: Height: 68dp with 34dp capsule radius. Poster thumbnail: 40x52dp (`borderRadius: 9dp`). Typography: bold 13.8sp main title and 11.5sp subTitle. Action button: 42x42dp circular target with 24dp play icon.
     - **Cover Poster Only**: Exclusively displays the anime or manga cover poster (`coverImage`), omitting character art.
@@ -405,6 +439,24 @@ Inspired by **Plezy** (`edde746/plezy`), the player focuses on high performance,
     - `ExoPlayerPlugin.kt`: Sets 60s connect and read timeouts on `DefaultHttpDataSource` for torrent streams, applies `DefaultLoadErrorHandlingPolicy(6)` for automatic retry while pieces buffer, and prevents erroneous HLS manifest retries on torrent streams.
     - `handler.go`: Adds a 15-second polling window in `ServeHTTP` before returning 404, eliminating race conditions when players connect immediately after `torrentstream/start` before initial metadata is fully populated.
   - Supports external subtitle streams via `OnlinestreamVideoSource.subtitles`.
+- **In-Player Online Source Resolution & Live Switching Pipeline (`PlayerSourceCard`, `video_player_screen.dart`, `OnlineStreamView`, `anime_detail_desktop_layout.dart`)**:
+  - **Zero Outside Delay (~0ms Instant Navigation)**:
+    - Previously, clicking an episode in `AnimeDetailScreen` (mobile `OnlineStreamView` and desktop `AnimeDetailDesktopLayout`) displayed a loading spinner on the detail screen while awaiting `repo.getOnlinestreamSource(...)`, followed by a modal bottom sheet/dialog to pick a server/quality before navigating to the player.
+    - Now, tapping an episode immediately pushes `VideoPlayerScreen.route(videoUrl: '', ...)` with zero delay, zero waiting outside, and no modal picker on the detail screen.
+  - **In-Player Background Resolution & Auto-Stream**:
+    - Inside `VideoPlayerScreen`, when `videoUrl` is empty, the player viewport immediately displays a clean, focused loading spinner against the black letterbox background (`isLoadingNextEpisode: _isLoadingNextEpisode || _isResolvingSources`) while `_resolveInitialSources()` resolves the selected provider's sources asynchronously in the background.
+    - As soon as sources arrive from the selected provider, the player **immediately auto-plays the first available source found** without waiting for manual user intervention ("no va a esperar a que lleguen todas las opciones, va a transmitir el primero que encuentre").
+  - **Modular Source Card (`PlayerSourceCard`) in Info Panel**:
+    - Embedded directly in `PlayerInfoPanel` (rendered on both mobile embedded watch page and desktop side panel).
+    - **Visual Hierarchy & State**: Displays active server and quality badge (e.g. `GOGOANIME`, `1080p`), provider name, total loaded options, and dynamic resolution status ("Buscando opciones...", "Reproduciendo primera opción encontrada", or error message).
+    - **On-Demand Reload Action**: Features a reload icon button (`Icons.refresh_rounded` / `AppIcons.refresh`) with tooltip (`l10n.reloadSourcesTooltip`), allowing users to refresh and re-fetch sources at any time directly from the info panel.
+    - **In-Player Live Switching Modal**: Tapping the card opens a Material 3 modal sheet listing all loaded servers and qualities with HLS badges and active playback checkmarks. Tapping any source switches playback seamlessly on-the-fly while preserving the current playback position (`startPosition: _position`).
+- **Modular Player Architecture & Services Decomposition (`video_player_screen.dart` & `services/`)**:
+  - To respect the project's strict `<400–500` lines guideline, `video_player_screen.dart` was decomposed from an initial monolithic >1,660 lines into dedicated single-responsibility domain services in `lib/presentation/widgets/player/services/`:
+    - **`PlayerProgressManager`**: Manages periodic playback continuity updates every 20s, local `LastSessionItem` persistence, and the AniList watched sync latch threshold (~80% watched or within 120s of end).
+    - **`PlayerWindowManager`**: Orchestrates fullscreen transitions, desktop native windowing, mobile orientation rotation stabilization (preventing intermediate landscape layout overflows), Android ExoPlayer surface layout synchronization (`setSurfaceBounds`), and clean exit sequences with black curtains.
+    - **`PlayerSourceController`**: Coordinates online stream source discovery, initial auto-streaming of first found sources without outside waiting, live in-player server/quality switching, seamless episode transitions, and background prefetching.
+    - **`VideoPlayerScreen`**: Retained strictly as a clean coordinator wiring viewport controls, layouts (`PlayerDesktopLayout`, `PlayerMobileLayout`), and state notifiers.
 - **MKV Chapters & Segments**:
   - **Cross-Engine Support (Desktop libmpv & Android ExoPlayer)**:
     - **Desktop (libmpv)**: Auto-extracted via `chapter-list` property into `PlayerChapter` models.
@@ -413,6 +465,7 @@ Inspired by **Plezy** (`edde746/plezy`), the player focuses on high performance,
   - Floating "Saltar Opening / Intro / Ending" pill button appears when playback enters a skippable chapter.
 - **Unified Settings Modal & Responsive Presentation (`PlayerSettingsSheet`)**:
   - Sub-navigation for MKV Chapters, Audio Tracks, Subtitle Tracks, Subtitle/Audio Sync offset (±50ms, ±500ms), Playback Speed, Shaders (OFF by default), Aspect Ratio, Performance Stats, and Torrent Download Progress.
+  - **Shaders Subview & Clean Localization (`ShadersView`, `ShaderPreset`)**: Verbose multi-line descriptions were removed from the shaders view for a clean, streamlined list displaying only the mode names (e.g. "Disabled" / "Desactivado", "Anime4K - Mode A" / "Anime4K - Modo A", "NVScaler", "ArtCNN C4F16") with status checkmarks and off-badges. Shader mode names and player controls tooltips (next episode, mute/unmute, side panel toggle) are fully localized dynamically through `AppTranslations` (`l10n`).
   - **Mobile Embedded Mode (`isBottomSheet: true`)**: When the player is in portrait embedded mode ("modo video pequeño"), settings opens as a sleek **modal bottom sheet** (`showModalBottomSheet`) with a top drag handle indicator and swipe-down-to-dismiss ("de arriba pa abajo"). Bounded to ~70% screen height so the 16:9 video player at the top remains fully visible and playing.
   - **Desktop Windowed / Small Mode (`rightOffset: 380`)**: When the side panel (`PlayerInfoPanel`) is visible on desktop, the settings sheet opens **adjacent to the side panel** rather than overlapping it ("por encima del panel"), featuring floating rounded corners (`BorderRadius.circular(16)`) and crisp borders on both sides. In fullscreen or when side panel is collapsed, it docks smoothly against the screen edge (`rightOffset: 0`).
   - **Fullscreen Mode**: Slides in smoothly from the right edge as a dedicated media control drawer.
@@ -590,6 +643,19 @@ Inspired by **Plezy** (`edde746/plezy`), the player focuses on high performance,
   - **Clean Header**: Header displays only the active step pill (`1 / 5`) and a concise 'Saltar' ('Skip') text button, free of large shiny badges.
   - **Zero-Overflow Bottom Navigation**: Bottom bar is borderless (no harsh top divider line) and uses compact circular action buttons (`IconButton.filledTonal` for back `<`, `IconButton.filled` for next `>` / finish `✓`) centered around animated step dots. Prevents any `RenderFlex` overflow across all compact mobile viewports (`w <= 386.7`).
   - **Borderless Modern Cards**: Replaced heavy enclosing borders and nested boxes with subtle `surfaceElevated.withValues(alpha: 0.40)` containers, breathing space, and sleek tinted selection outlines.
+
+### 4.6. Modern Web-Style Route Transitions Architecture (`custom_route_transitions.dart`, `WebPageTransitionsBuilder`, `SmoothPageRoute`)
+- **Web-Style Snappy Elegance (Linear / Vercel / Apple CSS ease)**:
+  - Replaces sluggish platform zooms and amateurish full-screen scale distortion (`ScaleTransition 0.96 -> 1.0` and 100% horizontal slide pushes) with a unified, high-tier modern web page transition across the entire app.
+  - **Timing & Curves**: Fast 240ms enter and 200ms reverse exit using `Cubic(0.16, 1.0, 0.3, 1.0)` (`kWebDecelCurve`). Starts with immediate velocity for instant touch responsiveness and settles with a soft, natural cushion.
+  - **Zero Scale Distortion**: Completely eliminates `ScaleTransition` so typography, posters, and raster UI retain 100% subpixel crispness during transitions without blurry scaling or jelly-like bounce.
+  - **Layered Micro-Elevation**:
+    - Incoming page glides in with a subtle vertical micro-lift (`Offset(0.0, 0.025) -> Offset.zero`, ~18-20px) while fading in with an 85% opacity plateau curve (`Interval(0.0, 0.85)`).
+    - Outgoing background page gently dims (`1.0 -> 0.90`) and recedes upward by ~9px (`Offset.zero -> Offset(0.0, -0.012)`), providing sophisticated depth and visual stability.
+- **Global Application Integration**:
+  - `WebPageTransitionsBuilder`: Registered in `ThemeData.pageTransitionsTheme` for all platforms (`TargetPlatform.android`, `iOS`, `linux`, `macOS`, `windows`, `fuchsia`) in both `AppThemeBuilder.buildTheme` (`theme_provider.dart`) and `AppTheme.darkTheme` (`app_theme.dart`).
+  - Standard `MaterialPageRoute` and pushed routes automatically inherit this cohesive web transition.
+  - `SmoothPageRoute` and `SlideRightToLeftPageRoute` in `custom_route_transitions.dart` are unified subclasses of `WebPageRoute`, guaranteeing that `AnimeDetailScreen.navigate`, `MangaDetailScreen.navigate`, Settings, Lists, Airing Calendar, Downloads, and Extensions share the exact same modern web feel.
 - **5-Step Onboarding Flow**:
   0. **Language Selection**: Real-time switch between Spanish (`es`) and English (`en`) via `i18nProvider`. Updating language dynamically refreshes extension recommendations in Step 4.
    1. **Appearance & Theming**:

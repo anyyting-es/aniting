@@ -3,6 +3,7 @@ import 'dart:io' show Platform;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/presentation/widgets/m3_expressive_slider.dart';
 
@@ -245,6 +246,7 @@ class _VolumeSliderState extends ConsumerState<VolumeSlider>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final primaryColor = theme.colorScheme.primary;
+    final l10n = ref.watch(translationsProvider);
     final iconPack = ref.watch(iconPackProvider);
     final isMaterial = iconPack == AppIconPack.material;
     final double volumeIconSize = widget.iconSize ??
@@ -261,7 +263,7 @@ class _VolumeSliderState extends ConsumerState<VolumeSlider>
         ),
         constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
         icon: Icon(_getVolumeIcon(iconPack), color: Colors.white, size: volumeIconSize),
-        tooltip: widget.volume > 0 ? 'Silenciar' : 'Activar sonido',
+        tooltip: widget.volume > 0 ? l10n.mute : l10n.unmute,
         onPressed: () {
           if (widget.volume > 0) {
             widget.onVolumeChanged(0.0);

@@ -550,7 +550,7 @@ class _PlayerSettingsSheetState extends ConsumerState<PlayerSettingsSheet> {
             _buildMenuItem(
               icon: AppIcons.sparkles(iconPack),
               title: l10n.shaders,
-              value: _activeShaderPreset.isNone ? l10n.disabled : _activeShaderPreset.name,
+              value: _activeShaderPreset.localizedName(l10n),
               onTap: () =>
                   setState(() => _currentSection = _SettingsSection.shaders),
             ),

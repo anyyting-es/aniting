@@ -108,10 +108,12 @@ class _AiringCalendarScreenState extends ConsumerState<AiringCalendarScreen> {
     final currentDay = days[_selectedDayIndex];
     final daySchedules = _getSchedulesForDay(currentDay);
 
+    final canPop = Navigator.canPop(context);
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.airingCalendar),
-        titleSpacing: 0,
+        automaticallyImplyLeading: canPop,
+        titleSpacing: canPop ? 0 : 16,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
@@ -226,7 +228,7 @@ class _AiringCalendarScreenState extends ConsumerState<AiringCalendarScreen> {
                     : RefreshIndicator(
                         onRefresh: _fetchSchedules,
                         child: ListView.separated(
-                          padding: const EdgeInsets.fromLTRB(14, 12, 14, 30),
+                          padding: const EdgeInsets.fromLTRB(14, 12, 14, 100),
                           itemCount: daySchedules.length,
                           separatorBuilder: (ctx, i) => const SizedBox(height: 10),
                           itemBuilder: (context, index) {

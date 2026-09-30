@@ -4,9 +4,11 @@ import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/data/models/anime_details.dart';
 import 'package:seanime_app/data/models/anizip_data.dart';
+import 'package:seanime_app/data/models/onlinestream_models.dart';
 import 'package:seanime_app/presentation/widgets/anime_details_modal_sheet.dart';
 import 'package:seanime_app/presentation/widgets/player/models/player_types.dart';
 import 'package:seanime_app/presentation/widgets/player/panels/next_episode_card.dart';
+import 'package:seanime_app/presentation/widgets/player/panels/player_source_card.dart';
 
 /// Clean, modular information panel for YouTube-style watch page and desktop side drawer.
 /// Displays current episode details, synopsis, MKV chapters, and next/prev episode navigation.
@@ -25,6 +27,13 @@ class PlayerInfoPanel extends ConsumerStatefulWidget {
   final ValueChanged<Duration> onSeekToChapter;
   final VoidCallback? onPlayNextEpisode;
   final VoidCallback? onPlayPreviousEpisode;
+  final bool isResolvingSources;
+  final List<OnlinestreamVideoSource> availableSources;
+  final OnlinestreamVideoSource? activeSource;
+  final String? sourceResolutionError;
+  final String? onlineStreamProvider;
+  final VoidCallback? onReloadSources;
+  final ValueChanged<OnlinestreamVideoSource>? onSelectSource;
 
   const PlayerInfoPanel({
     super.key,
@@ -42,6 +51,13 @@ class PlayerInfoPanel extends ConsumerStatefulWidget {
     required this.onSeekToChapter,
     this.onPlayNextEpisode,
     this.onPlayPreviousEpisode,
+    this.isResolvingSources = false,
+    this.availableSources = const [],
+    this.activeSource,
+    this.sourceResolutionError,
+    this.onlineStreamProvider,
+    this.onReloadSources,
+    this.onSelectSource,
   });
 
   @override
@@ -337,6 +353,25 @@ class _PlayerInfoPanelState extends ConsumerState<PlayerInfoPanel> {
                         ),
                       ],
                     ],
+                  ),
+                ],
+
+                // 3.5. Playback source card (reloads, displays active server/quality, switches sources)
+                if (widget.isResolvingSources ||
+                    widget.availableSources.isNotEmpty ||
+                    widget.onlineStreamProvider != null ||
+                    widget.sourceResolutionError != null) ...[
+                  const SizedBox(height: 12),
+                  PlayerSourceCard(
+                    isResolvingSources: widget.isResolvingSources,
+                    availableSources: widget.availableSources,
+                    activeSource: widget.activeSource,
+                    sourceResolutionError: widget.sourceResolutionError,
+                    providerName: widget.onlineStreamProvider,
+                    episodeNumber: currentEpNum,
+                    animeTitle: widget.animeTitle,
+                    onReloadSources: widget.onReloadSources,
+                    onSelectSource: widget.onSelectSource,
                   ),
                 ],
 

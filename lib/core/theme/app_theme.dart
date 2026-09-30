@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:seanime_app/core/theme/custom_route_transitions.dart';
 
 class AppTheme {
   static final ThemeData darkTheme = ThemeData(
@@ -24,6 +25,16 @@ class AppTheme {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
+    ),
+    pageTransitionsTheme: const PageTransitionsTheme(
+      builders: {
+        TargetPlatform.android: WebPageTransitionsBuilder(),
+        TargetPlatform.iOS: WebPageTransitionsBuilder(),
+        TargetPlatform.linux: WebPageTransitionsBuilder(),
+        TargetPlatform.macOS: WebPageTransitionsBuilder(),
+        TargetPlatform.windows: WebPageTransitionsBuilder(),
+        TargetPlatform.fuchsia: WebPageTransitionsBuilder(),
+      },
     ),
   );
 }

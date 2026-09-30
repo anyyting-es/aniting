@@ -1,0 +1,163 @@
+import 'dart:async';
+import 'package:flutter/foundation.dart';
+import 'package:seanime_app/core/preferences/resume_bar_preferences_provider.dart';
+import 'package:seanime_app/data/repositories/seanime_repository.dart';
+
+/// Service responsible for managing video playback progress, periodic continuity updates,
+/// LastSession persistence, and automatic AniList watched progress synchronization.
+class PlayerProgressManager {
+  final SeanimeRepository repository;
+  final LastSessionNotifier lastSessionNotifier;
+  final int? mediaId;
+  final String title;
+  final ValueGetter<String?> getCoverImage;
+  final ValueGetter<String?> getCharacterImage;
+  final ValueGetter<int?> getEpisodeNumber;
+  final ValueGetter<String?> getEpisodeTitle;
+  final ValueGetter<String> getVideoUrl;
+  final ValueGetter<Map<String, String>?> getHeaders;
+  final ValueGetter<String?> getMimeType;
+  final ValueGetter<String?> getVideoSource;
+  final ValueGetter<Duration> getPosition;
+  final ValueGetter<Duration> getDuration;
+  final ValueGetter<bool> getIsPlaying;
+  final ValueGetter<int?> getTotalEpisodes;
+  final VoidCallback? onProgressSynced;
+
+  Timer? _continuityTimer;
+  bool _hasUpdatedAnimeProgress = false;
+
+  PlayerProgressManager({
+    required this.repository,
+    required this.lastSessionNotifier,
+    required this.mediaId,
+    required this.title,
+    required this.getCoverImage,
+    required this.getCharacterImage,
+    required this.getEpisodeNumber,
+    required this.getEpisodeTitle,
+    required this.getVideoUrl,
+    required this.getHeaders,
+    required this.getMimeType,
+    required this.getVideoSource,
+    required this.getPosition,
+    required this.getDuration,
+    required this.getIsPlaying,
+    required this.getTotalEpisodes,
+    this.onProgressSynced,
+  });
+
+  /// Starts periodic continuity tracking every 20 seconds while playing.
+  void startTracking({Duration? initialPosition}) {
+    if (mediaId == null) return;
+
+    final initialSec = (initialPosition?.inSeconds ?? 0).toDouble();
+    repository.updateContinuityItem(
+      mediaId: mediaId!,
+      episodeNumber: getEpisodeNumber() ?? 1,
+      currentTime: initialSec,
+      duration: 0.0,
+    );
+
+    savePlaybackProgress();
+
+    _continuityTimer?.cancel();
+    _continuityTimer = Timer.periodic(const Duration(seconds: 20), (_) {
+      if (getIsPlaying()) {
+        savePlaybackProgress();
+      }
+    });
+  }
+
+  /// Resets the AniList watched sync latch for a newly switched episode.
+  void resetEpisodeLatch() {
+    _hasUpdatedAnimeProgress = false;
+  }
+
+  /// Saves the current playback progress both to the server continuity item
+  /// and local LastSessionItem.
+  void savePlaybackProgress() {
+    if (mediaId == null) return;
+
+    final pos = getPosition();
+    final dur = getDuration();
+    final epNum = getEpisodeNumber() ?? 1;
+
+    try {
+      repository.updateContinuityItem(
+        mediaId: mediaId!,
+        episodeNumber: epNum,
+        currentTime: pos.inSeconds.toDouble(),
+        duration: dur.inSeconds.toDouble(),
+      );
+
+      final sessionItem = LastSessionItem(
+        mediaType: 'ANIME',
+        mediaId: mediaId!,
+        title: title,
+        coverImage: getCoverImage(),
+        characterImage: getCharacterImage(),
+        episodeNumber: epNum,
+        episodeTitle: getEpisodeTitle(),
+        videoUrl: getVideoUrl(),
+        headers: getHeaders(),
+        mimeType: getMimeType(),
+        videoSource: getVideoSource(),
+        positionMs: pos.inMilliseconds,
+        durationMs: dur.inMilliseconds,
+        updatedAt: DateTime.now().millisecondsSinceEpoch,
+      );
+
+      Future.microtask(() {
+        lastSessionNotifier.saveSession(sessionItem);
+      });
+    } catch (e) {
+      debugPrint('[PlayerProgressManager] Error saving progress: $e');
+    }
+  }
+
+  /// Checks whether playback has passed the threshold to sync with AniList
+  /// (~80% watched OR within 120s of end with >=120s watched).
+  void syncAnimeProgressIfNeeded() {
+    if (_hasUpdatedAnimeProgress) return;
+    if (mediaId == null) return;
+
+    final epNum = getEpisodeNumber();
+    if (epNum == null || epNum < 1) return;
+
+    final durSec = getDuration().inSeconds;
+    final posSec = getPosition().inSeconds;
+    if (durSec <= 0 || posSec <= 0) return;
+
+    final fraction = posSec / durSec;
+    final remaining = durSec - posSec;
+    final isNearEnd = fraction >= 0.80 || (posSec >= 120 && remaining <= 120);
+
+    if (!isNearEnd) return;
+
+    _hasUpdatedAnimeProgress = true;
+
+    repository
+        .updateAnimeProgress(
+      mediaId: mediaId!,
+      episodeNumber: epNum,
+      totalEpisodes: getTotalEpisodes(),
+    )
+        .then((_) {
+      onProgressSynced?.call();
+    }).catchError((e) {
+      debugPrint('[PlayerProgressManager] Error syncing AniList progress: $e');
+    });
+  }
+
+  /// Disposes timers and performs final progress flush.
+  void dispose() {
+    _continuityTimer?.cancel();
+    try {
+      savePlaybackProgress();
+    } catch (_) {}
+    try {
+      syncAnimeProgressIfNeeded();
+    } catch (_) {}
+  }
+}

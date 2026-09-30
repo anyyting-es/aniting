@@ -2,6 +2,7 @@ abstract class AppTranslations {
   // Navigation & Shell
   String get navHome;
   String get navExplore;
+  String get navCalendar;
   String get navProfile;
   String get navSettings;
   String get profile;
@@ -308,6 +309,19 @@ abstract class AppTranslations {
   String get audioSync;
   String get playbackSpeed;
   String get shaders;
+  String get mode;
+  String get nextEpisode;
+  String get mute;
+  String get unmute;
+  String get showInfo;
+  String get collapsePanel;
+  String get playbackSources;
+  String get searchingSources;
+  String get playingFirstAvailable;
+  String get tapToChangeSource;
+  String get reloadSourcesTooltip;
+  String get noSourcesFoundForEpisode;
+  String get availableSourcesCount;
   String get aspectRatio;
   String get screenFit;
   String get videoSource;

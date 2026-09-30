@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/presentation/widgets/player/controls/player_bottom_bar.dart';
 import 'package:seanime_app/presentation/widgets/player/controls/player_gesture_overlay.dart';
 import 'package:seanime_app/presentation/widgets/player/controls/player_top_bar.dart';
@@ -13,13 +14,23 @@ import 'package:seanime_app/presentation/widgets/torrent_selector_sheet.dart';
 import 'package:seanime_app/data/models/anime_details.dart';
 import 'package:seanime_app/data/models/anizip_data.dart';
 
+class _MaterialIconPackNotifier extends IconPackNotifier {
+  @override
+  AppIconPack build() => AppIconPack.material;
+}
+
 void main() {
   group('Player UI Components Tests', () {
     testWidgets('SeekFeedbackToast displays correct icon and label', (tester) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: SeekFeedbackToast(text: '+10 s'),
+        ProviderScope(
+          overrides: [
+            iconPackProvider.overrideWith(_MaterialIconPackNotifier.new),
+          ],
+          child: const MaterialApp(
+            home: Scaffold(
+              body: SeekFeedbackToast(text: '+10 s'),
+            ),
           ),
         ),
       );
@@ -28,9 +39,14 @@ void main() {
       expect(find.byIcon(Icons.fast_forward_rounded), findsOneWidget);
 
       await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: SeekFeedbackToast(text: '-10 s'),
+        ProviderScope(
+          overrides: [
+            iconPackProvider.overrideWith(_MaterialIconPackNotifier.new),
+          ],
+          child: const MaterialApp(
+            home: Scaffold(
+              body: SeekFeedbackToast(text: '-10 s'),
+            ),
           ),
         ),
       );
@@ -52,6 +68,9 @@ void main() {
 
       await tester.pumpWidget(
         ProviderScope(
+          overrides: [
+            iconPackProvider.overrideWith(_MaterialIconPackNotifier.new),
+          ],
           child: MaterialApp(
             home: Scaffold(
               body: Stack(
@@ -72,7 +91,7 @@ void main() {
       expect(find.text('h264'), findsOneWidget);
       expect(find.text('1920x1080'), findsOneWidget);
 
-      await tester.tap(find.byIcon(Icons.close));
+      await tester.tap(find.byIcon(Icons.close_rounded));
       await tester.pump();
 
       expect(closed, isTrue);
@@ -84,6 +103,9 @@ void main() {
 
       await tester.pumpWidget(
         ProviderScope(
+          overrides: [
+            iconPackProvider.overrideWith(_MaterialIconPackNotifier.new),
+          ],
           child: MaterialApp(
             home: Scaffold(
               body: PlayerTopBar(
@@ -99,12 +121,12 @@ void main() {
 
       expect(find.text('Sousou no Frieren'), findsOneWidget);
       expect(find.text('Episodio 1: El fin del viaje'), findsOneWidget);
-      expect(find.byIcon(Icons.settings_outlined), findsOneWidget);
+      expect(find.byIcon(Icons.settings_rounded), findsOneWidget);
 
       await tester.tap(find.byIcon(Icons.arrow_back_rounded));
       expect(backed, isTrue);
 
-      await tester.tap(find.byIcon(Icons.settings_outlined));
+      await tester.tap(find.byIcon(Icons.settings_rounded));
       expect(settingsOpened, isTrue);
     });
 
@@ -178,6 +200,9 @@ void main() {
 
       await tester.pumpWidget(
         ProviderScope(
+          overrides: [
+            iconPackProvider.overrideWith(_MaterialIconPackNotifier.new),
+          ],
           child: MaterialApp(
             home: Scaffold(
               body: PlayerBottomBar(
@@ -226,6 +251,9 @@ void main() {
 
       await tester.pumpWidget(
         ProviderScope(
+          overrides: [
+            iconPackProvider.overrideWith(_MaterialIconPackNotifier.new),
+          ],
           child: MaterialApp(
             home: Scaffold(
               body: Builder(

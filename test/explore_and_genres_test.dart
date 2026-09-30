@@ -32,7 +32,7 @@ void main() {
       await tester.pump();
 
       expect(find.text('Explorar'), findsNothing);
-      expect(find.byIcon(Icons.calendar_month_rounded), findsOneWidget);
+      expect(find.byIcon(Icons.calendar_month_rounded), findsNothing);
       expect(find.byIcon(Icons.category_rounded), findsOneWidget);
       expect(find.byIcon(Icons.search_rounded), findsOneWidget);
 

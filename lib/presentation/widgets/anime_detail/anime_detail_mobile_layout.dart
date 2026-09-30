@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/preferences/episode_view_mode_provider.dart';
 import 'package:seanime_app/core/preferences/streaming_preferences_provider.dart';
@@ -9,14 +10,20 @@ import 'package:seanime_app/core/theme/app_theme_colors.dart';
 import 'package:seanime_app/data/models/anime_details.dart';
 import 'package:seanime_app/data/models/anime_entry.dart';
 import 'package:seanime_app/data/models/anizip_data.dart';
+import 'package:seanime_app/data/models/library_entry_details.dart';
+import 'package:seanime_app/data/models/onlinestream_models.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
+import 'package:seanime_app/presentation/screens/video_player_screen.dart';
 import 'package:seanime_app/presentation/widgets/anizip_episode_list.dart';
 import 'package:seanime_app/presentation/widgets/local_library_view.dart';
 import 'package:seanime_app/presentation/widgets/online_stream_view.dart';
 
+import 'mobile/anime_detail_mode_popup.dart';
+import 'mobile/anime_detail_source_popup.dart';
+
 enum AnimeDetailTab { online, torrent }
 
-class AnimeDetailMobileLayout extends ConsumerWidget {
+class AnimeDetailMobileLayout extends ConsumerStatefulWidget {
   final int mediaId;
   final AnimeEntry? initialEntry;
   final AnimeDetails? details;
@@ -66,7 +73,311 @@ class AnimeDetailMobileLayout extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AnimeDetailMobileLayout> createState() =>
+      _AnimeDetailMobileLayoutState();
+}
+
+class _AnimeDetailMobileLayoutState
+    extends ConsumerState<AnimeDetailMobileLayout> {
+  static const String _prefLastProviderKey = 'last_selected_online_provider';
+  final OnlineStreamViewController _onlineStreamController =
+      OnlineStreamViewController();
+
+  List<OnlinestreamProvider> _providers = [];
+  OnlinestreamProvider? _selectedProvider;
+  bool _isDubbed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedProvider();
+  }
+
+  Future<void> _loadSavedProvider() async {
+    try {
+      final repo = ref.read(repositoryProvider);
+      final list = await repo.getOnlinestreamProviders();
+      OnlinestreamProvider? initialProvider;
+      if (list.isNotEmpty) {
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          final savedId = prefs.getString(_prefLastProviderKey);
+          if (savedId != null && list.any((p) => p.id == savedId)) {
+            initialProvider = list.firstWhere((p) => p.id == savedId);
+          }
+        } catch (_) {}
+        initialProvider ??= list.first;
+      }
+      if (mounted) {
+        setState(() {
+          _providers = list;
+          _selectedProvider = initialProvider;
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _handlePlayNext(int progress) async {
+    final nextEp = progress > 0 ? progress + 1 : 1;
+
+    // 1. Fast-path: local library file
+    try {
+      final repo = ref.read(repositoryProvider);
+      final entry = await repo.getAnimeLibraryEntry(widget.mediaId);
+      final localEp = entry?.episodes.cast<LibraryEpisode?>().firstWhere(
+        (e) => e?.episodeNumber == nextEp,
+        orElse: () => null,
+      );
+      if (localEp != null && mounted) {
+        final serverManager = ref.read(serverManagerProvider);
+        final titleLang = ref.read(titleLanguageProvider);
+        final animeTitle = widget.details?.displayTitle(titleLang) ?? 'Anime';
+        final streamUrl = localEp.localFilePath != null &&
+                localEp.localFilePath!.isNotEmpty
+            ? 'http://${serverManager.host}:${serverManager.port}/api/v1/mediastream/file?path=${Uri.encodeComponent(localEp.localFilePath!)}'
+            : 'http://${serverManager.host}:${serverManager.port}/api/v1/mediastream?mediaId=${widget.mediaId}&episodeNumber=${localEp.episodeNumber}';
+        final fileName = localEp.localFilePath?.split(RegExp(r'[/\\]')).last;
+
+        Navigator.of(context, rootNavigator: true).push(
+          VideoPlayerScreen.route(
+            mediaId: widget.mediaId,
+            videoUrl: streamUrl,
+            title: animeTitle,
+            episodeTitle: localEp.displayTitle.isNotEmpty
+                ? localEp.displayTitle
+                : 'Episodio $nextEp',
+            episodeNumber: nextEp,
+            videoSource: fileName != null
+                ? 'Local • $fileName'
+                : 'Biblioteca Local',
+            isLocalFile: true,
+            animeDetails: widget.details,
+            aniZipData: widget.aniZipData ?? widget.details?.aniZipData,
+          ),
+        );
+        return;
+      }
+    } catch (_) {}
+
+    if (widget.currentTab == AnimeDetailTab.torrent) {
+      widget.onOpenTorrentSelector(
+        episodeNumber: nextEp,
+        episodeTitle: 'Episodio $nextEp',
+      );
+    } else {
+      if (!mounted) return;
+      final titleLang = ref.read(titleLanguageProvider);
+      final animeTitle = widget.details?.displayTitle(titleLang) ?? 'Anime';
+      final providerName = _selectedProvider?.name ?? 'Online';
+
+      Navigator.of(context, rootNavigator: true).push(
+        VideoPlayerScreen.route(
+          mediaId: widget.mediaId,
+          videoUrl: '',
+          title: animeTitle,
+          episodeTitle: 'Episodio $nextEp',
+          episodeNumber: nextEp,
+          videoSource: providerName,
+          animeDetails: widget.details,
+          aniZipData: widget.aniZipData ?? widget.details?.aniZipData,
+          onlineStreamProvider: _selectedProvider?.id,
+          onlineStreamDubbed: _isDubbed,
+          onlineStreamServer: null,
+        ),
+      );
+    }
+  }
+
+
+  void _openSourceSelector() {
+    AnimeDetailSourcePopup.show(
+      context: context,
+      providers: _providers,
+      selectedProvider: _selectedProvider,
+      isDubbed: _isDubbed,
+      onProviderChanged: (newProv) {
+        if (newProv != null) {
+          setState(() => _selectedProvider = newProv);
+          SharedPreferences.getInstance().then((prefs) {
+            prefs.setString(_prefLastProviderKey, newProv.id);
+          }).catchError((_) {});
+        }
+      },
+      onToggleDubbed: (isDub) {
+        setState(() => _isDubbed = isDub);
+      },
+      onOpenManualMapping: () {
+        _onlineStreamController.openManualMapping(context);
+      },
+      onRefreshCache: () {
+        _onlineStreamController.refresh();
+      },
+    );
+  }
+
+  String _formatPlayButtonLabel(int progress, int? totalEpisodes) {
+    if (progress > 0 && totalEpisodes != null && progress >= totalEpisodes) {
+      return 'Ver de nuevo';
+    }
+    if (progress > 0) {
+      return 'Continuar Ep. ${progress + 1}';
+    }
+    return 'Comenzar a ver';
+  }
+
+  Widget _buildModeDropdownChip(ThemeData theme, AnimeDetailTab effectiveTab) {
+    final isTorrent = !widget.isLocalMode && effectiveTab == AnimeDetailTab.torrent;
+    final isLocal = widget.isLocalMode;
+
+    final IconData modeIcon = isLocal
+        ? Icons.folder_rounded
+        : (isTorrent ? Icons.cloud_download_rounded : Icons.public_rounded);
+    final String modeLabel = isLocal
+        ? 'Local'
+        : (isTorrent ? 'Torrent' : 'Online');
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () {
+          AnimeDetailModePopup.show(
+            context: context,
+            currentTab: effectiveTab,
+            isLocalMode: widget.isLocalMode,
+            hasLocalFiles: widget.hasLocalFiles,
+            onTabChanged: widget.onTabChanged,
+            onToggleLocalMode: widget.onToggleLocalMode,
+          );
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
+              width: 1.0,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(modeIcon, size: 15, color: theme.colorScheme.primary),
+            const SizedBox(width: 6),
+            Text(
+              modeLabel,
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(width: 4),
+            Icon(Icons.arrow_drop_down_rounded, size: 18, color: theme.colorScheme.onSurfaceVariant),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+  Widget _buildProviderDropdownChip(ThemeData theme) {
+    final providerName = _selectedProvider?.name ?? 'Fuente';
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: _openSourceSelector,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
+              width: 1.0,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.tune_rounded, size: 14, color: theme.colorScheme.primary),
+              const SizedBox(width: 6),
+              Text(
+                providerName,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+              if (_isDubbed) ...[
+                const SizedBox(width: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: const Text(
+                    'DUB',
+                    style: TextStyle(
+                      fontSize: 8.5,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.amber,
+                    ),
+                  ),
+                ),
+              ],
+              const SizedBox(width: 4),
+              Icon(Icons.arrow_drop_down_rounded, size: 18, color: theme.colorScheme.onSurfaceVariant),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAniListStatusChip(ThemeData theme, String title, String progressText, String watchStatusText) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () => widget.onOpenEditEntryModal(title),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
+              width: 1.0,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.bookmark_border_rounded, size: 15, color: theme.colorScheme.primary),
+              const SizedBox(width: 6),
+              Text(
+                watchStatusText.isNotEmpty ? '$watchStatusText • $progressText' : 'Editar lista',
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = context.themeColors;
     final l10n = ref.watch(translationsProvider);
@@ -80,40 +391,39 @@ class AnimeDetailMobileLayout extends ConsumerWidget {
     final torrentEnabled = streamingPrefs.torrentStreamingEnabled;
     final onlineEnabled = streamingPrefs.onlineStreamingEnabled;
 
-    final effectiveTab = (currentTab == AnimeDetailTab.online &&
+    final effectiveTab = (widget.currentTab == AnimeDetailTab.online &&
             !onlineEnabled &&
             torrentEnabled)
         ? AnimeDetailTab.torrent
-        : (currentTab == AnimeDetailTab.torrent &&
+        : (widget.currentTab == AnimeDetailTab.torrent &&
                 !torrentEnabled &&
                 onlineEnabled)
             ? AnimeDetailTab.online
-            : currentTab;
+            : widget.currentTab;
 
-    final title = details?.displayTitle(titleLang) ??
-        initialEntry?.displayTitle(titleLang) ??
-        (details?.title.isNotEmpty == true && details?.title != l10n.noTitle
-            ? details!.title
+    final title = widget.details?.displayTitle(titleLang) ??
+        widget.initialEntry?.displayTitle(titleLang) ??
+        (widget.details?.title.isNotEmpty == true &&
+                widget.details?.title != l10n.noTitle
+            ? widget.details!.title
             : null) ??
-        initialEntry?.title ??
+        widget.initialEntry?.title ??
         l10n.loading;
 
-    final coverUrl = details?.coverImage ?? initialEntry?.coverImage;
+    final coverUrl = widget.details?.coverImage ?? widget.initialEntry?.coverImage;
     final bannerUrl =
-        details?.bannerImage ?? initialEntry?.bannerImage ?? coverUrl;
-    final score = details?.score ?? initialEntry?.score;
-    final format = details?.format ?? initialEntry?.format ?? 'TV';
-    final episodes = details?.totalEpisodes ?? initialEntry?.totalEpisodes;
-    final status = details?.status ?? initialEntry?.status;
+        widget.details?.bannerImage ?? widget.initialEntry?.bannerImage ?? coverUrl;
+    final score = widget.details?.score ?? widget.initialEntry?.score;
+    final format = widget.details?.format ?? widget.initialEntry?.format ?? 'TV';
+    final episodes = widget.details?.totalEpisodes ?? widget.initialEntry?.totalEpisodes;
 
     final displayScore = score != null && score > 0
-        ? (score > 10
-            ? (score / 10).toStringAsFixed(1)
-            : score.toStringAsFixed(1))
+        ? (score > 10 ? (score / 10).toStringAsFixed(1) : score.toStringAsFixed(1))
         : '8.0';
 
-    final year = details?.seasonYear ?? details?.rawMedia?['startDate']?['year'];
-    final season = details?.season;
+    final year = widget.details?.seasonYear ??
+        widget.details?.rawMedia?['startDate']?['year'];
+    final season = widget.details?.season;
     final dateParts = <String>[];
     if (year != null && season != null) {
       dateParts.add('${l10n.formatSeason(season)} $year');
@@ -122,36 +432,37 @@ class AnimeDetailMobileLayout extends ConsumerWidget {
     } else if (season != null) {
       dateParts.add(l10n.formatSeason(season));
     }
-    final formattedStatus = l10n.formatStatus(status ?? details?.status);
-    if (formattedStatus.isNotEmpty) {
-      dateParts.add(formattedStatus);
+    final nextAiring = widget.details?.rawMedia?['nextAiringEpisode'];
+    final nextEpNum = nextAiring?['episode'] ?? widget.initialEntry?.nextAiringEpisodeNumber;
+    if (nextEpNum != null) {
+      dateParts.add('Ep. $nextEpNum pronto');
     }
     final dateSeasonStatus = dateParts.join(' • ');
 
-    final genresList = details?.genres ?? [];
+    final genresList = widget.details?.genres ?? [];
     final genresString = genresList.take(3).join('  ');
 
     final liveCollectionEntry = ref.watch(animeCollectionProvider).whenOrNull(
           data: (entries) =>
-              entries.where((e) => e.mediaId == mediaId).firstOrNull,
+              entries.where((e) => e.mediaId == widget.mediaId).firstOrNull,
         );
     final progress = liveCollectionEntry?.progress ??
-        details?.progress ??
-        initialEntry?.progress ??
+        widget.details?.progress ??
+        widget.initialEntry?.progress ??
         0;
-    final totalEps = episodes ?? details?.totalEpisodes;
+    final totalEps = episodes ?? widget.details?.totalEpisodes;
     final progressText = progress > 0
         ? '$progress/${totalEps ?? "?"}'
         : (totalEps != null ? '$totalEps eps' : format);
     final userWatchStatus = liveCollectionEntry?.status ??
-        details?.userStatus ??
-        initialEntry?.status;
+        widget.details?.userStatus ??
+        widget.initialEntry?.status;
     final watchStatusText =
         l10n.formatWatchStatus(userWatchStatus, progress, totalEps, format);
 
     return Stack(
       children: [
-        // Fixed background banner with ambient breathing motion and parallax
+        // 1. Ambient Background Banner
         Positioned(
           top: -16,
           left: 0,
@@ -161,7 +472,7 @@ class AnimeDetailMobileLayout extends ConsumerWidget {
             child: RepaintBoundary(
               child: AnimatedBuilder(
                 animation: Listenable.merge(
-                    [bannerAnimController, scrollController]),
+                    [widget.bannerAnimController, widget.scrollController]),
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
@@ -208,16 +519,15 @@ class AnimeDetailMobileLayout extends ConsumerWidget {
                   ],
                 ),
                 builder: (context, child) {
-                  final scrollOffset = scrollController.hasClients
-                      ? scrollController.offset.clamp(0.0, double.infinity)
+                  final scrollOffset = widget.scrollController.hasClients
+                      ? widget.scrollController.offset.clamp(0.0, double.infinity)
                       : 0.0;
                   final ambientScale =
-                      1.0 + (bannerScaleAnimation.value * 0.05);
-                  final ambientTranslateY = bannerTranslateAnimation.value;
+                      1.0 + (widget.bannerScaleAnimation.value * 0.05);
+                  final ambientTranslateY = widget.bannerTranslateAnimation.value;
                   final parallaxTranslateY =
                       scrollOffset > 0 ? -scrollOffset * 0.35 : 0.0;
-                  final totalTranslateY =
-                      ambientTranslateY + parallaxTranslateY;
+                  final totalTranslateY = ambientTranslateY + parallaxTranslateY;
 
                   return Transform.translate(
                     offset: Offset(0, totalTranslateY),
@@ -233,507 +543,488 @@ class AnimeDetailMobileLayout extends ConsumerWidget {
           ),
         ),
 
-        // Foreground scrollable content
+        // 2. Foreground Scrollable Content
         Builder(
           builder: (context) {
             final bottomPadding = MediaQuery.of(context).viewPadding.bottom;
             return CustomScrollView(
-          controller: scrollController,
-          physics: const ClampingScrollPhysics(),
-          slivers: [
-            SliverAppBar(
-              pinned: true,
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              scrolledUnderElevation: 0,
-              leading: IconButton(
-                icon: Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.55),
-                    shape: BoxShape.circle,
+              controller: widget.scrollController,
+              physics: const ClampingScrollPhysics(),
+              slivers: [
+                SliverAppBar(
+                  pinned: true,
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  scrolledUnderElevation: 0,
+                  leading: IconButton(
+                    icon: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.55),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.arrow_back,
+                          color: Colors.white, size: 20),
+                    ),
+                    onPressed: () => Navigator.pop(context),
                   ),
-                  child: const Icon(Icons.arrow_back,
-                      color: Colors.white, size: 20),
-                ),
-                onPressed: () => Navigator.pop(context),
-              ),
-              actions: [
-                IconButton(
-                  tooltip:
-                      isLocalMode ? l10n.exitLocalMode : l10n.enterLocalMode,
-                  icon: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      Container(
+                  actions: [
+                    IconButton(
+                      tooltip: widget.isLocalMode
+                          ? l10n.exitLocalMode
+                          : l10n.enterLocalMode,
+                      icon: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: widget.isLocalMode
+                                  ? theme.colorScheme.primaryContainer
+                                  : Colors.black.withValues(alpha: 0.55),
+                              shape: BoxShape.circle,
+                              border: widget.isLocalMode
+                                  ? Border.all(
+                                      color: theme.colorScheme.primary,
+                                      width: 1.5)
+                                  : null,
+                            ),
+                            child: Icon(
+                              widget.isLocalMode
+                                  ? Icons.folder_rounded
+                                  : Icons.folder_outlined,
+                              color: widget.isLocalMode
+                                  ? theme.colorScheme.primary
+                                  : Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                          if (widget.hasLocalFiles && !widget.isLocalMode)
+                            Positioned(
+                              right: 0,
+                              top: 0,
+                              child: Container(
+                                width: 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: theme.colorScheme.primary,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Colors.black,
+                                    width: 1.5,
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      onPressed: widget.onToggleLocalMode,
+                    ),
+                    IconButton(
+                      tooltip: l10n.animeDetails,
+                      icon: Container(
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          color: isLocalMode
-                              ? theme.colorScheme.primaryContainer
-                              : Colors.black.withValues(alpha: 0.55),
+                          color: Colors.black.withValues(alpha: 0.55),
                           shape: BoxShape.circle,
-                          border: isLocalMode
-                              ? Border.all(
-                                  color: theme.colorScheme.primary, width: 1.5)
-                              : null,
                         ),
-                        child: Icon(
-                          isLocalMode
-                              ? Icons.folder_rounded
-                              : Icons.folder_outlined,
-                          color: isLocalMode
-                              ? theme.colorScheme.primary
-                              : Colors.white,
+                        child: const Icon(
+                          Icons.info_outline_rounded,
+                          color: Colors.white,
                           size: 20,
                         ),
                       ),
-                      if (hasLocalFiles && !isLocalMode)
-                        Positioned(
-                          right: 0,
-                          top: 0,
-                          child: Container(
-                            width: 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.primary,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: Colors.black,
-                                width: 1.5,
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                  onPressed: onToggleLocalMode,
-                ),
-                IconButton(
-                  tooltip: l10n.animeDetails,
-                  icon: Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.55),
-                      shape: BoxShape.circle,
+                      onPressed: widget.onOpenDetailsModal,
                     ),
-                    child: const Icon(
-                      Icons.info_outline_rounded,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                  ),
-                  onPressed: onOpenDetailsModal,
+                    const SizedBox(width: 8),
+                  ],
                 ),
-                const SizedBox(width: 8),
-              ],
-            ),
 
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(16, 26, 16, bottomPadding + 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(16, 26, 16, bottomPadding + 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        if (coverUrl != null)
-                          Container(
-                            width: 125,
-                            height: 185,
-                            decoration: BoxDecoration(
-                              borderRadius:
-                                  BorderRadius.circular(colors.borderRadius),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.45),
-                                  blurRadius: 16,
-                                  offset: const Offset(0, 6),
-                                ),
-                              ],
-                            ),
-                            clipBehavior: Clip.antiAlias,
-                            child: CachedNetworkImage(
-                              imageUrl: coverUrl,
-                              fit: BoxFit.cover,
-                              memCacheWidth: 300,
-                              memCacheHeight: 440,
-                            ),
-                          ),
-                        const SizedBox(width: 14),
-
-                        Expanded(
-                          child: SizedBox(
-                            height: 185,
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  title,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 19,
-                                    color: titleColor,
-                                    height: 1.2,
-                                    shadows: isDark
-                                        ? [
-                                            Shadow(
-                                              color: Colors.black
-                                                  .withValues(alpha: 0.8),
-                                              offset: const Offset(0, 1),
-                                              blurRadius: 4,
-                                            ),
-                                          ]
-                                        : null,
-                                  ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 6),
-
-                                if (dateSeasonStatus.isNotEmpty) ...[
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        Icons.calendar_month_rounded,
-                                        size: 14,
-                                        color: subtitleColor,
-                                      ),
-                                      const SizedBox(width: 5),
-                                      Expanded(
-                                        child: Text(
-                                          dateSeasonStatus,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(
-                                            color: subtitleColor,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w400,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 5),
-                                ],
-
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.favorite_rounded,
-                                      size: 14,
-                                      color: isDark
-                                          ? Colors.white.withValues(alpha: 0.85)
-                                          : theme.colorScheme.primary,
+                        // Poster + Header Info Row
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            if (coverUrl != null)
+                              Container(
+                                width: 125,
+                                height: 185,
+                                decoration: BoxDecoration(
+                                  borderRadius:
+                                      BorderRadius.circular(colors.borderRadius),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: 0.45),
+                                      blurRadius: 16,
+                                      offset: const Offset(0, 6),
                                     ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      displayScore,
-                                      style: TextStyle(
-                                        color: titleColor,
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    if (genresString.isNotEmpty) ...[
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Text(
-                                          genresString,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(
-                                            color: subtitleColor,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w400,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
                                   ],
                                 ),
-                                const SizedBox(height: 7),
+                                clipBehavior: Clip.antiAlias,
+                                child: CachedNetworkImage(
+                                  imageUrl: coverUrl,
+                                  fit: BoxFit.cover,
+                                  memCacheWidth: 300,
+                                  memCacheHeight: 440,
+                                ),
+                              ),
+                            const SizedBox(width: 14),
 
-                                Row(
+                            Expanded(
+                              child: SizedBox(
+                                height: 185,
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    InkWell(
-                                      onTap: () => onOpenEditEntryModal(title),
-                                      borderRadius: BorderRadius.circular(
-                                          (colors.borderRadius * 0.5)
-                                              .clamp(0.0, 8.0)),
-                                      child: Container(
-                                        padding: const EdgeInsets.all(4),
-                                        decoration: BoxDecoration(
-                                          color: isDark
-                                              ? Colors.white
-                                                  .withValues(alpha: 0.1)
-                                              : theme
-                                                  .colorScheme.primaryContainer
-                                                  .withValues(alpha: 0.6),
-                                          borderRadius: BorderRadius.circular(
-                                              (colors.borderRadius * 0.5)
-                                                  .clamp(0.0, 8.0)),
-                                          border: Border.all(
-                                            color: isDark
-                                                ? Colors.white
-                                                    .withValues(alpha: 0.2)
-                                                : theme.colorScheme
-                                                    .outlineVariant
-                                                    .withValues(alpha: 0.5),
-                                          ),
-                                        ),
-                                        child: Icon(
-                                          Icons.edit_note_rounded,
-                                          size: 15,
-                                          color: isDark
-                                              ? Colors.white
-                                              : theme.colorScheme.primary,
-                                        ),
+                                    Text(
+                                      title,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 19,
+                                        color: titleColor,
+                                        height: 1.2,
+                                        shadows: isDark
+                                            ? [
+                                                Shadow(
+                                                  color: Colors.black
+                                                      .withValues(alpha: 0.8),
+                                                  offset: const Offset(0, 1),
+                                                  blurRadius: 4,
+                                                ),
+                                              ]
+                                            : null,
                                       ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                    const SizedBox(width: 8),
-                                    GestureDetector(
-                                      onTap: () => onOpenEditEntryModal(title),
-                                      behavior: HitTestBehavior.opaque,
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
+                                    const SizedBox(height: 6),
+
+                                    if (dateSeasonStatus.isNotEmpty) ...[
+                                      Row(
                                         children: [
-                                          Text(
-                                            progressText,
-                                            style: TextStyle(
-                                              color: titleColor,
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.bold,
-                                            ),
+                                          Icon(
+                                            Icons.calendar_month_rounded,
+                                            size: 14,
+                                            color: subtitleColor,
                                           ),
-                                          const SizedBox(width: 8),
-                                          Text(
-                                            watchStatusText,
-                                            style: TextStyle(
-                                              color: subtitleColor,
-                                              fontSize: 12.5,
-                                              fontWeight: FontWeight.w500,
+                                          const SizedBox(width: 5),
+                                          Expanded(
+                                            child: Text(
+                                              dateSeasonStatus,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(
+                                                color: subtitleColor,
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w400,
+                                              ),
                                             ),
                                           ),
                                         ],
                                       ),
+                                      const SizedBox(height: 5),
+                                    ],
+
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          Icons.favorite_rounded,
+                                          size: 14,
+                                          color: isDark
+                                              ? Colors.white.withValues(alpha: 0.85)
+                                              : theme.colorScheme.primary,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          displayScore,
+                                          style: TextStyle(
+                                            color: titleColor,
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        if (genresString.isNotEmpty) ...[
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              genresString,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(
+                                                color: subtitleColor,
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w400,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                    const SizedBox(height: 7),
+
+                                    Row(
+                                      children: [
+                                        InkWell(
+                                          onTap: () =>
+                                              widget.onOpenEditEntryModal(title),
+                                          borderRadius: BorderRadius.circular(
+                                              (colors.borderRadius * 0.5)
+                                                  .clamp(0.0, 8.0)),
+                                          child: Container(
+                                            padding: const EdgeInsets.all(4),
+                                            decoration: BoxDecoration(
+                                              color: isDark
+                                                  ? Colors.white
+                                                      .withValues(alpha: 0.1)
+                                                  : theme.colorScheme
+                                                      .primaryContainer
+                                                      .withValues(alpha: 0.6),
+                                              borderRadius:
+                                                  BorderRadius.circular(
+                                                      (colors.borderRadius * 0.5)
+                                                          .clamp(0.0, 8.0)),
+                                              border: Border.all(
+                                                color: isDark
+                                                    ? Colors.white
+                                                        .withValues(alpha: 0.2)
+                                                    : theme.colorScheme
+                                                        .outlineVariant
+                                                        .withValues(alpha: 0.5),
+                                              ),
+                                            ),
+                                            child: Icon(
+                                              Icons.edit_note_rounded,
+                                              size: 15,
+                                              color: isDark
+                                                  ? Colors.white
+                                                  : theme.colorScheme.primary,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        GestureDetector(
+                                          onTap: () =>
+                                              widget.onOpenEditEntryModal(title),
+                                          behavior: HitTestBehavior.opaque,
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Text(
+                                                progressText,
+                                                style: TextStyle(
+                                                  color: titleColor,
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                watchStatusText,
+                                                style: TextStyle(
+                                                  color: subtitleColor,
+                                                  fontSize: 12.5,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
-                              ],
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // Primary Action: Continuar viendo / Comenzar ("Primerito")
+                        SizedBox(
+                          width: double.infinity,
+                          height: 41,
+                          child: FilledButton.icon(
+                            style: FilledButton.styleFrom(
+                              backgroundColor: theme.colorScheme.primary,
+                              foregroundColor: theme.colorScheme.onPrimary,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(22),
+                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              elevation: 0,
+                            ),
+                            onPressed: () => _handlePlayNext(progress),
+                            icon: const Icon(Icons.play_arrow_rounded, size: 21),
+                            label: Text(
+                              _formatPlayButtonLabel(progress, totalEps),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13.5,
+                                letterSpacing: -0.2,
+                              ),
                             ),
                           ),
                         ),
+
+                        const SizedBox(height: 10),
+
+                        // Minimalist Dropdown Chips Row
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          physics: const BouncingScrollPhysics(),
+                          child: Row(
+                            children: [
+                              _buildModeDropdownChip(theme, effectiveTab),
+                              if (!widget.isLocalMode && effectiveTab == AnimeDetailTab.online) ...[
+                                const SizedBox(width: 8),
+                                _buildProviderDropdownChip(theme),
+                              ],
+                              const SizedBox(width: 8),
+                              _buildAniListStatusChip(theme, title, progressText, watchStatusText),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 18),
+
+                        // Episodes Content (Clean, direct & without clunky middle tab bar)
+                        if (widget.isLocalMode)
+                          LocalLibraryView(
+                            mediaId: widget.mediaId,
+                            animeDetails: widget.details,
+                            progress: progress,
+                            onSwitchToTorrent: () {
+                              widget.onToggleLocalMode();
+                              widget.onTabChanged(AnimeDetailTab.torrent);
+                            },
+                            onSwitchToOnline: () {
+                              widget.onToggleLocalMode();
+                              widget.onTabChanged(AnimeDetailTab.online);
+                            },
+                          )
+                        else if (onlineEnabled &&
+                            effectiveTab == AnimeDetailTab.online)
+                          OnlineStreamView(
+                            mediaId: widget.mediaId,
+                            animeDetails: widget.details,
+                            progress: progress,
+                            hideTopBar: true,
+                            controller: _onlineStreamController,
+                            selectedProvider: _selectedProvider,
+                            isDubbed: _isDubbed,
+                            onProvidersLoaded: (list) {
+                              if (mounted && list.isNotEmpty) {
+                                setState(() => _providers = list);
+                              }
+                            },
+                            onProviderChanged: (p) {
+                              if (mounted && p != null) {
+                                setState(() => _selectedProvider = p);
+                              }
+                            },
+                            onDubbedChanged: (dub) {
+                              if (mounted) setState(() => _isDubbed = dub);
+                            },
+                          )
+                        else if (torrentEnabled &&
+                            effectiveTab == AnimeDetailTab.torrent)
+                          AniZipEpisodeListView(
+                            aniZipData:
+                                widget.aniZipData ?? widget.details?.aniZipData,
+                            fallbackEpisodes: widget.details?.episodes ?? const [],
+                            animeDetails: widget.details,
+                            isLoading:
+                                widget.isLoading || widget.isLoadingAniZip,
+                            progress: progress,
+                            onRetry: widget.onRetryAniZip,
+                            viewMode: ref.watch(episodeViewModeProvider),
+                            onToggleViewMode: () => ref
+                                .read(episodeViewModeProvider.notifier)
+                                .toggleMode(),
+                            onPlayEpisode: (ep) {
+                              widget.onOpenTorrentSelector(
+                                episodeNumber: ep.episodeNumber,
+                                episodeTitle: ep.displayTitle,
+                                aniDBEpisode: ep.episode,
+                              );
+                            },
+                            onTapEpisode: (ep) {
+                              widget.onOpenTorrentSelector(
+                                episodeNumber: ep.episodeNumber,
+                                episodeTitle: ep.displayTitle,
+                                aniDBEpisode: ep.episode,
+                              );
+                            },
+                            onPlayFallbackEpisode: (ep) {
+                              widget.onOpenTorrentSelector(
+                                episodeNumber: ep.episodeNumber,
+                                episodeTitle: ep.title,
+                              );
+                            },
+                          )
+                        else if (onlineEnabled)
+                          OnlineStreamView(
+                            mediaId: widget.mediaId,
+                            animeDetails: widget.details,
+                            progress: progress,
+                            hideTopBar: true,
+                            controller: _onlineStreamController,
+                            selectedProvider: _selectedProvider,
+                            isDubbed: _isDubbed,
+                          )
+                        else if (torrentEnabled)
+                          AniZipEpisodeListView(
+                            aniZipData:
+                                widget.aniZipData ?? widget.details?.aniZipData,
+                            fallbackEpisodes: widget.details?.episodes ?? const [],
+                            animeDetails: widget.details,
+                            isLoading:
+                                widget.isLoading || widget.isLoadingAniZip,
+                            progress: progress,
+                            onRetry: widget.onRetryAniZip,
+                            viewMode: ref.watch(episodeViewModeProvider),
+                            onToggleViewMode: () => ref
+                                .read(episodeViewModeProvider.notifier)
+                                .toggleMode(),
+                            onPlayEpisode: (ep) {
+                              widget.onOpenTorrentSelector(
+                                episodeNumber: ep.episodeNumber,
+                                episodeTitle: ep.displayTitle,
+                                aniDBEpisode: ep.episode,
+                              );
+                            },
+                            onTapEpisode: (ep) {
+                              widget.onOpenTorrentSelector(
+                                episodeNumber: ep.episodeNumber,
+                                episodeTitle: ep.displayTitle,
+                                aniDBEpisode: ep.episode,
+                              );
+                            },
+                            onPlayFallbackEpisode: (ep) {
+                              widget.onOpenTorrentSelector(
+                                episodeNumber: ep.episodeNumber,
+                                episodeTitle: ep.title,
+                              );
+                            },
+                          )
+                        else
+                          const SizedBox(height: 40),
                       ],
                     ),
-
-                    const SizedBox(height: 16),
-
-                    if (!isLocalMode && onlineEnabled && torrentEnabled) ...[
-                      _buildTabBar(context, theme, colors),
-                      const SizedBox(height: 12),
-                    ],
-
-                    if (isLocalMode)
-                      LocalLibraryView(
-                        mediaId: mediaId,
-                        animeDetails: details,
-                        progress: progress,
-                        onSwitchToTorrent: () {
-                          onToggleLocalMode();
-                          onTabChanged(AnimeDetailTab.torrent);
-                        },
-                        onSwitchToOnline: () {
-                          onToggleLocalMode();
-                          onTabChanged(AnimeDetailTab.online);
-                        },
-                      )
-                    else if (onlineEnabled &&
-                        effectiveTab == AnimeDetailTab.online)
-                      OnlineStreamView(
-                        mediaId: mediaId,
-                        animeDetails: details,
-                        progress: progress,
-                      )
-                    else if (torrentEnabled &&
-                        effectiveTab == AnimeDetailTab.torrent)
-                      AniZipEpisodeListView(
-                        aniZipData: aniZipData ?? details?.aniZipData,
-                        fallbackEpisodes: details?.episodes ?? const [],
-                        animeDetails: details,
-                        isLoading: isLoading || isLoadingAniZip,
-                        progress: progress,
-                        onRetry: onRetryAniZip,
-                        viewMode: ref.watch(episodeViewModeProvider),
-                        onToggleViewMode: () => ref
-                            .read(episodeViewModeProvider.notifier)
-                            .toggleMode(),
-                        onPlayEpisode: (ep) {
-                          onOpenTorrentSelector(
-                            episodeNumber: ep.episodeNumber,
-                            episodeTitle: ep.displayTitle,
-                            aniDBEpisode: ep.episode,
-                          );
-                        },
-                        onTapEpisode: (ep) {
-                          onOpenTorrentSelector(
-                            episodeNumber: ep.episodeNumber,
-                            episodeTitle: ep.displayTitle,
-                            aniDBEpisode: ep.episode,
-                          );
-                        },
-                        onPlayFallbackEpisode: (ep) {
-                          onOpenTorrentSelector(
-                            episodeNumber: ep.episodeNumber,
-                            episodeTitle: ep.title,
-                          );
-                        },
-                      )
-                    else if (onlineEnabled)
-                      OnlineStreamView(
-                        mediaId: mediaId,
-                        animeDetails: details,
-                        progress: progress,
-                      )
-                    else if (torrentEnabled)
-                      AniZipEpisodeListView(
-                        aniZipData: aniZipData ?? details?.aniZipData,
-                        fallbackEpisodes: details?.episodes ?? const [],
-                        animeDetails: details,
-                        isLoading: isLoading || isLoadingAniZip,
-                        progress: progress,
-                        onRetry: onRetryAniZip,
-                        viewMode: ref.watch(episodeViewModeProvider),
-                        onToggleViewMode: () => ref
-                            .read(episodeViewModeProvider.notifier)
-                            .toggleMode(),
-                        onPlayEpisode: (ep) {
-                          onOpenTorrentSelector(
-                            episodeNumber: ep.episodeNumber,
-                            episodeTitle: ep.displayTitle,
-                            aniDBEpisode: ep.episode,
-                          );
-                        },
-                        onTapEpisode: (ep) {
-                          onOpenTorrentSelector(
-                            episodeNumber: ep.episodeNumber,
-                            episodeTitle: ep.displayTitle,
-                            aniDBEpisode: ep.episode,
-                          );
-                        },
-                        onPlayFallbackEpisode: (ep) {
-                          onOpenTorrentSelector(
-                            episodeNumber: ep.episodeNumber,
-                            episodeTitle: ep.title,
-                          );
-                        },
-                      )
-                    else
-                      const SizedBox(height: 40),
-                  ],
+                  ),
                 ),
-              ),
-            ),
-          ],
-        );
+              ],
+            );
           },
         ),
       ],
-    );
-  }
-
-  Widget _buildTabBar(
-      BuildContext context, ThemeData theme, AppThemeColors colors) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color:
-            theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
-        borderRadius: BorderRadius.circular(colors.borderRadius),
-        border: Border.all(
-          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
-        ),
-      ),
-      child: Row(
-        children: [
-          _buildTabButton(
-            theme: theme,
-            colors: colors,
-            tab: AnimeDetailTab.online,
-            icon: Icons.public_rounded,
-            label: 'Online',
-          ),
-          const SizedBox(width: 4),
-          _buildTabButton(
-            theme: theme,
-            colors: colors,
-            tab: AnimeDetailTab.torrent,
-            icon: Icons.cloud_download_outlined,
-            label: 'Torrent',
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTabButton({
-    required ThemeData theme,
-    required AppThemeColors colors,
-    required AnimeDetailTab tab,
-    required IconData icon,
-    required String label,
-  }) {
-    final isSelected = !isLocalMode && currentTab == tab;
-    final innerRadius = (colors.borderRadius * 0.75).clamp(0.0, 16.0);
-
-    return Expanded(
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeInOut,
-        decoration: BoxDecoration(
-          color: isSelected
-              ? theme.colorScheme.primaryContainer
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(innerRadius),
-        ),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(innerRadius),
-            onTap: () => onTabChanged(tab),
-            child: Padding(
-              padding:
-                  const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    icon,
-                    size: 16,
-                    color: isSelected
-                        ? theme.colorScheme.primary
-                        : theme.colorScheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    label,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight:
-                          isSelected ? FontWeight.bold : FontWeight.w500,
-                      color: isSelected
-                          ? theme.colorScheme.onPrimaryContainer
-                          : theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

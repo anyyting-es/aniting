@@ -6,6 +6,7 @@ import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/preferences/mobile_nav_style_provider.dart';
 import 'package:seanime_app/core/preferences/resume_bar_preferences_provider.dart';
 import 'package:seanime_app/core/theme/custom_route_transitions.dart';
+import 'package:seanime_app/presentation/screens/airing_calendar_screen.dart';
 import 'package:seanime_app/presentation/screens/feed_screen.dart';
 import 'package:seanime_app/presentation/screens/library_screen.dart';
 import 'package:seanime_app/presentation/screens/manga_feed_screen.dart';
@@ -44,6 +45,7 @@ class _MainShellState extends ConsumerState<MainShell> {
         ),
       ),
       const RepaintBoundary(child: SearchScreen()),
+      const RepaintBoundary(child: AiringCalendarScreen()),
       RepaintBoundary(
         child: LibraryScreen(
           onOpenSettings: _openSettings,
@@ -131,6 +133,11 @@ class _MainShellState extends ConsumerState<MainShell> {
         label: l10n.navExplore,
       ),
       DesktopSidebarItem(
+        icon: AppIcons.calendar(iconPack),
+        selectedIcon: AppIcons.calendar(iconPack),
+        label: l10n.navCalendar,
+      ),
+      DesktopSidebarItem(
         icon: AppIcons.profile(iconPack),
         selectedIcon: AppIcons.profile(iconPack),
         label: l10n.navProfile,
@@ -151,10 +158,16 @@ class _MainShellState extends ConsumerState<MainShell> {
         targetIndex: 1,
       ),
       DesktopSidebarItem(
+        icon: AppIcons.calendar(iconPack),
+        selectedIcon: AppIcons.calendar(iconPack),
+        label: l10n.navCalendar,
+        targetIndex: 3,
+      ),
+      DesktopSidebarItem(
         icon: AppIcons.profile(iconPack),
         selectedIcon: AppIcons.profile(iconPack),
         label: l10n.navProfile,
-        targetIndex: 3,
+        targetIndex: 4,
       ),
     ];
 
@@ -286,6 +299,11 @@ class _MainShellState extends ConsumerState<MainShell> {
                     icon: Icon(AppIcons.explore(iconPack), color: theme.colorScheme.onSurfaceVariant),
                     selectedIcon: Icon(AppIcons.explore(iconPack), color: theme.colorScheme.onPrimaryContainer),
                     label: l10n.navExplore,
+                  ),
+                  NavigationDestination(
+                    icon: Icon(AppIcons.calendar(iconPack), color: theme.colorScheme.onSurfaceVariant),
+                    selectedIcon: Icon(AppIcons.calendar(iconPack), color: theme.colorScheme.onPrimaryContainer),
+                    label: l10n.navCalendar,
                   ),
                   NavigationDestination(
                     icon: Icon(AppIcons.profile(iconPack), color: theme.colorScheme.onSurfaceVariant),

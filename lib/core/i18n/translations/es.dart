@@ -9,6 +9,8 @@ class SpanishTranslations implements AppTranslations {
   @override
   String get navExplore => 'Explorar';
   @override
+  String get navCalendar => 'Calendario';
+  @override
   String get navProfile => 'Perfil';
   @override
   String get navSettings => 'Configuración';
@@ -606,6 +608,32 @@ class SpanishTranslations implements AppTranslations {
   String get playbackSpeed => 'Velocidad';
   @override
   String get shaders => 'Shaders GLSL';
+  @override
+  String get mode => 'Modo';
+  @override
+  String get nextEpisode => 'Siguiente episodio';
+  @override
+  String get mute => 'Silenciar';
+  @override
+  String get unmute => 'Activar sonido';
+  @override
+  String get showInfo => 'Mostrar información';
+  @override
+  String get collapsePanel => 'Colapsar panel';
+  @override
+  String get playbackSources => 'Opciones de reproducción';
+  @override
+  String get searchingSources => 'Buscando opciones...';
+  @override
+  String get playingFirstAvailable => 'Reproduciendo primera opción encontrada';
+  @override
+  String get tapToChangeSource => 'Toca para cambiar de servidor o calidad';
+  @override
+  String get reloadSourcesTooltip => 'Recargar fuentes';
+  @override
+  String get noSourcesFoundForEpisode => 'No se encontraron opciones de reproducción para este episodio';
+  @override
+  String get availableSourcesCount => 'opciones disponibles';
   @override
   String get aspectRatio => 'Ajuste de Pantalla';
   @override
