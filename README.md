@@ -15,13 +15,29 @@ Funciona utilizando el servidor de [Seanime](https://github.com/5rahim/seanime) 
 
 ---
 
+## Plataformas
+
+- **Android (Móvil)**: Versión principal.
+- **TV y PC**: Actualmente en fase temprana de desarrollo. Se irá mejorando y optimizando continuamente con futuras actualizaciones.
+
+---
+
 ## Instalación en Android
 
 1. Entra a la sección de [**Releases**](https://github.com/anyyting-es/aniting/releases).
-2. Descarga la versión más reciente del archivo `app-release.apk`.
-3. Abre el archivo en tu dispositivo Android e instálalo.
+2. Descarga la versión correspondiente a tu dispositivo:
+   - `app-arm64-v8a-release.apk`: Recomendada para la gran mayoría de teléfonos Android modernos (más ligera y rápida).
+   - `app-release.apk`: Versión universal compatible con cualquier dispositivo Android.
+3. Abre el archivo en tu teléfono e instálalo.
    *(Si es la primera vez que instalas una app fuera de Google Play, autoriza la opción "Instalar aplicaciones desconocidas")*.
 4. Abre Aniting y sigue el asistente inicial.
+
+---
+
+## Comunidad
+
+Únete a nuestra comunidad de Discord para soporte, reportes y novedades:
+- **Discord**: [discord.gg/FaPcNGURdN](https://discord.gg/FaPcNGURdN)
 
 ---
 

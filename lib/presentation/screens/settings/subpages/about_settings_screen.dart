@@ -41,13 +41,6 @@ class AboutSettingsScreen extends ConsumerWidget {
                 height: 76,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(22),
-                  boxShadow: [
-                    BoxShadow(
-                      color: theme.colorScheme.primary.withValues(alpha: 0.35),
-                      blurRadius: 16,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(22),
@@ -87,7 +80,7 @@ class AboutSettingsScreen extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Text(
-                  'Versión 1.0.0 (Flutter)',
+                  'v1.0.0 (Beta)',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
@@ -188,6 +181,44 @@ class AboutSettingsScreen extends ConsumerWidget {
                 mode: LaunchMode.externalApplication,
               ),
             ),
+            const PixelTileDivider(),
+            ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              leading: Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF5865F2).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.forum_rounded,
+                  color: Color(0xFF5865F2),
+                  size: 22,
+                ),
+              ),
+              title: const Text(
+                'Comunidad de Discord',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+              ),
+              subtitle: Text(
+                'Únete a la comunidad de Aniting en Discord\ndiscord.gg/FaPcNGURdN',
+                style: TextStyle(
+                  fontSize: 12.5,
+                  color: theme.colorScheme.onSurfaceVariant,
+                  height: 1.3,
+                ),
+              ),
+              trailing: Icon(
+                AppIcons.openInNew(iconPack),
+                size: 20,
+                color: theme.colorScheme.primary,
+              ),
+              onTap: () => launchUrl(
+                Uri.parse('https://discord.gg/FaPcNGURdN'),
+                mode: LaunchMode.externalApplication,
+              ),
+            ),
           ],
         ),
 
@@ -206,7 +237,7 @@ class AboutSettingsScreen extends ConsumerWidget {
                 style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
               ),
               subtitle: const Text(
-                'v1.0.0 (Build Release)',
+                'v1.0.0-beta (Build Release)',
                 style: TextStyle(fontSize: 12.5),
               ),
             ),
