@@ -1871,6 +1871,7 @@ class SeanimeRepository {
           'provider': provider,
           'dubbed': dubbed,
         },
+        options: Options(receiveTimeout: const Duration(seconds: 35)),
       );
       if (response.statusCode == 200 && response.data != null) {
         final data = response.data;
@@ -1932,6 +1933,7 @@ class SeanimeRepository {
           'dubbed': dubbed,
           'refresh': refresh,
         },
+        options: Options(receiveTimeout: const Duration(seconds: 45)),
       );
       if (response.statusCode == 200 && response.data != null) {
         final data = response.data;
@@ -1969,6 +1971,7 @@ class SeanimeRepository {
           'query': query.trim(),
           'dubbed': dubbed,
         },
+        options: Options(receiveTimeout: const Duration(seconds: 35)),
       );
       if (response.statusCode == 200 && response.data != null) {
         final data = response.data;

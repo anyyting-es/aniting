@@ -137,7 +137,10 @@ class InstalledExtensionCard extends ConsumerWidget {
               Row(
                 children: [
                   Expanded(
-                    child: Row(
+                    child: Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 6,
+                      runSpacing: 4,
                       children: [
                         Text(
                           'v${ext.version}',
@@ -147,20 +150,16 @@ class InstalledExtensionCard extends ConsumerWidget {
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
                         ),
-                        const SizedBox(width: 6),
-                        Flexible(
-                          child: Text(
-                            '• ${l10n.byAuthor} ${ext.author}',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                        Text(
+                          '• ${l10n.byAuthor} ${ext.author}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: theme.colorScheme.onSurfaceVariant,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        if (ext.hasUpdate) ...[
-                          const SizedBox(width: 6),
+                        if (ext.hasUpdate)
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                             decoration: BoxDecoration(
@@ -177,7 +176,6 @@ class InstalledExtensionCard extends ConsumerWidget {
                               ),
                             ),
                           ),
-                        ],
                       ],
                     ),
                   ),

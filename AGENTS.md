@@ -893,3 +893,13 @@ Inspired by **Plezy** (`edde746/plezy`), the player focuses on high performance,
 - Add `RepaintBoundary` around: continuously animated widgets (Ken Burns, breathing, shimmer), `BackdropFilter` layers, and any widget that repaints at 60fps.
 - Already present on: `AnimeCard`, `MangaCard`, `ContinueWatchingCard`, `ContinueReadingCard`, `LandscapeAnimeCard`, `FloatingResumeBar`, `MobileNavDock`, `Video` widget, player controls overlay, and player settings sheet.
 
+### 7.6. Online Streaming & Extensions Resilience (2026-09-30)
+- **Extended Timeout for Online Stream Sources (`seanime_repository.dart`)**:
+  - `getOnlinestreamSource` now specifies `Options(receiveTimeout: const Duration(seconds: 45))` and `getOnlinestreamEpisodes`/`searchOnlinestreamManual` use `35s`. This prevents premature `DioException [receive timeout]` in Flutter when upstream hosts (like MP4Upload, Voe, UPNShare) take longer to respond or when multiple embeds are processed by Goja JS extensions.
+- **Installed Extension Card Zero-Overflow (`installed_extension_card.dart`)**:
+  - Switched metadata cluster (version, author, and `Actualización disponible` badge) from a rigid inner `Row` to a responsive `Wrap(crossAxisAlignment: WrapCrossAlignment.center, spacing: 6, runSpacing: 4)`. This guarantees zero horizontal RenderFlex overflows on narrow device viewports regardless of title/author length or badge visibility.
+- **Off-Screen Floating SnackBar Elimination (`extensions_marketplace_screen.dart`)**:
+  - Centralized user notifications via `_showFeedback(message)` calling `messenger.clearSnackBars()`. This clears pending floating SnackBars before enqueueing new ones, preventing off-screen positioning warnings during soft keyboard or modal sheet transitions.
+- **AnimeAV1 Spanish Extension Architecture**:
+  - AnimeAV1 updated its upstream embeds (`UPNShare`, `Voe`, `Byse`, `MP4Upload`). Version 1.2.1+ in the official repository contains extractors for `UPNShare` and `Voe`, resolving `Error: No se encontró servidor Byse para sub` on series where Byse is not present.
+

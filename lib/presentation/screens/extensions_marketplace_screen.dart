@@ -113,26 +113,30 @@ class _ExtensionsMarketplaceScreenState extends ConsumerState<ExtensionsMarketpl
     }
   }
 
+  void _showFeedback(String message, {bool isError = false}) {
+    if (!mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.clearSnackBars();
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.redAccent : null,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
   Future<void> _installExtension(ExtensionItem ext) async {
     final l10n = ref.read(translationsProvider);
 
     if (ext.type.toLowerCase() == 'plugin') {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.pluginExtensionsNotSupported),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      _showFeedback(l10n.pluginExtensionsNotSupported);
       return;
     }
 
     if (ext.manifestUri.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.invalidManifestUrl),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      _showFeedback(l10n.invalidManifestUrl, isError: true);
       return;
     }
 
@@ -143,21 +147,10 @@ class _ExtensionsMarketplaceScreenState extends ConsumerState<ExtensionsMarketpl
     if (mounted) {
       setState(() => _installingExtensionId = null);
       if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${ext.name} ${l10n.extensionInstalledSuccessfully}'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        _showFeedback('${ext.name} ${l10n.extensionInstalledSuccessfully}');
         _loadInstalledExtensions();
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${ext.name}: ${l10n.extensionInstallFailed}'),
-            backgroundColor: Colors.redAccent,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        _showFeedback('${ext.name}: ${l10n.extensionInstallFailed}', isError: true);
       }
     }
   }
@@ -168,13 +161,7 @@ class _ExtensionsMarketplaceScreenState extends ConsumerState<ExtensionsMarketpl
     if (success) {
       _loadInstalledExtensions();
     } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error (${ext.name})'),
-          backgroundColor: Colors.redAccent,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      _showFeedback('Error (${ext.name})', isError: true);
     }
   }
 
@@ -205,12 +192,7 @@ class _ExtensionsMarketplaceScreenState extends ConsumerState<ExtensionsMarketpl
       final success = await repo.uninstallExtension(ext.id);
       if (mounted) {
         if (success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('${ext.name} ${l10n.extensionUninstalled}'),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
+          _showFeedback('${ext.name} ${l10n.extensionUninstalled}');
           _loadInstalledExtensions();
         }
       }
@@ -221,33 +203,21 @@ class _ExtensionsMarketplaceScreenState extends ConsumerState<ExtensionsMarketpl
     final l10n = ref.read(translationsProvider);
 
     if (ext.manifestUri.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.invalidManifestUrl),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      _showFeedback(l10n.invalidManifestUrl, isError: true);
       return;
     }
 
     setState(() => _installingExtensionId = ext.id);
     final repo = ref.read(repositoryProvider);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${l10n.extensionUpdating} ${ext.name}...'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    _showFeedback('${l10n.extensionUpdating} ${ext.name}...');
 
     final success = await repo.installExtension(ext.manifestUri);
     if (mounted) {
       setState(() => _installingExtensionId = null);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(success ? '${ext.name} ${l10n.extensionUpdateSuccess}' : '${ext.name}: ${l10n.extensionUpdateFailed}'),
-          behavior: SnackBarBehavior.floating,
-        ),
+      _showFeedback(
+        success ? '${ext.name} ${l10n.extensionUpdateSuccess}' : '${ext.name}: ${l10n.extensionUpdateFailed}',
+        isError: !success,
       );
       _loadInstalledExtensions();
     }
@@ -258,11 +228,9 @@ class _ExtensionsMarketplaceScreenState extends ConsumerState<ExtensionsMarketpl
     final repo = ref.read(repositoryProvider);
     final success = await repo.reloadExtensions();
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(success ? l10n.extensionsReloadSuccess : l10n.extensionsReloadFailed),
-          behavior: SnackBarBehavior.floating,
-        ),
+      _showFeedback(
+        success ? l10n.extensionsReloadSuccess : l10n.extensionsReloadFailed,
+        isError: !success,
       );
       _loadInstalledExtensions();
     }
@@ -278,15 +246,10 @@ class _ExtensionsMarketplaceScreenState extends ConsumerState<ExtensionsMarketpl
       final l10n = ref.read(translationsProvider);
       setState(() => _isCheckingUpdates = false);
       final updatesCount = _installedExtensions.where((e) => e.hasUpdate).length;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            updatesCount > 0
-                ? '$updatesCount ${l10n.availableUpdatesCount}!'
-                : l10n.allExtensionsUpToDateLong,
-          ),
-          behavior: SnackBarBehavior.floating,
-        ),
+      _showFeedback(
+        updatesCount > 0
+            ? '$updatesCount ${l10n.availableUpdatesCount}!'
+            : l10n.allExtensionsUpToDateLong,
       );
     }
   }
