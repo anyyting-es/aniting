@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,12 +13,14 @@ class DesktopSidebarItem {
   final IconData selectedIcon;
   final String label;
   final int? targetIndex;
+  final String? avatarUrl;
 
   const DesktopSidebarItem({
     required this.icon,
     required this.selectedIcon,
     required this.label,
     this.targetIndex,
+    this.avatarUrl,
   });
 }
 
@@ -252,6 +255,49 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
     final theme = Theme.of(context);
     final hoverIconColor = theme.brightness == Brightness.dark ? Colors.white : theme.colorScheme.onSurface;
 
+    final avatarUrl = item.avatarUrl;
+    final hasAvatar = avatarUrl != null && avatarUrl.isNotEmpty;
+
+    Widget iconWidget;
+    if (hasAvatar) {
+      iconWidget = Container(
+        width: 26,
+        height: 26,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: isSelected
+                ? colors.accent
+                : (isActive ? hoverIconColor : colors.border.withValues(alpha: 0.6)),
+            width: isSelected ? 2.0 : 1.2,
+          ),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: CachedNetworkImage(
+          imageUrl: avatarUrl,
+          fit: BoxFit.cover,
+          placeholder: (context, url) => Container(
+            color: theme.colorScheme.surfaceContainer,
+          ),
+          errorWidget: (context, url, error) => Icon(
+            isSelected ? item.selectedIcon : item.icon,
+            size: 20,
+            color: isSelected
+                ? colors.accent
+                : (isActive ? hoverIconColor : colors.textSecondary.withValues(alpha: 0.7)),
+          ),
+        ),
+      );
+    } else {
+      iconWidget = Icon(
+        isSelected ? item.selectedIcon : item.icon,
+        size: 22,
+        color: isSelected
+            ? colors.accent
+            : (isActive ? hoverIconColor : colors.textSecondary.withValues(alpha: 0.7)),
+      );
+    }
+
     void onSelect() => widget.onDestinationSelected(item.targetIndex ?? index);
 
     return Focus(
@@ -281,13 +327,7 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
                   duration: const Duration(milliseconds: 140),
                   curve: Curves.easeOutCubic,
                   scale: isActive ? 1.15 : (isSelected ? 1.1 : 1.0),
-                  child: Icon(
-                    isSelected ? item.selectedIcon : item.icon,
-                    size: 22,
-                    color: isSelected
-                        ? colors.accent
-                        : (isActive ? hoverIconColor : colors.textSecondary.withValues(alpha: 0.7)),
-                  ),
+                  child: iconWidget,
                 ),
               ),
             ),

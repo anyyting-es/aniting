@@ -8,7 +8,9 @@ import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/preferences/desktop_scrollbar_provider.dart';
 import 'package:seanime_app/core/preferences/onboarding_provider.dart';
+import 'package:seanime_app/core/preferences/playback_progress_preferences_provider.dart';
 import 'package:seanime_app/core/preferences/player_engine_provider.dart';
+import 'package:seanime_app/core/preferences/resume_bar_preferences_provider.dart';
 import 'package:seanime_app/core/preferences/settings_sidebar_width_provider.dart';
 import 'package:seanime_app/core/theme/app_scroll_behavior.dart';
 import 'package:seanime_app/core/theme/app_theme_colors.dart';
@@ -76,6 +78,9 @@ void main() async {
     SettingsSidebarWidthNotifier.setCachedPrefs(prefs);
     ThemeNotifier.setCachedPrefs(prefs);
     IconPackNotifier.setCachedPrefs(prefs);
+    PlaybackProgressNotifier.setCachedPrefs(prefs);
+    LastSessionNotifier.setCachedPrefs(prefs);
+    ResumeBarEnabledNotifier.setCachedPrefs(prefs);
     OnboardingNotifier.setCachedPrefs(prefs);
   } catch (_) {}
   runApp(

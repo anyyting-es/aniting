@@ -6,6 +6,7 @@ import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/preferences/mobile_nav_style_provider.dart';
 import 'package:seanime_app/core/preferences/resume_bar_preferences_provider.dart';
 import 'package:seanime_app/core/theme/custom_route_transitions.dart';
+import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/screens/airing_calendar_screen.dart';
 import 'package:seanime_app/presentation/screens/feed_screen.dart';
 import 'package:seanime_app/presentation/screens/library_screen.dart';
@@ -116,6 +117,9 @@ class _MainShellState extends ConsumerState<MainShell> {
     final mobileNavStyle = ref.watch(mobileNavStyleProvider);
     final iconPack = ref.watch(iconPackProvider);
 
+    final serverState = ref.watch(serverNotifierProvider);
+    final avatarUrl = serverState.status?.avatarUrl;
+
     final sidebarItems = [
       DesktopSidebarItem(
         icon: AppIcons.home(iconPack),
@@ -141,6 +145,7 @@ class _MainShellState extends ConsumerState<MainShell> {
         icon: AppIcons.profile(iconPack),
         selectedIcon: AppIcons.profile(iconPack),
         label: l10n.navProfile,
+        avatarUrl: avatarUrl,
       ),
     ];
 
@@ -168,6 +173,7 @@ class _MainShellState extends ConsumerState<MainShell> {
         selectedIcon: AppIcons.profile(iconPack),
         label: l10n.navProfile,
         targetIndex: 4,
+        avatarUrl: avatarUrl,
       ),
     ];
 

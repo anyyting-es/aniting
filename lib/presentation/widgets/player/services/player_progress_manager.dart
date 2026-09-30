@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:seanime_app/core/preferences/playback_progress_preferences_provider.dart';
 import 'package:seanime_app/core/preferences/resume_bar_preferences_provider.dart';
 import 'package:seanime_app/data/repositories/seanime_repository.dart';
 
@@ -8,6 +9,7 @@ import 'package:seanime_app/data/repositories/seanime_repository.dart';
 class PlayerProgressManager {
   final SeanimeRepository repository;
   final LastSessionNotifier lastSessionNotifier;
+  final PlaybackProgressNotifier? playbackProgressNotifier;
   final int? mediaId;
   final String title;
   final ValueGetter<String?> getCoverImage;
@@ -30,6 +32,7 @@ class PlayerProgressManager {
   PlayerProgressManager({
     required this.repository,
     required this.lastSessionNotifier,
+    this.playbackProgressNotifier,
     required this.mediaId,
     required this.title,
     required this.getCoverImage,
@@ -110,6 +113,12 @@ class PlayerProgressManager {
 
       Future.microtask(() {
         lastSessionNotifier.saveSession(sessionItem);
+        playbackProgressNotifier?.saveProgress(
+          mediaId: mediaId!,
+          episodeNumber: epNum,
+          positionMs: pos.inMilliseconds,
+          durationMs: dur.inMilliseconds,
+        );
       });
     } catch (e) {
       debugPrint('[PlayerProgressManager] Error saving progress: $e');

@@ -326,7 +326,9 @@ class AnimeEntry {
         (media['id'] as num?)?.toInt() ??
         (json['id'] as num?)?.toInt() ??
         0;
-    final int resolvedId = (media['id'] as num?)?.toInt() ?? resolvedMediaId;
+    final int resolvedId = (json['id'] as num?)?.toInt() ??
+        (media['id'] as num?)?.toInt() ??
+        resolvedMediaId;
 
     return AnimeEntry(
       id: resolvedId,

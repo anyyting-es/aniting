@@ -395,6 +395,36 @@ final popularMangaProvider = FutureProvider<List<MangaEntry>>((ref) async {
   );
 });
 
+final mangaRecommendationsProvider = FutureProvider<List<MangaEntry>>((ref) async {
+  return loadMangaWithCacheAndSwr(
+    ref: ref,
+    cacheKey: FeedCacheService.kCacheMangaRecommendations,
+    requireAuth: true,
+    fetchFresh: () async {
+      final collection = await ref.read(mangaCollectionProvider.future);
+      if (collection.isEmpty) return [];
+
+      final readingOrCompleted = collection
+          .where((e) =>
+              e.status.toUpperCase() == 'CURRENT' ||
+              e.status.toUpperCase() == 'READING' ||
+              e.status.toUpperCase() == 'COMPLETED')
+          .toList();
+
+      if (readingOrCompleted.isEmpty) return [];
+
+      final allUserMediaIds = collection.map((e) => e.mediaId).toSet();
+      final sampleMediaIds =
+          readingOrCompleted.take(4).map((e) => e.mediaId).toList();
+
+      return ref.read(repositoryProvider).getMangaRecommendationsForUser(
+        mediaIds: sampleMediaIds,
+        excludeMediaIds: allUserMediaIds,
+      );
+    },
+  );
+});
+
 final mangaProvidersListProvider = FutureProvider<List<MangaProvider>>((ref) async {
   final serverState = ref.watch(serverNotifierProvider);
   if (!serverState.isOnline) return [];

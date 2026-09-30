@@ -1025,6 +1025,85 @@ class SeanimeRepository {
     }
   }
 
+  Future<List<MangaEntry>> getMangaRecommendationsForUser({
+    required List<int> mediaIds,
+    Set<int> excludeMediaIds = const {},
+  }) async {
+    if (mediaIds.isEmpty) return [];
+    try {
+      final results = <MangaEntry>[];
+      final seenIds = Set<int>.from(excludeMediaIds);
+
+      for (final id in mediaIds.take(3)) {
+        try {
+          final res = await _externalDio.post(
+            'https://graphql.anilist.co',
+            data: {
+              'query': '''
+                query (\$id: Int) {
+                  Media(id: \$id) {
+                    recommendations(sort: RATING_DESC, perPage: 8) {
+                      nodes {
+                        mediaRecommendation {
+                          id
+                          title {
+                            userPreferred
+                            romaji
+                            english
+                            native
+                          }
+                          coverImage {
+                            extraLarge
+                            large
+                            medium
+                          }
+                          bannerImage
+                          status
+                          format
+                          chapters
+                          volumes
+                          averageScore
+                          description
+                        }
+                      }
+                    }
+                  }
+                }
+              ''',
+              'variables': {'id': id},
+            },
+          );
+
+          if (res.statusCode == 200 && res.data != null) {
+            final data = res.data is String ? jsonDecode(res.data) : res.data;
+            if (data is Map<String, dynamic>) {
+              final nodes = data['data']?['Media']?['recommendations']?['nodes'] as List?;
+              if (nodes != null) {
+                for (final node in nodes) {
+                  if (node is Map && node['mediaRecommendation'] is Map<String, dynamic>) {
+                    final rec = node['mediaRecommendation'] as Map<String, dynamic>;
+                    final recId = rec['id'] as int? ?? 0;
+                    if (recId > 0 && !seenIds.contains(recId)) {
+                      seenIds.add(recId);
+                      results.add(MangaEntry.fromJson(rec));
+                    }
+                  }
+                }
+              }
+            }
+          }
+        } catch (e) {
+          debugPrint('Error fetching manga recommendations for media \$id: \$e');
+        }
+      }
+
+      return results;
+    } catch (e) {
+      debugPrint('Error getting user manga recommendations: \$e');
+      return [];
+    }
+  }
+
   Future<bool> scanLibrary() async {
     try {
       final response = await _apiClient.post(ApiEndpoints.libraryScan);

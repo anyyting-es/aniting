@@ -60,9 +60,15 @@ class _ContinueReadingCardState extends ConsumerState<ContinueReadingCard> {
     final mangaTitle = widget.entry.displayTitle(titleLang);
     final imageUrl = widget.entry.coverImage ?? widget.entry.bannerImage;
 
-    final double progressFraction = (widget.entry.totalChapters != null && widget.entry.totalChapters! > 0)
-        ? (widget.entry.progress / widget.entry.totalChapters!).clamp(0.0, 1.0)
-        : 0.3;
+    final totalCaps = widget.entry.totalChapters;
+    final hasTotal = totalCaps != null && totalCaps > 0;
+    final double? progressFraction = hasTotal
+        ? (widget.entry.progress / totalCaps).clamp(0.0, 1.0)
+        : null;
+
+    final String chapterSubtitle = hasTotal
+        ? '${l10n.chapter} $nextChapter - $totalCaps'
+        : '${l10n.chapter} $nextChapter';
 
     final screenWidth = MediaQuery.of(context).size.width;
     final isCompact = (widget.width != null && widget.width! < 155) || screenWidth < 720;
@@ -135,22 +141,26 @@ class _ContinueReadingCardState extends ConsumerState<ContinueReadingCard> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${l10n.chapter} $nextChapter',
+                  chapterSubtitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: isCompact ? 10.0 : 11.0,
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
-                SizedBox(height: isCompact ? 4 : 5),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(2),
-                  child: LinearProgressIndicator(
-                    value: progressFraction,
-                    minHeight: isCompact ? 2.5 : 3.0,
-                    backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                    valueColor: AlwaysStoppedAnimation<Color>(colors.accent),
+                if (progressFraction != null) ...[
+                  SizedBox(height: isCompact ? 4 : 5),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(2),
+                    child: LinearProgressIndicator(
+                      value: progressFraction,
+                      minHeight: isCompact ? 2.5 : 3.0,
+                      backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                      valueColor: AlwaysStoppedAnimation<Color>(colors.accent),
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
           ),

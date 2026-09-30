@@ -45,6 +45,7 @@ class FeedCacheService {
   static const String kCacheMangaCollection = 'feed_cache_col_manga';
   static const String kCacheTrendingManga = 'feed_cache_trending_manga';
   static const String kCachePopularManga = 'feed_cache_popular_manga';
+  static const String kCacheMangaRecommendations = 'feed_cache_manga_recommendations';
 
   static const String kCacheServerStatus = 'feed_cache_server_status';
 
@@ -87,6 +88,7 @@ class FeedCacheService {
       kCacheMangaCollection,
       kCacheTrendingManga,
       kCachePopularManga,
+      kCacheMangaRecommendations,
     ];
     for (final key in mangaKeys) {
       final raw = prefs.getString(key);

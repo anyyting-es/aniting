@@ -67,60 +67,81 @@ func ListMissedSequels(
 		return []*BaseAnime{}, nil
 	}
 
-	if len(idsSlice) > 10 {
-		idsSlice = idsSlice[:10]
-	}
+	allMedia := make([]*BaseAnime, 0, len(idsSlice))
+	seenMedia := make(map[int]struct{})
 
-	variables["ids"] = idsSlice
-	variables["inCollection"] = false
-	variables["sort"] = MediaSortStartDateDesc
+	for i := 0; i < len(idsSlice); i += 50 {
+		end := i + 50
+		if end > len(idsSlice) {
+			end = len(idsSlice)
+		}
+		chunk := idsSlice[i:end]
 
-	// Event
-	reqEvent := &ListMissedSequelsRequestedEvent{
-		AnimeCollectionWithRelations: animeCollectionWithRelations,
-		Variables:                    variables,
-		List:                         make([]*BaseAnime, 0),
-		Query:                        SearchBaseAnimeByIdsDocument,
-	}
-	err = hook.GlobalHookManager.OnListMissedSequelsRequested().Trigger(reqEvent)
-	if err != nil {
-		return nil, err
-	}
+		chunkVars := map[string]interface{}{}
+		chunkVars["page"] = 1
+		chunkVars["perPage"] = 50
+		chunkVars["ids"] = chunk
+		chunkVars["inCollection"] = false
+		chunkVars["sort"] = MediaSortStartDateDesc
 
-	// If the hook prevented the default behavior, return the data
-	if reqEvent.DefaultPrevented {
-		return reqEvent.List, nil
-	}
+		// Event
+		reqEvent := &ListMissedSequelsRequestedEvent{
+			AnimeCollectionWithRelations: animeCollectionWithRelations,
+			Variables:                    chunkVars,
+			List:                         make([]*BaseAnime, 0),
+			Query:                        SearchBaseAnimeByIdsDocument,
+		}
+		err = hook.GlobalHookManager.OnListMissedSequelsRequested().Trigger(reqEvent)
+		if err != nil {
+			return nil, err
+		}
 
-	requestBody, err := json.Marshal(map[string]interface{}{
-		"query":     reqEvent.Query,
-		"variables": reqEvent.Variables,
-	})
-	if err != nil {
-		return nil, err
-	}
+		// If the hook prevented the default behavior, return the data
+		if reqEvent.DefaultPrevented {
+			for _, item := range reqEvent.List {
+				if _, ok := seenMedia[item.GetID()]; !ok {
+					seenMedia[item.GetID()] = struct{}{}
+					allMedia = append(allMedia, item)
+				}
+			}
+			continue
+		}
 
-	data, err := client.CustomQuery(requestBody, logger, token)
-	if err != nil {
-		return nil, err
-	}
+		requestBody, err := json.Marshal(map[string]interface{}{
+			"query":     reqEvent.Query,
+			"variables": reqEvent.Variables,
+		})
+		if err != nil {
+			return nil, err
+		}
 
-	m, err := json.Marshal(data)
-	if err != nil {
-		return nil, err
-	}
-	var searchRes *SearchBaseAnimeByIds
-	if err := json.Unmarshal(m, &searchRes); err != nil {
-		return nil, err
-	}
+		data, err := client.CustomQuery(requestBody, logger, token)
+		if err != nil {
+			return nil, err
+		}
 
-	if searchRes == nil || searchRes.Page == nil || searchRes.Page.Media == nil {
-		return nil, fmt.Errorf("no data found")
+		m, err := json.Marshal(data)
+		if err != nil {
+			return nil, err
+		}
+		var searchRes *SearchBaseAnimeByIds
+		if err := json.Unmarshal(m, &searchRes); err != nil {
+			return nil, err
+		}
+
+		if searchRes != nil && searchRes.Page != nil && searchRes.Page.Media != nil {
+			for _, media := range searchRes.Page.Media {
+				if _, ok := seenMedia[media.GetID()]; !ok {
+					seenMedia[media.GetID()] = struct{}{}
+					allMedia = append(allMedia, media)
+				}
+			}
+		}
 	}
 
 	// Event
 	event := &ListMissedSequelsEvent{
-		List: searchRes.Page.Media,
+		List: allMedia,
 	}
 	err = hook.GlobalHookManager.OnListMissedSequels().Trigger(event)
 	if err != nil {

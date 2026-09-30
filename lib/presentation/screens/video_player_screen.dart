@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/preferences/player_engine_provider.dart';
 import 'package:seanime_app/core/preferences/player_gesture_provider.dart';
+import 'package:seanime_app/core/preferences/playback_progress_preferences_provider.dart';
 import 'package:seanime_app/core/preferences/resume_bar_preferences_provider.dart';
 import 'package:seanime_app/core/preferences/tv_mode_provider.dart';
 import 'package:seanime_app/core/preferences/volume_boost_provider.dart';
@@ -427,6 +428,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     _progressManager = PlayerProgressManager(
       repository: ref.read(repositoryProvider),
       lastSessionNotifier: ref.read(lastSessionProvider.notifier),
+      playbackProgressNotifier: ref.read(playbackProgressPreferencesProvider.notifier),
       mediaId: widget.mediaId,
       title: widget.title,
       getCoverImage: () => _effectiveCoverImage,

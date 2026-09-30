@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:seanime_app/core/preferences/playback_progress_preferences_provider.dart';
 import 'package:seanime_app/core/preferences/title_language_provider.dart';
 import 'package:seanime_app/core/theme/app_theme_colors.dart';
 import 'package:seanime_app/core/theme/theme_provider.dart';
@@ -87,9 +88,15 @@ class _ContinueWatchingCardState extends ConsumerState<ContinueWatchingCard> {
     final animeTitle = widget.entry.displayTitle(titleLang);
     final String? episodeDuration = aniZipEpisode?.formattedDuration;
 
-    final double progressFraction = (widget.entry.totalEpisodes != null && widget.entry.totalEpisodes! > 0)
-        ? (widget.entry.progress / widget.entry.totalEpisodes!).clamp(0.0, 1.0)
-        : 0.5;
+    // Local video playback progress (only appears if user has actually watched part of this episode locally)
+    final playbackMap = ref.watch(playbackProgressPreferencesProvider);
+    final localProgress = playbackMap['${widget.entry.mediaId}_$epNum'] ??
+        playbackMap[widget.entry.mediaId.toString()];
+    final double? progressFraction = (localProgress != null &&
+            localProgress.durationMs > 0 &&
+            localProgress.positionMs > 0)
+        ? (localProgress.positionMs / localProgress.durationMs).clamp(0.0, 1.0)
+        : null;
 
     final isCompact = widget.width < 270;
 
@@ -147,8 +154,8 @@ class _ContinueWatchingCardState extends ConsumerState<ContinueWatchingCard> {
                               color: theme.colorScheme.surfaceContainerHighest,
                               child: Icon(Icons.movie_rounded, color: theme.colorScheme.outline, size: isCompact ? 28 : 36),
                             ),
-                          // Subtle progress indicator at the bottom edge
-                          if (progressFraction > 0)
+                          // Subtle video playback progress indicator at the bottom edge (only if watched locally)
+                          if (progressFraction != null && progressFraction > 0.01 && progressFraction < 0.98)
                             Positioned(
                               bottom: 0,
                               left: 0,

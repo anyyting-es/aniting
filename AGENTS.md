@@ -53,7 +53,7 @@ seanime_app/
 │   │   ├── player/                   # Video playback service wrappers
 │   │   │   ├── exo_player_service.dart   # Android Media3 platform channel bridge
 │   │   │   └── mpv_player_service.dart   # media_kit / libmpv service with Plezy optimizations
-│   │   ├── preferences/              # PlayerEngineProvider, TitleLanguageProvider, EpisodeViewModeProvider, OnboardingProvider, DownloadPreferencesProvider, LayoutModeProvider
+│   │   ├── preferences/              # PlayerEngineProvider, TitleLanguageProvider, EpisodeViewModeProvider, OnboardingProvider, DownloadPreferencesProvider, LayoutModeProvider, PlaybackProgressPreferencesProvider
 │   │   ├── server/                   # ServerManager, AndroidServerChannel, DesktopServer
 │   │   ├── storage/                  # AppStoragePaths (Aniting/Downloads resolution for Android and Desktop)
 │   │   └── theme/                    # AppTheme, ThemeProvider, AppPalette, AppThemeColors, AppScrollBehavior, custom_route_transitions (WebPageTransitionsBuilder, SmoothPageRoute)
@@ -164,11 +164,27 @@ seanime_app/
 ### 4.1. Navigation, Feeds & Explore Architecture
 - **Navigation Hierarchy**:
   - `main_shell.dart` organizes navigation into 5 primary views:
-    0. **Inicio (`feed_screen.dart`)**: Anime feed, continue watching, currently watching, missed sequels, trending, discover anime.
-    1. **Manga (`manga_feed_screen.dart`)**: Manga feed, continue reading, completed manga, trending manga, discover manga.
+    0. **Inicio (`feed_screen.dart`)**: 100% User Library anime feed (in-page search, Continue Watching with local video playback progress, Currently Watching, Missed Sequels full uncapped list, anime recommendations).
+    1. **Manga (`manga_feed_screen.dart`)**: 100% User Library manga feed (in-page search, Continue Reading with chapters progress bar & `Capítulo X - Total` format, Completed Manga, manga recommendations).
     2. **Explorar (`search_screen.dart`)**: Comprehensive exploration hub with hero banner carousel, genre chips, non-wrapping media type toggle (Anime/Manga), filters (season, year, sort), genres hub.
     3. **Calendario (`airing_calendar_screen.dart`)**: Dedicated airing calendar page tracking upcoming broadcast schedules and episode countdowns.
     4. **Perfil (`library_screen.dart`)**: User profile stats, AniList account, collection lists.
+- **100% User-Library Feeds Architecture (`feed_screen.dart`, `manga_feed_screen.dart`)**:
+  - **Exclusivity of User Content**: Feeds are strictly dedicated to user activity, history, and personalized recommendations. Generic exploration content (such as global Trending carousels and infinite scrolling Discover / Popular grids) has been completely removed from both feeds and consolidated into the Explore tab (`search_screen.dart`).
+  - **Anime Continue Watching (`ContinueWatchingCard`, `playback_progress_preferences_provider.dart`)**:
+    - Replaced the previous AniList-level progress fraction with **exact local video playback progress** (`PlaybackProgressNotifier`, backed by `local_episode_playback_progress_v1` in `SharedPreferences`).
+    - **New User / Unwatched Behavior**: When an episode has not yet been played locally in the app, no progress bar is rendered—displaying only the clean episode card.
+    - **In-Progress Tracking**: As the user watches the video, `PlayerProgressManager` updates the local position (`mediaId_episodeNumber` -> `positionMs`, `durationMs`, `fraction`). `ContinueWatchingCard` displays a smooth progress bar for fractions between 1% and 98%.
+  - **Missed Sequels Full Uncapped List (`backend/internal/api/anilist/list.go`, `feed_screen.dart`)**:
+    - Previously, the Go backend capped missed sequels at `len(idsSlice) > 10`. This hardcoded slice was removed and replaced with a batched query pipeline (50 IDs per GraphQL chunk via `SearchBaseAnimeByIdsDocument`), returning 100% of missed sequels for the user.
+    - The UI displays the full collection count badge in the section header.
+  - **Manga Continue Reading & Recommendations (`ContinueReadingCard`, `manga_feed_screen.dart`, `seanime_repository.dart`)**:
+    - `ContinueReadingCard` renders a progress bar calculated from `progress / totalChapters` (only when `totalChapters > 0`).
+    - The subtitle below the title clearly displays `${l10n.chapter} $nextChapter - $totalCaps` (e.g. `Capítulo 71 - 150`).
+    - Added dedicated Manga Recommendations pipeline (`getMangaRecommendationsForUser`, `kCacheMangaRecommendations`, `mangaRecommendationsProvider`) mirroring anime recommendations.
+  - **Desktop Sidebar Profile Avatar (`desktop_sidebar.dart`, `main_shell.dart`)**:
+    - `DesktopSidebarItem` supports an optional `avatarUrl`.
+    - When logged in with an AniList avatar, the sidebar renders a circular avatar image with an active selection ring; if unavailable, it smoothly falls back to the profile icon.
 - **Feed Initial Loading Barrier, Cache-First & SWR Anti-CLS Architecture (`feed_screen.dart`, `FeedCacheService`, `app_providers.dart`)**:
   - **Zero Content Layout Shift (CLS) via Persistent SWR**:
     - Rather than letting fast public providers (`trendingAnimeProvider`, `popularAnimeProvider`) resolve first and render at the top while slow private providers (`continueWatchingProvider`, `animeCollectionProvider`) pop in seconds later to violently push content down, the feed employs a high-performance **Stale-While-Revalidate (SWR) cache-first pipeline**:
