@@ -33,6 +33,7 @@ abstract class AppTranslations {
   String get continueWatching;
   String get trendingAnime;
   String get popularThisSeason;
+  String get popularOfTheMoment;
   String get recentReleases;
   String get quickSearch;
   String get quickSearchHint;
@@ -269,6 +270,8 @@ abstract class AppTranslations {
 
   // Online Stream & Torrent Selector
   String get onlineProvider;
+  String get changeProvider;
+  String get tapToChangeProvider;
   String get sub;
   String get dub;
   String get selectSource;

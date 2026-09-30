@@ -34,6 +34,7 @@ class PlayerInfoPanel extends ConsumerStatefulWidget {
   final String? onlineStreamProvider;
   final VoidCallback? onReloadSources;
   final ValueChanged<OnlinestreamVideoSource>? onSelectSource;
+  final ValueChanged<String>? onSelectProvider;
 
   const PlayerInfoPanel({
     super.key,
@@ -58,6 +59,7 @@ class PlayerInfoPanel extends ConsumerStatefulWidget {
     this.onlineStreamProvider,
     this.onReloadSources,
     this.onSelectSource,
+    this.onSelectProvider,
   });
 
   @override
@@ -372,6 +374,7 @@ class _PlayerInfoPanelState extends ConsumerState<PlayerInfoPanel> {
                     animeTitle: widget.animeTitle,
                     onReloadSources: widget.onReloadSources,
                     onSelectSource: widget.onSelectSource,
+                    onSelectProvider: widget.onSelectProvider,
                   ),
                 ],
 

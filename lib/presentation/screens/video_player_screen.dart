@@ -607,6 +607,16 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     _seekFeedbackTimer?.cancel();
   }
 
+  void _switchOnlineStreamProvider(String newProviderId) {
+    if (_currentOnlineStreamProvider == newProviderId) return;
+    setState(() {
+      _currentOnlineStreamProvider = newProviderId;
+      _currentVideoUrl = '';
+      _currentVideoSource = newProviderId;
+    });
+    _sourceController.resolveInitialSources(preservePosition: true);
+  }
+
   @override
   void dispose() {
     _sourceController.dispose();
@@ -1101,6 +1111,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                                 onlineStreamProvider: _currentOnlineStreamProvider,
                                 onReloadSources: () => _sourceController.resolveInitialSources(preservePosition: true),
                                 onSelectSource: _sourceController.selectSource,
+                                onSelectProvider: _switchOnlineStreamProvider,
                               ),
                               isSidePanelCollapsed: _isSidePanelCollapsed,
                             )
@@ -1141,6 +1152,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                                 onlineStreamProvider: _currentOnlineStreamProvider,
                                 onReloadSources: () => _sourceController.resolveInitialSources(preservePosition: true),
                                 onSelectSource: _sourceController.selectSource,
+                                onSelectProvider: _switchOnlineStreamProvider,
                               ),
                             )),
                 ),

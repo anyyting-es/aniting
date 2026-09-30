@@ -84,6 +84,8 @@ class PlayerSourceController {
 
     isResolvingSources = true;
     sourceResolutionError = null;
+    availableSources = [];
+    activeSource = null;
     onUpdateUi();
 
     try {

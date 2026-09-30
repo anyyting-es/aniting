@@ -4,6 +4,7 @@ import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/theme/app_theme_colors.dart';
 import 'package:seanime_app/data/models/onlinestream_models.dart';
+import 'package:seanime_app/presentation/providers/app_providers.dart';
 
 /// Compact, polished playback source card rendered in the player's info panel.
 /// Shows the active server/quality, handles reloading sources on demand,
@@ -18,6 +19,7 @@ class PlayerSourceCard extends ConsumerWidget {
   final String? animeTitle;
   final VoidCallback? onReloadSources;
   final ValueChanged<OnlinestreamVideoSource>? onSelectSource;
+  final ValueChanged<String>? onSelectProvider;
 
   const PlayerSourceCard({
     super.key,
@@ -30,16 +32,10 @@ class PlayerSourceCard extends ConsumerWidget {
     this.animeTitle,
     this.onReloadSources,
     this.onSelectSource,
+    this.onSelectProvider,
   });
 
-  void _showSourcesModal(BuildContext context, AppTranslations l10n) {
-    if (availableSources.isEmpty) {
-      if (sourceResolutionError != null && onReloadSources != null) {
-        onReloadSources!();
-      }
-      return;
-    }
-
+  void _showSourcesModal(BuildContext context, WidgetRef ref, AppTranslations l10n) {
     final theme = Theme.of(context);
     final borderRadius = context.themeColors.borderRadius;
 
@@ -98,7 +94,7 @@ class PlayerSourceCard extends ConsumerWidget {
                           Text(
                             episodeNumber != null
                                 ? '${l10n.episode} $episodeNumber • ${availableSources.length} ${l10n.availableSourcesCount}'
-                                : '${availableSources.length} ${l10n.availableSourcesCount}',
+                                : (providerName != null ? providerName! : l10n.playbackSources),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
@@ -123,121 +119,274 @@ class PlayerSourceCard extends ConsumerWidget {
                 const SizedBox(height: 12),
                 const Divider(height: 1),
                 const SizedBox(height: 8),
-                // Sources list
-                Flexible(
-                  child: ListView.separated(
-                    shrinkWrap: true,
-                    itemCount: availableSources.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 6),
-                    itemBuilder: (context, idx) {
-                      final src = availableSources[idx];
-                      final isActive = activeSource != null &&
-                          (activeSource!.url == src.url ||
-                              (activeSource!.server == src.server &&
-                                  activeSource!.quality == src.quality));
 
-                      return Material(
-                        color: isActive
-                            ? theme.colorScheme.primaryContainer.withValues(alpha: 0.3)
-                            : theme.colorScheme.surfaceContainerLow,
-                        borderRadius: BorderRadius.circular(borderRadius),
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(borderRadius),
-                          onTap: () {
-                            Navigator.pop(modalCtx);
-                            if (!isActive && onSelectSource != null) {
-                              onSelectSource!(src);
-                            }
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(borderRadius),
-                              border: Border.all(
-                                color: isActive
-                                    ? theme.colorScheme.primary
-                                    : theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
-                                width: isActive ? 1.5 : 1.0,
+                // Providers section
+                if (onSelectProvider != null) ...[
+                  Consumer(
+                    builder: (context, cRef, _) {
+                      final providersAsync = cRef.watch(onlinestreamProvidersProvider);
+                      return providersAsync.maybeWhen(
+                        data: (providers) {
+                          if (providers.isEmpty) return const SizedBox.shrink();
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.only(top: 4, bottom: 8),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.hub_outlined,
+                                      size: 14,
+                                      color: theme.colorScheme.onSurfaceVariant,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      l10n.onlineProvider.toUpperCase(),
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                        letterSpacing: 0.5,
+                                        color: theme.colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                            child: Row(
-                              children: [
-                                CircleAvatar(
-                                  radius: 16,
-                                  backgroundColor: isActive
-                                      ? theme.colorScheme.primary
-                                      : theme.colorScheme.surfaceContainerHighest,
-                                  child: Icon(
-                                    isActive ? Icons.play_arrow_rounded : Icons.dns_rounded,
-                                    size: 18,
-                                    color: isActive
-                                        ? theme.colorScheme.onPrimary
-                                        : theme.colorScheme.onSurfaceVariant,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Text(
-                                            src.server.toUpperCase(),
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 13,
-                                              color: isActive ? theme.colorScheme.primary : null,
-                                            ),
-                                          ),
-                                          if (src.isHls) ...[
-                                            const SizedBox(width: 6),
-                                            Container(
-                                              padding: const EdgeInsets.symmetric(
-                                                  horizontal: 5, vertical: 1.5),
-                                              decoration: BoxDecoration(
-                                                color: theme.colorScheme.tertiaryContainer,
-                                                borderRadius: BorderRadius.circular(4),
-                                              ),
-                                              child: Text(
-                                                'HLS',
-                                                style: TextStyle(
-                                                  fontSize: 9.5,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: theme.colorScheme.onTertiaryContainer,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ],
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        src.quality.isNotEmpty && src.quality != 'auto'
-                                            ? '${l10n.quality}: ${src.quality}'
-                                            : l10n.server,
-                                        style: TextStyle(
-                                          fontSize: 11.5,
-                                          color: theme.colorScheme.onSurfaceVariant,
+                              SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: Row(
+                                  children: providers.map((p) {
+                                    final isSelected = (providerName != null &&
+                                            providerName!.toLowerCase() == p.id.toLowerCase()) ||
+                                        (providerName != null &&
+                                            providerName!.toLowerCase() == p.name.toLowerCase());
+                                    return Padding(
+                                      padding: const EdgeInsets.only(right: 8),
+                                      child: ChoiceChip(
+                                        label: Text(p.name.isNotEmpty ? p.name : p.id),
+                                        selected: isSelected,
+                                        showCheckmark: false,
+                                        avatar: isSelected
+                                            ? Icon(Icons.check, size: 14, color: theme.colorScheme.onPrimary)
+                                            : null,
+                                        labelStyle: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                          color: isSelected ? theme.colorScheme.onPrimary : theme.colorScheme.onSurface,
                                         ),
+                                        selectedColor: theme.colorScheme.primary,
+                                        backgroundColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(8),
+                                          side: BorderSide(
+                                            color: isSelected
+                                                ? theme.colorScheme.primary
+                                                : theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+                                          ),
+                                        ),
+                                        onSelected: (selected) {
+                                          if (selected && !isSelected) {
+                                            Navigator.pop(modalCtx);
+                                            onSelectProvider?.call(p.id);
+                                          }
+                                        },
                                       ),
-                                    ],
-                                  ),
+                                    );
+                                  }).toList(),
                                 ),
-                                if (isActive)
-                                  Icon(
-                                    Icons.check_circle_rounded,
-                                    size: 20,
-                                    color: theme.colorScheme.primary,
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ),
+                              ),
+                              const SizedBox(height: 12),
+                              const Divider(height: 1),
+                              const SizedBox(height: 8),
+                            ],
+                          );
+                        },
+                        orElse: () => const SizedBox.shrink(),
                       );
                     },
                   ),
-                ),
+                ],
+
+                // Sources list / loading / empty state
+                if (isResolvingSources)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 24),
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              color: theme.colorScheme.primary,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            l10n.searchingSources,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                else if (availableSources.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 20),
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.search_off_rounded,
+                            size: 36,
+                            color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            sourceResolutionError ?? l10n.noSourcesFoundForEpisode,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          if (onReloadSources != null) ...[
+                            const SizedBox(height: 12),
+                            FilledButton.tonalIcon(
+                              onPressed: () {
+                                Navigator.pop(modalCtx);
+                                onReloadSources!();
+                              },
+                              icon: const Icon(Icons.refresh_rounded, size: 16),
+                              label: Text(l10n.retry),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  )
+                else
+                  Flexible(
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: availableSources.length,
+                      separatorBuilder: (_, _) => const SizedBox(height: 6),
+                      itemBuilder: (context, idx) {
+                        final src = availableSources[idx];
+                        final isActive = activeSource != null &&
+                            (activeSource!.url == src.url ||
+                                (activeSource!.server == src.server &&
+                                    activeSource!.quality == src.quality));
+
+                        return Material(
+                          color: isActive
+                              ? theme.colorScheme.primaryContainer.withValues(alpha: 0.3)
+                              : theme.colorScheme.surfaceContainerLow,
+                          borderRadius: BorderRadius.circular(borderRadius),
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(borderRadius),
+                            onTap: () {
+                              Navigator.pop(modalCtx);
+                              if (!isActive && onSelectSource != null) {
+                                onSelectSource!(src);
+                              }
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(borderRadius),
+                                border: Border.all(
+                                  color: isActive
+                                      ? theme.colorScheme.primary
+                                      : theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+                                  width: isActive ? 1.5 : 1.0,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 16,
+                                    backgroundColor: isActive
+                                        ? theme.colorScheme.primary
+                                        : theme.colorScheme.surfaceContainerHighest,
+                                    child: Icon(
+                                      isActive ? Icons.play_arrow_rounded : Icons.dns_rounded,
+                                      size: 18,
+                                      color: isActive
+                                          ? theme.colorScheme.onPrimary
+                                          : theme.colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Text(
+                                              src.server.toUpperCase(),
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 13,
+                                                color: isActive ? theme.colorScheme.primary : null,
+                                              ),
+                                            ),
+                                            if (src.isHls) ...[
+                                              const SizedBox(width: 6),
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(
+                                                    horizontal: 5, vertical: 1.5),
+                                                decoration: BoxDecoration(
+                                                  color: theme.colorScheme.tertiaryContainer,
+                                                  borderRadius: BorderRadius.circular(4),
+                                                ),
+                                                child: Text(
+                                                  'HLS',
+                                                  style: TextStyle(
+                                                    fontSize: 9.5,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: theme.colorScheme.onTertiaryContainer,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ],
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          src.quality.isNotEmpty && src.quality != 'auto'
+                                              ? '${l10n.quality}: ${src.quality}'
+                                              : l10n.server,
+                                          style: TextStyle(
+                                            fontSize: 11.5,
+                                            color: theme.colorScheme.onSurfaceVariant,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  if (isActive)
+                                    Icon(
+                                      Icons.check_circle_rounded,
+                                      size: 20,
+                                      color: theme.colorScheme.primary,
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
               ],
             ),
           ),
@@ -263,7 +412,7 @@ class PlayerSourceCard extends ConsumerWidget {
         borderRadius: BorderRadius.circular(borderRadius),
         child: InkWell(
           borderRadius: BorderRadius.circular(borderRadius),
-          onTap: () => _showSourcesModal(context, l10n),
+          onTap: () => _showSourcesModal(context, ref, l10n),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
@@ -372,12 +521,12 @@ class PlayerSourceCard extends ConsumerWidget {
                       const SizedBox(height: 2),
                       Text(
                         isResolvingSources
-                            ? l10n.playingFirstAvailable
+                            ? '${l10n.searchingSources} • ${l10n.tapToChangeProvider}'
                             : (hasError
-                                ? sourceResolutionError!
+                                ? '${l10n.noSourcesFoundForEpisode} • ${l10n.tapToChangeProvider}'
                                 : (availableSources.isNotEmpty
                                     ? '${availableSources.length} ${l10n.availableSourcesCount} • ${l10n.tapToChangeSource}'
-                                    : l10n.tapToChangeSource)),
+                                    : l10n.tapToChangeProvider)),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(

@@ -5,15 +5,18 @@ import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/data/models/onlinestream_models.dart';
 import 'package:seanime_app/presentation/widgets/player/panels/player_source_card.dart';
 
+import 'package:seanime_app/presentation/providers/app_providers.dart';
+
 class _MaterialIconPackNotifier extends IconPackNotifier {
   @override
   AppIconPack build() => AppIconPack.material;
 }
 
-Widget _buildWrapper({required Widget child}) {
+Widget _buildWrapper({required Widget child, List<dynamic>? overrides}) {
   return ProviderScope(
     overrides: [
       iconPackProvider.overrideWith(_MaterialIconPackNotifier.new),
+      ...?overrides?.cast(),
     ],
     child: MaterialApp(
       home: Scaffold(
@@ -57,7 +60,7 @@ void main() {
 
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
     expect(find.text('Buscando opciones...'), findsOneWidget);
-    expect(find.text('Reproduciendo primera opción encontrada'), findsOneWidget);
+    expect(find.textContaining('Toca para cambiar proveedor'), findsOneWidget);
   });
 
   testWidgets('PlayerSourceCard renders active source info and allows reload', (tester) async {
@@ -127,7 +130,7 @@ void main() {
     expect(selectedSource!.quality, '720p');
   });
 
-  testWidgets('PlayerSourceCard displays error message when resolution fails', (tester) async {
+  testWidgets('PlayerSourceCard displays error message and opens modal with retry', (tester) async {
     bool reloaded = false;
 
     await tester.pumpWidget(
@@ -144,10 +147,50 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.text('Error de conexión con el proveedor'), findsOneWidget);
-
-    // Tapping card triggers retry
+    // Tapping card opens modal with retry and error message
     await tester.tap(find.byType(PlayerSourceCard));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Error de conexión con el proveedor'), findsOneWidget);
+    expect(find.text('Reintentar'), findsOneWidget);
+    await tester.tap(find.text('Reintentar'));
     expect(reloaded, isTrue);
+  });
+
+  testWidgets('PlayerSourceCard allows changing provider inside modal', (tester) async {
+    String? switchedProvider;
+
+    await tester.pumpWidget(
+      _buildWrapper(
+        overrides: [
+          onlinestreamProvidersProvider.overrideWith((ref) async => const [
+            OnlinestreamProvider(id: 'gogoanime', name: 'Gogoanime'),
+            OnlinestreamProvider(id: 'animeflv', name: 'AnimeFLV'),
+          ]),
+        ],
+        child: PlayerSourceCard(
+          isResolvingSources: true,
+          providerName: 'gogoanime',
+          episodeNumber: 1,
+          onSelectProvider: (newProv) {
+            switchedProvider = newProv;
+          },
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    // Tap card while resolving to open modal and switch provider
+    await tester.tap(find.byType(PlayerSourceCard));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('AnimeFLV'), findsOneWidget);
+    await tester.tap(find.text('AnimeFLV'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(switchedProvider, 'animeflv');
   });
 }

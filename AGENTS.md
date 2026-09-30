@@ -239,6 +239,24 @@ seanime_app/
     - User can seamlessly tap any other file (e.g., OVAs, movies, or alternative episodes) to override selection.
   - **Targeted File Streaming (`fileIndex`)**:
     - Starts the stream passing `fileIndex: selectedFile.index` to `startTorrentStream`, ensuring the embedded Go engine streams the exact chosen file from the swarm.
+- **Explore Hub "Populares del momento" Priority (`search_screen.dart`, `popularAnimeProvider`, `popularMangaProvider`)**:
+  - In `search_screen.dart`, the curated section "Populares del momento" (`l10n.popularOfTheMoment`) is positioned as the very first line/row immediately below the genre filter chips for both Anime and Manga modes.
+  - Tapping "Ver más" seamlessly expands into a paginated full grid filter.
+- **In-Player Streaming Provider Switching Architecture (`player_source_card.dart`, `player_info_panel.dart`, `video_player_screen.dart`, `app_providers.dart`)**:
+  - **Direct Provider Switching in Playback**: Users can tap `PlayerSourceCard` while an episode is actively searching for sources (`isResolvingSources`), during error states, or during active playback to open the playback sources modal.
+  - **Installed Providers Picker**: The modal renders a top row with installed online stream providers (`onlinestreamProvidersProvider`) using clean `ChoiceChip` widgets.
+  - **Seamless Re-resolution (`_switchOnlineStreamProvider`)**: Selecting a new provider calls `_switchOnlineStreamProvider(newProviderId)` in `_VideoPlayerScreenState`, updating the active provider, clearing stale sources, and invoking `_sourceController.resolveInitialSources(preservePosition: true)` to automatically resolve and start streaming from the newly selected provider without exiting the player or losing playback position.
+- **In-App GitHub Releases Auto-Updater Architecture (`AppUpdateService`, `AppUpdateDialog`, `app_update_provider.dart`, `MainActivity.kt`, `file_paths.xml`)**:
+  - **Zero-Cost GitHub Releases Pipeline**: Queries `https://api.github.com/repos/anyyting-es/aniting/releases/latest` directly to retrieve semantic version tags (`vX.Y.Z`), changelog markdown, and attached `.apk` binaries.
+  - **Semantic Version Checking**: Compares remote vs current versions using `AppUpdateInfo.isVersionNewer` (supports major, minor, patch and build number).
+  - **In-App Interactive Modal & Live Download**: `AppUpdateDialog` displays version tags, formatted release notes, and real-time linear download progress (`received / total` bytes and percentage).
+  - **Native Android APK Installation**:
+    - Configured `androidx.core.content.FileProvider` (`authorities="${applicationId}.fileprovider"`) with `@xml/file_paths` (`cache-path`, `external-cache-path`, `files-path`).
+    - Handled `installApk`, `canRequestPackageInstalls`, and `openInstallPermissionSetting` in `MainActivity.kt` using `Intent(Intent.ACTION_VIEW)` with `application/vnd.android.package-archive` and `FLAG_GRANT_READ_URI_PERMISSION`.
+    - Added `<uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />`.
+- **Android Permissions Transparency & Clean Audit**:
+  - Confirmed 0 intrusive permissions (no Camera, no Audio/Microphone, no Location, no Contacts).
+  - Strict minimal set: `INTERNET`, `ACCESS_NETWORK_STATE`, `WAKE_LOCK`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_DATA_SYNC`, `POST_NOTIFICATIONS`, `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`, `MANAGE_EXTERNAL_STORAGE`, `REQUEST_INSTALL_PACKAGES`.
 - **Header Alignment between Feeds**:
   - `feed_screen.dart` and `manga_feed_screen.dart` share an identical vertical layout hierarchy:
     - Top spacer (`topPadding + 6`), `CompactSearchBar` (`Padding(horizontal: 16, vertical: 4)`), separator (`SizedBox(height: 8)`).

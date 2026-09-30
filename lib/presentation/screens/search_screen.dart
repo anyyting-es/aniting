@@ -251,7 +251,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   Widget _buildCuratedAnimeSection({
     required String title,
-    required String genreKey,
+    String? genreKey,
+    VoidCallback? onSeeMoreTap,
     required List<AnimeEntry> entries,
     required ThemeData theme,
     required AppTranslations l10n,
@@ -278,16 +279,18 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 ),
               ),
               InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    SlideRightToLeftPageRoute(
-                      child: GenreDetailScreen(
-                        genre: genreKey,
-                        displayGenreName: title,
+                onTap: onSeeMoreTap ?? () {
+                  if (genreKey != null) {
+                    Navigator.push(
+                      context,
+                      SlideRightToLeftPageRoute(
+                        child: GenreDetailScreen(
+                          genre: genreKey,
+                          displayGenreName: title,
+                        ),
                       ),
-                    ),
-                  );
+                    );
+                  }
                 },
                 borderRadius: BorderRadius.circular(8),
                 child: Padding(
@@ -344,7 +347,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   Widget _buildCuratedMangaSection({
     required String title,
-    required String genreKey,
+    String? genreKey,
+    VoidCallback? onSeeMoreTap,
     required List<MangaEntry> entries,
     required ThemeData theme,
     required AppTranslations l10n,
@@ -371,16 +375,18 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 ),
               ),
               InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    SlideRightToLeftPageRoute(
-                      child: GenreDetailScreen(
-                        genre: genreKey,
-                        displayGenreName: title,
+                onTap: onSeeMoreTap ?? () {
+                  if (genreKey != null) {
+                    Navigator.push(
+                      context,
+                      SlideRightToLeftPageRoute(
+                        child: GenreDetailScreen(
+                          genre: genreKey,
+                          displayGenreName: title,
+                        ),
                       ),
-                    ),
-                  );
+                    );
+                  }
                 },
                 borderRadius: BorderRadius.circular(8),
                 child: Padding(
@@ -583,11 +589,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final trendingMangaAsync = !isAnime ? ref.watch(trendingMangaProvider) : null;
 
     // Curated providers for Anime
+    final popularAnimeAsync = isAnime && !_showSearchBar ? ref.watch(popularAnimeProvider) : null;
     final romanceAnimeAsync = isAnime && !_showSearchBar ? ref.watch(curatedRomanceAnimeProvider) : null;
     final actionAnimeAsync = isAnime && !_showSearchBar ? ref.watch(curatedActionAnimeProvider) : null;
     final fantasyAnimeAsync = isAnime && !_showSearchBar ? ref.watch(curatedFantasyAnimeProvider) : null;
 
     // Curated providers for Manga
+    final popularMangaAsync = !isAnime && !_showSearchBar ? ref.watch(popularMangaProvider) : null;
     final romanceMangaAsync = !isAnime && !_showSearchBar ? ref.watch(curatedRomanceMangaProvider) : null;
     final actionMangaAsync = !isAnime && !_showSearchBar ? ref.watch(curatedActionMangaProvider) : null;
     final fantasyMangaAsync = !isAnime && !_showSearchBar ? ref.watch(curatedFantasyMangaProvider) : null;
@@ -611,11 +619,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 } else {
                   if (isAnime) {
                     ref.invalidate(trendingAnimeProvider);
+                    ref.invalidate(popularAnimeProvider);
                     ref.invalidate(curatedRomanceAnimeProvider);
                     ref.invalidate(curatedActionAnimeProvider);
                     ref.invalidate(curatedFantasyAnimeProvider);
                   } else {
                     ref.invalidate(trendingMangaProvider);
+                    ref.invalidate(popularMangaProvider);
                     ref.invalidate(curatedRomanceMangaProvider);
                     ref.invalidate(curatedActionMangaProvider);
                     ref.invalidate(curatedFantasyMangaProvider);
@@ -897,6 +907,21 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       if (isAnime) ...[
                         SliverToBoxAdapter(
                           child: _buildCuratedAnimeSection(
+                            title: l10n.popularOfTheMoment,
+                            onSeeMoreTap: () {
+                              setState(() {
+                                _filterState = _filterState.copyWith(sort: 'POPULARITY_DESC');
+                                _isSearchExpanded = true;
+                              });
+                              _fetchResults(reset: true);
+                            },
+                            entries: popularAnimeAsync?.asData?.value ?? [],
+                            theme: theme,
+                            l10n: l10n,
+                          ),
+                        ),
+                        SliverToBoxAdapter(
+                          child: _buildCuratedAnimeSection(
                             title: l10n.curatedRomance,
                             genreKey: 'Romance',
                             entries: romanceAnimeAsync?.asData?.value ?? [],
@@ -923,6 +948,21 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                           ),
                         ),
                       ] else ...[
+                        SliverToBoxAdapter(
+                          child: _buildCuratedMangaSection(
+                            title: l10n.popularOfTheMoment,
+                            onSeeMoreTap: () {
+                              setState(() {
+                                _filterState = _filterState.copyWith(sort: 'POPULARITY_DESC');
+                                _isSearchExpanded = true;
+                              });
+                              _fetchResults(reset: true);
+                            },
+                            entries: popularMangaAsync?.asData?.value ?? [],
+                            theme: theme,
+                            l10n: l10n,
+                          ),
+                        ),
                         SliverToBoxAdapter(
                           child: _buildCuratedMangaSection(
                             title: l10n.curatedRomanceManga,

@@ -7,6 +7,9 @@ import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/screens/welcome_screen.dart';
 import 'package:seanime_app/presentation/screens/settings/widgets/pixel_settings_widgets.dart';
 import 'package:seanime_app/presentation/screens/settings/widgets/pixel_subpage_scaffold.dart';
+import 'package:seanime_app/data/services/app_update_service.dart';
+import 'package:seanime_app/presentation/providers/app_update_provider.dart';
+import 'package:seanime_app/presentation/widgets/update/app_update_dialog.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -23,6 +26,7 @@ class AboutSettingsScreen extends ConsumerWidget {
     final iconPack = ref.watch(iconPackProvider);
     final serverState = ref.watch(serverNotifierProvider);
     final status = serverState.status;
+    final updateState = ref.watch(appUpdateNotifierProvider);
 
     return PixelSubpageScaffold(
       title: l10n.aboutApp,
@@ -246,32 +250,72 @@ class AboutSettingsScreen extends ConsumerWidget {
                 style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
               ),
               subtitle: Text(
-                'Buscar la versión más reciente en GitHub',
+                updateState.isChecking
+                    ? 'Buscando actualizaciones en GitHub...'
+                    : 'Buscar la versión más reciente en GitHub',
                 style: TextStyle(
                   fontSize: 12.5,
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
-              trailing: Icon(
-                AppIcons.refresh(iconPack),
-                color: theme.colorScheme.primary,
-              ),
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    content: const Text('Comprobando actualizaciones... Estás en la versión más reciente (v1.0.0).'),
-                    action: SnackBarAction(
-                      label: 'GitHub',
-                      onPressed: () => launchUrl(
-                        Uri.parse('https://github.com/anyyting-es'),
-                        mode: LaunchMode.externalApplication,
-                      ),
+              trailing: updateState.isChecking
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Icon(
+                      AppIcons.refresh(iconPack),
+                      color: theme.colorScheme.primary,
                     ),
-                  ),
-                );
-              },
+              onTap: updateState.isChecking
+                  ? null
+                  : () async {
+                      final messenger = ScaffoldMessenger.of(context);
+                      messenger.showSnackBar(
+                        SnackBar(
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          content: const Text('Buscando actualizaciones en GitHub...'),
+                          duration: const Duration(seconds: 1),
+                        ),
+                      );
+
+                      final info = await ref
+                          .read(appUpdateNotifierProvider.notifier)
+                          .checkForUpdate();
+
+                      if (!context.mounted) return;
+
+                      if (info != null && info.hasUpdate) {
+                        AppUpdateDialog.show(context, info);
+                      } else if (info != null) {
+                        messenger.showSnackBar(
+                          SnackBar(
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            content: Text(
+                              'Estás en la versión más reciente (v${AppUpdateService.currentAppVersion}). No hay nuevas actualizaciones.',
+                            ),
+                          ),
+                        );
+                      } else {
+                        messenger.showSnackBar(
+                          SnackBar(
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            content: const Text('No se pudo comprobar la actualización. Revisa tu conexión a internet.'),
+                            action: SnackBarAction(
+                              label: 'GitHub',
+                              onPressed: () => launchUrl(
+                                Uri.parse('https://github.com/anyyting-es/aniting/releases'),
+                                mode: LaunchMode.externalApplication,
+                              ),
+                            ),
+                          ),
+                        );
+                      }
+                    },
             ),
             const PixelTileDivider(),
             ListTile(

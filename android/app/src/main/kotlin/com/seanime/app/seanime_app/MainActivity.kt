@@ -108,6 +108,57 @@ class MainActivity : FlutterActivity() {
                 "requestManageStorage" -> {
                     result.success(SeanimeServerRuntime.requestManageStorage(applicationContext))
                 }
+                "installApk" -> {
+                    val filePath = call.argument<String>("filePath")
+                    if (filePath.isNullOrEmpty()) {
+                        result.error("INVALID_PATH", "File path cannot be null or empty", null)
+                        return@setMethodCallHandler
+                    }
+                    val file = java.io.File(filePath)
+                    if (!file.exists()) {
+                        result.error("FILE_NOT_FOUND", "File does not exist: $filePath", null)
+                        return@setMethodCallHandler
+                    }
+                    try {
+                        val apkUri = androidx.core.content.FileProvider.getUriForFile(
+                            applicationContext,
+                            "${applicationContext.packageName}.fileprovider",
+                            file
+                        )
+                        val installIntent = Intent(Intent.ACTION_VIEW).apply {
+                            setDataAndType(apkUri, "application/vnd.android.package-archive")
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+                        startActivity(installIntent)
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.error("INSTALL_ERROR", e.localizedMessage, null)
+                    }
+                }
+                "canRequestPackageInstalls" -> {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        result.success(packageManager.canRequestPackageInstalls())
+                    } else {
+                        result.success(true)
+                    }
+                }
+                "openInstallPermissionSetting" -> {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        try {
+                            val intent = Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
+                                data = android.net.Uri.parse("package:${packageName}")
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
+                            startActivity(intent)
+                            result.success(true)
+                        } catch (e: Exception) {
+                            result.error("PERMISSION_SETTING_ERROR", e.localizedMessage, null)
+                        }
+                    } else {
+                        result.success(false)
+                    }
+                }
                 else -> result.notImplemented()
             }
         }

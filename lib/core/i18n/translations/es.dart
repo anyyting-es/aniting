@@ -67,6 +67,8 @@ class SpanishTranslations implements AppTranslations {
   @override
   String get popularThisSeason => 'Popular Esta Temporada';
   @override
+  String get popularOfTheMoment => 'Populares del momento';
+  @override
   String get recentReleases => 'Últimos Lanzamientos';
   @override
   String get quickSearch => 'Buscar rápido';
@@ -533,6 +535,10 @@ class SpanishTranslations implements AppTranslations {
   // Online Stream & Torrent Selector
   @override
   String get onlineProvider => 'Proveedor';
+  @override
+  String get changeProvider => 'Cambiar proveedor';
+  @override
+  String get tapToChangeProvider => 'Toca para cambiar proveedor';
   @override
   String get sub => 'Sub';
   @override

@@ -7,6 +7,7 @@ import 'package:seanime_app/core/preferences/download_preferences_provider.dart'
 import 'package:seanime_app/data/models/anime_entry.dart';
 import 'package:seanime_app/data/models/anizip_data.dart';
 import 'package:seanime_app/data/models/manga_entry.dart';
+import 'package:seanime_app/data/models/onlinestream_models.dart';
 import 'package:seanime_app/data/models/server_status.dart';
 import 'package:seanime_app/data/repositories/seanime_repository.dart';
 import 'package:seanime_app/data/services/manga_offline_service.dart';
@@ -584,5 +585,12 @@ final sessionMcImageProvider =
   } catch (_) {
     return null;
   }
+});
+
+/// Proveedores de streaming online instalados y disponibles
+final onlinestreamProvidersProvider =
+    FutureProvider.autoDispose<List<OnlinestreamProvider>>((ref) async {
+  final repo = ref.watch(repositoryProvider);
+  return repo.getOnlinestreamProviders();
 });
 
