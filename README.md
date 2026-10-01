@@ -1,4 +1,4 @@
-# Aniting
+# Aniting - BETA
 
 Aniting es una aplicación para Android que te permite ver anime y leer manga desde un solo lugar.
 
