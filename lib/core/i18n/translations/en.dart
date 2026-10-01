@@ -275,7 +275,7 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get aboutApp => 'About Aniting';
   @override
-  String get aboutSubtitle => 'Native Aniting Flutter Client v1.0.1';
+  String get aboutSubtitle => 'Native Aniting Flutter Client';
   @override
   String get aboutLegalese => 'Native client for anime management and playback.';
 
