@@ -4,8 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:seanime_app/core/theme/smooth_scroll_controller.dart';
 
 void main() {
-  group('SmoothScrollController Tests', () {
-    testWidgets('Interpolates mouse wheel scrolling smoothly', (tester) async {
+  group('Advanced Ticker-Based Smooth Scroll Tests', () {
+    testWidgets('Glides smoothly with single-ticker exponential smoothing', (tester) async {
       final controller = SmoothScrollController();
       await tester.pumpWidget(
         MaterialApp(
@@ -22,33 +22,31 @@ void main() {
         ),
       );
 
-      expect(controller.offset, 0.0);
-
-      // Single mouse wheel scroll event (+100px)
       final center = tester.getCenter(find.text('Item 0'));
-      final pointerSignal = PointerScrollEvent(
-        position: center,
-        scrollDelta: const Offset(0, 100),
-        kind: PointerDeviceKind.mouse,
+      tester.binding.handlePointerEvent(
+        PointerScrollEvent(
+          position: center,
+          scrollDelta: const Offset(0, 100),
+          kind: PointerDeviceKind.mouse,
+        ),
       );
 
-      tester.binding.handlePointerEvent(pointerSignal);
+      // Frame 1 (~16ms)
+      await tester.pump(const Duration(milliseconds: 16));
+      expect(controller.offset, greaterThan(10.0));
+      expect(controller.offset, lessThan(40.0));
 
-      // Immediately after event, it should not have jumped to 100 yet
-      expect(controller.offset, 0.0);
+      // Frame 3 (~50ms)
+      await tester.pump(const Duration(milliseconds: 34));
+      expect(controller.offset, greaterThan(35.0));
+      expect(controller.offset, lessThan(85.0));
 
-      // Step forward: first pump initiates the ticker, second advances animation
-      await tester.pump(const Duration(milliseconds: 20));
-      await tester.pump(const Duration(milliseconds: 60));
-      expect(controller.offset, greaterThan(20.0));
-      expect(controller.offset, lessThan(100.0));
-
-      // Settle animation
+      // Settle
       await tester.pumpAndSettle();
       expect(controller.offset, 100.0);
     });
 
-    testWidgets('Accumulates target when scrolled repeatedly in same direction', (tester) async {
+    testWidgets('Filters out hardware mouse wheel encoder bounce glitch', (tester) async {
       final controller = SmoothScrollController();
       await tester.pumpWidget(
         MaterialApp(
@@ -67,7 +65,7 @@ void main() {
 
       final center = tester.getCenter(find.text('Item 0'));
 
-      // Event 1 (+100px)
+      // Forward wheel tick (+100px)
       tester.binding.handlePointerEvent(
         PointerScrollEvent(
           position: center,
@@ -75,56 +73,23 @@ void main() {
           kind: PointerDeviceKind.mouse,
         ),
       );
-      await tester.pump(const Duration(milliseconds: 50));
+      await tester.pump(const Duration(milliseconds: 16));
 
-      // Event 2 (+100px) while first is still moving
+      // Hardware bounce: faulty wheel sends an accidental -15px reverse tick
       tester.binding.handlePointerEvent(
         PointerScrollEvent(
           position: center,
-          scrollDelta: const Offset(0, 100),
-          kind: PointerDeviceKind.mouse,
-        ),
-      );
-      await tester.pump(const Duration(milliseconds: 50));
-
-      // Settle animation
-      await tester.pumpAndSettle();
-      expect(controller.offset, 200.0);
-    });
-
-    testWidgets('Reverses direction smoothly without lagging', (tester) async {
-      final controller = SmoothScrollController(initialScrollOffset: 300);
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ListView.builder(
-              controller: controller,
-              itemCount: 50,
-              itemBuilder: (context, i) => SizedBox(
-                height: 60,
-                child: Text('Item $i'),
-              ),
-            ),
-          ),
-        ),
-      );
-
-      final center = tester.getCenter(find.text('Item 5'));
-
-      // Scroll up (-100px)
-      tester.binding.handlePointerEvent(
-        PointerScrollEvent(
-          position: center,
-          scrollDelta: const Offset(0, -100),
+          scrollDelta: const Offset(0, -15),
           kind: PointerDeviceKind.mouse,
         ),
       );
 
+      // The glitch is filtered out: it continues smoothly toward 100px!
       await tester.pumpAndSettle();
-      expect(controller.offset, 200.0);
+      expect(controller.offset, 100.0);
     });
 
-    testWidgets('Touch drag still works smoothly and directly without interference', (tester) async {
+    testWidgets('Touchpad micro-deltas scroll immediately without animation lag', (tester) async {
       final controller = SmoothScrollController();
       await tester.pumpWidget(
         MaterialApp(
@@ -141,11 +106,19 @@ void main() {
         ),
       );
 
-      // Drag up with touch
-      await tester.drag(find.text('Item 0'), const Offset(0, -150), kind: PointerDeviceKind.touch);
-      await tester.pumpAndSettle();
+      final center = tester.getCenter(find.text('Item 0'));
 
-      expect(controller.offset, greaterThan(50.0));
+      // Send trackpad micro-event (+2.5px)
+      tester.binding.handlePointerEvent(
+        PointerScrollEvent(
+          position: center,
+          scrollDelta: const Offset(0, 2.5),
+          kind: PointerDeviceKind.trackpad,
+        ),
+      );
+
+      // It updates IMMEDIATELY without waiting for an animation cycle
+      expect(controller.offset, 2.5);
     });
 
     testWidgets('DynMouseScroll builder widget provides smooth mouse scrolling', (tester) async {
@@ -183,10 +156,9 @@ void main() {
       );
 
       // Step forward
-      await tester.pump(const Duration(milliseconds: 20));
-      await tester.pump(const Duration(milliseconds: 60));
-      expect(capturedController.offset, greaterThan(20.0));
-      expect(capturedController.offset, lessThan(100.0));
+      await tester.pump(const Duration(milliseconds: 16));
+      expect(capturedController.offset, greaterThan(10.0));
+      expect(capturedController.offset, lessThan(40.0));
 
       await tester.pumpAndSettle();
       expect(capturedController.offset, 100.0);

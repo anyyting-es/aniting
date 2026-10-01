@@ -196,10 +196,11 @@ seanime_app/
     - `DesktopSidebarItem` supports an optional `avatarUrl`.
     - When logged in with an AniList avatar, the sidebar renders a circular avatar image with an active selection ring; if unavailable, it smoothly falls back to the profile icon.
   - **Desktop & Web Smooth Mouse Scrolling System (`smooth_scroll_controller.dart`, `app_scroll_behavior.dart`)**:
-    - Built a high-performance, Riverpod-friendly alternative to legacy packages like `dyn_mouse_scroll` (`SmoothScrollController`, `SmoothScrollPosition`, `SmoothTrackingScrollController`, and `DynMouseScroll`).
-    - Intercepts discrete mouse wheel `pointerScroll` signals and replaces harsh instant pixel jumping with fluid, momentum-accumulating interpolation (`Curves.easeOutCubic`, ~220ms).
-    - Features direction-reversal auto-reset (preventing laggy rubberbanding when flicking in opposite directions), boundary clamping, and instant gesture interruption (touch drags, scrollbar drags, and programmatic `jumpTo`/`animateTo` take over immediately without friction).
-    - Native mobile touch dragging and precision trackpad gestures remain 100% untouched and responsive.
+    - Built a high-performance, browser-grade smooth scroll engine (inspired by Chromium, Firefox, and Lenis) via `SmoothScrollController`, `SmoothScrollPosition`, `SmoothTrackingScrollController`, and `DynMouseScroll`.
+    - **Single Ticker with Exponential Smoothing (`1.0 - exp(-smoothingFactor * dt)`)**: Replaced jerky per-tick animation-restart loops with a continuous vsync Ticker. Wheel ticks update future target pixels without restarting animations from 0, producing identical fluid physics to modern web browsers.
+    - **Mechanical Mouse Wheel Encoder Bounce Filter**: Faulty or worn mouse wheels frequently send accidental micro-reverse ticks (< 35px) while scrolling in one direction; these hardware bounce glitches are automatically filtered out, eliminating stutter.
+    - **Precision Touchpad & Trackpad Heuristic**: Sub-4px continuous deltas are identified as touchpad signals and bypass the ticker for instantaneous 1:1 direct tracking, eliminating touchpad lag or molasses resistance.
+    - Direct gesture interruptions (touch dragging, scrollbar dragging, programmatic `jumpTo`) immediately stop the ticker and grant 1:1 control with zero resistance.
     - Integrated across primary application views: `FeedScreen`, `MangaFeedScreen`, `SearchScreen`, `LibraryScreen`, `AnimeDetailDesktopLayout`, `MangaDetailDesktopLayout`, and `GenreDetailScreen`.
 - **Mobile Beta 1.0.0 Defaults & UI Refinements (`mobile_nav_style_provider.dart`, `resume_bar_preferences_provider.dart`, `theme_provider.dart`)**:
   - **Floating Dock Navigation as Default**: Mobile navigation style is defaulted to `MobileNavStyle.floating` for a sleek, non-intrusive bottom navigation dock.
