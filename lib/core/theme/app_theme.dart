@@ -26,6 +26,10 @@ class AppTheme {
         borderRadius: BorderRadius.circular(12),
       ),
     ),
+    tooltipTheme: const TooltipThemeData(
+      waitDuration: Duration(milliseconds: 700),
+      showDuration: Duration(milliseconds: 1500),
+    ),
     pageTransitionsTheme: const PageTransitionsTheme(
       builders: {
         TargetPlatform.android: WebPageTransitionsBuilder(),

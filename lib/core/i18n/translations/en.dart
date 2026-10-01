@@ -1278,6 +1278,10 @@ class EnglishTranslations implements AppTranslations {
   String get allRecommended => 'All Recommended';
   @override
   String get searchExtensionsPrompt => 'Search extensions...';
+  @override
+  String get blurBanner => 'Blur banner';
+  @override
+  String get blurBannerDesc => 'Applies a cinematic blur to the background banner on anime and manga details';
 
   @override
   String formatStatus(String? status) {

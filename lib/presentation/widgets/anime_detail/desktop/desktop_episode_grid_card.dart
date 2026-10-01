@@ -40,33 +40,38 @@ class _DesktopGridEpisodeCardState extends State<DesktopGridEpisodeCard> {
         opacity: cardOpacity,
         duration: const Duration(milliseconds: 240),
         curve: Curves.easeInOut,
-        child: AnimatedScale(
-          scale: _isHovered ? 1.02 : 1.0,
-          duration: const Duration(milliseconds: 260),
-          curve: Curves.easeInOut,
-          child: InkWell(
-            onTap: widget.isLoading ? null : widget.onTap,
-            borderRadius: BorderRadius.circular(10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 16:9 Thumbnail with Inner Zoom & Hover Play Icon
-                AspectRatio(
-                  aspectRatio: 16 / 9,
+        child: InkWell(
+          onTap: widget.isLoading ? null : widget.onTap,
+          borderRadius: BorderRadius.circular(10),
+          hoverColor: Colors.transparent,
+          splashColor: Colors.transparent,
+          highlightColor: Colors.transparent,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 16:9 Thumbnail with Box Expansion on hover (No play icon)
+              AspectRatio(
+                aspectRatio: 16 / 9,
+                child: AnimatedScale(
+                  scale: _isHovered ? 1.025 : 1.0,
+                  duration: const Duration(milliseconds: 180),
+                  curve: Curves.easeOutCubic,
                   child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 260),
-                    curve: Curves.easeInOut,
+                    duration: const Duration(milliseconds: 180),
+                    curve: Curves.easeOutCubic,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
-                        color: Colors.white.withValues(alpha: _isHovered ? 0.22 : 0.08),
+                        color: _isHovered
+                            ? Colors.white.withValues(alpha: 0.35)
+                            : Colors.white.withValues(alpha: 0.08),
                         width: 1.0,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: _isHovered ? 0.45 : 0.25),
-                          blurRadius: _isHovered ? 12 : 6,
-                          offset: Offset(0, _isHovered ? 4 : 2),
+                          color: Colors.black.withValues(alpha: _isHovered ? 0.35 : 0.25),
+                          blurRadius: _isHovered ? 10 : 6,
+                          offset: Offset(0, _isHovered ? 3 : 2),
                         ),
                       ],
                     ),
@@ -74,71 +79,36 @@ class _DesktopGridEpisodeCardState extends State<DesktopGridEpisodeCard> {
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
-                        ClipRect(
-                          child: AnimatedScale(
-                            scale: _isHovered ? 1.04 : 1.0,
-                            duration: const Duration(milliseconds: 280),
-                            curve: Curves.easeInOut,
-                            child: widget.ep.image != null && widget.ep.image!.isNotEmpty
-                                ? CachedNetworkImage(
-                                    imageUrl: widget.ep.image!,
-                                    fit: BoxFit.cover,
-                                    memCacheWidth: 400,
-                                    errorWidget: (_, _, _) => _buildPlaceholder(),
-                                  )
-                                : _buildPlaceholder(),
-                          ),
-                        ),
+                        widget.ep.image != null && widget.ep.image!.isNotEmpty
+                            ? CachedNetworkImage(
+                                imageUrl: widget.ep.image!,
+                                fit: BoxFit.cover,
+                                memCacheWidth: 400,
+                                errorWidget: (_, _, _) => _buildPlaceholder(),
+                              )
+                            : _buildPlaceholder(),
 
-                        // Hover Play Icon Overlay (Neutral dark glass with white play icon)
-                        AnimatedOpacity(
-                          opacity: _isHovered && !widget.isLoading ? 1.0 : 0.0,
-                          duration: const Duration(milliseconds: 220),
-                          child: Container(
-                            color: Colors.black.withValues(alpha: 0.35),
-                            child: Center(
-                              child: Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.95),
-                                  shape: BoxShape.circle,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.4),
-                                      blurRadius: 8,
-                                    ),
-                                  ],
-                                ),
-                                child: const Icon(
-                                  Icons.play_arrow_rounded,
-                                  color: Colors.black,
-                                  size: 22,
-                                ),
+                      // Loading indicator
+                      if (widget.isLoading)
+                        Container(
+                          color: Colors.black45,
+                          child: const Center(
+                            child: SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.2,
+                                color: Colors.white,
                               ),
                             ),
                           ),
                         ),
-
-                        // Loading indicator
-                        if (widget.isLoading)
-                          Container(
-                            color: Colors.black45,
-                            child: const Center(
-                              child: SizedBox(
-                                width: 22,
-                                height: 22,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2.2,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 8),
+              ),
+            ),
+            const SizedBox(height: 8),
 
                 // Title: "EP X. Title" (Theme-aware)
                 Text(
@@ -148,7 +118,7 @@ class _DesktopGridEpisodeCardState extends State<DesktopGridEpisodeCard> {
                   style: TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w700,
-                    color: titleColor,
+                    color: _isHovered ? theme.colorScheme.primary : titleColor,
                     height: 1.25,
                   ),
                 ),
@@ -156,8 +126,7 @@ class _DesktopGridEpisodeCardState extends State<DesktopGridEpisodeCard> {
             ),
           ),
         ),
-      ),
-    );
+      );
   }
 
   Widget _buildPlaceholder() {

@@ -86,71 +86,86 @@ class _MangaCardState extends ConsumerState<MangaCard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // 1. Poster Art Container
+                  // 1. Poster Art Container (whole box expands on hover)
                   AspectRatio(
                     aspectRatio: 0.72,
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 160),
-                      curve: Curves.easeOut,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(isCompact ? (colors.borderRadius * 0.8).clamp(0.0, 16.0) : colors.borderRadius),
-                        color: colors.surface,
-                        border: Border.all(
-                          color: _isActive ? Colors.white : colors.border.withValues(alpha: 0.5),
-                          width: _isActive ? 2.0 : 1.0,
+                    child: AnimatedScale(
+                      scale: _isHovered ? 1.025 : 1.0,
+                      duration: const Duration(milliseconds: 180),
+                      curve: Curves.easeOutCubic,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 180),
+                        curve: Curves.easeOutCubic,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(isCompact ? (colors.borderRadius * 0.8).clamp(0.0, 16.0) : colors.borderRadius),
+                          color: colors.surface,
+                          border: Border.all(
+                            color: _isFocused
+                                ? Colors.white
+                                : (_isHovered
+                                    ? Colors.white.withValues(alpha: 0.35)
+                                    : colors.border.withValues(alpha: 0.5)),
+                            width: _isFocused ? 2.0 : 1.0,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: _isHovered ? 0.30 : 0.15),
+                              blurRadius: _isHovered ? 8 : 4,
+                              offset: Offset(0, _isHovered ? 3 : 2),
+                            ),
+                          ],
                         ),
-                      ),
-                      clipBehavior: Clip.antiAlias,
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          widget.entry.localCoverPath != null &&
-                                  // TODO: Synchronous file I/O in build method. Needs model change to fix properly.
-                                  File(widget.entry.localCoverPath!).existsSync()
-                              ? Image.file(
-                                  File(widget.entry.localCoverPath!),
-                                  cacheWidth: 440,
-                                  cacheHeight: 640,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) => Container(
-                                    color: theme.colorScheme.surfaceContainerHighest,
-                                    child: Icon(
-                                      Icons.menu_book_rounded,
-                                      color: theme.colorScheme.outline,
-                                      size: isCompact ? 28 : 36,
-                                    ),
-                                  ),
-                                )
-                              : (widget.entry.coverImage != null
-                                  ? CachedNetworkImage(
-                                      imageUrl: widget.entry.coverImage!,
-                                      fit: BoxFit.cover,
-                                      memCacheWidth: isCompact ? 350 : 440,
-                                      memCacheHeight: isCompact ? 500 : 640,
-                                      maxWidthDiskCache: 600,
-                                      maxHeightDiskCache: 850,
-                                      fadeInDuration: const Duration(milliseconds: 150),
-                                      fadeOutDuration: const Duration(milliseconds: 100),
-                                      placeholder: (context, url) => ColoredBox(
-                                        color: theme.colorScheme.surfaceContainerHighest,
-                                      ),
-                                      errorWidget: (context, url, error) => Container(
-                                        color: theme.colorScheme.surfaceContainerHighest,
-                                        child: Icon(
-                                          Icons.menu_book_rounded,
-                                          color: theme.colorScheme.outline,
-                                          size: isCompact ? 28 : 36,
-                                        ),
-                                      ),
-                                    )
-                                  : Container(
+                        clipBehavior: Clip.antiAlias,
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            widget.entry.localCoverPath != null &&
+                                    // TODO: Synchronous file I/O in build method. Needs model change to fix properly.
+                                    File(widget.entry.localCoverPath!).existsSync()
+                                ? Image.file(
+                                    File(widget.entry.localCoverPath!),
+                                    cacheWidth: 440,
+                                    cacheHeight: 640,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) => Container(
                                       color: theme.colorScheme.surfaceContainerHighest,
                                       child: Icon(
                                         Icons.menu_book_rounded,
                                         color: theme.colorScheme.outline,
                                         size: isCompact ? 28 : 36,
                                       ),
-                                    )),
+                                    ),
+                                  )
+                                : (widget.entry.coverImage != null
+                                    ? CachedNetworkImage(
+                                        imageUrl: widget.entry.coverImage!,
+                                        fit: BoxFit.cover,
+                                        memCacheWidth: isCompact ? 350 : 440,
+                                        memCacheHeight: isCompact ? 500 : 640,
+                                        maxWidthDiskCache: 600,
+                                        maxHeightDiskCache: 850,
+                                        fadeInDuration: const Duration(milliseconds: 150),
+                                        fadeOutDuration: const Duration(milliseconds: 100),
+                                        placeholder: (context, url) => ColoredBox(
+                                          color: theme.colorScheme.surfaceContainerHighest,
+                                        ),
+                                        errorWidget: (context, url, error) => Container(
+                                          color: theme.colorScheme.surfaceContainerHighest,
+                                          child: Icon(
+                                            Icons.menu_book_rounded,
+                                            color: theme.colorScheme.outline,
+                                            size: isCompact ? 28 : 36,
+                                          ),
+                                        ),
+                                      )
+                                    : Container(
+                                        color: theme.colorScheme.surfaceContainerHighest,
+                                        child: Icon(
+                                          Icons.menu_book_rounded,
+                                          color: theme.colorScheme.outline,
+                                          size: isCompact ? 28 : 36,
+                                        ),
+                                      )),
 
                           // Downloaded badge
                           if (widget.entry.isDownloaded)
@@ -223,7 +238,8 @@ class _MangaCardState extends ConsumerState<MangaCard> {
                       ),
                     ),
                   ),
-                  SizedBox(height: isCompact ? 5 : 7),
+                ),
+                SizedBox(height: isCompact ? 5 : 7),
                   // 2. Title & Metadata
                   Container(
                     height: isCompact ? 30.0 : 34.0,
@@ -233,7 +249,7 @@ class _MangaCardState extends ConsumerState<MangaCard> {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: _isActive
+                        color: (_isActive || _isHovered)
                             ? theme.colorScheme.primary
                             : (theme.brightness == Brightness.dark
                                 ? colors.textPrimary

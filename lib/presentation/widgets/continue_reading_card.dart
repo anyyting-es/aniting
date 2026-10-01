@@ -88,39 +88,55 @@ class _ContinueReadingCardState extends ConsumerState<ContinueReadingCard> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 140),
-                    curve: Curves.easeOut,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(isCompact ? (colors.borderRadius * 0.8).clamp(0.0, 16.0) : colors.borderRadius),
-                      color: colors.surface,
-                      border: Border.all(
-                        color: _isActive ? Colors.white : colors.border.withValues(alpha: 0.5),
-                        width: _isActive ? 2.0 : 1.0,
+                  child: AnimatedScale(
+                    scale: _isHovered ? 1.02 : 1.0,
+                    duration: const Duration(milliseconds: 180),
+                    curve: Curves.easeOutCubic,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      curve: Curves.easeOutCubic,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(isCompact ? (colors.borderRadius * 0.8).clamp(0.0, 16.0) : colors.borderRadius),
+                        color: colors.surface,
+                        border: Border.all(
+                          color: _isFocused
+                              ? Colors.white
+                              : (_isHovered
+                                  ? Colors.white.withValues(alpha: 0.35)
+                                  : colors.border.withValues(alpha: 0.5)),
+                          width: _isFocused ? 2.0 : 1.0,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: _isHovered ? 0.30 : 0.15),
+                            blurRadius: _isHovered ? 8 : 4,
+                            offset: Offset(0, _isHovered ? 3 : 2),
+                          ),
+                        ],
                       ),
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: imageUrl != null
-                        ? CachedNetworkImage(
-                            imageUrl: imageUrl,
-                            fit: BoxFit.cover,
-                            width: double.infinity,
-                            memCacheWidth: isCompact ? 300 : 350,
-                            memCacheHeight: isCompact ? 440 : 520,
-                            fadeInDuration: const Duration(milliseconds: 150),
-                            fadeOutDuration: const Duration(milliseconds: 100),
-                            placeholder: (context, url) => Container(
-                              color: theme.colorScheme.surfaceContainerHighest,
-                            ),
-                            errorWidget: (context, url, error) => Container(
+                      clipBehavior: Clip.antiAlias,
+                      child: imageUrl != null
+                          ? CachedNetworkImage(
+                              imageUrl: imageUrl,
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              memCacheWidth: isCompact ? 300 : 350,
+                              memCacheHeight: isCompact ? 440 : 520,
+                              fadeInDuration: const Duration(milliseconds: 150),
+                              fadeOutDuration: const Duration(milliseconds: 100),
+                              placeholder: (context, url) => Container(
+                                color: theme.colorScheme.surfaceContainerHighest,
+                              ),
+                              errorWidget: (context, url, error) => Container(
+                                color: theme.colorScheme.surfaceContainerHighest,
+                                child: Icon(Icons.menu_book_rounded, color: theme.colorScheme.outline, size: isCompact ? 28 : 36),
+                              ),
+                            )
+                          : Container(
                               color: theme.colorScheme.surfaceContainerHighest,
                               child: Icon(Icons.menu_book_rounded, color: theme.colorScheme.outline, size: isCompact ? 28 : 36),
                             ),
-                          )
-                        : Container(
-                            color: theme.colorScheme.surfaceContainerHighest,
-                            child: Icon(Icons.menu_book_rounded, color: theme.colorScheme.outline, size: isCompact ? 28 : 36),
-                          ),
+                    ),
                   ),
                 ),
                 SizedBox(height: isCompact ? 5 : 7),
@@ -131,7 +147,7 @@ class _ContinueReadingCardState extends ConsumerState<ContinueReadingCard> {
                   style: TextStyle(
                     fontSize: isCompact ? 11.5 : 12.5,
                     fontWeight: FontWeight.w700,
-                    color: _isActive
+                    color: (_isActive || _isHovered)
                         ? theme.colorScheme.primary
                         : (theme.brightness == Brightness.dark
                             ? theme.colorScheme.onSurface

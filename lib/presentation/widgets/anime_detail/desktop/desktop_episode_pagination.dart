@@ -18,13 +18,18 @@ class DesktopEpisodePagination extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       margin: const EdgeInsets.only(top: 24, bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: const Color(0xFF14171B),
+        color: isDark ? const Color(0xFF14171B) : theme.colorScheme.surfaceContainer,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(
+          color: isDark ? Colors.white.withValues(alpha: 0.08) : theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+        ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -40,11 +45,13 @@ class DesktopEpisodePagination extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
                 color: currentPage > 0
-                    ? Colors.white.withValues(alpha: 0.08)
+                    ? (isDark ? Colors.white.withValues(alpha: 0.08) : theme.colorScheme.surfaceContainerHighest)
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: Colors.white.withValues(alpha: currentPage > 0 ? 0.15 : 0.04),
+                  color: currentPage > 0
+                      ? (isDark ? Colors.white.withValues(alpha: 0.15) : theme.colorScheme.outlineVariant.withValues(alpha: 0.4))
+                      : (isDark ? Colors.white.withValues(alpha: 0.04) : Colors.transparent),
                 ),
               ),
               child: Row(
@@ -53,7 +60,9 @@ class DesktopEpisodePagination extends StatelessWidget {
                   Icon(
                     Icons.chevron_left_rounded,
                     size: 18,
-                    color: currentPage > 0 ? Colors.white : Colors.white30,
+                    color: currentPage > 0
+                        ? (isDark ? Colors.white : theme.colorScheme.onSurface)
+                        : (isDark ? Colors.white30 : theme.colorScheme.outline.withValues(alpha: 0.5)),
                   ),
                   const SizedBox(width: 4),
                   Text(
@@ -61,7 +70,9 @@ class DesktopEpisodePagination extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w600,
-                      color: currentPage > 0 ? Colors.white : Colors.white30,
+                      color: currentPage > 0
+                          ? (isDark ? Colors.white : theme.colorScheme.onSurface)
+                          : (isDark ? Colors.white30 : theme.colorScheme.outline.withValues(alpha: 0.5)),
                     ),
                   ),
                 ],
@@ -83,12 +94,12 @@ class DesktopEpisodePagination extends StatelessWidget {
                       margin: const EdgeInsets.symmetric(horizontal: 2),
                       decoration: BoxDecoration(
                         color: currentPage == p
-                            ? Colors.white.withValues(alpha: 0.16)
+                            ? (isDark ? Colors.white.withValues(alpha: 0.16) : theme.colorScheme.primaryContainer)
                             : Colors.transparent,
                         borderRadius: BorderRadius.circular(6),
                         border: Border.all(
                           color: currentPage == p
-                              ? Colors.white.withValues(alpha: 0.28)
+                              ? (isDark ? Colors.white.withValues(alpha: 0.28) : theme.colorScheme.primary.withValues(alpha: 0.4))
                               : Colors.transparent,
                         ),
                       ),
@@ -97,7 +108,9 @@ class DesktopEpisodePagination extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: currentPage == p ? FontWeight.w700 : FontWeight.w500,
-                          color: currentPage == p ? Colors.white : Colors.white60,
+                          color: currentPage == p
+                              ? (isDark ? Colors.white : theme.colorScheme.primary)
+                              : (isDark ? Colors.white60 : theme.colorScheme.onSurfaceVariant),
                         ),
                       ),
                     ),
@@ -106,10 +119,10 @@ class DesktopEpisodePagination extends StatelessWidget {
               ] else ...[
                 Text(
                   'Página ${currentPage + 1} de $totalPages',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: Colors.white70,
+                    color: isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -117,15 +130,15 @@ class DesktopEpisodePagination extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.06),
+                  color: isDark ? Colors.white.withValues(alpha: 0.06) : theme.colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
                   'EP ${startIndex + 1} - $endIndex',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
-                    color: Colors.white54,
+                    color: isDark ? Colors.white54 : theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
               ),
@@ -143,11 +156,13 @@ class DesktopEpisodePagination extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
                 color: currentPage < totalPages - 1
-                    ? Colors.white.withValues(alpha: 0.08)
+                    ? (isDark ? Colors.white.withValues(alpha: 0.08) : theme.colorScheme.surfaceContainerHighest)
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: Colors.white.withValues(alpha: currentPage < totalPages - 1 ? 0.15 : 0.04),
+                  color: currentPage < totalPages - 1
+                      ? (isDark ? Colors.white.withValues(alpha: 0.15) : theme.colorScheme.outlineVariant.withValues(alpha: 0.4))
+                      : (isDark ? Colors.white.withValues(alpha: 0.04) : Colors.transparent),
                 ),
               ),
               child: Row(
@@ -158,14 +173,18 @@ class DesktopEpisodePagination extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w600,
-                      color: currentPage < totalPages - 1 ? Colors.white : Colors.white30,
+                      color: currentPage < totalPages - 1
+                          ? (isDark ? Colors.white : theme.colorScheme.onSurface)
+                          : (isDark ? Colors.white30 : theme.colorScheme.outline.withValues(alpha: 0.5)),
                     ),
                   ),
                   const SizedBox(width: 4),
                   Icon(
                     Icons.chevron_right_rounded,
                     size: 18,
-                    color: currentPage < totalPages - 1 ? Colors.white : Colors.white30,
+                    color: currentPage < totalPages - 1
+                        ? (isDark ? Colors.white : theme.colorScheme.onSurface)
+                        : (isDark ? Colors.white30 : theme.colorScheme.outline.withValues(alpha: 0.5)),
                   ),
                 ],
               ),

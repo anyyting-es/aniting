@@ -53,10 +53,10 @@ seanime_app/
 │   │   ├── player/                   # Video playback service wrappers
 │   │   │   ├── exo_player_service.dart   # Android Media3 platform channel bridge
 │   │   │   └── mpv_player_service.dart   # media_kit / libmpv service with Plezy optimizations
-│   │   ├── preferences/              # PlayerEngineProvider, TitleLanguageProvider, EpisodeViewModeProvider, OnboardingProvider, DownloadPreferencesProvider, LayoutModeProvider, PlaybackProgressPreferencesProvider, AnimeFavoritesProvider
+│   │   ├── preferences/              # PlayerEngineProvider, TitleLanguageProvider, EpisodeViewModeProvider, OnboardingProvider, DownloadPreferencesProvider, LayoutModeProvider, PlaybackProgressPreferencesProvider, AnimeFavoritesProvider, BannerBlurProvider
 │   │   ├── server/                   # ServerManager, AndroidServerChannel, DesktopServer
 │   │   ├── storage/                  # AppStoragePaths (Aniting/Downloads resolution for Android and Desktop)
-│   │   └── theme/                    # AppTheme, ThemeProvider, AppPalette, AppThemeColors, AppScrollBehavior, custom_route_transitions (WebPageTransitionsBuilder, SmoothPageRoute)
+│   │   └── theme/                    # AppTheme, ThemeProvider, AppPalette, AppThemeColors, AppScrollBehavior, smooth_scroll_controller (SmoothScrollController, SmoothTrackingScrollController, DynMouseScroll), custom_route_transitions (WebPageTransitionsBuilder, SmoothPageRoute)
 │   ├── data/
 │   │   ├── models/                   # Data models (AnimeEntry, MangaEntry, ExtensionItem, Torrent, etc.)
 │   │   ├── repositories/             # SeanimeRepository (API methods, marketplace fetching, cache)
@@ -195,6 +195,12 @@ seanime_app/
   - **Desktop Sidebar Profile Avatar (`desktop_sidebar.dart`, `main_shell.dart`)**:
     - `DesktopSidebarItem` supports an optional `avatarUrl`.
     - When logged in with an AniList avatar, the sidebar renders a circular avatar image with an active selection ring; if unavailable, it smoothly falls back to the profile icon.
+  - **Desktop & Web Smooth Mouse Scrolling System (`smooth_scroll_controller.dart`, `app_scroll_behavior.dart`)**:
+    - Built a high-performance, Riverpod-friendly alternative to legacy packages like `dyn_mouse_scroll` (`SmoothScrollController`, `SmoothScrollPosition`, `SmoothTrackingScrollController`, and `DynMouseScroll`).
+    - Intercepts discrete mouse wheel `pointerScroll` signals and replaces harsh instant pixel jumping with fluid, momentum-accumulating interpolation (`Curves.easeOutCubic`, ~220ms).
+    - Features direction-reversal auto-reset (preventing laggy rubberbanding when flicking in opposite directions), boundary clamping, and instant gesture interruption (touch drags, scrollbar drags, and programmatic `jumpTo`/`animateTo` take over immediately without friction).
+    - Native mobile touch dragging and precision trackpad gestures remain 100% untouched and responsive.
+    - Integrated across primary application views: `FeedScreen`, `MangaFeedScreen`, `SearchScreen`, `LibraryScreen`, `AnimeDetailDesktopLayout`, `MangaDetailDesktopLayout`, and `GenreDetailScreen`.
 - **Mobile Beta 1.0.0 Defaults & UI Refinements (`mobile_nav_style_provider.dart`, `resume_bar_preferences_provider.dart`, `theme_provider.dart`)**:
   - **Floating Dock Navigation as Default**: Mobile navigation style is defaulted to `MobileNavStyle.floating` for a sleek, non-intrusive bottom navigation dock.
   - **Resume Companion Disabled by Default**: The "Sigue donde estabas" resume companion is turned off by default (`resume_bar_enabled = false`) to keep the interface clean and spacious for first-time users.
@@ -385,10 +391,12 @@ seanime_app/
     - Watched episodes are styled with subdued opacity (`0.45` rest, elevating to `0.75` on hover) via `AnimatedOpacity`, providing instant, non-intrusive visual distinction between watched and unwatched episodes.
   - **High-Performance 20-Episode Pagination**:
     - Limits rendering to a maximum of 20 episodes per page (`_episodesPerPage = 20`) across both Grid and 2-Column List modes.
-    - Clean pagination bar provides "Anterior", direct page chips (`1`, `2`, `3`...), episode range indicator (`EP 1 - 20`), and "Siguiente" buttons, drastically speeding up rendering on long-running series.
-  - **Scroll-Driven Banner Theme Transition (Zero "Doble Color")**:
-    - Top panoramic backdrop dynamically transitions into `theme.scaffoldBackgroundColor` as the user scrolls down (`scrollProgress = (_scrollOffset / 200.0).clamp(0.0, 1.0)`).
-    - Uses the exact theme background color (instead of hardcoded black), seamlessly blending into OLED True Black, Tokyo Night, Catppuccin, Nord, or light palettes without horizontal color seams or split-tone cuts.
+  - **Desktop Anime Detail Hover & Micro-interactions (`DesktopGridEpisodeCard`, `DesktopListEpisodeCard`, `DesktopCharactersTab`, `DesktopRelationsTab`, `DesktopRecommendationsTab`, `DesktopTabButton`)**:
+    - **Snappy Inner Image Hover**: Removed whole-card scaling and jarring shadow hops. Cards retain stable dimensions while only the inner thumbnail/poster image quickly scales (`1.0 -> 1.06`, 140ms `Curves.easeOutCubic` on enter, 100ms `Curves.easeInQuad` on exit), creating an ultra-responsive, crisp micro-interaction.
+    - **Elimination of Hover Play Icon**: Removed the artificial floating play button overlay on episode thumbnails.
+    - **Clean Tab Headers & Minimalist Controls**: Replaced `InkWell` in `DesktopTabButton` with `GestureDetector` to eliminate rectangular hover shadow artifacts. Converted hardcoded dark boxes in `DesktopEpisodesTab` (EP counter, provider dropdown, grid/list view toggles, ascending/descending) and `DesktopActionBar` (Online/Torrent pill switch, local library toggle) into sleek typography labels, translucent theme-aware pills, and native compact icon buttons with subtle hover feedback.
+  - **D-Pad Focus vs Mouse Hover Border Architecture (`AnimeCard`, `MangaCard`, `ContinueWatchingCard`, `ContinueReadingCard`, `FocusCard`)**:
+    - Disentangled `_isHovered` from `_isFocused`. The thick 2px white outline frame is strictly reserved for D-Pad / keyboard navigation (`_isFocused`), ensuring that mouse cursor hovering does not produce jarring white border flashes across any card in the application.
 
 - **Desktop Manga Detail Architecture (`MangaDetailDesktopLayout`, `DesktopMangaChaptersTab`)**:
   - **Modular Dual-Column Layout (1580px max-width)**:
@@ -712,18 +720,16 @@ Inspired by **Plezy** (`edde746/plezy`), the player focuses on high performance,
   - **Zero-Overflow Bottom Navigation**: Bottom bar is borderless (no harsh top divider line) and uses compact circular action buttons (`IconButton.filledTonal` for back `<`, `IconButton.filled` for next `>` / finish `✓`) centered around animated step dots. Prevents any `RenderFlex` overflow across all compact mobile viewports (`w <= 386.7`).
   - **Borderless Modern Cards**: Replaced heavy enclosing borders and nested boxes with subtle `surfaceElevated.withValues(alpha: 0.40)` containers, breathing space, and sleek tinted selection outlines.
 
-### 4.6. Modern Web-Style Route Transitions Architecture (`custom_route_transitions.dart`, `WebPageTransitionsBuilder`, `SmoothPageRoute`)
-- **Web-Style Snappy Elegance (Linear / Vercel / Apple CSS ease)**:
-  - Replaces sluggish platform zooms and amateurish full-screen scale distortion (`ScaleTransition 0.96 -> 1.0` and 100% horizontal slide pushes) with a unified, high-tier modern web page transition across the entire app.
-  - **Timing & Curves**: Fast 240ms enter and 200ms reverse exit using `Cubic(0.16, 1.0, 0.3, 1.0)` (`kWebDecelCurve`). Starts with immediate velocity for instant touch responsiveness and settles with a soft, natural cushion.
-  - **Zero Scale Distortion**: Completely eliminates `ScaleTransition` so typography, posters, and raster UI retain 100% subpixel crispness during transitions without blurry scaling or jelly-like bounce.
-  - **Layered Micro-Elevation**:
-    - Incoming page glides in with a subtle vertical micro-lift (`Offset(0.0, 0.025) -> Offset.zero`, ~18-20px) while fading in with an 85% opacity plateau curve (`Interval(0.0, 0.85)`).
-    - Outgoing background page gently dims (`1.0 -> 0.90`) and recedes upward by ~9px (`Offset.zero -> Offset(0.0, -0.012)`), providing sophisticated depth and visual stability.
+### 4.6. In-Place Breathing Route Transitions Architecture (`custom_route_transitions.dart`, `WebPageTransitionsBuilder`, `SmoothPageRoute`)
+- **In-Place Subtle Breathing Motion (Zero Fade Ghosting, 100% Solid Opacity)**:
+  - Eliminated both full-screen side slide sweeps and opacity fade transitions (`FadeTransition`).
+  - Screen appears directly in-place without travelling across the viewport or turning semi-transparent.
+  - **Subtle Breathing Expansion on Enter**: Micro-scale expansion from `0.98` to `1.0` combined with a gentle vertical micro-lift (~10px, `Offset(0.0, 0.015) -> Offset.zero`) in 220ms using the responsive deceleration curve `Cubic(0.16, 1.0, 0.3, 1.0)`.
+  - **Dynamic Return Page Motion on Exit**: When popping/closing, rather than a frozen static screen, the underlying page (Feed, Search, Library) gracefully steps forward, expanding from `0.96` to `1.0` and rising ~16px into place (`reverseCurve: Curves.easeOutCubic`) over 200ms, while the exiting child dissolves cleanly without awkward shrinking. This makes the return page feel completely alive, tactile, and fluid.
 - **Global Application Integration**:
   - `WebPageTransitionsBuilder`: Registered in `ThemeData.pageTransitionsTheme` for all platforms (`TargetPlatform.android`, `iOS`, `linux`, `macOS`, `windows`, `fuchsia`) in both `AppThemeBuilder.buildTheme` (`theme_provider.dart`) and `AppTheme.darkTheme` (`app_theme.dart`).
-  - Standard `MaterialPageRoute` and pushed routes automatically inherit this cohesive web transition.
-  - `SmoothPageRoute` and `SlideRightToLeftPageRoute` in `custom_route_transitions.dart` are unified subclasses of `WebPageRoute`, guaranteeing that `AnimeDetailScreen.navigate`, `MangaDetailScreen.navigate`, Settings, Lists, Airing Calendar, Downloads, and Extensions share the exact same modern web feel.
+  - Standard `MaterialPageRoute` and pushed routes automatically inherit this cohesive transition.
+  - `SmoothPageRoute` and `SlideRightToLeftPageRoute` in `custom_route_transitions.dart` are unified subclasses of `WebPageRoute`, guaranteeing that `AnimeDetailScreen.navigate`, `MangaDetailScreen.navigate`, Settings, Lists, Airing Calendar, Downloads, and Extensions share the exact same clean, in-place organic feel.
 - **5-Step Onboarding Flow**:
   0. **Language Selection**: Real-time switch between Spanish (`es`) and English (`en`) via `i18nProvider`. Updating language dynamically refreshes extension recommendations in Step 4.
    1. **Appearance & Theming**:
@@ -933,6 +939,65 @@ Inspired by **Plezy** (`edde746/plezy`), the player focuses on high performance,
   - Queries `Abi.current()` (`dart:ffi`) to match the exact hardware architecture of the user's Android device:
     - `arm64-v8a`: downloads `app-arm64-v8a-release.apk` (~109 MB, saving bandwidth and storage over universal builds).
     - `x86_64`: downloads `app-x86_64-release.apk`.
-    - Fallback: automatically resolves to `app-release.apk` (universal APK) or first available `.apk`.
+### 7.8. Anime Detail Desktop Refinements, Dynamic Icon Packs & Internationalization (2026-09-30)
+- **Language-Aware Episode Title Resolution (`AniZipEpisode.displayTitleForLang`, `desktop_episodes_tab.dart`)**:
+  - `AniZipEpisode` previously hardcoded Spanish (`titleMap['es']`) as the primary lookup in `displayTitle`, causing English users in Torrent mode to see Spanish episode titles while Online mode showed English titles.
+  - Added `displayTitleForLang(String? langCode)`: when `langCode == 'en'`, it prioritizes English titles; otherwise, it prioritizes Spanish.
+  - `DesktopEpisodesTab` watches `appLanguageProvider` (`ref.watch(appLanguageProvider)`) to pass the current language code to `displayTitleForLang`, ensuring episode titles match the user's selected language consistently across both Torrent and Online modes.
+- **Dynamic Icon Pack Theming on Anime Detail Desktop (`desktop_action_bar.dart`, `anime_detail_desktop_layout.dart`, `desktop_episodes_tab.dart`)**:
+  - All icons across the desktop detail layout (back button, action bar play/bookmark/share/trailer, online/torrent pills, local mode folder, dropdown chevrons, list/grid toggle, sort button) now consume `iconPackProvider` via `AppIcons`, adapting instantly when switching between Lucide and Material icon packs in Settings.
+- **Modular Characters Tab Overhaul (`desktop_characters_tab.dart`)**:
+  - Extracted the character name and role label completely outside the image box into separate text widgets below the card, aligning with `DesktopRelationsTab` and `DesktopRecommendationsTab`.
+- **Subtle Card Box Expansion Architecture & Elevated Hover Shadows (All Media Cards)**:
+  - Scaled hover factors tuned to a subtle, gentle expansion (`scale: 1.025` for portrait posters, `scale: 1.02` for landscape thumbnails with `Curves.easeOutCubic`, 180ms) with soft shadows (`blurRadius: 8–10`) to provide high visual polish without aggressive displacement:
+    - `DesktopCharactersTab` (`_DesktopCharacterCard`): portrait card box gently expands (`1.025`), casts soft shadow, while character name and role remain cleanly positioned outside the box.
+    - `DesktopRelationsTab` (`_DesktopRelationCard`): relation poster gently expands (`1.025`).
+    - `DesktopRecommendationsTab` (`_DesktopRecommendationCard`): recommendation poster gently expands (`1.025`).
+    - `DesktopEpisodeGridCard`: 16:9 episode thumbnail box expands smoothly (`1.025`) without intrusive play icon overlays.
+    - `DesktopEpisodeListCard`: 16:9 thumbnail box expands smoothly (`1.02`) within the 2-column list row.
+    - `AnimeCard` & `MangaCard`: poster box scales smoothly (`1.025`), brightens border and elevates soft shadow, while title and scores stay static below.
+    - `ContinueWatchingCard` & `ContinueReadingCard`: 16:9 episode thumbnail and manga cover box expand smoothly (`1.02`).
+- **Feed Carousel Zero-Clipping Architecture (`feed_screen.dart`, `manga_feed_screen.dart`)**:
+  - Horizontal `ListView.builder` instances default to `clipBehavior: Clip.hardEdge` with 0 vertical padding. When card boxes scale up, their top and bottom bounds previously clipped against the `SizedBox` container.
+  - Added `clipBehavior: Clip.none`, `padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8)`, and increased carousel container height headroom (`+ 16`), completely eliminating top/bottom clipping on hover across anime and manga feeds.
+- **Adaptive Light Theme Detail Architecture (`desktop_action_bar.dart`, `desktop_episodes_tab.dart`, `desktop_episode_pagination.dart`, `anime_detail_desktop_layout.dart`, `manga_detail_desktop_layout.dart`)**:
+  - Replaced hardcoded `Colors.white` and dark assumptions across desktop detail layouts with theme-aware color resolution (`isDark = theme.brightness == Brightness.dark`):
+    - Back button: renders pure white over hero banner for contrast; gracefully switches to `theme.colorScheme.onSurface` when no banner is loaded or on light backgrounds.
+    - Action bar buttons: play pill uses `theme.colorScheme.primary` with white icon in light mode; secondary action buttons use `colorScheme.surfaceContainerHigh` and `colorScheme.onSurfaceVariant`.
+    - Mode toggle & source pills: adapt border, background, and typography for crisp contrast in light mode.
+    - Episode pagination bar: container, previous/next controls, page chips, and episode range pill adapt to light theme surfaces and text colors.
+    - Episodes tab filters: audio dropdown, grid/list view toggles, sort buttons, and empty/loading states adapt smoothly to light theme.
+- **Official AniList & MyAnimeList Clean Brand Icons (`_HoverBrandIcon`, `desktop_action_bar.dart`, `desktop_manga_action_bar.dart`)**:
+  - Replaced pill containers, borders, and text labels with clean, minimalist brand icons (`_HoverBrandIcon`). Hovering gently scales the icon (`scale: 1.14`) and illuminates opacity to `1.0`, keeping the action bar clutter-free.
+- **Global Desktop Tooltip Wait Delay (`app_theme.dart`, `theme_provider.dart`)**:
+  - Configured `waitDuration: const Duration(milliseconds: 700)` globally across `TooltipThemeData`. Prevents intrusive tooltips from popping up instantly upon moving the cursor across UI elements, ensuring tooltips only display when the user intentionally rests the mouse.
+- **Sub-Tab Jump Elimination & Smooth Entrance Glide (`anime_detail_desktop_layout.dart`)**:
+  - Fixed vertical layout snap when switching tabs: replaced default `Alignment.center` in `AnimatedSwitcher.layoutBuilder` with `Alignment.topLeft`, preventing shorter tabs from centering within previous taller tabs before snapping upwards.
+  - Added smooth slide-up entrance animation (`Offset(0, 0.035) -> Offset.zero`) combined with gentle fade (`Curves.easeOutCubic`, 240ms).
+
+### 7.9. Manga Detail PC Layout Redesign & System Theming Architecture (2026-10-01)
+- **Top Horizontal Manga Information Hub (`manga_detail_desktop_layout.dart`, `desktop_manga_sidebar.dart`, `desktop_manga_header.dart`)**:
+  - Replaced the previous full-height vertical sidebar with a wide panoramic horizontal info cluster at the top:
+    - Left: Large cover poster (`DesktopMangaSidebar(showMetadata: false, width: 220)`) with soft elevation shadow.
+    - Right: Complete manga data cluster:
+      - Formato, Estado, Año, Score, and Capítulos metadata chips.
+      - Large title with high contrast.
+      - System-colored genre pills (`theme.colorScheme.surfaceContainerHighest`).
+      - Expandable synopsis with smooth `AnimatedSize`.
+      - Manga action bar (`DesktopMangaActionBar`) with "Empezar/Continuar Leyendo" pill (`theme.colorScheme.primary`), AniList status editor, batch download, share, and clean AniList/MAL brand icons.
+- **Bottom Two-Column Desktop Layout (Chapters Box + Visual Grid)**:
+  - Left column (`Expanded(flex: 5)`):
+    - Dedicated chapters box container with header counter badge.
+    - Full chapter manager: provider selector, search bar with debounce, ascending/descending sorting, hide read filter, downloaded-only filter, batch download chip, 30-chapter pagination bar, and chapter cards.
+    - Zero horizontal overflow via `Wrap(spacing: 8, runSpacing: 8)` on filter chips.
+  - Right column (`Expanded(flex: 6)`):
+    - Characters grid ("Personajes") with name and role displayed below the poster.
+    - Relations grid ("Relaciones").
+    - Similar works grid ("Obras similares").
+- **100% Theme-Aware System Theming (Zero Hardcoded Colors)**:
+  - Purged all hardcoded blues (`0xFF00C7FF`, `0xFF02A9FF`) and hardcoded dark tones (`0xFF14171B`, `0xFF1C2026`).
+  - All backgrounds, borders, chips, text styles, and icons dynamically resolve from `theme.colorScheme` and `isDark`, delivering high legibility and contrast in both Light and Dark modes.
+
+
 
 

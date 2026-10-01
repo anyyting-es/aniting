@@ -119,21 +119,36 @@ class AniZipEpisode {
     );
   }
 
-  /// Returns title prioritizing Spanish, then English, then Romaji, then Japanese
-  String get displayTitle {
-    final es = titleMap['es'];
-    if (es != null && es.isNotEmpty) return es.replaceAll('`', "'");
-    final en = titleMap['en'];
-    if (en != null && en.isNotEmpty) return en.replaceAll('`', "'");
-    final ro = titleMap['x-jat'];
-    if (ro != null && ro.isNotEmpty) return ro.replaceAll('`', "'");
+  /// Returns title prioritizing the given language ('en', 'es', etc.)
+  String displayTitleForLang(String? langCode) {
+    final isEn = langCode?.toLowerCase().startsWith('en') ?? false;
+    if (isEn) {
+      final en = titleMap['en'];
+      if (en != null && en.isNotEmpty) return en.replaceAll('`', "'");
+      final ro = titleMap['x-jat'];
+      if (ro != null && ro.isNotEmpty) return ro.replaceAll('`', "'");
+      final es = titleMap['es'];
+      if (es != null && es.isNotEmpty) return es.replaceAll('`', "'");
+    } else {
+      final es = titleMap['es'];
+      if (es != null && es.isNotEmpty) return es.replaceAll('`', "'");
+      final en = titleMap['en'];
+      if (en != null && en.isNotEmpty) return en.replaceAll('`', "'");
+      final ro = titleMap['x-jat'];
+      if (ro != null && ro.isNotEmpty) return ro.replaceAll('`', "'");
+    }
     final ja = titleMap['ja'];
     if (ja != null && ja.isNotEmpty) return ja;
     for (final val in titleMap.values) {
       if (val.isNotEmpty) return val.replaceAll('`', "'");
     }
-    return isSpecial ? 'Especial $episode' : 'Episodio $episodeNumber';
+    return isSpecial
+        ? (isEn ? 'Special $episode' : 'Especial $episode')
+        : (isEn ? 'Episode $episodeNumber' : 'Episodio $episodeNumber');
   }
+
+  /// Returns title prioritizing Spanish, then English, then Romaji, then Japanese
+  String get displayTitle => displayTitleForLang('es');
 
   /// Original Japanese or Romaji title if different
   String? get originalTitle {

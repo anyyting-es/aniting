@@ -1,68 +1,80 @@
 import 'package:flutter/material.dart';
 
-/// Modern web deceleration curve (Apple / Linear / Framer Motion style).
-/// Starts with instant velocity for immediate touch feedback, then softly lands.
+/// Modern deceleration curve for smooth, physical motion.
+/// Responsive initial velocity with soft, natural landing.
 const Cubic kWebDecelCurve = Cubic(0.16, 1.0, 0.3, 1.0);
 
-/// Builds a modern web-style page transition with clean opacity fade
-/// and a subtle vertical micro-lift (Y: ~18-20px), completely avoiding
-/// scale distortion, raster blurring, or heavy platform zooms.
+/// Builds an expressive, organic page transition:
+/// - Incoming route: subtle in-place breathing expansion (0.98 -> 1.0) and ~10px micro-lift with 100% solid opacity.
+/// - Outgoing route on exit: smooth clean fade out (without awkward shrinking).
+/// - Return page (the underlying screen being returned to): smooth organic step-forward
+///   expansion (0.96 -> 1.0) and vertical lift (~16px), giving life and motion to the content!
 Widget buildWebPageTransition({
   required Animation<double> animation,
   required Animation<double> secondaryAnimation,
   required Widget child,
 }) {
-  // Primary incoming animation with cubic easing
   final enterCurve = CurvedAnimation(
     parent: animation,
     curve: kWebDecelCurve,
-    reverseCurve: Curves.easeInCubic,
   );
 
-  // Subtle vertical micro-lift (~18-20px)
+  // Subtle breathing expansion on enter (0.98 -> 1.0)
+  final scaleIn = Tween<double>(
+    begin: 0.98,
+    end: 1.0,
+  ).animate(enterCurve);
+
+  // Subtle vertical micro-lift (~10-12px) on enter
   final slideIn = Tween<Offset>(
-    begin: const Offset(0.0, 0.025),
+    begin: const Offset(0.0, 0.015),
     end: Offset.zero,
   ).animate(enterCurve);
 
-  // Smooth opacity fade with quick 85% plateau for instant legibility
-  final fadeIn = Tween<double>(
+  // Clean fade out only when exiting/popping (100% solid on enter via quick interval)
+  final exitFade = Tween<double>(
     begin: 0.0,
     end: 1.0,
   ).animate(
     CurvedAnimation(
       parent: animation,
-      curve: const Interval(0.0, 0.85, curve: Curves.easeOut),
+      curve: const Interval(0.0, 0.001),
       reverseCurve: Curves.easeIn,
     ),
   );
 
-  // Outgoing background animation when a new route pushes on top
-  final exitCurve = CurvedAnimation(
+  // Secondary curve driving the underlying screen
+  final secondaryCurve = CurvedAnimation(
     parent: secondaryAnimation,
     curve: kWebDecelCurve,
-    reverseCurve: Curves.easeInCubic,
+    reverseCurve: Curves.easeOutCubic,
   );
 
-  final fadeOut = Tween<double>(
+  // When another route is pushed, the underlying page recedes gently to 0.96.
+  // When returning, the page expands back (0.96 -> 1.0) making all cards/content spring forward!
+  final returnScale = Tween<double>(
     begin: 1.0,
-    end: 0.90,
-  ).animate(exitCurve);
+    end: 0.96,
+  ).animate(secondaryCurve);
 
-  final slideOut = Tween<Offset>(
+  // When returning, the content rises ~16px back into position
+  final returnSlide = Tween<Offset>(
     begin: Offset.zero,
-    end: const Offset(0.0, -0.012),
-  ).animate(exitCurve);
+    end: const Offset(0.0, 0.02),
+  ).animate(secondaryCurve);
 
   return SlideTransition(
-    position: slideOut,
-    child: FadeTransition(
-      opacity: fadeOut,
-      child: SlideTransition(
-        position: slideIn,
-        child: FadeTransition(
-          opacity: fadeIn,
-          child: child,
+    position: returnSlide,
+    child: ScaleTransition(
+      scale: returnScale,
+      child: FadeTransition(
+        opacity: exitFade,
+        child: SlideTransition(
+          position: slideIn,
+          child: ScaleTransition(
+            scale: scaleIn,
+            child: child,
+          ),
         ),
       ),
     ),
@@ -71,7 +83,7 @@ Widget buildWebPageTransition({
 
 /// Global PageTransitionsBuilder for ThemeData.pageTransitionsTheme.
 /// Unifies all standard routes (MaterialPageRoute, modal routes, etc.)
-/// across all platforms with the modern web-style transition.
+/// across all platforms with the modern smooth motion transition.
 class WebPageTransitionsBuilder extends PageTransitionsBuilder {
   const WebPageTransitionsBuilder();
 
@@ -91,7 +103,7 @@ class WebPageTransitionsBuilder extends PageTransitionsBuilder {
   }
 }
 
-/// Modern, snappy web-style page route (240ms enter / 200ms exit).
+/// Modern, snappy breathing route (220ms enter / 200ms return motion).
 class WebPageRoute<T> extends PageRouteBuilder<T> {
   final Widget child;
 
@@ -101,7 +113,7 @@ class WebPageRoute<T> extends PageRouteBuilder<T> {
     super.opaque,
   }) : super(
           pageBuilder: (context, animation, secondaryAnimation) => child,
-          transitionDuration: const Duration(milliseconds: 240),
+          transitionDuration: const Duration(milliseconds: 220),
           reverseTransitionDuration: const Duration(milliseconds: 200),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             return buildWebPageTransition(
@@ -125,7 +137,7 @@ class SmoothPageRoute<T> extends WebPageRoute<T> {
 
 /// Backwards-compatible subclass of WebPageRoute.
 /// Unifies previously horizontal slide routes (Settings, Lists, Calendar, etc.)
-/// under the same cohesive, high-quality web-style transition.
+/// under the same cohesive, high-quality transition.
 class SlideRightToLeftPageRoute<T> extends WebPageRoute<T> {
   SlideRightToLeftPageRoute({
     required super.child,

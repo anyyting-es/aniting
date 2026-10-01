@@ -11,13 +11,13 @@ void main() {
       final smoothRoute = SmoothPageRoute<void>(child: const SizedBox());
       final slideRoute = SlideRightToLeftPageRoute<void>(child: const SizedBox());
 
-      expect(webRoute.transitionDuration, const Duration(milliseconds: 240));
+      expect(webRoute.transitionDuration, const Duration(milliseconds: 220));
       expect(webRoute.reverseTransitionDuration, const Duration(milliseconds: 200));
 
-      expect(smoothRoute.transitionDuration, const Duration(milliseconds: 240));
+      expect(smoothRoute.transitionDuration, const Duration(milliseconds: 220));
       expect(smoothRoute.reverseTransitionDuration, const Duration(milliseconds: 200));
 
-      expect(slideRoute.transitionDuration, const Duration(milliseconds: 240));
+      expect(slideRoute.transitionDuration, const Duration(milliseconds: 220));
       expect(slideRoute.reverseTransitionDuration, const Duration(milliseconds: 200));
 
       expect(kWebDecelCurve.a, 0.16);
@@ -26,9 +26,15 @@ void main() {
       expect(kWebDecelCurve.d, 1.0);
     });
 
-    testWidgets('SmoothPageRoute produces pure fade and micro-slide without ScaleTransition', (tester) async {
+    testWidgets('SmoothPageRoute produces in-place subtle breathing and return motion', (tester) async {
+      final theme = AppThemeBuilder.buildTheme(
+        palette: AppPalettes.getDarkPresets().first,
+        isDark: true,
+      );
+
       await tester.pumpWidget(
         MaterialApp(
+          theme: theme,
           home: Builder(
             builder: (context) => ElevatedButton(
               onPressed: () {
@@ -50,12 +56,9 @@ void main() {
       await tester.tap(find.text('Open'));
       await tester.pump(); // Start transition
 
-      // During animation: verify FadeTransition and SlideTransition are present
-      expect(find.byType(FadeTransition), findsWidgets);
+      // During animation: verify ScaleTransition (respiración & return motion) and SlideTransition
+      expect(find.byType(ScaleTransition), findsWidgets);
       expect(find.byType(SlideTransition), findsWidgets);
-
-      // Verify NO ScaleTransition is used (eliminates blurry/jelly screen scaling)
-      expect(find.byType(ScaleTransition), findsNothing);
 
       await tester.pumpAndSettle();
       expect(find.text('Target Screen'), findsOneWidget);
@@ -83,7 +86,7 @@ void main() {
       }
     });
 
-    testWidgets('MaterialPageRoute inherits web transition from ThemeData', (tester) async {
+    testWidgets('MaterialPageRoute inherits expressive return transition from ThemeData', (tester) async {
       final theme = AppThemeBuilder.buildTheme(
         palette: AppPalettes.getDarkPresets().first,
         isDark: true,
@@ -111,10 +114,9 @@ void main() {
       await tester.tap(find.text('Go'));
       await tester.pump();
 
-      // Verify web-style transitions are used for MaterialPageRoute
-      expect(find.byType(FadeTransition), findsWidgets);
+      // Verify transitions are active
+      expect(find.byType(ScaleTransition), findsWidgets);
       expect(find.byType(SlideTransition), findsWidgets);
-      expect(find.byType(ScaleTransition), findsNothing);
 
       await tester.pumpAndSettle();
       expect(find.text('Material Target'), findsOneWidget);

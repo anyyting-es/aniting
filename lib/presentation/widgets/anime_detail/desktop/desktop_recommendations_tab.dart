@@ -143,98 +143,96 @@ class _DesktopRecommendationCardState extends State<_DesktopRecommendationCard> 
       cursor: recId > 0 ? SystemMouseCursors.click : SystemMouseCursors.basic,
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
-      child: AnimatedScale(
-        scale: _isHovered ? 1.025 : 1.0,
-        duration: const Duration(milliseconds: 260),
-        curve: Curves.easeInOut,
-        child: InkWell(
-          onTap: recId > 0
-              ? () {
-                  final type = mediaRec['type'] as String?;
-                  if (type == 'MANGA') {
-                    MangaEntry? manga;
-                    try {
-                      manga = MangaEntry.fromJson(mediaRec);
-                    } catch (_) {}
-                    MangaDetailScreen.navigate(
-                      context,
-                      mediaId: recId,
-                      initialEntry: manga,
-                    );
-                  } else {
-                    AnimeEntry? entry;
-                    try {
-                      entry = AnimeEntry.fromJson(mediaRec);
-                    } catch (_) {}
-                    AnimeDetailScreen.navigate(
-                      context,
-                      mediaId: recId,
-                      initialEntry: entry,
-                    );
-                  }
+      child: InkWell(
+        onTap: recId > 0
+            ? () {
+                final type = mediaRec['type'] as String?;
+                if (type == 'MANGA') {
+                  MangaEntry? manga;
+                  try {
+                    manga = MangaEntry.fromJson(mediaRec);
+                  } catch (_) {}
+                  MangaDetailScreen.navigate(
+                    context,
+                    mediaId: recId,
+                    initialEntry: manga,
+                  );
+                } else {
+                  AnimeEntry? entry;
+                  try {
+                    entry = AnimeEntry.fromJson(mediaRec);
+                  } catch (_) {}
+                  AnimeDetailScreen.navigate(
+                    context,
+                    mediaId: recId,
+                    initialEntry: entry,
+                  );
                 }
-              : null,
-          borderRadius: BorderRadius.circular(10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 1. Poster Art Container (enclosed with border, radius, shadow)
-              AspectRatio(
-                aspectRatio: 0.70,
+              }
+            : null,
+        borderRadius: BorderRadius.circular(10),
+        hoverColor: Colors.transparent,
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 1. Poster Art Container (whole box expands smoothly on hover)
+            AspectRatio(
+              aspectRatio: 0.70,
+              child: AnimatedScale(
+                scale: _isHovered ? 1.025 : 1.0,
+                duration: const Duration(milliseconds: 180),
+                curve: Curves.easeOutCubic,
                 child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 260),
-                  curve: Curves.easeInOut,
+                  duration: const Duration(milliseconds: 180),
+                  curve: Curves.easeOutCubic,
                   decoration: BoxDecoration(
                     color: isDark ? const Color(0xFF14171B) : theme.colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
                       color: _isHovered
-                          ? theme.colorScheme.primary
-                          : (isDark ? Colors.white.withValues(alpha: 0.08) : theme.colorScheme.outlineVariant.withValues(alpha: 0.3)),
+                          ? Colors.white.withValues(alpha: 0.35)
+                          : (isDark
+                              ? Colors.white.withValues(alpha: 0.08)
+                              : theme.colorScheme.outlineVariant.withValues(alpha: 0.3)),
                       width: 1.0,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: _isHovered ? 0.45 : 0.20),
-                        blurRadius: _isHovered ? 12 : 6,
-                        offset: Offset(0, _isHovered ? 4 : 2),
+                        color: Colors.black.withValues(alpha: _isHovered ? 0.35 : 0.20),
+                        blurRadius: _isHovered ? 10 : 6,
+                        offset: Offset(0, _isHovered ? 3 : 2),
                       ),
                     ],
                   ),
                   clipBehavior: Clip.antiAlias,
-                  child: ClipRect(
-                    child: AnimatedScale(
-                      scale: _isHovered ? 1.04 : 1.0,
-                      duration: const Duration(milliseconds: 280),
-                      curve: Curves.easeInOut,
-                      child: coverUrl != null
-                          ? CachedNetworkImage(
-                              imageUrl: coverUrl as String,
-                              fit: BoxFit.cover,
-                              memCacheWidth: 320,
-                              errorWidget: (_, _, _) => Container(color: const Color(0xFF1E2228)),
-                            )
-                          : Container(color: const Color(0xFF1E2228)),
-                    ),
-                  ),
+                  child: coverUrl != null
+                      ? CachedNetworkImage(
+                          imageUrl: coverUrl as String,
+                          fit: BoxFit.cover,
+                          memCacheWidth: 320,
+                          errorWidget: (_, _, _) => Container(color: const Color(0xFF1E2228)),
+                        )
+                      : Container(color: const Color(0xFF1E2228)),
                 ),
               ),
-              const SizedBox(height: 8),
+            ),
+            const SizedBox(height: 8),
 
-              // 2. Anime Title OUTSIDE container
-              Text(
-                recTitle as String,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w600,
-                  color: titleColor,
-                  height: 1.25,
-                ),
+            // 2. Anime Title OUTSIDE container
+            Text(
+              recTitle as String,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w600,
+                color: _isHovered ? theme.colorScheme.primary : titleColor,
+                height: 1.25,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

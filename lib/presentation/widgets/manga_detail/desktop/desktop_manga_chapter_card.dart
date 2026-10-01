@@ -42,12 +42,27 @@ class _DesktopMangaChapterCardState extends State<DesktopMangaChapterCard> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final cardOpacity = widget.isRead ? (_isHovered ? 0.85 : 0.45) : 1.0;
     final chapterLabel = _formatChapterLabel(widget.chapter);
 
     final hasTitle = widget.chapter.title.isNotEmpty &&
         widget.chapter.title.toLowerCase() != chapterLabel.toLowerCase() &&
         widget.chapter.title != widget.chapter.chapter;
+
+    final baseBg = isDark
+        ? Colors.white.withValues(alpha: 0.03)
+        : theme.colorScheme.surfaceContainerLow;
+    final hoverBg = isDark
+        ? Colors.white.withValues(alpha: 0.08)
+        : theme.colorScheme.surfaceContainerHighest;
+
+    final baseBorder = isDark
+        ? Colors.white.withValues(alpha: 0.05)
+        : theme.colorScheme.outlineVariant.withValues(alpha: 0.22);
+    final hoverBorder = isDark
+        ? Colors.white.withValues(alpha: 0.16)
+        : theme.colorScheme.outlineVariant.withValues(alpha: 0.45);
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -65,14 +80,10 @@ class _DesktopMangaChapterCardState extends State<DesktopMangaChapterCard> {
             height: 44,
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
-              color: _isHovered
-                  ? Colors.white.withValues(alpha: 0.08)
-                  : const Color(0xFF14171B).withValues(alpha: 0.7),
+              color: _isHovered ? hoverBg : baseBg,
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: _isHovered
-                    ? Colors.white.withValues(alpha: 0.18)
-                    : Colors.white.withValues(alpha: 0.05),
+                color: _isHovered ? hoverBorder : baseBorder,
               ),
             ),
             child: Row(
@@ -82,13 +93,13 @@ class _DesktopMangaChapterCardState extends State<DesktopMangaChapterCard> {
                   padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                   decoration: BoxDecoration(
                     color: widget.isRead
-                        ? Colors.white.withValues(alpha: 0.06)
-                        : const Color(0xFF00C7FF).withValues(alpha: 0.12),
+                        ? (isDark ? Colors.white.withValues(alpha: 0.06) : theme.colorScheme.surfaceContainerHighest)
+                        : theme.colorScheme.primary.withValues(alpha: isDark ? 0.14 : 0.10),
                     borderRadius: BorderRadius.circular(5),
                     border: Border.all(
                       color: widget.isRead
-                          ? Colors.white.withValues(alpha: 0.1)
-                          : const Color(0xFF00C7FF).withValues(alpha: 0.35),
+                          ? (isDark ? Colors.white.withValues(alpha: 0.1) : theme.colorScheme.outlineVariant.withValues(alpha: 0.3))
+                          : theme.colorScheme.primary.withValues(alpha: 0.35),
                     ),
                   ),
                   child: Text(
@@ -97,8 +108,8 @@ class _DesktopMangaChapterCardState extends State<DesktopMangaChapterCard> {
                       fontSize: 11.5,
                       fontWeight: FontWeight.w700,
                       color: widget.isRead
-                          ? Colors.white60
-                          : const Color(0xFF00C7FF),
+                          ? theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7)
+                          : theme.colorScheme.primary,
                     ),
                   ),
                 ),
@@ -119,7 +130,9 @@ class _DesktopMangaChapterCardState extends State<DesktopMangaChapterCard> {
                           style: TextStyle(
                             fontSize: 12.5,
                             fontWeight: FontWeight.w500,
-                            color: widget.isRead ? Colors.white70 : Colors.white,
+                            color: widget.isRead
+                                ? theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7)
+                                : theme.colorScheme.onSurface,
                           ),
                         ),
                       ),
@@ -132,7 +145,7 @@ class _DesktopMangaChapterCardState extends State<DesktopMangaChapterCard> {
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontSize: 11,
-                            color: Colors.white.withValues(alpha: 0.38),
+                            color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.55),
                           ),
                         ),
                       ],
@@ -147,16 +160,16 @@ class _DesktopMangaChapterCardState extends State<DesktopMangaChapterCard> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.06),
+                      color: isDark ? Colors.white.withValues(alpha: 0.06) : theme.colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(4),
                     ),
-                    child: const Text(
+                    child: Text(
                       'LEÍDO',
                       style: TextStyle(
                         fontSize: 8.5,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 0.4,
-                        color: Colors.white54,
+                        color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.65),
                       ),
                     ),
                   ),
@@ -165,12 +178,12 @@ class _DesktopMangaChapterCardState extends State<DesktopMangaChapterCard> {
 
                 // Download icon / indicator
                 if (widget.isDownloading)
-                  const SizedBox(
+                  SizedBox(
                     width: 16,
                     height: 16,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF00C7FF)),
+                      valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
                     ),
                   )
                 else if (widget.isDownloaded)
@@ -182,7 +195,7 @@ class _DesktopMangaChapterCardState extends State<DesktopMangaChapterCard> {
                 else if (widget.canDownload)
                   IconButton(
                     icon: const Icon(Icons.download_rounded, size: 17),
-                    color: Colors.white.withValues(alpha: _isHovered ? 0.85 : 0.35),
+                    color: theme.colorScheme.onSurfaceVariant.withValues(alpha: _isHovered ? 0.9 : 0.5),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(minWidth: 26, minHeight: 26),
                     tooltip: 'Descargar',
@@ -193,11 +206,11 @@ class _DesktopMangaChapterCardState extends State<DesktopMangaChapterCard> {
                 AnimatedOpacity(
                   opacity: _isHovered ? 1.0 : 0.0,
                   duration: const Duration(milliseconds: 120),
-                  child: const Padding(
-                    padding: EdgeInsets.only(left: 4),
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 4),
                     child: Icon(
                       Icons.chevron_right_rounded,
-                      color: Color(0xFF00C7FF),
+                      color: theme.colorScheme.primary,
                       size: 16,
                     ),
                   ),

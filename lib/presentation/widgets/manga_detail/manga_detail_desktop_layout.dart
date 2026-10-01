@@ -7,19 +7,11 @@ import 'package:seanime_app/presentation/widgets/anime_detail/desktop/desktop_ch
 import 'package:seanime_app/presentation/widgets/anime_detail/desktop/desktop_hero_banner.dart';
 import 'package:seanime_app/presentation/widgets/anime_detail/desktop/desktop_recommendations_tab.dart';
 import 'package:seanime_app/presentation/widgets/anime_detail/desktop/desktop_relations_tab.dart';
-import 'package:seanime_app/presentation/widgets/anime_detail/desktop/desktop_tab_button.dart';
-
 import 'desktop/desktop_manga_action_bar.dart';
 import 'desktop/desktop_manga_chapters_tab.dart';
 import 'desktop/desktop_manga_header.dart';
 import 'desktop/desktop_manga_sidebar.dart';
-
-enum DesktopMangaTab {
-  chapters,
-  characters,
-  related,
-  recommendations,
-}
+import 'package:seanime_app/core/theme/smooth_scroll_controller.dart';
 
 class MangaDetailDesktopLayout extends ConsumerStatefulWidget {
   final int mediaId;
@@ -69,8 +61,7 @@ class MangaDetailDesktopLayout extends ConsumerStatefulWidget {
 }
 
 class _MangaDetailDesktopLayoutState extends ConsumerState<MangaDetailDesktopLayout> {
-  DesktopMangaTab _selectedTab = DesktopMangaTab.chapters;
-  final ScrollController _scrollController = ScrollController();
+  final ScrollController _scrollController = SmoothScrollController();
   double _scrollOffset = 0.0;
 
   @override
@@ -114,6 +105,7 @@ class _MangaDetailDesktopLayoutState extends ConsumerState<MangaDetailDesktopLay
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final titleLang = ref.watch(titleLanguageProvider);
 
     final resolvedEntry = widget.entry ?? widget.initialEntry;
@@ -183,24 +175,39 @@ class _MangaDetailDesktopLayoutState extends ConsumerState<MangaDetailDesktopLay
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Back button with headroom
+                    // Back button (clean icon without heavy background)
                     Padding(
                       padding: const EdgeInsets.only(top: 24, bottom: 120),
                       child: IconButton(
                         style: IconButton.styleFrom(
-                          backgroundColor: Colors.black.withValues(alpha: 0.55),
                           padding: const EdgeInsets.all(8),
+                          hoverColor: isDark ? Colors.white.withValues(alpha: 0.12) : theme.colorScheme.surfaceContainerHighest,
+                          highlightColor: isDark ? Colors.white.withValues(alpha: 0.18) : theme.colorScheme.surfaceContainerHigh,
                         ),
-                        icon: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 20),
+                        icon: Icon(
+                          Icons.arrow_back_rounded,
+                          color: bannerUrl != null ? Colors.white : (isDark ? Colors.white : theme.colorScheme.onSurface),
+                          size: 22,
+                          shadows: bannerUrl != null
+                              ? const [
+                                  Shadow(
+                                    color: Colors.black54,
+                                    blurRadius: 4,
+                                    offset: Offset(0, 1),
+                                  ),
+                                ]
+                              : null,
+                        ),
+                        tooltip: 'Volver',
                         onPressed: () => Navigator.pop(context),
                       ),
                     ),
 
-                    // Two Columns Layout
+                    // ── TOP SECTION: Cover Poster on Left + All Data on Right ──
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Left Column (Sidebar)
+                        // Left: Poster Cover
                         DesktopMangaSidebar(
                           coverUrl: coverUrl,
                           format: format,
@@ -211,24 +218,30 @@ class _MangaDetailDesktopLayoutState extends ConsumerState<MangaDetailDesktopLay
                           totalVolumes: totalVolumes,
                           progress: progress,
                           onOpenEditModal: widget.onOpenEditModal,
+                          showMetadata: false,
+                          width: 220,
                         ),
 
                         const SizedBox(width: 32),
 
-                        // Right Column (Header, Action Bar, Tabs & Tab Content)
+                        // Right: Header + Action Bar
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Header
                               DesktopMangaHeader(
                                 subtitleStr: subtitleStr,
                                 title: title,
                                 genres: resolvedEntry?.genres ?? const [],
                                 description: description,
+                                format: format,
+                                status: status,
+                                year: year,
+                                score: score,
+                                totalChapters: totalChapters,
+                                totalVolumes: totalVolumes,
                               ),
-
-                              // Action Bar (Continue Reading, Bookmark, Batch Download, Share, Links)
+                              const SizedBox(height: 16),
                               DesktopMangaActionBar(
                                 mediaId: widget.mediaId,
                                 title: title,
@@ -238,42 +251,71 @@ class _MangaDetailDesktopLayoutState extends ConsumerState<MangaDetailDesktopLay
                                 onOpenEditEntryModal: (_) => widget.onOpenEditModal(),
                                 onBatchDownload: widget.onBatchDownload,
                               ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
 
-                              const SizedBox(height: 24),
+                    const SizedBox(height: 36),
 
-                              // Desktop Sub-Navigation Tab Bar
-                              Row(
-                                children: [
-                                  DesktopTabButton(
-                                    label: 'Capítulos',
-                                    isSelected: _selectedTab == DesktopMangaTab.chapters,
-                                    onTap: () => setState(() => _selectedTab = DesktopMangaTab.chapters),
-                                  ),
-                                  const SizedBox(width: 24),
-                                  DesktopTabButton(
-                                    label: 'Personajes',
-                                    isSelected: _selectedTab == DesktopMangaTab.characters,
-                                    onTap: () => setState(() => _selectedTab = DesktopMangaTab.characters),
-                                  ),
-                                  const SizedBox(width: 24),
-                                  DesktopTabButton(
-                                    label: 'Relaciones',
-                                    isSelected: _selectedTab == DesktopMangaTab.related,
-                                    onTap: () => setState(() => _selectedTab = DesktopMangaTab.related),
-                                  ),
-                                  const SizedBox(width: 24),
-                                  DesktopTabButton(
-                                    label: 'Obras similares',
-                                    isSelected: _selectedTab == DesktopMangaTab.recommendations,
-                                    onTap: () => setState(() => _selectedTab = DesktopMangaTab.recommendations),
-                                  ),
-                                ],
+                    // ── BOTTOM SECTION: Two Columns ──
+                    // Left column: Chapters in their box
+                    // Right column: Characters, then Related, then Similar Works
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Left: Chapters Box
+                        Expanded(
+                          flex: 5,
+                          child: Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? theme.colorScheme.surfaceContainer.withValues(alpha: 0.35)
+                                  : theme.colorScheme.surfaceContainerLowest,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: isDark
+                                    ? Colors.white.withValues(alpha: 0.06)
+                                    : theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
                               ),
-
-                              const SizedBox(height: 20),
-
-                              // Active Tab View
-                              if (_selectedTab == DesktopMangaTab.chapters)
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(Icons.list_alt_rounded, size: 20, color: theme.colorScheme.primary),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Capítulos',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w800,
+                                        color: theme.colorScheme.onSurface,
+                                      ),
+                                    ),
+                                    const Spacer(),
+                                    if (widget.chapters.isNotEmpty)
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+                                        decoration: BoxDecoration(
+                                          color: theme.colorScheme.primary.withValues(alpha: 0.12),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Text(
+                                          '${widget.chapters.length}',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                            color: theme.colorScheme.primary,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                                const SizedBox(height: 16),
                                 DesktopMangaChaptersTab(
                                   mediaId: widget.mediaId,
                                   providers: widget.providers,
@@ -289,22 +331,82 @@ class _MangaDetailDesktopLayoutState extends ConsumerState<MangaDetailDesktopLay
                                   onChapterClicked: widget.onChapterClicked,
                                   onDownloadChapter: widget.onDownloadChapter,
                                   onBatchDownload: widget.onBatchDownload,
-                                )
-                              else if (_selectedTab == DesktopMangaTab.characters)
-                                DesktopCharactersTab(
-                                  characters: charactersEdges,
-                                  isLoading: widget.isLoadingDetails,
-                                )
-                              else if (_selectedTab == DesktopMangaTab.related)
-                                DesktopRelationsTab(
-                                  relations: relationsEdges,
-                                  isLoading: widget.isLoadingDetails,
-                                )
-                              else if (_selectedTab == DesktopMangaTab.recommendations)
-                                DesktopRecommendationsTab(
-                                  recommendations: recommendationsEdges,
-                                  isLoading: widget.isLoadingDetails,
                                 ),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(width: 32),
+
+                        // Right: Characters, Related, Recommendations
+                        Expanded(
+                          flex: 6,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Personajes
+                              Row(
+                                children: [
+                                  Icon(Icons.people_outline_rounded, size: 20, color: theme.colorScheme.primary),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Personajes',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w800,
+                                      color: theme.colorScheme.onSurface,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 14),
+                              DesktopCharactersTab(
+                                characters: charactersEdges,
+                                isLoading: widget.isLoadingDetails,
+                              ),
+
+                              const SizedBox(height: 32),
+                              Row(
+                                children: [
+                                  Icon(Icons.hub_outlined, size: 20, color: theme.colorScheme.primary),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Relaciones',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w800,
+                                      color: theme.colorScheme.onSurface,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 14),
+                              DesktopRelationsTab(
+                                relations: relationsEdges,
+                                isLoading: widget.isLoadingDetails,
+                              ),
+
+                              const SizedBox(height: 32),
+                              Row(
+                                children: [
+                                  Icon(Icons.auto_awesome_rounded, size: 20, color: theme.colorScheme.primary),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Obras similares',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w800,
+                                      color: theme.colorScheme.onSurface,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 14),
+                              DesktopRecommendationsTab(
+                                recommendations: recommendationsEdges,
+                                isLoading: widget.isLoadingDetails,
+                              ),
                             ],
                           ),
                         ),

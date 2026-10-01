@@ -1,9 +1,11 @@
+import 'dart:ui';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
+import 'package:seanime_app/core/preferences/banner_blur_provider.dart';
 import 'package:seanime_app/core/preferences/episode_view_mode_provider.dart';
 import 'package:seanime_app/core/preferences/streaming_preferences_provider.dart';
 import 'package:seanime_app/core/preferences/title_language_provider.dart';
@@ -501,8 +503,14 @@ class _AnimeDetailMobileLayoutState
         l10n.loading;
 
     final coverUrl = widget.details?.coverImage ?? widget.initialEntry?.coverImage;
+    final hasRealBanner = (widget.details?.bannerImage != null &&
+            widget.details!.bannerImage!.isNotEmpty) ||
+        (widget.initialEntry?.bannerImage != null &&
+            widget.initialEntry!.bannerImage!.isNotEmpty);
     final bannerUrl =
         widget.details?.bannerImage ?? widget.initialEntry?.bannerImage ?? coverUrl;
+    final isBlurSetting = ref.watch(bannerBlurProvider);
+    final shouldBlur = (!hasRealBanner && coverUrl != null) || isBlurSetting;
     final score = widget.details?.score ?? widget.initialEntry?.score;
     final format = widget.details?.format ?? widget.initialEntry?.format ?? 'TV';
     final episodes = widget.details?.totalEpisodes ?? widget.initialEntry?.totalEpisodes;
@@ -575,14 +583,29 @@ class _AnimeDetailMobileLayoutState
                   fit: StackFit.expand,
                   children: [
                     if (bannerUrl != null)
-                      CachedNetworkImage(
-                        imageUrl: bannerUrl,
-                        fit: BoxFit.cover,
-                        alignment: Alignment.topCenter,
-                        memCacheWidth: 1080,
-                        errorWidget: (context, url, error) =>
-                            Container(color: theme.colorScheme.surfaceContainer),
-                      )
+                      shouldBlur
+                          ? ImageFiltered(
+                              imageFilter: ImageFilter.blur(sigmaX: 45, sigmaY: 45),
+                              child: Transform.scale(
+                                scale: 1.25,
+                                child: CachedNetworkImage(
+                                  imageUrl: bannerUrl,
+                                  fit: BoxFit.cover,
+                                  alignment: Alignment.topCenter,
+                                  memCacheWidth: 1080,
+                                  errorWidget: (context, url, error) =>
+                                      Container(color: theme.colorScheme.surfaceContainer),
+                                ),
+                              ),
+                            )
+                          : CachedNetworkImage(
+                              imageUrl: bannerUrl,
+                              fit: BoxFit.cover,
+                              alignment: Alignment.topCenter,
+                              memCacheWidth: 1080,
+                              errorWidget: (context, url, error) =>
+                                  Container(color: theme.colorScheme.surfaceContainer),
+                            )
                     else
                       Container(color: theme.colorScheme.surfaceContainer),
 
@@ -655,14 +678,17 @@ class _AnimeDetailMobileLayoutState
                   elevation: 0,
                   scrolledUnderElevation: 0,
                   leading: IconButton(
-                    icon: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.55),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.arrow_back,
-                          color: Colors.white, size: 20),
+                    icon: const Icon(
+                      Icons.arrow_back_rounded,
+                      color: Colors.white,
+                      size: 22,
+                      shadows: [
+                        Shadow(
+                          color: Colors.black54,
+                          blurRadius: 4,
+                          offset: Offset(0, 1),
+                        ),
+                      ],
                     ),
                     onPressed: () => Navigator.pop(context),
                   ),
@@ -674,33 +700,26 @@ class _AnimeDetailMobileLayoutState
                       icon: Stack(
                         clipBehavior: Clip.none,
                         children: [
-                          Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              color: widget.isLocalMode
-                                  ? theme.colorScheme.primaryContainer
-                                  : Colors.black.withValues(alpha: 0.55),
-                              shape: BoxShape.circle,
-                              border: widget.isLocalMode
-                                  ? Border.all(
-                                      color: theme.colorScheme.primary,
-                                      width: 1.5)
-                                  : null,
-                            ),
-                            child: Icon(
-                              widget.isLocalMode
-                                  ? Icons.folder_rounded
-                                  : Icons.folder_outlined,
-                              color: widget.isLocalMode
-                                  ? theme.colorScheme.primary
-                                  : Colors.white,
-                              size: 20,
-                            ),
+                          Icon(
+                            widget.isLocalMode
+                                ? Icons.folder_rounded
+                                : Icons.folder_outlined,
+                            color: widget.isLocalMode
+                                ? theme.colorScheme.primary
+                                : Colors.white,
+                            size: 22,
+                            shadows: const [
+                              Shadow(
+                                color: Colors.black54,
+                                blurRadius: 4,
+                                offset: Offset(0, 1),
+                              ),
+                            ],
                           ),
                           if (widget.hasLocalFiles && !widget.isLocalMode)
                             Positioned(
-                              right: 0,
-                              top: 0,
+                              right: -1,
+                              top: -1,
                               child: Container(
                                 width: 8,
                                 height: 8,
@@ -720,17 +739,17 @@ class _AnimeDetailMobileLayoutState
                     ),
                     IconButton(
                       tooltip: l10n.animeDetails,
-                      icon: Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.55),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.info_outline_rounded,
-                          color: Colors.white,
-                          size: 20,
-                        ),
+                      icon: const Icon(
+                        Icons.info_outline_rounded,
+                        color: Colors.white,
+                        size: 22,
+                        shadows: [
+                          Shadow(
+                            color: Colors.black54,
+                            blurRadius: 4,
+                            offset: Offset(0, 1),
+                          ),
+                        ],
                       ),
                       onPressed: widget.onOpenDetailsModal,
                     ),

@@ -117,43 +117,57 @@ class _ContinueWatchingCardState extends ConsumerState<ContinueWatchingCard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // 1. Clean Cover Image Container
+                  // 1. Clean Cover Image Container (whole box expands on hover)
                   AspectRatio(
                     aspectRatio: 16 / 9,
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 160),
-                      curve: Curves.easeOut,
-                      decoration: BoxDecoration(
-                        color: colors.surface,
-                        borderRadius: BorderRadius.circular(isCompact ? (colors.borderRadius * 0.8).clamp(0.0, 16.0) : colors.borderRadius),
-                        border: Border.all(
-                          color: _isActive ? Colors.white : colors.border.withValues(alpha: 0.5),
-                          width: _isActive ? 2.0 : 1.0,
-                        ),
-                      ),
-                      clipBehavior: Clip.antiAlias,
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          if (imageUrl != null)
-                            CachedNetworkImage(
-                              imageUrl: imageUrl,
-                              fit: BoxFit.cover,
-                              memCacheWidth: isCompact ? 450 : 600,
-                              memCacheHeight: isCompact ? 260 : 340,
-                              placeholder: (context, url) => Container(
-                                color: theme.colorScheme.surfaceContainerHighest,
-                              ),
-                              errorWidget: (context, url, error) => Container(
-                                color: theme.colorScheme.surfaceContainerHighest,
-                                child: Icon(Icons.movie_rounded, color: theme.colorScheme.outline, size: isCompact ? 28 : 36),
-                              ),
-                            )
-                          else
-                            Container(
-                              color: theme.colorScheme.surfaceContainerHighest,
-                              child: Icon(Icons.movie_rounded, color: theme.colorScheme.outline, size: isCompact ? 28 : 36),
+                    child: AnimatedScale(
+                      scale: _isHovered ? 1.02 : 1.0,
+                      duration: const Duration(milliseconds: 180),
+                      curve: Curves.easeOutCubic,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 180),
+                        curve: Curves.easeOutCubic,
+                        decoration: BoxDecoration(
+                          color: colors.surface,
+                          borderRadius: BorderRadius.circular(isCompact ? (colors.borderRadius * 0.8).clamp(0.0, 16.0) : colors.borderRadius),
+                          border: Border.all(
+                            color: _isFocused
+                                ? Colors.white
+                                : (_isHovered
+                                    ? Colors.white.withValues(alpha: 0.35)
+                                    : colors.border.withValues(alpha: 0.5)),
+                            width: _isFocused ? 2.0 : 1.0,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: _isHovered ? 0.30 : 0.15),
+                              blurRadius: _isHovered ? 8 : 4,
+                              offset: Offset(0, _isHovered ? 3 : 2),
                             ),
+                          ],
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            imageUrl != null
+                                ? CachedNetworkImage(
+                                    imageUrl: imageUrl,
+                                    fit: BoxFit.cover,
+                                    memCacheWidth: isCompact ? 450 : 600,
+                                    memCacheHeight: isCompact ? 260 : 340,
+                                    placeholder: (context, url) => Container(
+                                      color: theme.colorScheme.surfaceContainerHighest,
+                                    ),
+                                    errorWidget: (context, url, error) => Container(
+                                      color: theme.colorScheme.surfaceContainerHighest,
+                                      child: Icon(Icons.movie_rounded, color: theme.colorScheme.outline, size: isCompact ? 28 : 36),
+                                    ),
+                                  )
+                                : Container(
+                                    color: theme.colorScheme.surfaceContainerHighest,
+                                    child: Icon(Icons.movie_rounded, color: theme.colorScheme.outline, size: isCompact ? 28 : 36),
+                                  ),
                           // Subtle video playback progress indicator at the bottom edge (only if watched locally)
                           if (progressFraction != null && progressFraction > 0.01 && progressFraction < 0.98)
                             Positioned(
@@ -171,14 +185,15 @@ class _ContinueWatchingCardState extends ConsumerState<ContinueWatchingCard> {
                       ),
                     ),
                   ),
-                  SizedBox(height: isCompact ? 6 : 8),
+                ),
+                SizedBox(height: isCompact ? 6 : 8),
                   // 2. Info Below the Cover
                   Text(
                     titleLine,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: _isActive
+                      color: (_isActive || _isHovered)
                           ? theme.colorScheme.primary
                           : (theme.brightness == Brightness.dark
                               ? colors.textPrimary

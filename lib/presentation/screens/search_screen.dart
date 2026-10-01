@@ -17,6 +17,7 @@ import 'package:seanime_app/presentation/widgets/anime_card.dart';
 import 'package:seanime_app/presentation/widgets/compact_search_bar.dart';
 import 'package:seanime_app/presentation/widgets/discover_filter_sheet.dart';
 import 'package:seanime_app/presentation/widgets/explore_hero_carousel.dart';
+import 'package:seanime_app/core/theme/smooth_scroll_controller.dart';
 import 'package:seanime_app/presentation/widgets/manga_card.dart';
 import 'package:seanime_app/presentation/widgets/media_type_toggle.dart';
 import 'package:seanime_app/presentation/widgets/top_status_bar_glass.dart';
@@ -31,7 +32,7 @@ class SearchScreen extends ConsumerStatefulWidget {
 class _SearchScreenState extends ConsumerState<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
-  final ScrollController _scrollController = ScrollController();
+  final ScrollController _scrollController = SmoothScrollController();
   final ValueNotifier<bool> _isScrolledNotifier = ValueNotifier<bool>(false);
   bool _isSearchExpanded = false;
   Timer? _debounce;

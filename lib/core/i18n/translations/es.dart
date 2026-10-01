@@ -1284,6 +1284,10 @@ class SpanishTranslations implements AppTranslations {
   String get allRecommended => 'Todas las recomendadas';
   @override
   String get searchExtensionsPrompt => 'Buscar extensiones...';
+  @override
+  String get blurBanner => 'Desenfocar banner';
+  @override
+  String get blurBannerDesc => 'Aplica un desenfoque cinemático al banner de fondo en los detalles de anime y manga';
 
   @override
   String formatStatus(String? status) {

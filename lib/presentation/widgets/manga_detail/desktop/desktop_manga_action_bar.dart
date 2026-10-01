@@ -89,21 +89,19 @@ class DesktopMangaActionBar extends StatelessWidget {
         ),
         const SizedBox(width: 8),
 
-        // AniList External Link Pill
-        _HoverLinkPill(
-          label: 'A',
+        // AniList External Link with Official Brand Icon (Clean, no borders)
+        _HoverBrandIcon(
+          assetPath: 'assets/icons/AniList_logo.png',
           tooltip: 'Ver en AniList',
-          accentColor: const Color(0xFF02A9FF),
           onTap: () => _launchAnilist(mediaId),
         ),
         const SizedBox(width: 8),
 
-        // MAL External Link Pill
+        // MAL External Link with Official Brand Icon (Clean, no borders)
         if (idMal != null) ...[
-          _HoverLinkPill(
-            label: 'MAL',
+          _HoverBrandIcon(
+            assetPath: 'assets/icons/MyAnimeList_Logo.png',
             tooltip: 'Ver en MyAnimeList',
-            accentColor: const Color(0xFF5D84E0),
             onTap: () => _launchMal(idMal!),
           ),
           const SizedBox(width: 8),
@@ -131,30 +129,32 @@ class _HoverReadButtonState extends State<_HoverReadButton> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       child: AnimatedScale(
-        scale: _isHovered ? 1.03 : 1.0,
+        scale: _isHovered ? 1.025 : 1.0,
         duration: const Duration(milliseconds: 180),
         curve: Curves.easeOutCubic,
         child: FilledButton.icon(
           style: FilledButton.styleFrom(
-            backgroundColor: const Color(0xFF00C7FF),
-            foregroundColor: Colors.black,
+            backgroundColor: theme.colorScheme.primary,
+            foregroundColor: theme.colorScheme.onPrimary,
             padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
             elevation: _isHovered ? 6 : 2,
           ),
           onPressed: widget.onTap,
-          icon: const Icon(Icons.menu_book_rounded, size: 20, color: Colors.black),
+          icon: Icon(Icons.menu_book_rounded, size: 20, color: theme.colorScheme.onPrimary),
           label: Text(
             widget.label,
-            style: const TextStyle(
+            style: TextStyle(
               fontWeight: FontWeight.w800,
               fontSize: 14,
-              color: Colors.black,
+              color: theme.colorScheme.onPrimary,
             ),
           ),
         ),
@@ -183,23 +183,37 @@ class _HoverIconButtonState extends State<_HoverIconButton> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    final baseBg = isDark
+        ? Colors.white.withValues(alpha: 0.06)
+        : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.85);
+    final hoverBg = isDark
+        ? Colors.white.withValues(alpha: 0.12)
+        : theme.colorScheme.surfaceContainerHigh;
+
+    final iconColor = isDark
+        ? (_isHovered ? Colors.white : Colors.white70)
+        : (_isHovered ? theme.colorScheme.onSurface : theme.colorScheme.onSurfaceVariant);
+
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       child: AnimatedScale(
-        scale: _isHovered ? 1.06 : 1.0,
+        scale: _isHovered ? 1.025 : 1.0,
         duration: const Duration(milliseconds: 180),
         curve: Curves.easeOutCubic,
         child: IconButton(
           tooltip: widget.tooltip,
           style: IconButton.styleFrom(
-            backgroundColor: Colors.white.withValues(alpha: _isHovered ? 0.18 : 0.08),
+            backgroundColor: _isHovered ? hoverBg : baseBg,
             padding: const EdgeInsets.all(12),
           ),
           icon: Icon(
             widget.icon,
-            color: _isHovered ? Colors.white : Colors.white70,
+            color: iconColor,
             size: 20,
           ),
           onPressed: widget.onTap,
@@ -209,59 +223,52 @@ class _HoverIconButtonState extends State<_HoverIconButton> {
   }
 }
 
-class _HoverLinkPill extends StatefulWidget {
-  final String label;
+class _HoverBrandIcon extends StatefulWidget {
+  final String assetPath;
   final String tooltip;
-  final Color accentColor;
   final VoidCallback onTap;
 
-  const _HoverLinkPill({
-    required this.label,
+  const _HoverBrandIcon({
+    required this.assetPath,
     required this.tooltip,
-    required this.accentColor,
     required this.onTap,
   });
 
   @override
-  State<_HoverLinkPill> createState() => _HoverLinkPillState();
+  State<_HoverBrandIcon> createState() => _HoverBrandIconState();
 }
 
-class _HoverLinkPillState extends State<_HoverLinkPill> {
+class _HoverBrandIconState extends State<_HoverBrandIcon> {
   bool _isHovered = false;
 
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: AnimatedScale(
-        scale: _isHovered ? 1.06 : 1.0,
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOutCubic,
-        child: InkWell(
-          onTap: widget.onTap,
-          borderRadius: BorderRadius.circular(18),
-          child: Tooltip(
-            message: widget.tooltip,
-            child: Container(
-              height: 38,
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: _isHovered ? 0.18 : 0.08),
-                borderRadius: BorderRadius.circular(19),
-                border: Border.all(
-                  color: widget.accentColor.withValues(alpha: _isHovered ? 0.8 : 0.4),
-                  width: 1.2,
-                ),
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                widget.label,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                  color: _isHovered ? Colors.white : widget.accentColor,
+    return Tooltip(
+      message: widget.tooltip,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        onEnter: (_) => setState(() => _isHovered = true),
+        onExit: (_) => setState(() => _isHovered = false),
+        child: AnimatedScale(
+          scale: _isHovered ? 1.14 : 1.0,
+          duration: const Duration(milliseconds: 150),
+          curve: Curves.easeOutCubic,
+          child: AnimatedOpacity(
+            opacity: _isHovered ? 1.0 : 0.72,
+            duration: const Duration(milliseconds: 150),
+            child: InkResponse(
+              onTap: widget.onTap,
+              radius: 18,
+              highlightColor: Colors.transparent,
+              hoverColor: Colors.transparent,
+              splashColor: Colors.transparent,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                child: Image.asset(
+                  widget.assetPath,
+                  width: 22,
+                  height: 22,
+                  fit: BoxFit.contain,
                 ),
               ),
             ),

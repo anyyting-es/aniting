@@ -1,8 +1,10 @@
+import 'dart:ui';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
+import 'package:seanime_app/core/preferences/banner_blur_provider.dart';
 import 'package:seanime_app/core/preferences/title_language_provider.dart';
 import 'package:seanime_app/core/theme/app_theme_colors.dart';
 import 'package:seanime_app/data/models/manga_entry.dart';
@@ -180,8 +182,11 @@ class _MangaDetailMobileLayoutState extends ConsumerState<MangaDetailMobileLayou
 
     final resolved = widget.entry ?? widget.initialEntry;
     final title = resolved?.displayTitle(titleLang) ?? 'Manga';
+    final hasRealBanner = (resolved?.bannerImage != null && resolved!.bannerImage!.isNotEmpty);
     final bannerUrl = resolved?.bannerImage ?? resolved?.coverImage;
     final posterUrl = resolved?.coverImage;
+    final isBlurSetting = ref.watch(bannerBlurProvider);
+    final shouldBlur = (!hasRealBanner && posterUrl != null) || isBlurSetting;
 
     final progress = resolved?.progress ?? 0;
     final totalChapters = resolved?.totalChapters;
@@ -221,14 +226,29 @@ class _MangaDetailMobileLayoutState extends ConsumerState<MangaDetailMobileLayou
                     fit: StackFit.expand,
                     children: [
                       if (bannerUrl != null)
-                        CachedNetworkImage(
-                          imageUrl: bannerUrl,
-                          fit: BoxFit.cover,
-                          alignment: Alignment.topCenter,
-                          memCacheWidth: 1080,
-                          errorWidget: (_, _, _) =>
-                              Container(color: theme.colorScheme.surfaceContainer),
-                        )
+                        shouldBlur
+                            ? ImageFiltered(
+                                imageFilter: ImageFilter.blur(sigmaX: 45, sigmaY: 45),
+                                child: Transform.scale(
+                                  scale: 1.25,
+                                  child: CachedNetworkImage(
+                                    imageUrl: bannerUrl,
+                                    fit: BoxFit.cover,
+                                    alignment: Alignment.topCenter,
+                                    memCacheWidth: 1080,
+                                    errorWidget: (_, _, _) =>
+                                        Container(color: theme.colorScheme.surfaceContainer),
+                                  ),
+                                ),
+                              )
+                            : CachedNetworkImage(
+                                imageUrl: bannerUrl,
+                                fit: BoxFit.cover,
+                                alignment: Alignment.topCenter,
+                                memCacheWidth: 1080,
+                                errorWidget: (_, _, _) =>
+                                    Container(color: theme.colorScheme.surfaceContainer),
+                              )
                       else
                         Container(color: theme.colorScheme.surfaceContainer),
 
@@ -297,27 +317,33 @@ class _MangaDetailMobileLayoutState extends ConsumerState<MangaDetailMobileLayou
                 scrolledUnderElevation: 0,
                 pinned: true,
                 leading: IconButton(
-                  icon: Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.black.withValues(alpha: 0.4),
-                    ),
-                    child: const Icon(Icons.arrow_back_rounded,
-                        color: Colors.white, size: 20),
+                  icon: const Icon(
+                    Icons.arrow_back_rounded,
+                    color: Colors.white,
+                    size: 22,
+                    shadows: [
+                      Shadow(
+                        color: Colors.black54,
+                        blurRadius: 4,
+                        offset: Offset(0, 1),
+                      ),
+                    ],
                   ),
                   onPressed: () => Navigator.pop(context),
                 ),
                 actions: [
                   IconButton(
-                    icon: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.black.withValues(alpha: 0.4),
-                      ),
-                      child: const Icon(Icons.info_outline_rounded,
-                          color: Colors.white, size: 20),
+                    icon: const Icon(
+                      Icons.info_outline_rounded,
+                      color: Colors.white,
+                      size: 22,
+                      shadows: [
+                        Shadow(
+                          color: Colors.black54,
+                          blurRadius: 4,
+                          offset: Offset(0, 1),
+                        ),
+                      ],
                     ),
                     tooltip: 'Detalles',
                     onPressed: widget.onShowDetailsModal,

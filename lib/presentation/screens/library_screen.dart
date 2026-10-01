@@ -12,6 +12,8 @@ import 'package:seanime_app/presentation/screens/extensions_marketplace_screen.d
 import 'package:seanime_app/presentation/widgets/anilist_auth_sheet.dart';
 import 'package:seanime_app/presentation/widgets/top_status_bar_glass.dart';
 
+import 'package:seanime_app/core/theme/smooth_scroll_controller.dart';
+
 class LibraryScreen extends ConsumerStatefulWidget {
   final VoidCallback? onOpenSettings;
 
@@ -22,7 +24,7 @@ class LibraryScreen extends ConsumerStatefulWidget {
 }
 
 class _LibraryScreenState extends ConsumerState<LibraryScreen> {
-  final ScrollController _scrollController = ScrollController();
+  final ScrollController _scrollController = SmoothScrollController();
   final ValueNotifier<bool> _isScrolledNotifier = ValueNotifier<bool>(false);
   bool _isScanning = false;
 

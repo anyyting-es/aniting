@@ -152,9 +152,9 @@ void main() {
       expect(find.text('Drama'), findsOneWidget);
       expect(find.text('Ecchi'), findsOneWidget);
 
-      // Check Action bar
-      expect(find.text('A'), findsOneWidget);
-      expect(find.text('MAL'), findsOneWidget);
+      // Check Action bar brand icons
+      expect(find.byTooltip('Ver en AniList'), findsOneWidget);
+      expect(find.byTooltip('Ver en MyAnimeList'), findsOneWidget);
 
       // Check Desktop Tabs
       expect(find.text('Episodes'), findsOneWidget);

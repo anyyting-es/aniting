@@ -93,19 +93,24 @@ class _DesktopHeaderState extends State<DesktopHeader> {
           const SizedBox(height: 16),
         ],
 
-        // Synopsis Paragraph (expandable)
+        // Synopsis Paragraph (expandable with smooth height animation)
         if (widget.description.isNotEmpty) ...[
-          GestureDetector(
-            onTap: () => setState(() => _isSynopsisExpanded = !_isSynopsisExpanded),
-            child: Text(
-              widget.description,
-              maxLines: _isSynopsisExpanded ? 99 : 3,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 13.5,
-                height: 1.5,
-                color: descColor,
-                shadows: textShadows,
+          AnimatedSize(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+            alignment: Alignment.topLeft,
+            child: GestureDetector(
+              onTap: () => setState(() => _isSynopsisExpanded = !_isSynopsisExpanded),
+              child: Text(
+                widget.description,
+                maxLines: _isSynopsisExpanded ? 99 : 3,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 13.5,
+                  height: 1.5,
+                  color: descColor,
+                  shadows: textShadows,
+                ),
               ),
             ),
           ),

@@ -115,6 +115,9 @@ class AppIcons {
   static IconData folder([AppIconPack? pack]) =>
       _isLucide(pack) ? LucideIcons.folder : Icons.folder_outlined;
 
+  static IconData folderFilled([AppIconPack? pack]) =>
+      _isLucide(pack) ? LucideIcons.folder : Icons.folder_rounded;
+
   static IconData folderZip([AppIconPack? pack]) =>
       _isLucide(pack) ? LucideIcons.archive : Icons.folder_zip_rounded;
 
@@ -219,6 +222,9 @@ class AppIcons {
 
   static IconData bookmark([AppIconPack? pack]) =>
       _isLucide(pack) ? LucideIcons.bookmark : Icons.bookmark_rounded;
+
+  static IconData bookmarkOutline([AppIconPack? pack]) =>
+      _isLucide(pack) ? LucideIcons.bookmark : Icons.bookmark_border_rounded;
 
   static IconData bookmarks([AppIconPack? pack]) =>
       _isLucide(pack) ? LucideIcons.library : Icons.collections_bookmark_rounded;
@@ -375,5 +381,26 @@ class AppIcons {
 
   static IconData gradient([AppIconPack? pack]) =>
       _isLucide(pack) ? LucideIcons.layers : Icons.gradient_rounded;
+
+  static IconData share([AppIconPack? pack]) =>
+      _isLucide(pack) ? LucideIcons.share2 : Icons.share_rounded;
+
+  static IconData globe([AppIconPack? pack]) =>
+      _isLucide(pack) ? LucideIcons.globe : Icons.public_rounded;
+
+  static IconData cloudDownload([AppIconPack? pack]) =>
+      _isLucide(pack) ? LucideIcons.cloudDownload : Icons.cloud_download_outlined;
+
+  static IconData grid([AppIconPack? pack]) =>
+      _isLucide(pack) ? LucideIcons.layoutGrid : Icons.image_outlined;
+
+  static IconData list([AppIconPack? pack]) =>
+      _isLucide(pack) ? LucideIcons.layoutList : Icons.view_agenda_outlined;
+
+  static IconData video([AppIconPack? pack]) =>
+      _isLucide(pack) ? LucideIcons.video : Icons.smart_display_rounded;
+
+  static IconData voice([AppIconPack? pack]) =>
+      _isLucide(pack) ? LucideIcons.mic : Icons.record_voice_over_rounded;
 }
 

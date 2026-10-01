@@ -487,6 +487,8 @@ class AppThemeBuilder {
         space: 1,
       ),
       tooltipTheme: TooltipThemeData(
+        waitDuration: const Duration(milliseconds: 700),
+        showDuration: const Duration(milliseconds: 1500),
         decoration: BoxDecoration(
           color: effectivePalette.surfaceElevated,
           borderRadius: BorderRadius.circular(6),

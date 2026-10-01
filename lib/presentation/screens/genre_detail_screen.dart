@@ -6,6 +6,7 @@ import 'package:seanime_app/data/models/manga_entry.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
 import 'package:seanime_app/presentation/screens/manga_detail_screen.dart';
+import 'package:seanime_app/core/theme/smooth_scroll_controller.dart';
 import 'package:seanime_app/presentation/widgets/anime_card.dart';
 import 'package:seanime_app/presentation/widgets/manga_card.dart';
 
@@ -24,7 +25,7 @@ class GenreDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _GenreDetailScreenState extends ConsumerState<GenreDetailScreen> {
-  final ScrollController _scrollController = ScrollController();
+  final ScrollController _scrollController = SmoothScrollController();
   String _mediaType = 'ANIME'; // 'ANIME' or 'MANGA'
   String _sort = 'TRENDING_DESC'; // TRENDING_DESC, SCORE_DESC, POPULARITY_DESC, START_DATE_DESC
   int? _selectedYear;

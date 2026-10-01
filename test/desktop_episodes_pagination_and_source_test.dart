@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:seanime_app/data/models/anizip_data.dart';
 import 'package:seanime_app/data/models/onlinestream_models.dart';
@@ -25,26 +26,28 @@ void main() {
       });
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: DesktopEpisodesTab(
-              mediaId: 1,
-              details: null,
-              aniZipData: aniZipData,
-              progress: 1, // Episode 1 is watched, 2 is unwatched
-              isLocalMode: false,
-              currentTab: AnimeDetailTab.torrent,
-              providers: const [],
-              selectedProvider: null,
-              isDubbed: false,
-              onlineEpisodes: const [],
-              loadingEpisodeNumber: null,
-              fallbackCoverImage: null,
-              onProviderChanged: (_) {},
-              onToggleDubbed: () {},
-              onEpisodeClicked: (_) {},
-              onToggleLocalMode: () {},
-              onTabChanged: (_) {},
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: DesktopEpisodesTab(
+                mediaId: 1,
+                details: null,
+                aniZipData: aniZipData,
+                progress: 1, // Episode 1 is watched, 2 is unwatched
+                isLocalMode: false,
+                currentTab: AnimeDetailTab.torrent,
+                providers: const [],
+                selectedProvider: null,
+                isDubbed: false,
+                onlineEpisodes: const [],
+                loadingEpisodeNumber: null,
+                fallbackCoverImage: null,
+                onProviderChanged: (_) {},
+                onToggleDubbed: () {},
+                onEpisodeClicked: (_) {},
+                onToggleLocalMode: () {},
+                onTabChanged: (_) {},
+              ),
             ),
           ),
         ),
@@ -88,26 +91,28 @@ void main() {
       ];
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: DesktopEpisodesTab(
-              mediaId: 1,
-              details: null,
-              aniZipData: aniZipData,
-              progress: 0,
-              isLocalMode: false,
-              currentTab: AnimeDetailTab.torrent, // Torrent mode
-              providers: const [],
-              selectedProvider: null,
-              isDubbed: false,
-              onlineEpisodes: onlineEpisodes,
-              loadingEpisodeNumber: null,
-              fallbackCoverImage: null,
-              onProviderChanged: (_) {},
-              onToggleDubbed: () {},
-              onEpisodeClicked: (_) {},
-              onToggleLocalMode: () {},
-              onTabChanged: (_) {},
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: DesktopEpisodesTab(
+                mediaId: 1,
+                details: null,
+                aniZipData: aniZipData,
+                progress: 0,
+                isLocalMode: false,
+                currentTab: AnimeDetailTab.torrent, // Torrent mode
+                providers: const [],
+                selectedProvider: null,
+                isDubbed: false,
+                onlineEpisodes: onlineEpisodes,
+                loadingEpisodeNumber: null,
+                fallbackCoverImage: null,
+                onProviderChanged: (_) {},
+                onToggleDubbed: () {},
+                onEpisodeClicked: (_) {},
+                onToggleLocalMode: () {},
+                onTabChanged: (_) {},
+              ),
             ),
           ),
         ),
@@ -147,26 +152,28 @@ void main() {
       );
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: DesktopEpisodesTab(
-              mediaId: 1,
-              details: null,
-              aniZipData: aniZipData,
-              progress: 0,
-              isLocalMode: false,
-              currentTab: AnimeDetailTab.online, // Online streaming mode
-              providers: [provider],
-              selectedProvider: provider,
-              isDubbed: false,
-              onlineEpisodes: onlineEpisodes,
-              loadingEpisodeNumber: null,
-              fallbackCoverImage: null,
-              onProviderChanged: (_) {},
-              onToggleDubbed: () {},
-              onEpisodeClicked: (_) {},
-              onToggleLocalMode: () {},
-              onTabChanged: (_) {},
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: DesktopEpisodesTab(
+                mediaId: 1,
+                details: null,
+                aniZipData: aniZipData,
+                progress: 0,
+                isLocalMode: false,
+                currentTab: AnimeDetailTab.online, // Online streaming mode
+                providers: [provider],
+                selectedProvider: provider,
+                isDubbed: false,
+                onlineEpisodes: onlineEpisodes,
+                loadingEpisodeNumber: null,
+                fallbackCoverImage: null,
+                onProviderChanged: (_) {},
+                onToggleDubbed: () {},
+                onEpisodeClicked: (_) {},
+                onToggleLocalMode: () {},
+                onTabChanged: (_) {},
+              ),
             ),
           ),
         ),
@@ -200,27 +207,29 @@ void main() {
       });
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SingleChildScrollView(
-              child: DesktopEpisodesTab(
-                mediaId: 1,
-                details: null,
-                aniZipData: aniZipData,
-                progress: 0,
-                isLocalMode: false,
-                currentTab: AnimeDetailTab.torrent,
-                providers: const [],
-                selectedProvider: null,
-                isDubbed: false,
-                onlineEpisodes: const [],
-                loadingEpisodeNumber: null,
-                fallbackCoverImage: null,
-                onProviderChanged: (_) {},
-                onToggleDubbed: () {},
-                onEpisodeClicked: (_) {},
-                onToggleLocalMode: () {},
-                onTabChanged: (_) {},
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: SingleChildScrollView(
+                child: DesktopEpisodesTab(
+                  mediaId: 1,
+                  details: null,
+                  aniZipData: aniZipData,
+                  progress: 0,
+                  isLocalMode: false,
+                  currentTab: AnimeDetailTab.torrent,
+                  providers: const [],
+                  selectedProvider: null,
+                  isDubbed: false,
+                  onlineEpisodes: const [],
+                  loadingEpisodeNumber: null,
+                  fallbackCoverImage: null,
+                  onProviderChanged: (_) {},
+                  onToggleDubbed: () {},
+                  onEpisodeClicked: (_) {},
+                  onToggleLocalMode: () {},
+                  onTabChanged: (_) {},
+                ),
               ),
             ),
           ),
@@ -285,26 +294,28 @@ void main() {
       });
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: DesktopEpisodesTab(
-              mediaId: 1,
-              details: null,
-              aniZipData: aniZipData,
-              progress: 0,
-              isLocalMode: false,
-              currentTab: AnimeDetailTab.torrent,
-              providers: const [],
-              selectedProvider: null,
-              isDubbed: false,
-              onlineEpisodes: const [],
-              loadingEpisodeNumber: null,
-              fallbackCoverImage: null,
-              onProviderChanged: (_) {},
-              onToggleDubbed: () {},
-              onEpisodeClicked: (_) {},
-              onToggleLocalMode: () {},
-              onTabChanged: (_) {},
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: DesktopEpisodesTab(
+                mediaId: 1,
+                details: null,
+                aniZipData: aniZipData,
+                progress: 0,
+                isLocalMode: false,
+                currentTab: AnimeDetailTab.torrent,
+                providers: const [],
+                selectedProvider: null,
+                isDubbed: false,
+                onlineEpisodes: const [],
+                loadingEpisodeNumber: null,
+                fallbackCoverImage: null,
+                onProviderChanged: (_) {},
+                onToggleDubbed: () {},
+                onEpisodeClicked: (_) {},
+                onToggleLocalMode: () {},
+                onTabChanged: (_) {},
+              ),
             ),
           ),
         ),

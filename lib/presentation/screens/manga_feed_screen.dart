@@ -13,6 +13,8 @@ import 'package:seanime_app/presentation/widgets/manga_card.dart';
 import 'package:seanime_app/presentation/widgets/server_status_banner.dart';
 import 'package:seanime_app/presentation/widgets/top_status_bar_glass.dart';
 
+import 'package:seanime_app/core/theme/smooth_scroll_controller.dart';
+
 class MangaFeedScreen extends ConsumerStatefulWidget {
   final VoidCallback? onOpenSearch;
   final VoidCallback? onOpenSettings;
@@ -28,7 +30,7 @@ class MangaFeedScreen extends ConsumerStatefulWidget {
 }
 
 class _MangaFeedScreenState extends ConsumerState<MangaFeedScreen> {
-  final ScrollController _scrollController = ScrollController();
+  final ScrollController _scrollController = SmoothScrollController();
   final ValueNotifier<bool> _isScrolledNotifier = ValueNotifier<bool>(false);
 
   // In-page search state
@@ -296,11 +298,12 @@ class _MangaFeedScreenState extends ConsumerState<MangaFeedScreen> {
                                   children: [
                                     _SectionHeader(title: '${l10n.completedManga} (${completed.length})'),
                                     SizedBox(
-                                      height: carouselHeight,
+                                      height: carouselHeight + 16,
                                       child: ListView.separated(
+                                        clipBehavior: Clip.none,
                                         scrollDirection: Axis.horizontal,
                                         cacheExtent: 350,
-                                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                         itemCount: completed.length,
                                         separatorBuilder: (context, index) => SizedBox(width: carouselSpacing),
                                         itemBuilder: (context, index) {
@@ -308,7 +311,7 @@ class _MangaFeedScreenState extends ConsumerState<MangaFeedScreen> {
                                         },
                                       ),
                                     ),
-                                    const SizedBox(height: 24),
+                                    const SizedBox(height: 20),
                                   ],
                                 ),
                               );
@@ -327,11 +330,12 @@ class _MangaFeedScreenState extends ConsumerState<MangaFeedScreen> {
                                   children: [
                                     _SectionHeader(title: l10n.recommendations),
                                     SizedBox(
-                                      height: carouselHeight,
+                                      height: carouselHeight + 16,
                                       child: ListView.separated(
+                                        clipBehavior: Clip.none,
                                         scrollDirection: Axis.horizontal,
                                         cacheExtent: 350,
-                                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                         itemCount: recs.length,
                                         separatorBuilder: (context, index) => SizedBox(width: carouselSpacing),
                                         itemBuilder: (context, index) {
@@ -350,7 +354,7 @@ class _MangaFeedScreenState extends ConsumerState<MangaFeedScreen> {
                                         },
                                       ),
                                     ),
-                                    const SizedBox(height: 24),
+                                    const SizedBox(height: 20),
                                   ],
                                 ),
                               );
@@ -399,11 +403,12 @@ class _MangaFeedScreenState extends ConsumerState<MangaFeedScreen> {
           children: [
             _SectionHeader(title: l10n.continueReading),
             SizedBox(
-              height: listHeight,
+              height: listHeight + 16,
               child: ListView.separated(
+                clipBehavior: Clip.none,
                 scrollDirection: Axis.horizontal,
                 cacheExtent: 350,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 itemCount: list.length,
                 separatorBuilder: (context, index) => SizedBox(width: spacing),
                 itemBuilder: (context, index) {
@@ -422,7 +427,7 @@ class _MangaFeedScreenState extends ConsumerState<MangaFeedScreen> {
                 },
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
           ],
         ),
       ),

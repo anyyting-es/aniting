@@ -182,12 +182,8 @@ class _DesktopRelationCardState extends State<_DesktopRelationCard> {
       cursor: relId > 0 ? SystemMouseCursors.click : SystemMouseCursors.basic,
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
-      child: AnimatedScale(
-        scale: _isHovered ? 1.025 : 1.0,
-        duration: const Duration(milliseconds: 260),
-        curve: Curves.easeInOut,
-        child: InkWell(
-          onTap: relId > 0
+      child: InkWell(
+        onTap: relId > 0
               ? () {
                   final type = node?['type'] as String?;
                   if (type == 'MANGA') {
@@ -218,47 +214,50 @@ class _DesktopRelationCardState extends State<_DesktopRelationCard> {
                 }
               : null,
           borderRadius: BorderRadius.circular(10),
+          hoverColor: Colors.transparent,
+          splashColor: Colors.transparent,
+          highlightColor: Colors.transparent,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. Poster Container with border & shadow
+              // 1. Entire Poster Container expands and contracts on hover
               AspectRatio(
                 aspectRatio: 0.70,
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 260),
-                  curve: Curves.easeInOut,
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF14171B) : theme.colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: _isHovered
-                          ? theme.colorScheme.primary
-                          : (isDark ? Colors.white.withValues(alpha: 0.08) : theme.colorScheme.outlineVariant.withValues(alpha: 0.3)),
-                      width: 1.0,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: _isHovered ? 0.45 : 0.20),
-                        blurRadius: _isHovered ? 12 : 6,
-                        offset: Offset(0, _isHovered ? 4 : 2),
+                child: AnimatedScale(
+                  scale: _isHovered ? 1.025 : 1.0,
+                  duration: const Duration(milliseconds: 180),
+                  curve: Curves.easeOutCubic,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    curve: Curves.easeOutCubic,
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF14171B) : theme.colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: _isHovered
+                            ? Colors.white.withValues(alpha: 0.30)
+                            : (isDark
+                                ? Colors.white.withValues(alpha: 0.08)
+                                : theme.colorScheme.outlineVariant.withValues(alpha: 0.3)),
+                        width: 1.0,
                       ),
-                    ],
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: ClipRect(
-                    child: AnimatedScale(
-                      scale: _isHovered ? 1.04 : 1.0,
-                      duration: const Duration(milliseconds: 280),
-                      curve: Curves.easeInOut,
-                      child: coverUrl != null
-                          ? CachedNetworkImage(
-                              imageUrl: coverUrl as String,
-                              fit: BoxFit.cover,
-                              memCacheWidth: 320,
-                              errorWidget: (_, _, _) => Container(color: const Color(0xFF1E2228)),
-                            )
-                          : Container(color: const Color(0xFF1E2228)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: _isHovered ? 0.35 : 0.20),
+                          blurRadius: _isHovered ? 10 : 6,
+                          offset: Offset(0, _isHovered ? 3 : 2),
+                        ),
+                      ],
                     ),
+                    clipBehavior: Clip.antiAlias,
+                    child: coverUrl != null
+                        ? CachedNetworkImage(
+                            imageUrl: coverUrl as String,
+                            fit: BoxFit.cover,
+                            memCacheWidth: 320,
+                            errorWidget: (_, _, _) => Container(color: const Color(0xFF1E2228)),
+                          )
+                        : Container(color: const Color(0xFF1E2228)),
                   ),
                 ),
               ),
@@ -286,14 +285,13 @@ class _DesktopRelationCardState extends State<_DesktopRelationCard> {
                 style: TextStyle(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w600,
-                  color: titleColor,
+                  color: _isHovered ? theme.colorScheme.primary : titleColor,
                   height: 1.25,
                 ),
               ),
             ],
           ),
         ),
-      ),
-    );
+      );
   }
 }

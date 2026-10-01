@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
+import 'package:seanime_app/core/preferences/banner_blur_provider.dart';
 import 'package:seanime_app/core/preferences/desktop_scrollbar_provider.dart';
 import 'package:seanime_app/core/preferences/episode_view_mode_provider.dart';
 import 'package:seanime_app/core/preferences/layout_mode_provider.dart';
@@ -375,6 +376,24 @@ class PersonalizacionSettingsScreen extends ConsumerWidget {
               value: ref.watch(showScoresProvider),
               onChanged: (val) =>
                   ref.read(showScoresProvider.notifier).setShowScores(val),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 24),
+
+        // ─── DESENFOCAR BANNER DE FONDO ───────────────────────────
+        SettingsSectionHeader(title: l10n.blurBanner),
+        const SizedBox(height: 10),
+        PixelSettingsGroupCard(
+          children: [
+            PixelSwitchTile(
+              icon: Icons.blur_on_rounded,
+              title: l10n.blurBanner,
+              subtitle: l10n.blurBannerDesc,
+              value: ref.watch(bannerBlurProvider),
+              onChanged: (val) =>
+                  ref.read(bannerBlurProvider.notifier).setEnabled(val),
             ),
           ],
         ),

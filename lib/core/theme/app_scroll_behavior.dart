@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+export 'smooth_scroll_controller.dart';
 
 /// Global scroll behavior that enables drag-to-scroll with mouse, touch,
 /// stylus, and trackpad across all platforms.

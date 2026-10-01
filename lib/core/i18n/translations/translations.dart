@@ -644,6 +644,8 @@ abstract class AppTranslations {
   String get exploreAllMarketplace;
   String get allRecommended;
   String get searchExtensionsPrompt;
+  String get blurBanner;
+  String get blurBannerDesc;
 
   // Helper methods
   String formatStatus(String? status);

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/data/models/anime_details.dart';
 import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
 import 'package:seanime_app/presentation/widgets/anime_detail/desktop/desktop_action_bar.dart';
@@ -94,38 +96,40 @@ void main() {
 
     testWidgets('DesktopActionBar renders trailer button next to play and bookmark', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: DesktopActionBar(
-              mediaId: 12345,
-              title: 'Test Anime',
-              progress: 3,
-              idMal: 456,
-              trailerId: 'youtube_id',
-              trailerSite: 'youtube',
-              hasTrailer: true,
-              currentTab: AnimeDetailTab.online,
-              isLocalMode: false,
-              onlineEnabled: true,
-              torrentEnabled: true,
-              onPlayNext: () {},
-              onOpenEditEntryModal: (_) {},
-              onToggleLocalMode: () {},
-              onTabChanged: (_) {},
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: DesktopActionBar(
+                mediaId: 12345,
+                title: 'Test Anime',
+                progress: 3,
+                idMal: 456,
+                trailerId: 'youtube_id',
+                trailerSite: 'youtube',
+                hasTrailer: true,
+                currentTab: AnimeDetailTab.online,
+                isLocalMode: false,
+                onlineEnabled: true,
+                torrentEnabled: true,
+                onPlayNext: () {},
+                onOpenEditEntryModal: (_) {},
+                onToggleLocalMode: () {},
+                onTabChanged: (_) {},
+              ),
             ),
           ),
         ),
       );
 
       // Check play icon
-      expect(find.byIcon(Icons.play_arrow_rounded), findsOneWidget);
+      expect(find.byIcon(AppIcons.play(AppIconPack.lucide)), findsOneWidget);
       // Check bookmark icon
-      expect(find.byIcon(Icons.bookmark_border_rounded), findsOneWidget);
+      expect(find.byIcon(AppIcons.bookmarkOutline(AppIconPack.lucide)), findsOneWidget);
       // Check trailer icon in action bar
-      expect(find.byIcon(Icons.smart_display_rounded), findsOneWidget);
-      // Check MAL and AniList pills
-      expect(find.text('A'), findsOneWidget);
-      expect(find.text('MAL'), findsOneWidget);
+      expect(find.byIcon(AppIcons.video(AppIconPack.lucide)), findsOneWidget);
+      // Check MAL and AniList brand icons
+      expect(find.byTooltip('Ver en AniList'), findsOneWidget);
+      expect(find.byTooltip('Ver en MyAnimeList'), findsOneWidget);
     });
 
     testWidgets('DesktopCharactersTab renders characters with role and name', (tester) async {
@@ -147,9 +151,11 @@ void main() {
       ];
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: DesktopCharactersTab(characters: characters),
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: DesktopCharactersTab(characters: characters),
+            ),
           ),
         ),
       );

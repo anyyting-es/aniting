@@ -12,6 +12,7 @@ import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
 import 'package:seanime_app/presentation/widgets/anime_card.dart';
 import 'package:seanime_app/presentation/widgets/compact_search_bar.dart';
 import 'package:seanime_app/presentation/widgets/continue_watching_card.dart';
+import 'package:seanime_app/core/theme/smooth_scroll_controller.dart';
 import 'package:seanime_app/presentation/widgets/feed_empty_state.dart';
 import 'package:seanime_app/presentation/widgets/top_status_bar_glass.dart';
 
@@ -30,7 +31,7 @@ class FeedScreen extends ConsumerStatefulWidget {
 }
 
 class _FeedScreenState extends ConsumerState<FeedScreen> {
-  final ScrollController _scrollController = ScrollController();
+  final ScrollController _scrollController = SmoothScrollController();
   final ValueNotifier<bool> _isScrolledNotifier = ValueNotifier<bool>(false);
 
   // Sorting memoization
@@ -507,11 +508,12 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                                   ),
                                 ),
                                 SizedBox(
-                                  height: continueListHeight,
+                                  height: continueListHeight + 16,
                                   child: ListView.separated(
+                                    clipBehavior: Clip.none,
                                     scrollDirection: Axis.horizontal,
                                     cacheExtent: 350,
-                                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                     itemCount: sortedEntries.length,
                                     separatorBuilder: (context, index) => SizedBox(width: carouselSpacing),
                                     itemBuilder: (context, index) {
@@ -525,7 +527,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                                     },
                                   ),
                                 ),
-                                const SizedBox(height: 24),
+                                const SizedBox(height: 20),
                               ],
                             ),
                           );
@@ -552,11 +554,12 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                               children: [
                                 _SectionHeader(title: '${l10n.missedSequels} (${missed.length})'),
                                 SizedBox(
-                                  height: carouselHeight,
+                                  height: carouselHeight + 16,
                                   child: ListView.separated(
+                                    clipBehavior: Clip.none,
                                     scrollDirection: Axis.horizontal,
                                     cacheExtent: 350,
-                                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                     itemCount: missed.length,
                                     separatorBuilder: (context, index) => SizedBox(width: carouselSpacing),
                                     itemBuilder: (context, index) {
@@ -569,7 +572,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                                     },
                                   ),
                                 ),
-                                const SizedBox(height: 24),
+                                const SizedBox(height: 20),
                               ],
                             ),
                           );
@@ -588,11 +591,12 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                               children: [
                                 _SectionHeader(title: l10n.recommendations),
                                 SizedBox(
-                                  height: carouselHeight,
+                                  height: carouselHeight + 16,
                                   child: ListView.separated(
+                                    clipBehavior: Clip.none,
                                     scrollDirection: Axis.horizontal,
                                     cacheExtent: 350,
-                                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                     itemCount: recs.length,
                                     separatorBuilder: (context, index) => SizedBox(width: carouselSpacing),
                                     itemBuilder: (context, index) {
@@ -605,7 +609,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                                     },
                                   ),
                                 ),
-                                const SizedBox(height: 24),
+                                const SizedBox(height: 20),
                               ],
                             ),
                           );
@@ -655,11 +659,12 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
           children: [
             _SectionHeader(title: '${l10n.currentlyWatching} (${watching.length})'),
             SizedBox(
-              height: carouselHeight,
+              height: carouselHeight + 16,
               child: ListView.separated(
+                clipBehavior: Clip.none,
                 scrollDirection: Axis.horizontal,
                 cacheExtent: 350,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 itemCount: watching.length,
                 separatorBuilder: (context, index) => SizedBox(width: carouselSpacing),
                 itemBuilder: (context, index) {
@@ -672,7 +677,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                 },
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
           ],
         ),
       ),

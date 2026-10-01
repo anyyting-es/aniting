@@ -43,112 +43,90 @@ class _DesktopListEpisodeCardState extends State<DesktopListEpisodeCard> {
         opacity: cardOpacity,
         duration: const Duration(milliseconds: 240),
         curve: Curves.easeInOut,
-        child: AnimatedScale(
-          scale: _isHovered ? 1.01 : 1.0,
-          duration: const Duration(milliseconds: 260),
-          curve: Curves.easeInOut,
-          child: InkWell(
-            onTap: widget.isLoading ? null : widget.onTap,
-            borderRadius: BorderRadius.circular(12),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 260),
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
+        child: InkWell(
+          onTap: widget.isLoading ? null : widget.onTap,
+          borderRadius: BorderRadius.circular(12),
+          hoverColor: Colors.transparent,
+          splashColor: Colors.transparent,
+          highlightColor: Colors.transparent,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 260),
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: _isHovered
+                  ? Colors.white.withValues(alpha: 0.04)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
                 color: _isHovered
-                    ? Colors.white.withValues(alpha: 0.04)
+                    ? Colors.white.withValues(alpha: 0.12)
                     : Colors.transparent,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: _isHovered
-                      ? Colors.white.withValues(alpha: 0.12)
-                      : Colors.transparent,
-                ),
               ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // Left 16:9 Thumbnail with Inner Zoom & Play Overlay
-                  SizedBox(
-                    width: 220,
-                    child: AspectRatio(
-                      aspectRatio: 16 / 9,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Left 16:9 Thumbnail with Box Expansion on hover (No play icon)
+                SizedBox(
+                  width: 220,
+                  child: AspectRatio(
+                    aspectRatio: 16 / 9,
+                    child: AnimatedScale(
+                      scale: _isHovered ? 1.02 : 1.0,
+                      duration: const Duration(milliseconds: 180),
+                      curve: Curves.easeOutCubic,
                       child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 260),
+                        duration: const Duration(milliseconds: 180),
+                        curve: Curves.easeOutCubic,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                            color: Colors.white.withValues(alpha: _isHovered ? 0.20 : 0.08),
+                            color: _isHovered
+                                ? Colors.white.withValues(alpha: 0.35)
+                                : Colors.white.withValues(alpha: 0.08),
                           ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: _isHovered ? 0.35 : 0.25),
+                              blurRadius: _isHovered ? 10 : 6,
+                              offset: Offset(0, _isHovered ? 3 : 2),
+                            ),
+                          ],
                         ),
                         clipBehavior: Clip.antiAlias,
                         child: Stack(
                           fit: StackFit.expand,
                           children: [
-                            ClipRect(
-                              child: AnimatedScale(
-                                scale: _isHovered ? 1.04 : 1.0,
-                                duration: const Duration(milliseconds: 280),
-                                curve: Curves.easeInOut,
-                                child: widget.ep.image != null && widget.ep.image!.isNotEmpty
-                                    ? CachedNetworkImage(
-                                        imageUrl: widget.ep.image!,
-                                        fit: BoxFit.cover,
-                                        memCacheWidth: 440,
-                                        errorWidget: (_, _, _) => _buildPlaceholder(),
-                                      )
-                                    : _buildPlaceholder(),
-                              ),
-                            ),
+                            widget.ep.image != null && widget.ep.image!.isNotEmpty
+                                ? CachedNetworkImage(
+                                    imageUrl: widget.ep.image!,
+                                    fit: BoxFit.cover,
+                                    memCacheWidth: 440,
+                                    errorWidget: (_, _, _) => _buildPlaceholder(),
+                                  )
+                                : _buildPlaceholder(),
 
-                            // Hover Play Overlay (neutral white button)
-                            AnimatedOpacity(
-                              opacity: _isHovered && !widget.isLoading ? 1.0 : 0.0,
-                              duration: const Duration(milliseconds: 220),
-                              child: Container(
-                                color: Colors.black.withValues(alpha: 0.35),
-                                child: Center(
-                                  child: Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withValues(alpha: 0.95),
-                                      shape: BoxShape.circle,
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withValues(alpha: 0.4),
-                                          blurRadius: 8,
-                                        ),
-                                      ],
-                                    ),
-                                    child: const Icon(
-                                      Icons.play_arrow_rounded,
-                                      color: Colors.black,
-                                      size: 22,
-                                    ),
+                          if (widget.isLoading)
+                            Container(
+                              color: Colors.black45,
+                              child: const Center(
+                                child: SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.2,
+                                    color: Colors.white,
                                   ),
                                 ),
                               ),
                             ),
-
-                            if (widget.isLoading)
-                              Container(
-                                color: Colors.black45,
-                                child: const Center(
-                                  child: SizedBox(
-                                    width: 22,
-                                    height: 22,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2.2,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
+                        ],
                       ),
                     ),
                   ),
-                  const SizedBox(width: 16),
+                ),
+              ),
+              const SizedBox(width: 16),
 
                   // Right Title & Synopsis
                   Expanded(
@@ -163,7 +141,7 @@ class _DesktopListEpisodeCardState extends State<DesktopListEpisodeCard> {
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
-                            color: titleColor,
+                            color: _isHovered ? theme.colorScheme.primary : titleColor,
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -187,8 +165,7 @@ class _DesktopListEpisodeCardState extends State<DesktopListEpisodeCard> {
             ),
           ),
         ),
-      ),
-    );
+      );
   }
 
   Widget _buildPlaceholder() {

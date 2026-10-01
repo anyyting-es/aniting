@@ -139,6 +139,8 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
       displayChapters = allFiltered.sublist(start, end);
     }
 
+    final isDark = theme.brightness == Brightness.dark;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -151,31 +153,33 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
                 height: 40,
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF14171B),
+                  color: isDark ? theme.colorScheme.surfaceContainerHigh : theme.colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                  border: Border.all(
+                    color: isDark ? Colors.white.withValues(alpha: 0.1) : theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
+                  ),
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<MangaProvider>(
                     value: widget.selectedProvider,
-                    dropdownColor: const Color(0xFF1C2026),
-                    icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: Colors.white70),
+                    dropdownColor: theme.colorScheme.surfaceContainer,
+                    icon: Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: theme.colorScheme.onSurfaceVariant),
                     items: widget.providers.map((p) {
                       return DropdownMenuItem<MangaProvider>(
                         value: p,
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.extension_rounded, size: 16, color: Color(0xFF00C7FF)),
+                            Icon(Icons.extension_rounded, size: 16, color: theme.colorScheme.primary),
                             const SizedBox(width: 8),
                             ConstrainedBox(
                               constraints: const BoxConstraints(maxWidth: 160),
                               child: Text(
                                 p.name,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.white,
+                                  color: theme.colorScheme.onSurface,
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -200,17 +204,17 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
                 height: 40,
                 child: TextField(
                   controller: _searchController,
-                  style: const TextStyle(fontSize: 13, color: Colors.white),
+                  style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurface),
                   decoration: InputDecoration(
                     hintText: 'Buscar o N° de capítulo...',
                     hintStyle: TextStyle(
                       fontSize: 13,
-                      color: Colors.white.withValues(alpha: 0.4),
+                      color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
                     ),
-                    prefixIcon: const Icon(Icons.search_rounded, size: 18, color: Colors.white54),
+                    prefixIcon: Icon(Icons.search_rounded, size: 18, color: theme.colorScheme.onSurfaceVariant),
                     suffixIcon: _searchQuery.isNotEmpty
                         ? IconButton(
-                            icon: const Icon(Icons.clear_rounded, size: 16, color: Colors.white54),
+                            icon: Icon(Icons.clear_rounded, size: 16, color: theme.colorScheme.onSurfaceVariant),
                             onPressed: () {
                               _searchController.clear();
                               setState(() {
@@ -223,18 +227,22 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                     filled: true,
-                    fillColor: const Color(0xFF14171B),
+                    fillColor: isDark ? theme.colorScheme.surfaceContainerHigh : theme.colorScheme.surfaceContainerHighest,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+                      borderSide: BorderSide(
+                        color: isDark ? Colors.white.withValues(alpha: 0.1) : theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
+                      ),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+                      borderSide: BorderSide(
+                        color: isDark ? Colors.white.withValues(alpha: 0.1) : theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
+                      ),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(color: Color(0xFF00C7FF)),
+                      borderSide: BorderSide(color: theme.colorScheme.primary, width: 1.5),
                     ),
                   ),
                   onChanged: (val) => setState(() {
@@ -250,17 +258,19 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
             IconButton(
               tooltip: _isAscending ? 'Más antiguos primero' : 'Más recientes primero',
               style: IconButton.styleFrom(
-                backgroundColor: const Color(0xFF14171B),
+                backgroundColor: isDark ? theme.colorScheme.surfaceContainerHigh : theme.colorScheme.surfaceContainerHighest,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
-                  side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+                  side: BorderSide(
+                    color: isDark ? Colors.white.withValues(alpha: 0.1) : theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
+                  ),
                 ),
                 padding: const EdgeInsets.all(10),
               ),
               icon: Icon(
                 _isAscending ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
                 size: 18,
-                color: Colors.white,
+                color: theme.colorScheme.onSurface,
               ),
               onPressed: () => setState(() {
                 _isAscending = !_isAscending;
@@ -273,14 +283,16 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
             IconButton(
               tooltip: 'Recargar capítulos',
               style: IconButton.styleFrom(
-                backgroundColor: const Color(0xFF14171B),
+                backgroundColor: isDark ? theme.colorScheme.surfaceContainerHigh : theme.colorScheme.surfaceContainerHighest,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
-                  side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+                  side: BorderSide(
+                    color: isDark ? Colors.white.withValues(alpha: 0.1) : theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
+                  ),
                 ),
                 padding: const EdgeInsets.all(10),
               ),
-              icon: const Icon(Icons.refresh_rounded, size: 18, color: Colors.white),
+              icon: Icon(Icons.refresh_rounded, size: 18, color: theme.colorScheme.onSurface),
               onPressed: widget.onRefreshChapters,
             ),
           ],
@@ -288,30 +300,35 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
 
         const SizedBox(height: 12),
 
-        // ── 2. Filters Row (Ocultar leídos, Solo descargados, Descargar, Conteo) ──
-        Row(
+        // ── 2. Filters Wrap (Ocultar leídos, Solo descargados, Descargar, Conteo) ──
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             if (widget.progress > 0) ...[
               FilterChip(
                 avatar: Icon(
                   _hideRead ? Icons.visibility_off_rounded : Icons.visibility_rounded,
                   size: 14,
-                  color: _hideRead ? Colors.black : Colors.white70,
+                  color: _hideRead ? theme.colorScheme.onPrimaryContainer : theme.colorScheme.onSurfaceVariant,
                 ),
                 label: Text(
                   _hideRead ? 'Ocultando leídos (${widget.progress})' : 'Ocultar leídos (${widget.progress})',
                   style: TextStyle(
                     fontSize: 11.5,
                     fontWeight: _hideRead ? FontWeight.w700 : FontWeight.w500,
-                    color: _hideRead ? Colors.black : Colors.white,
+                    color: _hideRead ? theme.colorScheme.onPrimaryContainer : theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
                 selected: _hideRead,
-                selectedColor: const Color(0xFF00C7FF),
-                backgroundColor: const Color(0xFF14171B),
+                selectedColor: theme.colorScheme.primaryContainer,
+                backgroundColor: isDark ? theme.colorScheme.surfaceContainerHigh : theme.colorScheme.surfaceContainerHighest,
                 showCheckmark: false,
                 side: BorderSide(
-                  color: _hideRead ? const Color(0xFF00C7FF) : Colors.white.withValues(alpha: 0.1),
+                  color: _hideRead
+                      ? theme.colorScheme.primary.withValues(alpha: 0.5)
+                      : (isDark ? Colors.white.withValues(alpha: 0.1) : theme.colorScheme.outlineVariant.withValues(alpha: 0.3)),
                 ),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 onSelected: (val) {
@@ -324,7 +341,6 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
                   });
                 },
               ),
-              const SizedBox(width: 8),
             ],
 
             if (widget.downloadedChapterIds.isNotEmpty || _showOnlyDownloaded) ...[
@@ -332,7 +348,7 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
                 avatar: Icon(
                   _showOnlyDownloaded ? Icons.download_done_rounded : Icons.download_for_offline_outlined,
                   size: 14,
-                  color: _showOnlyDownloaded ? Colors.black : Colors.white70,
+                  color: _showOnlyDownloaded ? theme.colorScheme.onPrimaryContainer : theme.colorScheme.onSurfaceVariant,
                 ),
                 label: Text(
                   _showOnlyDownloaded
@@ -341,15 +357,17 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
                   style: TextStyle(
                     fontSize: 11.5,
                     fontWeight: _showOnlyDownloaded ? FontWeight.w700 : FontWeight.w500,
-                    color: _showOnlyDownloaded ? Colors.black : Colors.white,
+                    color: _showOnlyDownloaded ? theme.colorScheme.onPrimaryContainer : theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
                 selected: _showOnlyDownloaded,
-                selectedColor: const Color(0xFF00C7FF),
-                backgroundColor: const Color(0xFF14171B),
+                selectedColor: theme.colorScheme.primaryContainer,
+                backgroundColor: isDark ? theme.colorScheme.surfaceContainerHigh : theme.colorScheme.surfaceContainerHighest,
                 showCheckmark: false,
                 side: BorderSide(
-                  color: _showOnlyDownloaded ? const Color(0xFF00C7FF) : Colors.white.withValues(alpha: 0.1),
+                  color: _showOnlyDownloaded
+                      ? theme.colorScheme.primary.withValues(alpha: 0.5)
+                      : (isDark ? Colors.white.withValues(alpha: 0.1) : theme.colorScheme.outlineVariant.withValues(alpha: 0.3)),
                 ),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 onSelected: (val) {
@@ -359,39 +377,41 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
                   });
                 },
               ),
-              const SizedBox(width: 8),
             ],
 
             if (widget.selectedProvider != null && widget.chapters.isNotEmpty) ...[
               ActionChip(
-                avatar: const Icon(
+                avatar: Icon(
                   Icons.download_rounded,
                   size: 14,
-                  color: Color(0xFF00C7FF),
+                  color: theme.colorScheme.primary,
                 ),
-                label: const Text(
+                label: Text(
                   'Descargar lote',
                   style: TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w600,
-                    color: Colors.white,
+                    color: theme.colorScheme.onSurface,
                   ),
                 ),
-                backgroundColor: const Color(0xFF14171B),
-                side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+                backgroundColor: isDark ? theme.colorScheme.surfaceContainerHigh : theme.colorScheme.surfaceContainerHighest,
+                side: BorderSide(
+                  color: isDark ? Colors.white.withValues(alpha: 0.1) : theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+                ),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 onPressed: widget.onBatchDownload,
               ),
             ],
 
-            const Spacer(),
-
-            Text(
-              '${allFiltered.length} capítulos',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Colors.white.withValues(alpha: 0.55),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+              child: Text(
+                '${allFiltered.length} capítulos',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+                ),
               ),
             ),
           ],
@@ -404,9 +424,11 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
             decoration: BoxDecoration(
-              color: const Color(0xFF14171B),
+              color: isDark ? theme.colorScheme.surfaceContainerHigh : theme.colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+              border: Border.all(
+                color: isDark ? Colors.white.withValues(alpha: 0.08) : theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+              ),
             ),
             child: Row(
               children: [
@@ -414,7 +436,7 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
                   visualDensity: VisualDensity.compact,
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                  icon: const Icon(Icons.chevron_left_rounded, size: 22, color: Colors.white),
+                  icon: Icon(Icons.chevron_left_rounded, size: 22, color: theme.colorScheme.onSurface),
                   tooltip: '30 anteriores',
                   onPressed: currentBlockIndex > 0
                       ? () => setState(() => _selectedBlockIndex = currentBlockIndex - 1)
@@ -444,17 +466,17 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                              color: isSelected ? Colors.black : Colors.white70,
+                              color: isSelected ? theme.colorScheme.onPrimary : theme.colorScheme.onSurfaceVariant,
                             ),
                           ),
                           selected: isSelected,
-                          selectedColor: const Color(0xFF00C7FF),
-                          backgroundColor: Colors.white.withValues(alpha: 0.05),
+                          selectedColor: theme.colorScheme.primary,
+                          backgroundColor: isDark ? Colors.white.withValues(alpha: 0.05) : theme.colorScheme.surfaceContainerLow,
                           showCheckmark: false,
                           visualDensity: VisualDensity.compact,
                           materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           side: BorderSide(
-                            color: isSelected ? const Color(0xFF00C7FF) : Colors.transparent,
+                            color: isSelected ? theme.colorScheme.primary : Colors.transparent,
                           ),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                           onSelected: (selected) {
@@ -472,7 +494,7 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
                   visualDensity: VisualDensity.compact,
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                  icon: const Icon(Icons.chevron_right_rounded, size: 22, color: Colors.white),
+                  icon: Icon(Icons.chevron_right_rounded, size: 22, color: theme.colorScheme.onSurface),
                   tooltip: 'Siguientes 30',
                   onPressed: currentBlockIndex < totalBlocks - 1
                       ? () => setState(() => _selectedBlockIndex = currentBlockIndex + 1)
@@ -536,33 +558,43 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
   }
 
   Widget _buildNoProvidersView(ThemeData theme, AppTranslations l10n) {
+    final isDark = theme.brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        color: const Color(0xFF14171B),
+        color: isDark ? theme.colorScheme.surfaceContainerHigh : theme.colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(
+          color: isDark ? Colors.white.withValues(alpha: 0.08) : theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+        ),
       ),
       child: Center(
         child: Column(
           children: [
-            const Icon(Icons.extension_off_rounded, color: Color(0xFF00C7FF), size: 44),
+            Icon(Icons.extension_off_rounded, color: theme.colorScheme.primary, size: 44),
             const SizedBox(height: 12),
             Text(
               l10n.noMangaProviders,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 15,
+                color: theme.colorScheme.onSurface,
+              ),
             ),
             const SizedBox(height: 6),
             Text(
               'Instala una extensión de manga para leer capítulos en tu biblioteca.',
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.65), fontSize: 13),
+              style: TextStyle(
+                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+                fontSize: 13,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
             FilledButton.icon(
               style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF00C7FF),
-                foregroundColor: Colors.black,
+                backgroundColor: theme.colorScheme.primary,
+                foregroundColor: theme.colorScheme.onPrimary,
               ),
               onPressed: () {
                 Navigator.push(
@@ -570,8 +602,11 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
                   MaterialPageRoute(builder: (_) => const ExtensionsMarketplaceScreen()),
                 ).then((_) => widget.onRefreshChapters());
               },
-              icon: const Icon(Icons.download_rounded, size: 18, color: Colors.black),
-              label: const Text('Explorar Extensiones de Manga', style: TextStyle(fontWeight: FontWeight.w700)),
+              icon: Icon(Icons.download_rounded, size: 18, color: theme.colorScheme.onPrimary),
+              label: Text(
+                'Explorar Extensiones de Manga',
+                style: TextStyle(fontWeight: FontWeight.w700, color: theme.colorScheme.onPrimary),
+              ),
             ),
           ],
         ),
@@ -580,32 +615,38 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
   }
 
   Widget _buildErrorView(ThemeData theme) {
+    final isDark = theme.brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        color: const Color(0xFF14171B),
+        color: isDark ? theme.colorScheme.surfaceContainerHigh : theme.colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(
+          color: isDark ? Colors.white.withValues(alpha: 0.08) : theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+        ),
       ),
       child: Center(
         child: Column(
           children: [
-            const Icon(Icons.menu_book_outlined, color: Colors.white38, size: 40),
+            Icon(Icons.menu_book_outlined, color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5), size: 40),
             const SizedBox(height: 12),
             Text(
               widget.chaptersError!,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white70, fontSize: 13),
+              style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13),
             ),
             const SizedBox(height: 14),
             FilledButton.icon(
               style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF00C7FF),
-                foregroundColor: Colors.black,
+                backgroundColor: theme.colorScheme.primary,
+                foregroundColor: theme.colorScheme.onPrimary,
               ),
               onPressed: widget.onRefreshChapters,
-              icon: const Icon(Icons.refresh_rounded, color: Colors.black),
-              label: const Text('Reintentar', style: TextStyle(fontWeight: FontWeight.w700)),
+              icon: Icon(Icons.refresh_rounded, color: theme.colorScheme.onPrimary),
+              label: Text(
+                'Reintentar',
+                style: TextStyle(fontWeight: FontWeight.w700, color: theme.colorScheme.onPrimary),
+              ),
             ),
           ],
         ),
@@ -614,12 +655,16 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
   }
 
   Widget _buildEmptyView() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(36),
       decoration: BoxDecoration(
-        color: const Color(0xFF14171B),
+        color: isDark ? theme.colorScheme.surfaceContainerHigh : theme.colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(
+          color: isDark ? Colors.white.withValues(alpha: 0.08) : theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+        ),
       ),
       child: Center(
         child: Column(
@@ -628,22 +673,24 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
             Icon(
               _showOnlyDownloaded ? Icons.download_done_rounded : Icons.menu_book_outlined,
               size: 40,
-              color: Colors.white38,
+              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
             ),
             const SizedBox(height: 12),
             Text(
               _showOnlyDownloaded
                   ? 'No hay capítulos descargados para esta obra'
                   : 'No se encontraron capítulos con los filtros actuales',
-              style: const TextStyle(color: Colors.white70, fontSize: 13.5),
+              style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13.5),
               textAlign: TextAlign.center,
             ),
             if (_showOnlyDownloaded || _searchQuery.isNotEmpty || _hideRead) ...[
               const SizedBox(height: 14),
               OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  side: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
+                  foregroundColor: theme.colorScheme.onSurface,
+                  side: BorderSide(
+                    color: isDark ? Colors.white.withValues(alpha: 0.2) : theme.colorScheme.outlineVariant,
+                  ),
                 ),
                 onPressed: () => setState(() {
                   _showOnlyDownloaded = false;

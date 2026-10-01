@@ -49,8 +49,6 @@ class _FocusCardState extends State<FocusCard> {
     super.dispose();
   }
 
-  bool get _isActive => _isHovered || _isFocused;
-
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
     if (event is KeyDownEvent) {
       if (event.logicalKey == LogicalKeyboardKey.enter ||
@@ -87,11 +85,11 @@ class _FocusCardState extends State<FocusCard> {
             curve: Curves.easeOut,
             padding: widget.padding,
             decoration: BoxDecoration(
-              color: bg,
+              color: _isHovered ? (Color.lerp(bg, Colors.white, 0.04) ?? bg) : bg,
               borderRadius: BorderRadius.circular(widget.borderRadius ?? colors.borderRadius),
               border: Border.all(
-                color: _isActive ? Colors.white : inactiveBorder,
-                width: _isActive ? 2.0 : 1.0,
+                color: _isFocused ? Colors.white : inactiveBorder,
+                width: _isFocused ? 2.0 : 1.0,
               ),
             ),
             child: widget.child,
