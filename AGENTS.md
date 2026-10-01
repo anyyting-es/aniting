@@ -1,5 +1,11 @@
 # Seanime App - Agents & Architecture Guide
 
+> **RELEASE CHANGELOG SIMPLICITY RULE (CRITICAL - MANDATORY)**:
+> Release changelogs must **ALWAYS be simple, clean, and concise**.
+> - **NEVER** include microscopic, tedious, or trivial implementation details that end users do not care about (e.g., do **NOT** write: *"Eliminado el brillo fosforescente del indicador deslizante"*, *"Pestañas de los 7 días visibles en frame 0"*, *"Ajustado padding a 4px"*, *"Cambiado color del dot"*).
+> - **ALWAYS** summarize improvements at a high, user-facing level with clear, direct bullet points (e.g., *"Mejoras de UI y navegación en el calendario de emisión"*, *"Nueva pantalla y gestión de estado sin conexión"*, *"Optimizaciones en la caché de seguir viendo"*).
+> - Keep it punchy, professional, and easy to skim.
+>
 > **MANDATORY INSTRUCTION FOR AGENTS**:
 > Whenever you make architectural changes, add new features, refactor existing components, or change directory structures in this project, you **MUST** update this `AGENTS.md` file. Add new context or update the existing documentation so future agents have an up-to-date map of the project.
 >
