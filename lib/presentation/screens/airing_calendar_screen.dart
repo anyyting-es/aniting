@@ -101,6 +101,7 @@ class _AiringCalendarScreenState extends ConsumerState<AiringCalendarScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final l10n = ref.watch(translationsProvider);
     final titleLang = ref.watch(titleLanguageProvider);
     final isSpanish = ref.watch(appLanguageProvider) == AppLanguage.es;
@@ -125,15 +126,17 @@ class _AiringCalendarScreenState extends ConsumerState<AiringCalendarScreen> {
       ),
       body: Column(
         children: [
-          // Horizontal Day Selector
+          // Horizontal Day Selector (Respects theme and OLED pure black)
           Container(
-            height: 64,
-            padding: const EdgeInsets.symmetric(vertical: 8),
+            height: 58,
+            padding: const EdgeInsets.symmetric(vertical: 6),
             decoration: BoxDecoration(
-              color: theme.colorScheme.surface,
+              color: theme.scaffoldBackgroundColor,
               border: Border(
                 bottom: BorderSide(
-                  color: theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.06)
+                      : theme.colorScheme.outlineVariant.withValues(alpha: 0.2),
                 ),
               ),
             ),
@@ -152,20 +155,17 @@ class _AiringCalendarScreenState extends ConsumerState<AiringCalendarScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 4),
                   child: InkWell(
                     onTap: () => setState(() => _selectedDayIndex = index),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(10),
                     child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
+                      duration: const Duration(milliseconds: 180),
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
                       decoration: BoxDecoration(
                         color: isSelected
                             ? theme.colorScheme.primary
-                            : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: isSelected
-                              ? theme.colorScheme.primary
-                              : theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
-                        ),
+                            : (isDark
+                                ? Colors.white.withValues(alpha: 0.05)
+                                : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5)),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -184,7 +184,7 @@ class _AiringCalendarScreenState extends ConsumerState<AiringCalendarScreen> {
                           Text(
                             dayNum,
                             style: TextStyle(
-                              fontSize: 14,
+                              fontSize: 13.5,
                               fontWeight: FontWeight.bold,
                               color: isSelected
                                   ? theme.colorScheme.onPrimary
@@ -200,7 +200,7 @@ class _AiringCalendarScreenState extends ConsumerState<AiringCalendarScreen> {
             ),
           ),
 
-          // Content List
+          // Content List (Unboxed, clean typography)
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -228,9 +228,15 @@ class _AiringCalendarScreenState extends ConsumerState<AiringCalendarScreen> {
                     : RefreshIndicator(
                         onRefresh: _fetchSchedules,
                         child: ListView.separated(
-                          padding: const EdgeInsets.fromLTRB(14, 12, 14, 100),
+                          padding: const EdgeInsets.fromLTRB(14, 10, 14, 100),
                           itemCount: daySchedules.length,
-                          separatorBuilder: (ctx, i) => const SizedBox(height: 10),
+                          separatorBuilder: (ctx, i) => Divider(
+                            height: 1,
+                            thickness: 0.5,
+                            color: isDark
+                                ? Colors.white.withValues(alpha: 0.05)
+                                : theme.colorScheme.outlineVariant.withValues(alpha: 0.2),
+                          ),
                           itemBuilder: (context, index) {
                             final item = daySchedules[index];
                             final anime = item.media;
@@ -246,16 +252,9 @@ class _AiringCalendarScreenState extends ConsumerState<AiringCalendarScreen> {
                                   initialEntry: anime,
                                 );
                               },
-                              borderRadius: BorderRadius.circular(12),
-                              child: Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
-                                  ),
-                                ),
+                              borderRadius: BorderRadius.circular(10),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
                                 child: Row(
                                   children: [
                                     // Poster
@@ -266,21 +265,28 @@ class _AiringCalendarScreenState extends ConsumerState<AiringCalendarScreen> {
                                         height: 74,
                                         child: anime.coverImage != null
                                             ? CachedNetworkImage(
-                                                memCacheWidth: 130, memCacheHeight: 185, maxWidthDiskCache: 210, maxHeightDiskCache: 300,
+                                                memCacheWidth: 130,
+                                                memCacheHeight: 185,
+                                                maxWidthDiskCache: 210,
+                                                maxHeightDiskCache: 300,
                                                 imageUrl: anime.coverImage!,
                                                 fit: BoxFit.cover,
                                                 errorWidget: (context, url, error) => Container(
-                                                  color: theme.colorScheme.surfaceContainerHighest,
+                                                  color: isDark
+                                                      ? const Color(0xFF1E2228)
+                                                      : theme.colorScheme.surfaceContainerHighest,
                                                 ),
                                               )
                                             : Container(
-                                                color: theme.colorScheme.surfaceContainerHighest,
+                                                color: isDark
+                                                    ? const Color(0xFF1E2228)
+                                                    : theme.colorScheme.surfaceContainerHighest,
                                               ),
                                       ),
                                     ),
-                                    const SizedBox(width: 12),
+                                    const SizedBox(width: 14),
 
-                                    // Details
+                                    // Details (Clean, unboxed typography)
                                     Expanded(
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -289,39 +295,34 @@ class _AiringCalendarScreenState extends ConsumerState<AiringCalendarScreen> {
                                             title,
                                             maxLines: 2,
                                             overflow: TextOverflow.ellipsis,
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.w600,
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w700,
                                               fontSize: 13.5,
+                                              height: 1.25,
+                                              color: theme.colorScheme.onSurface,
                                             ),
                                           ),
                                           const SizedBox(height: 6),
                                           Row(
                                             children: [
-                                              // Episode Badge
-                                              Container(
-                                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                                decoration: BoxDecoration(
-                                                  color: theme.colorScheme.primaryContainer,
-                                                  borderRadius: BorderRadius.circular(6),
+                                              Text(
+                                                'Ep. ${item.episode}',
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: theme.colorScheme.primary,
                                                 ),
+                                              ),
+                                              Padding(
+                                                padding: const EdgeInsets.symmetric(horizontal: 6),
                                                 child: Text(
-                                                  'Ep. ${item.episode}',
+                                                  '•',
                                                   style: TextStyle(
-                                                    fontSize: 11,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: theme.colorScheme.onPrimaryContainer,
+                                                    fontSize: 12,
+                                                    color: isDark ? Colors.white30 : theme.colorScheme.outlineVariant,
                                                   ),
                                                 ),
                                               ),
-                                              const SizedBox(width: 8),
-
-                                              // Airing time
-                                              Icon(
-                                                Icons.schedule_rounded,
-                                                size: 13,
-                                                color: theme.colorScheme.onSurfaceVariant,
-                                              ),
-                                              const SizedBox(width: 3),
                                               Text(
                                                 timeStr,
                                                 style: TextStyle(
@@ -330,13 +331,24 @@ class _AiringCalendarScreenState extends ConsumerState<AiringCalendarScreen> {
                                                   color: theme.colorScheme.onSurfaceVariant,
                                                 ),
                                               ),
-                                              const SizedBox(width: 8),
+                                              Padding(
+                                                padding: const EdgeInsets.symmetric(horizontal: 6),
+                                                child: Text(
+                                                  '•',
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: isDark ? Colors.white30 : theme.colorScheme.outlineVariant,
+                                                  ),
+                                                ),
+                                              ),
                                               Text(
                                                 remaining,
                                                 style: TextStyle(
-                                                  fontSize: 11,
+                                                  fontSize: 12,
                                                   fontWeight: FontWeight.w600,
-                                                  color: theme.colorScheme.primary,
+                                                  color: remaining == 'Emitido'
+                                                      ? (isDark ? Colors.white54 : theme.colorScheme.outline)
+                                                      : (isDark ? const Color(0xFF68D391) : Colors.green.shade700),
                                                 ),
                                               ),
                                             ],
@@ -344,7 +356,11 @@ class _AiringCalendarScreenState extends ConsumerState<AiringCalendarScreen> {
                                         ],
                                       ),
                                     ),
-                                    const Icon(Icons.chevron_right_rounded, size: 20),
+                                    Icon(
+                                      Icons.chevron_right_rounded,
+                                      size: 20,
+                                      color: isDark ? Colors.white24 : theme.colorScheme.outlineVariant,
+                                    ),
                                   ],
                                 ),
                               ),

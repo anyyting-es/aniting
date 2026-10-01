@@ -83,7 +83,7 @@ class _AnimeDetailDesktopLayoutState
   static const String _prefLastProviderKey = 'last_selected_online_provider';
   DesktopDetailTab _selectedTab = DesktopDetailTab.episodes;
   final ScrollController _scrollController = SmoothScrollController();
-  double _scrollOffset = 0.0;
+  final ValueNotifier<double> _scrollProgressNotifier = ValueNotifier<double>(0.0);
 
   List<OnlinestreamProvider> _providers = [];
   OnlinestreamProvider? _selectedProvider;
@@ -102,12 +102,11 @@ class _AnimeDetailDesktopLayoutState
   void _onScroll() {
     if (!_scrollController.hasClients) return;
     final offset = _scrollController.offset;
-    if ((offset - _scrollOffset).abs() > 3 ||
-        (offset <= 0 && _scrollOffset > 0) ||
-        (offset >= 250 && _scrollOffset < 250)) {
-      setState(() {
-        _scrollOffset = offset.clamp(0.0, 500.0);
-      });
+    final progress = (offset / 200.0).clamp(0.0, 1.0);
+    if ((progress - _scrollProgressNotifier.value).abs() > 0.02 ||
+        (offset <= 0 && _scrollProgressNotifier.value > 0) ||
+        (offset >= 200 && _scrollProgressNotifier.value < 1.0)) {
+      _scrollProgressNotifier.value = progress;
     }
   }
 
@@ -126,6 +125,7 @@ class _AnimeDetailDesktopLayoutState
   void dispose() {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    _scrollProgressNotifier.dispose();
     super.dispose();
   }
 
@@ -371,18 +371,21 @@ class _AnimeDetailDesktopLayoutState
         ? widget.details!.recommendations
         : ((raw['recommendations']?['edges'] as List?) ?? []);
 
-    final scrollProgress = (_scrollOffset / 200.0).clamp(0.0, 1.0);
-
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: Stack(
         children: [
           // ─── 1. Panoramic Top Hero Backdrop (clean, uncovered, with full blur fallback & deeper darkness) ───
-          DesktopHeroBanner(
-            bannerUrl: bannerUrl,
-            isBlurredCover: isBlurredCover,
-            scrollProgress: scrollProgress,
-            scaffoldBackgroundColor: theme.scaffoldBackgroundColor,
+          ValueListenableBuilder<double>(
+            valueListenable: _scrollProgressNotifier,
+            builder: (context, scrollProgress, _) {
+              return DesktopHeroBanner(
+                bannerUrl: bannerUrl,
+                isBlurredCover: isBlurredCover,
+                scrollProgress: scrollProgress,
+                scaffoldBackgroundColor: theme.scaffoldBackgroundColor,
+              );
+            },
           ),
 
           // ─── 2. Main Scrollable Container (Wider Max-Width: 1580px, Generous Side Margins) ───

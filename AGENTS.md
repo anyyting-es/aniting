@@ -107,7 +107,9 @@ seanime_app/
 │           │   │   ├── desktop_manga_header.dart       # Title, format/year & expandable synopsis
 │           │   │   ├── desktop_manga_action_bar.dart   # Continue reading pill, bookmark, batch download & links
 │           │   │   ├── desktop_manga_chapters_tab.dart # Chapter manager (providers, search, 30-chapter pagination)
-│           │   │   └── desktop_manga_chapter_card.dart # Chapter card with dimmed read opacity & download state
+│           │   │   ├── desktop_manga_chapter_card.dart # Chapter card with dimmed read opacity & download state
+│           │   │   ├── desktop_manga_characters_section.dart # 2-per-row horizontal character cards (photo left, info right)
+│           │   │   └── desktop_manga_recommendations_row.dart # Full-width horizontal scroll for similar works
 │           │   └── manga_detail_mobile_layout.dart  # Compact vertical mobile layout (~380 lines)
 │           ├── compact_search_bar.dart # Sleek, semi-transparent top search bar for feeds
 │           ├── top_status_bar_glass.dart # Ambient frosted top glass protection
@@ -249,6 +251,26 @@ seanime_app/
 - **Explore Hub "Populares del momento" Priority (`search_screen.dart`, `popularAnimeProvider`, `popularMangaProvider`)**:
   - In `search_screen.dart`, the curated section "Populares del momento" (`l10n.popularOfTheMoment`) is positioned as the very first line/row immediately below the genre filter chips for both Anime and Manga modes.
   - Tapping "Ver más" seamlessly expands into a paginated full grid filter.
+- **Manga & Anime Detail Desktop Architecture Refinements (`desktop_action_bar.dart`, `desktop_manga_action_bar.dart`, `desktop_manga_header.dart`, `desktop_manga_characters_section.dart`, `desktop_manga_recommendations_row.dart`, `manga_detail_desktop_layout.dart`)**:
+  - **Unified Brand Icon Buttons (AniList & MyAnimeList)**:
+    - In both Anime and Manga Desktop Action Bars, brand icons (`_HoverBrandIcon`) are wrapped in rounded button containers (`borderRadius: BorderRadius.circular(10)`, padding 8, size matching neighbor `_HoverIconButton` at ~38-40px).
+    - Image assets feature rounded clipping (`ClipRRect(borderRadius: BorderRadius.circular(5))`) and consistent hover scale and background highlights.
+  - **Manga Desktop Read Button (`_HoverReadButton`)**:
+    - The "Continuar Leyendo" button is rendered as a sleek, non-stretched compact pill (`minimumSize: Size(0, 38)`, `padding: (18, 8)` horizontal/vertical) with tactile shadow.
+  - **Zero-Rebuild Scroll Architecture (60-120 FPS Fluidity)**:
+    - Eliminated root `setState` calls in `_onScroll` across both `MangaDetailDesktopLayout` and `AnimeDetailDesktopLayout`.
+    - Dissolve animation of `DesktopHeroBanner` is driven via isolated `ValueNotifier<double> _scrollProgressNotifier` consumed inside `ValueListenableBuilder<double>`, eliminating whole-tree rebuilds during scroll and locking frame rates to 60-120 FPS.
+  - **Single-Column Chapter List (`DesktopMangaChaptersTab`)**:
+    - Replaced multi-column grid with full-width single-column `ListView.separated` (1 chapter per row) for clear legibility and faster layout passes.
+  - **Unboxed & Enlarged Character Cards (`DesktopMangaCharactersSection`)**:
+    - Removed container boxes, borders, and dark rectangular cards ("unboxed").
+    - Enlarged character photo (60×80px) and typography (`fontSize: 14` for name, `fontSize: 12` for role/CV).
+  - **Prominent Bottom Horizontal Similar Works (`DesktopMangaRecommendationsRow`)**:
+    - Removed decorative leading icon from the "Obras similares" header.
+    - Enlarged card dimensions from 130px to 165px width (~290px row height) with 0.70 aspect ratio artwork for rich cover previews.
+- **Airing Calendar Unboxed & Theme-Consistent Architecture (`airing_calendar_screen.dart`)**:
+  - Replaced hardcoded surface container background in the horizontal day selector with `theme.scaffoldBackgroundColor`, ensuring full compatibility with OLED pure black and all custom theme palettes.
+  - Eliminated card boxes, grey borders, and boxed badge containers from schedule list items, rendering clean typography (`Ep. X • HH:mm • en Y`) with subtle divider lines.
 - **In-Player Streaming Provider Switching Architecture (`player_source_card.dart`, `player_info_panel.dart`, `video_player_screen.dart`, `app_providers.dart`)**:
   - **Direct Provider Switching in Playback**: Users can tap `PlayerSourceCard` while an episode is actively searching for sources (`isResolvingSources`), during error states, or during active playback to open the playback sources modal.
   - **Installed Providers Picker**: The modal renders a top row with installed online stream providers (`onlinestreamProvidersProvider`) using clean `ChoiceChip` widgets.

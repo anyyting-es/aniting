@@ -120,7 +120,7 @@ void main() {
     expect(find.text('Chainsaw Man'), findsWidgets);
     expect(find.text('Capítulos'), findsOneWidget);
     expect(find.text('Personajes'), findsOneWidget);
-    expect(find.text('Relaciones'), findsOneWidget);
+    expect(find.text('Relaciones'), findsNothing); // Completely hidden when there are no relations
     expect(find.text('Obras similares'), findsOneWidget);
   });
 

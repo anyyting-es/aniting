@@ -519,37 +519,24 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
         else if (displayChapters.isEmpty)
           _buildEmptyView()
         else
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final crossAxisCount = constraints.maxWidth >= 1200
-                  ? 3
-                  : (constraints.maxWidth >= 640 ? 2 : 1);
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: displayChapters.length,
+            separatorBuilder: (_, _) => const SizedBox(height: 6),
+            itemBuilder: (context, index) {
+              final c = displayChapters[index];
+              final epNum = c.chapterNumber.toInt();
+              final isRead = widget.progress >= epNum && epNum > 0;
 
-              return GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: displayChapters.length,
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: crossAxisCount,
-                  mainAxisExtent: 44.0,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 6,
-                ),
-                itemBuilder: (context, index) {
-                  final c = displayChapters[index];
-                  final epNum = c.chapterNumber.toInt();
-                  final isRead = widget.progress >= epNum && epNum > 0;
-
-                  return DesktopMangaChapterCard(
-                    chapter: c,
-                    isRead: isRead,
-                    isDownloaded: widget.downloadedChapterIds.contains(c.id),
-                    isDownloading: widget.downloadingChapterIds.contains(c.id),
-                    canDownload: widget.selectedProvider != null,
-                    onTap: () => widget.onChapterClicked(c),
-                    onDownload: () => widget.onDownloadChapter(c),
-                  );
-                },
+              return DesktopMangaChapterCard(
+                chapter: c,
+                isRead: isRead,
+                isDownloaded: widget.downloadedChapterIds.contains(c.id),
+                isDownloading: widget.downloadingChapterIds.contains(c.id),
+                canDownload: widget.selectedProvider != null,
+                onTap: () => widget.onChapterClicked(c),
+                onDownload: () => widget.onDownloadChapter(c),
               );
             },
           ),

@@ -3,13 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/preferences/title_language_provider.dart';
 import 'package:seanime_app/data/models/manga_entry.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/widgets/anime_detail/desktop/desktop_characters_tab.dart';
 import 'package:seanime_app/presentation/widgets/anime_detail/desktop/desktop_hero_banner.dart';
-import 'package:seanime_app/presentation/widgets/anime_detail/desktop/desktop_recommendations_tab.dart';
 import 'package:seanime_app/presentation/widgets/anime_detail/desktop/desktop_relations_tab.dart';
 import 'desktop/desktop_manga_action_bar.dart';
 import 'desktop/desktop_manga_chapters_tab.dart';
+import 'desktop/desktop_manga_characters_section.dart';
 import 'desktop/desktop_manga_header.dart';
+import 'desktop/desktop_manga_recommendations_row.dart';
 import 'desktop/desktop_manga_sidebar.dart';
 import 'package:seanime_app/core/theme/smooth_scroll_controller.dart';
 
@@ -62,7 +62,7 @@ class MangaDetailDesktopLayout extends ConsumerStatefulWidget {
 
 class _MangaDetailDesktopLayoutState extends ConsumerState<MangaDetailDesktopLayout> {
   final ScrollController _scrollController = SmoothScrollController();
-  double _scrollOffset = 0.0;
+  final ValueNotifier<double> _scrollProgressNotifier = ValueNotifier<double>(0.0);
 
   @override
   void initState() {
@@ -73,12 +73,11 @@ class _MangaDetailDesktopLayoutState extends ConsumerState<MangaDetailDesktopLay
   void _onScroll() {
     if (!_scrollController.hasClients) return;
     final offset = _scrollController.offset;
-    if ((offset - _scrollOffset).abs() > 3 ||
-        (offset <= 0 && _scrollOffset > 0) ||
-        (offset >= 250 && _scrollOffset < 250)) {
-      setState(() {
-        _scrollOffset = offset.clamp(0.0, 500.0);
-      });
+    final progress = (offset / 200.0).clamp(0.0, 1.0);
+    if ((progress - _scrollProgressNotifier.value).abs() > 0.02 ||
+        (offset <= 0 && _scrollProgressNotifier.value > 0) ||
+        (offset >= 200 && _scrollProgressNotifier.value < 1.0)) {
+      _scrollProgressNotifier.value = progress;
     }
   }
 
@@ -86,6 +85,7 @@ class _MangaDetailDesktopLayoutState extends ConsumerState<MangaDetailDesktopLay
   void dispose() {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    _scrollProgressNotifier.dispose();
     super.dispose();
   }
 
@@ -150,18 +150,21 @@ class _MangaDetailDesktopLayoutState extends ConsumerState<MangaDetailDesktopLay
     subtitleParts.add(format.replaceAll('_', ' '));
     final subtitleStr = subtitleParts.join(' • ').toUpperCase();
 
-    final scrollProgress = (_scrollOffset / 200.0).clamp(0.0, 1.0);
-
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: Stack(
         children: [
-          // ─── 1. Panoramic Top Hero Backdrop with scroll-driven dissolve ───
-          DesktopHeroBanner(
-            bannerUrl: bannerUrl,
-            isBlurredCover: isBlurredCover,
-            scrollProgress: scrollProgress,
-            scaffoldBackgroundColor: theme.scaffoldBackgroundColor,
+          // ─── 1. Panoramic Top Hero Backdrop with isolated scroll-driven dissolve ───
+          ValueListenableBuilder<double>(
+            valueListenable: _scrollProgressNotifier,
+            builder: (context, scrollProgress, _) {
+              return DesktopHeroBanner(
+                bannerUrl: bannerUrl,
+                isBlurredCover: isBlurredCover,
+                scrollProgress: scrollProgress,
+                scaffoldBackgroundColor: theme.scaffoldBackgroundColor,
+              );
+            },
           ),
 
           // ─── 2. Main Scrollable Container (1580px max-width) ───
@@ -177,7 +180,7 @@ class _MangaDetailDesktopLayoutState extends ConsumerState<MangaDetailDesktopLay
                   children: [
                     // Back button (clean icon without heavy background)
                     Padding(
-                      padding: const EdgeInsets.only(top: 24, bottom: 120),
+                      padding: const EdgeInsets.only(top: 36, bottom: 24),
                       child: IconButton(
                         style: IconButton.styleFrom(
                           padding: const EdgeInsets.all(8),
@@ -260,14 +263,14 @@ class _MangaDetailDesktopLayoutState extends ConsumerState<MangaDetailDesktopLay
                     const SizedBox(height: 36),
 
                     // ── BOTTOM SECTION: Two Columns ──
-                    // Left column: Chapters in their box
-                    // Right column: Characters, then Related, then Similar Works
+                    // Left column: Chapters in wide box (flex: 7)
+                    // Right column: Characters compact (flex: 4), Relations (only if present)
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Left: Chapters Box
+                        // Left: Chapters Box (Wider)
                         Expanded(
-                          flex: 5,
+                          flex: 7,
                           child: Container(
                             padding: const EdgeInsets.all(20),
                             decoration: BoxDecoration(
@@ -339,13 +342,13 @@ class _MangaDetailDesktopLayoutState extends ConsumerState<MangaDetailDesktopLay
 
                         const SizedBox(width: 32),
 
-                        // Right: Characters, Related, Recommendations
+                        // Right: Characters (Compact 2 per row) & Relations (if available)
                         Expanded(
-                          flex: 6,
+                          flex: 4,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Personajes
+                              // Personajes (2 per row horizontal cards)
                               Row(
                                 children: [
                                   Icon(Icons.people_outline_rounded, size: 20, color: theme.colorScheme.primary),
@@ -361,56 +364,55 @@ class _MangaDetailDesktopLayoutState extends ConsumerState<MangaDetailDesktopLay
                                 ],
                               ),
                               const SizedBox(height: 14),
-                              DesktopCharactersTab(
+                              DesktopMangaCharactersSection(
                                 characters: charactersEdges,
                                 isLoading: widget.isLoadingDetails,
                               ),
 
-                              const SizedBox(height: 32),
-                              Row(
-                                children: [
-                                  Icon(Icons.hub_outlined, size: 20, color: theme.colorScheme.primary),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'Relaciones',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w800,
-                                      color: theme.colorScheme.onSurface,
+                              // Relaciones (Completely hidden if no relations exist)
+                              if (relationsEdges.isNotEmpty) ...[
+                                const SizedBox(height: 28),
+                                Row(
+                                  children: [
+                                    Icon(Icons.hub_outlined, size: 20, color: theme.colorScheme.primary),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Relaciones',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w800,
+                                        color: theme.colorScheme.onSurface,
+                                      ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 14),
-                              DesktopRelationsTab(
-                                relations: relationsEdges,
-                                isLoading: widget.isLoadingDetails,
-                              ),
-
-                              const SizedBox(height: 32),
-                              Row(
-                                children: [
-                                  Icon(Icons.auto_awesome_rounded, size: 20, color: theme.colorScheme.primary),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'Obras similares',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w800,
-                                      color: theme.colorScheme.onSurface,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 14),
-                              DesktopRecommendationsTab(
-                                recommendations: recommendationsEdges,
-                                isLoading: widget.isLoadingDetails,
-                              ),
+                                  ],
+                                ),
+                                const SizedBox(height: 14),
+                                DesktopRelationsTab(
+                                  relations: relationsEdges,
+                                  isLoading: widget.isLoadingDetails,
+                                ),
+                              ],
                             ],
                           ),
                         ),
                       ],
+                    ),
+
+                    // ── OBRAS SIMILARES: Full-width horizontal scroll at the bottom ──
+                    const SizedBox(height: 40),
+                    Text(
+                      'Obras similares',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.2,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    DesktopMangaRecommendationsRow(
+                      recommendations: recommendationsEdges,
+                      isLoading: widget.isLoadingDetails,
                     ),
                   ],
                 ),

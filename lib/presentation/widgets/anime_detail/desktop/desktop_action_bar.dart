@@ -365,6 +365,16 @@ class _HoverBrandIconState extends State<_HoverBrandIcon> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    final baseBg = isDark
+        ? Colors.white.withValues(alpha: 0.06)
+        : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.85);
+    final hoverBg = isDark
+        ? Colors.white.withValues(alpha: 0.12)
+        : theme.colorScheme.surfaceContainerHigh;
+
     return Tooltip(
       message: widget.tooltip,
       child: MouseRegion(
@@ -372,20 +382,34 @@ class _HoverBrandIconState extends State<_HoverBrandIcon> {
         onEnter: (_) => setState(() => _isHovered = true),
         onExit: (_) => setState(() => _isHovered = false),
         child: AnimatedScale(
-          scale: _isHovered ? 1.14 : 1.0,
-          duration: const Duration(milliseconds: 150),
+          scale: _isHovered ? 1.025 : 1.0,
+          duration: const Duration(milliseconds: 180),
           curve: Curves.easeOutCubic,
-          child: AnimatedOpacity(
-            opacity: _isHovered ? 1.0 : 0.72,
-            duration: const Duration(milliseconds: 150),
-            child: InkResponse(
-              onTap: widget.onTap,
-              radius: 18,
-              highlightColor: Colors.transparent,
-              hoverColor: Colors.transparent,
-              splashColor: Colors.transparent,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+          child: InkWell(
+            onTap: widget.onTap,
+            borderRadius: BorderRadius.circular(10),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOutCubic,
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: _isHovered ? hoverBg : baseBg,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: isDark
+                      ? Colors.white.withValues(alpha: _isHovered ? 0.18 : 0.08)
+                      : theme.colorScheme.outlineVariant.withValues(alpha: _isHovered ? 0.6 : 0.3),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: _isHovered ? 0.25 : 0.10),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(5),
                 child: Image.asset(
                   widget.assetPath,
                   width: 22,

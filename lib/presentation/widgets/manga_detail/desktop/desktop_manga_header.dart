@@ -38,118 +38,109 @@ class _DesktopMangaHeaderState extends State<DesktopMangaHeader> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    final tags = <Widget>[];
-
-    if (widget.format != null && widget.format!.isNotEmpty) {
-      tags.add(_buildMetaBadge(
-        theme,
-        widget.format!.replaceAll('_', ' '),
-        color: theme.colorScheme.primary,
-        bgColor: theme.colorScheme.primaryContainer,
-      ));
+    final metaItems = <Widget>[];
+    if (widget.year != null) {
+      metaItems.add(
+        Text(
+          '${widget.year}',
+          style: TextStyle(
+            fontSize: 14.5,
+            fontWeight: FontWeight.w600,
+            color: isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
+            letterSpacing: 0.3,
+          ),
+        ),
+      );
     }
     if (widget.status != null && widget.status!.isNotEmpty) {
-      tags.add(_buildMetaBadge(
-        theme,
-        widget.status == 'RELEASING' ? 'En emisión' : (widget.status == 'FINISHED' ? 'Finalizado' : widget.status!),
-        color: theme.colorScheme.secondary,
-        bgColor: theme.colorScheme.secondaryContainer,
-      ));
-    }
-    if (widget.year != null) {
-      tags.add(_buildMetaBadge(
-        theme,
-        '${widget.year}',
-        color: theme.colorScheme.onSurfaceVariant,
-        bgColor: theme.colorScheme.surfaceContainerHighest,
-      ));
-    }
-    if (widget.score != null && widget.score! > 0) {
-      tags.add(_buildMetaBadge(
-        theme,
-        '★ ${widget.score!.toStringAsFixed(1)}',
-        color: const Color(0xFFFFB800),
-        bgColor: const Color(0xFFFFB800).withValues(alpha: 0.15),
-      ));
-    }
-    if (widget.totalChapters != null && widget.totalChapters! > 0) {
-      tags.add(_buildMetaBadge(
-        theme,
-        '${widget.totalChapters} Caps',
-        color: theme.colorScheme.onSurfaceVariant,
-        bgColor: theme.colorScheme.surfaceContainerHighest,
-      ));
+      if (metaItems.isNotEmpty) {
+        metaItems.add(
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Text(
+              '•',
+              style: TextStyle(
+                fontSize: 13,
+                color: isDark ? Colors.white30 : theme.colorScheme.outlineVariant,
+              ),
+            ),
+          ),
+        );
+      }
+      final statusLabel = widget.status == 'RELEASING'
+          ? 'En emisión'
+          : (widget.status == 'FINISHED' ? 'Finalizado' : widget.status!);
+      metaItems.add(
+        Text(
+          statusLabel,
+          style: TextStyle(
+            fontSize: 14.5,
+            fontWeight: FontWeight.w600,
+            color: widget.status == 'RELEASING'
+                ? (isDark ? const Color(0xFF68D391) : Colors.green.shade700)
+                : (isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant),
+            letterSpacing: 0.2,
+          ),
+        ),
+      );
     }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Metadata badges row
-        if (tags.isNotEmpty) ...[
-          Wrap(
-            spacing: 8,
-            runSpacing: 6,
-            children: tags,
-          ),
-          const SizedBox(height: 10),
-        ] else if (widget.subtitleStr != null && widget.subtitleStr!.isNotEmpty) ...[
-          Text(
-            widget.subtitleStr!,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1.1,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: 6),
-        ],
-
-        // Main Title
+        // ── 1. Main Title on Top (Bigger & Cinematic) ──
         Text(
           widget.title,
           style: TextStyle(
-            fontSize: 28,
+            fontSize: 34,
             fontWeight: FontWeight.w900,
-            letterSpacing: -0.3,
+            letterSpacing: -0.5,
             height: 1.15,
             color: theme.colorScheme.onSurface,
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
 
-        // System-Colored Genre Pills
+        // ── 2. Floating Metadata Row (Year • Status) ──
+        if (metaItems.isNotEmpty) ...[
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: metaItems,
+          ),
+          const SizedBox(height: 8),
+        ],
+
+        // ── 3. Floating Genres (No Heavy Backgrounds) ──
         if (widget.genres.isNotEmpty) ...[
           Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
             spacing: 8,
-            runSpacing: 6,
-            children: widget.genres.map((g) {
-              return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.6)
-                      : theme.colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+            runSpacing: 4,
+            children: [
+              for (int i = 0; i < widget.genres.length; i++) ...[
+                if (i > 0)
+                  Text(
+                    '•',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: isDark ? Colors.white24 : theme.colorScheme.outlineVariant,
+                    ),
                   ),
-                ),
-                child: Text(
-                  g,
+                Text(
+                  widget.genres[i],
                   style: TextStyle(
-                    fontSize: 11.5,
+                    fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: theme.colorScheme.onSurface,
+                    color: isDark ? Colors.white60 : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.85),
                   ),
                 ),
-              );
-            }).toList(),
+              ],
+            ],
           ),
           const SizedBox(height: 14),
         ],
 
-        // Synopsis (Expandable with AnimatedSize)
+        // ── 4. Synopsis (Expandable) ──
         if (widget.description.isNotEmpty) ...[
           MouseRegion(
             cursor: SystemMouseCursors.click,
@@ -164,41 +155,17 @@ class _DesktopMangaHeaderState extends State<DesktopMangaHeader> {
                   maxLines: _isSynopsisExpanded ? 99 : 3,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 13.5,
-                    height: 1.5,
+                    fontSize: 14,
+                    height: 1.55,
                     color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.88),
                   ),
                 ),
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
         ],
       ],
-    );
-  }
-
-  Widget _buildMetaBadge(
-    ThemeData theme,
-    String label, {
-    required Color color,
-    required Color bgColor,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-          color: color,
-          letterSpacing: 0.2,
-        ),
-      ),
     );
   }
 }
