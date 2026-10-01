@@ -277,7 +277,8 @@ seanime_app/
   - **Seamless Re-resolution (`_switchOnlineStreamProvider`)**: Selecting a new provider calls `_switchOnlineStreamProvider(newProviderId)` in `_VideoPlayerScreenState`, updating the active provider, clearing stale sources, and invoking `_sourceController.resolveInitialSources(preservePosition: true)` to automatically resolve and start streaming from the newly selected provider without exiting the player or losing playback position.
 - **In-App GitHub Releases Auto-Updater Architecture (`AppUpdateService`, `AppUpdateDialog`, `app_update_provider.dart`, `MainActivity.kt`, `file_paths.xml`)**:
   - **Zero-Cost GitHub Releases Pipeline**: Queries `https://api.github.com/repos/anyyting-es/aniting/releases/latest` directly to retrieve semantic version tags (`vX.Y.Z`), changelog markdown, and attached `.apk` binaries.
-  - **Semantic Version Checking**: Compares remote vs current versions using `AppUpdateInfo.isVersionNewer` (supports major, minor, patch and build number).
+  - **Dynamic Platform Version Resolution**: Added `"getAppVersion"` to `MainActivity.kt` MethodChannel so `AppUpdateService.getInstalledAppVersion()` dynamically queries Android's `packageManager.getPackageInfo().versionName`, eliminating hardcoded version desyncs between builds.
+  - **Semantic Version Checking & Beta Tag Support**: `AppUpdateInfo.isVersionNewer` reliably parses `major.minor.patch`, pre-release suffixes (`-beta`, `-rc`), and build numbers, comparing versions across releases without breaking on pre-release strings.
   - **In-App Interactive Modal & Live Download**: `AppUpdateDialog` displays version tags, formatted release notes, and real-time linear download progress (`received / total` bytes and percentage).
   - **Native Android APK Installation**:
     - Configured `androidx.core.content.FileProvider` (`authorities="${applicationId}.fileprovider"`) with `@xml/file_paths` (`cache-path`, `external-cache-path`, `files-path`).

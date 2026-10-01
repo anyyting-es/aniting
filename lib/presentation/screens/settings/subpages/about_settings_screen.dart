@@ -80,7 +80,7 @@ class AboutSettingsScreen extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Text(
-                  'v1.0.0 (Beta)',
+                  'v1.0.2 (Beta)',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
@@ -237,7 +237,7 @@ class AboutSettingsScreen extends ConsumerWidget {
                 style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
               ),
               subtitle: const Text(
-                'v1.0.0-beta (Build Release)',
+                'v1.0.2 (Build Release)',
                 style: TextStyle(fontSize: 12.5),
               ),
             ),
@@ -370,7 +370,7 @@ class AboutSettingsScreen extends ConsumerWidget {
               onTap: () => showLicensePage(
                 context: context,
                 applicationName: 'Aniting',
-                applicationVersion: '1.0.0',
+                applicationVersion: '1.0.2',
                 applicationLegalese: l10n.aboutLegalese,
               ),
             ),

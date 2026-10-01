@@ -76,7 +76,7 @@ class AppUpdateNotifier extends Notifier<AppUpdateState> {
   AppUpdateService get _service => ref.read(appUpdateServiceProvider);
 
   /// Checks GitHub Releases for a new version.
-  Future<AppUpdateInfo?> checkForUpdate({String currentVersion = AppUpdateService.currentAppVersion}) async {
+  Future<AppUpdateInfo?> checkForUpdate({String? currentVersion}) async {
     state = state.copyWith(status: UpdateDownloadStatus.checking, errorMessage: null);
     try {
       final info = await _service.checkForUpdate(currentVersion: currentVersion);

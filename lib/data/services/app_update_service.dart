@@ -10,7 +10,7 @@ typedef UpdateDownloadProgressCallback = void Function(int received, int total, 
 
 /// Service for checking updates from GitHub Releases, downloading APKs, and installing them on Android.
 class AppUpdateService {
-  static const String currentAppVersion = '1.0.0';
+  static const String currentAppVersion = '1.0.2';
   static const String githubOwner = 'anyyting-es';
   static const String githubRepo = 'aniting';
   static const String latestReleaseUrl =
@@ -29,15 +29,32 @@ class AppUpdateService {
     },
   ));
 
+  /// Resolves the installed app version dynamically from Android PackageManager,
+  /// falling back to [currentAppVersion].
+  Future<String> getInstalledAppVersion() async {
+    if (Platform.isAndroid) {
+      try {
+        final version = await _channel.invokeMethod<String>('getAppVersion');
+        if (version != null && version.isNotEmpty) {
+          return version;
+        }
+      } catch (e) {
+        debugPrint('[AppUpdateService] getAppVersion failed: $e');
+      }
+    }
+    return currentAppVersion;
+  }
+
   /// Checks if a newer release exists on GitHub.
-  Future<AppUpdateInfo?> checkForUpdate({String currentVersion = currentAppVersion}) async {
+  Future<AppUpdateInfo?> checkForUpdate({String? currentVersion}) async {
+    final activeVersion = currentVersion ?? await getInstalledAppVersion();
     try {
       final response = await _dio.get(latestReleaseUrl);
       if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
         final json = response.data as Map<String, dynamic>;
         return AppUpdateInfo.fromGitHubJson(
           json: json,
-          currentVersion: currentVersion,
+          currentVersion: activeVersion,
         );
       }
       return null;
@@ -46,9 +63,9 @@ class AppUpdateService {
         // No releases published yet on this repo
         debugPrint('[AppUpdateService] No GitHub releases found (404).');
         return AppUpdateInfo(
-          tagName: 'v$currentVersion',
-          version: currentVersion,
-          title: 'Aniting v$currentVersion',
+          tagName: 'v$activeVersion',
+          version: activeVersion,
+          title: 'Aniting v$activeVersion',
           releaseNotes: 'Estás en la última versión.',
           hasUpdate: false,
         );
