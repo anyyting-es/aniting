@@ -417,6 +417,60 @@ class SeanimeRepository {
     return [];
   }
 
+  /// Fetches only anime entries that actually possess downloaded/local files in the local library
+  Future<List<AnimeEntry>> getDownloadedAnime() async {
+    try {
+      final response = await _apiClient.get(ApiEndpoints.libraryCollection);
+      if (response.statusCode == 200 && response.data != null) {
+        final data = response.data;
+        Map<String, dynamic>? root;
+        if (data is Map<String, dynamic>) {
+          root = data['data'] is Map<String, dynamic> ? data['data'] as Map<String, dynamic> : data;
+        }
+        final rawLists = (root?['lists'] ?? root?['MediaListCollection']?['lists']) as List?;
+        if (rawLists == null) return [];
+        final list = <AnimeEntry>[];
+        final seenMediaIds = <int>{};
+        for (final l in rawLists) {
+          if (l is Map<String, dynamic> && l['entries'] is List) {
+            final listStatus = l['status'] as String? ?? (l['name'] == 'Watching' ? 'CURRENT' : null);
+            for (final entry in l['entries'] as List) {
+              if (entry is Map<String, dynamic>) {
+                final libData = entry['libraryData'] as Map<String, dynamic>?;
+                final nakamaLibData = entry['nakamaLibraryData'] as Map<String, dynamic>?;
+                final mainFiles = (libData?['mainFileCount'] as num?)?.toInt() ??
+                    (nakamaLibData?['mainFileCount'] as num?)?.toInt() ??
+                    0;
+                // Only include entries that actually have local files downloaded!
+                if (mainFiles > 0 || (libData != null && libData.isNotEmpty)) {
+                  final entryMap = Map<String, dynamic>.from(entry);
+                  if (listStatus != null && (entryMap['status'] == null || entryMap['status'] == '')) {
+                    entryMap['status'] = listStatus;
+                  }
+                  if (entryMap['media'] is Map) {
+                    final m = entryMap['media'] as Map;
+                    entryMap['mediaId'] ??= m['id'];
+                  }
+                  entryMap['hasLocalFiles'] = true;
+                  entryMap['mainFileCount'] = mainFiles;
+                  final animeEntry = AnimeEntry.fromJson(entryMap);
+                  if (animeEntry.mediaId > 0 && !seenMediaIds.contains(animeEntry.mediaId)) {
+                    seenMediaIds.add(animeEntry.mediaId);
+                    list.add(animeEntry);
+                  }
+                }
+              }
+            }
+          }
+        }
+        return list;
+      }
+    } catch (e) {
+      debugPrint('Error fetching downloaded anime: $e');
+    }
+    return [];
+  }
+
   Future<void> refreshAnilistCollection() async {
     try {
       await _apiClient.post(

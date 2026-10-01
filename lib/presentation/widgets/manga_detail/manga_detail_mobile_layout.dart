@@ -69,9 +69,7 @@ class MangaDetailMobileLayout extends ConsumerStatefulWidget {
 class _MangaDetailMobileLayoutState extends ConsumerState<MangaDetailMobileLayout>
     with SingleTickerProviderStateMixin {
   static const String _prefHideReadChaptersKey = 'manga_hide_read_chapters';
-  static const int _chaptersBlockSize = 30;
 
-  int _selectedBlockIndex = 0;
   bool _isAscending = true;
   String _searchQuery = '';
   bool _hideRead = true;
@@ -116,13 +114,6 @@ class _MangaDetailMobileLayoutState extends ConsumerState<MangaDetailMobileLayou
     _searchController.dispose();
     _scrollController.dispose();
     super.dispose();
-  }
-
-  String _formatChapterNum(double val) {
-    if (val == val.roundToDouble()) {
-      return val.toInt().toString();
-    }
-    return val.toString();
   }
 
   List<MangaChapter> get _filteredChapters {
@@ -195,19 +186,7 @@ class _MangaDetailMobileLayoutState extends ConsumerState<MangaDetailMobileLayou
     final status = resolved?.status ?? 'RELEASING';
     final score = resolved?.score;
 
-    final allFilteredChapters = _filteredChapters;
-    final totalBlocks = (allFilteredChapters.length / _chaptersBlockSize).ceil();
-    final currentBlockIndex =
-        _selectedBlockIndex.clamp(0, totalBlocks > 0 ? totalBlocks - 1 : 0);
-
-    final List<MangaChapter> displayChapters;
-    if (totalBlocks <= 1) {
-      displayChapters = allFilteredChapters;
-    } else {
-      final start = currentBlockIndex * _chaptersBlockSize;
-      final end = (start + _chaptersBlockSize).clamp(0, allFilteredChapters.length);
-      displayChapters = allFilteredChapters.sublist(start, end);
-    }
+    final displayChapters = _filteredChapters;
 
     return Scaffold(
       body: Stack(
@@ -630,7 +609,7 @@ class _MangaDetailMobileLayoutState extends ConsumerState<MangaDetailMobileLayou
                                   style: const TextStyle(
                                       fontSize: 17, fontWeight: FontWeight.bold),
                                 ),
-                                if (widget.chapters.isNotEmpty) ...[
+                                if (displayChapters.isNotEmpty) ...[
                                   const SizedBox(width: 8),
                                   Container(
                                     padding: const EdgeInsets.symmetric(
@@ -641,7 +620,7 @@ class _MangaDetailMobileLayoutState extends ConsumerState<MangaDetailMobileLayou
                                           BorderRadius.circular(borderRadius),
                                     ),
                                     child: Text(
-                                      '${widget.chapters.length}',
+                                      '${displayChapters.length}',
                                       style: TextStyle(
                                         color: theme.colorScheme.onPrimaryContainer,
                                         fontSize: 11,
@@ -653,7 +632,29 @@ class _MangaDetailMobileLayoutState extends ConsumerState<MangaDetailMobileLayou
                               ],
                             ),
                             Row(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
+                                if (progress > 0)
+                                  IconButton(
+                                    tooltip: _hideRead
+                                        ? 'Mostrar leídos ($progress)'
+                                        : 'Ocultar leídos ($progress)',
+                                    icon: Icon(
+                                      _hideRead
+                                          ? Icons.visibility_off_rounded
+                                          : Icons.visibility_rounded,
+                                      size: 20,
+                                      color: _hideRead
+                                          ? theme.colorScheme.primary
+                                          : theme.colorScheme.onSurfaceVariant,
+                                    ),
+                                    onPressed: () {
+                                      setState(() => _hideRead = !_hideRead);
+                                      SharedPreferences.getInstance().then((prefs) {
+                                        prefs.setBool(_prefHideReadChaptersKey, _hideRead);
+                                      });
+                                    },
+                                  ),
                                 IconButton(
                                   tooltip: _isAscending
                                       ? 'Más recientes primero'
@@ -666,7 +667,6 @@ class _MangaDetailMobileLayoutState extends ConsumerState<MangaDetailMobileLayou
                                   ),
                                   onPressed: () => setState(() {
                                     _isAscending = !_isAscending;
-                                    _selectedBlockIndex = 0;
                                   }),
                                 ),
                                 IconButton(
@@ -680,63 +680,75 @@ class _MangaDetailMobileLayoutState extends ConsumerState<MangaDetailMobileLayou
                         ),
                         const SizedBox(height: 8),
 
-                        // Search Input & Provider Selector Row
+                        // Slim & Compact Search Input & Provider Selector Row
                         Row(
                           children: [
                             Expanded(
-                              child: TextField(
-                                controller: _searchController,
-                                keyboardType: TextInputType.text,
-                                decoration: InputDecoration(
-                                  hintText: 'Buscar o N° de cap...',
-                                  prefixIcon:
-                                      const Icon(Icons.search_rounded, size: 20),
-                                  suffixIcon: _searchQuery.isNotEmpty
-                                      ? IconButton(
-                                          icon: const Icon(Icons.clear_rounded,
-                                              size: 18),
-                                          onPressed: () {
-                                            _searchController.clear();
-                                            setState(() {
-                                              _searchQuery = '';
-                                              _selectedBlockIndex = 0;
-                                            });
-                                          },
-                                        )
-                                      : null,
-                                  isDense: true,
-                                  contentPadding: const EdgeInsets.symmetric(
-                                      vertical: 10, horizontal: 12),
-                                  filled: true,
-                                  fillColor: theme
-                                      .colorScheme.surfaceContainerHighest
-                                      .withValues(alpha: 0.5),
-                                  border: OutlineInputBorder(
-                                    borderRadius:
-                                        BorderRadius.circular(borderRadius),
-                                    borderSide: BorderSide.none,
+                              child: SizedBox(
+                                height: 36,
+                                child: TextField(
+                                  controller: _searchController,
+                                  keyboardType: TextInputType.text,
+                                  style: const TextStyle(fontSize: 12.5),
+                                  decoration: InputDecoration(
+                                    hintText: 'Buscar cap...',
+                                    hintStyle: TextStyle(
+                                      fontSize: 12,
+                                      color: theme.colorScheme.onSurfaceVariant
+                                          .withValues(alpha: 0.6),
+                                    ),
+                                    prefixIcon:
+                                        const Icon(Icons.search_rounded, size: 17),
+                                    prefixIconConstraints:
+                                        const BoxConstraints(minWidth: 32, minHeight: 32),
+                                    suffixIcon: _searchQuery.isNotEmpty
+                                        ? IconButton(
+                                            icon: const Icon(Icons.clear_rounded,
+                                                size: 15),
+                                            padding: EdgeInsets.zero,
+                                            constraints: const BoxConstraints(
+                                                minWidth: 28, minHeight: 28),
+                                            onPressed: () {
+                                              _searchController.clear();
+                                              setState(() {
+                                                _searchQuery = '';
+                                              });
+                                            },
+                                          )
+                                        : null,
+                                    isDense: true,
+                                    contentPadding: const EdgeInsets.symmetric(
+                                        vertical: 8, horizontal: 10),
+                                    filled: true,
+                                    fillColor: theme
+                                        .colorScheme.surfaceContainerHighest
+                                        .withValues(alpha: 0.45),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(
+                                          (borderRadius * 0.75).clamp(0.0, 14.0)),
+                                      borderSide: BorderSide.none,
+                                    ),
                                   ),
+                                  onChanged: (val) => setState(() {
+                                    _searchQuery = val;
+                                  }),
                                 ),
-                                onChanged: (val) => setState(() {
-                                  _searchQuery = val;
-                                  _selectedBlockIndex = 0;
-                                }),
                               ),
                             ),
                             if (widget.providers.isNotEmpty) ...[
                               const SizedBox(width: 8),
                               Container(
-                                height: 42,
+                                height: 36,
                                 padding:
                                     const EdgeInsets.symmetric(horizontal: 10),
                                 decoration: BoxDecoration(
                                   color: theme.colorScheme.surfaceContainerHighest
-                                      .withValues(alpha: 0.5),
-                                  borderRadius:
-                                      BorderRadius.circular(borderRadius),
+                                      .withValues(alpha: 0.45),
+                                  borderRadius: BorderRadius.circular(
+                                      (borderRadius * 0.75).clamp(0.0, 14.0)),
                                   border: Border.all(
                                     color: theme.colorScheme.outlineVariant
-                                        .withValues(alpha: 0.25),
+                                        .withValues(alpha: 0.2),
                                   ),
                                 ),
                                 child: DropdownButtonHideUnderline(
@@ -744,7 +756,7 @@ class _MangaDetailMobileLayoutState extends ConsumerState<MangaDetailMobileLayou
                                     value: widget.selectedProvider,
                                     icon: const Icon(
                                         Icons.keyboard_arrow_down_rounded,
-                                        size: 18),
+                                        size: 16),
                                     borderRadius:
                                         BorderRadius.circular(borderRadius),
                                     isDense: true,
@@ -753,11 +765,11 @@ class _MangaDetailMobileLayoutState extends ConsumerState<MangaDetailMobileLayou
                                         value: p,
                                         child: ConstrainedBox(
                                           constraints:
-                                              const BoxConstraints(maxWidth: 130),
+                                              const BoxConstraints(maxWidth: 120),
                                           child: Text(
                                             p.name,
                                             style: const TextStyle(
-                                                fontSize: 12.5,
+                                                fontSize: 12,
                                                 fontWeight: FontWeight.w500),
                                             overflow: TextOverflow.ellipsis,
                                           ),
@@ -765,7 +777,6 @@ class _MangaDetailMobileLayoutState extends ConsumerState<MangaDetailMobileLayou
                                       );
                                     }).toList(),
                                     onChanged: (p) {
-                                      setState(() => _selectedBlockIndex = 0);
                                       widget.onProviderChanged(p);
                                     },
                                   ),
@@ -775,243 +786,88 @@ class _MangaDetailMobileLayoutState extends ConsumerState<MangaDetailMobileLayou
                           ],
                         ),
 
-                        const SizedBox(height: 8),
-
-                        // Filters row
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            children: [
-                              if (progress > 0) ...[
-                                FilterChip(
-                                  avatar: Icon(
-                                    _hideRead
-                                        ? Icons.visibility_off_rounded
-                                        : Icons.visibility_rounded,
-                                    size: 15,
-                                    color: _hideRead
-                                        ? theme.colorScheme.onPrimary
-                                        : theme.colorScheme.onSurfaceVariant,
-                                  ),
-                                  label: Text(
-                                    _hideRead
-                                        ? 'Ocultando vistos ($progress)'
-                                        : 'Ocultar vistos ($progress)',
-                                    style: TextStyle(
-                                      fontSize: 11.5,
-                                      fontWeight: _hideRead
-                                          ? FontWeight.bold
-                                          : FontWeight.w500,
-                                      color: _hideRead
-                                          ? theme.colorScheme.onPrimary
-                                          : theme.colorScheme.onSurface,
-                                    ),
-                                  ),
-                                  selected: _hideRead,
-                                  selectedColor: theme.colorScheme.primary,
-                                  backgroundColor: theme
-                                      .colorScheme.surfaceContainerHighest
-                                      .withValues(alpha: 0.5),
-                                  showCheckmark: false,
-                                  visualDensity: VisualDensity.compact,
-                                  materialTapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
-                                  shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(
-                                          (borderRadius * 0.75).clamp(0.0, 16.0))),
-                                  onSelected: (val) {
-                                    setState(() {
-                                      _hideRead = val;
-                                      _selectedBlockIndex = 0;
-                                    });
-                                    SharedPreferences.getInstance().then((prefs) {
-                                      prefs.setBool(_prefHideReadChaptersKey, val);
-                                    });
-                                  },
-                                ),
-                                const SizedBox(width: 8),
-                              ],
-                              if (widget.downloadedChapterIds.isNotEmpty ||
-                                  widget.showOnlyDownloaded) ...[
-                                FilterChip(
-                                  avatar: Icon(
-                                    widget.showOnlyDownloaded
-                                        ? Icons.download_done_rounded
-                                        : Icons.download_for_offline_outlined,
-                                    size: 15,
-                                    color: widget.showOnlyDownloaded
-                                        ? theme.colorScheme.onPrimary
-                                        : theme.colorScheme.onSurfaceVariant,
-                                  ),
-                                  label: Text(
-                                    widget.showOnlyDownloaded
-                                        ? 'Descargados (${widget.downloadedChapterIds.length})'
-                                        : 'Solo descargados',
-                                    style: TextStyle(
-                                      fontSize: 11.5,
-                                      fontWeight: widget.showOnlyDownloaded
-                                          ? FontWeight.bold
-                                          : FontWeight.w500,
+                        if (widget.downloadedChapterIds.isNotEmpty ||
+                            widget.showOnlyDownloaded ||
+                            (widget.selectedProvider != null && widget.chapters.isNotEmpty)) ...[
+                          const SizedBox(height: 8),
+                          // Secondary Filters row (Downloaded, Batch Download)
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              children: [
+                                if (widget.downloadedChapterIds.isNotEmpty ||
+                                    widget.showOnlyDownloaded) ...[
+                                  FilterChip(
+                                    avatar: Icon(
+                                      widget.showOnlyDownloaded
+                                          ? Icons.download_done_rounded
+                                          : Icons.download_for_offline_outlined,
+                                      size: 14,
                                       color: widget.showOnlyDownloaded
                                           ? theme.colorScheme.onPrimary
-                                          : theme.colorScheme.onSurface,
+                                          : theme.colorScheme.onSurfaceVariant,
                                     ),
-                                  ),
-                                  selected: widget.showOnlyDownloaded,
-                                  selectedColor: theme.colorScheme.primary,
-                                  backgroundColor: theme
-                                      .colorScheme.surfaceContainerHighest
-                                      .withValues(alpha: 0.5),
-                                  showCheckmark: false,
-                                  visualDensity: VisualDensity.compact,
-                                  materialTapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
-                                  shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(
-                                          (borderRadius * 0.75).clamp(0.0, 16.0))),
-                                  onSelected: (val) {
-                                    widget.onToggleShowOnlyDownloaded(val);
-                                    setState(() => _selectedBlockIndex = 0);
-                                  },
-                                ),
-                                const SizedBox(width: 8),
-                              ],
-                              if (widget.selectedProvider != null &&
-                                  widget.chapters.isNotEmpty) ...[
-                                ActionChip(
-                                  avatar: Icon(
-                                    Icons.download_rounded,
-                                    size: 15,
-                                    color: theme.colorScheme.primary,
-                                  ),
-                                  label: const Text(
-                                    'Descargar',
-                                    style: TextStyle(
-                                      fontSize: 11.5,
-                                      fontWeight: FontWeight.w600,
+                                    label: Text(
+                                      widget.showOnlyDownloaded
+                                          ? 'Descargados (${widget.downloadedChapterIds.length})'
+                                          : 'Solo descargados',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: widget.showOnlyDownloaded
+                                            ? FontWeight.bold
+                                            : FontWeight.w500,
+                                        color: widget.showOnlyDownloaded
+                                            ? theme.colorScheme.onPrimary
+                                            : theme.colorScheme.onSurface,
+                                      ),
                                     ),
-                                  ),
-                                  backgroundColor: theme
-                                      .colorScheme.surfaceContainerHighest
-                                      .withValues(alpha: 0.5),
-                                  visualDensity: VisualDensity.compact,
-                                  materialTapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
-                                  shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(
-                                          (borderRadius * 0.75).clamp(0.0, 16.0))),
-                                  onPressed: widget.onBatchDownload,
-                                ),
-                                const SizedBox(width: 8),
-                              ],
-                              Text(
-                                '${allFilteredChapters.length} capítulos',
-                                style: TextStyle(
-                                  fontSize: 11.5,
-                                  fontWeight: FontWeight.w600,
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        // Pagination bar
-                        if (totalBlocks > 1) ...[
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              IconButton(
-                                visualDensity: VisualDensity.compact,
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(
-                                    minWidth: 32, minHeight: 32),
-                                icon: const Icon(Icons.chevron_left_rounded,
-                                    size: 22),
-                                tooltip: '30 anteriores',
-                                onPressed: currentBlockIndex > 0
-                                    ? () => setState(() =>
-                                        _selectedBlockIndex = currentBlockIndex - 1)
-                                    : null,
-                              ),
-                              const SizedBox(width: 4),
-                              Expanded(
-                                child: SizedBox(
-                                  height: 34,
-                                  child: ListView.separated(
-                                    scrollDirection: Axis.horizontal,
-                                    itemCount: totalBlocks,
-                                    separatorBuilder: (_, _) =>
-                                        const SizedBox(width: 6),
-                                    itemBuilder: (context, i) {
-                                      final isSelected = i == currentBlockIndex;
-                                      final start = i * _chaptersBlockSize;
-                                      final end = (start + _chaptersBlockSize)
-                                          .clamp(0, allFilteredChapters.length);
-                                      final firstEp = allFilteredChapters[start];
-                                      final lastEp =
-                                          allFilteredChapters[end - 1];
-                                      final startNum = _formatChapterNum(
-                                          firstEp.chapterNumber);
-                                      final endNum = _formatChapterNum(
-                                          lastEp.chapterNumber);
-                                      final label = startNum == endNum
-                                          ? 'Cap. $startNum'
-                                          : '$startNum - $endNum';
-
-                                      return ChoiceChip(
-                                        label: Text(
-                                          label,
-                                          style: TextStyle(
-                                            fontSize: 11.5,
-                                            fontWeight: isSelected
-                                                ? FontWeight.bold
-                                                : FontWeight.w500,
-                                            color: isSelected
-                                                ? theme.colorScheme.onPrimary
-                                                : theme.colorScheme.onSurface,
-                                          ),
-                                        ),
-                                        selected: isSelected,
-                                        selectedColor: theme.colorScheme.primary,
-                                        backgroundColor: theme
-                                            .colorScheme.surfaceContainerHighest
-                                            .withValues(alpha: 0.5),
-                                        showCheckmark: false,
-                                        visualDensity: VisualDensity.compact,
-                                        materialTapTargetSize:
-                                            MaterialTapTargetSize.shrinkWrap,
-                                        shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                                (borderRadius * 0.75)
-                                                    .clamp(0.0, 16.0))),
-                                        onSelected: (selected) {
-                                          if (selected) {
-                                            setState(() {
-                                              _selectedBlockIndex = i;
-                                            });
-                                          }
-                                        },
-                                      );
+                                    selected: widget.showOnlyDownloaded,
+                                    selectedColor: theme.colorScheme.primary,
+                                    backgroundColor: theme
+                                        .colorScheme.surfaceContainerHighest
+                                        .withValues(alpha: 0.45),
+                                    showCheckmark: false,
+                                    visualDensity: VisualDensity.compact,
+                                    materialTapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                    shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(
+                                            (borderRadius * 0.75).clamp(0.0, 14.0))),
+                                    onSelected: (val) {
+                                      widget.onToggleShowOnlyDownloaded(val);
                                     },
                                   ),
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                              IconButton(
-                                visualDensity: VisualDensity.compact,
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(
-                                    minWidth: 32, minHeight: 32),
-                                icon: const Icon(Icons.chevron_right_rounded,
-                                    size: 22),
-                                tooltip: 'Siguientes 30',
-                                onPressed: currentBlockIndex < totalBlocks - 1
-                                    ? () => setState(() =>
-                                        _selectedBlockIndex = currentBlockIndex + 1)
-                                    : null,
-                              ),
-                            ],
+                                  const SizedBox(width: 8),
+                                ],
+                                if (widget.selectedProvider != null &&
+                                    widget.chapters.isNotEmpty) ...[
+                                  ActionChip(
+                                    avatar: Icon(
+                                      Icons.download_rounded,
+                                      size: 14,
+                                      color: theme.colorScheme.primary,
+                                    ),
+                                    label: const Text(
+                                      'Descargar lote',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    backgroundColor: theme
+                                        .colorScheme.surfaceContainerHighest
+                                        .withValues(alpha: 0.45),
+                                    visualDensity: VisualDensity.compact,
+                                    materialTapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                    shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(
+                                            (borderRadius * 0.75).clamp(0.0, 14.0))),
+                                    onPressed: widget.onBatchDownload,
+                                  ),
+                                ],
+                              ],
+                            ),
                           ),
                         ],
                       ],
@@ -1083,7 +939,6 @@ class _MangaDetailMobileLayoutState extends ConsumerState<MangaDetailMobileLayou
                             OutlinedButton.icon(
                               onPressed: () {
                                 widget.onToggleShowOnlyDownloaded(false);
-                                setState(() => _selectedBlockIndex = 0);
                               },
                               icon: const Icon(Icons.list_rounded, size: 18),
                               label: const Text('Ver todos los capítulos'),

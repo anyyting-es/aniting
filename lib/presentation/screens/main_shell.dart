@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/preferences/mobile_nav_style_provider.dart';
@@ -338,8 +339,56 @@ class _MainShellState extends ConsumerState<MainShell> {
                     label: l10n.navCalendar,
                   ),
                   NavigationDestination(
-                    icon: Icon(AppIcons.profile(iconPack), color: theme.colorScheme.onSurfaceVariant),
-                    selectedIcon: Icon(AppIcons.profile(iconPack), color: theme.colorScheme.onPrimaryContainer),
+                    icon: (avatarUrl != null && avatarUrl.isNotEmpty)
+                        ? Container(
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                                width: 1.2,
+                              ),
+                            ),
+                            clipBehavior: Clip.antiAlias,
+                            child: CachedNetworkImage(
+                              imageUrl: avatarUrl,
+                              fit: BoxFit.cover,
+                              placeholder: (context, url) => Container(
+                                color: theme.colorScheme.surfaceContainerHighest,
+                              ),
+                              errorWidget: (context, url, error) => Icon(
+                                AppIcons.profile(iconPack),
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          )
+                        : Icon(AppIcons.profile(iconPack), color: theme.colorScheme.onSurfaceVariant),
+                    selectedIcon: (avatarUrl != null && avatarUrl.isNotEmpty)
+                        ? Container(
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: theme.colorScheme.onPrimaryContainer,
+                                width: 1.8,
+                              ),
+                            ),
+                            clipBehavior: Clip.antiAlias,
+                            child: CachedNetworkImage(
+                              imageUrl: avatarUrl,
+                              fit: BoxFit.cover,
+                              placeholder: (context, url) => Container(
+                                color: theme.colorScheme.surfaceContainerHighest,
+                              ),
+                              errorWidget: (context, url, error) => Icon(
+                                AppIcons.profile(iconPack),
+                                color: theme.colorScheme.onPrimaryContainer,
+                              ),
+                            ),
+                          )
+                        : Icon(AppIcons.profile(iconPack), color: theme.colorScheme.onPrimaryContainer),
                     label: l10n.navProfile,
                   ),
                 ],

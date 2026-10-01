@@ -285,6 +285,12 @@ final animeCollectionProvider = FutureProvider<List<AnimeEntry>>((ref) async {
   );
 });
 
+final downloadedAnimeProvider = FutureProvider<List<AnimeEntry>>((ref) async {
+  final serverState = ref.watch(serverNotifierProvider);
+  if (!serverState.isOnline) return [];
+  return ref.read(repositoryProvider).getDownloadedAnime();
+});
+
 final aniZipDataProvider = FutureProvider.family<AniZipData?, int>((ref, mediaId) async {
   if (mediaId <= 0) return null;
   final serverState = ref.watch(serverNotifierProvider);

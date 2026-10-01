@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:seanime_app/presentation/widgets/desktop_sidebar.dart';
 
 /// A solid Material Design 3 floating navigation dock with fluid animated pill expansion.
@@ -261,12 +262,42 @@ class _FloatingDockPillState extends State<FloatingDockPill> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Icon (larger 26.5dp)
-                        Icon(
-                          selectValue > 0.5 ? item.selectedIcon : item.icon,
-                          size: 26.5,
-                          color: iconColor,
-                        ),
+                        // Icon or Avatar
+                        if (item.avatarUrl != null && item.avatarUrl!.isNotEmpty)
+                          Container(
+                            width: 26.5,
+                            height: 26.5,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: selectValue > 0.5
+                                    ? theme.colorScheme.primary
+                                    : (isActive
+                                        ? (iconColor ?? theme.colorScheme.onSurface)
+                                        : Colors.white.withValues(alpha: 0.25)),
+                                width: selectValue > 0.5 ? 1.8 : 1.2,
+                              ),
+                            ),
+                            clipBehavior: Clip.antiAlias,
+                            child: CachedNetworkImage(
+                              imageUrl: item.avatarUrl!,
+                              fit: BoxFit.cover,
+                              placeholder: (context, url) => Container(
+                                color: theme.colorScheme.surfaceContainerHighest,
+                              ),
+                              errorWidget: (context, url, error) => Icon(
+                                selectValue > 0.5 ? item.selectedIcon : item.icon,
+                                size: 20,
+                                color: iconColor,
+                              ),
+                            ),
+                          )
+                        else
+                          Icon(
+                            selectValue > 0.5 ? item.selectedIcon : item.icon,
+                            size: 26.5,
+                            color: iconColor,
+                          ),
 
                         // Animated expanding text label
                         if (labelValue > 0.01) ...[

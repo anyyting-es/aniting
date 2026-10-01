@@ -130,11 +130,11 @@ void main() {
   });
 
   group('MobileNavStyle Tests', () {
-    test('MobileNavStyle fromKey parses properly and defaults to classic', () {
+    test('MobileNavStyle fromKey parses properly and defaults to floating', () {
       expect(MobileNavStyle.fromKey('floating'), MobileNavStyle.floating);
       expect(MobileNavStyle.fromKey('classic'), MobileNavStyle.classic);
-      expect(MobileNavStyle.fromKey(null), MobileNavStyle.classic);
-      expect(MobileNavStyle.fromKey('invalid'), MobileNavStyle.classic);
+      expect(MobileNavStyle.fromKey(null), MobileNavStyle.floating);
+      expect(MobileNavStyle.fromKey('invalid'), MobileNavStyle.floating);
     });
   });
 }

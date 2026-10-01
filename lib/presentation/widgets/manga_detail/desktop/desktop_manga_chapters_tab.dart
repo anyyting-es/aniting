@@ -47,14 +47,12 @@ class DesktopMangaChaptersTab extends ConsumerStatefulWidget {
 
 class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTab> {
   static const String _prefHideReadChaptersKey = 'manga_hide_read_chapters';
-  static const int _chaptersBlockSize = 30;
 
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   bool _isAscending = true;
   bool _hideRead = true;
   bool _showOnlyDownloaded = false;
-  int _selectedBlockIndex = 0;
 
   @override
   void initState() {
@@ -71,13 +69,6 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
   void dispose() {
     _searchController.dispose();
     super.dispose();
-  }
-
-  String _formatChapterNum(double val) {
-    if (val == val.roundToDouble()) {
-      return val.toInt().toString();
-    }
-    return val.toString();
   }
 
   List<MangaChapter> get _filteredChapters {
@@ -126,19 +117,7 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
       return _buildNoProvidersView(theme, l10n);
     }
 
-    final allFiltered = _filteredChapters;
-    final totalBlocks = (allFiltered.length / _chaptersBlockSize).ceil();
-    final currentBlockIndex = _selectedBlockIndex.clamp(0, totalBlocks > 0 ? totalBlocks - 1 : 0);
-
-    final List<MangaChapter> displayChapters;
-    if (totalBlocks <= 1) {
-      displayChapters = allFiltered;
-    } else {
-      final start = currentBlockIndex * _chaptersBlockSize;
-      final end = (start + _chaptersBlockSize).clamp(0, allFiltered.length);
-      displayChapters = allFiltered.sublist(start, end);
-    }
-
+    final displayChapters = _filteredChapters;
     final isDark = theme.brightness == Brightness.dark;
 
     return Column(
@@ -189,7 +168,6 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
                       );
                     }).toList(),
                     onChanged: (p) {
-                      setState(() => _selectedBlockIndex = 0);
                       widget.onProviderChanged(p);
                     },
                   ),
@@ -219,7 +197,6 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
                               _searchController.clear();
                               setState(() {
                                 _searchQuery = '';
-                                _selectedBlockIndex = 0;
                               });
                             },
                           )
@@ -247,7 +224,6 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
                   ),
                   onChanged: (val) => setState(() {
                     _searchQuery = val;
-                    _selectedBlockIndex = 0;
                   }),
                 ),
               ),
@@ -274,7 +250,6 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
               ),
               onPressed: () => setState(() {
                 _isAscending = !_isAscending;
-                _selectedBlockIndex = 0;
               }),
             ),
             const SizedBox(width: 6),
@@ -334,7 +309,6 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
                 onSelected: (val) {
                   setState(() {
                     _hideRead = val;
-                    _selectedBlockIndex = 0;
                   });
                   SharedPreferences.getInstance().then((prefs) {
                     prefs.setBool(_prefHideReadChaptersKey, val);
@@ -373,7 +347,6 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
                 onSelected: (val) {
                   setState(() {
                     _showOnlyDownloaded = val;
-                    _selectedBlockIndex = 0;
                   });
                 },
               ),
@@ -406,7 +379,7 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
               child: Text(
-                '${allFiltered.length} capítulos',
+                '${displayChapters.length} capítulos',
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
@@ -417,96 +390,9 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
           ],
         ),
 
-        const SizedBox(height: 14),
+        const SizedBox(height: 16),
 
-        // ── 3. 30-Chapter Pagination Bar ──
-        if (totalBlocks > 1) ...[
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            decoration: BoxDecoration(
-              color: isDark ? theme.colorScheme.surfaceContainerHigh : theme.colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: isDark ? Colors.white.withValues(alpha: 0.08) : theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
-              ),
-            ),
-            child: Row(
-              children: [
-                IconButton(
-                  visualDensity: VisualDensity.compact,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                  icon: Icon(Icons.chevron_left_rounded, size: 22, color: theme.colorScheme.onSurface),
-                  tooltip: '30 anteriores',
-                  onPressed: currentBlockIndex > 0
-                      ? () => setState(() => _selectedBlockIndex = currentBlockIndex - 1)
-                      : null,
-                ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: SizedBox(
-                    height: 32,
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: totalBlocks,
-                      separatorBuilder: (_, _) => const SizedBox(width: 6),
-                      itemBuilder: (context, i) {
-                        final isSelected = i == currentBlockIndex;
-                        final start = i * _chaptersBlockSize;
-                        final end = (start + _chaptersBlockSize).clamp(0, allFiltered.length);
-                        final firstEp = allFiltered[start];
-                        final lastEp = allFiltered[end - 1];
-                        final startNum = _formatChapterNum(firstEp.chapterNumber);
-                        final endNum = _formatChapterNum(lastEp.chapterNumber);
-                        final label = startNum == endNum ? 'Cap. $startNum' : '$startNum - $endNum';
-
-                        return ChoiceChip(
-                          label: Text(
-                            label,
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                              color: isSelected ? theme.colorScheme.onPrimary : theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                          selected: isSelected,
-                          selectedColor: theme.colorScheme.primary,
-                          backgroundColor: isDark ? Colors.white.withValues(alpha: 0.05) : theme.colorScheme.surfaceContainerLow,
-                          showCheckmark: false,
-                          visualDensity: VisualDensity.compact,
-                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          side: BorderSide(
-                            color: isSelected ? theme.colorScheme.primary : Colors.transparent,
-                          ),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                          onSelected: (selected) {
-                            if (selected) {
-                              setState(() => _selectedBlockIndex = i);
-                            }
-                          },
-                        );
-                      },
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 6),
-                IconButton(
-                  visualDensity: VisualDensity.compact,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                  icon: Icon(Icons.chevron_right_rounded, size: 22, color: theme.colorScheme.onSurface),
-                  tooltip: 'Siguientes 30',
-                  onPressed: currentBlockIndex < totalBlocks - 1
-                      ? () => setState(() => _selectedBlockIndex = currentBlockIndex + 1)
-                      : null,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-        ],
-
-        // ── 4. Chapters Grid / States ──
+        // ── 3. Chapters Grid / States ──
         if (widget.isLoadingChapters)
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 48),
@@ -684,7 +570,6 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
                   _hideRead = false;
                   _searchQuery = '';
                   _searchController.clear();
-                  _selectedBlockIndex = 0;
                 }),
                 icon: const Icon(Icons.list_rounded, size: 18),
                 label: const Text('Restablecer filtros'),

@@ -93,7 +93,7 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
       );
     }
 
-    final animeListAsync = ref.watch(animeCollectionProvider);
+    final animeListAsync = ref.watch(downloadedAnimeProvider);
 
     return animeListAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -144,7 +144,7 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
         }
 
         return RefreshIndicator(
-          onRefresh: () async => ref.invalidate(animeCollectionProvider),
+          onRefresh: () async => ref.invalidate(downloadedAnimeProvider),
           child: CustomScrollView(
             slivers: [
               SliverToBoxAdapter(
@@ -183,7 +183,7 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
                         IconButton(
                           tooltip: 'Refrescar',
                           icon: Icon(AppIcons.refresh(iconPack), size: 20),
-                          onPressed: () => ref.invalidate(animeCollectionProvider),
+                          onPressed: () => ref.invalidate(downloadedAnimeProvider),
                         ),
                       ],
                     ),

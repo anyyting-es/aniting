@@ -90,6 +90,7 @@ void main() {
       ProviderScope(
         overrides: [
           lastSessionProvider.overrideWith(() => _MockLastSessionNotifier(testSession)),
+          resumeBarEnabledProvider.overrideWith(() => _MockResumeBarEnabledNotifier(true)),
         ],
         child: MaterialApp(
           home: Scaffold(
@@ -123,6 +124,7 @@ void main() {
       ProviderScope(
         overrides: [
           lastSessionProvider.overrideWith(() => _MockLastSessionNotifier(testSession)),
+          resumeBarEnabledProvider.overrideWith(() => _MockResumeBarEnabledNotifier(true)),
         ],
         child: MaterialApp(
           home: StatefulBuilder(
@@ -169,6 +171,7 @@ void main() {
       ProviderScope(
         overrides: [
           lastSessionProvider.overrideWith(() => _MockLastSessionNotifier(testSession)),
+          resumeBarEnabledProvider.overrideWith(() => _MockResumeBarEnabledNotifier(true)),
         ],
         child: MaterialApp(
           home: StatefulBuilder(
@@ -273,4 +276,12 @@ class _MockLastSessionNotifier extends LastSessionNotifier {
 
   @override
   LastSessionItem? build() => _initial;
+}
+
+class _MockResumeBarEnabledNotifier extends ResumeBarEnabledNotifier {
+  final bool _val;
+  _MockResumeBarEnabledNotifier(this._val);
+
+  @override
+  bool build() => _val;
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:seanime_app/core/preferences/resume_bar_preferences_provider.dart';
 import 'package:seanime_app/presentation/widgets/desktop_sidebar.dart';
 
@@ -167,15 +168,48 @@ class _MobileNavDockState extends ConsumerState<MobileNavDock> {
                   child: AnimatedScale(
                     duration: const Duration(milliseconds: 200),
                     scale: isSelected ? 1.06 : (isActive ? 1.04 : 1.0),
-                    child: Icon(
-                      isSelected ? item.selectedIcon : item.icon,
-                      size: 23,
-                      color: isSelected
-                          ? theme.colorScheme.onSecondaryContainer
-                          : (isActive
-                              ? theme.colorScheme.onSurface
-                              : theme.colorScheme.onSurfaceVariant),
-                    ),
+                    child: (item.avatarUrl != null && item.avatarUrl!.isNotEmpty)
+                        ? Container(
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: isSelected
+                                    ? theme.colorScheme.onSecondaryContainer
+                                    : (isActive
+                                        ? theme.colorScheme.onSurface
+                                        : Colors.white.withValues(alpha: 0.25)),
+                                width: isSelected ? 1.8 : 1.2,
+                              ),
+                            ),
+                            clipBehavior: Clip.antiAlias,
+                            child: CachedNetworkImage(
+                              imageUrl: item.avatarUrl!,
+                              fit: BoxFit.cover,
+                              placeholder: (context, url) => Container(
+                                color: theme.colorScheme.surfaceContainerHighest,
+                              ),
+                              errorWidget: (context, url, error) => Icon(
+                                isSelected ? item.selectedIcon : item.icon,
+                                size: 20,
+                                color: isSelected
+                                    ? theme.colorScheme.onSecondaryContainer
+                                    : (isActive
+                                        ? theme.colorScheme.onSurface
+                                        : theme.colorScheme.onSurfaceVariant),
+                              ),
+                            ),
+                          )
+                        : Icon(
+                            isSelected ? item.selectedIcon : item.icon,
+                            size: 23,
+                            color: isSelected
+                                ? theme.colorScheme.onSecondaryContainer
+                                : (isActive
+                                    ? theme.colorScheme.onSurface
+                                    : theme.colorScheme.onSurfaceVariant),
+                          ),
                   ),
                 ),
               ),

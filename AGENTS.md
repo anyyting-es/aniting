@@ -268,9 +268,18 @@ seanime_app/
   - **Prominent Bottom Horizontal Similar Works (`DesktopMangaRecommendationsRow`)**:
     - Removed decorative leading icon from the "Obras similares" header.
     - Enlarged card dimensions from 130px to 165px width (~290px row height) with 0.70 aspect ratio artwork for rich cover previews.
-- **Airing Calendar Unboxed & Theme-Consistent Architecture (`airing_calendar_screen.dart`)**:
-  - Replaced hardcoded surface container background in the horizontal day selector with `theme.scaffoldBackgroundColor`, ensuring full compatibility with OLED pure black and all custom theme palettes.
-  - Eliminated card boxes, grey borders, and boxed badge containers from schedule list items, rendering clean typography (`Ep. X • HH:mm • en Y`) with subtle divider lines.
+  - **Continuous Chapter List & Compact Search (`DesktopMangaChaptersTab`, `manga_detail_mobile_layout.dart`)**:
+    - Removed 30-chapter block jump boxes and block pagination, displaying a continuous chapter list starting from the next chapter to read.
+    - "Ocultar vistos" is enabled by default (`_hideRead = true`), rendered as a sleek `IconButton` in the mobile header without bulky chips.
+    - Mobile manga detail search bar is streamlined to a slim, low-profile input (`height: 36`) and aligned with the provider dropdown.
+  - **Airing Calendar Unboxed & Theme-Consistent Architecture (`airing_calendar_screen.dart`)**:
+    - Unboxed the horizontal day selector chips: removed container background boxes, borders, and colors; dates are rendered as clean typography with an active indicator dot beneath the selected day, respecting OLED and palette themes.
+    - Eliminated card boxes, grey borders, and boxed badge containers from schedule list items, rendering clean typography (`Ep. X • HH:mm • en Y`) with subtle divider lines.
+  - **Anime Downloads Local Disk Filtering (`downloads_screen.dart`, `seanime_repository.dart`, `downloadedAnimeProvider`)**:
+    - Fixed an issue where the Downloads screen previously watched `animeCollectionProvider` (cloud watchlist), showing unwatched and streaming anime as downloaded.
+    - Introduced `downloadedAnimeProvider` querying `getDownloadedAnime()`, inspecting `hasLocalFiles` and `mainFileCount > 0` (from `libraryData` / `nakamaLibraryData`) to strictly display media stored on the local filesystem.
+  - **Universal Navigation Profile Avatar (`floating_dock_pill.dart`, `mobile_nav_dock.dart`, `main_shell.dart`)**:
+    - Extended `FloatingDockPill`, `MobileNavDock`, and the classic `NavigationBar` in `MainShell` to render the user's AniList profile avatar (`CachedNetworkImage` with fallback to `AppIcons.profile`) identically to `DesktopSidebar`.
 - **In-Player Streaming Provider Switching Architecture (`player_source_card.dart`, `player_info_panel.dart`, `video_player_screen.dart`, `app_providers.dart`)**:
   - **Direct Provider Switching in Playback**: Users can tap `PlayerSourceCard` while an episode is actively searching for sources (`isResolvingSources`), during error states, or during active playback to open the playback sources modal.
   - **Installed Providers Picker**: The modal renders a top row with installed online stream providers (`onlinestreamProvidersProvider`) using clean `ChoiceChip` widgets.

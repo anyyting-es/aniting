@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/server/server_manager.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/screens/airing_calendar_screen.dart';
@@ -33,11 +34,11 @@ void main() {
 
       expect(find.text('Explorar'), findsNothing);
       expect(find.byIcon(Icons.calendar_month_rounded), findsNothing);
-      expect(find.byIcon(Icons.category_rounded), findsOneWidget);
-      expect(find.byIcon(Icons.search_rounded), findsOneWidget);
+      expect(find.byIcon(AppIcons.category()), findsOneWidget);
+      expect(find.byIcon(AppIcons.search()), findsOneWidget);
 
       // Tap search icon to expand CompactSearchBar
-      await tester.tap(find.byIcon(Icons.search_rounded));
+      await tester.tap(find.byIcon(AppIcons.search()));
       await tester.pump();
       expect(find.byType(CompactSearchBar), findsOneWidget);
     });

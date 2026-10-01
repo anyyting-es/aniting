@@ -27,6 +27,8 @@ class AnimeEntry {
   final int? nextAiringEpisodeAiringAt;
   final int? year;
   final List<String> genres;
+  final bool hasLocalFiles;
+  final int mainFileCount;
 
   AnimeEntry({
     required this.id,
@@ -55,6 +57,8 @@ class AnimeEntry {
     this.nextAiringEpisodeNumber,
     this.nextAiringEpisodeAiringAt,
     this.year,
+    this.hasLocalFiles = false,
+    this.mainFileCount = 0,
   });
 
   /// Effective timestamp in milliseconds for sorting (watch history > updatedAt > airDate > 0)
@@ -125,6 +129,8 @@ class AnimeEntry {
     int? nextAiringEpisodeAiringAt,
     int? year,
     List<String>? genres,
+    bool? hasLocalFiles,
+    int? mainFileCount,
   }) {
     return AnimeEntry(
       id: id ?? this.id,
@@ -153,6 +159,8 @@ class AnimeEntry {
       nextAiringEpisodeNumber: nextAiringEpisodeNumber ?? this.nextAiringEpisodeNumber,
       nextAiringEpisodeAiringAt: nextAiringEpisodeAiringAt ?? this.nextAiringEpisodeAiringAt,
       year: year ?? this.year,
+      hasLocalFiles: hasLocalFiles ?? this.hasLocalFiles,
+      mainFileCount: mainFileCount ?? this.mainFileCount,
     );
   }
 
@@ -330,6 +338,17 @@ class AnimeEntry {
         (media['id'] as num?)?.toInt() ??
         resolvedMediaId;
 
+    final libData = json['libraryData'] as Map<String, dynamic>?;
+    final nakamaLibData = json['nakamaLibraryData'] as Map<String, dynamic>?;
+    final int mainFiles = (libData?['mainFileCount'] as num?)?.toInt() ??
+        (nakamaLibData?['mainFileCount'] as num?)?.toInt() ??
+        (json['mainFileCount'] as num?)?.toInt() ??
+        0;
+    final bool hasLocal = json['hasLocalFiles'] as bool? ??
+        (mainFiles > 0) ||
+        (libData != null && libData.isNotEmpty) ||
+        (nakamaLibData != null && nakamaLibData.isNotEmpty);
+
     return AnimeEntry(
       id: resolvedId,
       mediaId: resolvedMediaId,
@@ -357,6 +376,8 @@ class AnimeEntry {
       nextAiringEpisodeNumber: nextAiringEp,
       nextAiringEpisodeAiringAt: nextAiringTime,
       year: parsedYear,
+      hasLocalFiles: hasLocal,
+      mainFileCount: mainFiles,
     );
   }
 
@@ -419,5 +440,7 @@ class AnimeEntry {
           }
         : null,
     'seasonYear': year,
+    'hasLocalFiles': hasLocalFiles,
+    'mainFileCount': mainFileCount,
   };
 }

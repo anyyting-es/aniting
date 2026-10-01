@@ -128,8 +128,8 @@ class _AiringCalendarScreenState extends ConsumerState<AiringCalendarScreen> {
         children: [
           // Horizontal Day Selector (Respects theme and OLED pure black)
           Container(
-            height: 58,
-            padding: const EdgeInsets.symmetric(vertical: 6),
+            height: 60,
+            padding: const EdgeInsets.symmetric(vertical: 2),
             decoration: BoxDecoration(
               color: theme.scaffoldBackgroundColor,
               border: Border(
@@ -155,18 +155,9 @@ class _AiringCalendarScreenState extends ConsumerState<AiringCalendarScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 4),
                   child: InkWell(
                     onTap: () => setState(() => _selectedDayIndex = index),
-                    borderRadius: BorderRadius.circular(10),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 180),
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? theme.colorScheme.primary
-                            : (isDark
-                                ? Colors.white.withValues(alpha: 0.05)
-                                : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5)),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -174,21 +165,34 @@ class _AiringCalendarScreenState extends ConsumerState<AiringCalendarScreen> {
                             isToday ? l10n.today : weekdayName,
                             style: TextStyle(
                               fontSize: 10.5,
-                              fontWeight: FontWeight.bold,
+                              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                               color: isSelected
-                                  ? theme.colorScheme.onPrimary
-                                  : theme.colorScheme.onSurfaceVariant,
+                                  ? (isDark ? Colors.white : theme.colorScheme.primary)
+                                  : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.75),
                             ),
                           ),
-                          const SizedBox(height: 2),
+                          const SizedBox(height: 1),
                           Text(
                             dayNum,
                             style: TextStyle(
-                              fontSize: 13.5,
-                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                              fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
                               color: isSelected
-                                  ? theme.colorScheme.onPrimary
-                                  : theme.colorScheme.onSurface,
+                                  ? (isDark ? Colors.white : theme.colorScheme.primary)
+                                  : theme.colorScheme.onSurface.withValues(alpha: 0.85),
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            curve: Curves.easeOutCubic,
+                            width: isSelected ? 4 : 0,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? theme.colorScheme.primary
+                                  : Colors.transparent,
+                              shape: BoxShape.circle,
                             ),
                           ),
                         ],
