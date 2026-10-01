@@ -25,6 +25,7 @@ import androidx.media3.common.TrackSelectionOverride
 import androidx.media3.common.Tracks
 import androidx.media3.common.VideoSize
 import androidx.media3.common.text.CueGroup
+import androidx.media3.common.util.UnstableApi
 import android.graphics.Color
 import android.graphics.Typeface
 import androidx.media3.ui.CaptionStyleCompat
