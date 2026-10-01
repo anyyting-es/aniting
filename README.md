@@ -37,7 +37,7 @@ Funciona utilizando el servidor de [Seanime](https://github.com/5rahim/seanime) 
 ## Comunidad
 
 Únete a nuestra comunidad de Discord para soporte, reportes y novedades:
-- **Discord**: [discord.gg/FaPcNGURdN](https://discord.gg/FaPcNGURdN)
+- **Discord**:
 
 ---
 
