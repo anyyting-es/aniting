@@ -65,6 +65,11 @@ final appUpdateServiceProvider = Provider<AppUpdateService>((ref) {
   return AppUpdateService();
 });
 
+final installedAppVersionProvider = FutureProvider<String>((ref) async {
+  final service = ref.watch(appUpdateServiceProvider);
+  return service.getInstalledAppVersion();
+});
+
 class AppUpdateNotifier extends Notifier<AppUpdateState> {
   CancelToken? _cancelToken;
 

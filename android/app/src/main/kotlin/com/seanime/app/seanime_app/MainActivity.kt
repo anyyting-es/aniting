@@ -164,7 +164,7 @@ class MainActivity : FlutterActivity() {
                         val pInfo = packageManager.getPackageInfo(packageName, 0)
                         result.success(pInfo.versionName)
                     } catch (e: Exception) {
-                        result.success("1.0.2")
+                        result.success(null)
                     }
                 }
                 else -> result.notImplemented()

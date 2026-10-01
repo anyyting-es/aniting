@@ -27,6 +27,8 @@ class AboutSettingsScreen extends ConsumerWidget {
     final serverState = ref.watch(serverNotifierProvider);
     final status = serverState.status;
     final updateState = ref.watch(appUpdateNotifierProvider);
+    final installedVersionAsync = ref.watch(installedAppVersionProvider);
+    final currentVersionStr = installedVersionAsync.value ?? AppUpdateService.currentAppVersion;
 
     return PixelSubpageScaffold(
       title: l10n.aboutApp,
@@ -80,7 +82,7 @@ class AboutSettingsScreen extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Text(
-                  'v1.0.1',
+                  'v$currentVersionStr',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
@@ -236,9 +238,9 @@ class AboutSettingsScreen extends ConsumerWidget {
                 'Cliente Móvil / PC',
                 style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
               ),
-              subtitle: const Text(
-                'v1.0.1 (Build Release)',
-                style: TextStyle(fontSize: 12.5),
+              subtitle: Text(
+                'v$currentVersionStr (Build Release)',
+                style: const TextStyle(fontSize: 12.5),
               ),
             ),
             const PixelTileDivider(),
@@ -370,7 +372,7 @@ class AboutSettingsScreen extends ConsumerWidget {
               onTap: () => showLicensePage(
                 context: context,
                 applicationName: 'Aniting',
-                applicationVersion: '1.0.1',
+                applicationVersion: currentVersionStr,
                 applicationLegalese: l10n.aboutLegalese,
               ),
             ),
