@@ -275,7 +275,7 @@ class SpanishTranslations implements AppTranslations {
   @override
   String get aboutApp => 'Acerca de Aniting';
   @override
-  String get aboutSubtitle => 'Cliente nativo Aniting Flutter v1.0.0';
+  String get aboutSubtitle => 'Cliente nativo Aniting Flutter v1.0.1';
   @override
   String get aboutLegalese => 'Cliente nativo para gestión y reproducción de anime.';
 

@@ -119,6 +119,15 @@ class MpvPlayerService {
       _safeSetProperty('embeddedfonts', 'yes');
       _safeSetProperty('sub-font-provider', 'auto');
 
+      // Plain text subtitle styling (SRT, VTT, etc.): clean white bold text, transparent bg, black outline
+      _safeSetProperty('sub-color', '#FFFFFFFF');
+      _safeSetProperty('sub-back-color', '#00000000');
+      _safeSetProperty('sub-border-color', '#FF000000');
+      _safeSetProperty('sub-border-size', '3.0');
+      _safeSetProperty('sub-bold', 'yes');
+      _safeSetProperty('sub-font', 'sans-serif');
+      _safeSetProperty('sub-font-size', '48');
+
       // Audio: auto-safe channel mapping and volume downmix normalization
       _safeSetProperty('audio-channels', 'auto-safe');
       _safeSetProperty('audio-normalize-downmix', 'yes');

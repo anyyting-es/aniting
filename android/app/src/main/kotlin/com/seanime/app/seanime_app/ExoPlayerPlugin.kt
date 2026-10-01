@@ -25,7 +25,9 @@ import androidx.media3.common.TrackSelectionOverride
 import androidx.media3.common.Tracks
 import androidx.media3.common.VideoSize
 import androidx.media3.common.text.CueGroup
-import androidx.media3.common.util.UnstableApi
+import android.graphics.Color
+import android.graphics.Typeface
+import androidx.media3.ui.CaptionStyleCompat
 import androidx.media3.ui.SubtitleView
 import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.DefaultDataSource
@@ -495,8 +497,18 @@ class ExoPlayerPlugin :
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.MATCH_PARENT
             )
-            setUserDefaultStyle()
-            setUserDefaultTextSize()
+            val customStyle = CaptionStyleCompat(
+                Color.WHITE,
+                Color.TRANSPARENT,
+                Color.TRANSPARENT,
+                CaptionStyleCompat.EDGE_TYPE_OUTLINE,
+                Color.BLACK,
+                Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+            )
+            setStyle(customStyle)
+            setFractionalTextSize(SubtitleView.DEFAULT_TEXT_SIZE_FRACTION * 1.15f)
+            setBottomPaddingFraction(SubtitleView.DEFAULT_BOTTOM_PADDING_FRACTION)
+            setApplyEmbeddedStyles(false)
         }
         standardSubtitleView = standardSubView
         container.addView(standardSubView)

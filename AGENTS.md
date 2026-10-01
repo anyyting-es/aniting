@@ -115,6 +115,12 @@ seanime_app/
 │           ├── top_status_bar_glass.dart # Ambient frosted top glass protection
 │           ├── media_type_toggle.dart # Non-wrapping pill toggle for Anime / Manga
 │           ├── explore_hero_carousel.dart # Featured banner carousel with gradients & indicators
+│           ├── calendar/             # Modular adaptive widgets for airing calendar
+│           │   ├── calendar_day_tabs.dart     # Full-width day tabs header with animated sliding line indicator
+│           │   ├── calendar_desktop_view.dart # Multi-column schedule layout with live time marker & sync
+│           │   ├── calendar_mobile_view.dart  # Swipeable single-day focused PageView with animated tabs
+│           │   ├── calendar_episode_card.dart # Compact timeline card (air time, square thumbnail, title & ep)
+│           │   └── calendar_now_marker.dart   # Real-time current time indicator (clock icon + HH:mm)
 │           ├── anime_card.dart       # Card displays for anime items
 │           ├── manga_card.dart       # Card displays for manga items
 │           ├── continue_watching_card.dart # 16:9 episode progress card
@@ -172,6 +178,21 @@ seanime_app/
     2. **Explorar (`search_screen.dart`)**: Comprehensive exploration hub with hero banner carousel, genre chips, non-wrapping media type toggle (Anime/Manga), filters (season, year, sort), genres hub.
     3. **Calendario (`airing_calendar_screen.dart`)**: Dedicated airing calendar page tracking upcoming broadcast schedules and episode countdowns.
     4. **Perfil (`library_screen.dart`)**: User profile stats, AniList account, collection lists.
+- **Airing Calendar Responsive Overhaul (`airing_calendar_screen.dart`, `widgets/calendar/`)**:
+  - **Full-Width Header with Animated Sliding Line Indicator (`calendar_day_tabs.dart`)**:
+    - The date header spans 100% of the screen width, rendering the 7-day schedule with `M/d` on top (15.5px bold) and weekday below (`Hoy`/`Today`, `Lun`, `Mar`, etc. or `Próx. Lun`).
+    - Equipped with a smooth sliding 40px tab line indicator ("dot tipo línea / pestaña") powered by `AnimatedPositioned` with `Curves.easeOutCubic`, dynamically gliding underneath the tapped or swiped day.
+  - **Desktop Multi-Column Schedule Layout (`calendar_desktop_view.dart`)**:
+    - Displays all days side-by-side in responsive columns, mirroring the reference desktop design.
+    - Each column scales with `math.max(totalWidth / 4.5, 290.0)` ensuring generous width, comfortable reading, large thumbnails (56x56), bold 13px air times, and smooth horizontal scrolling across the week.
+    - Clicking any day in the header animates the tab line indicator and automatically scrolls the view to center/focus that column.
+    - Features a real-time **Current Time Marker** (`calendar_now_marker.dart` with `🕒 HH:mm` and subtle gradient divider) inserted chronologically between past and future episodes in today's column.
+  - **Mobile Day-by-Day Swipe Layout (`calendar_mobile_view.dart`)**:
+    - Focuses strictly on one day at a time utilizing a smooth `PageView.builder`.
+    - Bidirectional synchronization between horizontal finger swipes and the top 7-day sliding line indicator.
+    - Includes `RefreshIndicator` and the current time marker.
+  - **Multi-Page Airing Schedule Fetching (`seanime_repository.dart`)**:
+    - `getAiringSchedule` paginates up to 250 items to ensure all 7 days of the broadcast week are thoroughly populated without being truncated by AniList's 50-item limit.
 - **100% User-Library Feeds Architecture (`feed_screen.dart`, `manga_feed_screen.dart`)**:
   - **Exclusivity of User Content**: Feeds are strictly dedicated to user activity, history, and personalized recommendations. Generic exploration content (such as global Trending carousels and infinite scrolling Discover / Popular grids) has been completely removed from both feeds and consolidated into the Explore tab (`search_screen.dart`).
   - **Anime Continue Watching (`ContinueWatchingCard`, `playback_progress_preferences_provider.dart`)**:
@@ -204,6 +225,16 @@ seanime_app/
     - **Precision Touchpad & Trackpad Heuristic**: Sub-4px continuous deltas are identified as touchpad signals and bypass the ticker for instantaneous 1:1 direct tracking, eliminating touchpad lag or molasses resistance.
     - Direct gesture interruptions (touch dragging, scrollbar dragging, programmatic `jumpTo`) immediately stop the ticker and grant 1:1 control with zero resistance.
     - Integrated across primary application views: `FeedScreen`, `MangaFeedScreen`, `SearchScreen`, `LibraryScreen`, `AnimeDetailDesktopLayout`, `MangaDetailDesktopLayout`, and `GenreDetailScreen`.
+- **Plain-Text Subtitle Styling Architecture (`ExoPlayerPlugin.kt`, `mpv_player_service.dart`)**:
+  - **ExoPlayer (Android)**:
+    - Replaced OS accessibility defaults in `SubtitleView` with explicit custom `CaptionStyleCompat`:
+      - `Color.WHITE` text with transparent background and window (`Color.TRANSPARENT`), eliminating the black background box.
+      - Strong black outline (`CaptionStyleCompat.EDGE_TYPE_OUTLINE`, `Color.BLACK`).
+      - Bold, wide typography (`Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)`).
+      - Comfortably scaled font size (`SubtitleView.DEFAULT_TEXT_SIZE_FRACTION * 1.15f`).
+      - `setApplyEmbeddedStyles(false)` to prevent erratic embedded SRT tags from distorting colors.
+  - **MPV (Desktop / Fallback Engine)**:
+    - Configured explicit plain-text properties matching ExoPlayer: `sub-color=#FFFFFFFF`, `sub-back-color=#00000000`, `sub-border-color=#FF000000`, `sub-border-size=3.0`, `sub-bold=yes`, `sub-font=sans-serif`, and `sub-font-size=48`.
 - **Mobile Beta 1.0.0 Defaults & UI Refinements (`mobile_nav_style_provider.dart`, `resume_bar_preferences_provider.dart`, `theme_provider.dart`)**:
   - **Floating Dock Navigation as Default**: Mobile navigation style is defaulted to `MobileNavStyle.floating` for a sleek, non-intrusive bottom navigation dock.
   - **Resume Companion Disabled by Default**: The "Sigue donde estabas" resume companion is turned off by default (`resume_bar_enabled = false`) to keep the interface clean and spacious for first-time users.

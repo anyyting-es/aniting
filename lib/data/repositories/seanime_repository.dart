@@ -1176,76 +1176,96 @@ class SeanimeRepository {
     int? endTimestamp,
     int page = 1,
     int perPage = 50,
+    int maxItems = 200,
   }) async {
     final start = startTimestamp ?? (DateTime.now().millisecondsSinceEpoch ~/ 1000 - 86400);
     final end = endTimestamp ?? (DateTime.now().millisecondsSinceEpoch ~/ 1000 + 7 * 86400);
 
+    final allItems = <AiringScheduleItem>[];
+    int currentPage = page;
+
     try {
-      final res = await _externalDio.post(
-        'https://graphql.anilist.co',
-        data: {
-          'query': '''
-            query (\$start: Int, \$end: Int, \$page: Int, \$perPage: Int) {
-              Page(page: \$page, perPage: \$perPage) {
-                airingSchedules(airingAt_greater: \$start, airingAt_lesser: \$end, sort: TIME) {
-                  id
-                  airingAt
-                  episode
-                  timeUntilAiring
-                  media {
+      while (allItems.length < maxItems) {
+        final res = await _externalDio.post(
+          'https://graphql.anilist.co',
+          data: {
+            'query': '''
+              query (\$start: Int, \$end: Int, \$page: Int, \$perPage: Int) {
+                Page(page: \$page, perPage: \$perPage) {
+                  pageInfo {
+                    hasNextPage
+                  }
+                  airingSchedules(airingAt_greater: \$start, airingAt_lesser: \$end, sort: TIME) {
                     id
-                    title {
-                      userPreferred
-                      romaji
-                      english
-                      native
-                    }
-                    coverImage {
-                      extraLarge
-                      large
-                      medium
-                    }
-                    bannerImage
-                    format
-                    status
-                    episodes
-                    averageScore
-                    genres
-                    nextAiringEpisode {
-                      airingAt
-                      timeUntilAiring
-                      episode
+                    airingAt
+                    episode
+                    timeUntilAiring
+                    media {
+                      id
+                      title {
+                        userPreferred
+                        romaji
+                        english
+                        native
+                      }
+                      coverImage {
+                        extraLarge
+                        large
+                        medium
+                      }
+                      bannerImage
+                      format
+                      status
+                      episodes
+                      averageScore
+                      genres
+                      nextAiringEpisode {
+                        airingAt
+                        timeUntilAiring
+                        episode
+                      }
                     }
                   }
                 }
               }
-            }
-          ''',
-          'variables': {
-            'start': start,
-            'end': end,
-            'page': page,
-            'perPage': perPage,
+            ''',
+            'variables': {
+              'start': start,
+              'end': end,
+              'page': currentPage,
+              'perPage': perPage,
+            },
           },
-        },
-      );
+        );
 
-      if (res.statusCode == 200 && res.data != null) {
-        final data = res.data is String ? jsonDecode(res.data) : res.data;
-        if (data is Map<String, dynamic>) {
-          final list = data['data']?['Page']?['airingSchedules'] as List?;
-          if (list != null) {
-            return list
-                .whereType<Map<String, dynamic>>()
-                .map((item) => AiringScheduleItem.fromJson(item))
-                .toList();
+        if (res.statusCode == 200 && res.data != null) {
+          final data = res.data is String ? jsonDecode(res.data) : res.data;
+          if (data is Map<String, dynamic>) {
+            final pageData = data['data']?['Page'];
+            final list = pageData?['airingSchedules'] as List?;
+            if (list != null && list.isNotEmpty) {
+              final items = list
+                  .whereType<Map<String, dynamic>>()
+                  .map((item) => AiringScheduleItem.fromJson(item))
+                  .toList();
+              allItems.addAll(items);
+
+              final hasNext = pageData?['pageInfo']?['hasNextPage'] == true;
+              if (!hasNext || items.length < perPage) {
+                break;
+              }
+              currentPage++;
+              continue;
+            }
           }
         }
+        break;
       }
+      return allItems;
     } catch (e) {
       debugPrint('Error fetching airing schedule: $e');
     }
-    return [];
+    return allItems;
   }
 
   static const Set<String> anilistOfficialGenres = {
