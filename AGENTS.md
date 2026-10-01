@@ -199,6 +199,10 @@ seanime_app/
     - Replaced the previous AniList-level progress fraction with **exact local video playback progress** (`PlaybackProgressNotifier`, backed by `local_episode_playback_progress_v1` in `SharedPreferences`).
     - **New User / Unwatched Behavior**: When an episode has not yet been played locally in the app, no progress bar is rendered—displaying only the clean episode card.
     - **In-Progress Tracking**: As the user watches the video, `PlayerProgressManager` updates the local position (`mediaId_episodeNumber` -> `positionMs`, `durationMs`, `fraction`). `ContinueWatchingCard` displays a smooth progress bar for fractions between 1% and 98%.
+    - **AniZip Persistent Metadata Caching (`FeedCacheService`, `seanime_repository.dart`)**: AniZip metadata (16:9 real episode thumbnails, official localized titles, and air dates) is cached in RAM (`_aniZipMemoryCache`) and local storage (`saveAniZipRaw` / `getAniZipData`), eliminating repetitive API requests and ensuring instant 0ms episode loading.
+    - **Anti-CLS & Offline Cache Fallback (`feed_screen.dart`, `seanime_repository.dart`)**:
+      - `continueWatchingEntries` uses memory-cached entries immediately on frame 0 while revalidation runs in the background. If the user is on a cold start without cache, the feed skeleton is preserved until both continue watching and library collections settle, eliminating layout shift (CLS).
+      - If network/AniList is offline, `getContinueWatching()` and `getContinueReadingManga()` fall back to cached data without wiping local storage with empty arrays `[]`.
   - **Missed Sequels Full Uncapped List (`backend/internal/api/anilist/list.go`, `feed_screen.dart`)**:
     - Previously, the Go backend capped missed sequels at `len(idsSlice) > 10`. This hardcoded slice was removed and replaced with a batched query pipeline (50 IDs per GraphQL chunk via `SearchBaseAnimeByIdsDocument`), returning 100% of missed sequels for the user.
     - The UI displays the full collection count badge in the section header.
@@ -206,12 +210,16 @@ seanime_app/
     - `ContinueReadingCard` renders a progress bar calculated from `progress / totalChapters` (only when `totalChapters > 0`).
     - The subtitle below the title clearly displays `${l10n.chapter} $nextChapter - $totalCaps` (e.g. `Capítulo 71 - 150`).
     - Added dedicated Manga Recommendations pipeline (`getMangaRecommendationsForUser`, `kCacheMangaRecommendations`, `mangaRecommendationsProvider`) mirroring anime recommendations.
-  - **Unauthenticated & Empty Library State Architecture (`feed_empty_state.dart`, `feed_screen.dart`, `manga_feed_screen.dart`)**:
-    - Previously, when a user was not logged in to AniList or had an empty library/watching list, all feed section slivers rendered `SizedBox.shrink()`, leaving an empty black screen under the search bar.
-    - Added dedicated `FeedEmptyState` widget rendered inside `SliverFillRemaining`:
+  - **Unauthenticated & Empty / Offline Library State Architecture (`feed_empty_state.dart`, `feed_screen.dart`, `manga_feed_screen.dart`)**:
+    - Dedicated `FeedEmptyState` widget rendered inside `SliverFillRemaining`:
       - **Compact & Top-Aligned**: Aligned towards the top (`Align(alignment: Alignment.topCenter)`) with a compact ~85px cute illustration (`assets/images/confused.png`), avoiding invasive full-screen centering or oversized elements.
-      - **Default Text Contract**: "Conecta tu cuenta de AniList para sincronizar tus listas" identically in both anime and manga feeds.
-      - **Minimalist Action Buttons**: Compact pills with reduced density and visual footprint: primary "Conectar con AniList" and secondary "Explorar".
+      - **Offline Mode (`isOffline: true`)**: When internet is unreachable or server fails, renders "Sin conexión a internet" with a retry button (`onRetry`) instead of asking the user to log in.
+      - **Unauthenticated Mode**: "Conecta tu cuenta de AniList para sincronizar tus listas" identically in both anime and manga feeds.
+      - **Minimalist Action Buttons**: Compact pills with reduced density and visual footprint: primary "Conectar con AniList" / "Reintentar" and secondary "Explorar".
+  - **Explore Hub Trending & Genre Overhaul (`search_screen.dart`, `app_providers.dart`)**:
+    - Replaced static "Popular ahora mismo" with "En tendencia ahora" sorted by `TRENDING_DESC` with extended 25-item carousels (`perPage: 25`).
+    - Replaced fantasy row with curated trending genre carousels: "Romance en tendencia", "Acción en tendencia", and "Comedia en tendencia" (`genre: 'Romance'|'Action'|'Comedy'`, `sort: 'TRENDING_DESC'`, `perPage: 25`).
+    - Mirroring identical trending structure for manga explore curation.
   - **Zero-Width & Negative Constraints Protection in Floating Navigation (`mobile_floating_nav.dart`, `floating_resume_companion.dart`)**:
     - During initial window frames (e.g. Waydroid initialization or Android split-screen mapping), `constraints.maxWidth` can transiently report `0.0`. Subtracting margins (`totalWidth - marginH * 2`) previously created negative box constraints (`w=-52.0`), throwing a Flutter `BoxConstraints has a negative minimum width` rendering assertion.
     - Added guard conditions: `totalWidth <= 0 || constraints.maxHeight <= 0` yields `SizedBox.shrink()`, `availableWidth` and `resumeWidth` are clamped to `math.max(0.0, ...)`, and `FloatingResumeCompanion` Container enforces non-negative width/height, eliminating initialization crashes.

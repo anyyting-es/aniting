@@ -311,7 +311,7 @@ final trendingAnimeProvider = FutureProvider<List<AnimeEntry>>((ref) async {
   return loadAnimeWithCacheAndSwr(
     ref: ref,
     cacheKey: FeedCacheService.kCacheTrendingAnime,
-    fetchFresh: () => ref.read(repositoryProvider).getTrendingAnime(),
+    fetchFresh: () => ref.read(repositoryProvider).getTrendingAnime(perPage: 25),
   );
 });
 
@@ -390,7 +390,7 @@ final trendingMangaProvider = FutureProvider<List<MangaEntry>>((ref) async {
   return loadMangaWithCacheAndSwr(
     ref: ref,
     cacheKey: FeedCacheService.kCacheTrendingManga,
-    fetchFresh: () => ref.read(repositoryProvider).getTrendingManga(),
+    fetchFresh: () => ref.read(repositoryProvider).getTrendingManga(perPage: 25),
   );
 });
 
@@ -443,37 +443,37 @@ final mangaProvidersListProvider = FutureProvider<List<MangaProvider>>((ref) asy
 final curatedRomanceAnimeProvider = FutureProvider<List<AnimeEntry>>((ref) async {
   final serverState = ref.watch(serverNotifierProvider);
   if (!serverState.isOnline) return [];
-  return ref.read(repositoryProvider).getAnimeByGenre(genre: 'Romance', sort: 'POPULARITY_DESC', perPage: 12);
+  return ref.read(repositoryProvider).getAnimeByGenre(genre: 'Romance', sort: 'TRENDING_DESC', perPage: 25);
 });
 
 final curatedActionAnimeProvider = FutureProvider<List<AnimeEntry>>((ref) async {
   final serverState = ref.watch(serverNotifierProvider);
   if (!serverState.isOnline) return [];
-  return ref.read(repositoryProvider).getAnimeByGenre(genre: 'Action', sort: 'POPULARITY_DESC', perPage: 12);
+  return ref.read(repositoryProvider).getAnimeByGenre(genre: 'Action', sort: 'TRENDING_DESC', perPage: 25);
 });
 
-final curatedFantasyAnimeProvider = FutureProvider<List<AnimeEntry>>((ref) async {
+final curatedComedyAnimeProvider = FutureProvider<List<AnimeEntry>>((ref) async {
   final serverState = ref.watch(serverNotifierProvider);
   if (!serverState.isOnline) return [];
-  return ref.read(repositoryProvider).getAnimeByGenre(genre: 'Fantasy', sort: 'POPULARITY_DESC', perPage: 12);
+  return ref.read(repositoryProvider).getAnimeByGenre(genre: 'Comedy', sort: 'TRENDING_DESC', perPage: 25);
 });
 
 final curatedRomanceMangaProvider = FutureProvider<List<MangaEntry>>((ref) async {
   final serverState = ref.watch(serverNotifierProvider);
   if (!serverState.isOnline) return [];
-  return ref.read(repositoryProvider).getMangaByGenre(genre: 'Romance', sort: 'POPULARITY_DESC', perPage: 12);
+  return ref.read(repositoryProvider).getMangaByGenre(genre: 'Romance', sort: 'TRENDING_DESC', perPage: 25);
 });
 
 final curatedActionMangaProvider = FutureProvider<List<MangaEntry>>((ref) async {
   final serverState = ref.watch(serverNotifierProvider);
   if (!serverState.isOnline) return [];
-  return ref.read(repositoryProvider).getMangaByGenre(genre: 'Action', sort: 'POPULARITY_DESC', perPage: 12);
+  return ref.read(repositoryProvider).getMangaByGenre(genre: 'Action', sort: 'TRENDING_DESC', perPage: 25);
 });
 
-final curatedFantasyMangaProvider = FutureProvider<List<MangaEntry>>((ref) async {
+final curatedComedyMangaProvider = FutureProvider<List<MangaEntry>>((ref) async {
   final serverState = ref.watch(serverNotifierProvider);
   if (!serverState.isOnline) return [];
-  return ref.read(repositoryProvider).getMangaByGenre(genre: 'Fantasy', sort: 'POPULARITY_DESC', perPage: 12);
+  return ref.read(repositoryProvider).getMangaByGenre(genre: 'Comedy', sort: 'TRENDING_DESC', perPage: 25);
 });
 
 // ─── OFFLINE MANGA PROVIDERS ─────────────────────────────────────────────────

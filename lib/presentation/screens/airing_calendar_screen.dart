@@ -27,34 +27,33 @@ class _AiringCalendarScreenState extends ConsumerState<AiringCalendarScreen> {
   }
 
   Future<void> _fetchSchedules() async {
-    final serverState = ref.read(serverNotifierProvider);
-    if (!serverState.isOnline) {
-      setState(() {
-        _allSchedules = [];
-        _isLoading = false;
-      });
-      return;
-    }
-
     setState(() => _isLoading = true);
     final now = DateTime.now();
     final startOfDay = DateTime(now.year, now.month, now.day);
     final startTimestamp = startOfDay.millisecondsSinceEpoch ~/ 1000;
     final endTimestamp = startTimestamp + (7 * 86400);
 
-    final repo = ref.read(repositoryProvider);
-    final schedules = await repo.getAiringSchedule(
-      startTimestamp: startTimestamp,
-      endTimestamp: endTimestamp,
-      perPage: 50,
-      maxItems: 250,
-    );
+    try {
+      final repo = ref.read(repositoryProvider);
+      final schedules = await repo.getAiringSchedule(
+        startTimestamp: startTimestamp,
+        endTimestamp: endTimestamp,
+        perPage: 50,
+        maxItems: 250,
+      );
 
-    if (mounted) {
-      setState(() {
-        _allSchedules = schedules;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _allSchedules = schedules;
+          _isLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -87,38 +86,42 @@ class _AiringCalendarScreenState extends ConsumerState<AiringCalendarScreen> {
           ),
           const SizedBox(width: 8),
         ],
+        bottom: _isLoading
+            ? const PreferredSize(
+                preferredSize: Size.fromHeight(2),
+                child: LinearProgressIndicator(minHeight: 2),
+              )
+            : null,
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : LayoutBuilder(
-              builder: (context, constraints) {
-                final isDesktop = resolvedMode == LayoutMode.desktop ||
-                    (resolvedMode == LayoutMode.auto && constraints.maxWidth >= 768);
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isDesktop = resolvedMode == LayoutMode.desktop ||
+              (resolvedMode == LayoutMode.auto && constraints.maxWidth >= 768);
 
-                if (isDesktop) {
-                  return CalendarDesktopView(
-                    days: days,
-                    selectedIndex: _selectedDayIndex,
-                    onDaySelected: (idx) => setState(() => _selectedDayIndex = idx),
-                    allSchedules: _allSchedules,
-                    titleLang: titleLang,
-                    l10n: l10n,
-                    isSpanish: isSpanish,
-                  );
-                }
+          if (isDesktop) {
+            return CalendarDesktopView(
+              days: days,
+              selectedIndex: _selectedDayIndex,
+              onDaySelected: (idx) => setState(() => _selectedDayIndex = idx),
+              allSchedules: _allSchedules,
+              titleLang: titleLang,
+              l10n: l10n,
+              isSpanish: isSpanish,
+            );
+          }
 
-                return CalendarMobileView(
-                  days: days,
-                  selectedIndex: _selectedDayIndex,
-                  onDaySelected: (idx) => setState(() => _selectedDayIndex = idx),
-                  allSchedules: _allSchedules,
-                  titleLang: titleLang,
-                  l10n: l10n,
-                  isSpanish: isSpanish,
-                  onRefresh: _fetchSchedules,
-                );
-              },
-            ),
+          return CalendarMobileView(
+            days: days,
+            selectedIndex: _selectedDayIndex,
+            onDaySelected: (idx) => setState(() => _selectedDayIndex = idx),
+            allSchedules: _allSchedules,
+            titleLang: titleLang,
+            l10n: l10n,
+            isSpanish: isSpanish,
+            onRefresh: _fetchSchedules,
+          );
+        },
+      ),
     );
   }
 }

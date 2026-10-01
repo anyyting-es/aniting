@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:seanime_app/data/models/anime_entry.dart';
+import 'package:seanime_app/data/models/anizip_data.dart';
 import 'package:seanime_app/data/models/manga_entry.dart';
 import 'package:seanime_app/data/models/server_status.dart';
 
@@ -228,6 +229,42 @@ class FeedCacheService {
       await prefs.setString(kCacheServerStatus, encoded);
     } catch (e) {
       debugPrint('FeedCacheService: error saving server status: $e');
+    }
+  }
+
+  // --- ANIZIP PERSISTENT CACHE METHODS ---
+
+  final Map<int, AniZipData> _aniZipMemoryCache = {};
+
+  AniZipData? getAniZipData(int mediaId) {
+    if (_aniZipMemoryCache.containsKey(mediaId)) {
+      return _aniZipMemoryCache[mediaId];
+    }
+    final prefs = _cachedPrefs;
+    if (prefs != null) {
+      final raw = prefs.getString('feed_cache_anizip_$mediaId');
+      if (raw != null && raw.isNotEmpty) {
+        try {
+          final decoded = jsonDecode(raw);
+          if (decoded is Map<String, dynamic>) {
+            final data = AniZipData.fromJson(decoded);
+            _aniZipMemoryCache[mediaId] = data;
+            return data;
+          }
+        } catch (_) {}
+      }
+    }
+    return null;
+  }
+
+  Future<void> saveAniZipRaw(int mediaId, Map<String, dynamic> rawJson) async {
+    try {
+      _aniZipMemoryCache[mediaId] = AniZipData.fromJson(rawJson);
+      final prefs = _cachedPrefs ?? await SharedPreferences.getInstance();
+      _cachedPrefs = prefs;
+      await prefs.setString('feed_cache_anizip_$mediaId', jsonEncode(rawJson));
+    } catch (e) {
+      debugPrint('FeedCacheService: error saving anizip cache for $mediaId: $e');
     }
   }
 

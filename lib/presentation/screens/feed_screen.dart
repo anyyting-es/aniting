@@ -15,6 +15,7 @@ import 'package:seanime_app/presentation/widgets/continue_watching_card.dart';
 import 'package:seanime_app/core/theme/smooth_scroll_controller.dart';
 import 'package:seanime_app/presentation/widgets/feed_empty_state.dart';
 import 'package:seanime_app/presentation/widgets/top_status_bar_glass.dart';
+import 'package:seanime_app/data/services/feed_cache_service.dart';
 
 class FeedScreen extends ConsumerStatefulWidget {
   final VoidCallback? onOpenSearch;
@@ -220,6 +221,13 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     return list;
   }
 
+  Future<void> _refresh() async {
+    ref.invalidate(continueWatchingProvider);
+    ref.invalidate(animeCollectionProvider);
+    ref.invalidate(missedSequelsProvider);
+    ref.invalidate(recommendationsProvider);
+  }
+
   @override
   Widget build(BuildContext context) {
     final serverState = ref.watch(serverNotifierProvider);
@@ -248,31 +256,34 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     final isLoggedIn = serverState.status?.isLoggedIn ?? false;
 
     // Cache / Readiness check for user library
-    final hasUserCachedData = (continueWatchingAsync.value?.isNotEmpty ?? false) ||
+    final cachedCw = FeedCacheService.instance.getAnimeList(FeedCacheService.kCacheContinueWatchingAnime);
+    final continueWatchingEntries = continueWatchingAsync.value ?? (continueWatchingAsync.isLoading ? cachedCw : <AnimeEntry>[]);
+    final hasUserCachedData = cachedCw.isNotEmpty ||
         (collectionAsync.value?.isNotEmpty ?? false);
     final isServerUnavailable = serverState.state == ServerState.stopped || serverState.state == ServerState.error;
 
-    final isUserFeedReady = !isLoggedIn ||
-        hasUserCachedData ||
-        (continueWatchingAsync.hasValue &&
-            collectionAsync.hasValue &&
-            !continueWatchingAsync.isLoading &&
-            !collectionAsync.isLoading);
+    // Both continueWatching (or its cache) and collection must be settled before removing skeleton to prevent CLS
+    final isCwSettled = continueWatchingAsync.hasValue || cachedCw.isNotEmpty || continueWatchingAsync.hasError;
+    final isCollectionSettled = collectionAsync.hasValue || collectionAsync.hasError;
+    final isUserFeedReady = !isLoggedIn || (isCwSettled && isCollectionSettled);
 
     if (!_hasCompletedInitialLoad) {
-      if (hasUserCachedData || isServerUnavailable || (serverState.isOnline && isUserFeedReady)) {
+      if ((hasUserCachedData && isCwSettled) || isServerUnavailable || (serverState.isOnline && isUserFeedReady)) {
         _hasCompletedInitialLoad = true;
       }
     }
 
     final showFeedSkeleton = !_hasCompletedInitialLoad;
 
-    final hasContinueWatching = continueWatchingAsync.value?.isNotEmpty ?? false;
+    final hasContinueWatching = continueWatchingEntries.isNotEmpty;
     final hasWatching = collectionAsync.value?.any((e) =>
         e.status.toUpperCase() == 'CURRENT' || e.status.toUpperCase() == 'WATCHING') ?? false;
     final hasMissedSequels = missedSequelsAsync.value?.isNotEmpty ?? false;
     final hasRecommendations = recommendationsAsync.value?.isNotEmpty ?? false;
     final hasAnyContent = hasContinueWatching || hasWatching || hasMissedSequels || hasRecommendations;
+    final isOffline = !serverState.isOnline ||
+        (serverState.state == ServerState.error) ||
+        (collectionAsync.hasError && (continueWatchingAsync.hasError || continueWatchingEntries.isEmpty));
 
     return PopScope(
       canPop: !_isSearching && _searchController.text.isEmpty,
@@ -440,101 +451,101 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                         child: FeedEmptyState(
                           isLoggedIn: isLoggedIn,
                           isManga: false,
+                          isOffline: isOffline,
+                          onRetry: _refresh,
                           iconPack: iconPack,
                           onExplore: widget.onOpenSearch,
                         ),
                       ),
                     ] else ...[
                       // ─── 1. Seguir Viendo (Continue Watching with Local Playback Progress) ───
-                      continueWatchingAsync.when(
-                        data: (entries) {
-                          if (entries.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
-                          final sortedEntries = _getSortedContinueWatching(entries, continueWatchingSort, titleLang);
-                          return SliverToBoxAdapter(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _SectionHeader(
-                                  title: l10n.continueWatching,
-                                  trailing: SizedBox(
-                                    width: 36,
-                                    height: 36,
-                                    child: PopupMenuButton<ContinueWatchingSortMode>(
-                                      padding: EdgeInsets.zero,
-                                      constraints: const BoxConstraints(minWidth: 175),
-                                      icon: Icon(
-                                        AppIcons.sort(iconPack),
-                                        size: 20,
-                                        color: theme.colorScheme.onSurfaceVariant,
-                                      ),
-                                      tooltip: '',
-                                      onSelected: (mode) {
-                                        ref.read(continueWatchingSortProvider.notifier).setSortMode(mode);
-                                      },
-                                      itemBuilder: (context) => [
-                                        for (final mode in ContinueWatchingSortMode.values)
-                                          PopupMenuItem(
-                                            value: mode,
-                                            height: 38,
-                                            child: Row(
-                                              children: [
-                                                Icon(
-                                                  mode == continueWatchingSort
-                                                      ? AppIcons.radioChecked(iconPack)
-                                                      : AppIcons.radioUnchecked(iconPack),
-                                                  size: 16,
-                                                  color: mode == continueWatchingSort
-                                                      ? theme.colorScheme.primary
-                                                      : theme.colorScheme.onSurfaceVariant,
-                                                ),
-                                                const SizedBox(width: 10),
-                                                Text(
-                                                  mode.localizedLabel(l10n),
-                                                  style: TextStyle(
-                                                    fontSize: 13,
-                                                    fontWeight: mode == continueWatchingSort
-                                                        ? FontWeight.bold
-                                                        : FontWeight.normal,
+                      if (continueWatchingEntries.isNotEmpty)
+                        Builder(
+                          builder: (context) {
+                            final sortedEntries = _getSortedContinueWatching(continueWatchingEntries, continueWatchingSort, titleLang);
+                            return SliverToBoxAdapter(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _SectionHeader(
+                                    title: l10n.continueWatching,
+                                    trailing: SizedBox(
+                                      width: 36,
+                                      height: 36,
+                                      child: PopupMenuButton<ContinueWatchingSortMode>(
+                                        padding: EdgeInsets.zero,
+                                        constraints: const BoxConstraints(minWidth: 175),
+                                        icon: Icon(
+                                          AppIcons.sort(iconPack),
+                                          size: 20,
+                                          color: theme.colorScheme.onSurfaceVariant,
+                                        ),
+                                        tooltip: '',
+                                        onSelected: (mode) {
+                                          ref.read(continueWatchingSortProvider.notifier).setSortMode(mode);
+                                        },
+                                        itemBuilder: (context) => [
+                                          for (final mode in ContinueWatchingSortMode.values)
+                                            PopupMenuItem(
+                                              value: mode,
+                                              height: 38,
+                                              child: Row(
+                                                children: [
+                                                  Icon(
+                                                    mode == continueWatchingSort
+                                                        ? AppIcons.radioChecked(iconPack)
+                                                        : AppIcons.radioUnchecked(iconPack),
+                                                    size: 16,
                                                     color: mode == continueWatchingSort
                                                         ? theme.colorScheme.primary
-                                                        : null,
+                                                        : theme.colorScheme.onSurfaceVariant,
                                                   ),
-                                                ),
-                                              ],
+                                                  const SizedBox(width: 10),
+                                                  Text(
+                                                    mode.localizedLabel(l10n),
+                                                    style: TextStyle(
+                                                      fontSize: 13,
+                                                      fontWeight: mode == continueWatchingSort
+                                                          ? FontWeight.bold
+                                                          : FontWeight.normal,
+                                                      color: mode == continueWatchingSort
+                                                          ? theme.colorScheme.primary
+                                                          : null,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
                                             ),
-                                          ),
-                                      ],
+                                        ],
+                                      ),
                                     ),
                                   ),
-                                ),
-                                SizedBox(
-                                  height: continueListHeight + 16,
-                                  child: ListView.separated(
-                                    clipBehavior: Clip.none,
-                                    scrollDirection: Axis.horizontal,
-                                    cacheExtent: 350,
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                    itemCount: sortedEntries.length,
-                                    separatorBuilder: (context, index) => SizedBox(width: carouselSpacing),
-                                    itemBuilder: (context, index) {
-                                      final item = sortedEntries[index];
-                                      return ContinueWatchingCard(
-                                        entry: item,
-                                        width: continueCardWidth,
-                                        height: continueCardHeight,
-                                        onTap: () => _openDetail(context, item),
-                                      );
-                                    },
+                                  SizedBox(
+                                    height: continueListHeight + 16,
+                                    child: ListView.separated(
+                                      clipBehavior: Clip.none,
+                                      scrollDirection: Axis.horizontal,
+                                      cacheExtent: 350,
+                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                      itemCount: sortedEntries.length,
+                                      separatorBuilder: (context, index) => SizedBox(width: carouselSpacing),
+                                      itemBuilder: (context, index) {
+                                        final item = sortedEntries[index];
+                                        return ContinueWatchingCard(
+                                          entry: item,
+                                          width: continueCardWidth,
+                                          height: continueCardHeight,
+                                          onTap: () => _openDetail(context, item),
+                                        );
+                                      },
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(height: 20),
-                              ],
-                            ),
-                          );
-                        },
-                        loading: () => const SliverToBoxAdapter(child: SizedBox.shrink()),
-                        error: (e, stack) => const SliverToBoxAdapter(child: SizedBox.shrink()),
-                      ),
+                                  const SizedBox(height: 20),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
 
                       // ─── 2. Viendo Actualmente (Currently Watching) ───
                       ..._buildWatchingSlivers(

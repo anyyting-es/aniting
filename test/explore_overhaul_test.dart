@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/server/server_manager.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/screens/search_screen.dart';
@@ -149,25 +150,27 @@ void main() {
       );
       await tester.pump();
 
+      final searchIcon = AppIcons.search(AppIconPack.lucide);
+
       // Starts in icon-only mode
       expect(find.byType(CompactSearchBar), findsNothing);
       expect(find.byType(MediaTypeToggle), findsOneWidget);
-      expect(find.byIcon(Icons.search_rounded), findsOneWidget);
+      expect(find.byIcon(searchIcon), findsOneWidget);
 
       // Tap search icon
-      await tester.tap(find.byIcon(Icons.search_rounded));
+      await tester.tap(find.byIcon(searchIcon));
       await tester.pumpAndSettle();
 
       // CompactSearchBar is now visible
       expect(find.byType(CompactSearchBar), findsOneWidget);
 
       // Tap back button on the search bar
-      await tester.tap(find.byIcon(Icons.arrow_back_rounded));
+      await tester.tap(find.byKey(const ValueKey('compact_search_back_btn')));
       await tester.pumpAndSettle();
 
       // Restored icon-only mode
       expect(find.byType(CompactSearchBar), findsNothing);
-      expect(find.byIcon(Icons.search_rounded), findsOneWidget);
+      expect(find.byIcon(searchIcon), findsOneWidget);
     });
   });
 }

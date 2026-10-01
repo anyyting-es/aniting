@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/server/server_manager.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
@@ -10,11 +11,28 @@ import 'package:seanime_app/presentation/screens/genres_screen.dart';
 import 'package:seanime_app/presentation/screens/search_screen.dart';
 import 'package:seanime_app/presentation/widgets/compact_search_bar.dart';
 
+import 'package:seanime_app/core/api/api_client.dart';
+import 'package:seanime_app/data/models/airing_schedule.dart';
+import 'package:seanime_app/data/repositories/seanime_repository.dart';
+
 class MockServerNotifier extends ServerNotifier {
   @override
   ServerStateModel build() {
     return const ServerStateModel(state: ServerState.stopped);
   }
+}
+
+class FakeCalendarRepository extends SeanimeRepository {
+  FakeCalendarRepository() : super(ApiClient());
+
+  @override
+  Future<List<AiringScheduleItem>> getAiringSchedule({
+    int? startTimestamp,
+    int? endTimestamp,
+    int page = 1,
+    int perPage = 50,
+    int maxItems = 250,
+  }) async => [];
 }
 
 void main() {
@@ -99,6 +117,8 @@ void main() {
         ProviderScope(
           overrides: [
             serverNotifierProvider.overrideWith(MockServerNotifier.new),
+            translationsProvider.overrideWithValue(const SpanishTranslations()),
+            repositoryProvider.overrideWithValue(FakeCalendarRepository()),
           ],
           child: const MaterialApp(
             home: AiringCalendarScreen(),

@@ -86,13 +86,6 @@ class CalendarDayTabs extends StatelessWidget {
                       topLeft: Radius.circular(3),
                       topRight: Radius.circular(3),
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: primaryColor.withValues(alpha: 0.5),
-                        blurRadius: 5,
-                        offset: const Offset(0, -1),
-                      ),
-                    ],
                   ),
                 ),
               ),

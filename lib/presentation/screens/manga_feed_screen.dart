@@ -14,6 +14,8 @@ import 'package:seanime_app/presentation/widgets/server_status_banner.dart';
 import 'package:seanime_app/presentation/widgets/top_status_bar_glass.dart';
 
 import 'package:seanime_app/core/theme/smooth_scroll_controller.dart';
+import 'package:seanime_app/core/server/server_manager.dart';
+import 'package:seanime_app/data/services/feed_cache_service.dart';
 
 class MangaFeedScreen extends ConsumerStatefulWidget {
   final VoidCallback? onOpenSearch;
@@ -106,6 +108,12 @@ class _MangaFeedScreenState extends ConsumerState<MangaFeedScreen> {
     });
   }
 
+  Future<void> _refresh() async {
+    ref.invalidate(continueReadingMangaProvider);
+    ref.invalidate(mangaCollectionProvider);
+    ref.invalidate(mangaRecommendationsProvider);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -119,10 +127,16 @@ class _MangaFeedScreenState extends ConsumerState<MangaFeedScreen> {
     final mangaRecommendationsAsync = ref.watch(mangaRecommendationsProvider);
     final isLoggedIn = serverState.status?.isLoggedIn ?? false;
 
-    final hasContinueReading = continueReadingAsync.value?.isNotEmpty ?? false;
+    final cachedCr = FeedCacheService.instance.getMangaList(FeedCacheService.kCacheContinueReadingManga);
+    final continueReadingEntries = continueReadingAsync.value ?? (continueReadingAsync.isLoading ? cachedCr : <MangaEntry>[]);
+
+    final hasContinueReading = continueReadingEntries.isNotEmpty;
     final hasCompleted = mangaCollectionAsync.value?.any((e) => e.status.toUpperCase() == 'COMPLETED') ?? false;
     final hasMangaRecs = mangaRecommendationsAsync.value?.isNotEmpty ?? false;
     final hasAnyMangaContent = hasContinueReading || hasCompleted || hasMangaRecs;
+    final isOffline = !serverState.isOnline ||
+        (serverState.state == ServerState.error) ||
+        (mangaCollectionAsync.hasError && (continueReadingAsync.hasError || continueReadingEntries.isEmpty));
 
     final isDesktop = MediaQuery.of(context).size.width >= 720;
     final mangaCardWidth = isDesktop ? 180.0 : 125.0;
@@ -271,6 +285,8 @@ class _MangaFeedScreenState extends ConsumerState<MangaFeedScreen> {
                               child: FeedEmptyState(
                                 isLoggedIn: isLoggedIn,
                                 isManga: true,
+                                isOffline: isOffline,
+                                onRetry: _refresh,
                                 iconPack: iconPack,
                                 onExplore: widget.onOpenSearch,
                               ),
@@ -389,7 +405,8 @@ class _MangaFeedScreenState extends ConsumerState<MangaFeedScreen> {
     required ThemeData theme,
     required bool isDesktop,
   }) {
-    final list = continueReadingAsync.value ?? [];
+    final cached = FeedCacheService.instance.getMangaList(FeedCacheService.kCacheContinueReadingManga);
+    final list = continueReadingAsync.value ?? (continueReadingAsync.isLoading ? cached : []);
     if (list.isEmpty) return [];
 
     final cardWidth = isDesktop ? 180.0 : 130.0;

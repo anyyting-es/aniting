@@ -17,6 +17,7 @@ import 'package:seanime_app/data/models/onlinestream_models.dart';
 import 'package:seanime_app/data/models/server_status.dart';
 import 'package:seanime_app/data/models/torrent_file_preview.dart';
 import 'package:seanime_app/data/models/torrent_models.dart';
+import 'package:seanime_app/data/services/feed_cache_service.dart';
 
 class SeanimeRepository {
   final ApiClient _apiClient;
@@ -250,6 +251,11 @@ class SeanimeRepository {
     if (_aniZipCache.containsKey(mediaId)) {
       return _aniZipCache[mediaId];
     }
+    final persistent = FeedCacheService.instance.getAniZipData(mediaId);
+    if (persistent != null) {
+      _aniZipCache[mediaId] = persistent;
+      return persistent;
+    }
     try {
       final response = await _externalDio.get('https://api.ani.zip/v1/episodes?anilist_id=$mediaId');
       if (response.statusCode == 200 && response.data != null) {
@@ -258,6 +264,7 @@ class SeanimeRepository {
         if (map is Map<String, dynamic>) {
           final data = AniZipData.fromJson(map);
           _aniZipCache[mediaId] = data;
+          await FeedCacheService.instance.saveAniZipRaw(mediaId, map);
           return data;
         }
       }
@@ -502,6 +509,13 @@ class SeanimeRepository {
       final serverHistory = results[1] as Map<int, dynamic>;
       final localHistory = results[2] as Map<int, int>;
       final anilistResponse = results[3] as Response?;
+
+      // Offline protection: if neither server library nor AniList could be reached, return cached entries
+      if (libraryResponse == null && anilistResponse == null) {
+        final cached = FeedCacheService.instance.getAnimeList(FeedCacheService.kCacheContinueWatchingAnime);
+        if (cached.isNotEmpty) return cached;
+        throw Exception('No network connection and no cached continue watching');
+      }
 
       final list = <AnimeEntry>[];
       final seenMediaIds = <int>{};
@@ -2489,6 +2503,8 @@ class SeanimeRepository {
       return reading;
     } catch (e) {
       debugPrint('Error getting continue reading manga: $e');
+      final cached = FeedCacheService.instance.getMangaList(FeedCacheService.kCacheContinueReadingManga);
+      if (cached.isNotEmpty) return cached;
       return [];
     }
   }

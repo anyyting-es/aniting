@@ -11,6 +11,8 @@ import 'package:seanime_app/presentation/widgets/anilist_auth_sheet.dart';
 class FeedEmptyState extends ConsumerWidget {
   final bool isLoggedIn;
   final bool isManga;
+  final bool isOffline;
+  final VoidCallback? onRetry;
   final VoidCallback? onExplore;
   final VoidCallback? onLogin;
   final AppIconPack iconPack;
@@ -19,6 +21,8 @@ class FeedEmptyState extends ConsumerWidget {
     super.key,
     required this.isLoggedIn,
     this.isManga = false,
+    this.isOffline = false,
+    this.onRetry,
     this.onExplore,
     this.onLogin,
     this.iconPack = AppIconPack.lucide,
@@ -28,20 +32,29 @@ class FeedEmptyState extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final l10n = ref.watch(translationsProvider);
+    final isSpanish = ref.watch(appLanguageProvider) == AppLanguage.es;
 
-    final title = !isLoggedIn
-        ? (l10n.loginForFeed.isNotEmpty ? l10n.loginForFeed : 'Inicia sesión en AniList')
-        : (isManga ? 'Tu lista de manga está vacía' : 'Tu lista de anime está vacía');
+    final title = isOffline
+        ? (isSpanish ? 'Sin conexión a internet' : 'No internet connection')
+        : (!isLoggedIn
+            ? (l10n.loginForFeed.isNotEmpty ? l10n.loginForFeed : 'Inicia sesión en AniList')
+            : (isManga ? 'Tu lista de manga está vacía' : 'Tu lista de anime está vacía'));
 
-    final description = !isLoggedIn
-        ? 'Conecta tu cuenta de AniList para sincronizar tus listas'
-        : (isManga
-            ? 'Aún no tienes mangas en curso. Explora el catálogo o busca tus series favoritas.'
-            : 'Aún no tienes animes en seguimiento. Explora el catálogo o busca tus series favoritas.');
+    final description = isOffline
+        ? (isSpanish
+            ? 'No pudimos conectar con los servidores. Revisa tu conexión a internet.'
+            : 'Could not connect to the servers. Please check your internet connection.')
+        : (!isLoggedIn
+            ? 'Conecta tu cuenta de AniList para sincronizar tus listas'
+            : (isManga
+                ? 'Aún no tienes mangas en curso. Explora el catálogo o busca tus series favoritas.'
+                : 'Aún no tienes animes en seguimiento. Explora el catálogo o busca tus series favoritas.'));
 
-    final mainIcon = !isLoggedIn
-        ? Icons.account_circle_outlined
-        : (isManga ? Icons.auto_stories_outlined : Icons.live_tv_rounded);
+    final mainIcon = isOffline
+        ? Icons.wifi_off_rounded
+        : (!isLoggedIn
+            ? Icons.account_circle_outlined
+            : (isManga ? Icons.auto_stories_outlined : Icons.live_tv_rounded));
 
     return Align(
       alignment: Alignment.topCenter,
@@ -104,7 +117,59 @@ class FeedEmptyState extends ConsumerWidget {
               const SizedBox(height: 16),
 
               // 4. Minimalist Action Buttons
-              if (!isLoggedIn) ...[
+              if (isOffline) ...[
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 10,
+                  runSpacing: 8,
+                  children: [
+                    if (onRetry != null)
+                      FilledButton.icon(
+                        style: FilledButton.styleFrom(
+                          visualDensity: VisualDensity.compact,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          elevation: 0,
+                        ),
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          onRetry!();
+                        },
+                        icon: const Icon(Icons.refresh_rounded, size: 16),
+                        label: Text(
+                          l10n.retry,
+                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                        ),
+                      ),
+                    if (onExplore != null)
+                      OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          visualDensity: VisualDensity.compact,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          side: BorderSide(
+                            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+                            width: 1,
+                          ),
+                        ),
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          onExplore?.call();
+                        },
+                        icon: const Icon(Icons.explore_outlined, size: 16),
+                        label: Text(
+                          isSpanish ? 'Explorar' : 'Explore',
+                          style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+                        ),
+                      ),
+                  ],
+                ),
+              ] else if (!isLoggedIn) ...[
                 Wrap(
                   alignment: WrapAlignment.center,
                   crossAxisAlignment: WrapCrossAlignment.center,

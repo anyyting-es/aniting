@@ -590,16 +590,14 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final trendingMangaAsync = !isAnime ? ref.watch(trendingMangaProvider) : null;
 
     // Curated providers for Anime
-    final popularAnimeAsync = isAnime && !_showSearchBar ? ref.watch(popularAnimeProvider) : null;
     final romanceAnimeAsync = isAnime && !_showSearchBar ? ref.watch(curatedRomanceAnimeProvider) : null;
     final actionAnimeAsync = isAnime && !_showSearchBar ? ref.watch(curatedActionAnimeProvider) : null;
-    final fantasyAnimeAsync = isAnime && !_showSearchBar ? ref.watch(curatedFantasyAnimeProvider) : null;
+    final comedyAnimeAsync = isAnime && !_showSearchBar ? ref.watch(curatedComedyAnimeProvider) : null;
 
     // Curated providers for Manga
-    final popularMangaAsync = !isAnime && !_showSearchBar ? ref.watch(popularMangaProvider) : null;
     final romanceMangaAsync = !isAnime && !_showSearchBar ? ref.watch(curatedRomanceMangaProvider) : null;
     final actionMangaAsync = !isAnime && !_showSearchBar ? ref.watch(curatedActionMangaProvider) : null;
-    final fantasyMangaAsync = !isAnime && !_showSearchBar ? ref.watch(curatedFantasyMangaProvider) : null;
+    final comedyMangaAsync = !isAnime && !_showSearchBar ? ref.watch(curatedComedyMangaProvider) : null;
 
     final topPadding = MediaQuery.of(context).padding.top;
 
@@ -620,16 +618,14 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 } else {
                   if (isAnime) {
                     ref.invalidate(trendingAnimeProvider);
-                    ref.invalidate(popularAnimeProvider);
                     ref.invalidate(curatedRomanceAnimeProvider);
                     ref.invalidate(curatedActionAnimeProvider);
-                    ref.invalidate(curatedFantasyAnimeProvider);
+                    ref.invalidate(curatedComedyAnimeProvider);
                   } else {
                     ref.invalidate(trendingMangaProvider);
-                    ref.invalidate(popularMangaProvider);
                     ref.invalidate(curatedRomanceMangaProvider);
                     ref.invalidate(curatedActionMangaProvider);
-                    ref.invalidate(curatedFantasyMangaProvider);
+                    ref.invalidate(curatedComedyMangaProvider);
                   }
                 }
               },
@@ -908,22 +904,22 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       if (isAnime) ...[
                         SliverToBoxAdapter(
                           child: _buildCuratedAnimeSection(
-                            title: l10n.popularOfTheMoment,
+                            title: isSpanish ? 'En tendencia ahora' : 'Trending Now',
                             onSeeMoreTap: () {
                               setState(() {
-                                _filterState = _filterState.copyWith(sort: 'POPULARITY_DESC');
+                                _filterState = _filterState.copyWith(sort: 'TRENDING_DESC');
                                 _isSearchExpanded = true;
                               });
                               _fetchResults(reset: true);
                             },
-                            entries: popularAnimeAsync?.asData?.value ?? [],
+                            entries: trendingAnimeAsync?.asData?.value ?? [],
                             theme: theme,
                             l10n: l10n,
                           ),
                         ),
                         SliverToBoxAdapter(
                           child: _buildCuratedAnimeSection(
-                            title: l10n.curatedRomance,
+                            title: isSpanish ? 'Romance en tendencia' : 'Trending Romance',
                             genreKey: 'Romance',
                             entries: romanceAnimeAsync?.asData?.value ?? [],
                             theme: theme,
@@ -932,7 +928,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         ),
                         SliverToBoxAdapter(
                           child: _buildCuratedAnimeSection(
-                            title: l10n.curatedAction,
+                            title: isSpanish ? 'Acción en tendencia' : 'Trending Action',
                             genreKey: 'Action',
                             entries: actionAnimeAsync?.asData?.value ?? [],
                             theme: theme,
@@ -941,9 +937,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         ),
                         SliverToBoxAdapter(
                           child: _buildCuratedAnimeSection(
-                            title: l10n.curatedFantasy,
-                            genreKey: 'Fantasy',
-                            entries: fantasyAnimeAsync?.asData?.value ?? [],
+                            title: isSpanish ? 'Comedia en tendencia' : 'Trending Comedy',
+                            genreKey: 'Comedy',
+                            entries: comedyAnimeAsync?.asData?.value ?? [],
                             theme: theme,
                             l10n: l10n,
                           ),
@@ -951,22 +947,22 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       ] else ...[
                         SliverToBoxAdapter(
                           child: _buildCuratedMangaSection(
-                            title: l10n.popularOfTheMoment,
+                            title: isSpanish ? 'En tendencia ahora' : 'Trending Now',
                             onSeeMoreTap: () {
                               setState(() {
-                                _filterState = _filterState.copyWith(sort: 'POPULARITY_DESC');
+                                _filterState = _filterState.copyWith(sort: 'TRENDING_DESC');
                                 _isSearchExpanded = true;
                               });
                               _fetchResults(reset: true);
                             },
-                            entries: popularMangaAsync?.asData?.value ?? [],
+                            entries: trendingMangaAsync?.asData?.value ?? [],
                             theme: theme,
                             l10n: l10n,
                           ),
                         ),
                         SliverToBoxAdapter(
                           child: _buildCuratedMangaSection(
-                            title: l10n.curatedRomanceManga,
+                            title: isSpanish ? 'Romance en tendencia' : 'Trending Romance',
                             genreKey: 'Romance',
                             entries: romanceMangaAsync?.asData?.value ?? [],
                             theme: theme,
@@ -975,7 +971,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         ),
                         SliverToBoxAdapter(
                           child: _buildCuratedMangaSection(
-                            title: l10n.curatedActionManga,
+                            title: isSpanish ? 'Acción en tendencia' : 'Trending Action',
                             genreKey: 'Action',
                             entries: actionMangaAsync?.asData?.value ?? [],
                             theme: theme,
@@ -984,9 +980,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         ),
                         SliverToBoxAdapter(
                           child: _buildCuratedMangaSection(
-                            title: l10n.curatedFantasyManga,
-                            genreKey: 'Fantasy',
-                            entries: fantasyMangaAsync?.asData?.value ?? [],
+                            title: isSpanish ? 'Comedia en tendencia' : 'Trending Comedy',
+                            genreKey: 'Comedy',
+                            entries: comedyMangaAsync?.asData?.value ?? [],
                             theme: theme,
                             l10n: l10n,
                           ),
