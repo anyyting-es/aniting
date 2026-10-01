@@ -389,6 +389,10 @@ seanime_app/
     - **Advanced Options Sheet (`AnimeDetailAdvancedSheet`)**: Accessible via the "Opciones avanzadas" button at the bottom of the source popup. Hosts Sub/Dub audio toggle pills, manual linking (`Vincular`), cache refresh (`Recargar`), and extension marketplace navigation.
   - **Unobstructed Episode List & Natural Scroll**:
     - Completely eliminates bottom floating docks so episodes and pagination controls flow cleanly and unobstructed from top to bottom with standard bottom inset padding (`bottomPadding + 24`).
+  - **Banner Blur Containment & Stationary Gradient Architecture (`anime_detail_mobile_layout.dart`, `manga_detail_mobile_layout.dart`, `desktop_hero_banner.dart`)**:
+    - **Zero-Bleed Blur Clipping**: `ImageFiltered(imageFilter: ImageFilter.blur(...), child: Transform.scale(scale: 1.25, ...))` is strictly wrapped inside an internal `ClipRect`, preventing the 1.25x scaled blurred image from spilling beyond the 345px banner box bounds.
+    - **Stationary Multi-Stop Gradient Anchor**: The bottom gradient into `scaffoldBackgroundColor` is decoupled from the parallax translation so it remains permanently anchored to the bottom of the banner viewport, guaranteeing the solid theme background never pulls upward or leaves unmasked color gaps during scroll.
+    - **Scroll-Driven Darkening**: Added a smooth scroll-driven darkening overlay (`theme.scaffoldBackgroundColor.withValues(alpha: (scrollOffset / 200.0).clamp(0.0, 1.0))`), dissolving the banner seamlessly into the theme background as foreground content scrolls over it.
 - **SliverGrid Zero-Width Viewport Protection (`feed_screen.dart`, `manga_feed_screen.dart`)**:
   - Wrapped `SliverGrid.builder` elements inside `SliverLayoutBuilder`. When initial window frames (e.g. Linux GTK, Windows launch before mapping) or tiled layouts supply `constraints.crossAxisExtent <= 32.0`, it returns an empty `SliverToBoxAdapter` rather than triggering Flutter's `assert(constraints.crossAxisExtent > 0.0)` layout assertion crash.
 - **Card Typography & Japanese Fallback Font Pipeline (`theme_provider.dart`, `AnimeCard`, `MangaCard`)**:

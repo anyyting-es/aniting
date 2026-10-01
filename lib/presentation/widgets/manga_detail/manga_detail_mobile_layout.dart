@@ -218,88 +218,98 @@ class _MangaDetailMobileLayoutState extends ConsumerState<MangaDetailMobileLayou
             left: 0,
             right: 0,
             height: 345,
-            child: ClipRect(
-              child: RepaintBoundary(
-                child: AnimatedBuilder(
-                  animation: Listenable.merge([_bannerAnimController, _scrollController]),
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      if (bannerUrl != null)
-                        shouldBlur
-                            ? ImageFiltered(
-                                imageFilter: ImageFilter.blur(sigmaX: 45, sigmaY: 45),
-                                child: Transform.scale(
-                                  scale: 1.25,
-                                  child: CachedNetworkImage(
-                                    imageUrl: bannerUrl,
-                                    fit: BoxFit.cover,
-                                    alignment: Alignment.topCenter,
-                                    memCacheWidth: 1080,
-                                    errorWidget: (_, _, _) =>
-                                        Container(color: theme.colorScheme.surfaceContainer),
-                                  ),
-                                ),
-                              )
-                            : CachedNetworkImage(
-                                imageUrl: bannerUrl,
-                                fit: BoxFit.cover,
-                                alignment: Alignment.topCenter,
-                                memCacheWidth: 1080,
-                                errorWidget: (_, _, _) =>
-                                    Container(color: theme.colorScheme.surfaceContainer),
-                              )
-                      else
-                        Container(color: theme.colorScheme.surfaceContainer),
+            child: Container(
+              color: theme.scaffoldBackgroundColor,
+              child: ClipRect(
+                child: RepaintBoundary(
+                  child: AnimatedBuilder(
+                    animation: Listenable.merge([_bannerAnimController, _scrollController]),
+                    builder: (context, _) {
+                      final scrollOffset = _scrollController.hasClients
+                          ? _scrollController.offset.clamp(0.0, double.infinity)
+                          : 0.0;
+                      final ambientScale = 1.0 + (_bannerScaleAnimation.value * 0.05);
+                      final ambientTranslateY = _bannerTranslateAnimation.value;
+                      final parallaxTranslateY =
+                          scrollOffset > 0 ? -scrollOffset * 0.35 : 0.0;
+                      final totalTranslateY = ambientTranslateY + parallaxTranslateY;
+                      final scrollDarkening = (scrollOffset / 200.0).clamp(0.0, 1.0);
 
-                      // Multi-stop cinematic gradient
-                      Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: isDark
-                                ? [
-                                    Colors.black.withValues(alpha: 0.65),
-                                    Colors.black.withValues(alpha: 0.15),
-                                    Colors.black.withValues(alpha: 0.45),
-                                    Colors.black.withValues(alpha: 0.85),
-                                    theme.scaffoldBackgroundColor.withValues(alpha: 0.96),
-                                    theme.scaffoldBackgroundColor,
-                                  ]
-                                : [
-                                    Colors.black.withValues(alpha: 0.35),
-                                    Colors.white.withValues(alpha: 0.10),
-                                    Colors.white.withValues(alpha: 0.50),
-                                    Colors.white.withValues(alpha: 0.88),
-                                    theme.scaffoldBackgroundColor.withValues(alpha: 0.96),
-                                    theme.scaffoldBackgroundColor,
-                                  ],
-                            stops: const [0.0, 0.20, 0.45, 0.70, 0.90, 1.0],
+                      return Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          // Parallax Banner Image (strictly clipped to bounds to avoid blur bleed)
+                          Transform.translate(
+                            offset: Offset(0, totalTranslateY),
+                            child: Transform.scale(
+                              scale: ambientScale,
+                              alignment: Alignment.topCenter,
+                              child: bannerUrl != null
+                                  ? (shouldBlur
+                                      ? ClipRect(
+                                          child: ImageFiltered(
+                                            imageFilter: ImageFilter.blur(sigmaX: 45, sigmaY: 45),
+                                            child: Transform.scale(
+                                              scale: 1.25,
+                                              child: CachedNetworkImage(
+                                                imageUrl: bannerUrl,
+                                                fit: BoxFit.cover,
+                                                alignment: Alignment.topCenter,
+                                                memCacheWidth: 1080,
+                                                errorWidget: (_, _, _) =>
+                                                    Container(color: theme.colorScheme.surfaceContainer),
+                                              ),
+                                            ),
+                                          ),
+                                        )
+                                      : CachedNetworkImage(
+                                          imageUrl: bannerUrl,
+                                          fit: BoxFit.cover,
+                                          alignment: Alignment.topCenter,
+                                          memCacheWidth: 1080,
+                                          errorWidget: (_, _, _) =>
+                                              Container(color: theme.colorScheme.surfaceContainer),
+                                        ))
+                                  : Container(color: theme.colorScheme.surfaceContainer),
+                            ),
                           ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  builder: (context, child) {
-                    final scrollOffset = _scrollController.hasClients
-                        ? _scrollController.offset.clamp(0.0, double.infinity)
-                        : 0.0;
-                    final ambientScale = 1.0 + (_bannerScaleAnimation.value * 0.05);
-                    final ambientTranslateY = _bannerTranslateAnimation.value;
-                    final parallaxTranslateY =
-                        scrollOffset > 0 ? -scrollOffset * 0.35 : 0.0;
-                    final totalTranslateY = ambientTranslateY + parallaxTranslateY;
 
-                    return Transform.translate(
-                      offset: Offset(0, totalTranslateY),
-                      child: Transform.scale(
-                        scale: ambientScale,
-                        alignment: Alignment.topCenter,
-                        child: child,
-                      ),
-                    );
-                  },
+                          // Stationary Multi-Stop Cinematic Gradient into Theme Background
+                          Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: isDark
+                                    ? [
+                                        Colors.black.withValues(alpha: 0.65),
+                                        Colors.black.withValues(alpha: 0.15),
+                                        Colors.black.withValues(alpha: 0.45),
+                                        Colors.black.withValues(alpha: 0.85),
+                                        theme.scaffoldBackgroundColor.withValues(alpha: 0.96),
+                                        theme.scaffoldBackgroundColor,
+                                      ]
+                                    : [
+                                        Colors.black.withValues(alpha: 0.35),
+                                        Colors.white.withValues(alpha: 0.10),
+                                        Colors.white.withValues(alpha: 0.50),
+                                        Colors.white.withValues(alpha: 0.88),
+                                        theme.scaffoldBackgroundColor.withValues(alpha: 0.96),
+                                        theme.scaffoldBackgroundColor,
+                                      ],
+                                stops: const [0.0, 0.20, 0.45, 0.70, 0.90, 1.0],
+                              ),
+                            ),
+                          ),
+
+                          // Scroll-driven darkening: seamlessly turns into active theme background
+                          Container(
+                            color: theme.scaffoldBackgroundColor.withValues(alpha: scrollDarkening),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
                 ),
               ),
             ),

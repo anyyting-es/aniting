@@ -13,6 +13,7 @@ import 'package:seanime_app/data/repositories/seanime_repository.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
 import 'package:seanime_app/presentation/widgets/anime_detail/anime_detail_desktop_layout.dart';
+import 'package:seanime_app/presentation/widgets/anime_detail/anime_detail_mobile_layout.dart';
 import 'package:seanime_app/presentation/widgets/anime_detail/anime_detail_tv_layout.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -103,6 +104,11 @@ class MockDesktopLayoutModeNotifier extends LayoutModeNotifier {
 class MockTvLayoutModeNotifier extends LayoutModeNotifier {
   @override
   LayoutMode build() => LayoutMode.tv;
+}
+
+class MockMobileLayoutModeNotifier extends LayoutModeNotifier {
+  @override
+  LayoutMode build() => LayoutMode.mobile;
 }
 
 void main() {
@@ -205,6 +211,33 @@ void main() {
       expect(find.byType(AnimeDetailTvLayout), findsOneWidget);
       expect(find.text('Empezar a ver'), findsOneWidget);
       expect(find.text('Detalles'), findsOneWidget);
+    });
+
+    testWidgets('Renders Mobile Layout with banner blur enabled without gaps', (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            repositoryProvider.overrideWithValue(FakeDetailRepo()),
+            serverNotifierProvider.overrideWith(() => MockServerNotifier()),
+            layoutModeProvider.overrideWith(() => MockMobileLayoutModeNotifier()),
+          ],
+          child: const MaterialApp(
+            home: AnimeDetailScreen(mediaId: 170000),
+          ),
+        ),
+      );
+
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(find.byType(AnimeDetailMobileLayout), findsOneWidget);
+      expect(find.text('Mushoku Tensei: Jobless Reincarnation Season 3'), findsOneWidget);
     });
   });
 }

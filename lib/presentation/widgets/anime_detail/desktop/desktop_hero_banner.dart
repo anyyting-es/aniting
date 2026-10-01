@@ -38,15 +38,17 @@ class DesktopHeroBanner extends ConsumerWidget {
             Opacity(
               opacity: (1.0 - scrollProgress * 0.95).clamp(0.0, 1.0),
               child: shouldBlur
-                  ? ImageFiltered(
-                      imageFilter: ImageFilter.blur(sigmaX: 45, sigmaY: 45),
-                      child: Transform.scale(
-                        scale: 1.25,
-                        child: CachedNetworkImage(
-                          imageUrl: bannerUrl!,
-                          fit: BoxFit.cover,
-                          alignment: const Alignment(0, -0.2),
-                          errorWidget: (_, _, _) => const SizedBox.shrink(),
+                  ? ClipRect(
+                      child: ImageFiltered(
+                        imageFilter: ImageFilter.blur(sigmaX: 45, sigmaY: 45),
+                        child: Transform.scale(
+                          scale: 1.25,
+                          child: CachedNetworkImage(
+                            imageUrl: bannerUrl!,
+                            fit: BoxFit.cover,
+                            alignment: const Alignment(0, -0.2),
+                            errorWidget: (_, _, _) => const SizedBox.shrink(),
+                          ),
                         ),
                       ),
                     )
