@@ -85,7 +85,7 @@ class MangaChapterItem extends ConsumerWidget {
               Padding(
                 padding: const EdgeInsets.only(right: 6),
                 child: Tooltip(
-                  message: 'Descargado en almacenamiento',
+                  message: l10n.downloadedInStorage,
                   child: Icon(
                     AppIcons.checkCircle(iconPack),
                     size: 19,
@@ -112,7 +112,7 @@ class MangaChapterItem extends ConsumerWidget {
                   size: 19,
                   color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.65),
                 ),
-                tooltip: 'Descargar capítulo',
+                tooltip: l10n.downloadChapter,
                 onPressed: onDownload,
               ),
 

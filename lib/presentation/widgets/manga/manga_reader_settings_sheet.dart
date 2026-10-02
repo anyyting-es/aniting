@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/preferences/manga_reader_preferences_provider.dart';
 
@@ -23,6 +24,7 @@ class MangaReaderSettingsSheet extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final l10n = ref.watch(translationsProvider);
     final prefs = ref.watch(mangaReaderPreferencesProvider);
     final notifier = ref.read(mangaReaderPreferencesProvider.notifier);
     final iconPack = ref.watch(iconPackProvider);
@@ -52,7 +54,7 @@ class MangaReaderSettingsSheet extends ConsumerWidget {
                 ),
                 const SizedBox(width: 12),
                 Text(
-                  'Ajustes del Lector',
+                  l10n.mangaReaderSettings,
                   style: theme.textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
@@ -67,7 +69,7 @@ class MangaReaderSettingsSheet extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.only(left: 4, bottom: 8),
               child: Text(
-                'Modo de lectura',
+                l10n.mangaReadingMode,
                 style: TextStyle(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w600,
@@ -86,17 +88,17 @@ class MangaReaderSettingsSheet extends ConsumerWidget {
                 segments: [
                   ButtonSegment(
                     value: MangaReadingMode.webtoon,
-                    label: const Text('Deslizar'),
+                    label: Text(MangaReadingMode.webtoon.localizedName(l10n)),
                     icon: Icon(AppIcons.swapVert(iconPack)),
                   ),
                   ButtonSegment(
                     value: MangaReadingMode.pagedLtr,
-                    label: const Text('Izq. a Der.'),
+                    label: Text(MangaReadingMode.pagedLtr.localizedName(l10n)),
                     icon: Icon(AppIcons.arrowRight(iconPack)),
                   ),
                   ButtonSegment(
                     value: MangaReadingMode.pagedRtl,
-                    label: const Text('Der. a Izq.'),
+                    label: Text(MangaReadingMode.pagedRtl.localizedName(l10n)),
                     icon: Icon(AppIcons.arrowLeft(iconPack)),
                   ),
                 ],
@@ -111,7 +113,7 @@ class MangaReaderSettingsSheet extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.only(left: 4, bottom: 8),
               child: Text(
-                'Barra de estado',
+                l10n.mangaStatusBar,
                 style: TextStyle(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w600,
@@ -130,17 +132,17 @@ class MangaReaderSettingsSheet extends ConsumerWidget {
                 segments: [
                   ButtonSegment(
                     value: MangaStatusBarMode.smart,
-                    label: const Text('Inteligente'),
+                    label: Text(MangaStatusBarMode.smart.localizedName(l10n)),
                     icon: Icon(AppIcons.sparkles(iconPack)),
                   ),
                   ButtonSegment(
                     value: MangaStatusBarMode.hidden,
-                    label: const Text('Ocultar'),
+                    label: Text(MangaStatusBarMode.hidden.localizedName(l10n)),
                     icon: Icon(AppIcons.fullscreen(iconPack)),
                   ),
                   ButtonSegment(
                     value: MangaStatusBarMode.visible,
-                    label: const Text('Mostrar'),
+                    label: Text(MangaStatusBarMode.visible.localizedName(l10n)),
                     icon: Icon(AppIcons.fullscreenExit(iconPack)),
                   ),
                 ],
@@ -167,9 +169,9 @@ class MangaReaderSettingsSheet extends ConsumerWidget {
                       color: theme.colorScheme.onSurfaceVariant,
                       size: 22,
                     ),
-                    title: const Text(
-                      'Tocar para pasar página',
-                      style: TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
+                    title: Text(
+                      l10n.mangaTapToTurn,
+                      style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
                     ),
                     value: prefs.tapToTurnEnabled,
                     onChanged: (v) => notifier.setTapToTurnEnabled(v),
@@ -187,9 +189,9 @@ class MangaReaderSettingsSheet extends ConsumerWidget {
                       color: theme.colorScheme.onSurfaceVariant,
                       size: 22,
                     ),
-                    title: const Text(
-                      'Sombra en bordes',
-                      style: TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
+                    title: Text(
+                      l10n.mangaSubtleShadow,
+                      style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
                     ),
                     value: prefs.subtleShadowEnabled,
                     onChanged: (v) => notifier.setSubtleShadowEnabled(v),

@@ -974,6 +974,10 @@ Inspired by **Plezy** (`edde746/plezy`), the player focuses on high performance,
      - **Exact Cache Key Alignment**: Matches `CachedNetworkImageProvider` parameters (`maxWidth: 1200`) and resolves relative server download paths (`/manga-downloads/`) cleanly.
   4. **Proportional Placeholder Preservation**:
      - Replaced fixed-height 350px containers with proportional placeholders (`constraints.maxWidth / 0.68`), eliminating scroll viewport height jumps during image decoding.
+  5. **Complete Manga Reader & Settings Internationalization (i18n)**:
+     - All user-facing strings across `MangaReaderScreen`, `MangaSettingsScreen`, `MangaReaderSettingsSheet`, `MangaChapterItem`, and `MangaDetailsModalSheet` are bound to `translationsProvider` (`l10n`), supporting English and Spanish dynamically.
+     - Enums `MangaReadingMode` and `MangaStatusBarMode` provide localized display labels via extension methods (`localizedName(l10n)`).
+     - Subtitles for manga in floating companions and bottom docks (`FloatingResumeCompanion`, `FloatingResumeBar`) format chapters and page numbers dynamically with zero hardcoded strings.
 
 ---
 

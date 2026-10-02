@@ -131,7 +131,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 controller: _searchController,
                 onChanged: (val) => setState(() => _searchQuery = val.toLowerCase().trim()),
                 decoration: InputDecoration(
-                  hintText: 'Buscar en ajustes...',
+                  hintText: l10n.searchSettingsHint,
                   hintStyle: TextStyle(
                     color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
                     fontSize: 14.5,
@@ -236,7 +236,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
             SettingsTile(
               icon: AppIcons.manga(iconPack),
-              title: 'Lector de Manga',
+              title: l10n.mangaReader,
               isSelected: isWideScreen && _selectedCategory == SettingsCategory.manga,
               onTap: () => _onSelectCategory(SettingsCategory.manga, isWideScreen),
             ),

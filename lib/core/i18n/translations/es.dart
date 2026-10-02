@@ -1298,6 +1298,74 @@ class SpanishTranslations implements AppTranslations {
   String get welcomeExtensionsEmptyHint => 'Podrás explorar e instalar extensiones desde la tienda en cualquier momento.';
   @override
   String get settingsSaved => 'Configuración guardada correctamente';
+  @override
+  String get searchSettingsHint => 'Buscar en ajustes...';
+  @override
+  String get mangaReader => 'Lector de Manga';
+  @override
+  String get mangaReaderSettings => 'Ajustes del Lector';
+  @override
+  String get mangaReadingModeSection => 'MODO DE LECTURA';
+  @override
+  String get mangaReadingMode => 'Modo de lectura';
+  @override
+  String get mangaModeWebtoon => 'Deslizar';
+  @override
+  String get mangaModePagedLtr => 'Izq. a Der.';
+  @override
+  String get mangaModePagedRtl => 'Der. a Izq.';
+  @override
+  String get mangaStatusBarSection => 'BARRA DE ESTADO';
+  @override
+  String get mangaStatusBar => 'Barra de estado';
+  @override
+  String get mangaStatusBarSmart => 'Inteligente';
+  @override
+  String get mangaStatusBarHidden => 'Ocultar';
+  @override
+  String get mangaStatusBarVisible => 'Mostrar';
+  @override
+  String get mangaGesturesSection => 'GESTOS Y VISUALIZACIÓN';
+  @override
+  String get mangaTapToTurn => 'Tocar para pasar página';
+  @override
+  String get mangaSubtleShadow => 'Sombra en bordes';
+  @override
+  String get mangaDownloadsSection => 'DESCARGAS Y ALMACENAMIENTO';
+  @override
+  String get mangaDownloadDir => 'Directorio de Descargas';
+  @override
+  String get mangaDownloadDirDesc => 'Aniting/Downloads/Manga (Independiente del directorio de trabajo/caché)';
+  @override
+  String get loadingPath => 'Cargando ruta...';
+  @override
+  String get loadingPages => 'Cargando páginas...';
+  @override
+  String get endOfChapter => 'Fin del';
+  @override
+  String get progressSavedAnilist => 'Progreso guardado en AniList';
+  @override
+  String get nextChapter => 'Siguiente Capítulo';
+  @override
+  String get prevChapter => 'Capítulo Anterior';
+  @override
+  String get backToManga => 'Volver al Manga';
+  @override
+  String get readingSettingsTooltip => 'Ajustes de lectura';
+  @override
+  String get chapterListTooltip => 'Lista de capítulos';
+  @override
+  String get page => 'Página';
+  @override
+  String get noPagesFound => 'No se encontraron páginas para este capítulo.';
+  @override
+  String get errorLoadingPages => 'Error cargando páginas';
+  @override
+  String get errorLoadingPage => 'Error al cargar página';
+  @override
+  String get downloadedInStorage => 'Descargado en almacenamiento';
+  @override
+  String get downloadChapter => 'Descargar capítulo';
 
   @override
   String formatStatus(String? status) {

@@ -1292,6 +1292,74 @@ class EnglishTranslations implements AppTranslations {
   String get welcomeExtensionsEmptyHint => 'You can explore and install extensions from the marketplace at any time.';
   @override
   String get settingsSaved => 'Settings saved successfully';
+  @override
+  String get searchSettingsHint => 'Search settings...';
+  @override
+  String get mangaReader => 'Manga Reader';
+  @override
+  String get mangaReaderSettings => 'Reader Settings';
+  @override
+  String get mangaReadingModeSection => 'READING MODE';
+  @override
+  String get mangaReadingMode => 'Reading mode';
+  @override
+  String get mangaModeWebtoon => 'Scroll';
+  @override
+  String get mangaModePagedLtr => 'Left to Right';
+  @override
+  String get mangaModePagedRtl => 'Right to Left';
+  @override
+  String get mangaStatusBarSection => 'STATUS BAR';
+  @override
+  String get mangaStatusBar => 'Status bar';
+  @override
+  String get mangaStatusBarSmart => 'Smart';
+  @override
+  String get mangaStatusBarHidden => 'Hidden';
+  @override
+  String get mangaStatusBarVisible => 'Visible';
+  @override
+  String get mangaGesturesSection => 'GESTURES & DISPLAY';
+  @override
+  String get mangaTapToTurn => 'Tap to turn page';
+  @override
+  String get mangaSubtleShadow => 'Edge shadow';
+  @override
+  String get mangaDownloadsSection => 'DOWNLOADS & STORAGE';
+  @override
+  String get mangaDownloadDir => 'Download Directory';
+  @override
+  String get mangaDownloadDirDesc => 'Aniting/Downloads/Manga (Independent of working/cache directory)';
+  @override
+  String get loadingPath => 'Loading path...';
+  @override
+  String get loadingPages => 'Loading pages...';
+  @override
+  String get endOfChapter => 'End of';
+  @override
+  String get progressSavedAnilist => 'Progress saved to AniList';
+  @override
+  String get nextChapter => 'Next Chapter';
+  @override
+  String get prevChapter => 'Previous Chapter';
+  @override
+  String get backToManga => 'Back to Manga';
+  @override
+  String get readingSettingsTooltip => 'Reading settings';
+  @override
+  String get chapterListTooltip => 'Chapter list';
+  @override
+  String get page => 'Page';
+  @override
+  String get noPagesFound => 'No pages found for this chapter.';
+  @override
+  String get errorLoadingPages => 'Error loading pages';
+  @override
+  String get errorLoadingPage => 'Error loading page';
+  @override
+  String get downloadedInStorage => 'Downloaded in storage';
+  @override
+  String get downloadChapter => 'Download chapter';
 
   @override
   String formatStatus(String? status) {

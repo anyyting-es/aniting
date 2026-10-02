@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../i18n/translations/translations.dart';
 
 enum MangaReadingMode {
   webtoon,   // Deslizando continuo vertical
@@ -7,10 +8,36 @@ enum MangaReadingMode {
   pagedRtl,  // Página a página Derecha a Izquierda (Manga tradicional)
 }
 
+extension MangaReadingModeExt on MangaReadingMode {
+  String localizedName(AppTranslations l10n) {
+    switch (this) {
+      case MangaReadingMode.webtoon:
+        return l10n.mangaModeWebtoon;
+      case MangaReadingMode.pagedLtr:
+        return l10n.mangaModePagedLtr;
+      case MangaReadingMode.pagedRtl:
+        return l10n.mangaModePagedRtl;
+    }
+  }
+}
+
 enum MangaStatusBarMode {
   smart,     // Oculto mientras se lee, visible con controles
   hidden,    // Siempre oculto (inmersivo total)
   visible,   // Siempre visible
+}
+
+extension MangaStatusBarModeExt on MangaStatusBarMode {
+  String localizedName(AppTranslations l10n) {
+    switch (this) {
+      case MangaStatusBarMode.smart:
+        return l10n.mangaStatusBarSmart;
+      case MangaStatusBarMode.hidden:
+        return l10n.mangaStatusBarHidden;
+      case MangaStatusBarMode.visible:
+        return l10n.mangaStatusBarVisible;
+    }
+  }
 }
 
 class MangaReaderPreferences {

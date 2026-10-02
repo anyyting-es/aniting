@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:seanime_app/core/i18n/i18n_provider.dart';
+import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/preferences/download_preferences_provider.dart';
 import 'package:seanime_app/core/preferences/manga_reader_preferences_provider.dart';
 import 'package:seanime_app/presentation/screens/settings/widgets/pixel_settings_widgets.dart';
@@ -15,36 +17,38 @@ class MangaSettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final l10n = ref.watch(translationsProvider);
+    final iconPack = ref.watch(iconPackProvider);
     final prefs = ref.watch(mangaReaderPreferencesProvider);
     final notifier = ref.read(mangaReaderPreferencesProvider.notifier);
 
     return PixelSubpageScaffold(
-      title: 'Lector de Manga',
+      title: l10n.mangaReader,
       isEmbedded: isEmbedded,
       children: [
         // ─── MODO DE LECTURA ──────────────────────────────
-        const SettingsSectionHeader(title: 'MODO DE LECTURA'),
+        SettingsSectionHeader(title: l10n.mangaReadingModeSection),
         const SizedBox(height: 10),
         PixelCardContainer(
           child: SizedBox(
             width: double.infinity,
             child: SegmentedButton<MangaReadingMode>(
               style: pixelSegmentedButtonStyle(theme),
-              segments: const [
+              segments: [
                 ButtonSegment(
                   value: MangaReadingMode.webtoon,
-                  label: Text('Deslizar'),
-                  icon: Icon(Icons.swap_vert_rounded),
+                  label: Text(MangaReadingMode.webtoon.localizedName(l10n)),
+                  icon: Icon(AppIcons.swapVert(iconPack)),
                 ),
                 ButtonSegment(
                   value: MangaReadingMode.pagedLtr,
-                  label: Text('Izq. a Der.'),
-                  icon: Icon(Icons.arrow_forward_rounded),
+                  label: Text(MangaReadingMode.pagedLtr.localizedName(l10n)),
+                  icon: Icon(AppIcons.arrowRight(iconPack)),
                 ),
                 ButtonSegment(
                   value: MangaReadingMode.pagedRtl,
-                  label: Text('Der. a Izq.'),
-                  icon: Icon(Icons.arrow_back_rounded),
+                  label: Text(MangaReadingMode.pagedRtl.localizedName(l10n)),
+                  icon: Icon(AppIcons.arrowLeft(iconPack)),
                 ),
               ],
               selected: {prefs.readingMode},
@@ -56,28 +60,28 @@ class MangaSettingsScreen extends ConsumerWidget {
         const SizedBox(height: 24),
 
         // ─── BARRA DE ESTADO DEL SISTEMA ───────────────────
-        const SettingsSectionHeader(title: 'BARRA DE ESTADO'),
+        SettingsSectionHeader(title: l10n.mangaStatusBarSection),
         const SizedBox(height: 10),
         PixelCardContainer(
           child: SizedBox(
             width: double.infinity,
             child: SegmentedButton<MangaStatusBarMode>(
               style: pixelSegmentedButtonStyle(theme),
-              segments: const [
+              segments: [
                 ButtonSegment(
                   value: MangaStatusBarMode.smart,
-                  label: Text('Inteligente'),
-                  icon: Icon(Icons.auto_awesome_rounded),
+                  label: Text(MangaStatusBarMode.smart.localizedName(l10n)),
+                  icon: Icon(AppIcons.sparkles(iconPack)),
                 ),
                 ButtonSegment(
                   value: MangaStatusBarMode.hidden,
-                  label: Text('Ocultar'),
-                  icon: Icon(Icons.fullscreen_rounded),
+                  label: Text(MangaStatusBarMode.hidden.localizedName(l10n)),
+                  icon: Icon(AppIcons.fullscreen(iconPack)),
                 ),
                 ButtonSegment(
                   value: MangaStatusBarMode.visible,
-                  label: Text('Mostrar'),
-                  icon: Icon(Icons.fullscreen_exit_rounded),
+                  label: Text(MangaStatusBarMode.visible.localizedName(l10n)),
+                  icon: Icon(AppIcons.fullscreenExit(iconPack)),
                 ),
               ],
               selected: {prefs.statusBarMode},
@@ -89,20 +93,20 @@ class MangaSettingsScreen extends ConsumerWidget {
         const SizedBox(height: 24),
 
         // ─── GESTOS Y CONFORT ─────────────────────────────
-        const SettingsSectionHeader(title: 'GESTOS Y VISUALIZACIÓN'),
+        SettingsSectionHeader(title: l10n.mangaGesturesSection),
         const SizedBox(height: 10),
         PixelSettingsGroupCard(
           children: [
             PixelSwitchTile(
-              icon: Icons.touch_app_rounded,
-              title: 'Tocar para pasar página',
+              icon: AppIcons.touchApp(iconPack),
+              title: l10n.mangaTapToTurn,
               value: prefs.tapToTurnEnabled,
               onChanged: (v) => notifier.setTapToTurnEnabled(v),
             ),
             const PixelTileDivider(),
             PixelSwitchTile(
-              icon: Icons.gradient_rounded,
-              title: 'Sombra en bordes',
+              icon: AppIcons.gradient(iconPack),
+              title: l10n.mangaSubtleShadow,
               value: prefs.subtleShadowEnabled,
               onChanged: (v) => notifier.setSubtleShadowEnabled(v),
             ),
@@ -112,7 +116,7 @@ class MangaSettingsScreen extends ConsumerWidget {
         const SizedBox(height: 24),
 
         // ─── ALMACENAMIENTO Y DESCARGAS OFFLINE ───────────
-        const SettingsSectionHeader(title: 'DESCARGAS Y ALMACENAMIENTO'),
+        SettingsSectionHeader(title: l10n.mangaDownloadsSection),
         const SizedBox(height: 10),
         Consumer(
           builder: (context, ref, _) {
@@ -131,7 +135,7 @@ class MangaSettingsScreen extends ConsumerWidget {
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Icon(
-                          Icons.folder_zip_rounded,
+                          AppIcons.download(iconPack),
                           color: theme.colorScheme.primary,
                           size: 20,
                         ),
@@ -141,13 +145,13 @@ class MangaSettingsScreen extends ConsumerWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'Directorio de Descargas',
-                              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                            Text(
+                              l10n.mangaDownloadDir,
+                              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              'Aniting/Downloads/Manga (Independiente del directorio de trabajo/caché)',
+                              l10n.mangaDownloadDirDesc,
                               style: TextStyle(
                                 color: theme.colorScheme.onSurfaceVariant,
                                 fontSize: 12,
@@ -172,7 +176,7 @@ class MangaSettingsScreen extends ConsumerWidget {
                     child: Text(
                       downloadPrefs.resolvedBasePath.isNotEmpty
                           ? '${downloadPrefs.resolvedBasePath}/Manga'
-                          : 'Cargando ruta...',
+                          : l10n.loadingPath,
                       style: TextStyle(
                         fontSize: 12,
                         fontFamily: 'monospace',

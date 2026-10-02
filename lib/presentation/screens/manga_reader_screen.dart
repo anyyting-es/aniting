@@ -98,6 +98,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
 
   void _saveSessionToPreferences() {
     try {
+      final l10n = ref.read(translationsProvider);
       final chNum = _currentChapter.chapterNumber;
       final chText = chNum % 1 == 0 ? chNum.toInt().toString() : chNum.toString();
       ref.read(lastSessionProvider.notifier).saveSession(
@@ -110,7 +111,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
           chapterId: _currentChapter.id,
           mangaProvider: widget.provider,
           page: _currentPage,
-          subtitle: 'Capítulo $chText • Pág $_currentPage',
+          subtitle: '${l10n.chapter} $chText • ${l10n.page} $_currentPage',
           updatedAt: DateTime.now().millisecondsSinceEpoch,
         ),
       );
@@ -402,11 +403,12 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
       }
 
       if (mounted) {
+        final l10n = ref.read(translationsProvider);
         setState(() {
           _pages = pages;
           _isLoading = false;
           if (pages.isEmpty) {
-            _error = 'No se encontraron páginas para este capítulo.';
+            _error = l10n.noPagesFound;
           }
         });
 
@@ -443,9 +445,10 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
       }
     } catch (e) {
       if (mounted) {
+        final l10n = ref.read(translationsProvider);
         setState(() {
           _isLoading = false;
-          _error = 'Error cargando páginas: $e';
+          _error = '${l10n.errorLoadingPages}: $e';
         });
       }
     }
@@ -628,6 +631,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
   }
 
   Widget _buildPagePlaceholder(int index) {
+    final l10n = ref.watch(translationsProvider);
     return LayoutBuilder(
       builder: (context, constraints) {
         final estimatedHeight = constraints.maxWidth > 0
@@ -651,7 +655,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Página ${index + 1}',
+                  '${l10n.page} ${index + 1}',
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.35),
                     fontSize: 11,
@@ -667,16 +671,18 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
   }
 
   Widget _buildErrorPlaceholder(int index) {
+    final l10n = ref.watch(translationsProvider);
+    final iconPack = ref.watch(iconPackProvider);
     return Container(
       height: 250,
       color: const Color(0xFF1E1E1E),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(AppIcons.brokenImage(ref.watch(iconPackProvider)), color: Colors.white38, size: 36),
+          Icon(AppIcons.brokenImage(iconPack), color: Colors.white38, size: 36),
           const SizedBox(height: 8),
           Text(
-            'Error al cargar página ${index + 1}',
+            '${l10n.errorLoadingPage} ${index + 1}',
             style: const TextStyle(color: Colors.white60, fontSize: 12),
           ),
         ],
@@ -686,6 +692,10 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
 
   Widget _buildEndChapterCard() {
     final pack = ref.watch(iconPackProvider);
+    final l10n = ref.watch(translationsProvider);
+    final chapterLabel = _currentChapter.title.isNotEmpty
+        ? _currentChapter.title
+        : '${l10n.chapter} ${_currentChapter.chapter}';
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
       child: Column(
@@ -694,13 +704,13 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
           Icon(AppIcons.checkCircle(pack), color: Colors.greenAccent, size: 48),
           const SizedBox(height: 12),
           Text(
-            'Fin del ${_currentChapter.title.isNotEmpty ? _currentChapter.title : "Capítulo ${_currentChapter.chapter}"}',
+            '${l10n.endOfChapter} $chapterLabel',
             style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
           Text(
-            'Progreso guardado en AniList',
+            l10n.progressSavedAnilist,
             style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 12),
           ),
           const SizedBox(height: 20),
@@ -708,13 +718,13 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
             FilledButton.icon(
               onPressed: _goToNextChapter,
               icon: Icon(AppIcons.arrowRight(pack)),
-              label: const Text('Siguiente Capítulo'),
+              label: Text(l10n.nextChapter),
             )
           else
             OutlinedButton.icon(
               onPressed: () => Navigator.pop(context),
               icon: Icon(AppIcons.arrowLeft(pack)),
-              label: const Text('Volver al Manga'),
+              label: Text(l10n.backToManga),
               style: OutlinedButton.styleFrom(foregroundColor: Colors.white),
             ),
         ],
@@ -745,15 +755,15 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
                         )
                     : (_) => _toggleControls(),
                 child: _isLoading
-                    ? const Center(
+                    ? Center(
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            CircularProgressIndicator(color: Colors.white70),
-                            SizedBox(height: 16),
+                            const CircularProgressIndicator(color: Colors.white70),
+                            const SizedBox(height: 16),
                             Text(
-                              'Cargando páginas...',
-                              style: TextStyle(color: Colors.white70, fontSize: 13),
+                              l10n.loadingPages,
+                              style: const TextStyle(color: Colors.white70, fontSize: 13),
                             ),
                           ],
                         ),
@@ -776,7 +786,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
                                   FilledButton.icon(
                                     onPressed: _loadPages,
                                     icon: Icon(AppIcons.refresh(iconPack)),
-                                    label: const Text('Reintentar'),
+                                    label: Text(l10n.retry),
                                   ),
                                 ],
                               ),
@@ -896,14 +906,14 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
 
                       // Botón de Ajustes del Lector
                       IconButton(
-                        tooltip: 'Ajustes de lectura',
+                        tooltip: l10n.readingSettingsTooltip,
                         icon: Icon(AppIcons.sliders(iconPack), color: Colors.white),
                         onPressed: () => MangaReaderSettingsSheet.show(context),
                       ),
 
                       // Selector de Capítulos
                       IconButton(
-                        tooltip: 'Lista de capítulos',
+                        tooltip: l10n.chapterListTooltip,
                         icon: Icon(AppIcons.listOrdered(iconPack), color: Colors.white),
                         onPressed: () => _showChapterSelectorSheet(context),
                       ),
@@ -955,7 +965,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
                         child: Text(
                           _pages.isNotEmpty
                               ? '$_currentPage / ${_pages.length}'
-                              : 'Cargando...',
+                              : l10n.loading,
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 12.5,
@@ -981,6 +991,8 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
   }
 
   void _showChapterSelectorSheet(BuildContext context) {
+    final l10n = ref.read(translationsProvider);
+    final iconPack = ref.read(iconPackProvider);
     showModalBottomSheet(
       context: context,
       backgroundColor: const Color(0xFF1E1D24),
@@ -997,16 +1009,16 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Capítulos',
-                      style: TextStyle(
+                    Text(
+                      l10n.chapters,
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     Text(
-                      '${widget.allChapters.length} disponibles',
+                      '${widget.allChapters.length} ${l10n.availableCount}',
                       style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 12),
                     ),
                   ],
@@ -1024,7 +1036,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
                       selected: isSelected,
                       selectedTileColor: Colors.white.withValues(alpha: 0.08),
                       title: Text(
-                        c.title.isNotEmpty ? c.title : 'Capítulo ${c.chapter}',
+                        c.title.isNotEmpty ? c.title : '${l10n.chapter} ${c.chapter}',
                         style: TextStyle(
                           color: isSelected ? Colors.amber : Colors.white,
                           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
@@ -1037,7 +1049,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
                               style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 11),
                             )
                           : null,
-                      trailing: isSelected ? Icon(AppIcons.check(ref.watch(iconPackProvider)), color: Colors.amber, size: 18) : null,
+                      trailing: isSelected ? Icon(AppIcons.check(iconPack), color: Colors.amber, size: 18) : null,
                       onTap: () {
                         Navigator.pop(ctx);
                         _switchChapter(c);

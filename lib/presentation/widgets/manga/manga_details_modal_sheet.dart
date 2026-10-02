@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:seanime_app/core/i18n/i18n_provider.dart';
 
 /// Modal bottom sheet displaying detailed synopsis and genres for a manga entry.
-class MangaDetailsModalSheet extends StatelessWidget {
+class MangaDetailsModalSheet extends ConsumerWidget {
   final String? description;
   final List<String> genres;
 
@@ -31,10 +33,11 @@ class MangaDetailsModalSheet extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final l10n = ref.watch(translationsProvider);
     final cleanDesc = description?.replaceAll(RegExp(r'<[^>]*>'), '') ??
-        'No hay descripción disponible.';
+        l10n.noDescriptionAvailable;
 
     return DraggableScrollableSheet(
       initialChildSize: 0.6,
@@ -58,9 +61,9 @@ class MangaDetailsModalSheet extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              const Text(
-                'Sinopsis',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              Text(
+                l10n.synopsis,
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               Text(
@@ -73,9 +76,9 @@ class MangaDetailsModalSheet extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               if (genres.isNotEmpty) ...[
-                const Text(
-                  'Géneros',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                Text(
+                  l10n.genresTitle,
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 Wrap(

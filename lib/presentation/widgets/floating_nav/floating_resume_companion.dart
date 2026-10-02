@@ -76,14 +76,17 @@ class _FloatingResumeCompanionState extends State<FloatingResumeCompanion> {
       subTitle = widget.session.title;
     } else {
       mainTitle = widget.session.title;
-      if (widget.session.subtitle != null &&
-          widget.session.subtitle!.trim().isNotEmpty) {
-        subTitle = widget.session.subtitle!;
-      } else if (widget.session.chapterNumber != null) {
+      if (widget.session.chapterNumber != null) {
         final chNum = widget.session.chapterNumber! % 1 == 0
             ? widget.session.chapterNumber!.toInt().toString()
             : widget.session.chapterNumber!.toString();
-        subTitle = '${widget.l10n.chapter} $chNum';
+        final pageText = widget.session.page != null && widget.session.page! > 0
+            ? ' • ${widget.l10n.page} ${widget.session.page}'
+            : '';
+        subTitle = '${widget.l10n.chapter} $chNum$pageText';
+      } else if (widget.session.subtitle != null &&
+          widget.session.subtitle!.trim().isNotEmpty) {
+        subTitle = widget.session.subtitle!;
       } else {
         subTitle = '';
       }

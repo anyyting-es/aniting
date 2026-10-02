@@ -180,24 +180,26 @@ class FloatingResumeBar extends ConsumerWidget {
       });
     }
 
-    // Format subtitle if not explicitly set
-    String displaySubtitle = session.subtitle ?? '';
-    if (displaySubtitle.isEmpty) {
-      if (session.isAnime) {
-        final epText = session.episodeNumber != null ? '${l10n.episode} ${session.episodeNumber}' : '';
-        if (session.positionMs != null && session.durationMs != null && session.durationMs! > 0) {
-          final posMin = (session.positionMs! ~/ 60000);
-          final posSec = ((session.positionMs! % 60000) ~/ 1000).toString().padLeft(2, '0');
-          displaySubtitle = epText.isNotEmpty ? '$epText • $posMin:$posSec' : '$posMin:$posSec';
-        } else {
-          displaySubtitle = epText;
-        }
+    // Format subtitle
+    String displaySubtitle = '';
+    if (session.isAnime) {
+      final epText = session.episodeNumber != null ? '${l10n.episode} ${session.episodeNumber}' : '';
+      if (session.positionMs != null && session.durationMs != null && session.durationMs! > 0) {
+        final posMin = (session.positionMs! ~/ 60000);
+        final posSec = ((session.positionMs! % 60000) ~/ 1000).toString().padLeft(2, '0');
+        displaySubtitle = epText.isNotEmpty ? '$epText • $posMin:$posSec' : '$posMin:$posSec';
       } else {
-        final chNum = session.chapterNumber != null
-            ? (session.chapterNumber! % 1 == 0 ? session.chapterNumber!.toInt().toString() : session.chapterNumber!.toString())
-            : '1';
-        final pageText = session.page != null ? ' • Pág ${session.page}' : '';
+        displaySubtitle = epText.isNotEmpty ? epText : (session.subtitle ?? '');
+      }
+    } else {
+      if (session.chapterNumber != null) {
+        final chNum = session.chapterNumber! % 1 == 0
+            ? session.chapterNumber!.toInt().toString()
+            : session.chapterNumber!.toString();
+        final pageText = session.page != null && session.page! > 0 ? ' • ${l10n.page} ${session.page}' : '';
         displaySubtitle = '${l10n.chapter} $chNum$pageText';
+      } else {
+        displaySubtitle = session.subtitle ?? '';
       }
     }
 
