@@ -511,6 +511,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     _initStatsService();
     _startHideTimer();
     _initBrightness();
+    PaintingBinding.instance.imageCache.clear();
     _sourceController.schedulePrefetchNextEpisode();
 
     if (_currentVideoUrl.isEmpty && _currentOnlineStreamProvider != null) {

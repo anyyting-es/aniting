@@ -94,11 +94,35 @@ void main() async {
   );
 }
 
-class AnitingFlutterApp extends ConsumerWidget {
+class AnitingFlutterApp extends ConsumerStatefulWidget {
   const AnitingFlutterApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AnitingFlutterApp> createState() => _AnitingFlutterAppState();
+}
+
+class _AnitingFlutterAppState extends ConsumerState<AnitingFlutterApp> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didHaveMemoryPressure() {
+    super.didHaveMemoryPressure();
+    PaintingBinding.instance.imageCache.clear();
+    PaintingBinding.instance.imageCache.clearLiveImages();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final themeMode = ref.watch(themeProvider.select((s) => s.themeMode));
     final palette = ref.watch(themeProvider.select((s) => s.currentPalette));
     final isOled = ref.watch(themeProvider.select((s) => s.isOled));
