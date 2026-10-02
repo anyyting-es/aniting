@@ -231,6 +231,7 @@ class _WelcomeStepRadiusSliderState extends ConsumerState<_WelcomeStepRadiusSlid
   @override
   Widget build(BuildContext context) {
     final colors = widget.colors;
+    final l10n = ref.watch(translationsProvider);
 
     ref.listen<double>(
       themeProvider.select((s) => s.borderRadius),
@@ -251,7 +252,7 @@ class _WelcomeStepRadiusSliderState extends ConsumerState<_WelcomeStepRadiusSlid
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Esquinas',
+              l10n.cornerRadius,
               style: TextStyle(
                 fontSize: 13.5,
                 fontWeight: FontWeight.w600,

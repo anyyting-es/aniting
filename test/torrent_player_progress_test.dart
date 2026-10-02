@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:seanime_app/data/models/torrent_models.dart';
 import 'package:seanime_app/presentation/providers/torrent_stream_provider.dart';
+import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/presentation/widgets/player/controls/player_top_bar.dart';
 import 'package:seanime_app/presentation/widgets/player/models/player_types.dart';
 import 'package:seanime_app/presentation/widgets/player/sheets/player_settings_sheet.dart';
@@ -117,8 +118,8 @@ void main() {
       expect(find.text('4.2 MB/s'), findsOneWidget);
       expect(find.text('22'), findsOneWidget);
       expect(find.textContaining('65%'), findsOneWidget);
-      expect(find.byIcon(Icons.arrow_downward_rounded), findsOneWidget);
-      expect(find.byIcon(Icons.people_outline_rounded), findsOneWidget);
+      expect(find.byIcon(AppIcons.arrowDown(AppIconPack.lucide)), findsOneWidget);
+      expect(find.byIcon(AppIcons.users(AppIconPack.lucide)), findsOneWidget);
     });
 
     testWidgets('hides floating indicators when disabled', (tester) async {
@@ -258,14 +259,14 @@ void main() {
       expect(find.byType(LinearProgressIndicator), findsOneWidget);
 
       // Tap the toggle switch inside the section to activate
-      await tester.tap(find.byIcon(Icons.remove_red_eye_outlined));
+      await tester.tap(find.byType(Switch));
       await tester.pumpAndSettle();
 
       expect(torrentProgressToggled, isTrue);
       expect(currentVal, isTrue);
 
       // Tap back button to return to main menu
-      await tester.tap(find.byIcon(Icons.arrow_back_rounded));
+      await tester.tap(find.byIcon(AppIcons.arrowLeft(AppIconPack.lucide)));
       await tester.pumpAndSettle();
 
       // Back in main menu: shows Ajustes header

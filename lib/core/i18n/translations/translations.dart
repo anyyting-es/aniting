@@ -646,6 +646,11 @@ abstract class AppTranslations {
   String get searchExtensionsPrompt;
   String get blurBanner;
   String get blurBannerDesc;
+  String get cornerRadius;
+  String get welcomeAnilistTitle;
+  String get welcomeAnilistSyncDesc;
+  String get welcomeExtensionsEmptyHint;
+  String get settingsSaved;
 
   // Helper methods
   String formatStatus(String? status);

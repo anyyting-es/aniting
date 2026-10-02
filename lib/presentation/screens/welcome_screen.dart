@@ -209,9 +209,10 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   Future<void> _finishOnboarding() async {
     if (widget.isDevPreview) {
       Navigator.of(context).pop();
+      final l10n = ref.read(translationsProvider);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Configuración guardada correctamente'),
+        SnackBar(
+          content: Text(l10n.settingsSaved),
           behavior: SnackBarBehavior.floating,
         ),
       );

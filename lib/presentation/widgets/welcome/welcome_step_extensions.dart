@@ -97,10 +97,10 @@ class _WelcomeStepExtensionsState extends ConsumerState<WelcomeStepExtensions> {
                 children: [
                   Icon(Icons.info_outline_rounded, color: theme.colorScheme.primary),
                   const SizedBox(width: 12),
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      'Podrás explorar e instalar extensiones desde la tienda en cualquier momento.',
-                      style: TextStyle(fontSize: 13),
+                      l10n.welcomeExtensionsEmptyHint,
+                      style: const TextStyle(fontSize: 13),
                     ),
                   ),
                 ],

@@ -67,7 +67,7 @@ class _WelcomeStepThemeState extends ConsumerState<WelcomeStepTheme> {
 
           // 1. THEME MODE (Dark, Light, System) WITH VISUAL GRAPHICS
           Text(
-            'Modo',
+            l10n.mode,
             style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
@@ -255,27 +255,15 @@ class _WelcomeStepThemeState extends ConsumerState<WelcomeStepTheme> {
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              pal.name,
-                              style: TextStyle(
-                                fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                                fontSize: 13.5,
-                                color: isSelected ? colors.accent : null,
-                              ),
-                            ),
-                            Text(
-                              pal.description,
-                              style: TextStyle(
-                                fontSize: 11.5,
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
+                        child: Text(
+                          pal.name,
+                          style: TextStyle(
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                            fontSize: 13.5,
+                            color: isSelected ? colors.accent : null,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       if (isSelected)

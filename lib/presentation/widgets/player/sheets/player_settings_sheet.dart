@@ -546,15 +546,17 @@ class _PlayerSettingsSheetState extends ConsumerState<PlayerSettingsSheet> {
             ),
             const Divider(color: Colors.white10, height: 1),
 
-            // 8. Shaders GLSL (Anime4K / NVScaler / ArtCNN)
-            _buildMenuItem(
-              icon: AppIcons.sparkles(iconPack),
-              title: l10n.shaders,
-              value: _activeShaderPreset.localizedName(l10n),
-              onTap: () =>
-                  setState(() => _currentSection = _SettingsSection.shaders),
-            ),
-            const Divider(color: Colors.white10, height: 1),
+            // 8. Shaders GLSL (Anime4K / NVScaler / ArtCNN) - Only supported on MPV
+            if (!widget.isUsingExoPlayer) ...[
+              _buildMenuItem(
+                icon: AppIcons.sparkles(iconPack),
+                title: l10n.shaders,
+                value: _activeShaderPreset.localizedName(l10n),
+                onTap: () =>
+                    setState(() => _currentSection = _SettingsSection.shaders),
+              ),
+              const Divider(color: Colors.white10, height: 1),
+            ],
 
             // 9. Fuente del video
             if (widget.videoSource != null && widget.videoSource!.isNotEmpty) ...[

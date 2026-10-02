@@ -41,7 +41,7 @@ class WelcomeStepAniList extends ConsumerWidget {
           ),
           const SizedBox(height: 18),
           Text(
-            'Sincronización con AniList',
+            l10n.welcomeAnilistTitle,
             textAlign: TextAlign.center,
             style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
@@ -125,7 +125,7 @@ class WelcomeStepAniList extends ConsumerWidget {
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          'Sincroniza animes, mangas, episodios y puntuaciones en tiempo real.',
+                          l10n.welcomeAnilistSyncDesc,
                           style: TextStyle(
                             fontSize: 13,
                             color: theme.colorScheme.onSurface,

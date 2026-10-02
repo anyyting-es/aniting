@@ -5,13 +5,14 @@ import 'package:seanime_app/core/api/api_client.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/preferences/onboarding_provider.dart';
-import 'package:seanime_app/core/preferences/streaming_preferences_provider.dart';
+import 'package:seanime_app/core/preferences/title_language_provider.dart';
 import 'package:seanime_app/core/server/server_manager.dart';
 import 'package:seanime_app/core/theme/theme_provider.dart';
 import 'package:seanime_app/data/models/extension_item.dart';
 import 'package:seanime_app/data/repositories/seanime_repository.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/screens/welcome_screen.dart';
+import 'package:seanime_app/presentation/widgets/welcome/welcome_marketplace_sheet.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class MockServerNotifier extends ServerNotifier {
@@ -192,7 +193,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Verify Step 1 elements (Dev mode shows close button)
-      expect(find.byIcon(Icons.close_rounded), findsOneWidget);
+      expect(find.byIcon(AppIcons.close(AppIconPack.lucide)), findsOneWidget);
       expect(find.text('1 / 5'), findsOneWidget);
       expect(find.text('Español'), findsOneWidget);
       expect(find.text('English'), findsOneWidget);
@@ -204,7 +205,7 @@ void main() {
       expect(container.read(appLanguageProvider), AppLanguage.en);
 
       // Verify Next button advances to Step 2
-      final nextButton = find.byIcon(Icons.arrow_forward_rounded);
+      final nextButton = find.byIcon(AppIcons.arrowRight(AppIconPack.lucide));
       expect(nextButton, findsOneWidget);
       await tester.tap(nextButton);
       await tester.pumpAndSettle();
@@ -214,30 +215,30 @@ void main() {
       expect(find.text('Appearance'), findsOneWidget);
 
       // Advance to Step 3: Content Preferences
-      await tester.tap(find.byIcon(Icons.arrow_forward_rounded));
-      await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(AppIcons.arrowRight(AppIconPack.lucide)));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
 
       expect(find.text('3 / 5'), findsOneWidget);
       expect(find.text('Preferences'), findsOneWidget);
-      expect(find.text('Romaji (Predeterminado)'), findsOneWidget);
-      expect(find.text('Both (Recommended)'), findsOneWidget);
+      expect(find.text('Romaji'), findsOneWidget);
+      expect(find.text('Native'), findsOneWidget);
 
-      // Scroll to and tap Online Only streaming option
-      final onlineOption = find.text('Online Only');
-      await tester.ensureVisible(onlineOption);
-      await tester.pumpAndSettle();
-      await tester.tap(onlineOption);
-      await tester.pumpAndSettle();
+      // Tap English title language option
+      final englishTitleOption = find.text('English').first;
+      await tester.tap(englishTitleOption);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
 
-      final streamingPrefs = container.read(streamingPreferencesProvider);
-      expect(streamingPrefs.onlineStreamingEnabled, isTrue);
-      expect(streamingPrefs.torrentStreamingEnabled, isFalse);
+      final titleLang = container.read(titleLanguageProvider);
+      expect(titleLang, TitleLanguage.english);
 
       // Back button goes back to Step 2
-      final backButton = find.byIcon(Icons.arrow_back_rounded);
+      final backButton = find.byIcon(AppIcons.arrowLeft(AppIconPack.lucide));
       expect(backButton, findsOneWidget);
       await tester.tap(backButton);
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
 
       expect(find.text('2 / 5'), findsOneWidget);
     });
@@ -302,14 +303,10 @@ void main() {
       await tester.pumpAndSettle();
 
       // Advance to Step 2: Theme
-      await tester.tap(find.byIcon(Icons.arrow_forward_rounded));
+      await tester.tap(find.byIcon(AppIcons.arrowRight(AppIconPack.lucide)));
       await tester.pumpAndSettle();
 
       expect(find.text('2 / 5'), findsOneWidget);
-      // Live preview card components
-      expect(find.text('Aniting Seanime'), findsOneWidget);
-      expect(find.text('Sousou no Frieren'), findsOneWidget);
-      expect(find.text('EP 12'), findsOneWidget);
 
       // Icon pack options
       expect(find.text('Lucide Web'), findsOneWidget);
@@ -367,13 +364,16 @@ void main() {
       await tester.pumpAndSettle();
 
       // Advance: Step 1 -> Step 2 -> Step 3 -> Step 4
-      final nextBtn = find.byIcon(Icons.arrow_forward_rounded);
+      final nextBtn = find.byIcon(AppIcons.arrowRight(AppIconPack.lucide));
       await tester.tap(nextBtn); // To Step 2
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
       await tester.tap(nextBtn); // To Step 3
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
       await tester.tap(nextBtn); // To Step 4
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
 
       expect(find.text('4 / 5'), findsOneWidget);
 
@@ -402,6 +402,7 @@ void main() {
 
       // Filter by Manga category
       final mangaChip = find.text('Manga').first;
+      await tester.ensureVisible(mangaChip);
       await tester.tap(mangaChip);
       await tester.pumpAndSettle();
 
@@ -417,7 +418,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // Verify bottom sheet title and close
-      expect(find.text('Todas (13)'), findsOneWidget);
+      expect(find.byType(WelcomeMarketplaceSheet), findsOneWidget);
+      expect(find.text('Todos los Tipos'), findsOneWidget);
       expect(find.byIcon(Icons.close_rounded), findsWidgets);
     });
   });

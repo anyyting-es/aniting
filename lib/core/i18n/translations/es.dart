@@ -1288,6 +1288,16 @@ class SpanishTranslations implements AppTranslations {
   String get blurBanner => 'Desenfocar banner';
   @override
   String get blurBannerDesc => 'Aplica un desenfoque cinemático al banner de fondo en los detalles de anime y manga';
+  @override
+  String get cornerRadius => 'Esquinas';
+  @override
+  String get welcomeAnilistTitle => 'Sincronización con AniList';
+  @override
+  String get welcomeAnilistSyncDesc => 'Sincroniza animes, mangas, episodios y puntuaciones en tiempo real.';
+  @override
+  String get welcomeExtensionsEmptyHint => 'Podrás explorar e instalar extensiones desde la tienda en cualquier momento.';
+  @override
+  String get settingsSaved => 'Configuración guardada correctamente';
 
   @override
   String formatStatus(String? status) {

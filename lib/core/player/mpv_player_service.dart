@@ -153,6 +153,15 @@ class MpvPlayerService {
     _safeSetProperty(name, value);
   }
 
+  /// Execute a native libmpv command (e.g. ['change-list', 'glsl-shaders', 'clr', ''])
+  Future<void> command(List<String> args) async {
+    try {
+      await (_player.platform as dynamic)?.command(args);
+    } catch (e) {
+      debugPrint('[MpvPlayerService] Error executing command $args: $e');
+    }
+  }
+
   /// Fetches MKV chapters / segments from libmpv
   Future<List<PlayerChapter>> getChapters() async {
     try {

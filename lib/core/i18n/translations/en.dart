@@ -1282,6 +1282,16 @@ class EnglishTranslations implements AppTranslations {
   String get blurBanner => 'Blur banner';
   @override
   String get blurBannerDesc => 'Applies a cinematic blur to the background banner on anime and manga details';
+  @override
+  String get cornerRadius => 'Corners';
+  @override
+  String get welcomeAnilistTitle => 'Sync with AniList';
+  @override
+  String get welcomeAnilistSyncDesc => 'Sync anime, manga, episodes, and scores in real time.';
+  @override
+  String get welcomeExtensionsEmptyHint => 'You can explore and install extensions from the marketplace at any time.';
+  @override
+  String get settingsSaved => 'Settings saved successfully';
 
   @override
   String formatStatus(String? status) {
