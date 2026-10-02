@@ -1,4 +1,4 @@
-package com.seanime.app.seanime_app.exoplayer
+package com.anyyting.aniting.exoplayer
 
 import java.nio.ByteBuffer
 

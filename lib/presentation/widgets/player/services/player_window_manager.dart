@@ -196,7 +196,7 @@ class PlayerWindowManager {
   void dispose({VoidCallback? onCustomDispose}) {
     if (Platform.isAndroid) {
       try {
-        const MethodChannel('com.seanime.app/exo_player')
+        const MethodChannel('com.anyyting.aniting/exo_player')
             .invokeMethod('setBrightness', {'brightness': -1.0});
       } catch (_) {}
     }

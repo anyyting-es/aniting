@@ -1,4 +1,4 @@
-package com.seanime.app.seanime_app
+package com.anyyting.aniting
 
 import android.app.Activity
 import android.content.Context
@@ -51,13 +51,13 @@ import com.edde746.plezy.libass.media.AssHandler
 import com.edde746.plezy.libass.media.extractor.AssMatroskaExtractor
 import com.edde746.plezy.libass.media.parser.AssSubtitleParserFactory
 import com.edde746.plezy.libass.media.widget.AssSubtitleSurfaceView
-import com.seanime.app.seanime_app.exoplayer.CuelessSeekExtractorWrapper
-import com.seanime.app.seanime_app.exoplayer.LoadControlPolicy
-import com.seanime.app.seanime_app.exoplayer.ObservingLoadControl
-import com.seanime.app.seanime_app.exoplayer.PgsSubtitleParserFactory
-import com.seanime.app.seanime_app.exoplayer.PlezyRenderersFactory
-import com.seanime.app.seanime_app.exoplayer.VideoDecoderRecoveryPolicy
-import com.seanime.app.seanime_app.exoplayer.ZlibMatroskaExtractor
+import com.anyyting.aniting.exoplayer.CuelessSeekExtractorWrapper
+import com.anyyting.aniting.exoplayer.LoadControlPolicy
+import com.anyyting.aniting.exoplayer.ObservingLoadControl
+import com.anyyting.aniting.exoplayer.PgsSubtitleParserFactory
+import com.anyyting.aniting.exoplayer.PlezyRenderersFactory
+import com.anyyting.aniting.exoplayer.VideoDecoderRecoveryPolicy
+import com.anyyting.aniting.exoplayer.ZlibMatroskaExtractor
 import android.app.ActivityManager
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
@@ -76,8 +76,8 @@ class ExoPlayerPlugin :
 
     companion object {
         private const val TAG = "ExoPlayerPlugin"
-        private const val METHOD_CHANNEL = "com.seanime.app/exo_player"
-        private const val EVENT_CHANNEL = "com.seanime.app/exo_player/events"
+        private const val METHOD_CHANNEL = "com.anyyting.aniting/exo_player"
+        private const val EVENT_CHANNEL = "com.anyyting.aniting/exo_player/events"
 
         init {
             try {

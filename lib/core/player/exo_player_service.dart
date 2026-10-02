@@ -52,8 +52,8 @@ class ExoPlayerError {
 }
 
 class ExoPlayerService {
-  static const _methodChannel = MethodChannel('com.seanime.app/exo_player');
-  static const _eventChannel = EventChannel('com.seanime.app/exo_player/events');
+  static const _methodChannel = MethodChannel('com.anyyting.aniting/exo_player');
+  static const _eventChannel = EventChannel('com.anyyting.aniting/exo_player/events');
 
   StreamSubscription? _eventSub;
 

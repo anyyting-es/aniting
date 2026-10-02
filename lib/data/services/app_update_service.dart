@@ -16,7 +16,7 @@ class AppUpdateService {
   static const String latestReleaseUrl =
       'https://api.github.com/repos/$githubOwner/$githubRepo/releases/latest';
 
-  static const MethodChannel _channel = MethodChannel('com.seanime.app/server');
+  static const MethodChannel _channel = MethodChannel('com.anyyting.aniting/server');
 
   final Dio _dio;
 

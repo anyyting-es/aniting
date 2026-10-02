@@ -1,4 +1,4 @@
-package com.seanime.app.seanime_app.exoplayer
+package com.anyyting.aniting.exoplayer
 
 import android.util.Log
 import androidx.media3.common.C

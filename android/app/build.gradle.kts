@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.seanime.app.seanime_app"
+    namespace = "com.anyyting.aniting"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -15,8 +15,7 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.seanime.app.seanime_app"
+        applicationId = "com.anyyting.aniting"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

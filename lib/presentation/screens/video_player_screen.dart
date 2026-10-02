@@ -526,7 +526,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     });
   }
 
-  static const _nativeChannel = MethodChannel('com.seanime.app/exo_player');
+  static const _nativeChannel = MethodChannel('com.anyyting.aniting/exo_player');
 
   Future<void> _initBrightness() async {
     if (!Platform.isAndroid) return;

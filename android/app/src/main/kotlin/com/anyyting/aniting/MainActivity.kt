@@ -1,4 +1,4 @@
-package com.seanime.app.seanime_app
+package com.anyyting.aniting
 
 import android.content.Context
 import android.content.Intent
@@ -12,7 +12,7 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
-    private val CHANNEL = "com.seanime.app/server"
+    private val CHANNEL = "com.anyyting.aniting/server"
 
     override fun getRenderMode(): RenderMode = RenderMode.texture
 

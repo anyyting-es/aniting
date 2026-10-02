@@ -35,6 +35,8 @@ void main() async {
       final candidates = [
         filesDir,
         appSupport,
+        Directory('/data/user/0/com.anyyting.aniting/files'),
+        Directory('/data/data/com.anyyting.aniting/files'),
         Directory('/data/user/0/com.seanime.app.seanime_app/files'),
         Directory('/data/data/com.seanime.app.seanime_app/files'),
       ];

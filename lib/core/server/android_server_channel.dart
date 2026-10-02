@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 
 class AndroidServerChannel {
-  static const MethodChannel _channel = MethodChannel('com.seanime.app/server');
+  static const MethodChannel _channel = MethodChannel('com.anyyting.aniting/server');
 
   static bool get isSupported => Platform.isAndroid;
 

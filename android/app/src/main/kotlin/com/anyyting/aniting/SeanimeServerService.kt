@@ -1,4 +1,4 @@
-package com.seanime.app.seanime_app
+package com.anyyting.aniting
 
 import android.app.Service
 import android.content.Intent

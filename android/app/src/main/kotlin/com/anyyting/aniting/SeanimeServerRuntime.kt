@@ -1,4 +1,4 @@
-package com.seanime.app.seanime_app
+package com.anyyting.aniting
 
 import android.Manifest
 import android.app.Notification
@@ -18,14 +18,14 @@ import java.io.File
 object SeanimeServerRuntime {
     const val host = "127.0.0.1"
     const val defaultPort = 43211
-    const val actionStart = "com.seanime.app.seanime_app.action.START"
-    const val actionStop = "com.seanime.app.seanime_app.action.STOP"
-    const val actionOpen = "com.seanime.app.seanime_app.action.OPEN"
+    const val actionStart = "com.anyyting.aniting.action.START"
+    const val actionStop = "com.anyyting.aniting.action.STOP"
+    const val actionOpen = "com.anyyting.aniting.action.OPEN"
     const val extraPort = "port"
     const val notificationId = 43211
-    const val notificationChannelId = "seanime-server"
+    const val notificationChannelId = "aniting-server"
 
-    private const val prefsName = "seanime-server"
+    private const val prefsName = "aniting-server"
     private const val keyState = "state"
     private const val keyPort = "port"
     private const val keyStartedAt = "startedAt"
@@ -181,7 +181,7 @@ builtintorrentclient = true
         }
 
         return builder
-            .setContentTitle("Seanime Server")
+            .setContentTitle("Aniting Server")
             .setContentText("Servidor activo en http://$host:$port")
             .setSmallIcon(iconRes)
             .setOngoing(true)
@@ -304,10 +304,10 @@ builtintorrentclient = true
 
         val channel = NotificationChannel(
             notificationChannelId,
-            "Seanime Server",
+            "Servidor Aniting",
             NotificationManager.IMPORTANCE_LOW
         ).apply {
-            description = "Mantiene activo el servidor de Seanime y descargas en segundo plano."
+            description = "Mantiene activo el servidor de Aniting y descargas en segundo plano."
             setShowBadge(false)
         }
         manager.createNotificationChannel(channel)
