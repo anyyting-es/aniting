@@ -347,7 +347,7 @@ class _WelcomeStepExtensionsState extends ConsumerState<WelcomeStepExtensions> {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Explora el catálogo completo con más de ${widget.marketplaceExtensions.length} extensiones',
+                            l10n.exploreAllMarketplaceCountDesc(widget.marketplaceExtensions.length),
                             style: TextStyle(fontSize: 11.5, color: theme.colorScheme.onSurfaceVariant),
                           ),
                         ],

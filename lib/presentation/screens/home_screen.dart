@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/theme/custom_route_transitions.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/screens/settings_screen.dart';
@@ -18,6 +19,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = ref.watch(translationsProvider);
     final serverState = ref.watch(serverNotifierProvider);
     final collectionAsync = ref.watch(animeCollectionProvider);
 
@@ -42,7 +44,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
         actions: [
           IconButton(
-            tooltip: 'Escanear Biblioteca',
+            tooltip: l10n.scanLocalFolder,
             icon: const Icon(Icons.sync),
             onPressed: serverState.isOnline
                 ? () async {
@@ -51,7 +53,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(ok ? 'Escaneo iniciado...' : 'Error al iniciar escaneo'),
+                          content: Text(ok ? '${l10n.scanLocalFolder}...' : l10n.error),
                         ),
                       );
                     }
@@ -59,7 +61,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 : null,
           ),
           IconButton(
-            tooltip: 'Ajustes',
+            tooltip: l10n.navSettings,
             icon: const Icon(Icons.settings_outlined),
             onPressed: () {
               Navigator.push(
@@ -115,14 +117,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       children: [
                         const Icon(Icons.cloud_off, size: 64, color: Colors.grey),
                         const SizedBox(height: 16),
-                        const Text(
-                          'El servidor Seanime no está conectado',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        Text(
+                          l10n.serverNotConnected,
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 8),
-                        const Text(
-                          'Inicia el servidor local o conecta a tu PC en Ajustes',
-                          style: TextStyle(color: Colors.grey, fontSize: 13),
+                        Text(
+                          l10n.serverNotConnectedDesc,
+                          style: const TextStyle(color: Colors.grey, fontSize: 13),
                         ),
                         const SizedBox(height: 20),
                         ElevatedButton(
@@ -132,7 +134,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               SlideRightToLeftPageRoute(child: const SettingsScreen()),
                             );
                           },
-                          child: const Text('Abrir Ajustes de Servidor'),
+                          child: Text(l10n.serverSettings),
                         ),
                       ],
                     ),
@@ -155,15 +157,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               const SizedBox(height: 12),
                               Text(
                                 entries.isEmpty
-                                    ? 'No hay animes en tu biblioteca local aún'
-                                    : 'No hay animes en esta categoría',
+                                    ? l10n.emptyLibraryLocal
+                                    : l10n.notInLocalLibrary,
                                 style: const TextStyle(color: Colors.grey),
                               ),
                               const SizedBox(height: 16),
                               ElevatedButton.icon(
                                 onPressed: () => ref.invalidate(animeCollectionProvider),
                                 icon: const Icon(Icons.refresh),
-                                label: const Text('Actualizar'),
+                                label: Text(l10n.refresh),
                               ),
                             ],
                           ),
@@ -191,7 +193,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     },
                     loading: () => const Center(child: CircularProgressIndicator()),
                     error: (err, stack) => Center(
-                      child: Text('Error al cargar animes: $err'),
+                      child: Text('${l10n.error}: $err'),
                     ),
                   ),
           ),

@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import '../i18n/translations/translations.dart';
 
 /// Semantic colors for modern Web / Media Center UI.
 class AppThemePalette {
@@ -67,6 +68,28 @@ class AppThemePalette {
       isDark: isDark ?? this.isDark,
       category: category ?? this.category,
     );
+  }
+
+  /// Returns the localized name of the palette if available, or the raw name.
+  String localizedName(AppTranslations l10n) {
+    switch (id) {
+      case AppPalettes.materialPurpleId:
+        return l10n.materialPurpleName;
+      case AppPalettes.materialBlueId:
+        return l10n.materialBlueName;
+      case AppPalettes.materialGreenId:
+        return l10n.materialGreenName;
+      case AppPalettes.materialOrangeId:
+        return l10n.materialOrangeName;
+      case AppPalettes.materialCrimsonId:
+        return l10n.materialCrimsonName;
+      case AppPalettes.materialTealId:
+        return l10n.materialTealName;
+      case AppPalettes.systemId:
+        return l10n.paletteSystem;
+      default:
+        return name;
+    }
   }
 
   /// Builds a matching Flutter ColorScheme so standard widgets remain cohesive.

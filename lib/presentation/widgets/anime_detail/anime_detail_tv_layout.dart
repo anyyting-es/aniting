@@ -163,7 +163,17 @@ class _AnimeDetailTvLayoutState extends ConsumerState<AnimeDetailTvLayout> {
 
                   // Metadata subtitle
                   Text(
-                    '${widget.details?.format ?? "TV"} • ${progress > 0 ? "Progreso: Ep $progress/$totalEps" : "${totalEps ?? "?"} Episodios"} • ${widget.details?.status ?? ""}',
+                    [
+                      widget.details?.format ?? 'TV',
+                      if (progress > 0)
+                        '${l10n.progress}: Ep $progress/${totalEps ?? "?"}'
+                      else if (totalEps != null)
+                        '$totalEps ${l10n.episodes}'
+                      else
+                        '? ${l10n.episodes}',
+                      if (widget.details?.status != null && widget.details!.status!.isNotEmpty)
+                        l10n.formatStatus(widget.details!.status),
+                    ].join(' • '),
                     style: TextStyle(
                       fontSize: 16,
                       color: Colors.white.withValues(alpha: 0.8),
@@ -182,6 +192,7 @@ class _AnimeDetailTvLayoutState extends ConsumerState<AnimeDetailTvLayout> {
                             return FilledButton.icon(
                               onPressed: () async {
                                 final nextEp = progress + 1;
+                                final l10n = ref.read(translationsProvider);
                                 try {
                                   final repo = ref.read(repositoryProvider);
                                   final entry = await repo.getAnimeLibraryEntry(widget.mediaId);
@@ -192,7 +203,6 @@ class _AnimeDetailTvLayoutState extends ConsumerState<AnimeDetailTvLayout> {
                                   if (localEp != null) {
                                     if (!ctx.mounted) return;
                                     final serverManager = ref.read(serverManagerProvider);
-                                    final l10n = ref.read(translationsProvider);
                                     final titleLang = ref.read(titleLanguageProvider);
                                     final animeTitle = widget.details?.displayTitle(titleLang) ?? 'Anime';
                                     final streamUrl = localEp.localFilePath != null && localEp.localFilePath!.isNotEmpty
@@ -205,7 +215,7 @@ class _AnimeDetailTvLayoutState extends ConsumerState<AnimeDetailTvLayout> {
                                         mediaId: widget.mediaId,
                                         videoUrl: streamUrl,
                                         title: animeTitle,
-                                        episodeTitle: localEp.displayTitle.isNotEmpty ? localEp.displayTitle : 'Episodio $nextEp',
+                                        episodeTitle: localEp.displayTitle.isNotEmpty ? localEp.displayTitle : l10n.episodeNumber(nextEp),
                                         episodeNumber: nextEp,
                                         videoSource: fileName != null ? 'Local • $fileName' : l10n.localLibrary,
                                         isLocalFile: true,
@@ -220,7 +230,7 @@ class _AnimeDetailTvLayoutState extends ConsumerState<AnimeDetailTvLayout> {
                                 if (widget.currentTab == AnimeDetailTab.torrent) {
                                   widget.onOpenTorrentSelector(
                                     episodeNumber: nextEp,
-                                    episodeTitle: 'Episodio $nextEp',
+                                    episodeTitle: l10n.episodeNumber(nextEp),
                                   );
                                 }
                               },
@@ -237,7 +247,9 @@ class _AnimeDetailTvLayoutState extends ConsumerState<AnimeDetailTvLayout> {
                               ),
                               icon: const Icon(Icons.play_arrow_rounded, size: 28),
                               label: Text(
-                                progress > 0 ? 'Continuar (Ep ${progress + 1})' : 'Empezar a ver',
+                                progress > 0
+                                    ? l10n.continueEpisodeNumbered(progress + 1)
+                                    : l10n.startWatching,
                                 style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                               ),
                             );
@@ -254,9 +266,9 @@ class _AnimeDetailTvLayoutState extends ConsumerState<AnimeDetailTvLayout> {
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         ),
                         icon: const Icon(Icons.info_outline_rounded, size: 24),
-                        label: const Text(
-                          'Detalles',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        label: Text(
+                          l10n.details,
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ],

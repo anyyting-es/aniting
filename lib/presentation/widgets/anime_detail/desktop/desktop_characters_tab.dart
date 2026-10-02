@@ -15,8 +15,7 @@ class DesktopCharactersTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final currentLanguage = ref.watch(appLanguageProvider);
-    final isEn = currentLanguage == AppLanguage.en;
+    final l10n = ref.watch(translationsProvider);
 
     if (isLoading && characters.isEmpty) {
       return LayoutBuilder(
@@ -48,7 +47,7 @@ class DesktopCharactersTab extends ConsumerWidget {
               const Icon(Icons.person_off_outlined, color: Colors.white38, size: 32),
               const SizedBox(height: 10),
               Text(
-                isEn ? 'No characters available' : 'No hay personajes disponibles',
+                l10n.noCharactersAvailable,
                 style: const TextStyle(
                   color: Colors.white70,
                   fontSize: 13.5,
@@ -76,7 +75,7 @@ class DesktopCharactersTab extends ConsumerWidget {
           ),
           itemBuilder: (context, index) {
             final edge = characters[index] as Map<String, dynamic>?;
-            return _DesktopCharacterCard(edge: edge, isEn: isEn);
+            return _DesktopCharacterCard(edge: edge, l10n: l10n);
           },
         );
       },
@@ -121,11 +120,11 @@ class DesktopCharactersTab extends ConsumerWidget {
 
 class _DesktopCharacterCard extends StatefulWidget {
   final Map<String, dynamic>? edge;
-  final bool isEn;
+  final AppTranslations l10n;
 
   const _DesktopCharacterCard({
     required this.edge,
-    required this.isEn,
+    required this.l10n,
   });
 
   @override
@@ -143,14 +142,14 @@ class _DesktopCharacterCardState extends State<_DesktopCharacterCard> {
     final role = widget.edge?['role'] as String? ?? 'SUPPORTING';
     final node = widget.edge?['node'] as Map<String, dynamic>?;
     final nameMap = node?['name'] as Map<String, dynamic>?;
-    final charName = nameMap?['userPreferred'] ?? nameMap?['full'] ?? 'Personaje';
+    final charName = nameMap?['userPreferred'] ?? nameMap?['full'] ?? widget.l10n.character;
     final imageMap = node?['image'] as Map<String, dynamic>?;
     final imgUrl = imageMap?['large'] ?? imageMap?['medium'];
     final isMain = role.toUpperCase() == 'MAIN';
 
     final roleLabel = isMain
-        ? (widget.isEn ? 'MAIN' : 'PRINCIPAL')
-        : (widget.isEn ? 'SUPPORTING' : 'SECUNDARIO');
+        ? widget.l10n.mainRole.toUpperCase()
+        : widget.l10n.supportingRole.toUpperCase();
 
     return MouseRegion(
       cursor: SystemMouseCursors.basic,

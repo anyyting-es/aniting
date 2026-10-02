@@ -129,7 +129,7 @@ class PlayerSourceController {
       onSourceActivated(
         videoUrl: chosenSource.url,
         episodeNumber: epNum,
-        episodeTitle: getEpisodeTitle() ?? 'Episodio $epNum',
+        episodeTitle: getEpisodeTitle() ?? getL10n().episodeNumber(epNum),
         headers: chosenSource.headers,
         mimeType: chosenSource.isHls ? 'application/x-mpegURL' : null,
         videoSource: sourceDesc,
@@ -246,7 +246,7 @@ class PlayerSourceController {
     final targetAniZipEp = aniZip?.getEpisode(targetEpNum);
     final targetEpTitle = targetAniZipEp?.displayTitle.isNotEmpty == true
         ? targetAniZipEp!.displayTitle
-        : 'Episodio $targetEpNum';
+        : getL10n().episodeNumber(targetEpNum);
 
     isLoadingNextEpisode = true;
     isResolvingSources = !getIsLocalFile() && getOnlineStreamProvider() != null;
@@ -271,6 +271,7 @@ class PlayerSourceController {
       final resolver = PlayerEpisodeResolver(
         repository: repository,
         serverManager: serverManager,
+        l10n: getL10n(),
       );
 
       final resolved = await resolver.resolveEpisode(
@@ -332,6 +333,7 @@ class PlayerSourceController {
       final resolver = PlayerEpisodeResolver(
         repository: repository,
         serverManager: serverManager,
+        l10n: getL10n(),
       );
       resolver.prefetchEpisode(
         mediaId: mediaId!,

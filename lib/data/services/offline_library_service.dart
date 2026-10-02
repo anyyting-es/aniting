@@ -107,7 +107,7 @@ class OfflineLibraryService {
   }
 
   /// Retorna la lista de anime en seguimiento para "Seguir Viendo".
-  List<AnimeEntry> getContinueWatching() {
+  List<AnimeEntry> getContinueWatching({String? langCode}) {
     final list = _animeEntries.values.where((e) {
       final isFinished = e.totalEpisodes != null &&
           e.totalEpisodes! > 0 &&
@@ -133,7 +133,7 @@ class OfflineLibraryService {
         return entry.copyWith(
           episodeNumber: nextEp,
           currentEpisode: nextEp,
-          episodeTitle: epData.displayTitle.isNotEmpty ? epData.displayTitle : entry.episodeTitle,
+          episodeTitle: epData.displayTitleForLang(langCode).isNotEmpty ? epData.displayTitleForLang(langCode) : entry.episodeTitle,
           episodeThumbnail: (epData.image != null && epData.image!.isNotEmpty) ? epData.image : entry.episodeThumbnail,
         );
       }

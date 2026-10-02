@@ -11,6 +11,9 @@
 >
 > **FILE SIZE & MODULAR ARCHITECTURE RULE**:
 > **NEVER** create gigantic monolithic files with thousands of lines. As a strict rule, avoid single source files exceeding ~400–500 lines unless exceptional constraints require it. Always decompose UI screens, tabs, cards, dialogs, and complex features into modular sub-widgets inside dedicated subfolders (e.g., `widgets/anime_detail/desktop/`, `widgets/player/layouts/`, `widgets/welcome/`). Keep files small, focused, maintainable, and adhering to single responsibility.
+>
+> **MANDATORY INTERNATIONALIZATION (i18n) RULE**:
+> Whenever you add **any** new feature, screen, widget, dialog, toast, error message, or UI element that contains **user-facing text**, you **MUST** simultaneously add the corresponding translation keys to all three i18n files: `lib/core/i18n/translations/translations.dart` (abstract contract), `lib/core/i18n/translations/en.dart` (English), and `lib/core/i18n/translations/es.dart` (Spanish). **NEVER** leave hardcoded strings in any language. All user-visible text must go through `l10n.keyName`. This applies to labels, placeholders, tooltips, error messages, button text, section headers, empty states, confirmation dialogs, and snackbar messages.
 
 ---
 
@@ -1132,6 +1135,74 @@ Inspired by **Plezy** (`edde746/plezy`), the player focuses on high performance,
   - Purged all hardcoded blues (`0xFF00C7FF`, `0xFF02A9FF`) and hardcoded dark tones (`0xFF14171B`, `0xFF1C2026`).
   - All backgrounds, borders, chips, text styles, and icons dynamically resolve from `theme.colorScheme` and `isDark`, delivering high legibility and contrast in both Light and Dark modes.
 
+### 7.10. Codebase-Wide Internationalization (i18n) & Spanish String Elimination (2026-10-02)
+- **Elimination of Hardcoded Spanish Prompts & Fallbacks**:
+  - Replaced all fallback episode and chapter titles (`'Episodio $x'`, `'Capítulo $x'`) across streaming pipelines, resolvers, player panels, and detail screens with dynamic, localized getters (`l10n.episodeNumber`, `l10n.chapterAbbr`).
+  - Localized playback stream resolvers and source controllers (`player_episode_resolver.dart`, `player_source_controller.dart`, `online_stream_view.dart`, `desktop_episodes_tab.dart`, `next_episode_card.dart`).
+- **Full Detail & Batch Action Localization**:
+  - Localized desktop, mobile, and TV layouts for Anime and Manga details (`anime_detail_mobile_layout.dart`, `anime_detail_desktop_layout.dart`, `anime_detail_tv_layout.dart`, `manga_detail_screen.dart`, `manga_detail_mobile_layout.dart`, `desktop_manga_chapters_tab.dart`).
+  - Fully translated Torrent Batch file selector sheet (`torrent_batch_files_sheet.dart`) and quality filters (`torrent_selector_sheet.dart`).
+  - Localized AniList and local entry removal dialogs (`edit_entry_modal.dart`).
+- **Comprehensive `AppTranslations` Contract Extensions**:
+  - Expanded `translations.dart`, `en.dart`, and `es.dart` contracts with comprehensive keys for streaming modes, downloads, empty states, search hints, and confirmation dialogs.
+
+### 7.11. 100% Spanish & English Parity Audit & Settings/Player Engine Fixes (2026-10-02)
+- **Stream Auto-Track & Subtitle Language Priority (`player_playback_coordinator.dart`)**:
+  - Resolved user report where streaming video defaulted or prompted in Spanish when the app was set to English.
+  - Player track selection previously hardcoded Spanish audio/subs as priority #2 right before English #3, and defaulted MPV external subtitle index to 0 without checking language.
+  - Refactored `PlayerPlaybackCoordinator` to detect `l10n is EnglishTranslations` and prioritize English tracks and external subtitles when the app is in English, and Spanish when in Spanish.
+- **Settings Personalization & Font/Accent Localization (`theme_provider.dart`, `personalizacion_settings_screen.dart`, `theme_settings_screen.dart`, `welcome_step_theme.dart`)**:
+  - Resolved user report where settings options displayed in Spanish.
+  - Converted `currentFont.displayName` (`'Sistema'`) to `currentFont.localizedDisplayName(l10n)`.
+  - Added localized descriptions for all 7 typography options (`AppFontOption.localizedDescription(l10n)`).
+  - Added localized accent color names (`AppAccentColor.localizedName(l10n)`) for tooltips across settings and onboarding.
+- **AniList Auth Error Localization & Error Sentinel Mapping (`seanime_repository.dart`, `anilist_auth_sheet.dart`)**:
+  - Replaced hardcoded Spanish exception messages in `seanime_repository.dart` with standardized error sentinel identifiers (`RATE_LIMIT`, `TIMEOUT`, `INVALID_TOKEN`, `NETWORK_ERROR`).
+  - Mapped sentinels in `anilist_auth_sheet.dart` to `l10n.anilistRateLimitError`, `l10n.anilistTimeoutError`, `l10n.anilistInvalidTokenError`, and `l10n.anilistConnectionError`.
+- **Complete UI Parity Across All Residual Strings**:
+  - Localized desktop episode pagination (`desktop_episode_pagination.dart`), desktop episode list card fallback description (`desktop_episode_list_card.dart`), character roles (`desktop_characters_tab.dart`, `desktop_manga_characters_section.dart`), downloaded chapter labels (`manga_detail_screen.dart`), library headers (`library_screen.dart`), home screen server offline states (`home_screen.dart`), resume bar labels (`floating_resume_bar.dart`), and update failure toasts (`app_update_provider.dart`, `app_update_service.dart`).
+  - Verified 100% parity across English and Spanish translations with `flutter analyze` (0 issues).
 
 
+### 7.12. AniZip Language-Aware Episode Metadata, Section Toggle, Explore Skeleton & Theme Redesign (2026-10-02)
+- **Language-Aware AniZip Episode Titles (`anizip_data.dart`, `seanime_repository.dart`, `offline_library_service.dart`, `anizip_episode_list.dart`, `continue_watching_card.dart`, `local_library_view.dart`)**:
+  - Previously, `AniZipEpisode.displayTitle` (no-arg getter) was hardcoded to `displayTitleForLang('es')`, causing episode titles to always display in Spanish regardless of the user's selected app language.
+  - All call sites that used `.displayTitle` on `AniZipEpisode` instances were systematically updated to use `.displayTitleForLang(langCode)` where `langCode` is derived from `appLanguageProvider` (`'en'` for English, `'es'` for Spanish).
+  - `getContinueWatching()` in `seanime_repository.dart` and `offline_library_service.dart` now accept an optional `String? langCode` parameter to pass through to AniZip title resolution.
+  - Widgets (`anizip_episode_list.dart`, `continue_watching_card.dart`, `local_library_view.dart`) now watch `appLanguageProvider` and pass the correct language code for episode title rendering.
+- **Anime/Manga Section Visibility Toggle (`section_visibility_provider.dart`, `main_shell.dart`, `personalizacion_settings_screen.dart`)**:
+  - New `AnimeSectionEnabledNotifier` and `MangaSectionEnabledNotifier` providers (`lib/core/preferences/section_visibility_provider.dart`) following the `_cachedPrefs` pattern for synchronous 0ms startup hydration.
+  - `MainShell` dynamically builds `availablePages`, `sidebarItems`, and `desktopSidebarItems` lists, filtering out disabled sections. `IndexedStack`, `FloatingDockPill`, `MobileNavDock`, and classic `NavigationBar` all respect the dynamic page set.
+  - `FloatingDockPill` updated to support `targetIndex` mapping for correct selection state with filtered navigation items.
+  - `SearchScreen` and `MediaTypeToggle` respect section visibility: if Anime is disabled, defaults to Manga mode and vice versa.
+  - Settings toggle in Personalización with guard preventing both sections from being disabled simultaneously.
+- **Explore Screen Shimmer Skeleton Placeholders (`explore_skeleton.dart`, `search_screen.dart`)**:
+  - Created `ExploreSkeleton` widget (`lib/presentation/widgets/explore_skeleton.dart`) rendering shimmer placeholders matching the Explore screen layout: hero carousel placeholder (exact dimensions `(isDesktop ? 340.0 : 260.0) + topPadding`), header controls row, genre chips row, and 2-3 curated section card rows.
+  - Uses the canonical app shimmer pattern: `AnimationController(1400ms, repeat reverse)`, opacity `0.18–0.46`, `surfaceContainerHighest` color, wrapped in `RepaintBoundary`.
+  - Exported `CuratedSectionRowSkeleton` for individual section loading states.
+  - `search_screen.dart` updated: when trending data is loading, renders the full `ExploreSkeleton` instead of `SizedBox.shrink()`, completely eliminating the CLS jump. Curated sections also render `CuratedSectionRowSkeleton` during loading instead of collapsing to 0 height. Anime ↔ Manga toggle transitions show skeleton during data fetch.
+- **Theme Settings Alignment with Setup Wizard & Material You Localization (`theme_settings_screen.dart`, `app_palette.dart`, `welcome_step_theme.dart`)**:
+  - Aligned `ThemeSettingsScreen` 1:1 with the clean, polished visual aesthetic of the Setup Wizard (`welcome_step_theme.dart`):
+    - **Mode**: 3 cards with the graphical mini window mockup preview (`_buildThemeModeGraphic`) for Dark, Light, and System modes.
+    - **Icon Pack**: Side-by-side cards for Lucide Web and Material Symbols with preview row and checkmark badges.
+    - **Accent Color**: Horizontal row of circular accent swatches with glow border and active checkmark.
+    - **Community Palettes**: Clean segmented tabs (`Dark Themes`, `Light Themes`, `Material Design 3`) with vertical list of clean pill-shaped tiles showing circular color preview dot and trailing radio/check state.
+    - **Extras**: Preserved OLED True Black and Dynamic Anime Theme switches alongside the Expressive M3 Corner Radius slider.
+  - **Material You & System Palette Localization**:
+    - Added `localizedName(AppTranslations l10n)` to `AppThemePalette` and contracts in `translations.dart`, `en.dart`, and `es.dart`.
+    - Localized names for all Material Design 3 palettes in English (`Material You Violet`, `Ocean`, `Forest`, `Sunset`, `Raspberry`, `Teal`) and Spanish (`Material You Violeta`, `Océano`, `Bosque`, `Atardecer`, `Frambuesa`, `Turquesa`), resolving the issue where English UI displayed Spanish palette names.
 
+### 7.13. Smooth Shell Page Switch Transitions & Robust Navigation Indexing (2026-10-02)
+- **Fluid Shell Page Entrance Animations (`ShellAnimatedIndexedStack`, `main_shell.dart`)**:
+  - Created `ShellAnimatedIndexedStack` (`lib/presentation/widgets/shell_animated_indexed_stack.dart`) wrapping `IndexedStack` with synchronized `FadeTransition` (0.0 -> 1.0) and subtle vertical glide `SlideTransition` (`Offset(0, 0.015) -> Offset.zero`, 240ms `Curves.easeOutCubic`).
+  - Preserves 100% of state, scroll offsets, and active controllers across all pages while delivering a smooth, premium animated transition whenever the user navigates between tabs from the Desktop Sidebar, Mobile Floating Nav, or classic NavigationBar.
+  - Keeps inactive tabs wrapped in `TickerMode(enabled: isCurrent)` to freeze background tickers and eliminate unnecessary CPU/GPU usage.
+- **Robust Section Deactivation & Index Bounds Protection (`main_shell.dart`, `ShellSection`)**:
+  - Replaced brittle numeric index assumptions with `ShellSection` enum (`anime`, `manga`, `explore`, `calendar`, `profile`).
+  - `MainShell` maintains `ShellSection _activeSection`, filtering `availableSections` dynamically.
+  - Automatically sanitizes `_activeSection` to `availableSections.first` when the currently viewed section is deactivated, and resolves `activeIndex = availableSections.indexOf(_activeSection).clamp(0, availableSections.length - 1)`.
+  - Completely eliminates the `The index must be null or within the range of children` assertion crash that occurred when disabling sections.
+- **Theme Mode Mini Mockup RenderFlex Overflow Fix (`theme_settings_screen.dart`, `welcome_step_theme.dart`)**:
+  - Fixed 1.1px vertical RenderFlex overflow on high-density / fractional font scale mobile screens (e.g. Infinix X6837) by increasing mini window container height from 54dp to 58dp and trimming internal padding in `_buildThemeModeGraphic`.
+- **Floating SnackBar Collision Clearance (`personalizacion_settings_screen.dart`)**:
+  - Added `messenger.clearSnackBars()` prior to displaying `cannotDisableBothSections`, preventing floating snackbar positioning exceptions during active settings navigation.

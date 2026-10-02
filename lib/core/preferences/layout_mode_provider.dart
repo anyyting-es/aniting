@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:seanime_app/core/i18n/translations/translations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 enum LayoutMode {
@@ -11,6 +12,32 @@ enum LayoutMode {
   final String key;
   final String label;
   const LayoutMode(this.key, this.label);
+
+  String localizedLabel(AppTranslations l10n) {
+    switch (this) {
+      case LayoutMode.auto:
+        return l10n.interfaceModeAuto;
+      case LayoutMode.desktop:
+        return l10n.interfaceModeDesktop;
+      case LayoutMode.mobile:
+        return l10n.interfaceModeMobile;
+      case LayoutMode.tv:
+        return l10n.interfaceModeTv;
+    }
+  }
+
+  String localizedDescription(AppTranslations l10n) {
+    switch (this) {
+      case LayoutMode.auto:
+        return l10n.interfaceModeAutoDesc;
+      case LayoutMode.desktop:
+        return l10n.interfaceModeDesktopDesc;
+      case LayoutMode.mobile:
+        return l10n.interfaceModeMobileDesc;
+      case LayoutMode.tv:
+        return l10n.interfaceModeTvDesc;
+    }
+  }
 
   static LayoutMode fromKey(String? key) {
     switch (key) {

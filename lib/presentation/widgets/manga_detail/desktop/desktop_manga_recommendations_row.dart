@@ -1,11 +1,13 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/i18n/i18n_provider.dart';
 import 'package:seanime_app/data/models/anime_entry.dart';
 import 'package:seanime_app/data/models/manga_entry.dart';
 import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
 import 'package:seanime_app/presentation/screens/manga_detail_screen.dart';
 
-class DesktopMangaRecommendationsRow extends StatelessWidget {
+class DesktopMangaRecommendationsRow extends ConsumerWidget {
   final List recommendations;
   final bool isLoading;
 
@@ -16,8 +18,9 @@ class DesktopMangaRecommendationsRow extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final l10n = ref.watch(translationsProvider);
     final isDark = theme.brightness == Brightness.dark;
 
     if (isLoading && recommendations.isEmpty) {
@@ -37,7 +40,7 @@ class DesktopMangaRecommendationsRow extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 24),
         child: Center(
           child: Text(
-            'No hay obras similares disponibles',
+            l10n.noSimilarWorksAvailable,
             style: TextStyle(
               color: isDark ? Colors.white54 : theme.colorScheme.onSurfaceVariant,
               fontSize: 13,
@@ -95,16 +98,16 @@ class DesktopMangaRecommendationsRow extends StatelessWidget {
   }
 }
 
-class _DesktopMangaRecommendationCard extends StatefulWidget {
+class _DesktopMangaRecommendationCard extends ConsumerStatefulWidget {
   final Map<String, dynamic>? edge;
 
   const _DesktopMangaRecommendationCard({required this.edge});
 
   @override
-  State<_DesktopMangaRecommendationCard> createState() => _DesktopMangaRecommendationCardState();
+  ConsumerState<_DesktopMangaRecommendationCard> createState() => _DesktopMangaRecommendationCardState();
 }
 
-class _DesktopMangaRecommendationCardState extends State<_DesktopMangaRecommendationCard> {
+class _DesktopMangaRecommendationCardState extends ConsumerState<_DesktopMangaRecommendationCard> {
   bool _isHovered = false;
 
   @override
@@ -113,9 +116,10 @@ class _DesktopMangaRecommendationCardState extends State<_DesktopMangaRecommenda
     final mediaRec = node?['mediaRecommendation'] as Map<String, dynamic>?;
     if (mediaRec == null) return const SizedBox.shrink();
 
+    final l10n = ref.watch(translationsProvider);
     final recId = mediaRec['id'] as int? ?? 0;
     final titleMap = mediaRec['title'] as Map<String, dynamic>?;
-    final recTitle = titleMap?['userPreferred'] ?? titleMap?['romaji'] ?? titleMap?['english'] ?? 'Sin título';
+    final recTitle = titleMap?['userPreferred'] ?? titleMap?['romaji'] ?? titleMap?['english'] ?? l10n.noTitle;
     final coverMap = mediaRec['coverImage'] as Map<String, dynamic>?;
     final coverUrl = coverMap?['large'] ?? coverMap?['medium'];
 

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:seanime_app/core/i18n/i18n_provider.dart';
 
-class DesktopEpisodePagination extends StatelessWidget {
+class DesktopEpisodePagination extends ConsumerWidget {
   final int currentPage;
   final int totalPages;
   final int startIndex;
@@ -17,7 +19,8 @@ class DesktopEpisodePagination extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = ref.watch(translationsProvider);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -66,7 +69,7 @@ class DesktopEpisodePagination extends StatelessWidget {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    'Anterior',
+                    l10n.previous,
                     style: TextStyle(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w600,
@@ -118,7 +121,7 @@ class DesktopEpisodePagination extends StatelessWidget {
                 ],
               ] else ...[
                 Text(
-                  'Página ${currentPage + 1} de $totalPages',
+                  l10n.pageOf(currentPage + 1, totalPages),
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -169,7 +172,7 @@ class DesktopEpisodePagination extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'Siguiente',
+                    l10n.next,
                     style: TextStyle(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w600,

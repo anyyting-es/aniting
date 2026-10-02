@@ -116,7 +116,7 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
 
     final currentLanguage = ref.watch(appLanguageProvider);
     final iconPack = ref.watch(iconPackProvider);
-    final isEn = currentLanguage == AppLanguage.en;
+    final l10n = ref.watch(translationsProvider);
     final langCode = currentLanguage.name;
 
     final aniZipData = widget.aniZipData ?? widget.details?.aniZipData;
@@ -184,7 +184,7 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
         final epTitle = !isGenericOnlineTitle
             ? rawTitle
             : (aniZipEp?.displayTitleForLang(langCode) ??
-                (isEn ? 'Episode ${ep.number}' : 'Episodio ${ep.number}'));
+                l10n.episodeNumber(ep.number));
 
         items.add(DesktopEpisodeItemData(
           number: ep.number,
@@ -235,7 +235,7 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
         for (int i = 1; i <= totalCount; i++) {
           items.add(DesktopEpisodeItemData(
             number: i,
-            title: isEn ? 'Episode $i' : 'Episodio $i',
+            title: l10n.episodeNumber(i),
             isWatched: widget.progress >= i,
           ));
         }
@@ -264,8 +264,8 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
         : items.sublist(startIndex, endIndex);
 
     final headerCountText = totalPages > 1
-        ? '${items.length} ${isEn ? "Episodes" : "Episodios"} • ${isEn ? "Page" : "Pág."} ${_currentPage + 1}/$totalPages'
-        : '${items.length} ${isEn ? "Episodes" : "Episodios"}';
+        ? '${items.length} ${l10n.episodes} • ${l10n.page} ${_currentPage + 1}/$totalPages'
+        : '${items.length} ${l10n.episodes}';
 
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
@@ -332,9 +332,7 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
                         ? (isDark ? Colors.white : theme.colorScheme.primary)
                         : (isDark ? Colors.white60 : theme.colorScheme.onSurfaceVariant),
                   ),
-                  tooltip: widget.isDubbed
-                      ? (isEn ? 'Dubbed Audio' : 'Audio Doblado')
-                      : (isEn ? 'Subtitled Audio' : 'Audio Subtitulado'),
+                  tooltip: widget.isDubbed ? l10n.audioDubbed : l10n.audioSubtitled,
                   onPressed: widget.onToggleDubbed,
                 ),
               ],
@@ -350,8 +348,8 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
               ),
               onPressed: () => setState(() => _isGridView = !_isGridView),
               tooltip: _isGridView
-                  ? (isEn ? 'List view' : 'Vista en lista')
-                  : (isEn ? 'Grid view' : 'Vista en cuadrícula'),
+                  ? l10n.switchToList
+                  : l10n.switchToGrid,
               icon: Icon(
                 _isGridView ? AppIcons.list(iconPack) : AppIcons.grid(iconPack),
                 size: 18,
@@ -372,8 +370,8 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
                 _currentPage = 0;
               }),
               tooltip: _isSortAscending
-                  ? (isEn ? 'Ascending order' : 'Orden ascendente')
-                  : (isEn ? 'Descending order' : 'Orden descendente'),
+                  ? l10n.orderAsc
+                  : l10n.orderDesc,
               icon: Icon(
                 AppIcons.swapVert(iconPack),
                 size: 18,
@@ -403,7 +401,7 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Cargando episodios de ${widget.selectedProvider?.name ?? 'la fuente'}...',
+                    l10n.loadingEpisodesFrom(widget.selectedProvider?.name ?? l10n.source),
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
@@ -429,7 +427,7 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'No se encontraron episodios en ${widget.selectedProvider?.name ?? 'esta fuente'}',
+                    l10n.noEpisodesFoundInProvider(widget.selectedProvider?.name ?? l10n.source),
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -438,7 +436,7 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Prueba seleccionando otro servidor o cambiando entre subtitulado y doblado',
+                    l10n.tryAnotherServerOrSubDub,
                     style: TextStyle(
                       fontSize: 12,
                       color: isDark ? Colors.white.withValues(alpha: 0.45) : theme.colorScheme.onSurfaceVariant,

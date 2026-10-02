@@ -17,8 +17,7 @@ class DesktopMangaCharactersSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final currentLanguage = ref.watch(appLanguageProvider);
-    final isEn = currentLanguage == AppLanguage.en;
+    final l10n = ref.watch(translationsProvider);
 
     if (isLoading && characters.isEmpty) {
       return GridView.builder(
@@ -40,7 +39,7 @@ class DesktopMangaCharactersSection extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(vertical: 24),
         child: Center(
           child: Text(
-            isEn ? 'No characters available' : 'No hay personajes disponibles',
+            l10n.noCharactersAvailable,
             style: TextStyle(
               color: isDark ? Colors.white54 : theme.colorScheme.onSurfaceVariant,
               fontSize: 13,
@@ -63,7 +62,7 @@ class DesktopMangaCharactersSection extends ConsumerWidget {
       ),
       itemBuilder: (context, index) {
         final edge = characters[index] as Map<String, dynamic>?;
-        return _DesktopMangaCharacterCard(edge: edge, isEn: isEn);
+        return _DesktopMangaCharacterCard(edge: edge, l10n: l10n);
       },
     );
   }
@@ -115,11 +114,11 @@ class DesktopMangaCharactersSection extends ConsumerWidget {
 
 class _DesktopMangaCharacterCard extends StatefulWidget {
   final Map<String, dynamic>? edge;
-  final bool isEn;
+  final AppTranslations l10n;
 
   const _DesktopMangaCharacterCard({
     required this.edge,
-    required this.isEn,
+    required this.l10n,
   });
 
   @override
@@ -129,14 +128,12 @@ class _DesktopMangaCharacterCard extends StatefulWidget {
 class _DesktopMangaCharacterCardState extends State<_DesktopMangaCharacterCard> {
   bool _isHovered = false;
 
-  String _formatRole(String role, bool isEn) {
+  String _formatRole(String role) {
     switch (role.toUpperCase()) {
       case 'MAIN':
-        return isEn ? 'Main' : 'Principal';
+        return widget.l10n.mainRole;
       case 'SUPPORTING':
-        return isEn ? 'Supporting' : 'Secundario';
-      case 'BACKGROUND':
-        return isEn ? 'Background' : 'Fondo';
+        return widget.l10n.supportingRole;
       default:
         return role;
     }
@@ -150,7 +147,7 @@ class _DesktopMangaCharacterCardState extends State<_DesktopMangaCharacterCard> 
     final node = widget.edge?['node'] as Map<String, dynamic>?;
     final role = widget.edge?['role'] as String? ?? 'MAIN';
     final nameMap = node?['name'] as Map<String, dynamic>?;
-    final characterName = nameMap?['userPreferred'] ?? nameMap?['full'] ?? 'Personaje';
+    final characterName = nameMap?['userPreferred'] ?? nameMap?['full'] ?? widget.l10n.character;
     final imageMap = node?['image'] as Map<String, dynamic>?;
     final imageUrl = imageMap?['large'] ?? imageMap?['medium'];
 
@@ -159,7 +156,7 @@ class _DesktopMangaCharacterCardState extends State<_DesktopMangaCharacterCard> 
     final va = voiceActors?.isNotEmpty == true ? voiceActors!.first as Map<String, dynamic>? : null;
     final vaName = va?['name']?['userPreferred'] ?? va?['name']?['full'];
 
-    final roleLabel = _formatRole(role, widget.isEn);
+    final roleLabel = _formatRole(role);
     final subtitle = vaName != null && vaName.isNotEmpty
         ? '$roleLabel • $vaName'
         : roleLabel;

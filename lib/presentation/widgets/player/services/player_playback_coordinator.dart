@@ -91,6 +91,30 @@ class PlayerPlaybackCoordinator {
     try { return (s as dynamic).isDefault == true; } catch (_) { return false; }
   }
 
+  int _resolveBestExternalSubtitleIndex(List<dynamic> subs) {
+    final defaultIdx = subs.indexWhere((s) => _getSubIsDefault(s));
+    if (defaultIdx >= 0) return defaultIdx;
+
+    final isEn = l10n is EnglishTranslations;
+    int findLangIdx(bool english) {
+      return subs.indexWhere((s) {
+        final lang = _getSubLanguage(s).toLowerCase();
+        final label = _getSubLabel(s).toLowerCase();
+        if (english) {
+          return lang == 'en' || lang == 'eng' || label.contains('eng') || label.contains('english');
+        } else {
+          return lang == 'es' || lang == 'spa' || label.contains('spa') || label.contains('es') || label.contains('castellano') || label.contains('latino');
+        }
+      });
+    }
+
+    final primaryIdx = findLangIdx(isEn);
+    if (primaryIdx >= 0) return primaryIdx;
+    final secondaryIdx = findLangIdx(!isEn);
+    if (secondaryIdx >= 0) return secondaryIdx;
+    return 0;
+  }
+
   PlayerPlaybackCoordinator({
     required this.isUsingExoPlayer,
     required this.shaderService,
@@ -227,22 +251,34 @@ class PlayerPlaybackCoordinator {
           }
         }
 
-        // 2. Spanish
-        trackToSelect ??= subList.where((t) {
-          final l = t.language.toLowerCase();
-          final title = t.title.toLowerCase();
-          return l == 'es' || l == 'spa' || l.contains('es') ||
-                 title.contains('spa') || title.contains('es') ||
-                 title.contains('castellano') || title.contains('latino') ||
-                 title.contains('español');
-        }).firstOrNull;
+        final isEn = l10n is EnglishTranslations;
 
-        // 3. English
-        trackToSelect ??= subList.where((t) {
-          final l = t.language.toLowerCase();
-          final title = t.title.toLowerCase();
-          return l == 'en' || l == 'eng' || title.contains('eng') || title.contains('english');
-        }).firstOrNull;
+        UiTrack? findSpanish() {
+          return subList.where((t) {
+            final l = t.language.toLowerCase();
+            final title = t.title.toLowerCase();
+            return l == 'es' || l == 'spa' || l.contains('es') ||
+                   title.contains('spa') || title.contains('es') ||
+                   title.contains('castellano') || title.contains('latino') ||
+                   title.contains('español');
+          }).firstOrNull;
+        }
+
+        UiTrack? findEnglish() {
+          return subList.where((t) {
+            final l = t.language.toLowerCase();
+            final title = t.title.toLowerCase();
+            return l == 'en' || l == 'eng' || title.contains('eng') || title.contains('english');
+          }).firstOrNull;
+        }
+
+        if (isEn) {
+          trackToSelect ??= findEnglish();
+          trackToSelect ??= findSpanish();
+        } else {
+          trackToSelect ??= findSpanish();
+          trackToSelect ??= findEnglish();
+        }
 
         // 4. First available
         trackToSelect ??= subList.first;
@@ -380,8 +416,7 @@ class PlayerPlaybackCoordinator {
 
       // Auto-load default external subtitle if provided
       if (externalSubtitles != null && externalSubtitles.isNotEmpty) {
-        final defaultIdx = externalSubtitles.indexWhere((s) => _getSubIsDefault(s));
-        final idxToUse = defaultIdx >= 0 ? defaultIdx : 0;
+        final idxToUse = _resolveBestExternalSubtitleIndex(externalSubtitles);
         final subToUse = externalSubtitles[idxToUse];
         final url = _getSubUrl(subToUse);
         final lang = _getSubLanguage(subToUse);
@@ -471,8 +506,7 @@ class PlayerPlaybackCoordinator {
       );
 
       if (externalSubtitles != null && externalSubtitles.isNotEmpty) {
-        final defaultIdx = externalSubtitles.indexWhere((s) => _getSubIsDefault(s));
-        final idxToUse = defaultIdx >= 0 ? defaultIdx : 0;
+        final idxToUse = _resolveBestExternalSubtitleIndex(externalSubtitles);
         final subToUse = externalSubtitles[idxToUse];
         final url = _getSubUrl(subToUse);
         final lang = _getSubLanguage(subToUse);

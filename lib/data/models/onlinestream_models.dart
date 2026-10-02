@@ -1,3 +1,5 @@
+import 'package:seanime_app/core/i18n/translations/translations.dart';
+
 class OnlinestreamProvider {
   final String id;
   final String name;
@@ -52,12 +54,17 @@ class OnlinestreamEpisode {
     );
   }
 
-  String get displayTitle {
+  String localizedDisplayTitle([AppTranslations? l10n]) {
     if (title != null && title!.trim().isNotEmpty) {
       return title!.trim();
     }
-    return 'Episodio $number';
+    if (l10n != null) {
+      return l10n.episodeNumber(number);
+    }
+    return 'Episode $number';
   }
+
+  String get displayTitle => localizedDisplayTitle();
 }
 
 class OnlinestreamSubtitle {

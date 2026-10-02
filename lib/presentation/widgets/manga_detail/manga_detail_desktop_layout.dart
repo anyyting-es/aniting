@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/preferences/title_language_provider.dart';
 import 'package:seanime_app/data/models/manga_entry.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
@@ -104,6 +105,7 @@ class _MangaDetailDesktopLayoutState extends ConsumerState<MangaDetailDesktopLay
 
   @override
   Widget build(BuildContext context) {
+    final l10n = ref.watch(translationsProvider);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final titleLang = ref.watch(titleLanguageProvider);
@@ -201,7 +203,7 @@ class _MangaDetailDesktopLayoutState extends ConsumerState<MangaDetailDesktopLay
                                 ]
                               : null,
                         ),
-                        tooltip: 'Volver',
+                        tooltip: l10n.back,
                         onPressed: () => Navigator.pop(context),
                       ),
                     ),
@@ -292,7 +294,7 @@ class _MangaDetailDesktopLayoutState extends ConsumerState<MangaDetailDesktopLay
                                     Icon(Icons.list_alt_rounded, size: 20, color: theme.colorScheme.primary),
                                     const SizedBox(width: 8),
                                     Text(
-                                      'Capítulos',
+                                      l10n.chapters,
                                       style: TextStyle(
                                         fontSize: 18,
                                         fontWeight: FontWeight.w800,

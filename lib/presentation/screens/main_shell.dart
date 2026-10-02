@@ -7,6 +7,7 @@ import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/preferences/mobile_nav_style_provider.dart';
 import 'package:seanime_app/core/preferences/resume_bar_preferences_provider.dart';
+import 'package:seanime_app/core/preferences/section_visibility_provider.dart';
 import 'package:seanime_app/core/theme/custom_route_transitions.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/screens/airing_calendar_screen.dart';
@@ -19,7 +20,16 @@ import 'package:seanime_app/presentation/widgets/desktop_sidebar.dart';
 import 'package:seanime_app/presentation/widgets/floating_resume_bar.dart';
 import 'package:seanime_app/presentation/widgets/mobile_floating_nav.dart';
 import 'package:seanime_app/presentation/providers/app_update_provider.dart';
+import 'package:seanime_app/presentation/widgets/shell_animated_indexed_stack.dart';
 import 'package:seanime_app/presentation/widgets/update/app_update_dialog.dart';
+
+enum ShellSection {
+  anime,
+  manga,
+  explore,
+  calendar,
+  profile,
+}
 
 class MainShell extends ConsumerStatefulWidget {
   const MainShell({super.key});
@@ -29,7 +39,7 @@ class MainShell extends ConsumerStatefulWidget {
 }
 
 class _MainShellState extends ConsumerState<MainShell> {
-  int _currentIndex = 0;
+  ShellSection _activeSection = ShellSection.anime;
   final ValueNotifier<bool> _isResumeExpandedNotifier = ValueNotifier<bool>(true);
   late final List<Widget> _pages;
 
@@ -39,13 +49,13 @@ class _MainShellState extends ConsumerState<MainShell> {
     _pages = [
       RepaintBoundary(
         child: FeedScreen(
-          onOpenSearch: () => setState(() => _currentIndex = 2),
+          onOpenSearch: () => setState(() => _activeSection = ShellSection.explore),
           onOpenSettings: _openSettings,
         ),
       ),
       RepaintBoundary(
         child: MangaFeedScreen(
-          onOpenSearch: () => setState(() => _currentIndex = 2),
+          onOpenSearch: () => setState(() => _activeSection = ShellSection.explore),
           onOpenSettings: _openSettings,
         ),
       ),
@@ -88,12 +98,6 @@ class _MainShellState extends ConsumerState<MainShell> {
     _isResumeExpandedNotifier.dispose();
     super.dispose();
   }
-
-  void _onDesktopDestinationSelected(int desktopIndex) {
-    setState(() => _currentIndex = desktopIndex);
-  }
-
-  int get _desktopSelectedIndex => _currentIndex;
 
   void _openSettings() {
     Navigator.push(
@@ -148,62 +152,96 @@ class _MainShellState extends ConsumerState<MainShell> {
     final serverState = ref.watch(serverNotifierProvider);
     final avatarUrl = serverState.status?.avatarUrl;
 
-    final sidebarItems = [
-      DesktopSidebarItem(
-        icon: AppIcons.home(iconPack),
-        selectedIcon: AppIcons.home(iconPack),
-        label: l10n.navHome,
-      ),
-      DesktopSidebarItem(
-        icon: AppIcons.manga(iconPack),
-        selectedIcon: AppIcons.manga(iconPack),
-        label: l10n.manga,
-      ),
-      DesktopSidebarItem(
-        icon: AppIcons.explore(iconPack),
-        selectedIcon: AppIcons.explore(iconPack),
-        label: l10n.navExplore,
-      ),
-      DesktopSidebarItem(
-        icon: AppIcons.calendar(iconPack),
-        selectedIcon: AppIcons.calendar(iconPack),
-        label: l10n.navCalendar,
-      ),
-      DesktopSidebarItem(
-        icon: AppIcons.profile(iconPack),
-        selectedIcon: AppIcons.profile(iconPack),
-        label: l10n.navProfile,
-        avatarUrl: avatarUrl,
-      ),
+    final animeEnabled = ref.watch(animeSectionEnabledProvider);
+    final mangaEnabled = ref.watch(mangaSectionEnabledProvider);
+
+    final List<ShellSection> availableSections = [
+      if (animeEnabled) ShellSection.anime,
+      if (mangaEnabled) ShellSection.manga,
+      ShellSection.explore,
+      ShellSection.calendar,
+      ShellSection.profile,
     ];
 
-    final desktopSidebarItems = [
-      DesktopSidebarItem(
-        icon: AppIcons.home(iconPack),
-        selectedIcon: AppIcons.home(iconPack),
-        label: l10n.navHome,
-        targetIndex: 0,
-      ),
-      DesktopSidebarItem(
-        icon: AppIcons.manga(iconPack),
-        selectedIcon: AppIcons.manga(iconPack),
-        label: l10n.manga,
-        targetIndex: 1,
-      ),
-      DesktopSidebarItem(
-        icon: AppIcons.calendar(iconPack),
-        selectedIcon: AppIcons.calendar(iconPack),
-        label: l10n.navCalendar,
-        targetIndex: 3,
-      ),
-      DesktopSidebarItem(
-        icon: AppIcons.profile(iconPack),
-        selectedIcon: AppIcons.profile(iconPack),
-        label: l10n.navProfile,
-        targetIndex: 4,
-        avatarUrl: avatarUrl,
-      ),
-    ];
+    if (!availableSections.contains(_activeSection)) {
+      _activeSection = availableSections.first;
+    }
+
+    final activeIndex = availableSections.indexOf(_activeSection);
+
+    final availablePages = availableSections.map<Widget>((s) {
+      switch (s) {
+        case ShellSection.anime:
+          return _pages[0];
+        case ShellSection.manga:
+          return _pages[1];
+        case ShellSection.explore:
+          return _pages[2];
+        case ShellSection.calendar:
+          return _pages[3];
+        case ShellSection.profile:
+          return _pages[4];
+      }
+    }).toList();
+
+    final sidebarItems = <DesktopSidebarItem>[];
+    final desktopSidebarItems = <DesktopSidebarItem>[];
+
+    for (int i = 0; i < availableSections.length; i++) {
+      final s = availableSections[i];
+      switch (s) {
+        case ShellSection.anime:
+          final item = DesktopSidebarItem(
+            icon: AppIcons.home(iconPack),
+            selectedIcon: AppIcons.home(iconPack),
+            label: l10n.navHome,
+            targetIndex: i,
+          );
+          sidebarItems.add(item);
+          desktopSidebarItems.add(item);
+          break;
+        case ShellSection.manga:
+          final item = DesktopSidebarItem(
+            icon: AppIcons.manga(iconPack),
+            selectedIcon: AppIcons.manga(iconPack),
+            label: l10n.manga,
+            targetIndex: i,
+          );
+          sidebarItems.add(item);
+          desktopSidebarItems.add(item);
+          break;
+        case ShellSection.explore:
+          final item = DesktopSidebarItem(
+            icon: AppIcons.explore(iconPack),
+            selectedIcon: AppIcons.explore(iconPack),
+            label: l10n.navExplore,
+            targetIndex: i,
+          );
+          sidebarItems.add(item);
+          break;
+        case ShellSection.calendar:
+          final item = DesktopSidebarItem(
+            icon: AppIcons.calendar(iconPack),
+            selectedIcon: AppIcons.calendar(iconPack),
+            label: l10n.navCalendar,
+            targetIndex: i,
+          );
+          sidebarItems.add(item);
+          desktopSidebarItems.add(item);
+          break;
+        case ShellSection.profile:
+          final item = DesktopSidebarItem(
+            icon: AppIcons.profile(iconPack),
+            selectedIcon: AppIcons.profile(iconPack),
+            label: l10n.navProfile,
+            targetIndex: i,
+            avatarUrl: avatarUrl,
+          );
+          sidebarItems.add(item);
+          desktopSidebarItems.add(item);
+          break;
+      }
+    }
 
     ref.listen<LastSessionItem?>(lastSessionProvider, (prev, next) {
       if (next != null &&
@@ -239,35 +277,34 @@ class _MainShellState extends ConsumerState<MainShell> {
         Scaffold(
           backgroundColor: theme.scaffoldBackgroundColor,
           body: Row(
-          children: [
-            // Vertical Desktop Sidebar Rail
-            DesktopSidebar(
-              selectedIndex: _desktopSelectedIndex,
-              isSearchActive: _currentIndex == 2,
-              onDestinationSelected: _onDesktopDestinationSelected,
-              onSearchPressed: () {
-                setState(() => _currentIndex = 2);
-              },
-              onSettingsPressed: _openSettings,
-              items: desktopSidebarItems,
-            ),
-
-            // Full-width Main Content Area for Desktop & TV
-            Expanded(
-              child: IndexedStack(
-                index: _currentIndex,
-                children: [
-                  for (int i = 0; i < _pages.length; i++)
-                    TickerMode(
-                      enabled: _currentIndex == i,
-                      child: _pages[i],
-                    ),
-                ],
+            children: [
+              // Vertical Desktop Sidebar Rail
+              DesktopSidebar(
+                selectedIndex: activeIndex,
+                isSearchActive: _activeSection == ShellSection.explore,
+                onDestinationSelected: (idx) {
+                  if (idx >= 0 && idx < availableSections.length) {
+                    setState(() => _activeSection = availableSections[idx]);
+                  }
+                },
+                onSearchPressed: () {
+                  setState(() => _activeSection = ShellSection.explore);
+                },
+                onSettingsPressed: _openSettings,
+                items: desktopSidebarItems,
               ),
-            ),
-          ],
+
+              // Full-width Main Content Area for Desktop & TV with Smooth Animation
+              Expanded(
+                child: ShellAnimatedIndexedStack(
+                  index: activeIndex,
+                  children: availablePages,
+                ),
+              ),
+            ],
+          ),
         ),
-      ));
+      );
     }
 
     if (mobileNavStyle == MobileNavStyle.floating) {
@@ -276,148 +313,121 @@ class _MainShellState extends ConsumerState<MainShell> {
         Scaffold(
           extendBody: true,
           body: NotificationListener<ScrollNotification>(
-          onNotification: _onScrollNotification,
-          child: IndexedStack(
-            index: _currentIndex,
-            children: [
-              for (int i = 0; i < _pages.length; i++)
-                TickerMode(
-                  enabled: _currentIndex == i,
-                  child: _pages[i],
-                ),
-            ],
+            onNotification: _onScrollNotification,
+            child: ShellAnimatedIndexedStack(
+              index: activeIndex,
+              children: availablePages,
+            ),
+          ),
+          bottomNavigationBar: SafeArea(
+            bottom: true,
+            child: ValueListenableBuilder<bool>(
+              valueListenable: _isResumeExpandedNotifier,
+              builder: (context, isResumeExpanded, _) {
+                return MobileFloatingNav(
+                  selectedIndex: activeIndex,
+                  onDestinationSelected: (idx) {
+                    if (idx >= 0 && idx < availableSections.length) {
+                      setState(() => _activeSection = availableSections[idx]);
+                    }
+                    _isResumeExpandedNotifier.value = true;
+                  },
+                  items: sidebarItems,
+                  isResumeExpanded: isResumeExpanded,
+                );
+              },
+            ),
           ),
         ),
-        bottomNavigationBar: SafeArea(
-          bottom: true,
-          child: ValueListenableBuilder<bool>(
-            valueListenable: _isResumeExpandedNotifier,
-            builder: (context, isResumeExpanded, _) {
-              return MobileFloatingNav(
-                selectedIndex: _currentIndex,
-                onDestinationSelected: (index) {
-                  setState(() => _currentIndex = index);
-                  _isResumeExpandedNotifier.value = true;
-                },
-                items: sidebarItems,
-                isResumeExpanded: isResumeExpanded,
-              );
-            },
-          ),
-        ),
-      ));
+      );
     }
 
     // Mobile layout: Classic fixed NavigationBar
     return wrapWithSystemOverlay(
       Scaffold(
         extendBody: false,
-      body: IndexedStack(
-        index: _currentIndex,
-        children: [
-          for (int i = 0; i < _pages.length; i++)
-            TickerMode(
-              enabled: _currentIndex == i,
-              child: _pages[i],
-            ),
-        ],
-      ),
-      bottomNavigationBar: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const FloatingResumeBar(),
-          Container(
-            color: theme.colorScheme.surfaceContainer,
-            child: SafeArea(
-              top: false,
-              bottom: true,
-              child: NavigationBar(
-                selectedIndex: _currentIndex,
-                onDestinationSelected: (index) => setState(() => _currentIndex = index),
-                backgroundColor: theme.colorScheme.surfaceContainer,
-                indicatorColor: theme.colorScheme.primaryContainer,
-                elevation: 0,
-                height: 65,
-                destinations: [
-                  NavigationDestination(
-                    icon: Icon(AppIcons.home(iconPack), color: theme.colorScheme.onSurfaceVariant),
-                    selectedIcon: Icon(AppIcons.home(iconPack), color: theme.colorScheme.onPrimaryContainer),
-                    label: l10n.navHome,
-                  ),
-                  NavigationDestination(
-                    icon: Icon(AppIcons.manga(iconPack), color: theme.colorScheme.onSurfaceVariant),
-                    selectedIcon: Icon(AppIcons.manga(iconPack), color: theme.colorScheme.onPrimaryContainer),
-                    label: l10n.manga,
-                  ),
-                  NavigationDestination(
-                    icon: Icon(AppIcons.explore(iconPack), color: theme.colorScheme.onSurfaceVariant),
-                    selectedIcon: Icon(AppIcons.explore(iconPack), color: theme.colorScheme.onPrimaryContainer),
-                    label: l10n.navExplore,
-                  ),
-                  NavigationDestination(
-                    icon: Icon(AppIcons.calendar(iconPack), color: theme.colorScheme.onSurfaceVariant),
-                    selectedIcon: Icon(AppIcons.calendar(iconPack), color: theme.colorScheme.onPrimaryContainer),
-                    label: l10n.navCalendar,
-                  ),
-                  NavigationDestination(
-                    icon: (avatarUrl != null && avatarUrl.isNotEmpty)
-                        ? Container(
-                            width: 24,
-                            height: 24,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-                                width: 1.2,
-                              ),
-                            ),
-                            clipBehavior: Clip.antiAlias,
-                            child: CachedNetworkImage(
-                              imageUrl: avatarUrl,
-                              fit: BoxFit.cover,
-                              placeholder: (context, url) => Container(
-                                color: theme.colorScheme.surfaceContainerHighest,
-                              ),
-                              errorWidget: (context, url, error) => Icon(
-                                AppIcons.profile(iconPack),
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          )
-                        : Icon(AppIcons.profile(iconPack), color: theme.colorScheme.onSurfaceVariant),
-                    selectedIcon: (avatarUrl != null && avatarUrl.isNotEmpty)
-                        ? Container(
-                            width: 24,
-                            height: 24,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: theme.colorScheme.onPrimaryContainer,
-                                width: 1.8,
-                              ),
-                            ),
-                            clipBehavior: Clip.antiAlias,
-                            child: CachedNetworkImage(
-                              imageUrl: avatarUrl,
-                              fit: BoxFit.cover,
-                              placeholder: (context, url) => Container(
-                                color: theme.colorScheme.surfaceContainerHighest,
-                              ),
-                              errorWidget: (context, url, error) => Icon(
-                                AppIcons.profile(iconPack),
-                                color: theme.colorScheme.onPrimaryContainer,
-                              ),
-                            ),
-                          )
-                        : Icon(AppIcons.profile(iconPack), color: theme.colorScheme.onPrimaryContainer),
-                    label: l10n.navProfile,
-                  ),
-                ],
+        body: ShellAnimatedIndexedStack(
+          index: activeIndex,
+          children: availablePages,
+        ),
+        bottomNavigationBar: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const FloatingResumeBar(),
+            Container(
+              color: theme.colorScheme.surfaceContainer,
+              child: SafeArea(
+                top: false,
+                bottom: true,
+                child: NavigationBar(
+                  selectedIndex: activeIndex,
+                  onDestinationSelected: (idx) {
+                    if (idx >= 0 && idx < availableSections.length) {
+                      setState(() => _activeSection = availableSections[idx]);
+                    }
+                  },
+                  backgroundColor: theme.colorScheme.surfaceContainer,
+                  indicatorColor: theme.colorScheme.primaryContainer,
+                  elevation: 0,
+                  height: 65,
+                  destinations: sidebarItems.map((item) {
+                    final isProfile = item.label == l10n.navProfile;
+                    final hasAvatar = item.avatarUrl != null && item.avatarUrl!.isNotEmpty;
+                    Widget iconWidget = Icon(item.icon, color: theme.colorScheme.onSurfaceVariant);
+                    Widget selectedIconWidget = Icon(item.selectedIcon, color: theme.colorScheme.onPrimaryContainer);
+
+                    if (isProfile && hasAvatar) {
+                      final avatarWidget = Container(
+                        width: 24,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                            width: 1.2,
+                          ),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: CachedNetworkImage(
+                          imageUrl: item.avatarUrl!,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => Container(color: theme.colorScheme.surfaceContainerHighest),
+                          errorWidget: (context, url, error) => Icon(item.icon, color: theme.colorScheme.onSurfaceVariant),
+                        ),
+                      );
+                      iconWidget = avatarWidget;
+                      selectedIconWidget = Container(
+                        width: 24,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: theme.colorScheme.onPrimaryContainer,
+                            width: 1.8,
+                          ),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: CachedNetworkImage(
+                          imageUrl: item.avatarUrl!,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => Container(color: theme.colorScheme.surfaceContainerHighest),
+                          errorWidget: (context, url, error) => Icon(item.icon, color: theme.colorScheme.onPrimaryContainer),
+                        ),
+                      );
+                    }
+
+                    return NavigationDestination(
+                      icon: iconWidget,
+                      selectedIcon: selectedIconWidget,
+                      label: item.label,
+                    );
+                  }).toList(),
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ));
+    );
   }
 }

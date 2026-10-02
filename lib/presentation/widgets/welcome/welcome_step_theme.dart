@@ -256,7 +256,7 @@ class _WelcomeStepThemeState extends ConsumerState<WelcomeStepTheme> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          pal.name,
+                          pal.localizedName(l10n),
                           style: TextStyle(
                             fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
                             fontSize: 13.5,
@@ -314,7 +314,7 @@ class _WelcomeStepThemeState extends ConsumerState<WelcomeStepTheme> {
             children: [
               // Mini graphical window mockup
               Container(
-                height: 54,
+                height: 58,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
@@ -502,7 +502,7 @@ class _WelcomeStepThemeState extends ConsumerState<WelcomeStepTheme> {
                   // Mini content card
                   Expanded(
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3.5),
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                       decoration: BoxDecoration(
                         color: cardBg,
                         borderRadius: BorderRadius.circular(3.5),
@@ -515,18 +515,18 @@ class _WelcomeStepThemeState extends ConsumerState<WelcomeStepTheme> {
                           Row(
                             children: [
                               Container(
-                                width: 5.5,
-                                height: 5.5,
+                                width: 5.0,
+                                height: 5.0,
                                 decoration: BoxDecoration(color: colors.accent, shape: BoxShape.circle),
                               ),
                               const SizedBox(width: 3.5),
                               Expanded(
-                                child: Container(height: 2.5, decoration: BoxDecoration(color: lineMuted, borderRadius: BorderRadius.circular(1.5))),
+                                child: Container(height: 2.0, decoration: BoxDecoration(color: lineMuted, borderRadius: BorderRadius.circular(1.5))),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 3.5),
-                          Container(width: 20, height: 2, decoration: BoxDecoration(color: lineMuted.withValues(alpha: 0.6), borderRadius: BorderRadius.circular(1))),
+                          const SizedBox(height: 2),
+                          Container(width: 18, height: 2, decoration: BoxDecoration(color: lineMuted.withValues(alpha: 0.6), borderRadius: BorderRadius.circular(1))),
                         ],
                       ),
                     ),
@@ -694,7 +694,7 @@ class _WelcomeStepThemeState extends ConsumerState<WelcomeStepTheme> {
             final isSelected = themeSettings.customAccentIndex == index;
 
             return Tooltip(
-              message: item.name,
+              message: item.localizedName(l10n),
               child: InkWell(
                 onTap: () => themeNotifier.setAccentColor(index),
                 borderRadius: BorderRadius.circular(20),

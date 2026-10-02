@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/i18n/i18n_provider.dart';
 
-class DesktopMangaHeader extends StatefulWidget {
+class DesktopMangaHeader extends ConsumerStatefulWidget {
   final String? subtitleStr;
   final String title;
   final List<String> genres;
@@ -27,15 +29,16 @@ class DesktopMangaHeader extends StatefulWidget {
   });
 
   @override
-  State<DesktopMangaHeader> createState() => _DesktopMangaHeaderState();
+  ConsumerState<DesktopMangaHeader> createState() => _DesktopMangaHeaderState();
 }
 
-class _DesktopMangaHeaderState extends State<DesktopMangaHeader> {
+class _DesktopMangaHeaderState extends ConsumerState<DesktopMangaHeader> {
   bool _isSynopsisExpanded = false;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = ref.watch(translationsProvider);
     final isDark = theme.brightness == Brightness.dark;
 
     final metaItems = <Widget>[];
@@ -67,9 +70,7 @@ class _DesktopMangaHeaderState extends State<DesktopMangaHeader> {
           ),
         );
       }
-      final statusLabel = widget.status == 'RELEASING'
-          ? 'En emisión'
-          : (widget.status == 'FINISHED' ? 'Finalizado' : widget.status!);
+      final statusLabel = l10n.formatStatus(widget.status);
       metaItems.add(
         Text(
           statusLabel,

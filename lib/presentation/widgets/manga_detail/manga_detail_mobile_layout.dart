@@ -373,7 +373,7 @@ class _MangaDetailMobileLayoutState extends ConsumerState<MangaDetailMobileLayou
                             ]
                           : null,
                     ),
-                    tooltip: 'Detalles',
+                    tooltip: l10n.details,
                     onPressed: widget.onShowDetailsModal,
                   ),
                   const SizedBox(width: 8),
@@ -566,7 +566,7 @@ class _MangaDetailMobileLayoutState extends ConsumerState<MangaDetailMobileLayou
                       child: FilledButton.icon(
                         onPressed: widget.onContinueReading,
                         icon: const Icon(Icons.menu_book_rounded, size: 20),
-                        label: Text('Continuar Leyendo • Cap. ${progress + 1}'),
+                        label: Text(l10n.continueChapterNumbered(progress + 1)),
                       ),
                     ),
                   ),
@@ -607,7 +607,7 @@ class _MangaDetailMobileLayoutState extends ConsumerState<MangaDetailMobileLayou
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Instala una extensión de manga para leer capítulos.',
+                            l10n.installMangaExtensionNotice,
                             style: TextStyle(
                                 color: theme.colorScheme.onSurfaceVariant,
                                 fontSize: 11.5),
@@ -624,7 +624,7 @@ class _MangaDetailMobileLayoutState extends ConsumerState<MangaDetailMobileLayou
                               ).then((_) => widget.onRefreshChapters());
                             },
                             icon: const Icon(Icons.download_rounded, size: 18),
-                            label: const Text('Explorar Extensiones'),
+                            label: Text(l10n.exploreMangaExtensions),
                           ),
                         ],
                       ),
@@ -673,11 +673,11 @@ class _MangaDetailMobileLayoutState extends ConsumerState<MangaDetailMobileLayou
                             Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                if (progress > 0)
+                                 if (progress > 0)
                                   IconButton(
                                     tooltip: _hideRead
-                                        ? 'Mostrar leídos ($progress)'
-                                        : 'Ocultar leídos ($progress)',
+                                        ? l10n.hidingReadChapters(progress)
+                                        : l10n.hideReadChapters(progress),
                                     icon: Icon(
                                       _hideRead
                                           ? Icons.visibility_off_rounded
@@ -690,14 +690,14 @@ class _MangaDetailMobileLayoutState extends ConsumerState<MangaDetailMobileLayou
                                     onPressed: () {
                                       setState(() => _hideRead = !_hideRead);
                                       SharedPreferences.getInstance().then((prefs) {
-                                        prefs.setBool(_prefHideReadChaptersKey, _hideRead);
+                                         prefs.setBool(_prefHideReadChaptersKey, _hideRead);
                                       });
                                     },
                                   ),
                                 IconButton(
                                   tooltip: _isAscending
-                                      ? 'Más recientes primero'
-                                      : 'Primeros capítulos primero',
+                                      ? l10n.oldestFirst
+                                      : l10n.newestFirst,
                                   icon: Icon(
                                     _isAscending
                                         ? Icons.arrow_upward_rounded
@@ -709,7 +709,7 @@ class _MangaDetailMobileLayoutState extends ConsumerState<MangaDetailMobileLayou
                                   }),
                                 ),
                                 IconButton(
-                                  tooltip: 'Recargar capítulos',
+                                  tooltip: l10n.reloadChapters,
                                   icon: const Icon(Icons.refresh_rounded, size: 20),
                                   onPressed: widget.onRefreshChapters,
                                 ),
@@ -730,7 +730,7 @@ class _MangaDetailMobileLayoutState extends ConsumerState<MangaDetailMobileLayou
                                   keyboardType: TextInputType.text,
                                   style: const TextStyle(fontSize: 12.5),
                                   decoration: InputDecoration(
-                                    hintText: 'Buscar cap...',
+                                    hintText: l10n.searchChapterPlaceholder,
                                     hintStyle: TextStyle(
                                       fontSize: 12,
                                       color: theme.colorScheme.onSurfaceVariant
@@ -848,8 +848,8 @@ class _MangaDetailMobileLayoutState extends ConsumerState<MangaDetailMobileLayou
                                     ),
                                     label: Text(
                                       widget.showOnlyDownloaded
-                                          ? 'Descargados (${widget.downloadedChapterIds.length})'
-                                          : 'Solo descargados',
+                                          ? l10n.downloadedCount(widget.downloadedChapterIds.length)
+                                          : l10n.onlyDownloaded,
                                       style: TextStyle(
                                         fontSize: 11,
                                         fontWeight: widget.showOnlyDownloaded
@@ -886,9 +886,9 @@ class _MangaDetailMobileLayoutState extends ConsumerState<MangaDetailMobileLayou
                                       size: 14,
                                       color: theme.colorScheme.primary,
                                     ),
-                                    label: const Text(
-                                      'Descargar lote',
-                                      style: TextStyle(
+                                    label: Text(
+                                      l10n.downloadBatch,
+                                      style: const TextStyle(
                                         fontSize: 11,
                                         fontWeight: FontWeight.w600,
                                       ),
@@ -942,7 +942,7 @@ class _MangaDetailMobileLayoutState extends ConsumerState<MangaDetailMobileLayou
                           FilledButton.icon(
                             onPressed: widget.onRefreshChapters,
                             icon: const Icon(Icons.refresh_rounded),
-                            label: const Text('Reintentar'),
+                            label: Text(l10n.retry),
                           ),
                         ],
                       ),
@@ -967,8 +967,8 @@ class _MangaDetailMobileLayoutState extends ConsumerState<MangaDetailMobileLayou
                           const SizedBox(height: 12),
                           Text(
                             widget.showOnlyDownloaded
-                                ? 'No hay capítulos descargados para esta obra'
-                                : 'No hay capítulos disponibles',
+                                ? l10n.noDownloadedChaptersForManga
+                                : l10n.noChaptersAvailable,
                             style: TextStyle(
                                 color: theme.colorScheme.onSurfaceVariant),
                             textAlign: TextAlign.center,
@@ -980,7 +980,7 @@ class _MangaDetailMobileLayoutState extends ConsumerState<MangaDetailMobileLayou
                                 widget.onToggleShowOnlyDownloaded(false);
                               },
                               icon: const Icon(Icons.list_rounded, size: 18),
-                              label: const Text('Ver todos los capítulos'),
+                              label: Text(l10n.viewAllChapters),
                             ),
                           ],
                         ],

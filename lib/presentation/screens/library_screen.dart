@@ -159,7 +159,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                 const SizedBox(height: 20),
 
                 // 2. Section: Colección y Navegación Principal
-                _buildSectionHeader('Mi Colección'),
+                _buildSectionHeader(l10n.myCollection),
                 const SizedBox(height: 4),
 
                 _buildNavigationTile(
@@ -278,7 +278,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     final avatarUrl = serverState.status?.avatarUrl;
     final username = isLoggedIn
         ? (serverState.status?.username ?? l10n.user)
-        : 'Usuario Local';
+        : l10n.localUser;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
@@ -313,7 +313,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     if (isLoggedIn) ...[
                       const SizedBox(height: 2),
                       Text(
-                        'AniList Conectado',
+                        l10n.anilistConnectedBadge,
                         style: TextStyle(
                           fontSize: 12.5,
                           color: theme.colorScheme.primary,
@@ -461,7 +461,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   minimumSize: Size.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
-                child: const Text('Escanear'),
+                child: Text(l10n.scan),
               ),
             ],
           ),

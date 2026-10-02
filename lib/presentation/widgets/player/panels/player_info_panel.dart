@@ -156,7 +156,7 @@ class _PlayerInfoPanelState extends ConsumerState<PlayerInfoPanel> {
     } else if (nextEp != null && nextEp.title.isNotEmpty) {
       nextEpTitle = nextEp.title;
     } else {
-      nextEpTitle = 'Episodio $nextEpNum';
+      nextEpTitle = l10n.episodeNumber(nextEpNum);
     }
 
     if (!isMovie && nextEp == null && currentEpNum > 0) {
@@ -178,7 +178,7 @@ class _PlayerInfoPanelState extends ConsumerState<PlayerInfoPanel> {
     if (!isMovie && prevEp == null && currentEpNum > 1) {
       prevEp = AnimeEpisode(
         episodeNumber: currentEpNum - 1,
-        title: prevAniZipEp?.displayTitle ?? 'Episodio ${currentEpNum - 1}',
+        title: prevAniZipEp?.displayTitle ?? l10n.episodeNumber(currentEpNum - 1),
       );
     }
 
@@ -265,7 +265,7 @@ class _PlayerInfoPanelState extends ConsumerState<PlayerInfoPanel> {
                   Icon(AppIcons.info(iconPack), size: 18),
                   const SizedBox(width: 8),
                   Text(
-                    'Información',
+                    l10n.informationTitle,
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       fontSize: 15,
@@ -275,7 +275,7 @@ class _PlayerInfoPanelState extends ConsumerState<PlayerInfoPanel> {
                   if (widget.onCollapse != null)
                     IconButton(
                       icon: Icon(AppIcons.close(iconPack), size: 20),
-                      tooltip: 'Colapsar panel',
+                      tooltip: l10n.collapsePanel,
                       onPressed: widget.onCollapse,
                     ),
                 ],
@@ -423,7 +423,7 @@ class _PlayerInfoPanelState extends ConsumerState<PlayerInfoPanel> {
                                   ),
                                   if (canExpand)
                                     Text(
-                                      _isSynopsisExpanded ? 'Menos' : 'Más',
+                                      _isSynopsisExpanded ? l10n.synopsisLess : l10n.synopsisMore,
                                       style: TextStyle(
                                         color: theme.colorScheme.primary,
                                         fontWeight: FontWeight.w600,
@@ -455,7 +455,7 @@ class _PlayerInfoPanelState extends ConsumerState<PlayerInfoPanel> {
                       Icon(AppIcons.bookmarks(iconPack), size: 16, color: theme.colorScheme.primary),
                       const SizedBox(width: 6),
                       Text(
-                        'Capítulos (${widget.chapters.length})',
+                        '${l10n.chapters} (${widget.chapters.length})',
                         style: theme.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
@@ -527,7 +527,7 @@ class _PlayerInfoPanelState extends ConsumerState<PlayerInfoPanel> {
                       Icon(AppIcons.skipNext(iconPack), size: 18, color: theme.colorScheme.primary),
                       const SizedBox(width: 6),
                       Text(
-                        'Siguiente episodio',
+                        l10n.nextEpisode,
                         style: theme.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.bold,
                           fontSize: 13.5,
@@ -583,8 +583,8 @@ class _PlayerInfoPanelState extends ConsumerState<PlayerInfoPanel> {
                       },
                       child: Text(
                         prevEp != null && prevEp.episodeNumber > 0
-                            ? '← Episodio anterior: Ep. ${prevEp.episodeNumber}'
-                            : '← Episodio anterior',
+                            ? l10n.prevEpisodeNumbered(prevEp.episodeNumber)
+                            : l10n.prevEpisode,
                         style: TextStyle(
                           color: theme.colorScheme.onSurfaceVariant,
                           fontSize: 12.5,

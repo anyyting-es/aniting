@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
@@ -75,11 +76,11 @@ class DesktopActionBar extends ConsumerWidget {
     }
   }
 
-  void _shareAnime(BuildContext context, String title) {
+  void _shareAnime(BuildContext context, String title, AppTranslations l10n) {
     Clipboard.setData(ClipboardData(text: 'https://anilist.co/anime/$mediaId'));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Enlace copiado para $title'),
+        content: Text(l10n.linkCopiedFor(title)),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -90,6 +91,7 @@ class DesktopActionBar extends ConsumerWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final iconPack = ref.watch(iconPackProvider);
+    final l10n = ref.watch(translationsProvider);
 
     return Row(
       children: [
@@ -102,7 +104,7 @@ class DesktopActionBar extends ConsumerWidget {
 
         // Bookmark Button (AniList status modal) with Gentle Hover
         _HoverIconButton(
-          tooltip: 'Editar en AniList',
+          tooltip: l10n.editInAnilist,
           icon: AppIcons.bookmarkOutline(iconPack),
           onTap: () => onOpenEditEntryModal(title),
         ),
@@ -110,16 +112,16 @@ class DesktopActionBar extends ConsumerWidget {
 
         // Share Button with Gentle Hover
         _HoverIconButton(
-          tooltip: 'Compartir',
+          tooltip: l10n.share,
           icon: AppIcons.share(iconPack),
-          onTap: () => _shareAnime(context, title),
+          onTap: () => _shareAnime(context, title, l10n),
         ),
         const SizedBox(width: 8),
 
         // Watch Trailer Button (Clean, next to play/actions)
         if (hasTrailer) ...[
           _HoverIconButton(
-            tooltip: 'Ver tráiler',
+            tooltip: l10n.watchTrailer,
             icon: AppIcons.video(iconPack),
             onTap: _launchTrailer,
           ),
@@ -129,7 +131,7 @@ class DesktopActionBar extends ConsumerWidget {
         // AniList External Link with Official Brand Icon (Clean, no borders)
         _HoverBrandIcon(
           assetPath: 'assets/icons/AniList_logo.png',
-          tooltip: 'Ver en AniList',
+          tooltip: l10n.viewOnAnilist,
           onTap: () => _launchAnilist(mediaId),
         ),
         const SizedBox(width: 8),
@@ -138,7 +140,7 @@ class DesktopActionBar extends ConsumerWidget {
         if (idMal != null) ...[
           _HoverBrandIcon(
             assetPath: 'assets/icons/MyAnimeList_Logo.png',
-            tooltip: 'Ver en MyAnimeList',
+            tooltip: l10n.viewOnMal,
             onTap: () => _launchMal(idMal!),
           ),
           const SizedBox(width: 8),
@@ -184,7 +186,7 @@ class DesktopActionBar extends ConsumerWidget {
 
         // Local library toggle
         _HoverIconButton(
-          tooltip: isLocalMode ? 'Salir de modo local' : 'Biblioteca local',
+          tooltip: isLocalMode ? l10n.exitLocalMode : l10n.localLibrary,
           icon: isLocalMode ? AppIcons.folderFilled(iconPack) : AppIcons.folder(iconPack),
           iconColor: isLocalMode
               ? theme.colorScheme.primary

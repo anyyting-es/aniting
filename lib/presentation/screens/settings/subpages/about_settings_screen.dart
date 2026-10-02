@@ -67,7 +67,7 @@ class AboutSettingsScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                'Cliente nativo para Anime y Manga',
+                l10n.nativeClientSubtitle,
                 style: TextStyle(
                   fontSize: 13,
                   color: theme.colorScheme.onSurfaceVariant,
@@ -97,7 +97,7 @@ class AboutSettingsScreen extends ConsumerWidget {
         const SizedBox(height: 24),
 
         // ─── DESARROLLADOR & CRÉDITOS ─────────────────────────
-        const SettingsSectionHeader(title: 'DESARROLLADOR & CRÉDITOS'),
+        SettingsSectionHeader(title: l10n.developerAndCredits),
         const SizedBox(height: 10),
         PixelSettingsGroupCard(
           children: [
@@ -128,7 +128,7 @@ class AboutSettingsScreen extends ConsumerWidget {
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
               ),
               subtitle: Text(
-                'Desarrollador del cliente nativo Flutter\nGitHub: github.com/anyyting-es',
+                l10n.developerSubtitle,
                 style: TextStyle(
                   fontSize: 12.5,
                   color: theme.colorScheme.onSurfaceVariant,
@@ -166,7 +166,7 @@ class AboutSettingsScreen extends ConsumerWidget {
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
               ),
               subtitle: Text(
-                'Backend y servidor multimedia original creado por 5rahim\nhttps://seanime.app',
+                l10n.originalServerSubtitle,
                 style: TextStyle(
                   fontSize: 12.5,
                   color: theme.colorScheme.onSurfaceVariant,
@@ -199,12 +199,12 @@ class AboutSettingsScreen extends ConsumerWidget {
                   size: 22,
                 ),
               ),
-              title: const Text(
-                'Comunidad de Discord',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+              title: Text(
+                l10n.discordCommunity,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
               ),
               subtitle: Text(
-                'Únete a la comunidad de Aniting en Discord\ndiscord.gg/FaPcNGURdN',
+                l10n.discordSubtitle,
                 style: TextStyle(
                   fontSize: 12.5,
                   color: theme.colorScheme.onSurfaceVariant,
@@ -227,19 +227,19 @@ class AboutSettingsScreen extends ConsumerWidget {
         const SizedBox(height: 24),
 
         // ─── SISTEMA & VERSIONES ──────────────────────────────
-        const SettingsSectionHeader(title: 'SISTEMA Y ACTUALIZACIONES'),
+        SettingsSectionHeader(title: l10n.systemAndUpdates),
         const SizedBox(height: 10),
         PixelSettingsGroupCard(
           children: [
             ListTile(
               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               leading: _LeadingIcon(icon: AppIcons.devices(iconPack)),
-              title: const Text(
-                'Cliente Móvil / PC',
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+              title: Text(
+                l10n.clientDevice,
+                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
               ),
               subtitle: Text(
-                'v$currentVersionStr (Build Release)',
+                'v$currentVersionStr (${l10n.buildRelease})',
                 style: const TextStyle(fontSize: 12.5),
               ),
             ),
@@ -260,14 +260,14 @@ class AboutSettingsScreen extends ConsumerWidget {
                   size: 22,
                 ),
               ),
-              title: const Text(
-                'Servidor Seanime Core',
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+              title: Text(
+                l10n.seanimeCoreServer,
+                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
               ),
               subtitle: Text(
                 serverState.isOnline
-                    ? 'Versión ${status?.version ?? "3.10.2"} (Conectado)'
-                    : 'Desconectado o Servidor Local',
+                    ? l10n.serverVersionConnected(status?.version ?? "3.10.2")
+                    : l10n.serverOfflineOrLocal,
                 style: TextStyle(
                   fontSize: 12.5,
                   color: theme.colorScheme.onSurfaceVariant,
@@ -278,14 +278,14 @@ class AboutSettingsScreen extends ConsumerWidget {
             ListTile(
               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               leading: _LeadingIcon(icon: AppIcons.update(iconPack)),
-              title: const Text(
-                'Comprobar Actualizaciones',
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+              title: Text(
+                l10n.checkForUpdates,
+                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
               ),
               subtitle: Text(
                 updateState.isChecking
-                    ? 'Buscando actualizaciones en GitHub...'
-                    : 'Buscar la versión más reciente en GitHub',
+                    ? l10n.checkingUpdatesGithub
+                    : l10n.checkLatestGithub,
                 style: TextStyle(
                   fontSize: 12.5,
                   color: theme.colorScheme.onSurfaceVariant,
@@ -309,7 +309,7 @@ class AboutSettingsScreen extends ConsumerWidget {
                         SnackBar(
                           behavior: SnackBarBehavior.floating,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                          content: const Text('Buscando actualizaciones en GitHub...'),
+                          content: Text(l10n.checkingUpdatesGithub),
                           duration: const Duration(seconds: 1),
                         ),
                       );
@@ -328,7 +328,7 @@ class AboutSettingsScreen extends ConsumerWidget {
                             behavior: SnackBarBehavior.floating,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                             content: Text(
-                              'Estás en la versión más reciente (v${AppUpdateService.currentAppVersion}). No hay nuevas actualizaciones.',
+                              l10n.latestVersionSnackbar(AppUpdateService.currentAppVersion),
                             ),
                           ),
                         );
@@ -337,7 +337,7 @@ class AboutSettingsScreen extends ConsumerWidget {
                           SnackBar(
                             behavior: SnackBarBehavior.floating,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            content: const Text('No se pudo comprobar la actualización. Revisa tu conexión a internet.'),
+                            content: Text(l10n.failedCheckUpdateSnackbar),
                             action: SnackBarAction(
                               label: 'GitHub',
                               onPressed: () => launchUrl(
@@ -354,12 +354,12 @@ class AboutSettingsScreen extends ConsumerWidget {
             ListTile(
               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               leading: _LeadingIcon(icon: AppIcons.shield(iconPack)),
-              title: const Text(
-                'Licencias de Código Abierto',
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+              title: Text(
+                l10n.openSourceLicenses,
+                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
               ),
               subtitle: Text(
-                'Ver licencias y librerías de software libre',
+                l10n.openSourceLicensesDesc,
                 style: TextStyle(
                   fontSize: 12.5,
                   color: theme.colorScheme.onSurfaceVariant,
@@ -382,7 +382,7 @@ class AboutSettingsScreen extends ConsumerWidget {
         const SizedBox(height: 24),
 
         // ─── DESARROLLO & PRUEBAS ─────────────────────────────
-        const SettingsSectionHeader(title: 'DESARROLLO & PRUEBAS'),
+        SettingsSectionHeader(title: l10n.devAndTesting),
         const SizedBox(height: 10),
         PixelSettingsGroupCard(
           children: [
@@ -393,9 +393,9 @@ class AboutSettingsScreen extends ConsumerWidget {
                 l10n.welcomeDevPreview,
                 style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
               ),
-              subtitle: const Text(
-                'Abrir el asistente de bienvenida en modo vista previa',
-                style: TextStyle(fontSize: 12.5),
+              subtitle: Text(
+                l10n.welcomeDevPreviewDesc,
+                style: const TextStyle(fontSize: 12.5),
               ),
               trailing: Icon(
                 AppIcons.play(iconPack),
@@ -417,9 +417,9 @@ class AboutSettingsScreen extends ConsumerWidget {
                 l10n.welcomeResetPrompt,
                 style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
               ),
-              subtitle: const Text(
-                'Restablece la bienvenida para mostrarla en el siguiente arranque',
-                style: TextStyle(fontSize: 12.5),
+              subtitle: Text(
+                l10n.welcomeResetDesc,
+                style: const TextStyle(fontSize: 12.5),
               ),
               trailing: Icon(
                 AppIcons.restore(iconPack),

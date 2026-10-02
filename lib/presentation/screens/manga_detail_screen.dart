@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:seanime_app/core/api/ws_events.dart';
+import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/preferences/layout_mode_provider.dart';
 import 'package:seanime_app/core/preferences/title_language_provider.dart';
 import 'package:seanime_app/core/theme/custom_route_transitions.dart';
@@ -247,12 +248,13 @@ class _MangaDetailScreenState extends ConsumerState<MangaDetailScreen> {
         setState(() {
           _downloadedChapterIds = ids;
           if (_chapters.isEmpty && downloaded.isNotEmpty) {
+            final l10n = ref.read(translationsProvider);
             _chapters = downloaded.map((d) {
               final parsedNum = double.tryParse(d.chapterNumber) ?? 0.0;
               return MangaChapter(
                 id: d.chapterId,
                 url: '',
-                title: 'Capítulo ${d.chapterNumber} (Descargado)',
+                title: l10n.chapterDownloaded(d.chapterNumber),
                 chapter: d.chapterNumber,
                 index: parsedNum.toInt(),
               );
@@ -319,19 +321,21 @@ class _MangaDetailScreenState extends ConsumerState<MangaDetailScreen> {
       );
 
       if (mounted) {
+        final l10n = ref.read(translationsProvider);
         setState(() {
           _chapters = container?.chapters ?? [];
           _isLoadingChapters = false;
           if (_chapters.isEmpty) {
-            _chaptersError = 'No se encontraron capítulos con este proveedor.';
+            _chaptersError = l10n.noChaptersAvailable;
           }
         });
       }
     } catch (e) {
       if (mounted) {
+        final l10n = ref.read(translationsProvider);
         setState(() {
           _isLoadingChapters = false;
-          _chaptersError = 'Error cargando capítulos: $e';
+          _chaptersError = '${l10n.errorLoadingChapters}: $e';
         });
       }
     }
@@ -340,11 +344,12 @@ class _MangaDetailScreenState extends ConsumerState<MangaDetailScreen> {
   }
 
   Future<void> _downloadChapter(MangaChapter chapter) async {
+    final l10n = ref.read(translationsProvider);
     if (_selectedProvider == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Selecciona un proveedor para descargar'),
-          duration: Duration(seconds: 2),
+        SnackBar(
+          content: Text(l10n.selectProviderToDownload),
+          duration: const Duration(seconds: 2),
         ),
       );
       return;
@@ -357,7 +362,7 @@ class _MangaDetailScreenState extends ConsumerState<MangaDetailScreen> {
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     scaffoldMessenger.showSnackBar(
       SnackBar(
-        content: Text('Descargando capítulo ${chapter.chapter}...'),
+        content: Text(l10n.downloadingChapter(chapter.chapter)),
         duration: const Duration(seconds: 2),
         behavior: SnackBarBehavior.floating,
       ),
@@ -384,7 +389,7 @@ class _MangaDetailScreenState extends ConsumerState<MangaDetailScreen> {
     } catch (e) {
       scaffoldMessenger.showSnackBar(
         SnackBar(
-          content: Text('Error al programar descarga: $e'),
+          content: Text(l10n.errorSchedulingDownload(e.toString())),
           duration: const Duration(seconds: 3),
           behavior: SnackBarBehavior.floating,
         ),
@@ -400,6 +405,7 @@ class _MangaDetailScreenState extends ConsumerState<MangaDetailScreen> {
   void _showBatchDownloadModal(BuildContext context) {
     if (_selectedProvider == null || _chapters.isEmpty) return;
 
+    final l10n = ref.read(translationsProvider);
     final progress = _entry?.progress ?? 0;
     final unreadChapters = _chapters.where((c) => c.chapterNumber > progress).toList();
 
@@ -430,19 +436,19 @@ class _MangaDetailScreenState extends ConsumerState<MangaDetailScreen> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Descargar Capítulos',
+                  l10n.downloadChapters,
                   style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Proveedor: ${_selectedProvider!.name} • ${unreadChapters.length} no leídos',
+                  l10n.providerWithUnreadCount(_selectedProvider!.name, unreadChapters.length),
                   style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                 ),
                 const SizedBox(height: 16),
                 ListTile(
                   leading: const Icon(Icons.download_rounded),
-                  title: const Text('Descargar siguientes 5 no leídos'),
-                  subtitle: const Text('Guarda los próximos 5 capítulos para leer sin conexión'),
+                  title: Text(l10n.downloadNextUnread(5)),
+                  subtitle: Text(l10n.downloadNextUnreadDesc(5)),
                   onTap: () {
                     Navigator.pop(ctx);
                     _downloadMultiple(unreadChapters.take(5).toList());
@@ -450,8 +456,8 @@ class _MangaDetailScreenState extends ConsumerState<MangaDetailScreen> {
                 ),
                 ListTile(
                   leading: const Icon(Icons.download_for_offline_rounded),
-                  title: const Text('Descargar siguientes 10 no leídos'),
-                  subtitle: const Text('Guarda los próximos 10 capítulos'),
+                  title: Text(l10n.downloadNextUnread(10)),
+                  subtitle: Text(l10n.downloadNextUnreadDesc(10)),
                   onTap: () {
                     Navigator.pop(ctx);
                     _downloadMultiple(unreadChapters.take(10).toList());
@@ -460,8 +466,8 @@ class _MangaDetailScreenState extends ConsumerState<MangaDetailScreen> {
                 if (unreadChapters.isNotEmpty)
                   ListTile(
                     leading: const Icon(Icons.download_done_rounded),
-                    title: Text('Descargar todos los no leídos (${unreadChapters.length})'),
-                    subtitle: const Text('Descarga completa de todos los capítulos pendientes'),
+                    title: Text(l10n.downloadAllUnread(unreadChapters.length)),
+                    subtitle: Text(l10n.downloadAllUnreadDesc),
                     onTap: () {
                       Navigator.pop(ctx);
                       _downloadMultiple(unreadChapters);
@@ -479,10 +485,11 @@ class _MangaDetailScreenState extends ConsumerState<MangaDetailScreen> {
   Future<void> _downloadMultiple(List<MangaChapter> chaptersToDownload) async {
     if (chaptersToDownload.isEmpty || _selectedProvider == null) return;
 
+    final l10n = ref.read(translationsProvider);
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     scaffoldMessenger.showSnackBar(
       SnackBar(
-        content: Text('Descargando ${chaptersToDownload.length} capítulos...'),
+        content: Text(l10n.downloadingChaptersCount(chaptersToDownload.length)),
         duration: const Duration(seconds: 3),
         behavior: SnackBarBehavior.floating,
       ),

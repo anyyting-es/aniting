@@ -139,6 +139,7 @@ class _AnimeDetailMobileLayoutState
 
   Future<void> _handlePlayNext(int progress) async {
     final nextEp = progress > 0 ? progress + 1 : 1;
+    final l10n = ref.read(translationsProvider);
 
     // 1. Fast-path: local library file
     try {
@@ -165,11 +166,11 @@ class _AnimeDetailMobileLayoutState
             title: animeTitle,
             episodeTitle: localEp.displayTitle.isNotEmpty
                 ? localEp.displayTitle
-                : 'Episodio $nextEp',
+                : l10n.episodeNumber(nextEp),
             episodeNumber: nextEp,
             videoSource: fileName != null
                 ? 'Local • $fileName'
-                : 'Biblioteca Local',
+                : l10n.localLibrary,
             isLocalFile: true,
             animeDetails: widget.details,
             aniZipData: widget.aniZipData ?? widget.details?.aniZipData,
@@ -182,7 +183,7 @@ class _AnimeDetailMobileLayoutState
     if (widget.currentTab == AnimeDetailTab.torrent) {
       widget.onOpenTorrentSelector(
         episodeNumber: nextEp,
-        episodeTitle: 'Episodio $nextEp',
+        episodeTitle: l10n.episodeNumber(nextEp),
       );
     } else {
       if (!mounted) return;
@@ -195,7 +196,7 @@ class _AnimeDetailMobileLayoutState
           mediaId: widget.mediaId,
           videoUrl: '',
           title: animeTitle,
-          episodeTitle: 'Episodio $nextEp',
+          episodeTitle: l10n.episodeNumber(nextEp),
           episodeNumber: nextEp,
           videoSource: providerName,
           animeDetails: widget.details,
@@ -235,14 +236,14 @@ class _AnimeDetailMobileLayoutState
     );
   }
 
-  String _formatPlayButtonLabel(int progress, int? totalEpisodes) {
+  String _formatPlayButtonLabel(int progress, int? totalEpisodes, AppTranslations l10n) {
     if (progress > 0 && totalEpisodes != null && progress >= totalEpisodes) {
-      return 'Ver de nuevo';
+      return l10n.rewatch;
     }
     if (progress > 0) {
-      return 'Continuar Ep. ${progress + 1}';
+      return l10n.continueEpisodeNumbered(progress + 1);
     }
-    return 'Comenzar a ver';
+    return l10n.startWatching;
   }
 
   Future<void> _launchTrailer(String? trailerId, String? trailerSite) async {
@@ -289,7 +290,7 @@ class _AnimeDetailMobileLayoutState
         ),
       ),
       child: PopupMenuButton<String>(
-        tooltip: 'Modo de reproducción',
+        tooltip: ref.watch(translationsProvider).playbackMode,
         position: PopupMenuPosition.under,
         offset: const Offset(0, 6),
         onSelected: (value) {
@@ -427,7 +428,7 @@ class _AnimeDetailMobileLayoutState
   }
 
   Widget _buildProviderDropdownChip(ThemeData theme) {
-    final providerName = _selectedProvider?.name ?? 'Fuente';
+    final providerName = _selectedProvider?.name ?? ref.watch(translationsProvider).source;
 
     return Material(
       color: Colors.transparent,
@@ -549,7 +550,7 @@ class _AnimeDetailMobileLayoutState
     final nextAiring = widget.details?.rawMedia?['nextAiringEpisode'];
     final nextEpNum = nextAiring?['episode'] ?? widget.initialEntry?.nextAiringEpisodeNumber;
     if (nextEpNum != null) {
-      dateParts.add('Ep. $nextEpNum pronto');
+      dateParts.add(l10n.episodeSoon(nextEpNum));
     }
     final dateSeasonStatus = dateParts.join(' • ');
 
@@ -1002,7 +1003,7 @@ class _AnimeDetailMobileLayoutState
                                   onPressed: () => _handlePlayNext(progress),
                                   icon: const Icon(Icons.play_arrow_rounded, size: 22),
                                   label: Text(
-                                    _formatPlayButtonLabel(progress, totalEps),
+                                    _formatPlayButtonLabel(progress, totalEps, l10n),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
@@ -1017,14 +1018,14 @@ class _AnimeDetailMobileLayoutState
                             if (hasTrailer) ...[
                               const SizedBox(width: 4),
                               IconButton(
-                                tooltip: 'Ver tráiler',
+                                tooltip: l10n.watchTrailer,
                                 icon: const Icon(Icons.smart_display_outlined, size: 22),
                                 onPressed: () => _launchTrailer(trailerId, trailerSite),
                               ),
                             ],
                             const SizedBox(width: 2),
                             IconButton(
-                              tooltip: isFavorite ? 'En favoritos' : 'Añadir a favoritos',
+                              tooltip: isFavorite ? l10n.inFavorites : l10n.addToFavorites,
                               icon: Icon(
                                 isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
                                 size: 22,
@@ -1039,7 +1040,7 @@ class _AnimeDetailMobileLayoutState
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Text(
-                                      nowFav ? 'Añadido a favoritos' : 'Eliminado de favoritos',
+                                      nowFav ? l10n.addedToFavorites : l10n.removedFromFavorites,
                                     ),
                                     duration: const Duration(seconds: 2),
                                     behavior: SnackBarBehavior.floating,
@@ -1049,7 +1050,7 @@ class _AnimeDetailMobileLayoutState
                             ),
                             const SizedBox(width: 2),
                             IconButton(
-                              tooltip: 'Editar en AniList',
+                              tooltip: l10n.editInAnilist,
                               icon: const Icon(Icons.edit_outlined, size: 22),
                               onPressed: () => widget.onOpenEditEntryModal(title),
                             ),

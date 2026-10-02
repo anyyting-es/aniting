@@ -8,6 +8,7 @@ import 'package:seanime_app/core/theme/app_theme_colors.dart';
 import 'package:seanime_app/core/theme/theme_provider.dart';
 import 'package:seanime_app/data/models/anime_entry.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
+import 'package:seanime_app/core/i18n/i18n_provider.dart';
 
 class ContinueWatchingCard extends ConsumerStatefulWidget {
   final AnimeEntry entry;
@@ -51,6 +52,8 @@ class _ContinueWatchingCardState extends ConsumerState<ContinueWatchingCard> {
     final theme = Theme.of(context);
     final colors = context.themeColors;
     final titleLang = ref.watch(titleLanguageProvider);
+    final appLang = ref.watch(appLanguageProvider);
+    final langCode = appLang.code;
 
     final epNum = widget.entry.episodeNumber ?? (widget.entry.progress + 1);
 
@@ -72,12 +75,12 @@ class _ContinueWatchingCardState extends ConsumerState<ContinueWatchingCard> {
     final imageUrl = resolvedThumbnail ?? widget.entry.bannerImage ?? widget.entry.coverImage;
 
     final String resolvedEpTitle = (aniZipEpisode != null &&
-            aniZipEpisode.displayTitle.isNotEmpty &&
-            !aniZipEpisode.displayTitle.startsWith('Episodio'))
-        ? aniZipEpisode.displayTitle
+            aniZipEpisode.displayTitleForLang(langCode).isNotEmpty &&
+            !aniZipEpisode.displayTitleForLang(langCode).toLowerCase().startsWith('episod'))
+        ? aniZipEpisode.displayTitleForLang(langCode)
         : (widget.entry.episodeTitle != null &&
                 widget.entry.episodeTitle!.isNotEmpty &&
-                !widget.entry.episodeTitle!.startsWith('Episodio')
+                !widget.entry.episodeTitle!.toLowerCase().startsWith('episod')
             ? widget.entry.episodeTitle!
             : '');
 

@@ -268,13 +268,4 @@ class PlayerChapter {
     if (isPreview) return l10n.skipPreview;
     return l10n.skip;
   }
-
-  String get skipButtonLabel {
-    if (isOpening) return 'Saltar Opening';
-    if (isEnding) return 'Saltar Ending';
-    if (isCredits) return 'Saltar Créditos';
-    if (isIntro) return 'Saltar Intro';
-    if (isPreview) return 'Saltar Avance';
-    return 'Saltar';
-  }
 }

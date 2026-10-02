@@ -66,7 +66,7 @@ class AppUpdateService {
           tagName: 'v$activeVersion',
           version: activeVersion,
           title: 'Aniting v$activeVersion',
-          releaseNotes: 'Estás en la última versión.',
+          releaseNotes: '',
           hasUpdate: false,
         );
       }

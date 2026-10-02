@@ -210,6 +210,12 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get themeMode => 'Theme Mode';
   @override
+  String get darkMode => 'Dark';
+  @override
+  String get lightMode => 'Light';
+  @override
+  String get systemMode => 'System';
+  @override
   String get themeDark => 'Dark';
   @override
   String get themeLight => 'Light';
@@ -806,6 +812,18 @@ class EnglishTranslations implements AppTranslations {
   String get failedToLinkAccount =>
       'Could not link account. Check that the token has not expired and is complete.';
   @override
+  String get anilistRateLimitError =>
+      'AniList rate limit is active. Please wait 60 seconds before trying again.';
+  @override
+  String get anilistTimeoutError =>
+      'AniList or the server took too long to respond. Please wait 1 minute and try again.';
+  @override
+  String get anilistInvalidTokenError =>
+      'The AniList token is invalid or has expired. Make sure to copy the full token and try again.';
+  @override
+  String get anilistConnectionError =>
+      'Could not connect to the server or AniList. Check your connection and try again.';
+  @override
   String get logoutConfirmTitle => 'Log Out';
   @override
   String get logoutConfirmContent =>
@@ -1273,6 +1291,20 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get themeSectionMaterial => 'Material Design 3';
   @override
+  String get materialPurpleName => 'Material You Violet';
+  @override
+  String get materialBlueName => 'Material You Ocean';
+  @override
+  String get materialGreenName => 'Material You Forest';
+  @override
+  String get materialOrangeName => 'Material You Sunset';
+  @override
+  String get materialCrimsonName => 'Material You Raspberry';
+  @override
+  String get materialTealName => 'Material You Teal';
+  @override
+  String get paletteSystem => 'System (Dank Shell / Matugen)';
+  @override
   String get exploreAllMarketplace => 'Explore Full Marketplace';
   @override
   String get allRecommended => 'All Recommended';
@@ -1437,4 +1469,402 @@ class EnglishTranslations implements AppTranslations {
     if (status != null && status.isNotEmpty) return formatStatus(status);
     return fallbackFormat;
   }
+
+  // About Screen & Version Check
+  @override
+  String get nativeClientSubtitle => 'Native client for Anime & Manga';
+  @override
+  String get developerAndCredits => 'DEVELOPER & CREDITS';
+  @override
+  String get developerSubtitle => 'Flutter native client developer\nGitHub: github.com/anyyting-es';
+  @override
+  String get originalServerSubtitle => 'Original backend & media server created by 5rahim\nhttps://seanime.app';
+  @override
+  String get discordCommunity => 'Discord Community';
+  @override
+  String get discordSubtitle => 'Join the Aniting community on Discord\ndiscord.gg/FaPcNGURdN';
+  @override
+  String get systemAndUpdates => 'SYSTEM & UPDATES';
+  @override
+  String get clientDevice => 'Mobile / PC Client';
+  @override
+  String get buildRelease => 'Build Release';
+  @override
+  String get seanimeCoreServer => 'Seanime Core Server';
+  @override
+  String serverVersionConnected(String version) => 'Version $version (Connected)';
+  @override
+  String get serverOfflineOrLocal => 'Disconnected or Local Server';
+  @override
+  String get checkingUpdatesGithub => 'Checking for updates on GitHub...';
+  @override
+  String get checkLatestGithub => 'Check for the latest version on GitHub';
+  @override
+  String latestVersionSnackbar(String version) => 'You are on the latest version (v$version). No new updates.';
+  @override
+  String get failedCheckUpdateSnackbar => 'Could not check for updates. Check your internet connection.';
+  @override
+  String get openSourceLicenses => 'Open Source Licenses';
+  @override
+  String get openSourceLicensesDesc => 'View free and open source software licenses and libraries';
+  @override
+  String get devAndTesting => 'DEVELOPMENT & TESTING';
+  @override
+  String get welcomeDevPreviewDesc => 'Open the welcome wizard in preview mode';
+  @override
+  String get welcomeResetDesc => 'Reset welcome wizard to show on next launch';
+
+  // Stream Selection & Modes
+  @override
+  String get playbackMode => 'Playback Mode';
+  @override
+  String get communityServers => 'Community servers';
+  @override
+  String get torrentP2p => 'P2P download & streaming';
+  @override
+  String get downloadedLibrary => 'Downloaded library';
+  @override
+  String get onlineSources => 'Online Sources';
+  @override
+  String availableSourcesCountLabel(int count) => '$count available';
+  @override
+  String get advancedOptions => 'Advanced options';
+  @override
+  String get closeModeSelector => 'Close mode selector';
+  @override
+  String get closeSourceSelector => 'Close source selector';
+  @override
+  String get audioHeading => 'AUDIO';
+  @override
+  String get audioDubbedFull => 'Dubbed (Dub)';
+  @override
+  String get exploreMarketplaceMore => 'Explore more extensions in store';
+  @override
+  String loadingEpisodesFrom(String provider) => 'Loading episodes from $provider...';
+  @override
+  String noEpisodesFoundInProvider(String provider) => 'No episodes found on $provider';
+  @override
+  String get tryAnotherServerOrSubDub => 'Try selecting another server or switching between subtitled and dubbed';
+  @override
+  String episodeNumber(int number) => 'Episode $number';
+
+  // Settings & Customization
+  @override
+  String get cornerAndBorders => 'Corners & Borders (Card Radius)';
+  @override
+  String get adjustCornerRadiusDesc => 'Adjust the visual roundness of components and cards';
+  @override
+  String get cornerRadiusSquare => '0 px (Square)';
+  @override
+  String get cornerRadiusSubtle => '6 px (Subtle)';
+  @override
+  String get cornerRadiusNormal => '10 px (Normal)';
+  @override
+  String get cornerRadiusRound => '16 px (Round)';
+  @override
+  String get cornerRadiusCurved => '22 px (Curved)';
+  @override
+  String get interfaceModeTitle => 'Interface Mode (Adaptive)';
+  @override
+  String get interfaceModeDesc => 'Layout tailored for your device';
+  @override
+  String get interfaceModeDialogTitle => 'Interface Mode';
+  @override
+  String get interfaceModeAuto => 'Automatic';
+  @override
+  String get interfaceModeAutoDesc => 'Automatic screen size detection';
+  @override
+  String get interfaceModeDesktop => 'Desktop (PC)';
+  @override
+  String get interfaceModeDesktopDesc => 'Full 2-column layout with hero banner';
+  @override
+  String get interfaceModeMobile => 'Mobile';
+  @override
+  String get interfaceModeMobileDesc => 'Compact vertical layout for phones';
+  @override
+  String get interfaceModeTv => 'TV Mode (10ft)';
+  @override
+  String get interfaceModeTvDesc => 'Simplified 10-foot UI for remote control and D-Pad';
+  @override
+  String get episodeDisplayDetailedDesc => 'Shows large thumbnails with title and synopsis';
+  @override
+  String get episodeDisplayGridDesc => 'Compact numbered grid of episodes';
+  @override
+  String get oledTrueBlackTitle => 'Pure Black (OLED True Black)';
+  @override
+  String get oledTrueBlackDesc => 'Absolute #000000 black background for OLED screens';
+  @override
+  String get fontSystemDisplayName => 'System';
+  @override
+  String get fontSystemDesc => 'Default device typography';
+  @override
+  String get pathRestoredDefault => 'Path restored to default SSD storage';
+  @override
+  String get workDirSavedSuccess => 'Working directory saved successfully';
+  @override
+  String get workDirSaveError => 'Error saving working directory';
+
+  // App Update Dialog
+  @override
+  String get updateDialogTitle => 'New version';
+  @override
+  String updateDialogCurrentVersion(String version, String size) =>
+      'Current version: v$version${size.isNotEmpty ? ' • $size' : ''}';
+  @override
+  String get updateDialogChangelogTitle => 'Release Notes & Changes';
+  @override
+  String get updateDialogDefaultNotes => 'Stability, performance improvements, and bug fixes are included in this release.';
+  @override
+  String get updateDialogDownloading => 'Downloading update...';
+  @override
+  String get updateDialogLater => 'Later';
+  @override
+  String get updateDialogUpdateNow => 'Update now';
+  @override
+  String get updateDialogDownloadingBtn => 'Downloading...';
+  @override
+  String get updateDialogInstalling => 'Installing...';
+  @override
+  String get updateDialogInstallUpdate => 'Install update';
+
+  // Empty Feed States & Downloads
+  @override
+  String get emptyMangaFeedTitle => 'Your manga list is empty';
+  @override
+  String get emptyAnimeFeedTitle => 'Your anime list is empty';
+  @override
+  String get emptyMangaFeedDesc => "You don't have any manga in progress. Explore the catalog or search for your favorite series.";
+  @override
+  String get emptyAnimeFeedDesc => "You don't have any anime in progress. Explore the catalog or search for your favorite series.";
+  @override
+  String get noDownloadedAnimeTitle => 'No downloaded anime';
+  @override
+  String get noDownloadedAnimeDesc => 'Episodes downloaded in your local library will appear here for offline viewing.';
+  @override
+  String get noDownloadedMangaTitle => 'No downloaded manga';
+  @override
+  String get noDownloadedMangaDesc => 'Chapters downloaded to read in the offline reader will be saved in Aniting/Downloads/Manga and appear here.';
+  @override
+  String get exploreManga => 'Explore Manga';
+  @override
+  String downloadedAnimeCount(int count) => '$count downloaded ${count == 1 ? "anime" : "anime"} in local library';
+  @override
+  String downloadedMangaCount(int mangaCount, int chaptersCount) => '$mangaCount ${mangaCount == 1 ? "manga" : "manga"} • $chaptersCount ch.';
+  @override
+  String storageUsed(String formattedSize) => 'Storage used: $formattedSize';
+  @override
+  String get refreshDownloadsTooltip => 'Refresh downloads';
+
+  // Player & UI Details
+  @override
+  String prevEpisodeNumbered(int number) => '← Previous episode: Ep. $number';
+  @override
+  String scorePercent(String score) => '$score% score';
+  @override
+  String get anilistConnectedBadge => 'AniList Connected';
+
+  // Play & Reading Button States
+  @override
+  String get rewatch => 'Watch again';
+  @override
+  String continueEpisodeNumbered(int number) => 'Continue Ep. $number';
+  @override
+  String get startWatching => 'Start watching';
+  @override
+  String get startReading => 'Start reading';
+  @override
+  String continueChapterNumbered(int number) => 'Continue Ch. $number';
+
+  // Favorites & Actions
+  @override
+  String get inFavorites => 'In favorites';
+  @override
+  String get addToFavorites => 'Add to favorites';
+  @override
+  String get addedToFavorites => 'Added to favorites';
+  @override
+  String get removedFromFavorites => 'Removed from favorites';
+  @override
+  String get editInAnilist => 'Edit on AniList';
+  @override
+  String get share => 'Share';
+  @override
+  String get watchTrailer => 'Watch trailer';
+  @override
+  String get viewOnAnilist => 'View on AniList';
+  @override
+  String get viewOnMal => 'View on MyAnimeList';
+  @override
+  String linkCopiedFor(String title) => 'Link copied for $title';
+  @override
+  String get details => 'Details';
+  @override
+  String get batchDownload => 'Batch download';
+  @override
+  String get downloadChapterAction => 'Download';
+  @override
+  String get downloadBatch => 'Download batch';
+  @override
+  String get readBadge => 'READ';
+  @override
+  String get progress => 'Progress';
+  @override
+  String get myProgress => 'My Progress';
+  @override
+  String get volumes => 'Volumes';
+  @override
+  String get score => 'Score';
+  @override
+  String get aired => 'Aired';
+  @override
+  String get localUser => 'Local User';
+  @override
+  String get scan => 'Scan';
+
+  // Empty States & Content Tabs
+  @override
+  String get noRelationsAvailable => 'No relations available';
+  @override
+  String get noRecommendationsAvailable => 'No recommendations available';
+  @override
+  String get noCharactersAvailable => 'No characters available';
+  @override
+  String get noSimilarWorksAvailable => 'No similar titles available';
+  @override
+  String get noDownloadedChaptersForManga => 'No downloaded chapters for this title';
+  @override
+  String get noChaptersMatchingFilters => 'No chapters found with current filters';
+  @override
+  String get resetFilters => 'Reset filters';
+  @override
+  String get exploreMangaExtensions => 'Explore Manga Extensions';
+  @override
+  String get reloadChapters => 'Reload chapters';
+  @override
+  String get oldestFirst => 'Oldest first';
+  @override
+  String get newestFirst => 'Newest first';
+  @override
+  String get onlyDownloaded => 'Only downloaded';
+  @override
+  String get viewAllChapters => 'View all chapters';
+  @override
+  String get informationTitle => 'Information';
+  @override
+  String get prevEpisode => '← Previous episode';
+  @override
+  String get synopsisMore => 'More';
+  @override
+  String get synopsisLess => 'Less';
+  @override
+  String get searchChapterPlaceholder => 'Search or Ch. number...';
+  @override
+  String get installMangaExtensionNotice =>
+      'Install a manga extension to read chapters in your library.';
+  @override
+  String hideReadChapters(int count) => 'Hide read ($count)';
+  @override
+  String hidingReadChapters(int count) => 'Hiding read ($count)';
+  @override
+  String downloadedCount(int count) => 'Downloaded ($count)';
+  @override
+  String chaptersCount(int count) => '$count chapters';
+  @override
+  String chapterAbbr(String number) => 'Ch. $number';
+  @override
+  String get noChaptersAvailable => 'No chapters available';
+  @override
+  String episodeSoon(int number) => 'Ep. $number soon';
+  @override
+  String get currentEpisodeBadge => 'Current episode';
+  @override
+  String get batchFiles => 'Batch Files';
+  @override
+  String filesCount(int count) => '$count files';
+  @override
+  String get filterFilesOrEpisode => 'Filter files or episode...';
+  @override
+  String noFilesMatching(String query) => 'No files found with "$query"';
+  @override
+  String get selectAFile => 'Select a file';
+  @override
+  String get delete => 'Delete';
+  @override
+  String get deleteFromAnilist => 'Delete from AniList';
+  @override
+  String get deleteFromList => 'Delete from your list';
+  @override
+  String deleteAnilistConfirm(String title) =>
+      'Are you sure you want to delete "$title" from your AniList list?';
+  @override
+  String deleteLocalConfirm(String title) =>
+      'Are you sure you want to delete "$title" from your local library?';
+  @override
+  String get removedFromList => 'Removed from your list';
+  @override
+  String get selectProviderToDownload => 'Select a provider to download';
+  @override
+  String downloadingChapter(String chapter) => 'Downloading chapter $chapter...';
+  @override
+  String errorSchedulingDownload(String error) => 'Error scheduling download: $error';
+  @override
+  String get downloadChapters => 'Download Chapters';
+  @override
+  String providerWithUnreadCount(String provider, int unreadCount) =>
+      'Provider: $provider • $unreadCount unread';
+  @override
+  String downloadNextUnread(int count) => 'Download next $count unread';
+  @override
+  String downloadNextUnreadDesc(int count) =>
+      'Save the next $count chapters for offline reading';
+  @override
+  String downloadAllUnread(int count) => 'Download all unread ($count)';
+  @override
+  String get downloadAllUnreadDesc => 'Full download of all pending chapters';
+  @override
+  String downloadingChaptersCount(int count) => 'Downloading $count chapters...';
+  @override
+  String torrentsFilterCount(int filtered, int total, String quality) =>
+      '$filtered of $total torrents ($quality)';
+  @override
+  String noTorrentsWithQuality(String quality) =>
+      'No torrents found with quality "$quality"';
+  @override
+  String get resetQualityFilterAll => 'Reset filter to "All"';
+  @override
+  String get myCollection => 'My Collection';
+  @override
+  String get previous => 'Previous';
+  @override
+  String get next => 'Next';
+  @override
+  String pageOf(int current, int total) => 'Page $current of $total';
+  @override
+  String chapterDownloaded(String number) => 'Chapter $number (Downloaded)';
+  @override
+  String get errorLoadingChapters => 'Error loading chapters';
+  @override
+  String exploreAllMarketplaceCountDesc(int count) =>
+      'Explore the full catalog with over $count extensions';
+  @override
+  String get updateNoApkFound => 'No APK file found attached to this release.';
+  @override
+  String updateDownloadError(String error) => 'Error downloading update: $error';
+  @override
+  String get updateAndroidOnly => 'Direct installation is only available on Android.';
+  @override
+  String updateInstallerError(String error) => 'Error opening installer: $error';
+
+  @override
+  String get navigationSections => 'Navigation Sections';
+  @override
+  String get animeSection => 'Anime Section';
+  @override
+  String get animeSectionDesc => 'Show anime tab in navigation';
+  @override
+  String get mangaSection => 'Manga Section';
+  @override
+  String get mangaSectionDesc => 'Show manga tab in navigation';
+  @override
+  String get cannotDisableBothSections => 'You must keep at least one section enabled';
 }

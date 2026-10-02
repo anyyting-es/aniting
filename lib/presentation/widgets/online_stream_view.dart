@@ -549,13 +549,14 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
 
     final animeTitle = widget.animeDetails?.title ?? 'Anime';
     final providerName = _selectedProvider?.name ?? 'Online';
+    final l10n = ref.read(translationsProvider);
 
     Navigator.of(context).push(
       VideoPlayerScreen.route(
         mediaId: widget.mediaId,
         videoUrl: '',
         title: animeTitle,
-        episodeTitle: ep.displayTitle,
+        episodeTitle: ep.localizedDisplayTitle(l10n),
         episodeNumber: ep.number,
         videoSource: providerName,
         animeDetails: widget.animeDetails,
@@ -1052,7 +1053,7 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
 
               return EpisodeGridItem(
                 episodeNumber: ep.number,
-                title: ep.displayTitle,
+                title: ep.localizedDisplayTitle(l10n),
                 originalTitle: aniZipEp?.originalTitle,
                 duration: aniZipEp?.formattedDuration,
                 synopsis: epSynopsis,
@@ -1098,7 +1099,7 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
 
                       return EpisodeListItem(
                         episodeNumber: ep.number,
-                        title: ep.displayTitle,
+                        title: ep.localizedDisplayTitle(l10n),
                         originalTitle: aniZipEp?.originalTitle,
                         duration: aniZipEp?.formattedDuration,
                         synopsis: epSynopsis,

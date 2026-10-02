@@ -1,5 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/data/models/anime_details.dart';
 
 bool _isGenericTitle(String? title, int epNum) {
@@ -18,7 +20,7 @@ bool _isGenericTitle(String? title, int epNum) {
 
 /// Clean episode item displaying the next episode thumbnail, title, and metadata
 /// loosely without heavy card/box containers, mirroring the anime details EpisodeListItem style.
-class NextEpisodeCard extends StatelessWidget {
+class NextEpisodeCard extends ConsumerWidget {
   final AnimeEpisode episode;
   final String? animeTitle;
   final String? episodeTitle;
@@ -41,8 +43,9 @@ class NextEpisodeCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final l10n = ref.watch(translationsProvider);
 
     const double imageWidth = 148;
     const double imageHeight = 84;
@@ -59,7 +62,7 @@ class NextEpisodeCard extends StatelessWidget {
 
     final String displayEpTitle;
     if (_isGenericTitle(rawTitle, episode.episodeNumber)) {
-      displayEpTitle = 'Episodio ${episode.episodeNumber}';
+      displayEpTitle = l10n.episodeNumber(episode.episodeNumber);
     } else {
       displayEpTitle = rawTitle;
     }

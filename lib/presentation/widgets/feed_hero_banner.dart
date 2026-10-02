@@ -1,17 +1,20 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/data/models/anime_entry.dart';
 
-class FeedHeroBanner extends StatelessWidget {
+class FeedHeroBanner extends ConsumerWidget {
   final AnimeEntry? entry;
 
   const FeedHeroBanner({super.key, this.entry});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     if (entry == null) return const SizedBox.shrink();
 
     final theme = Theme.of(context);
+    final l10n = ref.watch(translationsProvider);
     final imageUrl = entry!.bannerImage ?? entry!.coverImage;
 
     return Container(
@@ -86,7 +89,7 @@ class FeedHeroBanner extends StatelessWidget {
                       const Icon(Icons.star, color: Colors.amber, size: 14),
                       const SizedBox(width: 4),
                       Text(
-                        '${entry!.score!.toStringAsFixed(0)}% puntuación',
+                        l10n.scorePercent(entry!.score!.toStringAsFixed(0)),
                         style: const TextStyle(color: Colors.white70, fontSize: 12),
                       ),
                     ],

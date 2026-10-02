@@ -18,6 +18,7 @@ class FloatingResumeBar extends ConsumerWidget {
 
   static Future<void> resumePlayback(BuildContext context, WidgetRef ref, LastSessionItem session) async {
     HapticFeedback.mediumImpact();
+    final l10n = ref.read(translationsProvider);
 
     if (session.isAnime) {
       final repo = ref.read(repositoryProvider);
@@ -47,7 +48,7 @@ class FloatingResumeBar extends ConsumerWidget {
                 startPosition: session.positionMs != null
                     ? Duration(milliseconds: session.positionMs!)
                     : null,
-                videoSource: fileName != null ? 'Local • $fileName' : 'Biblioteca Local',
+                videoSource: fileName != null ? 'Local • $fileName' : l10n.localLibrary,
                 isLocalFile: true,
               ),
             );
@@ -124,7 +125,7 @@ class FloatingResumeBar extends ConsumerWidget {
         final chapter = MangaChapter(
           id: session.chapterId!,
           url: session.chapterId!,
-          title: session.subtitle ?? 'Capítulo $chNumStr',
+          title: session.subtitle ?? '${l10n.chapter} $chNumStr',
           chapter: chNumStr,
           index: (session.chapterNumber?.toInt() ?? 1) - 1,
         );

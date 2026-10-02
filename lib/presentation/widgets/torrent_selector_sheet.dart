@@ -558,7 +558,7 @@ class _TorrentSelectorSheetState extends ConsumerState<TorrentSelectorSheet> {
                       for (final quality in const ['Todos', '1080p', '720p', '2160p / 4K', '480p']) ...[
                         FilterChip(
                           selected: _selectedQuality == quality,
-                          label: Text(quality, style: const TextStyle(fontSize: 11)),
+                          label: Text(quality == 'Todos' ? l10n.filterAll : quality, style: const TextStyle(fontSize: 11)),
                           visualDensity: VisualDensity.compact,
                           padding: const EdgeInsets.symmetric(horizontal: 4),
                           materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -623,7 +623,7 @@ class _TorrentSelectorSheetState extends ConsumerState<TorrentSelectorSheet> {
                           ? l10n.searchingTorrents
                           : (_selectedQuality == 'Todos'
                               ? '${_torrents.length} ${l10n.resultsFound}'
-                              : '${_filteredTorrents.length} de ${_torrents.length} torrents ($_selectedQuality)'),
+                              : l10n.torrentsFilterCount(_filteredTorrents.length, _torrents.length, _selectedQuality)),
                       style: TextStyle(
                         fontSize: 12,
                         color: theme.colorScheme.onSurfaceVariant,
@@ -727,14 +727,14 @@ class _TorrentSelectorSheetState extends ConsumerState<TorrentSelectorSheet> {
               ),
               const SizedBox(height: 10),
               Text(
-                'No hay torrents con calidad "$_selectedQuality"',
+                l10n.noTorrentsWithQuality(_selectedQuality == 'Todos' ? l10n.filterAll : _selectedQuality),
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
               ),
               const SizedBox(height: 6),
               TextButton(
                 onPressed: () => setState(() => _selectedQuality = 'Todos'),
-                child: const Text('Restablecer filtro a "Todos"'),
+                child: Text(l10n.resetQualityFilterAll),
               ),
             ],
           ),

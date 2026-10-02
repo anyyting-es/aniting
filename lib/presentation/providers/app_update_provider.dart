@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/data/models/app_update_models.dart';
 import 'package:seanime_app/data/services/app_update_service.dart';
 
@@ -108,12 +109,13 @@ class AppUpdateNotifier extends Notifier<AppUpdateState> {
 
   /// Downloads the APK and prepares it for installation.
   Future<void> downloadUpdate() async {
+    final l10n = ref.read(translationsProvider);
     final info = state.updateInfo;
     final url = info?.apkDownloadUrl;
     if (url == null || url.isEmpty) {
       state = state.copyWith(
         status: UpdateDownloadStatus.error,
-        errorMessage: 'No se encontró archivo APK adjunto en esta versión.',
+        errorMessage: l10n.updateNoApkFound,
       );
       return;
     }
@@ -161,26 +163,27 @@ class AppUpdateNotifier extends Notifier<AppUpdateState> {
       } else {
         state = state.copyWith(
           status: UpdateDownloadStatus.error,
-          errorMessage: 'Error en la descarga: ${e.message}',
+          errorMessage: l10n.updateDownloadError(e.message ?? ''),
         );
       }
     } catch (e) {
       state = state.copyWith(
         status: UpdateDownloadStatus.error,
-        errorMessage: 'Error al descargar la actualización: $e',
+        errorMessage: l10n.updateDownloadError(e.toString()),
       );
     }
   }
 
   /// Requests package installation via native Android intent.
   Future<void> installUpdate() async {
+    final l10n = ref.read(translationsProvider);
     final filePath = state.downloadedFilePath;
     if (filePath == null || filePath.isEmpty) return;
 
     if (!Platform.isAndroid) {
       state = state.copyWith(
         status: UpdateDownloadStatus.error,
-        errorMessage: 'La instalación directa solo está disponible en Android.',
+        errorMessage: l10n.updateAndroidOnly,
       );
       return;
     }
@@ -197,7 +200,7 @@ class AppUpdateNotifier extends Notifier<AppUpdateState> {
     } catch (e) {
       state = state.copyWith(
         status: UpdateDownloadStatus.error,
-        errorMessage: 'Error al abrir el instalador: $e',
+        errorMessage: l10n.updateInstallerError(e.toString()),
       );
     }
   }

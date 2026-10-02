@@ -5,9 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/preferences/title_language_provider.dart';
+import 'package:seanime_app/core/preferences/section_visibility_provider.dart';
 import 'package:seanime_app/core/theme/custom_route_transitions.dart';
 import 'package:seanime_app/data/models/anime_entry.dart';
 import 'package:seanime_app/data/models/manga_entry.dart';
+import 'package:seanime_app/presentation/widgets/explore_skeleton.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
 import 'package:seanime_app/presentation/screens/genre_detail_screen.dart';
@@ -37,7 +39,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   bool _isSearchExpanded = false;
   Timer? _debounce;
 
-  DiscoverFilterState _filterState = const DiscoverFilterState(mediaType: 'ANIME');
+  late DiscoverFilterState _filterState;
 
   final List<AnimeEntry> _animeResults = [];
   final List<MangaEntry> _mangaResults = [];
@@ -54,6 +56,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   @override
   void initState() {
     super.initState();
+    final animeEnabled = ref.read(animeSectionEnabledProvider);
+    _filterState = DiscoverFilterState(mediaType: animeEnabled ? 'ANIME' : 'MANGA');
     _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -255,10 +259,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     String? genreKey,
     VoidCallback? onSeeMoreTap,
     required List<AnimeEntry> entries,
+    bool isLoading = false,
     required ThemeData theme,
     required AppTranslations l10n,
   }) {
-    if (entries.isEmpty) return const SizedBox.shrink();
+    if (entries.isEmpty && !isLoading) return const SizedBox.shrink();
 
     final isDesktop = MediaQuery.of(context).size.width >= 720;
     final cardWidth = isDesktop ? 145.0 : 125.0;
@@ -315,9 +320,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             ],
           ),
         ),
-        SizedBox(
-          height: carouselHeight,
-          child: ListView.separated(
+        if (isLoading && entries.isEmpty)
+          const CuratedSectionRowSkeleton(isAnimated: true)
+        else
+          SizedBox(
+            height: carouselHeight,
+            child: ListView.separated(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             scrollDirection: Axis.horizontal,
             itemCount: entries.length,
@@ -351,10 +359,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     String? genreKey,
     VoidCallback? onSeeMoreTap,
     required List<MangaEntry> entries,
+    bool isLoading = false,
     required ThemeData theme,
     required AppTranslations l10n,
   }) {
-    if (entries.isEmpty) return const SizedBox.shrink();
+    if (entries.isEmpty && !isLoading) return const SizedBox.shrink();
 
     final isDesktop = MediaQuery.of(context).size.width >= 720;
     final cardWidth = isDesktop ? 145.0 : 125.0;
@@ -411,9 +420,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             ],
           ),
         ),
-        SizedBox(
-          height: carouselHeight,
-          child: ListView.separated(
+        if (isLoading && entries.isEmpty)
+          const CuratedSectionRowSkeleton(isAnimated: true)
+        else
+          SizedBox(
+            height: carouselHeight,
+            child: ListView.separated(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             scrollDirection: Axis.horizontal,
             itemCount: entries.length,
@@ -584,6 +596,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final isAnime = _filterState.mediaType == 'ANIME';
     final isDesktop = MediaQuery.of(context).size.width >= 720;
     final titleLang = ref.watch(titleLanguageProvider);
+    final animeEnabled = ref.watch(animeSectionEnabledProvider);
+    final mangaEnabled = ref.watch(mangaSectionEnabledProvider);
 
     // Trending providers for Explore Hero Carousel
     final trendingAnimeAsync = isAnime ? ref.watch(trendingAnimeProvider) : null;
@@ -677,6 +691,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                                   MediaTypeToggle(
                                     selected: _filterState.mediaType,
                                     onSelected: _setMediaType,
+                                    showAnime: animeEnabled,
+                                    showManga: mangaEnabled,
                                   ),
                                 ],
                               ),
@@ -771,11 +787,15 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         ),
                     ] else ...[
                       // Discover & Curated Explore Mode Slivers
-
-                      // 1. Full-bleed Hero Carousel at the very top (Edge to Edge, extends behind status bar)
-                      if (isAnime && trendingAnimeAsync != null)
-                        trendingAnimeAsync.when(
-                          data: (items) {
+                      if ((isAnime && (trendingAnimeAsync == null || trendingAnimeAsync.isLoading)) || (!isAnime && (trendingMangaAsync == null || trendingMangaAsync.isLoading)))
+                        const SliverToBoxAdapter(
+                          child: ExploreSkeleton(),
+                        )
+                      else ...[
+                        // 1. Full-bleed Hero Carousel at the very top (Edge to Edge, extends behind status bar)
+                        if (isAnime && trendingAnimeAsync != null && trendingAnimeAsync.asData != null)
+                          Builder(builder: (context) {
+                            final items = trendingAnimeAsync.asData!.value;
                             if (items.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
                             final carouselItems = items
                                 .take(6)
@@ -787,13 +807,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                                 items: carouselItems,
                               ),
                             );
-                          },
-                          loading: () => const SliverToBoxAdapter(child: SizedBox.shrink()),
-                          error: (err, stack) => const SliverToBoxAdapter(child: SizedBox.shrink()),
-                        )
-                      else if (!isAnime && trendingMangaAsync != null)
-                        trendingMangaAsync.when(
-                          data: (items) {
+                          })
+                        else if (!isAnime && trendingMangaAsync != null && trendingMangaAsync.asData != null)
+                          Builder(builder: (context) {
+                            final items = trendingMangaAsync.asData!.value;
                             if (items.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
                             final carouselItems = items
                                 .take(6)
@@ -805,10 +822,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                                 items: carouselItems,
                               ),
                             );
-                          },
-                          loading: () => const SliverToBoxAdapter(child: SizedBox.shrink()),
-                          error: (err, stack) => const SliverToBoxAdapter(child: SizedBox.shrink()),
-                        ),
+                          }),
 
                       // 2. Header Bar positioned below Carousel (MediaTypeToggle & Action Icons)
                       SliverToBoxAdapter(
@@ -912,8 +926,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                               });
                               _fetchResults(reset: true);
                             },
-                            entries: trendingAnimeAsync?.asData?.value ?? [],
-                            theme: theme,
+                            entries: trendingAnimeAsync?.asData?.value ?? [], isLoading: trendingAnimeAsync?.isLoading ?? false, theme: theme,
                             l10n: l10n,
                           ),
                         ),
@@ -921,8 +934,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                           child: _buildCuratedAnimeSection(
                             title: isSpanish ? 'Romance en tendencia' : 'Trending Romance',
                             genreKey: 'Romance',
-                            entries: romanceAnimeAsync?.asData?.value ?? [],
-                            theme: theme,
+                            entries: romanceAnimeAsync?.asData?.value ?? [], isLoading: romanceAnimeAsync?.isLoading ?? false, theme: theme,
                             l10n: l10n,
                           ),
                         ),
@@ -930,8 +942,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                           child: _buildCuratedAnimeSection(
                             title: isSpanish ? 'Acción en tendencia' : 'Trending Action',
                             genreKey: 'Action',
-                            entries: actionAnimeAsync?.asData?.value ?? [],
-                            theme: theme,
+                            entries: actionAnimeAsync?.asData?.value ?? [], isLoading: actionAnimeAsync?.isLoading ?? false, theme: theme,
                             l10n: l10n,
                           ),
                         ),
@@ -939,8 +950,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                           child: _buildCuratedAnimeSection(
                             title: isSpanish ? 'Comedia en tendencia' : 'Trending Comedy',
                             genreKey: 'Comedy',
-                            entries: comedyAnimeAsync?.asData?.value ?? [],
-                            theme: theme,
+                            entries: comedyAnimeAsync?.asData?.value ?? [], isLoading: comedyAnimeAsync?.isLoading ?? false, theme: theme,
                             l10n: l10n,
                           ),
                         ),
@@ -955,8 +965,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                               });
                               _fetchResults(reset: true);
                             },
-                            entries: trendingMangaAsync?.asData?.value ?? [],
-                            theme: theme,
+                            entries: trendingMangaAsync?.asData?.value ?? [], isLoading: trendingMangaAsync?.isLoading ?? false, theme: theme,
                             l10n: l10n,
                           ),
                         ),
@@ -964,8 +973,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                           child: _buildCuratedMangaSection(
                             title: isSpanish ? 'Romance en tendencia' : 'Trending Romance',
                             genreKey: 'Romance',
-                            entries: romanceMangaAsync?.asData?.value ?? [],
-                            theme: theme,
+                            entries: romanceMangaAsync?.asData?.value ?? [], isLoading: romanceMangaAsync?.isLoading ?? false, theme: theme,
                             l10n: l10n,
                           ),
                         ),
@@ -973,8 +981,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                           child: _buildCuratedMangaSection(
                             title: isSpanish ? 'Acción en tendencia' : 'Trending Action',
                             genreKey: 'Action',
-                            entries: actionMangaAsync?.asData?.value ?? [],
-                            theme: theme,
+                            entries: actionMangaAsync?.asData?.value ?? [], isLoading: actionMangaAsync?.isLoading ?? false, theme: theme,
                             l10n: l10n,
                           ),
                         ),
@@ -982,16 +989,16 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                           child: _buildCuratedMangaSection(
                             title: isSpanish ? 'Comedia en tendencia' : 'Trending Comedy',
                             genreKey: 'Comedy',
-                            entries: comedyMangaAsync?.asData?.value ?? [],
-                            theme: theme,
+                            entries: comedyMangaAsync?.asData?.value ?? [], isLoading: comedyMangaAsync?.isLoading ?? false, theme: theme,
                             l10n: l10n,
                           ),
                         ),
                       ],
 
-                      const SliverToBoxAdapter(
-                        child: SizedBox(height: 90),
-                      ),
+                        const SliverToBoxAdapter(
+                          child: SizedBox(height: 90),
+                        ),
+                      ],
                     ],
                   ],
                 ),
@@ -1008,4 +1015,5 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     );
   }
 }
+
 

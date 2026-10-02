@@ -1,11 +1,13 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/data/models/anime_entry.dart';
 import 'package:seanime_app/data/models/manga_entry.dart';
 import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
 import 'package:seanime_app/presentation/screens/manga_detail_screen.dart';
 
-class DesktopRecommendationsTab extends StatelessWidget {
+class DesktopRecommendationsTab extends ConsumerWidget {
   final List recommendations;
   final bool isLoading;
 
@@ -16,7 +18,9 @@ class DesktopRecommendationsTab extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = ref.watch(translationsProvider);
+
     if (isLoading && recommendations.isEmpty) {
       return LayoutBuilder(
         builder: (context, constraints) {
@@ -49,7 +53,7 @@ class DesktopRecommendationsTab extends StatelessWidget {
               Icon(Icons.auto_awesome_outlined, color: isDark ? Colors.white38 : theme.colorScheme.outline, size: 32),
               const SizedBox(height: 10),
               Text(
-                'No hay recomendaciones disponibles',
+                l10n.noRecommendationsAvailable,
                 style: TextStyle(
                   color: isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
                   fontSize: 13.5,
@@ -77,7 +81,7 @@ class DesktopRecommendationsTab extends StatelessWidget {
           ),
           itemBuilder: (context, index) {
             final edge = recommendations[index] as Map<String, dynamic>?;
-            return _DesktopRecommendationCard(edge: edge);
+            return _DesktopRecommendationCard(edge: edge, l10n: l10n);
           },
         );
       },
@@ -113,8 +117,9 @@ class DesktopRecommendationsTab extends StatelessWidget {
 
 class _DesktopRecommendationCard extends StatefulWidget {
   final Map<String, dynamic>? edge;
+  final AppTranslations l10n;
 
-  const _DesktopRecommendationCard({required this.edge});
+  const _DesktopRecommendationCard({required this.edge, required this.l10n});
 
   @override
   State<_DesktopRecommendationCard> createState() => _DesktopRecommendationCardState();
@@ -131,7 +136,7 @@ class _DesktopRecommendationCardState extends State<_DesktopRecommendationCard> 
 
     final recId = mediaRec['id'] as int? ?? 0;
     final titleMap = mediaRec['title'] as Map<String, dynamic>?;
-    final recTitle = titleMap?['userPreferred'] ?? titleMap?['romaji'] ?? titleMap?['english'] ?? 'Sin título';
+    final recTitle = titleMap?['userPreferred'] ?? titleMap?['romaji'] ?? titleMap?['english'] ?? widget.l10n.noTitle;
     final coverMap = mediaRec['coverImage'] as Map<String, dynamic>?;
     final coverUrl = coverMap?['large'] ?? coverMap?['medium'];
 

@@ -1,3 +1,4 @@
+import 'package:seanime_app/core/i18n/translations/translations.dart';
 import 'package:seanime_app/core/server/server_manager.dart';
 import 'package:seanime_app/data/models/anime_details.dart';
 import 'package:seanime_app/data/models/anizip_data.dart';
@@ -30,6 +31,7 @@ class ResolvedEpisodeSource {
 class PlayerEpisodeResolver {
   final SeanimeRepository repository;
   final ServerManager serverManager;
+  final AppTranslations? l10n;
 
   // In-memory cache of resolved episode streams to allow instantaneous (0ms) episode switching
   static final Map<String, ResolvedEpisodeSource> _cache = {};
@@ -38,6 +40,7 @@ class PlayerEpisodeResolver {
   const PlayerEpisodeResolver({
     required this.repository,
     required this.serverManager,
+    this.l10n,
   });
 
   static String _makeKey({
@@ -166,7 +169,7 @@ class PlayerEpisodeResolver {
         final fileName = nextLocal.localFilePath != null && nextLocal.localFilePath!.isNotEmpty
             ? nextLocal.localFilePath!.split(RegExp(r'[/\\]')).last
             : null;
-        final sourceDesc = fileName != null ? 'Local • $fileName' : 'Biblioteca Local';
+        final sourceDesc = fileName != null ? 'Local • $fileName' : (l10n?.downloadedLibrary ?? 'Local Library');
 
         return ResolvedEpisodeSource(
           videoUrl: streamUrl,
@@ -201,7 +204,7 @@ class PlayerEpisodeResolver {
         final aniZipEp = (aniZipData ?? animeDetails?.aniZipData)?.getEpisode(targetEpNum);
         final epTitle = aniZipEp?.displayTitle.isNotEmpty == true
             ? aniZipEp!.displayTitle
-            : 'Episodio $targetEpNum';
+            : (l10n != null ? l10n!.episodeNumber(targetEpNum) : 'Episode $targetEpNum');
 
         return ResolvedEpisodeSource(
           videoUrl: selectedSource.url,

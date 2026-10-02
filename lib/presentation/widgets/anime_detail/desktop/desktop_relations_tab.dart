@@ -1,11 +1,13 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/data/models/anime_entry.dart';
 import 'package:seanime_app/data/models/manga_entry.dart';
 import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
 import 'package:seanime_app/presentation/screens/manga_detail_screen.dart';
 
-class DesktopRelationsTab extends StatelessWidget {
+class DesktopRelationsTab extends ConsumerWidget {
   final List relations;
   final bool isLoading;
 
@@ -16,7 +18,9 @@ class DesktopRelationsTab extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = ref.watch(translationsProvider);
+
     if (isLoading && relations.isEmpty) {
       return LayoutBuilder(
         builder: (context, constraints) {
@@ -49,7 +53,7 @@ class DesktopRelationsTab extends StatelessWidget {
               Icon(Icons.hub_outlined, color: isDark ? Colors.white38 : theme.colorScheme.outline, size: 32),
               const SizedBox(height: 10),
               Text(
-                'No hay relaciones disponibles',
+                l10n.noRelationsAvailable,
                 style: TextStyle(
                   color: isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
                   fontSize: 13.5,
@@ -77,7 +81,7 @@ class DesktopRelationsTab extends StatelessWidget {
           ),
           itemBuilder: (context, index) {
             final edge = relations[index] as Map<String, dynamic>?;
-            return _DesktopRelationCard(edge: edge);
+            return _DesktopRelationCard(edge: edge, l10n: l10n);
           },
         );
       },
@@ -122,8 +126,9 @@ class DesktopRelationsTab extends StatelessWidget {
 
 class _DesktopRelationCard extends StatefulWidget {
   final Map<String, dynamic>? edge;
+  final AppTranslations l10n;
 
-  const _DesktopRelationCard({required this.edge});
+  const _DesktopRelationCard({required this.edge, required this.l10n});
 
   @override
   State<_DesktopRelationCard> createState() => _DesktopRelationCardState();
@@ -132,36 +137,7 @@ class _DesktopRelationCard extends StatefulWidget {
 class _DesktopRelationCardState extends State<_DesktopRelationCard> {
   bool _isHovered = false;
 
-  String _formatRelationLabel(String raw) {
-    switch (raw.toUpperCase()) {
-      case 'PREQUEL':
-        return 'Precuela';
-      case 'SEQUEL':
-        return 'Secuela';
-      case 'SIDE_STORY':
-        return 'Historia paralela';
-      case 'SPIN_OFF':
-        return 'Spin-off';
-      case 'PARENT':
-        return 'Historia principal';
-      case 'ALTERNATIVE':
-        return 'Alternativo';
-      case 'SUMMARY':
-        return 'Resumen';
-      case 'CHARACTER':
-        return 'Personaje';
-      case 'OTHER':
-        return 'Relacionado';
-      case 'SOURCE':
-        return 'Obra original';
-      case 'ADAPTATION':
-        return 'Adaptación';
-      default:
-        if (raw.isEmpty) return '';
-        final s = raw.replaceAll('_', ' ').toLowerCase();
-        return s[0].toUpperCase() + s.substring(1);
-    }
-  }
+  String _formatRelationLabel(String raw) => widget.l10n.formatRelationType(raw);
 
   @override
   Widget build(BuildContext context) {
@@ -169,7 +145,7 @@ class _DesktopRelationCardState extends State<_DesktopRelationCard> {
     final node = widget.edge?['node'] as Map<String, dynamic>?;
     final relId = node?['id'] as int? ?? 0;
     final titleMap = node?['title'] as Map<String, dynamic>?;
-    final relTitle = titleMap?['userPreferred'] ?? titleMap?['romaji'] ?? titleMap?['english'] ?? 'Sin título';
+    final relTitle = titleMap?['userPreferred'] ?? titleMap?['romaji'] ?? titleMap?['english'] ?? widget.l10n.noTitle;
     final coverMap = node?['coverImage'] as Map<String, dynamic>?;
     final coverUrl = coverMap?['large'] ?? coverMap?['medium'];
     final relationLabel = _formatRelationLabel(relationType);

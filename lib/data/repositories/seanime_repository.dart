@@ -303,11 +303,11 @@ class SeanimeRepository {
     } on DioException catch (e) {
       debugPrint('Error logging in to AniList: $e');
       if (e.type == DioExceptionType.receiveTimeout || e.type == DioExceptionType.connectionTimeout) {
-        throw Exception('AniList o el servidor tardaron en responder (posible límite de peticiones de AniList). Por favor espera 1 minuto y vuelve a presionar Vincular Cuenta.');
+        throw Exception('TIMEOUT: AniList or server response timeout.');
       }
       final statusCode = e.response?.statusCode;
       if (statusCode == 429) {
-        throw Exception('AniList tiene activo un límite temporal de peticiones (rate limit). Por favor espera 60 segundos antes de volver a intentarlo.');
+        throw Exception('RATE_LIMIT: AniList rate limit.');
       }
       final errorData = e.response?.data;
       if (errorData is Map && errorData['error'] != null) {
@@ -315,14 +315,14 @@ class SeanimeRepository {
         if (serverErr.toLowerCase().contains('invalid token') ||
             serverErr.toLowerCase().contains('could not authenticate') ||
             serverErr.toLowerCase().contains('unauthorized')) {
-          throw Exception('El token de AniList no es válido o ha expirado. Asegúrate de copiar el token completo (o la URL entera) y vuelve a intentarlo.');
+          throw Exception('INVALID_TOKEN: AniList token invalid or expired.');
         }
         if (serverErr.toLowerCase().contains('rate limit')) {
-          throw Exception('AniList tiene activo un límite temporal de peticiones (rate limit). Por favor espera 60 segundos antes de reintentar.');
+          throw Exception('RATE_LIMIT: AniList rate limit.');
         }
         throw Exception(serverErr);
       }
-      throw Exception('No se pudo conectar con el servidor o AniList. Verifica tu conexión e inténtalo de nuevo.');
+      throw Exception('NETWORK_ERROR: Could not connect to server or AniList.');
     } catch (e) {
       debugPrint('Error logging in to AniList: $e');
       rethrow;
@@ -491,7 +491,7 @@ class SeanimeRepository {
     }
   }
 
-  Future<List<AnimeEntry>> getContinueWatching() async {
+  Future<List<AnimeEntry>> getContinueWatching({String? langCode}) async {
     try {
       final historyFuture = getContinuityWatchHistory();
       final localHistoryFuture = getLocalWatchHistory();
@@ -646,13 +646,14 @@ class SeanimeRepository {
                 final String? thumb = (aniEp.image != null && aniEp.image!.trim().isNotEmpty)
                     ? aniEp.image!.trim()
                     : null;
-                final String? title = aniEp.displayTitle.trim().isNotEmpty
-                    ? aniEp.displayTitle.trim()
+                final String? title = aniEp.displayTitleForLang(langCode).trim().isNotEmpty
+                    ? aniEp.displayTitleForLang(langCode).trim()
                     : null;
                 return entry.copyWith(
                   episodeThumbnail: thumb ?? entry.episodeThumbnail,
-                  episodeTitle: (title != null && !title.startsWith('Episodio')) ? title : entry.episodeTitle,
+                  episodeTitle: (title != null && !title.toLowerCase().startsWith('episod')) ? title : entry.episodeTitle,
                   airDate: aniEp.airDate ?? entry.airDate,
+
                 );
               }
             }

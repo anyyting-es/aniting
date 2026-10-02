@@ -126,7 +126,7 @@ class DesktopMangaSidebar extends ConsumerWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Mi Progreso',
+                              l10n.myProgress,
                               style: TextStyle(
                                 fontSize: 10.5,
                                 fontWeight: FontWeight.w600,
@@ -159,15 +159,15 @@ class DesktopMangaSidebar extends ConsumerWidget {
             const SizedBox(height: 18),
 
             // ── Metadata List Rows ──
-            _buildInfoRow(theme, 'Formato', format.replaceAll('_', ' ')),
-            _buildInfoRow(theme, 'Estado', l10n.formatStatus(status)),
-            if (year != null) _buildInfoRow(theme, 'Año', '$year'),
+            _buildInfoRow(theme, l10n.format, format.replaceAll('_', ' ')),
+            _buildInfoRow(theme, l10n.status, l10n.formatStatus(status)),
+            if (year != null) _buildInfoRow(theme, l10n.yearTitle, '$year'),
             if (totalChapters != null && totalChapters! > 0)
-              _buildInfoRow(theme, 'Capítulos', '$totalChapters'),
+              _buildInfoRow(theme, l10n.chapters, '$totalChapters'),
             if (totalVolumes != null && totalVolumes! > 0)
-              _buildInfoRow(theme, 'Volúmenes', '$totalVolumes'),
+              _buildInfoRow(theme, l10n.volumes, '$totalVolumes'),
             if (score != null && score! > 0)
-              _buildInfoRow(theme, 'Puntuación', '★ ${score!.toStringAsFixed(1)} / 10'),
+              _buildInfoRow(theme, l10n.score, '★ ${score!.toStringAsFixed(1)} / 10'),
           ],
         ],
       ),

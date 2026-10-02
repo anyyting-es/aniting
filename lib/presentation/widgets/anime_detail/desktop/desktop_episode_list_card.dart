@@ -1,8 +1,10 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'desktop_episode_models.dart';
 
-class DesktopListEpisodeCard extends StatefulWidget {
+class DesktopListEpisodeCard extends ConsumerStatefulWidget {
   final DesktopEpisodeItemData ep;
   final bool isLoading;
   final String formattedTitle;
@@ -19,14 +21,15 @@ class DesktopListEpisodeCard extends StatefulWidget {
   });
 
   @override
-  State<DesktopListEpisodeCard> createState() => _DesktopListEpisodeCardState();
+  ConsumerState<DesktopListEpisodeCard> createState() => _DesktopListEpisodeCardState();
 }
 
-class _DesktopListEpisodeCardState extends State<DesktopListEpisodeCard> {
+class _DesktopListEpisodeCardState extends ConsumerState<DesktopListEpisodeCard> {
   bool _isHovered = false;
 
   @override
   Widget build(BuildContext context) {
+    final l10n = ref.watch(translationsProvider);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final titleColor = isDark ? Colors.white : theme.colorScheme.onSurface;
@@ -148,7 +151,7 @@ class _DesktopListEpisodeCardState extends State<DesktopListEpisodeCard> {
                         Text(
                           widget.ep.synopsis != null && widget.ep.synopsis!.isNotEmpty
                               ? widget.ep.synopsis!
-                              : 'Sin descripción.',
+                              : l10n.noDescriptionAvailable,
                           maxLines: 3,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(

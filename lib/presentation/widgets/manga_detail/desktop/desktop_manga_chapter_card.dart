@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/i18n/i18n_provider.dart';
 import 'package:seanime_app/data/models/manga_entry.dart';
 
-class DesktopMangaChapterCard extends StatefulWidget {
+class DesktopMangaChapterCard extends ConsumerStatefulWidget {
   final MangaChapter chapter;
   final bool isRead;
   final bool isDownloaded;
@@ -22,29 +24,30 @@ class DesktopMangaChapterCard extends StatefulWidget {
   });
 
   @override
-  State<DesktopMangaChapterCard> createState() => _DesktopMangaChapterCardState();
+  ConsumerState<DesktopMangaChapterCard> createState() => _DesktopMangaChapterCardState();
 }
 
-class _DesktopMangaChapterCardState extends State<DesktopMangaChapterCard> {
+class _DesktopMangaChapterCardState extends ConsumerState<DesktopMangaChapterCard> {
   bool _isHovered = false;
 
-  String _formatChapterLabel(MangaChapter c) {
+  String _formatChapterLabel(MangaChapter c, AppTranslations l10n) {
     if (c.chapter.isNotEmpty) {
       final parsed = double.tryParse(c.chapter);
       if (parsed != null && parsed == parsed.roundToDouble()) {
-        return 'Cap. ${parsed.toInt()}';
+        return l10n.chapterAbbr('${parsed.toInt()}');
       }
-      return 'Cap. ${c.chapter}';
+      return l10n.chapterAbbr(c.chapter);
     }
-    return 'Cap. ${c.index + 1}';
+    return l10n.chapterAbbr('${c.index + 1}');
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = ref.watch(translationsProvider);
     final isDark = theme.brightness == Brightness.dark;
     final cardOpacity = widget.isRead ? (_isHovered ? 0.85 : 0.45) : 1.0;
-    final chapterLabel = _formatChapterLabel(widget.chapter);
+    final chapterLabel = _formatChapterLabel(widget.chapter, l10n);
 
     final hasTitle = widget.chapter.title.isNotEmpty &&
         widget.chapter.title.toLowerCase() != chapterLabel.toLowerCase() &&
@@ -124,7 +127,7 @@ class _DesktopMangaChapterCardState extends State<DesktopMangaChapterCard> {
                         child: Text(
                           hasTitle
                               ? widget.chapter.title
-                              : 'Capítulo ${widget.chapter.chapter.isNotEmpty ? widget.chapter.chapter : (widget.chapter.index + 1)}',
+                              : '${l10n.chapter} ${widget.chapter.chapter.isNotEmpty ? widget.chapter.chapter : (widget.chapter.index + 1)}',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
@@ -164,7 +167,7 @@ class _DesktopMangaChapterCardState extends State<DesktopMangaChapterCard> {
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
-                      'LEÍDO',
+                      l10n.readBadge,
                       style: TextStyle(
                         fontSize: 8.5,
                         fontWeight: FontWeight.w700,
@@ -198,7 +201,7 @@ class _DesktopMangaChapterCardState extends State<DesktopMangaChapterCard> {
                     color: theme.colorScheme.onSurfaceVariant.withValues(alpha: _isHovered ? 0.9 : 0.5),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(minWidth: 26, minHeight: 26),
-                    tooltip: 'Descargar',
+                    tooltip: l10n.downloadChapterAction,
                     onPressed: widget.onDownload,
                   ),
 

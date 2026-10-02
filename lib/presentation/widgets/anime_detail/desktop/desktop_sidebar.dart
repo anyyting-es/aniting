@@ -1,7 +1,9 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:seanime_app/core/i18n/i18n_provider.dart';
 
-class DesktopSidebar extends StatelessWidget {
+class DesktopSidebar extends ConsumerWidget {
   final String? coverUrl;
   final String format;
   final String? status;
@@ -22,8 +24,9 @@ class DesktopSidebar extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final l10n = ref.watch(translationsProvider);
 
     return SizedBox(
       width: 260,
@@ -40,17 +43,17 @@ class DesktopSidebar extends StatelessWidget {
           const SizedBox(height: 24),
 
           // Metadata Sidebar items
-          _buildMetaItem(theme, 'Format', format == 'TV' ? 'TV Show' : format.replaceAll('_', ' ')),
+          _buildMetaItem(theme, l10n.format, format == 'TV' ? l10n.formatTv : format.replaceAll('_', ' ')),
           if (status != null && status!.isNotEmpty)
-            _buildMetaItem(theme, 'Status', status!.replaceAll('_', ' ')),
+            _buildMetaItem(theme, l10n.status, l10n.formatStatus(status)),
           if (airedStr.isNotEmpty)
-            _buildMetaItem(theme, 'Aired', airedStr),
+            _buildMetaItem(theme, l10n.aired, airedStr),
           if (seasonYearStr.isNotEmpty)
-            _buildMetaItem(theme, 'Season', seasonYearStr),
+            _buildMetaItem(theme, l10n.season, seasonYearStr),
           if (score != null && score! > 0)
-            _buildMetaItem(theme, 'Average score', '${score!.round()}%'),
+            _buildMetaItem(theme, l10n.averageScore, '${score!.round()}%'),
           if (studio.isNotEmpty)
-            _buildMetaItem(theme, 'Studio', studio),
+            _buildMetaItem(theme, l10n.studio, studio),
         ],
       ),
     );

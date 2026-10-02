@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher_string.dart';
+import '../../../../core/i18n/i18n_provider.dart';
 
-class DesktopMangaActionBar extends StatelessWidget {
+class DesktopMangaActionBar extends ConsumerWidget {
   final int mediaId;
   final String title;
   final int progress;
@@ -40,21 +42,22 @@ class DesktopMangaActionBar extends StatelessWidget {
     } catch (_) {}
   }
 
-  void _shareManga(BuildContext context, String title) {
+  void _shareManga(BuildContext context, String title, String message) {
     Clipboard.setData(ClipboardData(text: 'https://anilist.co/manga/$mediaId'));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Enlace copiado para $title'),
+        content: Text(message),
         behavior: SnackBarBehavior.floating,
       ),
     );
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = ref.watch(translationsProvider);
     final label = progress > 0
-        ? 'Continuar Leyendo • Cap. ${progress + 1}'
-        : 'Empezar a Leer';
+        ? l10n.continueChapterNumbered(progress + 1)
+        : l10n.startReading;
 
     return Row(
       children: [
@@ -67,7 +70,7 @@ class DesktopMangaActionBar extends StatelessWidget {
 
         // Bookmark Button (AniList status modal)
         _HoverIconButton(
-          tooltip: 'Editar en AniList',
+          tooltip: l10n.editInAnilist,
           icon: Icons.bookmark_border_rounded,
           onTap: () => onOpenEditEntryModal(title),
         ),
@@ -75,7 +78,7 @@ class DesktopMangaActionBar extends StatelessWidget {
 
         // Batch Download Button
         _HoverIconButton(
-          tooltip: 'Descargar por lote',
+          tooltip: l10n.batchDownload,
           icon: Icons.download_rounded,
           onTap: onBatchDownload,
         ),
@@ -83,16 +86,16 @@ class DesktopMangaActionBar extends StatelessWidget {
 
         // Share Button
         _HoverIconButton(
-          tooltip: 'Compartir',
+          tooltip: l10n.share,
           icon: Icons.share_rounded,
-          onTap: () => _shareManga(context, title),
+          onTap: () => _shareManga(context, title, l10n.linkCopiedFor(title)),
         ),
         const SizedBox(width: 8),
 
         // AniList External Link with Official Brand Icon (Clean, no borders)
         _HoverBrandIcon(
           assetPath: 'assets/icons/AniList_logo.png',
-          tooltip: 'Ver en AniList',
+          tooltip: l10n.viewOnAnilist,
           onTap: () => _launchAnilist(mediaId),
         ),
         const SizedBox(width: 8),
@@ -101,7 +104,7 @@ class DesktopMangaActionBar extends StatelessWidget {
         if (idMal != null) ...[
           _HoverBrandIcon(
             assetPath: 'assets/icons/MyAnimeList_Logo.png',
-            tooltip: 'Ver en MyAnimeList',
+            tooltip: l10n.viewOnMal,
             onTap: () => _launchMal(idMal!),
           ),
           const SizedBox(width: 8),

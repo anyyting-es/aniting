@@ -66,7 +66,8 @@ class FloatingDockPill extends StatefulWidget {
     if (items.isNotEmpty) {
       total += (items.length - 1) * itemGap;
       for (int i = 0; i < items.length; i++) {
-        if (i == selectedIndex && labelProgress > 0.05) {
+        final isSelected = selectedIndex == (items[i].targetIndex ?? i);
+        if (isSelected && labelProgress > 0.05) {
           final textWidth = measureTextWidth(items[i].label, labelStyle);
           final expandedButtonWidth = baseButtonWidth + textWidth + 18.0;
           total += lerpDouble(baseButtonWidth, expandedButtonWidth, labelProgress.clamp(0.0, 1.0))!;
@@ -148,7 +149,7 @@ class _FloatingDockPillState extends State<FloatingDockPill> {
                     _buildNavItem(
                       index: i,
                       item: widget.items[i],
-                      isSelected: widget.selectedIndex == i,
+                      isSelected: widget.selectedIndex == (widget.items[i].targetIndex ?? i),
                       theme: theme,
                     ),
                   ],

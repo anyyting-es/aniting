@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import '../../../../data/models/onlinestream_models.dart';
 import '../../../screens/extensions_marketplace_screen.dart';
 
 /// Full modal sheet for advanced options (Sub/Dub audio toggle, manual linking, cache reload, extensions).
-class AnimeDetailAdvancedSheet extends StatefulWidget {
+class AnimeDetailAdvancedSheet extends ConsumerStatefulWidget {
   final OnlinestreamProvider? selectedProvider;
   final bool isDubbed;
   final ValueChanged<bool> onToggleDubbed;
@@ -21,10 +23,10 @@ class AnimeDetailAdvancedSheet extends StatefulWidget {
   });
 
   @override
-  State<AnimeDetailAdvancedSheet> createState() => _AnimeDetailAdvancedSheetState();
+  ConsumerState<AnimeDetailAdvancedSheet> createState() => _AnimeDetailAdvancedSheetState();
 }
 
-class _AnimeDetailAdvancedSheetState extends State<AnimeDetailAdvancedSheet> {
+class _AnimeDetailAdvancedSheetState extends ConsumerState<AnimeDetailAdvancedSheet> {
   late bool _dubbed;
 
   @override
@@ -35,6 +37,7 @@ class _AnimeDetailAdvancedSheetState extends State<AnimeDetailAdvancedSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = ref.watch(translationsProvider);
     final theme = Theme.of(context);
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     final safeBottom = MediaQuery.of(context).padding.bottom;
@@ -75,10 +78,10 @@ class _AnimeDetailAdvancedSheetState extends State<AnimeDetailAdvancedSheet> {
                   children: [
                     Icon(Icons.tune_rounded, size: 20, color: theme.colorScheme.primary),
                     const SizedBox(width: 10),
-                    const Expanded(
+                    Expanded(
                       child: Text(
-                        'Opciones Avanzadas',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        l10n.advancedOptions,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                       ),
                     ),
                     IconButton(
@@ -96,7 +99,7 @@ class _AnimeDetailAdvancedSheetState extends State<AnimeDetailAdvancedSheet> {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 14, 20, 6),
                   child: Text(
-                    'AUDIO',
+                    l10n.audioHeading,
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
@@ -116,7 +119,7 @@ class _AnimeDetailAdvancedSheetState extends State<AnimeDetailAdvancedSheet> {
                               color: !_dubbed
                                   ? theme.colorScheme.onPrimaryContainer
                                   : theme.colorScheme.onSurfaceVariant),
-                          label: const Text('Subtitulado'),
+                          label: Text(l10n.audioSubtitled),
                           selected: !_dubbed,
                           onSelected: (val) {
                             HapticFeedback.selectionClick();
@@ -133,7 +136,7 @@ class _AnimeDetailAdvancedSheetState extends State<AnimeDetailAdvancedSheet> {
                               color: _dubbed
                                   ? theme.colorScheme.onPrimaryContainer
                                   : theme.colorScheme.onSurfaceVariant),
-                          label: const Text('Doblado (Dub)'),
+                          label: Text(l10n.audioDubbedFull),
                           selected: _dubbed,
                           onSelected: (val) {
                             HapticFeedback.selectionClick();
@@ -167,7 +170,7 @@ class _AnimeDetailAdvancedSheetState extends State<AnimeDetailAdvancedSheet> {
                             widget.onOpenManualMapping?.call();
                           },
                           icon: const Icon(Icons.link_rounded, size: 18),
-                          label: const Text('Vincular'),
+                          label: Text(l10n.link),
                         ),
                       ),
                     if (widget.onOpenManualMapping != null && widget.onRefreshCache != null)
@@ -187,7 +190,7 @@ class _AnimeDetailAdvancedSheetState extends State<AnimeDetailAdvancedSheet> {
                             Navigator.pop(context);
                           },
                           icon: const Icon(Icons.refresh_rounded, size: 18),
-                          label: const Text('Recargar'),
+                          label: Text(l10n.refresh),
                         ),
                       ),
                   ],
@@ -206,7 +209,7 @@ class _AnimeDetailAdvancedSheetState extends State<AnimeDetailAdvancedSheet> {
                     );
                   },
                   icon: const Icon(Icons.storefront_rounded, size: 18),
-                  label: const Text('Explorar más extensiones en la tienda'),
+                  label: Text(l10n.exploreMarketplaceMore),
                 ),
               ),
             ],

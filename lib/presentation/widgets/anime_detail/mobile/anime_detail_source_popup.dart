@@ -42,7 +42,7 @@ class AnimeDetailSourcePopup extends ConsumerStatefulWidget {
     return showGeneralDialog(
       context: context,
       barrierDismissible: true,
-      barrierLabel: 'Cerrar selector de fuentes',
+      barrierLabel: 'Close source selector',
       barrierColor: Colors.black.withValues(alpha: 0.55),
       transitionDuration: const Duration(milliseconds: 320),
       transitionBuilder: (context, anim, secondaryAnim, child) {
@@ -161,16 +161,16 @@ class _AnimeDetailSourcePopupState extends ConsumerState<AnimeDetailSourcePopup>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Fuentes Online',
-                            style: TextStyle(
+                          Text(
+                            l10n.onlineSources,
+                            style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 14.5,
                               letterSpacing: -0.2,
                             ),
                           ),
                           Text(
-                            '${widget.providers.length} disponibles',
+                            l10n.availableSourcesCountLabel(widget.providers.length),
                             style: TextStyle(
                               color: theme.colorScheme.onSurfaceVariant,
                               fontSize: 11,
@@ -325,7 +325,7 @@ class _AnimeDetailSourcePopupState extends ConsumerState<AnimeDetailSourcePopup>
                         const SizedBox(width: 6),
                         Flexible(
                           child: Text(
-                            'Opciones avanzadas',
+                            l10n.advancedOptions,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontSize: 12.5,

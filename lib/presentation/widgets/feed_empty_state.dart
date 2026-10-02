@@ -40,7 +40,7 @@ class FeedEmptyState extends ConsumerWidget {
             ? (isManga
                 ? (isSpanish ? 'Comienza a leer' : 'Start reading')
                 : (isSpanish ? 'Comienza a explorar' : 'Start exploring'))
-            : (isManga ? 'Tu lista de manga está vacía' : 'Tu lista de anime está vacía'));
+            : (isManga ? l10n.emptyMangaFeedTitle : l10n.emptyAnimeFeedTitle));
 
     final description = isOffline
         ? (isSpanish
@@ -55,8 +55,8 @@ class FeedEmptyState extends ConsumerWidget {
                     ? 'Explore the catalog or read any chapter to build your feed automatically, or connect AniList to sync your lists.'
                     : 'Explore the catalog or play any episode to build your feed automatically, or connect AniList to sync your lists.'))
             : (isManga
-                ? 'Aún no tienes mangas en curso. Explora el catálogo o busca tus series favoritas.'
-                : 'Aún no tienes animes en seguimiento. Explora el catálogo o busca tus series favoritas.'));
+                ? l10n.emptyMangaFeedDesc
+                : l10n.emptyAnimeFeedDesc));
 
     final mainIcon = isOffline
         ? Icons.wifi_off_rounded
@@ -247,9 +247,9 @@ class FeedEmptyState extends ConsumerWidget {
                     onExplore?.call();
                   },
                   icon: const Icon(Icons.explore_rounded, size: 16),
-                  label: const Text(
-                    'Explorar',
-                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                  label: Text(
+                    l10n.navExplore,
+                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
                   ),
                 ),
               ],

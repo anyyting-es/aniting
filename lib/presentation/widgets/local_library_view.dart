@@ -185,9 +185,11 @@ class _LocalLibraryViewState extends ConsumerState<LocalLibraryView> {
                     ? ep.thumbnail
                     : aniZipEp?.image;
                 final epSynopsis = aniZipEp?.synopsis;
+                final appLang = ref.watch(appLanguageProvider);
+                final langCode = appLang.code;
                 final epTitle = (ep.episodeTitle != null && ep.episodeTitle!.isNotEmpty)
                     ? ep.episodeTitle!
-                    : (aniZipEp?.displayTitle ?? ep.displayTitle);
+                    : (aniZipEp?.displayTitleForLang(langCode) ?? ep.displayTitle);
 
                 return EpisodeGridItem(
                   episodeNumber: ep.episodeNumber,
@@ -235,9 +237,11 @@ class _LocalLibraryViewState extends ConsumerState<LocalLibraryView> {
                             ? ep.thumbnail
                             : aniZipEp?.image;
                         final epSynopsis = aniZipEp?.synopsis;
+                        final appLang = ref.watch(appLanguageProvider);
+                        final langCode = appLang.code;
                         final epTitle = (ep.episodeTitle != null && ep.episodeTitle!.isNotEmpty)
                             ? ep.episodeTitle!
-                            : (aniZipEp?.displayTitle ?? ep.displayTitle);
+                            : (aniZipEp?.displayTitleForLang(langCode) ?? ep.displayTitle);
 
                         return EpisodeListItem(
                           episodeNumber: ep.episodeNumber,

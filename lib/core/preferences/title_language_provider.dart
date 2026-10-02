@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:seanime_app/core/i18n/translations/translations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 enum TitleLanguage {
@@ -10,6 +11,29 @@ enum TitleLanguage {
   final String example;
   final String key;
   const TitleLanguage(this.label, this.example, this.key);
+
+  String localizedLabel(AppTranslations l10n) {
+    switch (this) {
+      case TitleLanguage.romaji:
+        return l10n.titleRomaji;
+      case TitleLanguage.english:
+        return l10n.titleEnglish;
+      case TitleLanguage.native:
+        return l10n.titleNative;
+    }
+  }
+
+  String localizedExample(AppTranslations l10n) {
+    final prefix = l10n.titleExample;
+    switch (this) {
+      case TitleLanguage.romaji:
+        return '$prefix Sousou no Frieren';
+      case TitleLanguage.english:
+        return '$prefix Frieren: Beyond Journey\'s End';
+      case TitleLanguage.native:
+        return '$prefix 葬送のフリーレン';
+    }
+  }
 
   static TitleLanguage fromKey(String? key) {
     switch (key) {

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/theme/app_theme_colors.dart';
 import 'package:seanime_app/data/models/torrent_file_preview.dart';
 import 'package:seanime_app/data/models/torrent_models.dart';
@@ -13,7 +15,7 @@ class TorrentBatchSelectionResult {
   });
 }
 
-class TorrentBatchFilesSheet extends StatefulWidget {
+class TorrentBatchFilesSheet extends ConsumerStatefulWidget {
   final TorrentItem torrent;
   final List<TorrentFilePreview> files;
   final int targetEpisodeNumber;
@@ -59,10 +61,10 @@ class TorrentBatchFilesSheet extends StatefulWidget {
   }
 
   @override
-  State<TorrentBatchFilesSheet> createState() => _TorrentBatchFilesSheetState();
+  ConsumerState<TorrentBatchFilesSheet> createState() => _TorrentBatchFilesSheetState();
 }
 
-class _TorrentBatchFilesSheetState extends State<TorrentBatchFilesSheet> {
+class _TorrentBatchFilesSheetState extends ConsumerState<TorrentBatchFilesSheet> {
   late TorrentFilePreview? _selectedFile;
   late final TorrentFilePreview? _autoMatchedFile;
   String _searchQuery = '';
@@ -100,6 +102,7 @@ class _TorrentBatchFilesSheetState extends State<TorrentBatchFilesSheet> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = context.themeColors;
+    final l10n = ref.watch(translationsProvider);
     final filtered = _filteredFiles;
 
     return DraggableScrollableSheet(
@@ -153,7 +156,7 @@ class _TorrentBatchFilesSheetState extends State<TorrentBatchFilesSheet> {
                           Row(
                             children: [
                               Text(
-                                'Archivos del Batch',
+                                l10n.batchFiles,
                                 style: theme.textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -166,7 +169,7 @@ class _TorrentBatchFilesSheetState extends State<TorrentBatchFilesSheet> {
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Text(
-                                  '${widget.files.length} archivos',
+                                  l10n.filesCount(widget.files.length),
                                   style: TextStyle(
                                     fontSize: 10,
                                     fontWeight: FontWeight.w600,
@@ -207,7 +210,7 @@ class _TorrentBatchFilesSheetState extends State<TorrentBatchFilesSheet> {
                     controller: _searchController,
                     style: const TextStyle(fontSize: 13),
                     decoration: InputDecoration(
-                      hintText: 'Filtrar archivos o episodio...',
+                      hintText: l10n.filterFilesOrEpisode,
                       isDense: true,
                       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       prefixIcon: const Icon(Icons.search_rounded, size: 18),
@@ -233,7 +236,7 @@ class _TorrentBatchFilesSheetState extends State<TorrentBatchFilesSheet> {
                 child: filtered.isEmpty
                     ? Center(
                         child: Text(
-                          'No se encontraron archivos con "$_searchQuery"',
+                          l10n.noFilesMatching(_searchQuery),
                           style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13),
                         ),
                       )
@@ -292,7 +295,7 @@ class _TorrentBatchFilesSheetState extends State<TorrentBatchFilesSheet> {
                                                   file.displayTitle.isNotEmpty
                                                       ? file.displayTitle
                                                       : (file.episodeNumber > 0
-                                                          ? 'Episodio ${file.episodeNumber}'
+                                                          ? l10n.episodeNumber(file.episodeNumber)
                                                           : file.fileName),
                                                   style: TextStyle(
                                                     fontWeight: isSelected
@@ -316,14 +319,14 @@ class _TorrentBatchFilesSheetState extends State<TorrentBatchFilesSheet> {
                                                     color: Colors.amber.withValues(alpha: 0.2),
                                                     borderRadius: BorderRadius.circular(5),
                                                   ),
-                                                  child: const Row(
+                                                  child: Row(
                                                     mainAxisSize: MainAxisSize.min,
                                                     children: [
                                                       Icon(Icons.star_rounded,
                                                           size: 11, color: Colors.amber),
                                                       SizedBox(width: 2),
                                                       Text(
-                                                        'Episodio actual',
+                                                        l10n.currentEpisodeBadge,
                                                         style: TextStyle(
                                                           fontSize: 9,
                                                           fontWeight: FontWeight.bold,
@@ -400,8 +403,8 @@ class _TorrentBatchFilesSheetState extends State<TorrentBatchFilesSheet> {
                           icon: const Icon(Icons.play_arrow_rounded),
                           label: Text(
                             _selectedFile != null
-                                ? 'Reproducir (${_selectedFile!.displayTitle.isNotEmpty ? _selectedFile!.displayTitle : 'Ep. ${_selectedFile!.episodeNumber > 0 ? _selectedFile!.episodeNumber : _selectedFile!.index + 1}'})'
-                                : 'Selecciona un archivo',
+                                ? '${l10n.play} (${_selectedFile!.displayTitle.isNotEmpty ? _selectedFile!.displayTitle : 'Ep. ${_selectedFile!.episodeNumber > 0 ? _selectedFile!.episodeNumber : _selectedFile!.index + 1}'})'
+                                : l10n.selectAFile,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -415,7 +418,7 @@ class _TorrentBatchFilesSheetState extends State<TorrentBatchFilesSheet> {
                       ),
                       const SizedBox(width: 8),
                       IconButton.filledTonal(
-                        tooltip: 'Abrir en reproductor externo',
+                        tooltip: l10n.openInExternalPlayer,
                         icon: const Icon(Icons.open_in_new_rounded),
                         onPressed: _selectedFile != null
                             ? () {

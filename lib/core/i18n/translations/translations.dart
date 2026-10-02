@@ -106,12 +106,22 @@ abstract class AppTranslations {
   String get animeDynamicTheme;
   String get animeDynamicThemeDesc;
   String get themeMode;
+  String get darkMode;
+  String get lightMode;
+  String get systemMode;
   String get themeDark;
   String get themeLight;
   String get themeOled;
   String get themeSystem;
   String get themePresets;
   String get themePresetsDesc;
+  String get materialPurpleName;
+  String get materialBlueName;
+  String get materialGreenName;
+  String get materialOrangeName;
+  String get materialCrimsonName;
+  String get materialTealName;
+  String get paletteSystem;
   String get iconPack;
   String get iconPackDesc;
   String get iconPackLucide;
@@ -408,6 +418,10 @@ abstract class AppTranslations {
   String get tokenIncompletePrompt;
   String get loginSuccessAnilist;
   String get failedToLinkAccount;
+  String get anilistRateLimitError;
+  String get anilistTimeoutError;
+  String get anilistInvalidTokenError;
+  String get anilistConnectionError;
   String get logoutConfirmTitle;
   String get logoutConfirmContent;
   String get sessionLoggedOut;
@@ -691,4 +705,209 @@ abstract class AppTranslations {
   String formatSeason(String? season);
   String formatRelationType(String? type);
   String formatWatchStatus(String? status, int progress, int? totalEpisodes, String fallbackFormat);
+
+  // About Screen & Version Check
+  String get nativeClientSubtitle;
+  String get developerAndCredits;
+  String get developerSubtitle;
+  String get originalServerSubtitle;
+  String get discordCommunity;
+  String get discordSubtitle;
+  String get systemAndUpdates;
+  String get clientDevice;
+  String get buildRelease;
+  String get seanimeCoreServer;
+  String serverVersionConnected(String version);
+  String get serverOfflineOrLocal;
+  String get checkingUpdatesGithub;
+  String get checkLatestGithub;
+  String latestVersionSnackbar(String version);
+  String get failedCheckUpdateSnackbar;
+  String get openSourceLicenses;
+  String get openSourceLicensesDesc;
+  String get devAndTesting;
+  String get welcomeDevPreviewDesc;
+  String get welcomeResetDesc;
+
+  // Stream Selection & Modes
+  String get playbackMode;
+  String get communityServers;
+  String get torrentP2p;
+  String get downloadedLibrary;
+  String get onlineSources;
+  String availableSourcesCountLabel(int count);
+  String get advancedOptions;
+  String get closeModeSelector;
+  String get closeSourceSelector;
+  String get audioHeading;
+  String get audioDubbedFull;
+  String get exploreMarketplaceMore;
+  String loadingEpisodesFrom(String provider);
+  String noEpisodesFoundInProvider(String provider);
+  String get tryAnotherServerOrSubDub;
+  String episodeNumber(int number);
+
+  // Settings & Customization
+  String get cornerAndBorders;
+  String get adjustCornerRadiusDesc;
+  String get cornerRadiusSquare;
+  String get cornerRadiusSubtle;
+  String get cornerRadiusNormal;
+  String get cornerRadiusRound;
+  String get cornerRadiusCurved;
+  String get interfaceModeTitle;
+  String get interfaceModeDesc;
+  String get interfaceModeDialogTitle;
+  String get interfaceModeAuto;
+  String get interfaceModeAutoDesc;
+  String get interfaceModeDesktop;
+  String get interfaceModeDesktopDesc;
+  String get interfaceModeMobile;
+  String get interfaceModeMobileDesc;
+  String get interfaceModeTv;
+  String get interfaceModeTvDesc;
+  String get episodeDisplayDetailedDesc;
+  String get episodeDisplayGridDesc;
+  String get oledTrueBlackTitle;
+  String get oledTrueBlackDesc;
+  String get fontSystemDisplayName;
+  String get fontSystemDesc;
+  String get pathRestoredDefault;
+  String get workDirSavedSuccess;
+  String get workDirSaveError;
+
+  // App Update Dialog
+  String get updateDialogTitle;
+  String updateDialogCurrentVersion(String version, String size);
+  String get updateDialogChangelogTitle;
+  String get updateDialogDefaultNotes;
+  String get updateDialogDownloading;
+  String get updateDialogLater;
+  String get updateDialogUpdateNow;
+  String get updateDialogDownloadingBtn;
+  String get updateDialogInstalling;
+  String get updateDialogInstallUpdate;
+
+  // Empty Feed States & Downloads
+  String get emptyMangaFeedTitle;
+  String get emptyAnimeFeedTitle;
+  String get emptyMangaFeedDesc;
+  String get emptyAnimeFeedDesc;
+  String get noDownloadedAnimeTitle;
+  String get noDownloadedAnimeDesc;
+  String get noDownloadedMangaTitle;
+  String get noDownloadedMangaDesc;
+  String get exploreManga;
+  String downloadedAnimeCount(int count);
+  String downloadedMangaCount(int mangaCount, int chaptersCount);
+  String storageUsed(String formattedSize);
+  String get refreshDownloadsTooltip;
+
+  // Player & UI Details
+  String prevEpisodeNumbered(int number);
+  String scorePercent(String score);
+  String get anilistConnectedBadge;
+
+  // Play & Reading Button States
+  String get rewatch;
+  String continueEpisodeNumbered(int number);
+  String get startWatching;
+  String get startReading;
+  String continueChapterNumbered(int number);
+
+  // Favorites & Actions
+  String get inFavorites;
+  String get addToFavorites;
+  String get addedToFavorites;
+  String get removedFromFavorites;
+  String get editInAnilist;
+  String get share;
+  String get watchTrailer;
+  String get viewOnAnilist;
+  String get viewOnMal;
+  String linkCopiedFor(String title);
+  String get details;
+  String get batchDownload;
+  String get downloadChapterAction;
+  String get downloadBatch;
+  String get readBadge;
+  String get progress;
+  String get myProgress;
+  String get volumes;
+  String get score;
+  String get aired;
+  String get localUser;
+  String get scan;
+
+  // Empty States & Content Tabs
+  String get noRelationsAvailable;
+  String get noRecommendationsAvailable;
+  String get noCharactersAvailable;
+  String get noSimilarWorksAvailable;
+  String get noDownloadedChaptersForManga;
+  String get noChaptersMatchingFilters;
+  String get resetFilters;
+  String get exploreMangaExtensions;
+  String get reloadChapters;
+  String get oldestFirst;
+  String get newestFirst;
+  String get onlyDownloaded;
+  String get viewAllChapters;
+  String get informationTitle;
+  String get prevEpisode;
+  String get synopsisMore;
+  String get synopsisLess;
+  String get searchChapterPlaceholder;
+  String get installMangaExtensionNotice;
+  String hideReadChapters(int count);
+  String hidingReadChapters(int count);
+  String downloadedCount(int count);
+  String chaptersCount(int count);
+  String chapterAbbr(String number);
+  String get noChaptersAvailable;
+  String episodeSoon(int number);
+  String get currentEpisodeBadge;
+  String get batchFiles;
+  String filesCount(int count);
+  String get filterFilesOrEpisode;
+  String noFilesMatching(String query);
+  String get selectAFile;
+  String get delete;
+  String get deleteFromAnilist;
+  String get deleteFromList;
+  String deleteAnilistConfirm(String title);
+  String deleteLocalConfirm(String title);
+  String get removedFromList;
+  String get selectProviderToDownload;
+  String downloadingChapter(String chapter);
+  String errorSchedulingDownload(String error);
+  String get downloadChapters;
+  String providerWithUnreadCount(String provider, int unreadCount);
+  String downloadNextUnread(int count);
+  String downloadNextUnreadDesc(int count);
+  String downloadAllUnread(int count);
+  String get downloadAllUnreadDesc;
+  String downloadingChaptersCount(int count);
+  String torrentsFilterCount(int filtered, int total, String quality);
+  String noTorrentsWithQuality(String quality);
+  String get resetQualityFilterAll;
+  String get myCollection;
+  String get previous;
+  String get next;
+  String pageOf(int current, int total);
+  String chapterDownloaded(String number);
+  String get errorLoadingChapters;
+  String exploreAllMarketplaceCountDesc(int count);
+  String get updateNoApkFound;
+  String updateDownloadError(String error);
+  String get updateAndroidOnly;
+  String updateInstallerError(String error);
+
+  // Navigation Sections
+  String get navigationSections;
+  String get animeSection;
+  String get animeSectionDesc;
+  String get mangaSection;
+  String get mangaSectionDesc;
+  String get cannotDisableBothSections;
 }

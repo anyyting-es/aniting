@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/theme/app_palette.dart';
 import 'package:seanime_app/core/theme/app_theme_colors.dart';
 import 'package:seanime_app/core/theme/custom_route_transitions.dart';
@@ -18,6 +19,30 @@ class AppAccentColor {
   final Color color;
 
   const AppAccentColor({required this.name, required this.color});
+
+  String localizedName(AppTranslations l10n) {
+    final isEn = l10n is EnglishTranslations;
+    switch (name) {
+      case 'Violeta / Lavanda':
+        return isEn ? 'Violet / Lavender' : 'Violeta / Lavanda';
+      case 'Azul Calmo':
+        return isEn ? 'Calm Blue' : 'Azul Calmo';
+      case 'Cian / Menta':
+        return isEn ? 'Cyan / Mint' : 'Cian / Menta';
+      case 'Rosa':
+        return isEn ? 'Pink' : 'Rosa';
+      case 'Ámbar':
+        return isEn ? 'Amber' : 'Ámbar';
+      case 'Esmeralda':
+        return isEn ? 'Emerald' : 'Esmeralda';
+      case 'Cereza':
+        return isEn ? 'Cherry' : 'Cereza';
+      case 'Pizarra':
+        return isEn ? 'Slate' : 'Pizarra';
+      default:
+        return name;
+    }
+  }
 }
 
 const List<AppAccentColor> kMaterialAccents = [
@@ -45,6 +70,45 @@ class AppFontOption {
     this.textThemeBuilder,
     this.textStyleBuilder,
   });
+
+  String localizedDisplayName(AppTranslations l10n) {
+    if (id == 'system') return l10n.fontSystemDisplayName;
+    return displayName;
+  }
+
+  String localizedDescription(AppTranslations l10n) {
+    final isEn = l10n is EnglishTranslations;
+    switch (id) {
+      case 'system':
+        return l10n.fontSystemDesc;
+      case 'inter':
+        return isEn
+            ? 'Modern, clean with maximum web/desktop legibility'
+            : 'Moderna, limpia y de máxima legibilidad web/desktop';
+      case 'poppins':
+        return isEn
+            ? 'Geometric, stylish and modern'
+            : 'Geométrica, estilizada y moderna';
+      case 'outfit':
+        return isEn
+            ? 'Contemporary, refined and minimalist'
+            : 'Contemporánea, refinada y minimalista';
+      case 'rubik':
+        return isEn
+            ? 'Slightly rounded and friendly edges'
+            : 'Bordes ligeramente suaves y amigables';
+      case 'nunito':
+        return isEn
+            ? 'Rounded, warm with anime aesthetics'
+            : 'Redondeada, cálida y estética anime';
+      case 'jetbrains_mono':
+        return isEn
+            ? 'Technical and gamer monospace font'
+            : 'Monoespaciada técnica y gamer';
+      default:
+        return description;
+    }
+  }
 }
 
 /// Fallback fonts for CJK (Japanese / Kanji / Hiragana / Katakana) glyphs.

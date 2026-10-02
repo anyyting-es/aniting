@@ -5,15 +5,21 @@ import 'package:seanime_app/core/i18n/i18n_provider.dart';
 class MediaTypeToggle extends ConsumerWidget {
   final String selected;
   final ValueChanged<String> onSelected;
+  final bool showAnime;
+  final bool showManga;
 
   const MediaTypeToggle({
     super.key,
     required this.selected,
     required this.onSelected,
+    this.showAnime = true,
+    this.showManga = true,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    if (!showAnime && !showManga) return const SizedBox.shrink();
+
     final theme = Theme.of(context);
     final l10n = ref.watch(translationsProvider);
     final isAnime = selected == 'ANIME';
@@ -32,20 +38,22 @@ class MediaTypeToggle extends ConsumerWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _buildSegment(
-            context: context,
-            label: l10n.anime,
-            icon: Icons.play_circle_outline_rounded,
-            isSelected: isAnime,
-            onTap: () => onSelected('ANIME'),
-          ),
-          _buildSegment(
-            context: context,
-            label: l10n.manga,
-            icon: Icons.menu_book_rounded,
-            isSelected: !isAnime,
-            onTap: () => onSelected('MANGA'),
-          ),
+          if (showAnime)
+            _buildSegment(
+              context: context,
+              label: l10n.anime,
+              icon: Icons.play_circle_outline_rounded,
+              isSelected: isAnime || !showManga,
+              onTap: () => onSelected('ANIME'),
+            ),
+          if (showManga)
+            _buildSegment(
+              context: context,
+              label: l10n.manga,
+              icon: Icons.menu_book_rounded,
+              isSelected: !isAnime || !showAnime,
+              onTap: () => onSelected('MANGA'),
+            ),
         ],
       ),
     );

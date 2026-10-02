@@ -400,6 +400,7 @@ class _EditEntryModalState extends ConsumerState<EditEntryModal> {
   }
 
   Future<void> _handleDelete() async {
+    final l10n = ref.read(translationsProvider);
     final serverState = ref.read(serverNotifierProvider);
     final isLoggedIn = serverState.status?.isLoggedIn ?? false;
 
@@ -410,20 +411,20 @@ class _EditEntryModalState extends ConsumerState<EditEntryModal> {
         return AlertDialog(
           backgroundColor: ctxTheme.colorScheme.surfaceContainer,
           title: Text(
-            isLoggedIn ? 'Eliminar de AniList' : 'Eliminar de tu lista',
+            isLoggedIn ? l10n.deleteFromAnilist : l10n.deleteFromList,
             style: TextStyle(color: ctxTheme.colorScheme.onSurface),
           ),
           content: Text(
             isLoggedIn
-                ? '¿Seguro que deseas eliminar "${widget.title}" de tu lista de AniList?'
-                : '¿Seguro que deseas eliminar "${widget.title}" de tus listas locales?',
+                ? l10n.deleteAnilistConfirm(widget.title)
+                : l10n.deleteLocalConfirm(widget.title),
             style: TextStyle(color: ctxTheme.colorScheme.onSurfaceVariant),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(false),
               child: Text(
-                'Cancelar',
+                l10n.cancel,
                 style: TextStyle(color: ctxTheme.colorScheme.onSurfaceVariant),
               ),
             ),
@@ -433,7 +434,7 @@ class _EditEntryModalState extends ConsumerState<EditEntryModal> {
                 foregroundColor: ctxTheme.colorScheme.onError,
               ),
               onPressed: () => Navigator.of(ctx).pop(true),
-              child: const Text('Eliminar'),
+              child: Text(l10n.delete),
             ),
           ],
         );
@@ -468,10 +469,10 @@ class _EditEntryModalState extends ConsumerState<EditEntryModal> {
 
     Navigator.of(context).pop(true);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Eliminado de tu lista'),
+      SnackBar(
+        content: Text(l10n.removedFromList),
         behavior: SnackBarBehavior.floating,
-        duration: Duration(seconds: 2),
+        duration: const Duration(seconds: 2),
       ),
     );
   }

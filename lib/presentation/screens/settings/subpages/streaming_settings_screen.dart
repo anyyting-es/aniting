@@ -90,13 +90,14 @@ class _StreamingSettingsScreenState
         }
       });
 
+      final l10n = ref.read(translationsProvider);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(ok
               ? (path.isEmpty
-                  ? 'Ruta restaurada a almacenamiento SSD predeterminado'
-                  : 'Directorio de trabajo guardado correctamente')
-              : 'Error al guardar el directorio de trabajo'),
+                  ? l10n.pathRestoredDefault
+                  : l10n.workDirSavedSuccess)
+              : l10n.workDirSaveError),
           behavior: SnackBarBehavior.floating,
           duration: const Duration(seconds: 2),
         ),

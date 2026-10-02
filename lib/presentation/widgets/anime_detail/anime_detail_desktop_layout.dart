@@ -224,6 +224,7 @@ class _AnimeDetailDesktopLayoutState
 
   Future<void> _handlePlayNext(int progress) async {
     final nextEp = progress > 0 ? progress + 1 : 1;
+    final l10n = ref.read(translationsProvider);
 
     // 1. FAST-PATH: If file exists on PC in local library, stream directly from disk (0ms)
     try {
@@ -235,7 +236,6 @@ class _AnimeDetailDesktopLayoutState
       );
       if (localEp != null && mounted) {
         final serverManager = ref.read(serverManagerProvider);
-        final l10n = ref.read(translationsProvider);
         final titleLang = ref.read(titleLanguageProvider);
         final animeTitle = widget.details?.displayTitle(titleLang) ?? 'Anime';
         final streamUrl = localEp.localFilePath != null && localEp.localFilePath!.isNotEmpty
@@ -248,7 +248,7 @@ class _AnimeDetailDesktopLayoutState
             mediaId: widget.mediaId,
             videoUrl: streamUrl,
             title: animeTitle,
-            episodeTitle: localEp.displayTitle.isNotEmpty ? localEp.displayTitle : 'Episodio $nextEp',
+            episodeTitle: localEp.displayTitle.isNotEmpty ? localEp.displayTitle : l10n.episodeNumber(nextEp),
             episodeNumber: nextEp,
             videoSource: fileName != null ? 'Local • $fileName' : l10n.localLibrary,
             isLocalFile: true,
@@ -263,10 +263,10 @@ class _AnimeDetailDesktopLayoutState
     if (widget.currentTab == AnimeDetailTab.torrent) {
       widget.onOpenTorrentSelector(
         episodeNumber: nextEp,
-        episodeTitle: 'Episodio $nextEp',
+        episodeTitle: l10n.episodeNumber(nextEp),
       );
     } else {
-      _playOnlineEpisode(nextEp, 'Episodio $nextEp');
+      _playOnlineEpisode(nextEp, l10n.episodeNumber(nextEp));
     }
   }
 
@@ -422,7 +422,7 @@ class _AnimeDetailDesktopLayoutState
                                 ]
                               : null,
                         ),
-                        tooltip: 'Volver',
+                        tooltip: MaterialLocalizations.of(context).backButtonTooltip,
                         onPressed: () => Navigator.pop(context),
                       ),
                     ),
@@ -488,25 +488,25 @@ class _AnimeDetailDesktopLayoutState
                               Row(
                                 children: [
                                   DesktopTabButton(
-                                    label: 'Episodes',
+                                    label: l10n.episodes,
                                     isSelected: _selectedTab == DesktopDetailTab.episodes,
                                     onTap: () => setState(() => _selectedTab = DesktopDetailTab.episodes),
                                   ),
                                   const SizedBox(width: 24),
                                   DesktopTabButton(
-                                    label: 'Characters',
+                                    label: l10n.characters,
                                     isSelected: _selectedTab == DesktopDetailTab.characters,
                                     onTap: () => setState(() => _selectedTab = DesktopDetailTab.characters),
                                   ),
                                   const SizedBox(width: 24),
                                   DesktopTabButton(
-                                    label: 'Related',
+                                    label: l10n.relations,
                                     isSelected: _selectedTab == DesktopDetailTab.related,
                                     onTap: () => setState(() => _selectedTab = DesktopDetailTab.related),
                                   ),
                                   const SizedBox(width: 24),
                                   DesktopTabButton(
-                                    label: 'More like this',
+                                    label: l10n.recommendations,
                                     isSelected: _selectedTab == DesktopDetailTab.recommendations,
                                     onTap: () => setState(() => _selectedTab = DesktopDetailTab.recommendations),
                                   ),

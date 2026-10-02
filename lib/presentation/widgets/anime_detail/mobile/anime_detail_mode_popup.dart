@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
 
 /// Compact Material Design Expressive popup for switching playback modes
 /// (Online Streaming, Torrent Swarm, Local Library) with a spring/bounce animation.
-class AnimeDetailModePopup extends StatelessWidget {
+class AnimeDetailModePopup extends ConsumerWidget {
   final AnimeDetailTab currentTab;
   final bool isLocalMode;
   final bool hasLocalFiles;
@@ -32,7 +34,7 @@ class AnimeDetailModePopup extends StatelessWidget {
     return showGeneralDialog(
       context: context,
       barrierDismissible: true,
-      barrierLabel: 'Cerrar selector de modo',
+      barrierLabel: 'Close mode selector',
       barrierColor: Colors.black.withValues(alpha: 0.55),
       transitionDuration: const Duration(milliseconds: 320),
       transitionBuilder: (context, anim, secondaryAnim, child) {
@@ -62,7 +64,8 @@ class AnimeDetailModePopup extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = ref.watch(translationsProvider);
     final theme = Theme.of(context);
     final dialogBg = theme.colorScheme.surfaceContainerHigh;
     final isTorrent = !isLocalMode && currentTab == AnimeDetailTab.torrent;
@@ -112,10 +115,10 @@ class AnimeDetailModePopup extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 10),
-                    const Expanded(
+                    Expanded(
                       child: Text(
-                        'Modo de Reproducción',
-                        style: TextStyle(
+                        l10n.playbackMode,
+                        style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 14.5,
                           letterSpacing: -0.2,
@@ -141,8 +144,8 @@ class AnimeDetailModePopup extends StatelessWidget {
                     _buildModeTile(
                       context: context,
                       theme: theme,
-                      label: 'Online Streaming',
-                      subtitle: 'Servidores comunitarios',
+                      label: l10n.onlineStreaming,
+                      subtitle: l10n.communityServers,
                       icon: Icons.public_rounded,
                       color: theme.colorScheme.primary,
                       isSelected: isOnline,
@@ -157,8 +160,8 @@ class AnimeDetailModePopup extends StatelessWidget {
                     _buildModeTile(
                       context: context,
                       theme: theme,
-                      label: 'Torrent Swarm',
-                      subtitle: 'Descarga y streaming P2P',
+                      label: l10n.torrentStreaming,
+                      subtitle: l10n.torrentP2p,
                       icon: Icons.cloud_download_rounded,
                       color: theme.colorScheme.secondary,
                       isSelected: isTorrent,
@@ -174,8 +177,8 @@ class AnimeDetailModePopup extends StatelessWidget {
                       _buildModeTile(
                         context: context,
                         theme: theme,
-                        label: 'Archivos Locales',
-                        subtitle: 'Biblioteca descargada',
+                        label: l10n.localLibrary,
+                        subtitle: l10n.downloadedLibrary,
                         icon: Icons.folder_rounded,
                         color: theme.colorScheme.tertiary,
                         isSelected: isLocalMode,

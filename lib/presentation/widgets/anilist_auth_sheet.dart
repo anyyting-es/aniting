@@ -150,6 +150,16 @@ class _AnilistAuthSheetState extends ConsumerState<AnilistAuthSheet> {
         if (msg.startsWith('Exception: ')) {
           msg = msg.substring(11);
         }
+        final upper = msg.toUpperCase();
+        if (upper.contains('RATE_LIMIT') || upper.contains('RATE LIMIT') || upper.contains('LÍMITE TEMPORAL')) {
+          msg = l10n.anilistRateLimitError;
+        } else if (upper.contains('TIMEOUT') || upper.contains('TARDA')) {
+          msg = l10n.anilistTimeoutError;
+        } else if (upper.contains('INVALID_TOKEN') || upper.contains('INVALID TOKEN') || upper.contains('UNAUTHORIZED') || upper.contains('NO ES VÁLIDO') || upper.contains('EXPIRADO')) {
+          msg = l10n.anilistInvalidTokenError;
+        } else if (upper.contains('NETWORK_ERROR') || upper.contains('NO SE PUDO CONECTAR') || upper.contains('COULD NOT CONNECT')) {
+          msg = l10n.anilistConnectionError;
+        }
         setState(() {
           _errorMessage = msg;
         });

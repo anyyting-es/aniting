@@ -59,7 +59,7 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
     );
   }
 
-  Widget _buildAnimeDownloadsTab(BuildContext context, dynamic l10n, ThemeData theme, bool isDark, AppIconPack iconPack) {
+  Widget _buildAnimeDownloadsTab(BuildContext context, AppTranslations l10n, ThemeData theme, bool isDark, AppIconPack iconPack) {
     final serverState = ref.watch(serverNotifierProvider);
     if (!serverState.isOnline) {
       return Center(
@@ -122,14 +122,14 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    'No hay anime descargado',
+                    l10n.noDownloadedAnimeTitle,
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Los episodios descargados en tu biblioteca local aparecerán aquí para ver sin conexión.',
+                    l10n.noDownloadedAnimeDesc,
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: theme.colorScheme.onSurfaceVariant,
@@ -176,12 +176,12 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            '${localAnimeList.length} ${localAnimeList.length == 1 ? 'anime' : 'animes'} descargados en biblioteca local',
+                            l10n.downloadedAnimeCount(localAnimeList.length),
                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
                           ),
                         ),
                         IconButton(
-                          tooltip: 'Refrescar',
+                          tooltip: l10n.refreshDownloadsTooltip,
                           icon: Icon(AppIcons.refresh(iconPack), size: 20),
                           onPressed: () => ref.invalidate(downloadedAnimeProvider),
                         ),
@@ -225,7 +225,7 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
     );
   }
 
-  Widget _buildMangaDownloadsTab(BuildContext context, dynamic l10n, ThemeData theme, bool isDark, AppIconPack iconPack) {
+  Widget _buildMangaDownloadsTab(BuildContext context, AppTranslations l10n, ThemeData theme, bool isDark, AppIconPack iconPack) {
     final downloadsAsync = ref.watch(downloadedMangaListProvider);
     final offlineService = ref.watch(mangaOfflineServiceProvider);
     final downloadPrefs = ref.watch(downloadPreferencesProvider);
@@ -240,12 +240,12 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
             children: [
               Icon(AppIcons.error(iconPack), size: 48, color: Colors.redAccent),
               const SizedBox(height: 12),
-              Text('Error al cargar descargas: $err', textAlign: TextAlign.center),
+              Text('Error: $err', textAlign: TextAlign.center),
               const SizedBox(height: 12),
               FilledButton.icon(
                 onPressed: () => ref.invalidate(downloadedMangaListProvider),
                 icon: Icon(AppIcons.refresh(iconPack)),
-                label: const Text('Reintentar'),
+                label: Text(l10n.retry),
               ),
             ],
           ),
@@ -273,14 +273,14 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    'No hay manga descargado',
+                    l10n.noDownloadedMangaTitle,
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Los capítulos descargados para leer en el lector offline se guardarán automáticamente en Aniting/Downloads/Manga y aparecerán aquí.',
+                    l10n.noDownloadedMangaDesc,
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: theme.colorScheme.onSurfaceVariant,
@@ -292,7 +292,7 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
                   FilledButton.icon(
                     onPressed: () => Navigator.pop(context),
                     icon: Icon(AppIcons.explore(iconPack), size: 18),
-                    label: const Text('Explorar Manga'),
+                    label: Text(l10n.exploreManga),
                   ),
                 ],
               ),
@@ -350,12 +350,12 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    '${mangaList.length} ${mangaList.length == 1 ? 'manga' : 'mangas'} • $totalChapters caps',
+                                    l10n.downloadedMangaCount(mangaList.length, totalChapters),
                                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    'Espacio ocupado: $sizeFormatted',
+                                    l10n.storageUsed(sizeFormatted),
                                     style: TextStyle(
                                       color: theme.colorScheme.onSurfaceVariant,
                                       fontSize: 12,
@@ -365,7 +365,7 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
                               ),
                             ),
                             IconButton(
-                              tooltip: 'Refrescar descargas',
+                              tooltip: l10n.refreshDownloadsTooltip,
                               icon: Icon(AppIcons.refresh(iconPack), size: 20),
                               onPressed: () => ref.invalidate(downloadedMangaListProvider),
                             ),

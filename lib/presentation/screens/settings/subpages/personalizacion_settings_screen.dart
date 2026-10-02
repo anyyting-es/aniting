@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
+import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/preferences/banner_blur_provider.dart';
 import 'package:seanime_app/core/preferences/desktop_scrollbar_provider.dart';
 import 'package:seanime_app/core/preferences/episode_view_mode_provider.dart';
 import 'package:seanime_app/core/preferences/layout_mode_provider.dart';
 import 'package:seanime_app/core/preferences/mobile_nav_style_provider.dart';
 import 'package:seanime_app/core/preferences/resume_bar_preferences_provider.dart';
+import 'package:seanime_app/core/preferences/section_visibility_provider.dart';
 import 'package:seanime_app/core/preferences/show_scores_provider.dart';
 import 'package:seanime_app/core/preferences/title_language_provider.dart';
 import 'package:seanime_app/core/theme/theme_provider.dart';
@@ -31,6 +33,10 @@ class PersonalizacionSettingsScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final l10n = ref.watch(translationsProvider);
     final currentLanguage = ref.watch(appLanguageProvider);
+    final iconPack = ref.watch(iconPackProvider);
+    
+    final animeEnabled = ref.watch(animeSectionEnabledProvider);
+    final mangaEnabled = ref.watch(mangaSectionEnabledProvider);
 
     return PixelSubpageScaffold(
       title: l10n.appearanceAndDisplay,
@@ -168,7 +174,7 @@ class PersonalizacionSettingsScreen extends ConsumerWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            currentFont.displayName,
+                            currentFont.localizedDisplayName(l10n),
                             style: currentFont.textStyleBuilder != null
                                 ? currentFont.textStyleBuilder!(
                                     textStyle: TextStyle(
@@ -200,7 +206,7 @@ class PersonalizacionSettingsScreen extends ConsumerWidget {
         const SizedBox(height: 24),
 
         // ─── ESQUINAS Y BORDES DE LA APP ──────────────────────────
-        SettingsSectionHeader(title: 'Esquinas y Bordes (Radio de Tarjetas)'),
+        SettingsSectionHeader(title: l10n.cornerAndBorders),
         const SizedBox(height: 10),
         _PersonalizacionRadiusSection(),
         const SizedBox(height: 24),
@@ -309,12 +315,59 @@ class PersonalizacionSettingsScreen extends ConsumerWidget {
 
         const SizedBox(height: 24),
 
+        // ─── SECCIONES DE NAVEGACIÓN ──────────────────────────────
+        SettingsSectionHeader(title: l10n.navigationSections),
+        const SizedBox(height: 10),
+        PixelSwitchTile(
+          icon: AppIcons.home(iconPack),
+          title: l10n.animeSection,
+          subtitle: l10n.animeSectionDesc,
+          value: animeEnabled,
+          onChanged: (val) {
+            if (!val && !mangaEnabled) {
+              final messenger = ScaffoldMessenger.of(context);
+              messenger.clearSnackBars();
+              messenger.showSnackBar(
+                SnackBar(
+                  content: Text(l10n.cannotDisableBothSections),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+              return;
+            }
+            ref.read(animeSectionEnabledProvider.notifier).setEnabled(val);
+          },
+        ),
+        const SizedBox(height: 10),
+        PixelSwitchTile(
+          icon: AppIcons.manga(iconPack),
+          title: l10n.mangaSection,
+          subtitle: l10n.mangaSectionDesc,
+          value: mangaEnabled,
+          onChanged: (val) {
+            if (!val && !animeEnabled) {
+              final messenger = ScaffoldMessenger.of(context);
+              messenger.clearSnackBars();
+              messenger.showSnackBar(
+                SnackBar(
+                  content: Text(l10n.cannotDisableBothSections),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+              return;
+            }
+            ref.read(mangaSectionEnabledProvider.notifier).setEnabled(val);
+          },
+        ),
+
+        const SizedBox(height: 24),
+
         // ─── MODO DE INTERFAZ Y PANTALLA ──────────────────────────
-        SettingsSectionHeader(title: 'Modo de Interfaz (Adaptativo)'),
+        SettingsSectionHeader(title: l10n.interfaceModeTitle),
         const SizedBox(height: 10),
         PixelCardContainer(
           child: InkWell(
-            onTap: () => _showLayoutModeDialog(context, ref, layoutMode),
+            onTap: () => _showLayoutModeDialog(context, ref, l10n, layoutMode),
             borderRadius: BorderRadius.circular(12),
             child: Row(
               children: [
@@ -335,7 +388,7 @@ class PersonalizacionSettingsScreen extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Diseño adaptado para tu dispositivo',
+                        l10n.interfaceModeDesc,
                         style: TextStyle(
                           fontSize: 13,
                           color: theme.colorScheme.onSurfaceVariant,
@@ -343,7 +396,7 @@ class PersonalizacionSettingsScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        layoutMode.label,
+                        layoutMode.localizedLabel(l10n),
                         style: TextStyle(
                           fontSize: 14.5,
                           fontWeight: FontWeight.bold,
@@ -609,7 +662,7 @@ void _showTitleLanguageDialog(
                   borderRadius: BorderRadius.circular(16),
                 ),
                 title: Text(
-                  lang.label,
+                  lang.localizedLabel(l10n),
                   style: TextStyle(
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                     color: isSelected
@@ -618,7 +671,7 @@ void _showTitleLanguageDialog(
                   ),
                 ),
                 subtitle: Text(
-                  lang.example,
+                  lang.localizedExample(l10n),
                   style: TextStyle(
                     fontSize: 12,
                     color: theme.colorScheme.onSurfaceVariant,
@@ -702,11 +755,11 @@ void _showFontFamilyDialog(
                     borderRadius: BorderRadius.circular(16),
                   ),
                   title: Text(
-                    font.displayName,
+                    font.localizedDisplayName(l10n),
                     style: titleStyle,
                   ),
                   subtitle: Text(
-                    '${font.description} • Aa Bb 123',
+                    '${font.localizedDescription(l10n)} • Aa Bb 123',
                     style: subtitleStyle,
                   ),
                   trailing: Icon(
@@ -746,13 +799,13 @@ void _showEpisodeDisplayDialog(
           mode: EpisodeViewMode.list,
           label: l10n.detailedList,
           icon: Icons.view_list_rounded,
-          subtitle: 'Muestra miniaturas grandes con título y sinopsis',
+          subtitle: l10n.episodeDisplayDetailedDesc,
         ),
         (
           mode: EpisodeViewMode.grid,
           label: l10n.grid,
           icon: Icons.grid_view_rounded,
-          subtitle: 'Cuadrícula compacta y numerada de episodios',
+          subtitle: l10n.episodeDisplayGridDesc,
         ),
       ];
 
@@ -860,6 +913,7 @@ class _PersonalizacionRadiusSectionState extends ConsumerState<_PersonalizacionR
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = ref.watch(translationsProvider);
 
     // Keep synchronized if updated from elsewhere
     ref.listen<double>(
@@ -893,7 +947,7 @@ class _PersonalizacionRadiusSectionState extends ConsumerState<_PersonalizacionR
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Radio de bordes',
+                        l10n.cornerRadius,
                         style: TextStyle(
                           fontSize: 14.5,
                           fontWeight: FontWeight.bold,
@@ -902,7 +956,7 @@ class _PersonalizacionRadiusSectionState extends ConsumerState<_PersonalizacionR
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Ajusta la redondez de tarjetas y componentes',
+                        l10n.adjustCornerRadiusDesc,
                         style: TextStyle(
                           fontSize: 12,
                           color: theme.colorScheme.onSurfaceVariant,
@@ -964,15 +1018,15 @@ class _PersonalizacionRadiusSectionState extends ConsumerState<_PersonalizacionR
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                _buildRadiusChip('0 px (Cuadrado)', 0.0, _localRadius, theme),
+                _buildRadiusChip(l10n.cornerRadiusSquare, 0.0, _localRadius, theme),
                 const SizedBox(width: 6),
-                _buildRadiusChip('6 px (Sutil)', 6.0, _localRadius, theme),
+                _buildRadiusChip(l10n.cornerRadiusSubtle, 6.0, _localRadius, theme),
                 const SizedBox(width: 6),
-                _buildRadiusChip('10 px (Normal)', 10.0, _localRadius, theme),
+                _buildRadiusChip(l10n.cornerRadiusNormal, 10.0, _localRadius, theme),
                 const SizedBox(width: 6),
-                _buildRadiusChip('16 px (Redondo)', 16.0, _localRadius, theme),
+                _buildRadiusChip(l10n.cornerRadiusRound, 16.0, _localRadius, theme),
                 const SizedBox(width: 6),
-                _buildRadiusChip('22 px (Curvo)', 22.0, _localRadius, theme),
+                _buildRadiusChip(l10n.cornerRadiusCurved, 22.0, _localRadius, theme),
               ],
             ),
           ),
@@ -1018,6 +1072,7 @@ class _PersonalizacionRadiusSectionState extends ConsumerState<_PersonalizacionR
 void _showLayoutModeDialog(
   BuildContext context,
   WidgetRef ref,
+  AppTranslations l10n,
   LayoutMode currentMode,
 ) {
   showDialog(
@@ -1026,9 +1081,9 @@ void _showLayoutModeDialog(
       final theme = Theme.of(ctx);
       return AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: const Text(
-          'Modo de Interfaz',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        title: Text(
+          l10n.interfaceModeDialogTitle,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
         ),
         contentPadding: const EdgeInsets.fromLTRB(8, 16, 8, 8),
         content: ConstrainedBox(
@@ -1043,12 +1098,7 @@ void _showLayoutModeDialog(
                 LayoutMode.mobile => Icons.smartphone_rounded,
                 LayoutMode.tv => Icons.tv_rounded,
               };
-              final subtitle = switch (mode) {
-                LayoutMode.auto => 'Detección automática por tamaño de pantalla',
-                LayoutMode.desktop => 'Diseño completo en 2 columnas con barra hero',
-                LayoutMode.mobile => 'Diseño vertical compacto para teléfonos',
-                LayoutMode.tv => 'Interfaz simplificada a 10 pies para control remoto y D-Pad',
-              };
+              final subtitle = mode.localizedDescription(l10n);
 
               return ListTile(
                 shape: RoundedRectangleBorder(
@@ -1056,7 +1106,7 @@ void _showLayoutModeDialog(
                 ),
                 leading: Icon(icon, color: isSelected ? theme.colorScheme.primary : null),
                 title: Text(
-                  mode.label,
+                  mode.localizedLabel(l10n),
                   style: TextStyle(
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                     color: isSelected

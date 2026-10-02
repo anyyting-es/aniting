@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/theme/app_theme_colors.dart';
 import 'package:seanime_app/data/models/app_update_models.dart';
 import 'package:seanime_app/data/services/app_update_service.dart';
@@ -36,6 +37,7 @@ class AppUpdateDialog extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final l10n = ref.watch(translationsProvider);
     final borderRadius = context.themeColors.borderRadius;
 
     final updateState = ref.watch(appUpdateNotifierProvider);
@@ -89,7 +91,7 @@ class AppUpdateDialog extends ConsumerWidget {
                         Row(
                           children: [
                             Text(
-                              'Nueva versión',
+                              l10n.updateDialogTitle,
                               style: theme.textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.bold,
                               ),
@@ -114,7 +116,7 @@ class AppUpdateDialog extends ConsumerWidget {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          'Versión actual: v${AppUpdateService.currentAppVersion}${updateInfo.formattedSize.isNotEmpty ? ' • ${updateInfo.formattedSize}' : ''}',
+                          l10n.updateDialogCurrentVersion(AppUpdateService.currentAppVersion, updateInfo.formattedSize),
                           style: TextStyle(
                             fontSize: 12,
                             color: theme.colorScheme.onSurfaceVariant,
@@ -137,7 +139,7 @@ class AppUpdateDialog extends ConsumerWidget {
 
               // ─── NOVEDADES / CHANGELOG ──────────────────────────
               Text(
-                'Novedades y Cambios',
+                l10n.updateDialogChangelogTitle,
                 style: theme.textTheme.labelMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                   letterSpacing: 0.5,
@@ -162,7 +164,7 @@ class AppUpdateDialog extends ConsumerWidget {
                     child: Text(
                       updateInfo.releaseNotes.isNotEmpty
                           ? updateInfo.releaseNotes
-                          : 'Se han incluido mejoras de estabilidad, rendimiento y corrección de errores en esta versión.',
+                          : l10n.updateDialogDefaultNotes,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         fontSize: 13,
                         height: 1.45,
@@ -183,7 +185,7 @@ class AppUpdateDialog extends ConsumerWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Descargando actualización...',
+                          l10n.updateDialogDownloading,
                           style: TextStyle(
                             fontSize: 12.5,
                             fontWeight: FontWeight.w600,
@@ -257,17 +259,17 @@ class AppUpdateDialog extends ConsumerWidget {
                   if (!isDownloading && !isInstalling)
                     TextButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Más tarde'),
+                      child: Text(l10n.updateDialogLater),
                     ),
                   if (isDownloading)
                     TextButton(
                       onPressed: () => notifier.cancelDownload(),
-                      child: const Text('Cancelar'),
+                      child: Text(l10n.cancel),
                     ),
                   if (!isDownloading && !isDownloaded && !isInstalling)
                     FilledButton.icon(
                       icon: const Icon(Icons.download_rounded, size: 18),
-                      label: const Text('Actualizar ahora'),
+                      label: Text(l10n.updateDialogUpdateNow),
                       onPressed: () => notifier.downloadUpdate(),
                     ),
                   if (isDownloading)
@@ -275,21 +277,21 @@ class AppUpdateDialog extends ConsumerWidget {
                       onPressed: null,
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
-                        children: const [
-                          SizedBox(
+                        children: [
+                          const SizedBox(
                             width: 14,
                             height: 14,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           ),
-                          SizedBox(width: 8),
-                          Text('Descargando...'),
+                          const SizedBox(width: 8),
+                          Text(l10n.updateDialogDownloadingBtn),
                         ],
                       ),
                     ),
                   if (isDownloaded || isInstalling)
                     FilledButton.icon(
                       icon: const Icon(Icons.install_mobile_rounded, size: 18),
-                      label: Text(isInstalling ? 'Instalando...' : 'Instalar actualización'),
+                      label: Text(isInstalling ? l10n.updateDialogInstalling : l10n.updateDialogInstallUpdate),
                       onPressed: isInstalling ? null : () => notifier.installUpdate(),
                     ),
                 ],

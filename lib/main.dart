@@ -13,6 +13,7 @@ import 'package:seanime_app/core/preferences/playback_progress_preferences_provi
 import 'package:seanime_app/core/preferences/player_engine_provider.dart';
 import 'package:seanime_app/core/preferences/resume_bar_preferences_provider.dart';
 import 'package:seanime_app/core/preferences/settings_sidebar_width_provider.dart';
+import 'package:seanime_app/core/preferences/section_visibility_provider.dart';
 import 'package:seanime_app/core/theme/app_scroll_behavior.dart';
 import 'package:seanime_app/core/theme/app_theme_colors.dart';
 import 'package:path_provider/path_provider.dart';
@@ -87,6 +88,8 @@ void main() async {
     LastSessionNotifier.setCachedPrefs(prefs);
     ResumeBarEnabledNotifier.setCachedPrefs(prefs);
     OnboardingNotifier.setCachedPrefs(prefs);
+    AnimeSectionEnabledNotifier.setCachedPrefs(prefs);
+    MangaSectionEnabledNotifier.setCachedPrefs(prefs);
   } catch (_) {}
   runApp(
     const ProviderScope(

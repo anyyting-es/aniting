@@ -184,7 +184,7 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
                   controller: _searchController,
                   style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurface),
                   decoration: InputDecoration(
-                    hintText: 'Buscar o N° de capítulo...',
+                    hintText: l10n.searchChapterPlaceholder,
                     hintStyle: TextStyle(
                       fontSize: 13,
                       color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
@@ -232,7 +232,7 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
 
             // Asc / Desc Sort Button
             IconButton(
-              tooltip: _isAscending ? 'Más antiguos primero' : 'Más recientes primero',
+              tooltip: _isAscending ? l10n.oldestFirst : l10n.newestFirst,
               style: IconButton.styleFrom(
                 backgroundColor: isDark ? theme.colorScheme.surfaceContainerHigh : theme.colorScheme.surfaceContainerHighest,
                 shape: RoundedRectangleBorder(
@@ -256,7 +256,7 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
 
             // Refresh Chapters Button
             IconButton(
-              tooltip: 'Recargar capítulos',
+              tooltip: l10n.reloadChapters,
               style: IconButton.styleFrom(
                 backgroundColor: isDark ? theme.colorScheme.surfaceContainerHigh : theme.colorScheme.surfaceContainerHighest,
                 shape: RoundedRectangleBorder(
@@ -289,7 +289,7 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
                   color: _hideRead ? theme.colorScheme.onPrimaryContainer : theme.colorScheme.onSurfaceVariant,
                 ),
                 label: Text(
-                  _hideRead ? 'Ocultando leídos (${widget.progress})' : 'Ocultar leídos (${widget.progress})',
+                  _hideRead ? l10n.hidingReadChapters(widget.progress) : l10n.hideReadChapters(widget.progress),
                   style: TextStyle(
                     fontSize: 11.5,
                     fontWeight: _hideRead ? FontWeight.w700 : FontWeight.w500,
@@ -326,8 +326,8 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
                 ),
                 label: Text(
                   _showOnlyDownloaded
-                      ? 'Descargados (${widget.downloadedChapterIds.length})'
-                      : 'Solo descargados (${widget.downloadedChapterIds.length})',
+                      ? l10n.downloadedCount(widget.downloadedChapterIds.length)
+                      : '${l10n.onlyDownloaded} (${widget.downloadedChapterIds.length})',
                   style: TextStyle(
                     fontSize: 11.5,
                     fontWeight: _showOnlyDownloaded ? FontWeight.w700 : FontWeight.w500,
@@ -360,7 +360,7 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
                   color: theme.colorScheme.primary,
                 ),
                 label: Text(
-                  'Descargar lote',
+                  l10n.downloadBatch,
                   style: TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w600,
@@ -379,7 +379,7 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
               child: Text(
-                '${displayChapters.length} capítulos',
+                l10n.chaptersCount(displayChapters.length),
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
@@ -456,7 +456,7 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
             ),
             const SizedBox(height: 6),
             Text(
-              'Instala una extensión de manga para leer capítulos en tu biblioteca.',
+              l10n.installMangaExtensionNotice,
               style: TextStyle(
                 color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
                 fontSize: 13,
@@ -477,7 +477,7 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
               },
               icon: Icon(Icons.download_rounded, size: 18, color: theme.colorScheme.onPrimary),
               label: Text(
-                'Explorar Extensiones de Manga',
+                l10n.exploreMangaExtensions,
                 style: TextStyle(fontWeight: FontWeight.w700, color: theme.colorScheme.onPrimary),
               ),
             ),
@@ -489,6 +489,7 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
 
   Widget _buildErrorView(ThemeData theme) {
     final isDark = theme.brightness == Brightness.dark;
+    final l10n = ref.watch(translationsProvider);
     return Container(
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
@@ -517,7 +518,7 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
               onPressed: widget.onRefreshChapters,
               icon: Icon(Icons.refresh_rounded, color: theme.colorScheme.onPrimary),
               label: Text(
-                'Reintentar',
+                l10n.retry,
                 style: TextStyle(fontWeight: FontWeight.w700, color: theme.colorScheme.onPrimary),
               ),
             ),
@@ -530,6 +531,7 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
   Widget _buildEmptyView() {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final l10n = ref.watch(translationsProvider);
     return Container(
       padding: const EdgeInsets.all(36),
       decoration: BoxDecoration(
@@ -551,8 +553,8 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
             const SizedBox(height: 12),
             Text(
               _showOnlyDownloaded
-                  ? 'No hay capítulos descargados para esta obra'
-                  : 'No se encontraron capítulos con los filtros actuales',
+                  ? l10n.noDownloadedChaptersForManga
+                  : l10n.noChaptersMatchingFilters,
               style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13.5),
               textAlign: TextAlign.center,
             ),
@@ -572,7 +574,7 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
                   _searchController.clear();
                 }),
                 icon: const Icon(Icons.list_rounded, size: 18),
-                label: const Text('Restablecer filtros'),
+                label: Text(l10n.resetFilters),
               ),
             ],
           ],

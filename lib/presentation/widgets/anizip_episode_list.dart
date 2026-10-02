@@ -105,7 +105,7 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
     return true;
   }
 
-  List<AniZipEpisode> _getFilteredAniZipEpisodes() {
+  List<AniZipEpisode> _getFilteredAniZipEpisodes(String langCode) {
     if (widget.aniZipData == null) return [];
 
     // Only main episodes, no specials
@@ -122,7 +122,7 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
       final q = _searchQuery.trim().toLowerCase();
       list = list.where((ep) {
         final epNumMatch = ep.episodeNumber.toString() == q || ep.episode.toLowerCase() == q;
-        final titleMatch = ep.displayTitle.toLowerCase().contains(q) ||
+        final titleMatch = ep.displayTitleForLang(langCode).toLowerCase().contains(q) ||
             (ep.originalTitle != null && ep.originalTitle!.toLowerCase().contains(q));
         final descMatch = ep.synopsis != null && ep.synopsis!.toLowerCase().contains(q);
         return epNumMatch || titleMatch || descMatch;
@@ -141,6 +141,8 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = ref.watch(translationsProvider);
+    final appLang = ref.watch(appLanguageProvider);
+    final langCode = appLang.code;
     final hasAniZip = widget.aniZipData != null && widget.aniZipData!.episodes.isNotEmpty;
     final fallbackImage = widget.animeDetails?.bannerImage ?? widget.animeDetails?.coverImage;
     final viewMode = widget.viewMode ?? _localViewMode;
@@ -152,7 +154,7 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
 
     // Main AniZip episode view
     if (hasAniZip) {
-      final filteredEpisodes = _getFilteredAniZipEpisodes();
+      final filteredEpisodes = _getFilteredAniZipEpisodes(langCode);
 
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -312,7 +314,7 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
                 final ep = filteredEpisodes[index];
                 return EpisodeGridItem(
                   episodeNumber: ep.episodeNumber,
-                  title: ep.displayTitle,
+                  title: ep.displayTitleForLang(langCode),
                   originalTitle: ep.originalTitle,
                   duration: ep.formattedDuration,
                   synopsis: ep.synopsis,
@@ -360,7 +362,7 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
                         final ep = pagedEpisodes[index];
                         return EpisodeListItem(
                           episodeNumber: ep.episodeNumber,
-                          title: ep.displayTitle,
+                          title: ep.displayTitleForLang(langCode),
                           originalTitle: ep.originalTitle,
                           duration: ep.formattedDuration,
                           synopsis: ep.synopsis,

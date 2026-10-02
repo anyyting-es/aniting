@@ -208,7 +208,13 @@ class SpanishTranslations implements AppTranslations {
   String get animeDynamicThemeDesc =>
       'Usa el color característico de AniList para adaptar la paleta Material Design en la pantalla del anime.';
   @override
-  String get themeMode => 'Modo de Tema';
+  String get themeMode => 'Modo del tema';
+  @override
+  String get darkMode => 'Oscuro';
+  @override
+  String get lightMode => 'Claro';
+  @override
+  String get systemMode => 'Sistema';
   @override
   String get themeDark => 'Oscuro';
   @override
@@ -808,6 +814,18 @@ class SpanishTranslations implements AppTranslations {
   String get failedToLinkAccount =>
       'No se pudo vincular la cuenta. Revisa que el token no haya expirado y esté completo.';
   @override
+  String get anilistRateLimitError =>
+      'AniList tiene activo un límite temporal de peticiones (rate limit). Por favor espera 60 segundos antes de volver a intentarlo.';
+  @override
+  String get anilistTimeoutError =>
+      'AniList o el servidor tardaron en responder. Por favor espera 1 minuto y vuelve a presionar Vincular Cuenta.';
+  @override
+  String get anilistInvalidTokenError =>
+      'El token de AniList no es válido o ha expirado. Asegúrate de copiar el token completo y vuelve a intentarlo.';
+  @override
+  String get anilistConnectionError =>
+      'No se pudo conectar con el servidor o AniList. Verifica tu conexión e inténtalo de nuevo.';
+  @override
   String get logoutConfirmTitle => 'Cerrar Sesión';
   @override
   String get logoutConfirmContent =>
@@ -1279,6 +1297,20 @@ class SpanishTranslations implements AppTranslations {
   @override
   String get themeSectionMaterial => 'Material Design 3';
   @override
+  String get materialPurpleName => 'Material You Violeta';
+  @override
+  String get materialBlueName => 'Material You Océano';
+  @override
+  String get materialGreenName => 'Material You Bosque';
+  @override
+  String get materialOrangeName => 'Material You Atardecer';
+  @override
+  String get materialCrimsonName => 'Material You Frambuesa';
+  @override
+  String get materialTealName => 'Material You Turquesa';
+  @override
+  String get paletteSystem => 'Sistema (Dank Shell / Matugen)';
+  @override
   String get exploreAllMarketplace => 'Explorar catálogo completo';
   @override
   String get allRecommended => 'Todas las recomendadas';
@@ -1443,4 +1475,402 @@ class SpanishTranslations implements AppTranslations {
     if (status != null && status.isNotEmpty) return formatStatus(status);
     return fallbackFormat;
   }
+
+  // About Screen & Version Check
+  @override
+  String get nativeClientSubtitle => 'Cliente nativo para Anime y Manga';
+  @override
+  String get developerAndCredits => 'DESARROLLADOR & CRÉDITOS';
+  @override
+  String get developerSubtitle => 'Desarrollador del cliente nativo Flutter\nGitHub: github.com/anyyting-es';
+  @override
+  String get originalServerSubtitle => 'Backend y servidor multimedia original creado por 5rahim\nhttps://seanime.app';
+  @override
+  String get discordCommunity => 'Comunidad de Discord';
+  @override
+  String get discordSubtitle => 'Únete a la comunidad de Aniting en Discord\ndiscord.gg/FaPcNGURdN';
+  @override
+  String get systemAndUpdates => 'SISTEMA Y ACTUALIZACIONES';
+  @override
+  String get clientDevice => 'Cliente Móvil / PC';
+  @override
+  String get buildRelease => 'Build Release';
+  @override
+  String get seanimeCoreServer => 'Servidor Seanime Core';
+  @override
+  String serverVersionConnected(String version) => 'Versión $version (Conectado)';
+  @override
+  String get serverOfflineOrLocal => 'Desconectado o Servidor Local';
+  @override
+  String get checkingUpdatesGithub => 'Buscando actualizaciones en GitHub...';
+  @override
+  String get checkLatestGithub => 'Buscar la versión más reciente en GitHub';
+  @override
+  String latestVersionSnackbar(String version) => 'Estás en la versión más reciente (v$version). No hay nuevas actualizaciones.';
+  @override
+  String get failedCheckUpdateSnackbar => 'No se pudo comprobar la actualización. Revisa tu conexión a internet.';
+  @override
+  String get openSourceLicenses => 'Licencias de Código Abierto';
+  @override
+  String get openSourceLicensesDesc => 'Ver licencias y librerías de software libre';
+  @override
+  String get devAndTesting => 'DESARROLLO & PRUEBAS';
+  @override
+  String get welcomeDevPreviewDesc => 'Abrir el asistente de bienvenida en modo vista previa';
+  @override
+  String get welcomeResetDesc => 'Restablece la bienvenida para mostrarla en el siguiente arranque';
+
+  // Stream Selection & Modes
+  @override
+  String get playbackMode => 'Modo de Reproducción';
+  @override
+  String get communityServers => 'Servidores comunitarios';
+  @override
+  String get torrentP2p => 'Descarga y streaming P2P';
+  @override
+  String get downloadedLibrary => 'Biblioteca descargada';
+  @override
+  String get onlineSources => 'Fuentes Online';
+  @override
+  String availableSourcesCountLabel(int count) => '$count disponibles';
+  @override
+  String get advancedOptions => 'Opciones avanzadas';
+  @override
+  String get closeModeSelector => 'Cerrar selector de modo';
+  @override
+  String get closeSourceSelector => 'Cerrar selector de fuentes';
+  @override
+  String get audioHeading => 'AUDIO';
+  @override
+  String get audioDubbedFull => 'Doblado (Dub)';
+  @override
+  String get exploreMarketplaceMore => 'Explorar más extensiones en la tienda';
+  @override
+  String loadingEpisodesFrom(String provider) => 'Cargando episodios de $provider...';
+  @override
+  String noEpisodesFoundInProvider(String provider) => 'No se encontraron episodios en $provider';
+  @override
+  String get tryAnotherServerOrSubDub => 'Prueba seleccionando otro servidor o cambiando entre subtitulado y doblado';
+  @override
+  String episodeNumber(int number) => 'Episodio $number';
+
+  // Settings & Customization
+  @override
+  String get cornerAndBorders => 'Esquinas y Bordes (Radio de Tarjetas)';
+  @override
+  String get adjustCornerRadiusDesc => 'Ajusta la redondez visual de componentes y tarjetas';
+  @override
+  String get cornerRadiusSquare => '0 px (Cuadrado)';
+  @override
+  String get cornerRadiusSubtle => '6 px (Sutil)';
+  @override
+  String get cornerRadiusNormal => '10 px (Normal)';
+  @override
+  String get cornerRadiusRound => '16 px (Redondo)';
+  @override
+  String get cornerRadiusCurved => '22 px (Curvo)';
+  @override
+  String get interfaceModeTitle => 'Modo de Interfaz (Adaptativo)';
+  @override
+  String get interfaceModeDesc => 'Diseño adaptado para tu dispositivo';
+  @override
+  String get interfaceModeDialogTitle => 'Modo de Interfaz';
+  @override
+  String get interfaceModeAuto => 'Automático';
+  @override
+  String get interfaceModeAutoDesc => 'Detección automática por tamaño de pantalla';
+  @override
+  String get interfaceModeDesktop => 'Escritorio (PC)';
+  @override
+  String get interfaceModeDesktopDesc => 'Diseño completo en 2 columnas con barra hero';
+  @override
+  String get interfaceModeMobile => 'Móvil';
+  @override
+  String get interfaceModeMobileDesc => 'Diseño vertical compacto para teléfonos';
+  @override
+  String get interfaceModeTv => 'Modo TV (10ft)';
+  @override
+  String get interfaceModeTvDesc => 'Interfaz simplificada a 10 pies para control remoto y D-Pad';
+  @override
+  String get episodeDisplayDetailedDesc => 'Muestra miniaturas grandes con título y sinopsis';
+  @override
+  String get episodeDisplayGridDesc => 'Cuadrícula compacta y numerada de episodios';
+  @override
+  String get oledTrueBlackTitle => 'Negro puro (OLED True Black)';
+  @override
+  String get oledTrueBlackDesc => 'Fondo negro #000000 absoluto para pantallas OLED';
+  @override
+  String get fontSystemDisplayName => 'Sistema';
+  @override
+  String get fontSystemDesc => 'Tipografía predeterminada del dispositivo';
+  @override
+  String get pathRestoredDefault => 'Ruta restaurada a almacenamiento SSD predeterminado';
+  @override
+  String get workDirSavedSuccess => 'Directorio de trabajo guardado correctamente';
+  @override
+  String get workDirSaveError => 'Error al guardar el directorio de trabajo';
+
+  // App Update Dialog
+  @override
+  String get updateDialogTitle => 'Nueva versión';
+  @override
+  String updateDialogCurrentVersion(String version, String size) =>
+      'Versión actual: v$version${size.isNotEmpty ? ' • $size' : ''}';
+  @override
+  String get updateDialogChangelogTitle => 'Novedades y Cambios';
+  @override
+  String get updateDialogDefaultNotes => 'Se han incluido mejoras de estabilidad, rendimiento y corrección de errores en esta versión.';
+  @override
+  String get updateDialogDownloading => 'Descargando actualización...';
+  @override
+  String get updateDialogLater => 'Más tarde';
+  @override
+  String get updateDialogUpdateNow => 'Actualizar ahora';
+  @override
+  String get updateDialogDownloadingBtn => 'Descargando...';
+  @override
+  String get updateDialogInstalling => 'Instalando...';
+  @override
+  String get updateDialogInstallUpdate => 'Instalar actualización';
+
+  // Empty Feed States & Downloads
+  @override
+  String get emptyMangaFeedTitle => 'Tu lista de manga está vacía';
+  @override
+  String get emptyAnimeFeedTitle => 'Tu lista de anime está vacía';
+  @override
+  String get emptyMangaFeedDesc => 'Aún no tienes mangas en curso. Explora el catálogo o busca tus series favoritas.';
+  @override
+  String get emptyAnimeFeedDesc => 'Aún no tienes animes en seguimiento. Explora el catálogo o busca tus series favoritas.';
+  @override
+  String get noDownloadedAnimeTitle => 'No hay anime descargado';
+  @override
+  String get noDownloadedAnimeDesc => 'Los episodios descargados en tu biblioteca local aparecerán aquí para ver sin conexión.';
+  @override
+  String get noDownloadedMangaTitle => 'No hay manga descargado';
+  @override
+  String get noDownloadedMangaDesc => 'Los capítulos descargados para leer en el lector offline se guardarán automáticamente en Aniting/Downloads/Manga y aparecerán aquí.';
+  @override
+  String get exploreManga => 'Explorar Manga';
+  @override
+  String downloadedAnimeCount(int count) => '$count ${count == 1 ? "anime" : "animes"} descargados en biblioteca local';
+  @override
+  String downloadedMangaCount(int mangaCount, int chaptersCount) => '$mangaCount ${mangaCount == 1 ? "manga" : "mangas"} • $chaptersCount caps';
+  @override
+  String storageUsed(String formattedSize) => 'Espacio ocupado: $formattedSize';
+  @override
+  String get refreshDownloadsTooltip => 'Refrescar descargas';
+
+  // Player & UI Details
+  @override
+  String prevEpisodeNumbered(int number) => '← Episodio anterior: Ep. $number';
+  @override
+  String scorePercent(String score) => '$score% puntuación';
+  @override
+  String get anilistConnectedBadge => 'AniList Conectado';
+
+  // Play & Reading Button States
+  @override
+  String get rewatch => 'Ver de nuevo';
+  @override
+  String continueEpisodeNumbered(int number) => 'Continuar Ep. $number';
+  @override
+  String get startWatching => 'Comenzar a ver';
+  @override
+  String get startReading => 'Empezar a leer';
+  @override
+  String continueChapterNumbered(int number) => 'Continuar Cap. $number';
+
+  // Favorites & Actions
+  @override
+  String get inFavorites => 'En favoritos';
+  @override
+  String get addToFavorites => 'Añadir a favoritos';
+  @override
+  String get addedToFavorites => 'Añadido a favoritos';
+  @override
+  String get removedFromFavorites => 'Eliminado de favoritos';
+  @override
+  String get editInAnilist => 'Editar en AniList';
+  @override
+  String get share => 'Compartir';
+  @override
+  String get watchTrailer => 'Ver tráiler';
+  @override
+  String get viewOnAnilist => 'Ver en AniList';
+  @override
+  String get viewOnMal => 'Ver en MyAnimeList';
+  @override
+  String linkCopiedFor(String title) => 'Enlace copiado para $title';
+  @override
+  String get details => 'Detalles';
+  @override
+  String get batchDownload => 'Descarga por lote';
+  @override
+  String get downloadChapterAction => 'Descargar';
+  @override
+  String get downloadBatch => 'Descargar lote';
+  @override
+  String get readBadge => 'LEÍDO';
+  @override
+  String get progress => 'Progreso';
+  @override
+  String get myProgress => 'Mi Progreso';
+  @override
+  String get volumes => 'Volúmenes';
+  @override
+  String get score => 'Puntuación';
+  @override
+  String get aired => 'Emisión';
+  @override
+  String get localUser => 'Usuario Local';
+  @override
+  String get scan => 'Escanear';
+
+  // Empty States & Content Tabs
+  @override
+  String get noRelationsAvailable => 'No hay relaciones disponibles';
+  @override
+  String get noRecommendationsAvailable => 'No hay recomendaciones disponibles';
+  @override
+  String get noCharactersAvailable => 'No hay personajes disponibles';
+  @override
+  String get noSimilarWorksAvailable => 'No hay obras similares disponibles';
+  @override
+  String get noDownloadedChaptersForManga => 'No hay capítulos descargados para esta obra';
+  @override
+  String get noChaptersMatchingFilters => 'No se encontraron capítulos con los filtros actuales';
+  @override
+  String get resetFilters => 'Restablecer filtros';
+  @override
+  String get exploreMangaExtensions => 'Explorar extensiones de manga';
+  @override
+  String get reloadChapters => 'Recargar capítulos';
+  @override
+  String get oldestFirst => 'Más antiguos primero';
+  @override
+  String get newestFirst => 'Más recientes primero';
+  @override
+  String get onlyDownloaded => 'Solo descargados';
+  @override
+  String get viewAllChapters => 'Ver todos los capítulos';
+  @override
+  String get informationTitle => 'Información';
+  @override
+  String get prevEpisode => '← Episodio anterior';
+  @override
+  String get synopsisMore => 'Más';
+  @override
+  String get synopsisLess => 'Menos';
+  @override
+  String get searchChapterPlaceholder => 'Buscar o N° de capítulo...';
+  @override
+  String get installMangaExtensionNotice =>
+      'Instala una extensión de manga para leer capítulos en tu biblioteca.';
+  @override
+  String hideReadChapters(int count) => 'Ocultar leídos ($count)';
+  @override
+  String hidingReadChapters(int count) => 'Ocultando leídos ($count)';
+  @override
+  String downloadedCount(int count) => 'Descargados ($count)';
+  @override
+  String chaptersCount(int count) => '$count capítulos';
+  @override
+  String chapterAbbr(String number) => 'Cap. $number';
+  @override
+  String get noChaptersAvailable => 'No hay capítulos disponibles';
+  @override
+  String episodeSoon(int number) => 'Ep. $number pronto';
+  @override
+  String get currentEpisodeBadge => 'Episodio actual';
+  @override
+  String get batchFiles => 'Archivos del Batch';
+  @override
+  String filesCount(int count) => '$count archivos';
+  @override
+  String get filterFilesOrEpisode => 'Filtrar archivos o episodio...';
+  @override
+  String noFilesMatching(String query) => 'No se encontraron archivos con "$query"';
+  @override
+  String get selectAFile => 'Selecciona un archivo';
+  @override
+  String get delete => 'Eliminar';
+  @override
+  String get deleteFromAnilist => 'Eliminar de AniList';
+  @override
+  String get deleteFromList => 'Eliminar de tu lista';
+  @override
+  String deleteAnilistConfirm(String title) =>
+      '¿Seguro que deseas eliminar "$title" de tu lista de AniList?';
+  @override
+  String deleteLocalConfirm(String title) =>
+      '¿Seguro que deseas eliminar "$title" de tus listas locales?';
+  @override
+  String get removedFromList => 'Eliminado de tu lista';
+  @override
+  String get selectProviderToDownload => 'Selecciona un proveedor para descargar';
+  @override
+  String downloadingChapter(String chapter) => 'Descargando capítulo $chapter...';
+  @override
+  String errorSchedulingDownload(String error) => 'Error al programar descarga: $error';
+  @override
+  String get downloadChapters => 'Descargar Capítulos';
+  @override
+  String providerWithUnreadCount(String provider, int unreadCount) =>
+      'Proveedor: $provider • $unreadCount no leídos';
+  @override
+  String downloadNextUnread(int count) => 'Descargar siguientes $count no leídos';
+  @override
+  String downloadNextUnreadDesc(int count) =>
+      'Guarda los próximos $count capítulos para leer sin conexión';
+  @override
+  String downloadAllUnread(int count) => 'Descargar todos los no leídos ($count)';
+  @override
+  String get downloadAllUnreadDesc => 'Descarga completa de todos los capítulos pendientes';
+  @override
+  String downloadingChaptersCount(int count) => 'Descargando $count capítulos...';
+  @override
+  String torrentsFilterCount(int filtered, int total, String quality) =>
+      '$filtered de $total torrents ($quality)';
+  @override
+  String noTorrentsWithQuality(String quality) =>
+      'No hay torrents con calidad "$quality"';
+  @override
+  String get resetQualityFilterAll => 'Restablecer filtro a "Todos"';
+  @override
+  String get myCollection => 'Mi Colección';
+  @override
+  String get previous => 'Anterior';
+  @override
+  String get next => 'Siguiente';
+  @override
+  String pageOf(int current, int total) => 'Página $current de $total';
+  @override
+  String chapterDownloaded(String number) => 'Capítulo $number (Descargado)';
+  @override
+  String get errorLoadingChapters => 'Error cargando capítulos';
+  @override
+  String exploreAllMarketplaceCountDesc(int count) =>
+      'Explora el catálogo completo con más de $count extensiones';
+  @override
+  String get updateNoApkFound => 'No se encontró archivo APK adjunto en esta versión.';
+  @override
+  String updateDownloadError(String error) => 'Error al descargar la actualización: $error';
+  @override
+  String get updateAndroidOnly => 'La instalación directa solo está disponible en Android.';
+  @override
+  String updateInstallerError(String error) => 'Error al abrir el instalador: $error';
+
+  @override
+  String get navigationSections => 'Secciones de navegación';
+  @override
+  String get animeSection => 'Sección de Anime';
+  @override
+  String get animeSectionDesc => 'Mostrar pestaña de anime en la navegación';
+  @override
+  String get mangaSection => 'Sección de Manga';
+  @override
+  String get mangaSectionDesc => 'Mostrar pestaña de manga en la navegación';
+  @override
+  String get cannotDisableBothSections => 'Debes mantener al menos una sección habilitada';
 }
