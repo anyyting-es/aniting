@@ -10,6 +10,7 @@ import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/preferences/manga_reader_preferences_provider.dart';
 import 'package:seanime_app/core/preferences/resume_bar_preferences_provider.dart';
 import 'package:seanime_app/data/models/manga_entry.dart';
+import 'package:seanime_app/data/services/offline_library_service.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/widgets/manga/manga_keep_alive_page.dart';
 import 'package:seanime_app/presentation/widgets/manga/manga_reader_settings_sheet.dart';
@@ -113,6 +114,18 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
           updatedAt: DateTime.now().millisecondsSinceEpoch,
         ),
       );
+
+      OfflineLibraryService.instance.recordMangaRead(
+        mediaId: widget.mediaId,
+        title: widget.mangaTitle,
+        chapterNumber: _currentChapter.chapterNumber,
+        chapterTitle: _currentChapter.title,
+        coverImage: widget.coverImage,
+      );
+      if (mounted) {
+        ref.invalidate(mangaCollectionProvider);
+        ref.invalidate(continueReadingMangaProvider);
+      }
     } catch (_) {}
   }
 
@@ -224,17 +237,24 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
         debugPrint('Error saving local manga progress: $e');
       }
 
-      // 2. Sincronizar con Seanime server y trackers conectados (AniList, etc.)
+      // 2. Sincronizar con almacenamiento offline y Seanime server/trackers
       try {
+        await OfflineLibraryService.instance.updateMangaProgress(
+          mediaId: widget.mediaId,
+          chapterNumber: epNum.toDouble(),
+        );
+
         final repo = ref.read(repositoryProvider);
         await repo.updateMangaProgress(
           mediaId: widget.mediaId,
           chapterNumber: epNum,
         );
+      } catch (e) {
+        debugPrint('Error syncing manga progress: $e');
+      } finally {
         ref.invalidate(mangaCollectionProvider);
         ref.invalidate(continueReadingMangaProvider);
-      } catch (e) {
-        debugPrint('Error syncing manga progress with trackers: $e');
+        ref.invalidate(mangaRecommendationsProvider);
       }
     }
   }

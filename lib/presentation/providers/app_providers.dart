@@ -11,6 +11,7 @@ import 'package:seanime_app/data/models/onlinestream_models.dart';
 import 'package:seanime_app/data/models/server_status.dart';
 import 'package:seanime_app/data/repositories/seanime_repository.dart';
 import 'package:seanime_app/data/services/manga_offline_service.dart';
+import 'package:seanime_app/data/services/offline_library_service.dart';
 import 'package:seanime_app/data/services/feed_cache_service.dart';
 import 'package:seanime_app/core/api/websocket_service.dart';
 
@@ -277,12 +278,26 @@ Future<List<MangaEntry>> loadMangaWithCacheAndSwr({
 // ─── ANIME PROVIDERS ───
 
 final animeCollectionProvider = FutureProvider<List<AnimeEntry>>((ref) async {
-  return loadAnimeWithCacheAndSwr(
+  final serverState = ref.watch(serverNotifierProvider);
+  final isLoggedIn = serverState.status?.isLoggedIn ?? false;
+
+  if (!isLoggedIn) {
+    return OfflineLibraryService.instance.getAnimeCollection();
+  }
+
+  final remote = await loadAnimeWithCacheAndSwr(
     ref: ref,
     cacheKey: FeedCacheService.kCacheAnimeCollection,
     requireAuth: true,
     fetchFresh: () => ref.read(repositoryProvider).getLibraryCollection(),
   );
+
+  if (remote.isEmpty) {
+    final local = OfflineLibraryService.instance.getAnimeCollection();
+    if (local.isNotEmpty) return local;
+  }
+
+  return remote;
 });
 
 final downloadedAnimeProvider = FutureProvider<List<AnimeEntry>>((ref) async {
@@ -299,12 +314,26 @@ final aniZipDataProvider = FutureProvider.family<AniZipData?, int>((ref, mediaId
 });
 
 final continueWatchingProvider = FutureProvider<List<AnimeEntry>>((ref) async {
-  return loadAnimeWithCacheAndSwr(
+  final serverState = ref.watch(serverNotifierProvider);
+  final isLoggedIn = serverState.status?.isLoggedIn ?? false;
+
+  if (!isLoggedIn) {
+    return OfflineLibraryService.instance.getContinueWatching();
+  }
+
+  final remote = await loadAnimeWithCacheAndSwr(
     ref: ref,
     cacheKey: FeedCacheService.kCacheContinueWatchingAnime,
     requireAuth: true,
     fetchFresh: () => ref.read(repositoryProvider).getContinueWatching(),
   );
+
+  if (remote.isEmpty) {
+    final local = OfflineLibraryService.instance.getContinueWatching();
+    if (local.isNotEmpty) return local;
+  }
+
+  return remote;
 });
 
 final trendingAnimeProvider = FutureProvider<List<AnimeEntry>>((ref) async {
@@ -341,13 +370,49 @@ final missedSequelsProvider = FutureProvider<List<AnimeEntry>>((ref) async {
 });
 
 final recommendationsProvider = FutureProvider<List<AnimeEntry>>((ref) async {
+  final serverState = ref.watch(serverNotifierProvider);
+  final isLoggedIn = serverState.status?.isLoggedIn ?? false;
+
+  if (!isLoggedIn) {
+    final localCollection = OfflineLibraryService.instance.getAnimeCollection();
+    if (localCollection.isEmpty) return [];
+
+    final watchingOrCompleted = localCollection
+        .where((e) => e.status == 'CURRENT' || e.status == 'WATCHING' || e.status == 'COMPLETED')
+        .toList();
+
+    if (watchingOrCompleted.isEmpty) return [];
+
+    final allUserMediaIds = localCollection.map((e) => e.mediaId).toSet();
+    final sampleMediaIds = watchingOrCompleted.take(4).map((e) => e.mediaId).toList();
+
+    return ref.read(repositoryProvider).getRecommendationsForUser(
+      mediaIds: sampleMediaIds,
+      excludeMediaIds: allUserMediaIds,
+    );
+  }
+
   return loadAnimeWithCacheAndSwr(
     ref: ref,
     cacheKey: FeedCacheService.kCacheRecommendations,
     requireAuth: true,
     fetchFresh: () async {
       final collection = await ref.read(animeCollectionProvider.future);
-      if (collection.isEmpty) return [];
+      if (collection.isEmpty) {
+        final local = OfflineLibraryService.instance.getAnimeCollection();
+        if (local.isNotEmpty) {
+          final watchingOrCompleted = local
+              .where((e) => e.status == 'CURRENT' || e.status == 'WATCHING' || e.status == 'COMPLETED')
+              .toList();
+          if (watchingOrCompleted.isNotEmpty) {
+            return ref.read(repositoryProvider).getRecommendationsForUser(
+              mediaIds: watchingOrCompleted.take(4).map((e) => e.mediaId).toList(),
+              excludeMediaIds: local.map((e) => e.mediaId).toSet(),
+            );
+          }
+        }
+        return [];
+      }
 
       final watchingOrCompleted = collection
           .where((e) => e.status == 'CURRENT' || e.status == 'WATCHING' || e.status == 'COMPLETED')
@@ -369,21 +434,49 @@ final recommendationsProvider = FutureProvider<List<AnimeEntry>>((ref) async {
 // ─── MANGA PROVIDERS ───
 
 final mangaCollectionProvider = FutureProvider<List<MangaEntry>>((ref) async {
-  return loadMangaWithCacheAndSwr(
+  final serverState = ref.watch(serverNotifierProvider);
+  final isLoggedIn = serverState.status?.isLoggedIn ?? false;
+
+  if (!isLoggedIn) {
+    return OfflineLibraryService.instance.getMangaCollection();
+  }
+
+  final remote = await loadMangaWithCacheAndSwr(
     ref: ref,
     cacheKey: FeedCacheService.kCacheMangaCollection,
     requireAuth: true,
     fetchFresh: () => ref.read(repositoryProvider).getMangaCollection(),
   );
+
+  if (remote.isEmpty) {
+    final local = OfflineLibraryService.instance.getMangaCollection();
+    if (local.isNotEmpty) return local;
+  }
+
+  return remote;
 });
 
 final continueReadingMangaProvider = FutureProvider<List<MangaEntry>>((ref) async {
-  return loadMangaWithCacheAndSwr(
+  final serverState = ref.watch(serverNotifierProvider);
+  final isLoggedIn = serverState.status?.isLoggedIn ?? false;
+
+  if (!isLoggedIn) {
+    return OfflineLibraryService.instance.getContinueReading();
+  }
+
+  final remote = await loadMangaWithCacheAndSwr(
     ref: ref,
     cacheKey: FeedCacheService.kCacheContinueReadingManga,
     requireAuth: true,
     fetchFresh: () => ref.read(repositoryProvider).getContinueReadingManga(),
   );
+
+  if (remote.isEmpty) {
+    final local = OfflineLibraryService.instance.getContinueReading();
+    if (local.isNotEmpty) return local;
+  }
+
+  return remote;
 });
 
 final trendingMangaProvider = FutureProvider<List<MangaEntry>>((ref) async {
@@ -403,13 +496,55 @@ final popularMangaProvider = FutureProvider<List<MangaEntry>>((ref) async {
 });
 
 final mangaRecommendationsProvider = FutureProvider<List<MangaEntry>>((ref) async {
+  final serverState = ref.watch(serverNotifierProvider);
+  final isLoggedIn = serverState.status?.isLoggedIn ?? false;
+
+  if (!isLoggedIn) {
+    final localCollection = OfflineLibraryService.instance.getMangaCollection();
+    if (localCollection.isEmpty) return [];
+
+    final readingOrCompleted = localCollection
+        .where((e) =>
+            e.status.toUpperCase() == 'CURRENT' ||
+            e.status.toUpperCase() == 'READING' ||
+            e.status.toUpperCase() == 'COMPLETED')
+        .toList();
+
+    if (readingOrCompleted.isEmpty) return [];
+
+    final allUserMediaIds = localCollection.map((e) => e.mediaId).toSet();
+    final sampleMediaIds = readingOrCompleted.take(4).map((e) => e.mediaId).toList();
+
+    return ref.read(repositoryProvider).getMangaRecommendationsForUser(
+      mediaIds: sampleMediaIds,
+      excludeMediaIds: allUserMediaIds,
+    );
+  }
+
   return loadMangaWithCacheAndSwr(
     ref: ref,
     cacheKey: FeedCacheService.kCacheMangaRecommendations,
     requireAuth: true,
     fetchFresh: () async {
       final collection = await ref.read(mangaCollectionProvider.future);
-      if (collection.isEmpty) return [];
+      if (collection.isEmpty) {
+        final local = OfflineLibraryService.instance.getMangaCollection();
+        if (local.isNotEmpty) {
+          final readingOrCompleted = local
+              .where((e) =>
+                  e.status.toUpperCase() == 'CURRENT' ||
+                  e.status.toUpperCase() == 'READING' ||
+                  e.status.toUpperCase() == 'COMPLETED')
+              .toList();
+          if (readingOrCompleted.isNotEmpty) {
+            return ref.read(repositoryProvider).getMangaRecommendationsForUser(
+              mediaIds: readingOrCompleted.take(4).map((e) => e.mediaId).toList(),
+              excludeMediaIds: local.map((e) => e.mediaId).toSet(),
+            );
+          }
+        }
+        return [];
+      }
 
       final readingOrCompleted = collection
           .where((e) =>

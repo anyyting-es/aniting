@@ -286,6 +286,10 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
             _isLoadingDetails = false;
           });
 
+          if (details != null) {
+            _progressManager.savePlaybackProgress();
+          }
+
           // Auto-update active session with main character image once details load
           final currentSession = ref.read(lastSessionProvider);
           if (currentSession != null && currentSession.mediaId == widget.mediaId) {
@@ -443,10 +447,29 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       getDuration: () => _duration,
       getIsPlaying: () => _isPlaying,
       getTotalEpisodes: () => _animeDetails?.totalEpisodes,
+      getBannerImage: () => _animeDetails?.bannerImage,
+      getCoverColor: () => _animeDetails?.coverColor,
+      getGenres: () => _animeDetails?.genres,
+      getScore: () => _animeDetails?.score,
+      getDescription: () => _animeDetails?.description,
+      getYear: () => _animeDetails?.seasonYear,
+      getFormat: () => _animeDetails?.format,
+      getEpisodeThumbnail: () {
+        final ep = _aniZipData?.getEpisode(_currentEpisodeNumber ?? 1);
+        return ep?.image ?? _effectiveCoverImage;
+      },
+      onLocalWatchRecorded: () {
+        if (mounted) {
+          ref.invalidate(animeCollectionProvider);
+          ref.invalidate(continueWatchingProvider);
+          ref.invalidate(recommendationsProvider);
+        }
+      },
       onProgressSynced: () {
         if (mounted) {
           ref.invalidate(animeCollectionProvider);
           ref.invalidate(continueWatchingProvider);
+          ref.invalidate(recommendationsProvider);
         }
       },
     );

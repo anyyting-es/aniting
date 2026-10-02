@@ -2,8 +2,11 @@ package com.seanime.app.seanime_app
 
 import android.app.Service
 import android.content.Intent
+import android.content.pm.ServiceInfo
+import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
+import android.util.Log
 import go.Seq
 import mobile.Mobile
 import java.io.File
@@ -19,8 +22,9 @@ class SeanimeServerService : Service() {
     override fun onCreate() {
         super.onCreate()
         runCatching { System.loadLibrary("c++_shared") }
+        runCatching { System.loadLibrary("asskt") }
         runCatching { System.loadLibrary("gojni") }
-        Seq.setContext(applicationContext)
+        runCatching { Seq.setContext(applicationContext) }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -32,11 +36,25 @@ class SeanimeServerService : Service() {
         val port = intent?.getIntExtra(SeanimeServerRuntime.extraPort, SeanimeServerRuntime.defaultPort)
             ?: SeanimeServerRuntime.defaultPort
 
-        startForeground(
-            SeanimeServerRuntime.notificationId,
-            SeanimeServerRuntime.createNotification(applicationContext)
-        )
-        ensureWakeLock()
+        runCatching {
+            val notification = SeanimeServerRuntime.createNotification(applicationContext)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                startForeground(
+                    SeanimeServerRuntime.notificationId,
+                    notification,
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
+                )
+            } else {
+                startForeground(
+                    SeanimeServerRuntime.notificationId,
+                    notification
+                )
+            }
+        }.onFailure { e ->
+            Log.e("SeanimeServerService", "startForeground error: ${e.message}", e)
+        }
+
+        runCatching { ensureWakeLock() }
         startGoServer(port)
 
         return START_STICKY

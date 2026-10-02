@@ -8,6 +8,7 @@ import 'package:seanime_app/core/preferences/banner_blur_provider.dart';
 import 'package:seanime_app/core/preferences/title_language_provider.dart';
 import 'package:seanime_app/core/theme/app_theme_colors.dart';
 import 'package:seanime_app/data/models/manga_entry.dart';
+import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/screens/extensions_marketplace_screen.dart';
 import 'package:seanime_app/presentation/widgets/manga/manga_chapter_item.dart';
 
@@ -118,7 +119,10 @@ class _MangaDetailMobileLayoutState extends ConsumerState<MangaDetailMobileLayou
 
   List<MangaChapter> get _filteredChapters {
     var list = List<MangaChapter>.from(widget.chapters);
-    final progress = widget.entry?.progress ?? 0;
+    final liveCol = ref.read(mangaCollectionProvider).whenOrNull(
+          data: (entries) => entries.where((e) => e.mediaId == widget.mediaId).firstOrNull,
+        );
+    final progress = liveCol?.progress ?? widget.entry?.progress ?? 0;
 
     if (widget.showOnlyDownloaded) {
       list = list.where((c) => widget.downloadedChapterIds.contains(c.id)).toList();
@@ -171,7 +175,10 @@ class _MangaDetailMobileLayoutState extends ConsumerState<MangaDetailMobileLayou
         ? [Shadow(color: Colors.black.withValues(alpha: 0.8), blurRadius: 4)]
         : null;
 
-    final resolved = widget.entry ?? widget.initialEntry;
+    final liveCollectionEntry = ref.watch(mangaCollectionProvider).whenOrNull(
+          data: (entries) => entries.where((e) => e.mediaId == widget.mediaId).firstOrNull,
+        );
+    final resolved = liveCollectionEntry ?? widget.entry ?? widget.initialEntry;
     final title = resolved?.displayTitle(titleLang) ?? 'Manga';
     final hasRealBanner = (resolved?.bannerImage != null && resolved!.bannerImage!.isNotEmpty);
     final bannerUrl = resolved?.bannerImage ?? resolved?.coverImage;

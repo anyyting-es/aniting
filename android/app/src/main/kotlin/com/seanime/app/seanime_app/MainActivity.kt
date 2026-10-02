@@ -71,17 +71,29 @@ class MainActivity : FlutterActivity() {
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
             when (call.method) {
                 "startServer" -> {
-                    val port = call.argument<Int>("port") ?: SeanimeServerRuntime.defaultPort
-                    val status = SeanimeServerRuntime.start(applicationContext, port)
-                    result.success(status)
+                    try {
+                        val port = call.argument<Int>("port") ?: SeanimeServerRuntime.defaultPort
+                        val status = SeanimeServerRuntime.start(applicationContext, port)
+                        result.success(status)
+                    } catch (e: Throwable) {
+                        result.error("SERVER_START_ERROR", e.localizedMessage, null)
+                    }
                 }
                 "stopServer" -> {
-                    val status = SeanimeServerRuntime.stop(applicationContext)
-                    result.success(status)
+                    try {
+                        val status = SeanimeServerRuntime.stop(applicationContext)
+                        result.success(status)
+                    } catch (e: Throwable) {
+                        result.error("SERVER_STOP_ERROR", e.localizedMessage, null)
+                    }
                 }
                 "getStatus" -> {
-                    val status = SeanimeServerRuntime.status(applicationContext)
-                    result.success(status)
+                    try {
+                        val status = SeanimeServerRuntime.status(applicationContext)
+                        result.success(status)
+                    } catch (e: Throwable) {
+                        result.error("SERVER_STATUS_ERROR", e.localizedMessage, null)
+                    }
                 }
                 "getDataDir" -> {
                     result.success(SeanimeServerRuntime.dataDir(applicationContext).absolutePath)

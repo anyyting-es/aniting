@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:seanime_app/core/preferences/playback_progress_preferences_provider.dart';
 import 'package:seanime_app/core/preferences/resume_bar_preferences_provider.dart';
 import 'package:seanime_app/data/repositories/seanime_repository.dart';
+import 'package:seanime_app/data/services/offline_library_service.dart';
 
 /// Service responsible for managing video playback progress, periodic continuity updates,
 /// LastSession persistence, and automatic AniList watched progress synchronization.
@@ -16,6 +17,7 @@ class PlayerProgressManager {
   final ValueGetter<String?> getCharacterImage;
   final ValueGetter<int?> getEpisodeNumber;
   final ValueGetter<String?> getEpisodeTitle;
+  final ValueGetter<String?>? getEpisodeThumbnail;
   final ValueGetter<String> getVideoUrl;
   final ValueGetter<Map<String, String>?> getHeaders;
   final ValueGetter<String?> getMimeType;
@@ -24,7 +26,15 @@ class PlayerProgressManager {
   final ValueGetter<Duration> getDuration;
   final ValueGetter<bool> getIsPlaying;
   final ValueGetter<int?> getTotalEpisodes;
+  final ValueGetter<String?>? getBannerImage;
+  final ValueGetter<String?>? getCoverColor;
+  final ValueGetter<List<String>?>? getGenres;
+  final ValueGetter<double?>? getScore;
+  final ValueGetter<String?>? getDescription;
+  final ValueGetter<int?>? getYear;
+  final ValueGetter<String?>? getFormat;
   final VoidCallback? onProgressSynced;
+  final VoidCallback? onLocalWatchRecorded;
 
   Timer? _continuityTimer;
   bool _hasUpdatedAnimeProgress = false;
@@ -39,6 +49,7 @@ class PlayerProgressManager {
     required this.getCharacterImage,
     required this.getEpisodeNumber,
     required this.getEpisodeTitle,
+    this.getEpisodeThumbnail,
     required this.getVideoUrl,
     required this.getHeaders,
     required this.getMimeType,
@@ -47,7 +58,15 @@ class PlayerProgressManager {
     required this.getDuration,
     required this.getIsPlaying,
     required this.getTotalEpisodes,
+    this.getBannerImage,
+    this.getCoverColor,
+    this.getGenres,
+    this.getScore,
+    this.getDescription,
+    this.getYear,
+    this.getFormat,
     this.onProgressSynced,
+    this.onLocalWatchRecorded,
   });
 
   /// Starts periodic continuity tracking every 20 seconds while playing.
@@ -111,7 +130,7 @@ class PlayerProgressManager {
         updatedAt: DateTime.now().millisecondsSinceEpoch,
       );
 
-      Future.microtask(() {
+      Future.microtask(() async {
         lastSessionNotifier.saveSession(sessionItem);
         playbackProgressNotifier?.saveProgress(
           mediaId: mediaId!,
@@ -119,6 +138,26 @@ class PlayerProgressManager {
           positionMs: pos.inMilliseconds,
           durationMs: dur.inMilliseconds,
         );
+
+        await OfflineLibraryService.instance.recordAnimeWatch(
+          mediaId: mediaId!,
+          title: title,
+          episodeNumber: epNum,
+          episodeTitle: getEpisodeTitle(),
+          episodeThumbnail: getEpisodeThumbnail?.call(),
+          coverImage: getCoverImage(),
+          bannerImage: getBannerImage?.call(),
+          characterImage: getCharacterImage(),
+          totalEpisodes: getTotalEpisodes(),
+          genres: getGenres?.call(),
+          score: getScore?.call(),
+          format: getFormat?.call(),
+          description: getDescription?.call(),
+          coverColor: getCoverColor?.call(),
+          year: getYear?.call(),
+        );
+
+        onLocalWatchRecorded?.call();
       });
     } catch (e) {
       debugPrint('[PlayerProgressManager] Error saving progress: $e');
@@ -146,6 +185,12 @@ class PlayerProgressManager {
 
     _hasUpdatedAnimeProgress = true;
 
+    OfflineLibraryService.instance.updateAnimeProgress(
+      mediaId: mediaId!,
+      episodeNumber: epNum,
+      totalEpisodes: getTotalEpisodes(),
+    );
+
     repository
         .updateAnimeProgress(
       mediaId: mediaId!,
@@ -156,6 +201,8 @@ class PlayerProgressManager {
       onProgressSynced?.call();
     }).catchError((e) {
       debugPrint('[PlayerProgressManager] Error syncing AniList progress: $e');
+      // Even if AniList remote sync fails, local progress succeeded
+      onProgressSynced?.call();
     });
   }
 

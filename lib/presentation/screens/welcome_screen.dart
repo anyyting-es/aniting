@@ -7,7 +7,6 @@ import '../../core/preferences/onboarding_provider.dart';
 import '../../core/theme/app_theme_colors.dart';
 import '../../data/models/extension_item.dart';
 import '../providers/app_providers.dart';
-import 'main_shell.dart';
 import '../widgets/welcome/welcome_step_anilist.dart';
 import '../widgets/welcome/welcome_step_content_preferences.dart';
 import '../widgets/welcome/welcome_step_extensions.dart';
@@ -218,10 +217,8 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
       );
     } else {
       await ref.read(onboardingProvider.notifier).completeOnboarding();
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const MainShell()),
-        );
+      if (mounted && Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
       }
     }
   }

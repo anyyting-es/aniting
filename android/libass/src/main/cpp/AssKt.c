@@ -1,16 +1,197 @@
+#define _GNU_SOURCE 1
 // JNI bindings for libass. Exports use standard Java_<package>_<Class>_<method>
 // naming so no RegisterNatives/JNI_OnLoad registration is needed.
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
 #include <android/log.h>
+#include <errno.h>
+#include <fcntl.h>
 #include <jni.h>
 #include <limits.h>
+#include <signal.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <time.h>
+#include <ucontext.h>
+#include <unistd.h>
+
+#if !defined(__USE_GNU)
+extern int pipe2(int __fds[2], int __flags);
+#endif
+
+#ifndef SYS_SECCOMP
+#define SYS_SECCOMP 1
+#endif
+
+#ifndef AT_FDCWD
+#define AT_FDCWD -100
+#endif
+#ifndef AT_SYMLINK_NOFOLLOW
+#define AT_SYMLINK_NOFOLLOW 0x100
+#endif
+#ifndef AT_REMOVEDIR
+#define AT_REMOVEDIR 0x200
+#endif
+#ifndef AT_EMPTY_PATH
+#define AT_EMPTY_PATH 0x1000
+#endif
+
+static struct sigaction g_old_sigsys;
+static __thread int s_in_sigsys = 0;
+
+static void sigsys_filter_handler(int sig, siginfo_t *info, void *ucontext) {
+  if (sig == SIGSYS && info && info->si_code == SYS_SECCOMP) {
+    ucontext_t *ctx = (ucontext_t *)ucontext;
+    int syscall_no = info->si_syscall;
+
+    if (s_in_sigsys) {
+#if defined(__x86_64__)
+      ctx->uc_mcontext.gregs[REG_RAX] = -ENOSYS;
+#elif defined(__i386__)
+      ctx->uc_mcontext.gregs[REG_EAX] = -ENOSYS;
+#elif defined(__aarch64__)
+      ctx->uc_mcontext.regs[0] = -ENOSYS;
+#elif defined(__arm__)
+      ctx->uc_mcontext.arm_r0 = -ENOSYS;
+#endif
+      return;
+    }
+
+    s_in_sigsys = 1;
+
+#if defined(__x86_64__)
+    uintptr_t arg1 = (uintptr_t)ctx->uc_mcontext.gregs[REG_RDI];
+    uintptr_t arg2 = (uintptr_t)ctx->uc_mcontext.gregs[REG_RSI];
+    uintptr_t arg3 = (uintptr_t)ctx->uc_mcontext.gregs[REG_RDX];
+    uintptr_t arg4 = (uintptr_t)ctx->uc_mcontext.gregs[REG_R10];
+    uintptr_t arg5 = (uintptr_t)ctx->uc_mcontext.gregs[REG_R8];
+    uintptr_t arg6 = (uintptr_t)ctx->uc_mcontext.gregs[REG_R9];
+
+    long ret = -ENOSYS;
+    int handled = 0;
+
+    switch (syscall_no) {
+      case 2: /* __NR_open */
+        ret = openat(AT_FDCWD, (const char *)arg1, (int)arg2, (mode_t)arg3);
+        if (ret < 0) ret = -errno;
+        handled = 1;
+        break;
+      case 4: /* __NR_stat */
+        ret = fstatat(AT_FDCWD, (const char *)arg1, (struct stat *)arg2, 0);
+        if (ret < 0) ret = -errno;
+        handled = 1;
+        break;
+      case 5: /* __NR_fstat */
+        ret = fstat((int)arg1, (struct stat *)arg2);
+        if (ret < 0) ret = -errno;
+        handled = 1;
+        break;
+      case 6: /* __NR_lstat */
+        ret = fstatat(AT_FDCWD, (const char *)arg1, (struct stat *)arg2, AT_SYMLINK_NOFOLLOW);
+        if (ret < 0) ret = -errno;
+        handled = 1;
+        break;
+      case 21: /* __NR_access */
+        ret = faccessat(AT_FDCWD, (const char *)arg1, (int)arg2, 0);
+        if (ret < 0) ret = -errno;
+        handled = 1;
+        break;
+      case 22: /* __NR_pipe */
+        ret = pipe2((int *)arg1, 0);
+        if (ret < 0) ret = -errno;
+        handled = 1;
+        break;
+      case 33: /* __NR_dup2 */
+        ret = dup3((int)arg1, (int)arg2, 0);
+        if (ret < 0) ret = -errno;
+        handled = 1;
+        break;
+      case 82: /* __NR_rename */
+        ret = renameat(AT_FDCWD, (const char *)arg1, AT_FDCWD, (const char *)arg2);
+        if (ret < 0) ret = -errno;
+        handled = 1;
+        break;
+      case 83: /* __NR_mkdir */
+        ret = mkdirat(AT_FDCWD, (const char *)arg1, (mode_t)arg2);
+        if (ret < 0) ret = -errno;
+        handled = 1;
+        break;
+      case 84: /* __NR_rmdir */
+        ret = unlinkat(AT_FDCWD, (const char *)arg1, AT_REMOVEDIR);
+        if (ret < 0) ret = -errno;
+        handled = 1;
+        break;
+      case 87: /* __NR_unlink */
+        ret = unlinkat(AT_FDCWD, (const char *)arg1, 0);
+        if (ret < 0) ret = -errno;
+        handled = 1;
+        break;
+      case 89: /* __NR_readlink */
+        ret = readlinkat(AT_FDCWD, (const char *)arg1, (char *)arg2, (size_t)arg3);
+        if (ret < 0) ret = -errno;
+        handled = 1;
+        break;
+      case 90: /* __NR_chmod */
+        ret = fchmodat(AT_FDCWD, (const char *)arg1, (mode_t)arg2, 0);
+        if (ret < 0) ret = -errno;
+        handled = 1;
+        break;
+      case 92: /* __NR_chown */
+        ret = fchownat(AT_FDCWD, (const char *)arg1, (uid_t)arg2, (gid_t)arg3, 0);
+        if (ret < 0) ret = -errno;
+        handled = 1;
+        break;
+      default:
+        __android_log_print(ANDROID_LOG_WARN, "SeanimeSyscall", "Unhandled SIGSYS syscall %d, returning -ENOSYS for fallback", syscall_no);
+        ret = -ENOSYS;
+        break;
+    }
+
+    if (handled) {
+      __android_log_print(ANDROID_LOG_INFO, "SeanimeSyscall", "Emulated SIGSYS syscall %d -> %ld", syscall_no, ret);
+    }
+    ctx->uc_mcontext.gregs[REG_RAX] = ret;
+
+#elif defined(__aarch64__)
+    __android_log_print(ANDROID_LOG_WARN, "SeanimeSyscall", "ARM64 SIGSYS syscall %d, returning -ENOSYS for fallback", syscall_no);
+    ctx->uc_mcontext.regs[0] = -ENOSYS;
+
+#elif defined(__i386__)
+    __android_log_print(ANDROID_LOG_WARN, "SeanimeSyscall", "x86 SIGSYS syscall %d, returning -ENOSYS for fallback", syscall_no);
+    ctx->uc_mcontext.gregs[REG_EAX] = -ENOSYS;
+
+#elif defined(__arm__)
+    __android_log_print(ANDROID_LOG_WARN, "SeanimeSyscall", "ARM32 SIGSYS syscall %d, returning -ENOSYS for fallback", syscall_no);
+    ctx->uc_mcontext.arm_r0 = -ENOSYS;
+#endif
+
+    s_in_sigsys = 0;
+    return;
+  }
+  if (g_old_sigsys.sa_sigaction) {
+    g_old_sigsys.sa_sigaction(sig, info, ucontext);
+  } else if (g_old_sigsys.sa_handler && g_old_sigsys.sa_handler != SIG_DFL && g_old_sigsys.sa_handler != SIG_IGN) {
+    g_old_sigsys.sa_handler(sig);
+  }
+}
+
+static void install_seccomp_sigsys_handler(void) {
+  struct sigaction sa;
+  memset(&sa, 0, sizeof(sa));
+  sa.sa_sigaction = sigsys_filter_handler;
+  sa.sa_flags = SA_SIGINFO | SA_NODEFER;
+  sigemptyset(&sa.sa_mask);
+  sigaction(SIGSYS, &sa, &g_old_sigsys);
+  __android_log_print(ANDROID_LOG_INFO, "SeanimeSyscall", "Installed SECCOMP SIGSYS compatibility handler");
+}
+
+JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
+  install_seccomp_sigsys_handler();
+  return JNI_VERSION_1_6;
+}
 
 static inline long long nowMs(void) {
   struct timespec ts;

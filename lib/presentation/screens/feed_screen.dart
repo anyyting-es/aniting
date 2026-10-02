@@ -16,6 +16,7 @@ import 'package:seanime_app/core/theme/smooth_scroll_controller.dart';
 import 'package:seanime_app/presentation/widgets/feed_empty_state.dart';
 import 'package:seanime_app/presentation/widgets/top_status_bar_glass.dart';
 import 'package:seanime_app/data/services/feed_cache_service.dart';
+import 'package:seanime_app/data/services/offline_library_service.dart';
 
 class FeedScreen extends ConsumerStatefulWidget {
   final VoidCallback? onOpenSearch;
@@ -257,18 +258,24 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
 
     // Cache / Readiness check for user library
     final cachedCw = FeedCacheService.instance.getAnimeList(FeedCacheService.kCacheContinueWatchingAnime);
-    final continueWatchingEntries = continueWatchingAsync.value ?? (continueWatchingAsync.isLoading ? cachedCw : <AnimeEntry>[]);
+    final offlineCw = OfflineLibraryService.instance.getContinueWatching();
+    final continueWatchingEntries = continueWatchingAsync.value ??
+        (continueWatchingAsync.isLoading
+            ? (cachedCw.isNotEmpty ? cachedCw : offlineCw)
+            : (!isLoggedIn ? offlineCw : <AnimeEntry>[]));
     final hasUserCachedData = cachedCw.isNotEmpty ||
-        (collectionAsync.value?.isNotEmpty ?? false);
+        offlineCw.isNotEmpty ||
+        (collectionAsync.value?.isNotEmpty ?? false) ||
+        OfflineLibraryService.instance.getAnimeCollection().isNotEmpty;
     final isServerUnavailable = serverState.state == ServerState.stopped || serverState.state == ServerState.error;
 
     // Both continueWatching (or its cache) and collection must be settled before removing skeleton to prevent CLS
-    final isCwSettled = continueWatchingAsync.hasValue || cachedCw.isNotEmpty || continueWatchingAsync.hasError;
+    final isCwSettled = continueWatchingAsync.hasValue || cachedCw.isNotEmpty || offlineCw.isNotEmpty || continueWatchingAsync.hasError;
     final isCollectionSettled = collectionAsync.hasValue || collectionAsync.hasError;
-    final isUserFeedReady = !isLoggedIn || (isCwSettled && isCollectionSettled);
+    final isUserFeedReady = isCwSettled && isCollectionSettled;
 
     if (!_hasCompletedInitialLoad) {
-      if ((hasUserCachedData && isCwSettled) || isServerUnavailable || (serverState.isOnline && isUserFeedReady)) {
+      if ((hasUserCachedData && isCwSettled) || isServerUnavailable || (serverState.isOnline && isUserFeedReady) || !isLoggedIn) {
         _hasCompletedInitialLoad = true;
       }
     }

@@ -85,10 +85,14 @@ builtintorrentclient = true
             .setAction(actionStart)
             .putExtra(extraPort, port)
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            appContext.startForegroundService(intent)
-        } else {
-            appContext.startService(intent)
+        runCatching {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                appContext.startForegroundService(intent)
+            } else {
+                appContext.startService(intent)
+            }
+        }.onFailure { e ->
+            setState(appContext, "error", e.message ?: e.toString())
         }
 
         return status(appContext)
@@ -164,6 +168,12 @@ builtintorrentclient = true
 
         val port = prefs(appContext).getInt(keyPort, defaultPort)
 
+        val iconRes = if (appContext.applicationInfo.icon != 0) {
+            appContext.applicationInfo.icon
+        } else {
+            android.R.drawable.stat_notify_sync
+        }
+
         val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             Notification.Builder(appContext, notificationChannelId)
         } else {
@@ -173,7 +183,7 @@ builtintorrentclient = true
         return builder
             .setContentTitle("Seanime Server")
             .setContentText("Servidor activo en http://$host:$port")
-            .setSmallIcon(appContext.applicationInfo.icon)
+            .setSmallIcon(iconRes)
             .setOngoing(true)
             .setContentIntent(openIntent)
             .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Detener", stopIntent)

@@ -37,7 +37,9 @@ class FeedEmptyState extends ConsumerWidget {
     final title = isOffline
         ? (isSpanish ? 'Sin conexión a internet' : 'No internet connection')
         : (!isLoggedIn
-            ? (l10n.loginForFeed.isNotEmpty ? l10n.loginForFeed : 'Inicia sesión en AniList')
+            ? (isManga
+                ? (isSpanish ? 'Comienza a leer' : 'Start reading')
+                : (isSpanish ? 'Comienza a explorar' : 'Start exploring'))
             : (isManga ? 'Tu lista de manga está vacía' : 'Tu lista de anime está vacía'));
 
     final description = isOffline
@@ -45,7 +47,13 @@ class FeedEmptyState extends ConsumerWidget {
             ? 'No pudimos conectar con los servidores. Revisa tu conexión a internet.'
             : 'Could not connect to the servers. Please check your internet connection.')
         : (!isLoggedIn
-            ? 'Conecta tu cuenta de AniList para sincronizar tus listas'
+            ? (isSpanish
+                ? (isManga
+                    ? 'Explora el catálogo o lee cualquier capítulo para armar tu feed automáticamente, o conecta tu cuenta de AniList si deseas sincronizar tus listas.'
+                    : 'Explora el catálogo o reproduce cualquier serie para armar tu feed automáticamente, o conecta tu cuenta de AniList si deseas sincronizar tus listas.')
+                : (isManga
+                    ? 'Explore the catalog or read any chapter to build your feed automatically, or connect AniList to sync your lists.'
+                    : 'Explore the catalog or play any episode to build your feed automatically, or connect AniList to sync your lists.'))
             : (isManga
                 ? 'Aún no tienes mangas en curso. Explora el catálogo o busca tus series favoritas.'
                 : 'Aún no tienes animes en seguimiento. Explora el catálogo o busca tus series favoritas.'));
@@ -176,14 +184,37 @@ class FeedEmptyState extends ConsumerWidget {
                   spacing: 10,
                   runSpacing: 8,
                   children: [
-                    FilledButton.icon(
-                      style: FilledButton.styleFrom(
+                    if (onExplore != null)
+                      FilledButton.icon(
+                        style: FilledButton.styleFrom(
+                          visualDensity: VisualDensity.compact,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          elevation: 0,
+                        ),
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          onExplore?.call();
+                        },
+                        icon: const Icon(Icons.explore_outlined, size: 16),
+                        label: Text(
+                          isSpanish ? 'Explorar' : 'Explore',
+                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                        ),
+                      ),
+                    OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
                         visualDensity: VisualDensity.compact,
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(20),
                         ),
-                        elevation: 0,
+                        side: BorderSide(
+                          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+                          width: 1,
+                        ),
                       ),
                       onPressed: () {
                         HapticFeedback.lightImpact();
@@ -194,34 +225,11 @@ class FeedEmptyState extends ConsumerWidget {
                         }
                       },
                       icon: const Icon(Icons.login_rounded, size: 16),
-                      label: const Text(
-                        'Conectar con AniList',
-                        style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                      label: Text(
+                        isSpanish ? 'Conectar con AniList' : 'Connect AniList',
+                        style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
                       ),
                     ),
-                    if (onExplore != null)
-                      OutlinedButton.icon(
-                        style: OutlinedButton.styleFrom(
-                          visualDensity: VisualDensity.compact,
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          side: BorderSide(
-                            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
-                            width: 1,
-                          ),
-                        ),
-                        onPressed: () {
-                          HapticFeedback.lightImpact();
-                          onExplore?.call();
-                        },
-                        icon: const Icon(Icons.explore_outlined, size: 16),
-                        label: const Text(
-                          'Explorar',
-                          style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
-                        ),
-                      ),
                   ],
                 ),
               ] else if (onExplore != null) ...[

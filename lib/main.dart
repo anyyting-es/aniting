@@ -20,6 +20,7 @@ import 'package:seanime_app/presentation/screens/main_shell.dart';
 import 'package:seanime_app/presentation/screens/welcome_screen.dart';
 import 'package:seanime_app/presentation/widgets/desktop_title_bar.dart';
 import 'package:seanime_app/data/services/feed_cache_service.dart';
+import 'package:seanime_app/data/services/offline_library_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
@@ -72,6 +73,7 @@ void main() async {
   try {
     final prefs = await SharedPreferences.getInstance();
     FeedCacheService.setCachedPrefs(prefs);
+    OfflineLibraryService.setCachedPrefs(prefs);
     PlayerEngineNotifier.setCachedPrefs(prefs);
     AppLanguageNotifier.setCachedPrefs(prefs);
     DesktopScrollbarNotifier.setCachedPrefs(prefs);

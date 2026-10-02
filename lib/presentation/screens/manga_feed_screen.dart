@@ -16,6 +16,7 @@ import 'package:seanime_app/presentation/widgets/top_status_bar_glass.dart';
 import 'package:seanime_app/core/theme/smooth_scroll_controller.dart';
 import 'package:seanime_app/core/server/server_manager.dart';
 import 'package:seanime_app/data/services/feed_cache_service.dart';
+import 'package:seanime_app/data/services/offline_library_service.dart';
 
 class MangaFeedScreen extends ConsumerStatefulWidget {
   final VoidCallback? onOpenSearch;
@@ -128,15 +129,20 @@ class _MangaFeedScreenState extends ConsumerState<MangaFeedScreen> {
     final isLoggedIn = serverState.status?.isLoggedIn ?? false;
 
     final cachedCr = FeedCacheService.instance.getMangaList(FeedCacheService.kCacheContinueReadingManga);
-    final continueReadingEntries = continueReadingAsync.value ?? (continueReadingAsync.isLoading ? cachedCr : <MangaEntry>[]);
+    final offlineCr = OfflineLibraryService.instance.getContinueReading();
+    final continueReadingEntries = continueReadingAsync.value ??
+        (continueReadingAsync.isLoading
+            ? (cachedCr.isNotEmpty ? cachedCr : offlineCr)
+            : (!isLoggedIn ? offlineCr : <MangaEntry>[]));
 
     final hasContinueReading = continueReadingEntries.isNotEmpty;
     final hasCompleted = mangaCollectionAsync.value?.any((e) => e.status.toUpperCase() == 'COMPLETED') ?? false;
+    final hasReading = mangaCollectionAsync.value?.any((e) => e.status.toUpperCase() == 'CURRENT' || e.status.toUpperCase() == 'READING') ?? false;
     final hasMangaRecs = mangaRecommendationsAsync.value?.isNotEmpty ?? false;
-    final hasAnyMangaContent = hasContinueReading || hasCompleted || hasMangaRecs;
-    final isOffline = !serverState.isOnline ||
-        (serverState.state == ServerState.error) ||
-        (mangaCollectionAsync.hasError && (continueReadingAsync.hasError || continueReadingEntries.isEmpty));
+    final hasAnyMangaContent = hasContinueReading || hasCompleted || hasReading || hasMangaRecs;
+    final isOffline = (!serverState.isOnline || (serverState.state == ServerState.error)) &&
+        !hasAnyMangaContent &&
+        mangaCollectionAsync.hasError;
 
     final isDesktop = MediaQuery.of(context).size.width >= 720;
     final mangaCardWidth = isDesktop ? 180.0 : 125.0;
@@ -294,7 +300,7 @@ class _MangaFeedScreenState extends ConsumerState<MangaFeedScreen> {
                           ] else ...[
                             // ─── 1. Seguir Leyendo (Continue Reading) ───
                             ..._buildContinueReadingSlivers(
-                              continueReadingAsync: continueReadingAsync,
+                              entries: continueReadingEntries,
                               l10n: l10n,
                               theme: theme,
                               isDesktop: isDesktop,
@@ -400,14 +406,12 @@ class _MangaFeedScreenState extends ConsumerState<MangaFeedScreen> {
   }
 
   List<Widget> _buildContinueReadingSlivers({
-    required AsyncValue<List<MangaEntry>> continueReadingAsync,
+    required List<MangaEntry> entries,
     required AppTranslations l10n,
     required ThemeData theme,
     required bool isDesktop,
   }) {
-    final cached = FeedCacheService.instance.getMangaList(FeedCacheService.kCacheContinueReadingManga);
-    final list = continueReadingAsync.value ?? (continueReadingAsync.isLoading ? cached : []);
-    if (list.isEmpty) return [];
+    if (entries.isEmpty) return [];
 
     final cardWidth = isDesktop ? 180.0 : 130.0;
     final listHeight = isDesktop ? 320.0 : 238.0;
@@ -426,10 +430,10 @@ class _MangaFeedScreenState extends ConsumerState<MangaFeedScreen> {
                 scrollDirection: Axis.horizontal,
                 cacheExtent: 350,
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                itemCount: list.length,
+                itemCount: entries.length,
                 separatorBuilder: (context, index) => SizedBox(width: spacing),
                 itemBuilder: (context, index) {
-                  final item = list[index];
+                  final item = entries[index];
                   return ContinueReadingCard(
                     entry: item,
                     width: cardWidth,

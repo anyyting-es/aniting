@@ -66,7 +66,7 @@ seanime_app/
 │   ├── data/
 │   │   ├── models/                   # Data models (AnimeEntry, MangaEntry, ExtensionItem, Torrent, etc.)
 │   │   ├── repositories/             # SeanimeRepository (API methods, marketplace fetching, cache)
-│   │   └── services/                 # MangaOfflineService, FeedCacheService (persistent SWR feed cache)
+│   │   └── services/                 # MangaOfflineService, FeedCacheService (persistent SWR feed cache), OfflineLibraryService (autonomous local library & feed tracking)
 │   └── presentation/
 │       ├── providers/                # Global UI and repository providers
 │       ├── screens/                  # Main application views
@@ -292,7 +292,35 @@ seanime_app/
     - Displays the complete file list with search filter input (`Filtrar archivos o episodio...`), file names, parsed episode titles, and radio selection.
     - User can seamlessly tap any other file (e.g., OVAs, movies, or alternative episodes) to override selection.
   - **Targeted File Streaming (`fileIndex`)**:
-    - Starts the stream passing `fileIndex: selectedFile.index` to `startTorrentStream`, ensuring the embedded Go engine streams the exact chosen file from the swarm.
+- **Android 14+ Foreground Service, SECCOMP Syscall Emulation & Crash Resilience (`AssKt.c`, `SeanimeServerService.kt`, `SeanimeServerRuntime.kt`, `MainActivity.kt`, `welcome_screen.dart`)**:
+  - **Android 14 FGS Type Requirement (`FOREGROUND_SERVICE_TYPE_DATA_SYNC`)**:
+    - Under Android 14 (API 34+ / `UPSIDE_DOWN_CAKE`), calling `startForeground(id, notification)` without specifying the declared foreground service type throws a fatal `MissingForegroundServiceTypeException` and terminates the application process.
+    - Updated `SeanimeServerService.onStartCommand()` with a version-guarded `startForeground(..., ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)` call wrapped in `runCatching`, protecting low-RAM and Android 14/Android Go devices (e.g. Infinix Smart 9, Transsion XOS, MIUI).
+  - **Android 14 SECCOMP Syscall Emulation for Pure-Go SQLite (`android/libass/src/main/cpp/AssKt.c`)**:
+    - **Problem**: Android 14's kernel `seccomp-bpf` filter traps deprecated 64-bit syscalls (such as `lstat` [6], `stat` [4], `unlink` [87], `open` [2], `access` [21], etc.) that are no longer used by Android's Bionic C library, raising a `SIGSYS` (`SYS_SECCOMP`) signal. The Go backend's embedded SQLite driver (`modernc.org/sqlite` via `modernc.org/libc`) invokes `unix.Syscall(unix.SYS_LSTAT, ...)` on x86_64 Linux targets without fallback. Merely catching `SIGSYS` and returning `-ENOSYS` caused SQLite's VFS to fail immediately (`SQLITE_CANTOPEN: unable to open database file: out of memory (14)`), triggering `logger.Fatal` and killing the whole process with `os.Exit(1)`.
+    - **Solution**: Inside `sigsys_filter_handler` (`AssKt.c`), registered via `JNI_OnLoad` before `gojni` loads:
+      - Uses thread-local reentrancy guards (`s_in_sigsys`) to prevent signal handler recursion.
+      - Intercepts trapped filesystem syscalls on x86_64 (`lstat`, `stat`, `fstat`, `open`, `access`, `unlink`, `rmdir`, `mkdir`, `rename`, `readlink`, `chmod`, `chown`, `pipe`, `dup2`) and transparently emulates them using modern, Bionic-permitted POSIX `*at` system calls (`fstatat(AT_FDCWD, path, buf, AT_SYMLINK_NOFOLLOW)`, `openat`, `unlinkat`, `mkdirat`, etc.).
+      - For unhandled or modern syscalls probed by Go runtime (e.g., `clone3`, `pidfd_open`, `close_range`), gracefully returns `-ENOSYS`, enabling the Go runtime's internal fallback mechanisms without terminating the application.
+  - **Platform Channel & Service Launch Exception Safety**:
+    - Wrapped `startForegroundService` in `SeanimeServerRuntime.start()` with `runCatching` to gracefully handle `ForegroundServiceStartNotAllowedException` or battery optimization kills without tearing down Flutter.
+    - Wrapped MethodChannel handlers in `MainActivity.kt` (`startServer`, `stopServer`, `getStatus`) in `try/catch` blocks.
+    - Added safe fallback for notification icons (`stat_notify_sync`) in case `applicationInfo.icon` is null or invalid.
+  - **Zero-Collision Declarative Navigation (`welcome_screen.dart`, `main.dart`)**:
+    - Removed redundant `Navigator.pushReplacement(MaterialPageRoute(builder: (_) => const MainShell()))` on onboarding completion. Since `MaterialApp.home` watches `onboardingProvider`, switching `onboardingProvider` declaratively updates the root route, eliminating duplicate `MainShell` instances, double server starts, and navigator stack corruption.
+- **Autonomous Offline Library & Guest Feed Architecture (`OfflineLibraryService`, `app_providers.dart`, `feed_screen.dart`, `manga_feed_screen.dart`, `edit_entry_modal.dart`)**:
+  - **Zero-Login Required for Feeds & Continuity**:
+    - Users can start browsing, streaming anime (online or torrent), and reading manga without connecting an AniList account or starting a remote media server.
+    - As soon as the user starts playing an episode or reading a chapter, `OfflineLibraryService` automatically records the entry into persistent local storage (`local_offline_anime_entries_v1` and `local_offline_manga_entries_v1` via `SharedPreferences` + synchronous 0ms in-memory cache).
+  - **Dynamic Feed Self-Assembly**:
+    - **Continue Watching / Continue Reading**: Automatically populates `continueWatchingProvider` and `continueReadingMangaProvider` with next episode/chapter numbers, AniZip titles/thumbnails, and exact playback progress bars.
+    - **Currently Watching / Reading**: Local collection entries with status `'CURRENT'` or `'WATCHING'` / `'READING'` immediately populate the "Viendo Actualmente" and "Leyendo Actualmente" carousels.
+    - **Personalized Recommendations**: `recommendationsProvider` and `mangaRecommendationsProvider` inspect local watched media IDs and query public AniList GraphQL (`getRecommendationsForUser` / `getMangaRecommendationsForUser`), dynamically assembling the "Te podría gustar" recommendation row without needing an AniList authentication token.
+  - **Empty State & Call-to-Action Refinement (`FeedEmptyState`)**:
+    - When unauthenticated with 0 watched items, the empty state displays friendly exploration copy: "Comienza a explorar / Explora el catálogo o reproduce cualquier serie para armar tu feed automáticamente, o conecta tu cuenta de AniList".
+    - The primary button is "Explorar" (`FilledButton.icon`), smoothly redirecting the user to the exploration hub to start watching, with "Conectar con AniList" as a clean secondary option (`OutlinedButton.icon`).
+  - **Offline List Management (`EditEntryModal`)**:
+    - If the user changes status (Watching, Completed, Planning, Dropped), score, or progress via `EditEntryModal` while unauthenticated or offline, the modal saves directly to `OfflineLibraryService` and informs the user with "Guardado en tus listas locales", preventing false error snackbars.
 - **Explore Hub "Populares del momento" Priority (`search_screen.dart`, `popularAnimeProvider`, `popularMangaProvider`)**:
   - In `search_screen.dart`, the curated section "Populares del momento" (`l10n.popularOfTheMoment`) is positioned as the very first line/row immediately below the genre filter chips for both Anime and Manga modes.
   - Tapping "Ver más" seamlessly expands into a paginated full grid filter.

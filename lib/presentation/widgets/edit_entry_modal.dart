@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/theme/app_theme_colors.dart';
+import 'package:seanime_app/data/services/offline_library_service.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 
 /// Modal dialog to edit or delete an AniList entry for Anime or Manga.
@@ -296,7 +297,6 @@ class _EditEntryModalState extends ConsumerState<EditEntryModal> {
   Future<void> _handleSave() async {
     setState(() => _isSaving = true);
     final repo = ref.read(repositoryProvider);
-    final theme = Theme.of(context);
 
     // Parse values
     final progress = int.tryParse(_progressController.text.trim()) ?? 0;
@@ -330,61 +330,79 @@ class _EditEntryModalState extends ConsumerState<EditEntryModal> {
       };
     }
 
-    final success = await repo.editAnilistListEntry(
-      mediaId: widget.mediaId,
-      type: widget.type,
-      status: _status,
-      score: scoreRaw,
-      progress: progress,
-      startedAt: startedAtMap,
-      completedAt: completedAtMap,
-    );
+    final serverState = ref.read(serverNotifierProvider);
+    final isLoggedIn = serverState.status?.isLoggedIn ?? false;
 
-    // If anime and repeat was specified/changed, update repeat as well
-    if (_isAnime && repeat >= 0) {
-      await repo.updateAnimeRepeat(
+    bool remoteSuccess = false;
+    if (isLoggedIn) {
+      remoteSuccess = await repo.editAnilistListEntry(
         mediaId: widget.mediaId,
+        type: widget.type,
+        status: _status,
+        score: scoreRaw,
+        progress: progress,
+        startedAt: startedAtMap,
+        completedAt: completedAtMap,
+      );
+
+      // If anime and repeat was specified/changed, update repeat as well
+      if (_isAnime && repeat >= 0) {
+        await repo.updateAnimeRepeat(
+          mediaId: widget.mediaId,
+          repeat: repeat,
+        );
+      }
+    }
+
+    // Always keep offline local library updated
+    if (_isAnime) {
+      await OfflineLibraryService.instance.saveAnimeEntryFromEdit(
+        mediaId: widget.mediaId,
+        title: widget.title,
+        status: _status,
+        score: scoreInput,
+        progress: progress,
+        totalCount: widget.totalCount,
         repeat: repeat,
       );
+      ref.invalidate(animeCollectionProvider);
+      ref.invalidate(continueWatchingProvider);
+      ref.invalidate(recommendationsProvider);
+    } else {
+      await OfflineLibraryService.instance.saveMangaEntryFromEdit(
+        mediaId: widget.mediaId,
+        title: widget.title,
+        status: _status,
+        score: scoreInput,
+        progress: progress,
+        totalCount: widget.totalCount,
+      );
+      ref.invalidate(mangaCollectionProvider);
+      ref.invalidate(continueReadingMangaProvider);
+      ref.invalidate(mangaRecommendationsProvider);
     }
 
     if (!mounted) return;
     setState(() => _isSaving = false);
 
-    if (success) {
-      // Invalidate relevant providers to update all screens
-      if (_isAnime) {
-        ref.invalidate(animeCollectionProvider);
-        ref.invalidate(continueWatchingProvider);
-      } else {
-        ref.invalidate(mangaCollectionProvider);
-        ref.invalidate(continueReadingMangaProvider);
-      }
+    Navigator.of(context).pop(true);
+    final message = isLoggedIn
+        ? (remoteSuccess ? 'Guardado en AniList' : 'Guardado en tus listas locales')
+        : 'Guardado en tus listas locales';
 
-      Navigator.of(context).pop(true);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Guardado en AniList'),
-          behavior: SnackBarBehavior.floating,
-          duration: Duration(seconds: 2),
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Error al actualizar en AniList',
-            style: TextStyle(color: theme.colorScheme.onError),
-          ),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: theme.colorScheme.error,
-        ),
-      );
-    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   Future<void> _handleDelete() async {
-    final theme = Theme.of(context);
+    final serverState = ref.read(serverNotifierProvider);
+    final isLoggedIn = serverState.status?.isLoggedIn ?? false;
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) {
@@ -392,11 +410,13 @@ class _EditEntryModalState extends ConsumerState<EditEntryModal> {
         return AlertDialog(
           backgroundColor: ctxTheme.colorScheme.surfaceContainer,
           title: Text(
-            'Eliminar de AniList',
+            isLoggedIn ? 'Eliminar de AniList' : 'Eliminar de tu lista',
             style: TextStyle(color: ctxTheme.colorScheme.onSurface),
           ),
           content: Text(
-            '¿Seguro que deseas eliminar "${widget.title}" de tu lista de AniList?',
+            isLoggedIn
+                ? '¿Seguro que deseas eliminar "${widget.title}" de tu lista de AniList?'
+                : '¿Seguro que deseas eliminar "${widget.title}" de tus listas locales?',
             style: TextStyle(color: ctxTheme.colorScheme.onSurfaceVariant),
           ),
           actions: [
@@ -424,43 +444,36 @@ class _EditEntryModalState extends ConsumerState<EditEntryModal> {
 
     setState(() => _isDeleting = true);
     final repo = ref.read(repositoryProvider);
-    final success = await repo.deleteAnilistListEntry(
-      mediaId: widget.mediaId,
-      type: widget.type,
-    );
+    if (isLoggedIn) {
+      await repo.deleteAnilistListEntry(
+        mediaId: widget.mediaId,
+        type: widget.type,
+      );
+    }
+
+    if (_isAnime) {
+      await OfflineLibraryService.instance.deleteAnimeEntry(widget.mediaId);
+      ref.invalidate(animeCollectionProvider);
+      ref.invalidate(continueWatchingProvider);
+      ref.invalidate(recommendationsProvider);
+    } else {
+      await OfflineLibraryService.instance.deleteMangaEntry(widget.mediaId);
+      ref.invalidate(mangaCollectionProvider);
+      ref.invalidate(continueReadingMangaProvider);
+      ref.invalidate(mangaRecommendationsProvider);
+    }
 
     if (!mounted) return;
     setState(() => _isDeleting = false);
 
-    if (success) {
-      if (_isAnime) {
-        ref.invalidate(animeCollectionProvider);
-        ref.invalidate(continueWatchingProvider);
-      } else {
-        ref.invalidate(mangaCollectionProvider);
-        ref.invalidate(continueReadingMangaProvider);
-      }
-
-      Navigator.of(context).pop(true);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Eliminado de tu lista'),
-          behavior: SnackBarBehavior.floating,
-          duration: Duration(seconds: 2),
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Error al eliminar de AniList',
-            style: TextStyle(color: theme.colorScheme.onError),
-          ),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: theme.colorScheme.error,
-        ),
-      );
-    }
+    Navigator.of(context).pop(true);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Eliminado de tu lista'),
+        behavior: SnackBarBehavior.floating,
+        duration: Duration(seconds: 2),
+      ),
+    );
   }
 
   @override
