@@ -149,8 +149,8 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   double _lastNonZeroVolume = 100.0;
   final FocusNode _focusNode = FocusNode();
 
-  // YouTube-style watch page & TV mode state
-  bool _isSidePanelCollapsed = false;
+  // YouTube-style watch page & TV mode state (hidden/collapsed by default on desktop)
+  bool _isSidePanelCollapsed = !Platform.isAndroid && !Platform.isIOS;
   AnimeDetails? _animeDetails;
   AniZipData? _aniZipData;
   bool _isLoadingDetails = false;

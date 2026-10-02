@@ -10,6 +10,7 @@ import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/preferences/manga_reader_preferences_provider.dart';
 import 'package:seanime_app/core/preferences/resume_bar_preferences_provider.dart';
 import 'package:seanime_app/data/models/manga_entry.dart';
+import 'package:seanime_app/core/theme/theme_provider.dart';
 import 'package:seanime_app/data/services/offline_library_service.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/widgets/manga/manga_keep_alive_page.dart';
@@ -147,6 +148,22 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
     _pageController.dispose();
     // Restore system UI on exit
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    try {
+      final themeSettings = ref.read(themeProvider);
+      final isDark = themeSettings.themeMode == AppThemeMode.dark ||
+          (themeSettings.themeMode == AppThemeMode.system &&
+              WidgetsBinding.instance.platformDispatcher.platformBrightness == Brightness.dark);
+      SystemChrome.setSystemUIOverlayStyle(
+        SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+          statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+          systemNavigationBarColor: Colors.transparent,
+          systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+          systemNavigationBarDividerColor: Colors.transparent,
+        ),
+      );
+    } catch (_) {}
     super.dispose();
   }
 

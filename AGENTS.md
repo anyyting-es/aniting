@@ -256,7 +256,14 @@ seanime_app/
   - **Anime Detail Mobile Action Bar**:
     - Clean horizontal action cluster: Primary "Comenzar a ver" / "Continuar" pill button flanked by Trailer, AniList Status Edit, and Favorites toggle icons.
     - Minimalist mode dropdown (`PopupMenuButton` anchored below the mode button with compact options "Online" and "Torrent").
-    - Clean and discreet AniList edit icon without oversized background boxes.
+- **System UI Overlay & Status Bar Synchronization Architecture (`main.dart`, `main_shell.dart`, `theme_provider.dart`, `anime_detail_mobile_layout.dart`, `manga_detail_mobile_layout.dart`)**:
+  - **Global & Shell `AnnotatedRegion<SystemUiOverlayStyle>`**: Configured persistent `AnnotatedRegion` at `MaterialApp.builder` and `MainShell` matching the active theme's brightness and scaffold background. Guarantees that when returning from detail pages, video players, or settings, the system status bar icon brightness immediately and faithfully snaps back to the theme color scheme instead of remaining stuck on white/dark icons.
+  - **Scroll-Aware Transparent AppBars**: In `AnimeDetailMobileLayout` and `MangaDetailMobileLayout`, `SliverAppBar` explicitly provides a dynamic `systemOverlayStyle` adapting between light icons (over the dark ambient banner at the top) and dark icons (when scrolled past the banner in light mode), with back/action icons responding in tandem.
+  - **Player & Reader Exit Cleanup**: `PlayerWindowManager` and `MangaReaderScreen` dispose callbacks safely restore standard edge-to-edge orientation and status bar overlay styles reflecting the current theme.
+- **Desktop Player Default Viewport Optimization (`video_player_screen.dart`)**:
+  - `_isSidePanelCollapsed` defaults to `true` on desktop platforms (`!Platform.isAndroid && !Platform.isIOS`), allowing the player viewport to claim 100% of the window width by default while retaining the collapsible sidebar toggle button.
+- **Batch Torrent Precision Detection (`torrent_selector_sheet.dart`)**:
+  - Replaced naive keyword matching (which previously matched words like "season" or "temporada" and mislabeled episodic seasonal releases like `Oshi no Ko 3rd Season - 07` as batches) with strict release heuristics: explicit batch keywords, multi-season ranges, and bracketed/tilde episode ranges (`01-12`, `(01-11)`, `01~28`), while strictly protecting single-episode releases.
 - **Feed Initial Loading Barrier, Cache-First & SWR Anti-CLS Architecture (`feed_screen.dart`, `FeedCacheService`, `app_providers.dart`)**:
   - **Zero Content Layout Shift (CLS) via Persistent SWR**:
     - Rather than letting fast public providers (`trendingAnimeProvider`, `popularAnimeProvider`) resolve first and render at the top while slow private providers (`continueWatchingProvider`, `animeCollectionProvider`) pop in seconds later to violently push content down, the feed employs a high-performance **Stale-While-Revalidate (SWR) cache-first pipeline**:

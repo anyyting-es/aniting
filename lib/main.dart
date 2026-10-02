@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:window_manager/window_manager.dart';
@@ -196,9 +197,26 @@ class _AnitingFlutterAppState extends ConsumerState<AnitingFlutterApp> with Widg
               ],
             );
 
-            return Theme(
-              data: updatedTheme,
-              child: DesktopWindowFrame(child: child ?? const SizedBox.shrink()),
+            final isDark = updatedTheme.brightness == Brightness.dark;
+            final overlayStyle = SystemUiOverlayStyle(
+              statusBarColor: Colors.transparent,
+              statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+              statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+              systemNavigationBarColor: updatedTheme.scaffoldBackgroundColor,
+              systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+              systemNavigationBarDividerColor: Colors.transparent,
+            );
+
+            return AnnotatedRegion<SystemUiOverlayStyle>(
+              value: overlayStyle,
+              child: Theme(
+                data: updatedTheme.copyWith(
+                  appBarTheme: updatedTheme.appBarTheme.copyWith(
+                    systemOverlayStyle: overlayStyle,
+                  ),
+                ),
+                child: DesktopWindowFrame(child: child ?? const SizedBox.shrink()),
+              ),
             );
           },
         );

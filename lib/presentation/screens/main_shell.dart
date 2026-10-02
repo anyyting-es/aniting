@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
@@ -216,10 +217,28 @@ class _MainShellState extends ConsumerState<MainShell> {
       }
     });
 
+    final isDark = theme.brightness == Brightness.dark;
+    final shellOverlayStyle = SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+      statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+      systemNavigationBarColor: theme.scaffoldBackgroundColor,
+      systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+      systemNavigationBarDividerColor: Colors.transparent,
+    );
+
+    Widget wrapWithSystemOverlay(Widget scaffoldChild) {
+      return AnnotatedRegion<SystemUiOverlayStyle>(
+        value: shellOverlayStyle,
+        child: scaffoldChild,
+      );
+    }
+
     if (isDesktop) {
-      return Scaffold(
-        backgroundColor: theme.scaffoldBackgroundColor,
-        body: Row(
+      return wrapWithSystemOverlay(
+        Scaffold(
+          backgroundColor: theme.scaffoldBackgroundColor,
+          body: Row(
           children: [
             // Vertical Desktop Sidebar Rail
             DesktopSidebar(
@@ -248,14 +267,15 @@ class _MainShellState extends ConsumerState<MainShell> {
             ),
           ],
         ),
-      );
+      ));
     }
 
     if (mobileNavStyle == MobileNavStyle.floating) {
       // Mobile layout: Floating iOS-style bottom pill navigation dock with animated hero resume companion
-      return Scaffold(
-        extendBody: true,
-        body: NotificationListener<ScrollNotification>(
+      return wrapWithSystemOverlay(
+        Scaffold(
+          extendBody: true,
+          body: NotificationListener<ScrollNotification>(
           onNotification: _onScrollNotification,
           child: IndexedStack(
             index: _currentIndex,
@@ -285,12 +305,13 @@ class _MainShellState extends ConsumerState<MainShell> {
             },
           ),
         ),
-      );
+      ));
     }
 
     // Mobile layout: Classic fixed NavigationBar
-    return Scaffold(
-      extendBody: false,
+    return wrapWithSystemOverlay(
+      Scaffold(
+        extendBody: false,
       body: IndexedStack(
         index: _currentIndex,
         children: [
@@ -397,6 +418,6 @@ class _MainShellState extends ConsumerState<MainShell> {
           ),
         ],
       ),
-    );
+    ));
   }
 }

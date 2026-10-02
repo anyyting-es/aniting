@@ -164,8 +164,62 @@ class _TorrentSelectorSheetState extends ConsumerState<TorrentSelectorSheet> {
   bool _isBatchTorrent(TorrentItem torrent) {
     if (torrent.isBatch) return true;
     final name = torrent.name.toLowerCase();
-    return RegExp(r'(?:batch|complete|temporada|season|\b0*1\s*[-~]\s*\d+|\b\d+\s*[-~]\s*\d+\b)')
-        .hasMatch(name);
+
+    // 1. Explicit batch / complete release keywords
+    if (RegExp(r'\b(?:batch|complete|completa|completo)\b').hasMatch(name)) {
+      return true;
+    }
+
+    // 2. Explicit full-series / all-episodes indicators
+    if (RegExp(r'\b(?:entire\s+series|all\s+episodes|temporada\s+completa|serie\s+completa)\b').hasMatch(name)) {
+      return true;
+    }
+
+    // 3. Multi-season ranges (e.g. "S01-S03", "Season 1-3")
+    if (RegExp(r'\b(?:s|season|temporada)\s*\d{1,2}\s*[-~]\s*(?:s|season|temporada)?\s*\d{1,2}\b').hasMatch(name)) {
+      return true;
+    }
+
+    // 4. Bracketed/parenthesized episode ranges: e.g. "(01-12)", "[01~12]", "[01 - 24]"
+    final bracketedRange = RegExp(r'[\[\(]\s*(?:ep|eps|e)?\s*(\d{1,3})\s*[-~]\s*(?:ep|eps|e)?\s*(\d{1,3})\s*[\]\)]').firstMatch(name);
+    if (bracketedRange != null) {
+      final start = int.tryParse(bracketedRange.group(1) ?? '');
+      final end = int.tryParse(bracketedRange.group(2) ?? '');
+      if (start != null && end != null && end > start) {
+        return true;
+      }
+    }
+
+    // 5. Episode ranges with "ep" / "eps" or tilde "~": e.g. "ep01-ep12", "01~12", "eps 01-24"
+    final epRange = RegExp(r'\b(?:ep|eps|e)\s*(\d{1,3})\s*[-~]\s*(?:ep|eps|e)?\s*(\d{1,3})\b').firstMatch(name);
+    if (epRange != null) {
+      final start = int.tryParse(epRange.group(1) ?? '');
+      final end = int.tryParse(epRange.group(2) ?? '');
+      if (start != null && end != null && end > start) {
+        return true;
+      }
+    }
+
+    final tildeRange = RegExp(r'\b(\d{1,3})\s*~\s*(\d{1,3})\b').firstMatch(name);
+    if (tildeRange != null) {
+      final start = int.tryParse(tildeRange.group(1) ?? '');
+      final end = int.tryParse(tildeRange.group(2) ?? '');
+      if (start != null && end != null && end > start) {
+        return true;
+      }
+    }
+
+    // 6. Explicit episode range like "01-12" that is NOT preceded by season prefix ("S3 - 07")
+    final standaloneRange = RegExp(r'(?<!(?:s|season|temporada)\s*)\b0*([1-9]\d{0,2})\s*-\s*0*([1-9]\d{0,2})\b').firstMatch(name);
+    if (standaloneRange != null) {
+      final start = int.tryParse(standaloneRange.group(1) ?? '');
+      final end = int.tryParse(standaloneRange.group(2) ?? '');
+      if (start != null && end != null && end > start && (end - start) >= 2) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   Future<void> _handleTorrentTap(TorrentItem torrent) async {

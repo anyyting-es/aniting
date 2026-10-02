@@ -90,11 +90,27 @@ class _AnimeDetailMobileLayoutState
   List<OnlinestreamProvider> _providers = [];
   OnlinestreamProvider? _selectedProvider;
   bool _isDubbed = false;
+  bool _isHeaderScrolled = false;
 
   @override
   void initState() {
     super.initState();
     _loadSavedProvider();
+    widget.scrollController.addListener(_onScrollChanged);
+  }
+
+  @override
+  void dispose() {
+    widget.scrollController.removeListener(_onScrollChanged);
+    super.dispose();
+  }
+
+  void _onScrollChanged() {
+    if (!widget.scrollController.hasClients) return;
+    final isScrolled = widget.scrollController.offset > 120.0;
+    if (isScrolled != _isHeaderScrolled) {
+      setState(() => _isHeaderScrolled = isScrolled);
+    }
   }
 
   Future<void> _loadSavedProvider() async {
@@ -688,18 +704,34 @@ class _AnimeDetailMobileLayoutState
                   backgroundColor: Colors.transparent,
                   elevation: 0,
                   scrolledUnderElevation: 0,
+                  systemOverlayStyle: SystemUiOverlayStyle(
+                    statusBarColor: Colors.transparent,
+                    statusBarIconBrightness: isDark
+                        ? Brightness.light
+                        : (_isHeaderScrolled ? Brightness.dark : Brightness.light),
+                    statusBarBrightness: isDark
+                        ? Brightness.dark
+                        : (_isHeaderScrolled ? Brightness.light : Brightness.dark),
+                    systemNavigationBarColor: theme.scaffoldBackgroundColor,
+                    systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+                    systemNavigationBarDividerColor: Colors.transparent,
+                  ),
                   leading: IconButton(
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.arrow_back_rounded,
-                      color: Colors.white,
+                      color: (isDark || !_isHeaderScrolled)
+                          ? Colors.white
+                          : theme.colorScheme.onSurface,
                       size: 22,
-                      shadows: [
-                        Shadow(
-                          color: Colors.black54,
-                          blurRadius: 4,
-                          offset: Offset(0, 1),
-                        ),
-                      ],
+                      shadows: (isDark || !_isHeaderScrolled)
+                          ? const [
+                              Shadow(
+                                color: Colors.black54,
+                                blurRadius: 4,
+                                offset: Offset(0, 1),
+                              ),
+                            ]
+                          : null,
                     ),
                     onPressed: () => Navigator.pop(context),
                   ),
@@ -717,15 +749,19 @@ class _AnimeDetailMobileLayoutState
                                 : Icons.folder_outlined,
                             color: widget.isLocalMode
                                 ? theme.colorScheme.primary
-                                : Colors.white,
+                                : ((isDark || !_isHeaderScrolled)
+                                    ? Colors.white
+                                    : theme.colorScheme.onSurface),
                             size: 22,
-                            shadows: const [
-                              Shadow(
-                                color: Colors.black54,
-                                blurRadius: 4,
-                                offset: Offset(0, 1),
-                              ),
-                            ],
+                            shadows: (isDark || !_isHeaderScrolled)
+                                ? const [
+                                    Shadow(
+                                      color: Colors.black54,
+                                      blurRadius: 4,
+                                      offset: Offset(0, 1),
+                                    ),
+                                  ]
+                                : null,
                           ),
                           if (widget.hasLocalFiles && !widget.isLocalMode)
                             Positioned(
@@ -750,17 +786,21 @@ class _AnimeDetailMobileLayoutState
                     ),
                     IconButton(
                       tooltip: l10n.animeDetails,
-                      icon: const Icon(
+                      icon: Icon(
                         Icons.info_outline_rounded,
-                        color: Colors.white,
+                        color: (isDark || !_isHeaderScrolled)
+                            ? Colors.white
+                            : theme.colorScheme.onSurface,
                         size: 22,
-                        shadows: [
-                          Shadow(
-                            color: Colors.black54,
-                            blurRadius: 4,
-                            offset: Offset(0, 1),
-                          ),
-                        ],
+                        shadows: (isDark || !_isHeaderScrolled)
+                            ? const [
+                                Shadow(
+                                  color: Colors.black54,
+                                  blurRadius: 4,
+                                  offset: Offset(0, 1),
+                                ),
+                              ]
+                            : null,
                       ),
                       onPressed: widget.onOpenDetailsModal,
                     ),

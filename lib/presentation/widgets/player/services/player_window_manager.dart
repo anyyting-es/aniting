@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit_video/media_kit_video.dart';
+import 'package:seanime_app/core/theme/theme_provider.dart';
 import 'package:seanime_app/presentation/widgets/desktop_title_bar.dart';
 import 'package:seanime_app/presentation/widgets/player/services/player_playback_coordinator.dart';
 
@@ -216,6 +217,22 @@ class PlayerWindowManager {
         DeviceOrientation.portraitUp,
       ]);
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+      try {
+        final themeSettings = ref.read(themeProvider);
+        final isDark = themeSettings.themeMode == AppThemeMode.dark ||
+            (themeSettings.themeMode == AppThemeMode.system &&
+                WidgetsBinding.instance.platformDispatcher.platformBrightness == Brightness.dark);
+        SystemChrome.setSystemUIOverlayStyle(
+          SystemUiOverlayStyle(
+            statusBarColor: Colors.transparent,
+            statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+            statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+            systemNavigationBarColor: Colors.transparent,
+            systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+            systemNavigationBarDividerColor: Colors.transparent,
+          ),
+        );
+      } catch (_) {}
     }
   }
 }

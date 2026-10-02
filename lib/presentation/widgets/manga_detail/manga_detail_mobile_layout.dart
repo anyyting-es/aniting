@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
@@ -74,6 +75,7 @@ class _MangaDetailMobileLayoutState extends ConsumerState<MangaDetailMobileLayou
   bool _isAscending = true;
   String _searchQuery = '';
   bool _hideRead = true;
+  bool _isHeaderScrolled = false;
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
@@ -84,6 +86,7 @@ class _MangaDetailMobileLayoutState extends ConsumerState<MangaDetailMobileLayou
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onMangaScroll);
     _bannerAnimController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 10),
@@ -111,10 +114,19 @@ class _MangaDetailMobileLayoutState extends ConsumerState<MangaDetailMobileLayou
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onMangaScroll);
     _bannerAnimController.dispose();
     _searchController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _onMangaScroll() {
+    if (!_scrollController.hasClients) return;
+    final isScrolled = _scrollController.offset > 120.0;
+    if (isScrolled != _isHeaderScrolled) {
+      setState(() => _isHeaderScrolled = isScrolled);
+    }
   }
 
   List<MangaChapter> get _filteredChapters {
@@ -312,34 +324,54 @@ class _MangaDetailMobileLayoutState extends ConsumerState<MangaDetailMobileLayou
                 elevation: 0,
                 scrolledUnderElevation: 0,
                 pinned: true,
+                systemOverlayStyle: SystemUiOverlayStyle(
+                  statusBarColor: Colors.transparent,
+                  statusBarIconBrightness: isDark
+                      ? Brightness.light
+                      : (_isHeaderScrolled ? Brightness.dark : Brightness.light),
+                  statusBarBrightness: isDark
+                      ? Brightness.dark
+                      : (_isHeaderScrolled ? Brightness.light : Brightness.dark),
+                  systemNavigationBarColor: theme.scaffoldBackgroundColor,
+                  systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+                  systemNavigationBarDividerColor: Colors.transparent,
+                ),
                 leading: IconButton(
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.arrow_back_rounded,
-                    color: Colors.white,
+                    color: (isDark || !_isHeaderScrolled)
+                        ? Colors.white
+                        : theme.colorScheme.onSurface,
                     size: 22,
-                    shadows: [
-                      Shadow(
-                        color: Colors.black54,
-                        blurRadius: 4,
-                        offset: Offset(0, 1),
-                      ),
-                    ],
+                    shadows: (isDark || !_isHeaderScrolled)
+                        ? const [
+                            Shadow(
+                              color: Colors.black54,
+                              blurRadius: 4,
+                              offset: Offset(0, 1),
+                            ),
+                          ]
+                        : null,
                   ),
                   onPressed: () => Navigator.pop(context),
                 ),
                 actions: [
                   IconButton(
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.info_outline_rounded,
-                      color: Colors.white,
+                      color: (isDark || !_isHeaderScrolled)
+                          ? Colors.white
+                          : theme.colorScheme.onSurface,
                       size: 22,
-                      shadows: [
-                        Shadow(
-                          color: Colors.black54,
-                          blurRadius: 4,
-                          offset: Offset(0, 1),
-                        ),
-                      ],
+                      shadows: (isDark || !_isHeaderScrolled)
+                          ? const [
+                              Shadow(
+                                color: Colors.black54,
+                                blurRadius: 4,
+                                offset: Offset(0, 1),
+                              ),
+                            ]
+                          : null,
                     ),
                     tooltip: 'Detalles',
                     onPressed: widget.onShowDetailsModal,
