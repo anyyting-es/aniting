@@ -43,6 +43,7 @@ migrate_working_dir/
 key.properties
 **/*.keystore
 **/*.jks
+!android/app/release.jks
 
 # iOS/macOS related
 **/ios/**/*.mode1v3

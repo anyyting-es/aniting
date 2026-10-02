@@ -366,6 +366,9 @@ seanime_app/
     - Configured `androidx.core.content.FileProvider` (`authorities="${applicationId}.fileprovider"`) with `@xml/file_paths` (`cache-path`, `external-cache-path`, `files-path`).
     - Handled `installApk`, `canRequestPackageInstalls`, and `openInstallPermissionSetting` in `MainActivity.kt` using `Intent(Intent.ACTION_VIEW)` with `application/vnd.android.package-archive` and `FLAG_GRANT_READ_URI_PERMISSION`.
     - Added `<uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />`.
+- **Permanent Release Signing & In-App Auto-Update Integrity (`android/app/release.jks`, `android/app/build.gradle.kts`)**:
+  - **Cryptographic Signature Stability**: Previously, `buildTypes.release` defaulted to `signingConfigs.getByName("debug")`, signing APKs with the local machine's ephemeral `~/.android/debug.keystore`. When `debug.keystore` was regenerated or built across different machines, Android Package Manager blocked in-app updates with `INSTALL_FAILED_UPDATE_INCOMPATIBLE` ("No se instaló la app").
+  - **Dedicated Release Keystore**: Added a permanent, reproducible release keystore (`android/app/release.jks`) configured under `signingConfigs.create("release")` in `build.gradle.kts` and whitelisted in `.gitignore`. All APK builds across developers, CI/CD, and machines produce identical cryptographic signatures (`SHA-256: 7e7960daf8...`), ensuring seamless in-app auto-updates for all users.
 - **Android Permissions Transparency & Clean Audit**:
   - Confirmed 0 intrusive permissions (no Camera, no Audio/Microphone, no Location, no Contacts).
   - Strict minimal set: `INTERNET`, `ACCESS_NETWORK_STATE`, `WAKE_LOCK`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_DATA_SYNC`, `POST_NOTIFICATIONS`, `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`, `MANAGE_EXTERNAL_STORAGE`, `REQUEST_INSTALL_PACKAGES`.
