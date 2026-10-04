@@ -94,8 +94,8 @@ class ServerManager {
       final dio = Dio(
         BaseOptions(
           baseUrl: 'http://$h:$p/api/v1',
-          connectTimeout: const Duration(milliseconds: 1500),
-          receiveTimeout: const Duration(milliseconds: 2000),
+          connectTimeout: const Duration(milliseconds: 3000),
+          receiveTimeout: const Duration(milliseconds: 3000),
         ),
       );
 
@@ -109,10 +109,12 @@ class ServerManager {
         } else {
           _state = ServerState.running;
         }
+        _lastError = null;
         return true;
       }
-    } catch (_) {
+    } catch (e) {
       // Server not reachable yet
+      _lastError = 'No se pudo conectar a $h:$p';
     }
     return false;
   }

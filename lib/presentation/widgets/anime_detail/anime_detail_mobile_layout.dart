@@ -209,6 +209,56 @@ class _AnimeDetailMobileLayoutState
     }
   }
 
+  Future<void> _playOrOpenTorrent(
+    int episodeNumber,
+    String episodeTitle, [
+    String? aniDBEpisode,
+  ]) async {
+    final l10n = ref.read(translationsProvider);
+    try {
+      final repo = ref.read(repositoryProvider);
+      final entry = await repo.getAnimeLibraryEntry(widget.mediaId);
+      final localEp = entry?.episodes.cast<LibraryEpisode?>().firstWhere(
+        (e) => e?.episodeNumber == episodeNumber && (e?.isDownloaded ?? false),
+        orElse: () => null,
+      );
+      if (localEp != null && mounted) {
+        final serverManager = ref.read(serverManagerProvider);
+        final titleLang = ref.read(titleLanguageProvider);
+        final animeTitle = widget.details?.displayTitle(titleLang) ?? 'Anime';
+        final streamUrl = localEp.localFilePath != null &&
+                localEp.localFilePath!.isNotEmpty
+            ? 'http://${serverManager.host}:${serverManager.port}/api/v1/mediastream/file?path=${Uri.encodeComponent(localEp.localFilePath!)}'
+            : 'http://${serverManager.host}:${serverManager.port}/api/v1/mediastream?mediaId=${widget.mediaId}&episodeNumber=${localEp.episodeNumber}';
+        final fileName = localEp.localFilePath?.split(RegExp(r'[/\\]')).last;
+
+        Navigator.of(context, rootNavigator: true).push(
+          VideoPlayerScreen.route(
+            mediaId: widget.mediaId,
+            videoUrl: streamUrl,
+            title: animeTitle,
+            episodeTitle: localEp.displayTitle.isNotEmpty
+                ? localEp.displayTitle
+                : episodeTitle,
+            episodeNumber: episodeNumber,
+            videoSource: fileName != null
+                ? 'Local • $fileName'
+                : l10n.localLibrary,
+            isLocalFile: true,
+            animeDetails: widget.details,
+            aniZipData: widget.aniZipData ?? widget.details?.aniZipData,
+          ),
+        );
+        return;
+      }
+    } catch (_) {}
+
+    widget.onOpenTorrentSelector(
+      episodeNumber: episodeNumber,
+      episodeTitle: episodeTitle,
+      aniDBEpisode: aniDBEpisode,
+    );
+  }
 
   void _openSourceSelector() {
     AnimeDetailSourcePopup.show(
@@ -519,7 +569,7 @@ class _AnimeDetailMobileLayoutState
         widget.initialEntry?.title ??
         l10n.loading;
 
-    final coverUrl = widget.details?.coverImage ?? widget.initialEntry?.coverImage;
+    final coverUrl = widget.initialEntry?.coverImage ?? widget.details?.coverImage;
     final hasRealBanner = (widget.details?.bannerImage != null &&
             widget.details!.bannerImage!.isNotEmpty) ||
         (widget.initialEntry?.bannerImage != null &&
@@ -1150,23 +1200,23 @@ class _AnimeDetailMobileLayoutState
                                 .read(episodeViewModeProvider.notifier)
                                 .toggleMode(),
                             onPlayEpisode: (ep) {
-                              widget.onOpenTorrentSelector(
-                                episodeNumber: ep.episodeNumber,
-                                episodeTitle: ep.displayTitle,
-                                aniDBEpisode: ep.episode,
+                              _playOrOpenTorrent(
+                                ep.episodeNumber,
+                                ep.displayTitle,
+                                ep.episode,
                               );
                             },
                             onTapEpisode: (ep) {
-                              widget.onOpenTorrentSelector(
-                                episodeNumber: ep.episodeNumber,
-                                episodeTitle: ep.displayTitle,
-                                aniDBEpisode: ep.episode,
+                              _playOrOpenTorrent(
+                                ep.episodeNumber,
+                                ep.displayTitle,
+                                ep.episode,
                               );
                             },
                             onPlayFallbackEpisode: (ep) {
-                              widget.onOpenTorrentSelector(
-                                episodeNumber: ep.episodeNumber,
-                                episodeTitle: ep.title,
+                              _playOrOpenTorrent(
+                                ep.episodeNumber,
+                                ep.title,
                               );
                             },
                             onDownloadEpisode: (ep) {
@@ -1214,23 +1264,23 @@ class _AnimeDetailMobileLayoutState
                                 .read(episodeViewModeProvider.notifier)
                                 .toggleMode(),
                             onPlayEpisode: (ep) {
-                              widget.onOpenTorrentSelector(
-                                episodeNumber: ep.episodeNumber,
-                                episodeTitle: ep.displayTitle,
-                                aniDBEpisode: ep.episode,
+                              _playOrOpenTorrent(
+                                ep.episodeNumber,
+                                ep.displayTitle,
+                                ep.episode,
                               );
                             },
                             onTapEpisode: (ep) {
-                              widget.onOpenTorrentSelector(
-                                episodeNumber: ep.episodeNumber,
-                                episodeTitle: ep.displayTitle,
-                                aniDBEpisode: ep.episode,
+                              _playOrOpenTorrent(
+                                ep.episodeNumber,
+                                ep.displayTitle,
+                                ep.episode,
                               );
                             },
                             onPlayFallbackEpisode: (ep) {
-                              widget.onOpenTorrentSelector(
-                                episodeNumber: ep.episodeNumber,
-                                episodeTitle: ep.title,
+                              _playOrOpenTorrent(
+                                ep.episodeNumber,
+                                ep.title,
                               );
                             },
                             onDownloadEpisode: (ep) {

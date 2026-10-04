@@ -287,7 +287,12 @@ class _TorrentSelectorSheetState extends ConsumerState<TorrentSelectorSheet> {
 
     // 2. Mark episode as downloading for inline spinning indicator
     final epNum = _currentEpisodeNumber ?? widget.episodeNumber;
-    ref.read(downloadingEpisodesProvider.notifier).add(widget.mediaId, epNum);
+    ref.read(downloadingEpisodesProvider.notifier).add(
+      widget.mediaId,
+      epNum,
+      hash: torrent.infoHash,
+      torrentName: torrent.name,
+    );
 
     // 3. Initiate download in background
     try {

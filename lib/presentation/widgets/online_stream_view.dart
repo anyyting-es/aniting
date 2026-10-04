@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/preferences/episode_view_mode_provider.dart';
+import 'package:seanime_app/core/preferences/title_language_provider.dart';
 import 'package:seanime_app/core/theme/app_theme_colors.dart';
 import 'package:seanime_app/data/models/anime_details.dart';
+import 'package:seanime_app/data/models/library_entry_details.dart';
 import 'package:seanime_app/data/models/onlinestream_models.dart';
 import 'package:seanime_app/presentation/providers/active_downloads_provider.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
@@ -549,6 +551,39 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
   }
 
   void _handleEpisodeTap(OnlinestreamEpisode ep) {
+    // If this episode is already downloaded locally, give it priority for 0-buffer instant playback
+    final libraryEntry = ref.read(animeLibraryEntryProvider(widget.mediaId)).asData?.value;
+    final localEp = libraryEntry?.episodes.cast<LibraryEpisode?>().firstWhere(
+      (e) => e?.episodeNumber == ep.number && (e?.isDownloaded ?? false),
+      orElse: () => null,
+    );
+
+    if (localEp != null) {
+      final serverManager = ref.read(serverManagerProvider);
+      final l10n = ref.read(translationsProvider);
+      final titleLang = ref.read(titleLanguageProvider);
+      final animeTitle = widget.animeDetails?.displayTitle(titleLang) ?? 'Anime';
+      final streamUrl = localEp.localFilePath != null && localEp.localFilePath!.isNotEmpty
+          ? 'http://${serverManager.host}:${serverManager.port}/api/v1/mediastream/file?path=${Uri.encodeComponent(localEp.localFilePath!)}'
+          : 'http://${serverManager.host}:${serverManager.port}/api/v1/mediastream?mediaId=${widget.mediaId}&episodeNumber=${localEp.episodeNumber}';
+      final fileName = localEp.localFilePath?.split(RegExp(r'[/\\]')).last;
+
+      Navigator.of(context).push(
+        VideoPlayerScreen.route(
+          mediaId: widget.mediaId,
+          videoUrl: streamUrl,
+          title: animeTitle,
+          episodeTitle: localEp.displayTitle.isNotEmpty ? localEp.displayTitle : ep.localizedDisplayTitle(l10n),
+          episodeNumber: ep.number,
+          videoSource: fileName != null ? 'Local • $fileName' : l10n.localLibrary,
+          isLocalFile: true,
+          animeDetails: widget.animeDetails,
+          aniZipData: widget.animeDetails?.aniZipData,
+        ),
+      );
+      return;
+    }
+
     if (_selectedProvider == null) return;
 
     final animeTitle = widget.animeDetails?.title ?? 'Anime';
@@ -587,6 +622,11 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
     final theme = Theme.of(context);
     final l10n = ref.watch(translationsProvider);
     final downloadingEpisodes = ref.watch(downloadingEpisodesProvider);
+    final libraryEntryAsync = ref.watch(animeLibraryEntryProvider(widget.mediaId));
+    final downloadedMap = {
+      for (final ep in (libraryEntryAsync.asData?.value?.episodes ?? <LibraryEpisode>[]))
+        if (ep.isDownloaded) ep.episodeNumber: ep.localFilePath,
+    };
 
     // 1. Loading providers
     if (_isLoadingProviders) {
@@ -1069,7 +1109,9 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
                 badgeText: ep.isFiller ? l10n.filler.toUpperCase() : null,
                 isLoading: isLoading,
                 isWatched: widget.progress >= ep.number && ep.number > 0,
+                isDownloaded: downloadedMap.containsKey(ep.number),
                 isDownloading: downloadingEpisodes.contains('${widget.mediaId}_${ep.number}'),
+                downloadProgress: downloadingEpisodes.getProgress(widget.mediaId, ep.number),
                 onTap: isLoading ? null : () => _handleEpisodeTap(ep),
                 onDownload: widget.onDownloadEpisode != null
                     ? () => widget.onDownloadEpisode!(ep.number, ep.localizedDisplayTitle(l10n))
@@ -1119,7 +1161,9 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
                         badgeText: ep.isFiller ? l10n.filler.toUpperCase() : null,
                         isLoading: isLoading,
                         isWatched: widget.progress >= ep.number && ep.number > 0,
+                        isDownloaded: downloadedMap.containsKey(ep.number),
                         isDownloading: downloadingEpisodes.contains('${widget.mediaId}_${ep.number}'),
+                        downloadProgress: downloadingEpisodes.getProgress(widget.mediaId, ep.number),
                         onTap: isLoading ? null : () => _handleEpisodeTap(ep),
                         onPlay: isLoading ? null : () => _handleEpisodeTap(ep),
                         onDownload: widget.onDownloadEpisode != null

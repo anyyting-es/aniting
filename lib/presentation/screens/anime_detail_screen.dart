@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:seanime_app/core/preferences/layout_mode_provider.dart';
 import 'package:seanime_app/core/theme/custom_route_transitions.dart';
 import 'package:seanime_app/core/theme/theme_provider.dart';
@@ -60,8 +61,12 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen>
   bool _isLoading = true;
   bool _isLoadingAniZip = true;
   bool _isLocalMode = false;
-  final bool _hasLocalFiles = false;
+  bool _hasLocalFiles = false;
+  bool _userManuallyChangedMode = false;
   AnimeDetailTab _currentTab = AnimeDetailTab.online;
+
+  static const _prefModePrefix = 'pref_anime_detail_mode_';
+  static const _prefGlobalLastMode = 'pref_anime_detail_last_mode';
 
   late final AnimationController _bannerAnimController;
   late final Animation<double> _bannerScaleAnimation;
@@ -71,7 +76,46 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen>
   @override
   void initState() {
     super.initState();
-    _isLocalMode = widget.initialLocalMode;
+    final initialHasLocal = widget.initialLocalMode ||
+        (widget.initialEntry?.hasLocalFiles ?? false) ||
+        ((widget.initialEntry?.mainFileCount ?? 0) > 0);
+    _hasLocalFiles = initialHasLocal;
+    if (widget.initialLocalMode || initialHasLocal) {
+      _isLocalMode = true;
+    }
+
+    // Fast checks: downloadedAnimeProvider, animeCollectionProvider, animeLibraryEntryProvider caches
+    if (!_hasLocalFiles) {
+      final downloadedAnime =
+          ref.read(downloadedAnimeProvider).asData?.value ?? [];
+      if (downloadedAnime.any((e) => e.mediaId == widget.mediaId)) {
+        _hasLocalFiles = true;
+        _isLocalMode = true;
+      }
+    }
+    if (!_hasLocalFiles) {
+      final collection = ref.read(animeCollectionProvider).asData?.value ?? [];
+      final collEntry =
+          collection.where((e) => e.mediaId == widget.mediaId).firstOrNull;
+      if (collEntry != null &&
+          (collEntry.hasLocalFiles || collEntry.mainFileCount > 0)) {
+        _hasLocalFiles = true;
+        _isLocalMode = true;
+      }
+    }
+    if (!_hasLocalFiles) {
+      final libEntryCache =
+          ref.read(animeLibraryEntryProvider(widget.mediaId)).asData?.value;
+      if (libEntryCache != null &&
+          (libEntryCache.hasLibraryData ||
+              libEntryCache.episodes.any((e) => e.isDownloaded))) {
+        _hasLocalFiles = true;
+        _isLocalMode = true;
+      }
+    }
+
+    _restoreSavedMode();
+
     _bannerAnimController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 10),
@@ -92,6 +136,56 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen>
     _loadDetails();
   }
 
+  Future<void> _restoreSavedMode() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final saved = prefs.getString('$_prefModePrefix${widget.mediaId}') ??
+          prefs.getString(_prefGlobalLastMode);
+      if (saved != null && mounted) {
+        setState(() {
+          _userManuallyChangedMode = true;
+          if (saved == 'local' && (_hasLocalFiles || widget.initialLocalMode)) {
+            _isLocalMode = true;
+          } else if (saved == 'torrent') {
+            _isLocalMode = false;
+            _currentTab = AnimeDetailTab.torrent;
+          } else if (saved == 'online') {
+            _isLocalMode = false;
+            _currentTab = AnimeDetailTab.online;
+          }
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _saveMode(String mode) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('$_prefModePrefix${widget.mediaId}', mode);
+      await prefs.setString(_prefGlobalLastMode, mode);
+    } catch (_) {}
+  }
+
+  void _changeTab(AnimeDetailTab tab) {
+    setState(() {
+      _userManuallyChangedMode = true;
+      _isLocalMode = false;
+      _currentTab = tab;
+    });
+    _saveMode(tab == AnimeDetailTab.torrent ? 'torrent' : 'online');
+  }
+
+  void _toggleLocalMode() {
+    setState(() {
+      _userManuallyChangedMode = true;
+      _isLocalMode = !_isLocalMode;
+    });
+    final mode = _isLocalMode
+        ? 'local'
+        : (_currentTab == AnimeDetailTab.torrent ? 'torrent' : 'online');
+    _saveMode(mode);
+  }
+
   @override
   void dispose() {
     _bannerAnimController.dispose();
@@ -100,6 +194,7 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen>
   }
 
   Future<void> _loadDetails() async {
+    await _restoreSavedMode();
     final repo = ref.read(repositoryProvider);
 
     AnimeDetails? details = widget.initialEntry != null
@@ -128,10 +223,22 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen>
       details = fetchedDetails;
     }
 
+    // Check local files in library
+    final libEntry = await repo.getAnimeLibraryEntry(widget.mediaId);
+    final hasDownloadedFiles = libEntry != null &&
+        (libEntry.hasLibraryData ||
+            libEntry.episodes.any((e) => e.isDownloaded));
+
     if (mounted) {
       setState(() {
         _details = details;
         _isLoading = false;
+        if (hasDownloadedFiles) {
+          _hasLocalFiles = true;
+          if (!_userManuallyChangedMode) {
+            _isLocalMode = true;
+          }
+        }
       });
     }
 
@@ -278,15 +385,8 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen>
                 isLocalMode: _isLocalMode,
                 hasLocalFiles: _hasLocalFiles,
                 currentTab: _currentTab,
-                onToggleLocalMode: () {
-                  setState(() => _isLocalMode = !_isLocalMode);
-                },
-                onTabChanged: (tab) {
-                  setState(() {
-                    _isLocalMode = false;
-                    _currentTab = tab;
-                  });
-                },
+                onToggleLocalMode: _toggleLocalMode,
+                onTabChanged: _changeTab,
                 onOpenEditEntryModal: _openEditEntryModal,
                 onRetryAniZip: _retryAniZip,
                 onOpenTorrentSelector: _openTorrentSelector,
@@ -304,15 +404,8 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen>
                 isLocalMode: _isLocalMode,
                 hasLocalFiles: _hasLocalFiles,
                 currentTab: _currentTab,
-                onToggleLocalMode: () {
-                  setState(() => _isLocalMode = !_isLocalMode);
-                },
-                onTabChanged: (tab) {
-                  setState(() {
-                    _isLocalMode = false;
-                    _currentTab = tab;
-                  });
-                },
+                onToggleLocalMode: _toggleLocalMode,
+                onTabChanged: _changeTab,
                 onOpenEditEntryModal: _openEditEntryModal,
                 onRetryAniZip: _retryAniZip,
                 onOpenTorrentSelector: _openTorrentSelector,
@@ -337,15 +430,8 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen>
                   bannerAnimController: _bannerAnimController,
                   bannerScaleAnimation: _bannerScaleAnimation,
                   bannerTranslateAnimation: _bannerTranslateAnimation,
-                  onToggleLocalMode: () {
-                    setState(() => _isLocalMode = !_isLocalMode);
-                  },
-                  onTabChanged: (tab) {
-                    setState(() {
-                      _isLocalMode = false;
-                      _currentTab = tab;
-                    });
-                  },
+                  onToggleLocalMode: _toggleLocalMode,
+                  onTabChanged: _changeTab,
                   onOpenEditEntryModal: _openEditEntryModal,
                   onRetryAniZip: _retryAniZip,
                   onOpenTorrentSelector: _openTorrentSelector,

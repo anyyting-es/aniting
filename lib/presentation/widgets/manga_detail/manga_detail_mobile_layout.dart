@@ -194,7 +194,7 @@ class _MangaDetailMobileLayoutState extends ConsumerState<MangaDetailMobileLayou
     final title = resolved?.displayTitle(titleLang) ?? 'Manga';
     final hasRealBanner = (resolved?.bannerImage != null && resolved!.bannerImage!.isNotEmpty);
     final bannerUrl = resolved?.bannerImage ?? resolved?.coverImage;
-    final posterUrl = resolved?.coverImage;
+    final posterUrl = widget.initialEntry?.coverImage ?? resolved?.coverImage;
     final isBlurSetting = ref.watch(bannerBlurProvider);
     final shouldBlur = (!hasRealBanner && posterUrl != null) || isBlurSetting;
 

@@ -11,6 +11,7 @@ import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/screens/video_player_screen.dart';
 import 'package:seanime_app/presentation/widgets/anime_detail/anime_detail_mobile_layout.dart';
 import 'package:seanime_app/presentation/widgets/anizip_episode_list.dart';
+import 'package:seanime_app/presentation/widgets/local_library_view.dart';
 import 'package:seanime_app/presentation/widgets/online_stream_view.dart';
 
 class AnimeDetailTvLayout extends ConsumerStatefulWidget {
@@ -76,6 +77,57 @@ class _AnimeDetailTvLayoutState extends ConsumerState<AnimeDetailTvLayout> {
   void dispose() {
     _playButtonFocus.dispose();
     super.dispose();
+  }
+
+  Future<void> _playOrOpenTorrent(
+    int episodeNumber,
+    String episodeTitle, [
+    String? aniDBEpisode,
+  ]) async {
+    final l10n = ref.read(translationsProvider);
+    try {
+      final repo = ref.read(repositoryProvider);
+      final entry = await repo.getAnimeLibraryEntry(widget.mediaId);
+      final localEp = entry?.episodes.cast<LibraryEpisode?>().firstWhere(
+        (e) => e?.episodeNumber == episodeNumber && (e?.isDownloaded ?? false),
+        orElse: () => null,
+      );
+      if (localEp != null && mounted) {
+        final serverManager = ref.read(serverManagerProvider);
+        final titleLang = ref.read(titleLanguageProvider);
+        final animeTitle = widget.details?.displayTitle(titleLang) ?? 'Anime';
+        final streamUrl = localEp.localFilePath != null &&
+                localEp.localFilePath!.isNotEmpty
+            ? 'http://${serverManager.host}:${serverManager.port}/api/v1/mediastream/file?path=${Uri.encodeComponent(localEp.localFilePath!)}'
+            : 'http://${serverManager.host}:${serverManager.port}/api/v1/mediastream?mediaId=${widget.mediaId}&episodeNumber=${localEp.episodeNumber}';
+        final fileName = localEp.localFilePath?.split(RegExp(r'[/\\]')).last;
+
+        Navigator.of(context, rootNavigator: true).push(
+          VideoPlayerScreen.route(
+            mediaId: widget.mediaId,
+            videoUrl: streamUrl,
+            title: animeTitle,
+            episodeTitle: localEp.displayTitle.isNotEmpty
+                ? localEp.displayTitle
+                : episodeTitle,
+            episodeNumber: episodeNumber,
+            videoSource: fileName != null
+                ? 'Local • $fileName'
+                : l10n.localLibrary,
+            isLocalFile: true,
+            animeDetails: widget.details,
+            aniZipData: widget.aniZipData ?? widget.details?.aniZipData,
+          ),
+        );
+        return;
+      }
+    } catch (_) {}
+
+    widget.onOpenTorrentSelector(
+      episodeNumber: episodeNumber,
+      episodeTitle: episodeTitle,
+      aniDBEpisode: aniDBEpisode,
+    );
   }
 
   @override
@@ -278,27 +330,41 @@ class _AnimeDetailTvLayoutState extends ConsumerState<AnimeDetailTvLayout> {
                   // Episodes rail / container
                   Expanded(
                     flex: 2,
-                    child: widget.currentTab == AnimeDetailTab.torrent
-                        ? AniZipEpisodeListView(
-                            aniZipData: widget.aniZipData ?? widget.details?.aniZipData,
-                            fallbackEpisodes: widget.details?.episodes ?? const [],
-                            animeDetails: widget.details,
-                            isLoading: widget.isLoading || widget.isLoadingAniZip,
-                            progress: progress,
-                            onRetry: widget.onRetryAniZip,
-                            onPlayEpisode: (ep) {
-                              widget.onOpenTorrentSelector(
-                                episodeNumber: ep.episodeNumber,
-                                episodeTitle: ep.displayTitle,
-                                aniDBEpisode: ep.episode,
-                              );
-                            },
-                          )
-                        : OnlineStreamView(
+                    child: widget.isLocalMode
+                        ? LocalLibraryView(
                             mediaId: widget.mediaId,
                             animeDetails: widget.details,
                             progress: progress,
-                          ),
+                            onSwitchToTorrent: () {
+                              widget.onToggleLocalMode();
+                              widget.onTabChanged(AnimeDetailTab.torrent);
+                            },
+                            onSwitchToOnline: () {
+                              widget.onToggleLocalMode();
+                              widget.onTabChanged(AnimeDetailTab.online);
+                            },
+                          )
+                        : widget.currentTab == AnimeDetailTab.torrent
+                            ? AniZipEpisodeListView(
+                                aniZipData: widget.aniZipData ?? widget.details?.aniZipData,
+                                fallbackEpisodes: widget.details?.episodes ?? const [],
+                                animeDetails: widget.details,
+                                isLoading: widget.isLoading || widget.isLoadingAniZip,
+                                progress: progress,
+                                onRetry: widget.onRetryAniZip,
+                                onPlayEpisode: (ep) {
+                                  _playOrOpenTorrent(
+                                    ep.episodeNumber,
+                                    ep.displayTitle,
+                                    ep.episode,
+                                  );
+                                },
+                              )
+                            : OnlineStreamView(
+                                mediaId: widget.mediaId,
+                                animeDetails: widget.details,
+                                progress: progress,
+                              ),
                   ),
                 ],
               ),

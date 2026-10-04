@@ -8,7 +8,9 @@ import 'package:seanime_app/core/server/server_manager.dart';
 import 'package:seanime_app/core/server/lan_discovery_service.dart';
 import 'package:seanime_app/core/preferences/lan_sharing_provider.dart';
 import 'package:seanime_app/core/preferences/download_preferences_provider.dart';
+import 'package:seanime_app/core/preferences/playback_progress_preferences_provider.dart';
 import 'package:seanime_app/data/models/anime_entry.dart';
+import 'package:seanime_app/data/models/library_entry_details.dart';
 import 'package:seanime_app/data/models/anizip_data.dart';
 import 'package:seanime_app/data/models/manga_entry.dart';
 import 'package:seanime_app/data/models/onlinestream_models.dart';
@@ -117,6 +119,7 @@ class ServerNotifier extends Notifier<ServerStateModel> {
           _connectWebSocket();
           _repo.ensureOnlineStreamingEnabled();
           _repo.ensureTorrentStreamingEnabled();
+          _repo.ensureWatchContinuityEnabled();
           return;
         }
       }
@@ -133,6 +136,7 @@ class ServerNotifier extends Notifier<ServerStateModel> {
       _connectWebSocket();
       _repo.ensureOnlineStreamingEnabled();
       _repo.ensureTorrentStreamingEnabled();
+      _repo.ensureWatchContinuityEnabled();
       _checkAndStartLanBroadcasting(info?.version);
       return;
     }
@@ -172,35 +176,47 @@ class ServerNotifier extends Notifier<ServerStateModel> {
   Future<void> checkConnection({String? host, int? port}) async {
     final cachedStatus = FeedCacheService.instance.getServerStatus();
     state = ServerStateModel(state: ServerState.starting, status: cachedStatus);
-    final isAlive = await _manager.checkHealth(host: host, port: port);
-    if (isAlive) {
-      final info = await _repo.getStatus();
-      if (info != null) {
-        FeedCacheService.instance.saveServerStatus(info);
+    try {
+      final isAlive = await _manager.checkHealth(host: host, port: port);
+      if (isAlive) {
+        final info = await _repo.getStatus();
+        if (info != null) {
+          FeedCacheService.instance.saveServerStatus(info);
+        }
+        // Persistir configuración de conexión remota
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          if (host != null && host.isNotEmpty) {
+            await prefs.setString(AppConstants.keyServerHost, host);
+          }
+          if (port != null) {
+            await prefs.setInt(AppConstants.keyServerPort, port);
+          }
+        } catch (_) {}
+
+        // Limpiar caché previa del feed
+        await FeedCacheService.instance.clearUserCache();
+
+        // 1. Establecer el nuevo estado del servidor PRIMERO antes de invalidar providers
+        state = ServerStateModel(state: _manager.state, status: info ?? cachedStatus);
+        _connectWebSocket();
+        _repo.ensureOnlineStreamingEnabled();
+        _repo.ensureTorrentStreamingEnabled();
+        _repo.ensureWatchContinuityEnabled();
+
+        // 2. Invalidar providers de feeds en el siguiente microtask para evitar dependencias circulares
+        _invalidateFeedProviders();
+      } else {
+        state = ServerStateModel(
+          state: ServerState.stopped,
+          errorMessage: _manager.lastError ?? 'Servidor no detectado',
+        );
       }
-      // Persistir configuración de conexión remota
-      try {
-        final prefs = await SharedPreferences.getInstance();
-        if (host != null && host.isNotEmpty) {
-          await prefs.setString(AppConstants.keyServerHost, host);
-        }
-        if (port != null) {
-          await prefs.setInt(AppConstants.keyServerPort, port);
-        }
-      } catch (_) {}
-
-      // Limpiar caché previa del feed e invalidar providers para cargar datos frescos del nuevo servidor
-      await FeedCacheService.instance.clearUserCache();
-      _invalidateFeedProviders();
-
-      state = ServerStateModel(state: _manager.state, status: info ?? cachedStatus);
-      _connectWebSocket();
-      _repo.ensureOnlineStreamingEnabled();
-      _repo.ensureTorrentStreamingEnabled();
-    } else {
+    } catch (e) {
+      debugPrint('Error en checkConnection: $e');
       state = ServerStateModel(
         state: ServerState.stopped,
-        errorMessage: _manager.lastError ?? 'Servidor no detectado',
+        errorMessage: _manager.lastError ?? 'Error de conexión al servidor: $e',
       );
     }
   }
@@ -217,28 +233,44 @@ class ServerNotifier extends Notifier<ServerStateModel> {
       await prefs.remove(AppConstants.keyServerPort);
     } catch (_) {}
     _stopLanBroadcasting();
-    ref.read(webSocketServiceProvider).disconnect();
-    await _manager.stopServer();
-    _manager.resetToLocal();
-    await FeedCacheService.instance.clearUserCache();
-    _invalidateFeedProviders();
-    await initAndAutoStart();
+    try {
+      ref.read(webSocketServiceProvider).disconnect();
+    } catch (_) {}
+    try {
+      await _manager.stopServer();
+      _manager.resetToLocal();
+      await FeedCacheService.instance.clearUserCache();
+      await initAndAutoStart();
+      _invalidateFeedProviders();
+    } catch (e) {
+      debugPrint('Error en switchToLocal: $e');
+      state = ServerStateModel(
+        state: ServerState.stopped,
+        errorMessage: 'Error al cambiar a servidor local: $e',
+      );
+    }
   }
 
   void _invalidateFeedProviders() {
-    ref.invalidate(continueWatchingProvider);
-    ref.invalidate(animeCollectionProvider);
-    ref.invalidate(missedSequelsProvider);
-    ref.invalidate(recommendationsProvider);
-    ref.invalidate(mangaCollectionProvider);
-    ref.invalidate(continueReadingMangaProvider);
-    ref.invalidate(mangaRecommendationsProvider);
+    Future.microtask(() {
+      ref.invalidate(continueWatchingProvider);
+      ref.invalidate(animeCollectionProvider);
+      ref.invalidate(missedSequelsProvider);
+      ref.invalidate(recommendationsProvider);
+      ref.invalidate(mangaCollectionProvider);
+      ref.invalidate(continueReadingMangaProvider);
+      ref.invalidate(mangaRecommendationsProvider);
+    });
   }
 
   Future<void> stopServer() async {
     _stopLanBroadcasting();
-    ref.read(webSocketServiceProvider).disconnect();
-    await _manager.stopServer();
+    try {
+      ref.read(webSocketServiceProvider).disconnect();
+    } catch (_) {}
+    try {
+      await _manager.stopServer();
+    } catch (_) {}
     state = const ServerStateModel(state: ServerState.stopped);
   }
 
@@ -421,6 +453,14 @@ final downloadedAnimeProvider = FutureProvider<List<AnimeEntry>>((ref) async {
   return ref.read(repositoryProvider).getDownloadedAnime();
 });
 
+final animeLibraryEntryProvider =
+    FutureProvider.family<LibraryEntryDetails?, int>((ref, mediaId) async {
+  if (mediaId <= 0) return null;
+  final serverState = ref.watch(serverNotifierProvider);
+  if (!serverState.isOnline) return null;
+  return ref.watch(repositoryProvider).getAnimeLibraryEntry(mediaId);
+});
+
 final aniZipDataProvider = FutureProvider.family<AniZipData?, int>((ref, mediaId) async {
   if (mediaId <= 0) return null;
   final serverState = ref.watch(serverNotifierProvider);
@@ -436,6 +476,13 @@ final continueWatchingProvider = FutureProvider<List<AnimeEntry>>((ref) async {
     if (cached.isNotEmpty) return cached;
     return OfflineLibraryService.instance.getContinueWatching();
   }
+
+  // Sincronizar historial de continuidad del servidor (progreso en segundos) con las preferencias del dispositivo
+  ref.read(repositoryProvider).getContinuityWatchHistory().then((history) {
+    if (history.isNotEmpty) {
+      ref.read(playbackProgressPreferencesProvider.notifier).syncWithServerContinuity(history);
+    }
+  }).catchError((_) {});
 
   return loadAnimeWithCacheAndSwr(
     ref: ref,

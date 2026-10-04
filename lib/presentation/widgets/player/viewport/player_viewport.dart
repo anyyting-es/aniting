@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit_video/media_kit_video.dart';
@@ -156,8 +155,7 @@ class PlayerViewport extends ConsumerWidget {
                             fit: fitMode.boxFit,
                             filterQuality: FilterQuality.low,
                             subtitleViewConfiguration: SubtitleViewConfiguration(
-                              visible: selectedSubtitleTrackId != null &&
-                                  selectedSubtitleTrackId != 'no' &&
+                              visible: selectedSubtitleTrackId != 'no' &&
                                   selectedSubtitleTrackId != 'none',
                               style: TextStyle(
                                 height: 1.4,
@@ -270,38 +268,65 @@ class PlayerViewport extends ConsumerWidget {
               ),
             ),
 
-          // 8. ExoPlayer Subtitles Overlay (for SRT / WebVTT / standard text cues)
+          // 8. ExoPlayer Non-ASS Subtitles Overlay (Crisp vector outline, scalable and clean)
           if (isUsingExoPlayer &&
               currentSubtitleText.isNotEmpty &&
-              selectedSubtitleTrackId != null &&
               selectedSubtitleTrackId != 'no' &&
               selectedSubtitleTrackId != 'none')
             Positioned(
-              left: 20,
-              right: 20,
+              left: 24,
+              right: 24,
               bottom: areControlsVisible
                   ? (isFullscreen ? 96.0 : 56.0)
-                  : (isFullscreen ? 36.0 : 18.0),
+                  : (isFullscreen ? 36.0 : 20.0),
               child: IgnorePointer(
                 child: Center(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: subStyle.bgFlutterColor,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      currentSubtitleText,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: subStyle.textFlutterColor,
-                        fontFamily: subStyle.fontFamily == 'sans-serif' ? null : subStyle.fontFamily,
-                        fontSize: (isFullscreen ? 20.0 : 15.0) * subStyle.fontSizeMultiplier,
-                        fontWeight: subStyle.bold ? FontWeight.bold : FontWeight.normal,
-                        fontStyle: subStyle.italic ? FontStyle.italic : FontStyle.normal,
-                        height: 1.3,
-                        shadows: _buildViewportSubtitleShadows(subStyle),
-                      ),
+                    padding: subStyle.backgroundColor != 0
+                        ? const EdgeInsets.symmetric(horizontal: 10, vertical: 4)
+                        : EdgeInsets.zero,
+                    decoration: subStyle.backgroundColor != 0
+                        ? BoxDecoration(
+                            color: subStyle.bgFlutterColor,
+                            borderRadius: BorderRadius.circular(6),
+                          )
+                        : null,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        // Vector stroke outline (renders crisp border without blurry shadows)
+                        if (subStyle.borderStyle != SubtitleBorderStyle.none && subStyle.borderSize > 0)
+                          Text(
+                            currentSubtitleText,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontFamily: subStyle.fontFamily == 'sans-serif' ? null : subStyle.fontFamily,
+                              fontSize: (isFullscreen ? 28.0 : 20.0) * subStyle.fontSizeMultiplier,
+                              fontWeight: subStyle.bold ? FontWeight.bold : FontWeight.w600,
+                              fontStyle: subStyle.italic ? FontStyle.italic : FontStyle.normal,
+                              height: 1.35,
+                              foreground: Paint()
+                                ..style = PaintingStyle.stroke
+                                ..strokeWidth = (isFullscreen ? 3.5 : 2.5) * (subStyle.borderSize / 3.0).clamp(0.5, 2.5)
+                                ..strokeJoin = StrokeJoin.round
+                                ..strokeCap = StrokeCap.round
+                                ..color = subStyle.borderFlutterColor,
+                            ),
+                          ),
+                        // Foreground fill text
+                        Text(
+                          currentSubtitleText,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: subStyle.textFlutterColor,
+                            fontFamily: subStyle.fontFamily == 'sans-serif' ? null : subStyle.fontFamily,
+                            fontSize: (isFullscreen ? 28.0 : 20.0) * subStyle.fontSizeMultiplier,
+                            fontWeight: subStyle.bold ? FontWeight.bold : FontWeight.w600,
+                            fontStyle: subStyle.italic ? FontStyle.italic : FontStyle.normal,
+                            height: 1.35,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -391,43 +416,6 @@ class PlayerViewport extends ConsumerWidget {
         ],
       ),
     );
-  }
-
-  List<Shadow>? _buildViewportSubtitleShadows(SubtitleStylePrefs prefs) {
-    final borderCol = prefs.borderFlutterColor;
-    final bSize = prefs.borderSize;
-
-    switch (prefs.borderStyle) {
-      case SubtitleBorderStyle.none:
-        return null;
-      case SubtitleBorderStyle.outline:
-        // Adding a subtle blurRadius softens discrete directional shadow steps into smooth anti-aliased outlines.
-        final blur = math.max(1.0, bSize * 0.5);
-        return [
-          Shadow(offset: Offset(-bSize, -bSize), blurRadius: blur, color: borderCol),
-          Shadow(offset: Offset(bSize, -bSize), blurRadius: blur, color: borderCol),
-          Shadow(offset: Offset(-bSize, bSize), blurRadius: blur, color: borderCol),
-          Shadow(offset: Offset(bSize, bSize), blurRadius: blur, color: borderCol),
-          Shadow(offset: Offset(0, -bSize), blurRadius: blur, color: borderCol),
-          Shadow(offset: Offset(0, bSize), blurRadius: blur, color: borderCol),
-          Shadow(offset: Offset(-bSize, 0), blurRadius: blur, color: borderCol),
-          Shadow(offset: Offset(bSize, 0), blurRadius: blur, color: borderCol),
-        ];
-      case SubtitleBorderStyle.dropShadow:
-        return [
-          Shadow(offset: Offset(bSize, bSize), blurRadius: bSize * 1.5, color: borderCol),
-        ];
-      case SubtitleBorderStyle.raised:
-        return [
-          Shadow(offset: Offset(-bSize * 0.7, -bSize * 0.7), color: Colors.white54),
-          Shadow(offset: Offset(bSize * 0.7, bSize * 0.7), color: borderCol),
-        ];
-      case SubtitleBorderStyle.depressed:
-        return [
-          Shadow(offset: Offset(bSize * 0.7, bSize * 0.7), color: Colors.white54),
-          Shadow(offset: Offset(-bSize * 0.7, -bSize * 0.7), color: borderCol),
-        ];
-    }
   }
 }
 

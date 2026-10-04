@@ -76,11 +76,22 @@ class AnimeEntry {
 
   /// Returns true if the next episode to watch is available (already aired and not in the future)
   bool get hasNextEpisodeAired {
-    if (status == 'NOT_YET_RELEASED') return false;
+    if (status.toUpperCase() == 'COMPLETED') return false;
+
     final nextEp = episodeNumber ?? (progress + 1);
 
+    // If files are already downloaded/present on disk, episodes are available to watch!
+    if (hasLocalFiles) {
+      if (totalEpisodes != null && totalEpisodes! > 0 && (progress >= totalEpisodes! || nextEp > totalEpisodes!)) {
+        return false;
+      }
+      return true;
+    }
+
+    if (status == 'NOT_YET_RELEASED') return false;
+
     // If user has already finished all episodes
-    if (totalEpisodes != null && totalEpisodes! > 0 && progress >= totalEpisodes!) {
+    if (totalEpisodes != null && totalEpisodes! > 0 && (progress >= totalEpisodes! || nextEp > totalEpisodes!)) {
       return false;
     }
 
@@ -91,10 +102,10 @@ class AnimeEntry {
       }
     }
 
-    // If AniZip / episode airDate is known and in the future
+    // If AniZip / episode airDate is known and in the future (with 12h timezone buffer)
     if (airDate != null && airDate!.isNotEmpty) {
       final parsedDate = DateTime.tryParse(airDate!);
-      if (parsedDate != null && parsedDate.isAfter(DateTime.now())) {
+      if (parsedDate != null && parsedDate.isAfter(DateTime.now().add(const Duration(hours: 12)))) {
         return false;
       }
     }
@@ -228,6 +239,11 @@ class AnimeEntry {
         if (parsed != null) parsedYear = parsed.year;
       }
 
+      final userProgress = json['progress'] as int? ??
+          json['progressNumber'] as int? ??
+          base['progress'] as int? ??
+          (epNum > 1 ? epNum - 1 : 0);
+
       return AnimeEntry(
         id: json['id'] is int ? json['id'] : (base['id'] ?? 0),
         mediaId: base['id'] as int? ?? 0,
@@ -238,7 +254,7 @@ class AnimeEntry {
         coverImage: cover?['large'] ?? cover?['extraLarge'] ?? cover?['medium'],
         coverColor: cover?['color'] as String?,
         bannerImage: base['bannerImage'] as String?,
-        progress: epNum,
+        progress: userProgress,
         totalEpisodes: base['episodes'] as int?,
         status: 'CURRENT',
         currentEpisode: epNum,

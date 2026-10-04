@@ -524,9 +524,7 @@ class ExoPlayerPlugin :
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.MATCH_PARENT
             )
-            // Native view is hidden because Flutter's PlayerViewport renders the smooth,
-            // anti-aliased cues overlay directly, eliminating Canvas stroke miter spikes and double rendering.
-            visibility = View.GONE
+            visibility = View.VISIBLE
         }
         standardSubtitleView = standardSubView
         container.addView(standardSubView)
@@ -902,8 +900,14 @@ class ExoPlayerPlugin :
 
     override fun onCues(cueGroup: CueGroup) {
         if (isCurrentSubAss) {
-            // When an ASS subtitle track is active, libass renders directly onto AssSubtitleSurfaceView.
-            // Suppress standard plain text cues to prevent duplicate/ugly unstyled text overlays.
+            mainHandler.post {
+                eventSink?.success(
+                    mapOf(
+                        "event" to "cues",
+                        "text" to ""
+                    )
+                )
+            }
             return
         }
         val text = cueGroup.cues
@@ -911,8 +915,6 @@ class ExoPlayerPlugin :
             .filter { it.isNotBlank() }
             .joinToString("\n")
         mainHandler.post {
-            // Flutter's PlayerViewport renders these cues cleanly with customizable styles and anti-aliasing.
-            // Keeping native SubtitleView dormant prevents double-rendering artifacts and outline pixelation.
             eventSink?.success(
                 mapOf(
                     "event" to "cues",
@@ -968,9 +970,9 @@ class ExoPlayerPlugin :
 
         mainHandler.post {
             standardSubtitleView?.setStyle(customStyle)
-            standardSubtitleView?.setFractionalTextSize(
-                SubtitleView.DEFAULT_TEXT_SIZE_FRACTION * 1.15f * fontSizeMultiplier
-            )
+            val fraction = (38f * fontSizeMultiplier) / 720f
+            standardSubtitleView?.setFractionalTextSize(fraction)
+            standardSubtitleView?.setBottomPaddingFraction(0.05f)
         }
     }
 

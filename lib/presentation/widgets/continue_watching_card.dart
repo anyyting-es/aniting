@@ -91,10 +91,12 @@ class _ContinueWatchingCardState extends ConsumerState<ContinueWatchingCard> {
     final animeTitle = widget.entry.displayTitle(titleLang);
     final String? episodeDuration = aniZipEpisode?.formattedDuration;
 
-    // Local video playback progress (only appears if user has actually watched part of this episode locally)
+    // Local video playback progress (only appears if user has actually watched part of THIS episode locally)
     final playbackMap = ref.watch(playbackProgressPreferencesProvider);
-    final localProgress = playbackMap['${widget.entry.mediaId}_$epNum'] ??
-        playbackMap[widget.entry.mediaId.toString()];
+    final epKey = '${widget.entry.mediaId}_$epNum';
+    final mediaProgress = playbackMap[widget.entry.mediaId.toString()];
+    final localProgress = playbackMap[epKey] ??
+        (mediaProgress != null && mediaProgress.episodeNumber == epNum ? mediaProgress : null);
     final double? progressFraction = (localProgress != null &&
             localProgress.durationMs > 0 &&
             localProgress.positionMs > 0)

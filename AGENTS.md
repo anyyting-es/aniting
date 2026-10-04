@@ -207,7 +207,11 @@ seanime_app/
   - **Anime Continue Watching (`ContinueWatchingCard`, `playback_progress_preferences_provider.dart`)**:
     - Replaced the previous AniList-level progress fraction with **exact local video playback progress** (`PlaybackProgressNotifier`, backed by `local_episode_playback_progress_v1` in `SharedPreferences`).
     - **New User / Unwatched Behavior**: When an episode has not yet been played locally in the app, no progress bar is rendered—displaying only the clean episode card.
-    - **In-Progress Tracking**: As the user watches the video, `PlayerProgressManager` updates the local position (`mediaId_episodeNumber` -> `positionMs`, `durationMs`, `fraction`). `ContinueWatchingCard` displays a smooth progress bar for fractions between 1% and 98%.
+    - **In-Progress Tracking & Episode Isolation (`continue_watching_card.dart`, `playback_progress_preferences_provider.dart`, `video_player_screen.dart`)**:
+      - As the user watches the video, `PlayerProgressManager` updates the local position (`mediaId_episodeNumber` -> `positionMs`, `durationMs`, `fraction`). `ContinueWatchingCard` displays a smooth progress bar for fractions between 1% and 98%.
+      - **Strict Episode Progress Isolation**: `getProgress(mediaId, episodeNumber)` and `ContinueWatchingCard` strictly match playback progress against the exact requested episode (`mediaProgress.episodeNumber == epNum`). When a user completes Episode 1 and AniList advances to Episode 2, Episode 2 starts at 0% with no phantom progress bar and opens at 00:00 rather than inheriting Episode 1's finished position.
+      - **Future Episode & Completion Filtering**: Animes marked as `COMPLETED` or where `progress >= totalEpisodes` are excluded from Continue Watching. If the next episode has not yet aired (and is not present on disk), it is withheld from Continue Watching while remaining cleanly in "Viendo Actualmente" (Currently Watching) until release.
+      - **Movie & Single-Episode Tracking**: In `OfflineLibraryService` and `SeanimeRepository`, movies (`totalEpisodes: 1`) and single-episode media are kept as `CURRENT` during playback rather than prematurely transitioning to `COMPLETED` on episode start (`epNum >= totalEpisodes`), ensuring they appear in both Continue Watching and Currently Watching with real-time playback progress until finished. Automatic self-healing re-promotes active unfinished media from `COMPLETED` to `CURRENT`.
     - **AniZip Persistent Metadata Caching (`FeedCacheService`, `seanime_repository.dart`)**: AniZip metadata (16:9 real episode thumbnails, official localized titles, and air dates) is cached in RAM (`_aniZipMemoryCache`) and local storage (`saveAniZipRaw` / `getAniZipData`), eliminating repetitive API requests and ensuring instant 0ms episode loading.
     - **Server-First Multi-Device Synchronization & Offline Fallback (`app_providers.dart`, `feed_screen.dart`, `manga_feed_screen.dart`, `seanime_repository.dart`)**:
       - Whenever the server is online (`serverState.isOnline == true`, whether hosted locally or accessed remotely over LAN from phone/tablet), the server's database and library collections (`/api/v1/library/collection`, `/api/v1/continuity/watch-history`) are the single source of truth for `animeCollectionProvider`, `continueWatchingProvider`, `mangaCollectionProvider`, and `continueReadingMangaProvider`.
@@ -216,6 +220,22 @@ seanime_app/
     - **Anti-CLS & Offline Cache Fallback (`feed_screen.dart`, `seanime_repository.dart`)**:
       - `continueWatchingEntries` uses memory-cached entries immediately on frame 0 while revalidation runs in the background. If the user is on a cold start without cache, the feed skeleton is preserved until both continue watching and library collections settle, eliminating layout shift (CLS).
       - If network/AniList is offline, `getContinueWatching()` and `getContinueReadingManga()` fall back to cached data without wiping local storage with empty arrays `[]`.
+    - **Remote Server & LAN Discovery Resilience (`lan_discovery_service.dart`, `server_manager.dart`, `app_providers.dart`, `server_settings_screen.dart`)**:
+      - **Android Socket `reusePort` Hardening**: On Android, `RawDatagramSocket.bind` rejects `reusePort: true` with `Dart Socket ERROR: socket_linux.cc: reusePort not supported on this platform`. Set to `reusePort: !Platform.isWindows && !Platform.isAndroid`, allowing mobile clients to listen for UDP discovery beacons sent by desktop servers on the local Wi-Fi without crashing.
+      - **Circular Dependency Elimination in `ServerNotifier`**: Feed provider invalidations (`_invalidateFeedProviders()`) are scheduled via `Future.microtask`, and `state = ServerStateModel(state: _manager.state, ...)` is committed prior to invalidating feeds. This prevents Riverpod's `CircularDependencyError` when feed providers evaluate `serverNotifierProvider` during server transitions.
+      - **Non-Blocking Server UI State**: `checkConnection()` and `switchToLocal()` are wrapped in comprehensive `try/catch` handlers guaranteeing that server state never gets locked indefinitely in `ServerState.starting`. If the server is in `starting`, the "Detener Servidor" button remains active, and the "Iniciar Servidor Local" button reflects progress without becoming permanently unresponsive.
+      - **Connection Check Robustness**: Increased HTTP health-check timeout to 3000ms for stable LAN resolution over Wi-Fi, improved error feedback in `ServerManager._lastError`, and added asynchronous toasts informing users whether remote connection succeeded or failed.
+    - **Detail Mode Persistence & Tab Restoration (`anime_detail_screen.dart`)**:
+      - Persists user mode selection (`local`, `torrent`, `online`) per anime in `SharedPreferences` (`pref_anime_detail_mode_${mediaId}`) with a global fallback (`pref_anime_detail_last_mode`).
+      - Restores the exact mode on screen initialization without forcefully resetting the user to Online or Local mode.
+    - **ExoPlayer Plain-Text Subtitle Pipeline & Stroke Outlining (`ExoPlayerPlugin.kt`, `player_viewport.dart`)**:
+      - Transmits plain-text subtitle cues (SRT, VTT) from Android Media3 `ExoPlayer` via `eventSink` stream to Flutter.
+      - Rendered in Flutter with high-fidelity vector stroke outlining (`PaintingStyle.stroke`, `StrokeJoin.round`) rather than blurry shadow filters or opaque boxes, matching the visual quality of `.ass` subtitles and YouTube/Netflix player overlays.
+    - **Cover Poster Cache Consistency (`anime_details.dart`, `anime_detail_mobile_layout.dart`, `anime_detail_desktop_layout.dart`)**:
+      - Aligned image resolution precedence across models (`large` -> `extraLarge` -> `medium`), preserving `initialEntry.coverImage` to eliminate image reloading and flickering when transitioning from card to detail view.
+    - **Search Duplication Safeguards (`search_screen.dart`)**:
+      - Debounce timer is strictly cancelled upon search submission (`onSubmitted`), preventing concurrent requests for page 1.
+      - Applied `mediaId` set deduplication when appending pagination results.
   - **Missed Sequels Full Uncapped List (`backend/internal/api/anilist/list.go`, `feed_screen.dart`)**:
     - Previously, the Go backend capped missed sequels at `len(idsSlice) > 10`. This hardcoded slice was removed and replaced with a batched query pipeline (50 IDs per GraphQL chunk via `SearchBaseAnimeByIdsDocument`), returning 100% of missed sequels for the user.
     - The UI displays the full collection count badge in the section header.
@@ -573,7 +593,7 @@ seanime_app/
   - **Source-Specific Episode Engine**:
     - **Torrent Mode (`AnimeDetailTab.torrent`)**: Always loads 100% of the official AniList / AniZip episode list (`aniZipEps`, `fallbackEps`, or `totalEpisodes`), ensuring complete fidelity with release schedules and metadata.
     - **Online Streaming Mode (`AnimeDetailTab.online`)**: Dynamically queries the selected extension/source provider (`getOnlinestreamEpisodes`). When changing providers in the dropdown or toggling between Subbed and Dubbed audio, `DesktopEpisodesTab` re-fetches and renders the exact episode list from the active provider with an inline loading state and empty fallback.
-    - **Real Canon Episodes Engine ("Solo EP Reales")**: In both Torrent and AniZip sources, filters out extra specials, openings, endings (`ncop`/`nced`), previews, teasers, and recaps (`isRealMainEpisode`). Enforces episode deduplication by number (`seenTorrent`, `seenOnline`) and bounds to `totalEpisodes`, eliminating duplicate cards and spin-off shorts ("Oni and Momo Too") between canon episodes.
+    - **Real Canon Episodes Engine ("Solo EP Reales")**: In both Torrent and AniZip sources, filters out extra specials, openings, endings (`ncop`/`nced`), previews, teasers, and recaps (`isRealMainEpisode`). Enforces episode deduplication by number (`seenTorrent`, `seenOnline`) and bounds to `totalEpisodes`, eliminating duplicate cards and spin-off shorts ("Oni and Momo Too") between canon episodes. Harmonized with mobile by applying `hasEpisodeAired` (filtering out unreleased future TV stubs with future `airDate` / `nextAiringEpisode` unless downloaded locally on disk).
   - **Dimmed Watched Episodes ("Sin icono de visto")**:
     - Completely eliminates checkmark badges/icons on episode cards.
     - Watched episodes are styled with subdued opacity (`0.45` rest, elevating to `0.75` on hover) via `AnimatedOpacity`, providing instant, non-intrusive visual distinction between watched and unwatched episodes.
@@ -772,7 +792,12 @@ Inspired by **Plezy** (`edde746/plezy`), the player focuses on high performance,
    - **Pause, Seek & Track Invalidation**: When paused or seeking (where new video frames are not emitted by MediaCodec), `assSubtitleView.invalidateSubtitles()` forces an immediate re-render of the last subtitle position, ensuring subtitles remain visible while scrubbing or paused.
    - **Accurate Dialogue Duration Parsing (`AssTrackOutput.kt`)**: MatroskaExtractor writes `blockDurationUs` into token 1 of `subtitleSample` (`"%01d:%02d:%02d:%02d"`). `parseTimecodeUs(rawDuration)` decodes the exact event duration directly to milliseconds (`durationUs / 1000`). This completely eliminates the previous false comparison (`endTimeUs > timeUs`) that fell back to a forced 5000ms duration, preventing dialogues from stacking or lingering on screen.
    - **ExoPlayer Subtitle Delay**: Added `setSubtitleDelay` platform channel method and Dart bindings (`ExoPlayerService.setSubtitleDelay` and `PlayerPlaybackCoordinator.setSubtitleDelay`), adjusting timestamps dynamically in `videoFrameCallback` and triggering instant invalidation.
-   - **SRT & WebVTT Subtitles (`application/x-subrip`, `text/vtt`)**: In Android, standard Canvas `View` (`SubtitleView`) placed behind Flutter's Impeller/Vulkan surface is occluded. `ExoPlayerPlugin.kt` bridges `onCues(cueGroup)` via EventChannel (`cues` event) directly to Flutter, where `PlayerViewport` renders crisp, high-contrast, responsive subtitle overlays on top of the video surface.
+   - **SRT & WebVTT Plain-Text Subtitles (`SubtitleCueLayout.kt`, `ExoPlayerPlugin.kt`)**:
+      - Ported Plezy's `SubtitleCueLayout` to stack unpositioned cues (`stackUnpositioned`) and calculate vertical bounds (`applyPosition`), preventing SRT lines from overlapping or colliding.
+      - Enabled Media3's native `standardSubtitleView` with hardware-accelerated canvas text rendering, clean outline styles (`CaptionStyleCompat.EDGE_TYPE_OUTLINE`), and dynamic fractional sizing (`setFractionalTextSize(38f * fontSizeMultiplier / 720f)`).
+      - Removed redundant Flutter text overlay box to eliminate blurry shadow artifacts and dark background rectangles.
+   - **Android libmpv Subtitle Font Resolution (`mpv_player_service.dart`)**:
+      - Configured direct system font directory mapping (`sub-fonts-dir=/system/fonts`, `sub-font=Roboto`, `sub-font-provider=none`) on Android for libmpv. This resolves the missing fontconfig fallback on Android SoCs, allowing libmpv to render plain-text SRT and VTT subtitles natively.
    - **Intelligent Subtitle Auto-Selection**: For both torrents and streams with embedded or external tracks, when no subtitle is selected by default, `video_player_screen.dart` automatically selects:
      1. Default external subtitle (if flagged default)
      2. Preferred Spanish track (`es`, `spa`, `español`, `castellano`, `latino`)
@@ -879,8 +904,12 @@ Inspired by **Plezy** (`edde746/plezy`), the player focuses on high performance,
   - Official logo located at `assets/icons/logo.png` integrated into hero cards, developer badges, Android launcher mipmaps (`mipmap-mdpi` through `mipmap-xxxhdpi`), and native Windows icon (`windows/runner/resources/app_icon.ico` supporting 16x16 up to 256x256).
   - Streamlined "Sobre Aniting" view: Developer information and a single concise "Créditos" link acknowledging Seanime media server backend (`https://seanime.app`).
 - **Integrated Desktop Titlebar (`DesktopTitleBar` & `window_manager`)**:
-  - Hides native OS titlebar frame via `window_manager` (`TitleBarStyle.hidden`) on Windows and macOS.
-  - On Linux, desktop environments (KDE KWin, GNOME Shell, XFCE) manage window decorations directly (SSD/CSD); therefore, `DesktopWindowFrame` skips rendering `DesktopTitleBar` on Linux (`Platform.isWindows || Platform.isMacOS`), using `TitleBarStyle.normal` in `main.dart` to prevent duplicate stacked titlebars.
+  - Hides native OS titlebar frame via `window_manager` (`TitleBarStyle.hidden`) across all desktop platforms (Windows, macOS, and Linux).
+  - **Linux Custom Titlebar & The "Double Titlebar" Resolution**:
+    - *The Issue*: Previously, Linux was restricted to `TitleBarStyle.normal` because calling `windowManager.setTitleBarStyle(TitleBarStyle.hidden)` from Dart produced a duplicate titlebar (both the system OS titlebar and Flutter's in-app titlebar appeared simultaneously). In Linux GTK, Flutter shows the window on the first frame callback (`first_frame_cb -> gtk_widget_show`). When mapped, Wayland compositors (GNOME Mutter, KDE KWin) lock in native decorations. Asynchronous undecoration requests from Dart run after mapping and are ignored by Wayland compositors.
+    - *The Native C++ Fix (`linux/runner/my_application.cc`)*: Calls `gtk_window_set_decorated(window, FALSE);` synchronously when the `GtkWindow` is created, before realization or mapping. This forces GTK and Wayland compositors to spawn the window without system decorations from frame zero, eliminating the double titlebar entirely.
+    - *Dart Configuration (`lib/main.dart`)*: Uses `titleBarStyle: TitleBarStyle.hidden` unconditionally for all desktop platforms (`Platform.isWindows || Platform.isMacOS || Platform.isLinux`).
+    - *Window Resizing with `DragToResizeArea` (`lib/presentation/widgets/desktop_title_bar.dart`)*: Undecorated GTK windows lose system resize handles. `DesktopWindowFrame` wraps the app in `DragToResizeArea` on Linux, providing transparent 8dp hitboxes across all borders and corners that hook into native `windowManager.startResizing(edge)` (`gtk_window_begin_resize_drag`).
   - **Transparent Stack Overlay Architecture (`DesktopWindowFrame`)**:
     - Embedded as a floating `Positioned` overlay atop a `Stack` (`lib/presentation/widgets/desktop_title_bar.dart`), allowing media content (Anime Detail hero banners, Video Player viewport, and Explore hero carousels) to bleed edge-to-edge behind the titlebar with zero solid gaps or white bars.
     - Draggable `DragToMoveArea` spans the client area while leaving interactive navigation elements (e.g. back buttons, sidebar icons, search bars) with comfortable top clearance (~38-42dp).
@@ -893,7 +922,8 @@ Inspired by **Plezy** (`edde746/plezy`), the player focuses on high performance,
 - **Linux Wayland & Desktop Integration (`linux/runner/my_application.cc`)**:
   - Implements automatic `setup_application_icons(window)` on startup to guarantee reliable icon display across all Wayland compositors (KDE KWin, GNOME Shell) and X11:
     - **Wayland `app_id` Integration**: Auto-installs `com.seanime.app.seanime_app.png` into `~/.local/share/icons/hicolor/256x256/apps/` and generates `~/.local/share/applications/com.seanime.app.seanime_app.desktop` if not present. Solves the fallback "W" Wayland placeholder icon in KDE's titlebar and Alt-Tab window switcher.
-    - **Window Title Consistency & Compact Titlebar**: Native GTK window title synchronized to "Aniting". Eliminated the bulky GTK3 `GtkHeaderBar` (~48-50px toolbar height) in favor of the standard compact (~34px) native system titlebar across all Linux desktop environments (GNOME, KDE Plasma, XFCE, tiling WMs).
+    - **Frameless CSD & Custom Titlebar**: Replaced bulky GTK3 `GtkHeaderBar` and native system titlebars with `gtk_window_set_decorated(window, FALSE)` in `my_application.cc`, seamlessly unifying Flutter's `DesktopTitleBar` with Wayland window dragging and edge resizing.
+  - **Build Dependencies**: Compiling `media_kit_video` on Linux requires `mpv` (`libmpv.so` and `mpv.pc` for CMake `PkgConfig::mpv`). On Arch/CachyOS: `sudo pacman -S mpv`. On Debian/Ubuntu: `sudo apt install libmpv-dev mpv`.
 
 ### 4.5. Onboarding & Welcome Flow (`welcome_screen.dart`)
 - **State Management & Persistence**:
@@ -1379,4 +1409,28 @@ Inspired by **Plezy** (`edde746/plezy`), the player focuses on high performance,
   - Completely removed the disruptive floating SnackBar when initiating a download. The torrent selector modal closes immediately (`Navigator.pop`).
   - Created `downloadingEpisodesProvider` (`DownloadingEpisodesNotifier`) in `active_downloads_provider.dart` tracking active download keys (`"${mediaId}_${episodeNumber}"`).
   - `EpisodeListItem` and `EpisodeGridItem` render a sleek inline circular progress indicator (`CircularProgressIndicator(strokeWidth: 2)`) on the right of the episode card while downloading, auto-clearing when completed or refreshed.
+
+### 7.19. Priorización Automática de Modo Local e Indicadores de Progreso en Episodios (2026-10-04)
+- **Priorización Automática de la Carpeta Local (`anime_detail_screen.dart`, `anime_detail_mobile_layout.dart`, `anime_detail_tv_layout.dart`, `anime_detail_desktop_layout.dart`)**:
+  - Al abrir los detalles de un anime con episodios descargados, la aplicación prioriza de inmediato el modo y la carpeta local (`isLocalMode = true`) desde el primer instante (frame 0), evitando mostrar por defecto los proveedores en línea o torrents si el usuario ya dispone del contenido descargado.
+  - Los usuarios mantienen el control manual en todo momento para alternar libremente entre modos (Local, Online, Torrent).
+- **Indicadores de Descarga en Tiempo Real en Listas de Episodios (`episode_item_widget.dart`, `anizip_episode_list.dart`, `online_stream_view.dart`, `desktop_episodes_tab.dart`, `active_downloads_provider.dart`)**:
+  - Las listas de episodios de AniZip, Online y Desktop muestran el estado exacto de cada episodio:
+    - Indicador visual de descarga en progreso con spinner circular y porcentaje sincronizado con el cliente torrent (`downloadingEpisodesProvider`).
+    - Distintivo e indicador de episodio descargado localmente con verificación instantánea.
+- **Reproducción Inmediata de Contenido Descargado (`anime_detail_mobile_layout.dart`, `anime_detail_tv_layout.dart`, `online_stream_view.dart`)**:
+  - Al pulsar o reproducir un episodio descargado desde cualquier lista (incluso en vistas AniZip u Online), se reproduce automáticamente el archivo local sin búfer ni depender de conexión a internet.
+- **Internacionalización Completa (i18n)**:
+  - Añadidas las traducciones correspondientes en `translations.dart`, `en.dart` y `es.dart` (`downloading`, `downloaded`).
+### 7.20. Integración de Animes Descargados en Seguir Viendo y Viendo Actualmente (2026-10-04)
+- **Integración Completa de Descargas en el Feed Principal (`seanime_repository.dart`, `feed_screen.dart`)**:
+  - Los animes descargados en el dispositivo ahora se integran automáticamente en las secciones "Continuar viendo" y "Viendo actualmente" del feed de inicio en cuanto se reproduce cualquier episodio.
+  - El progreso exacto de reproducción local se conserva y refleja en las tarjetas 16:9 con barra de avance fluida para archivos descargados.
+- **Soporte para Contenido Local sin Restricciones de Emisión (`anime_entry.dart`, `seanime_repository.dart`)**:
+  - Los episodios descargados físicamente en el dispositivo omiten filtros de fechas de emisión futuras o estados no emitidos en AniList, garantizando su reproducción y seguimiento ininterrumpido.
+- **Sincronización Bidireccional entre Almacenamiento Local y Servidor (`offline_library_service.dart`, `feed_screen.dart`)**:
+  - Al regresar a la pantalla de inicio tras ver un episodio descargado, las listas de seguimiento y colecciones se actualizan de forma inmediata sin necesidad de reiniciar la aplicación.
+- **Sincronización Multidispositivo de Continuidad de Reproducción (`playback_progress_preferences_provider.dart`, `app_providers.dart`, `video_player_screen.dart`)**:
+  - Al conectarse al servidor desde cualquier otro dispositivo (teléfono, tablet, TV u otro PC), el historial de continuidad del servidor (`/api/v1/continuity/history`) se sincroniza automáticamente con el progreso local del reproductor.
+  - El segundo exacto donde pausaste en un dispositivo se recupera al abrir el reproductor en otro dispositivo, garantizando una experiencia 100% sincronizada.
 

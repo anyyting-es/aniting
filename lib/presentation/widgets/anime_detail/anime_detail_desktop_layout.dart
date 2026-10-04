@@ -333,7 +333,7 @@ class _AnimeDetailDesktopLayoutState
         l10n.loading;
 
     final coverUrl =
-        widget.details?.coverImage ?? widget.initialEntry?.coverImage;
+        widget.initialEntry?.coverImage ?? widget.details?.coverImage;
     final hasRealBanner = (widget.details?.bannerImage != null &&
             widget.details!.bannerImage!.isNotEmpty) ||
         (widget.initialEntry?.bannerImage != null &&

@@ -5,9 +5,18 @@ import 'package:seanime_app/core/preferences/continue_watching_sort_provider.dar
 import 'package:seanime_app/data/models/anime_entry.dart';
 import 'package:seanime_app/presentation/widgets/continue_watching_card.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:seanime_app/core/preferences/playback_progress_preferences_provider.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
+import 'package:seanime_app/data/services/offline_library_service.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+  });
+
   group('Continue Watching Tests', () {
     testWidgets('ContinueWatchingCard does not show center play button', (tester) async {
       final entry = AnimeEntry(
@@ -204,6 +213,100 @@ void main() {
 
       expect(find.text('EP 1081'), findsOneWidget);
       expect(find.text('One Piece'), findsOneWidget);
+    });
+
+    test('AnimeEntry with hasLocalFiles allows watching even if NOT_YET_RELEASED or future airDate', () {
+      final unreleasedDownloaded = AnimeEntry(
+        id: 999,
+        mediaId: 999,
+        title: 'Chainsaw Man: Reze-hen',
+        status: 'NOT_YET_RELEASED',
+        airDate: '2026-12-31',
+        hasLocalFiles: true,
+        progress: 0,
+        totalEpisodes: 1,
+      );
+
+      // Local files exist, so user CAN watch it
+      expect(unreleasedDownloaded.hasNextEpisodeAired, isTrue);
+
+      // Once all episodes are finished, it should not appear
+      final finishedDownloaded = unreleasedDownloaded.copyWith(progress: 1);
+      expect(finishedDownloaded.hasNextEpisodeAired, isFalse);
+
+      // Without local files, NOT_YET_RELEASED is blocked
+      final unreleasedWithoutFiles = unreleasedDownloaded.copyWith(hasLocalFiles: false);
+      expect(unreleasedWithoutFiles.hasNextEpisodeAired, isFalse);
+    });
+
+    test('AnimeEntry with status COMPLETED returns false for hasNextEpisodeAired', () {
+      final completedAnime = AnimeEntry(
+        id: 195516,
+        mediaId: 195516,
+        title: 'Los diarios de la boticaria',
+        status: 'COMPLETED',
+        progress: 4,
+        totalEpisodes: 4,
+      );
+      expect(completedAnime.hasNextEpisodeAired, isFalse);
+    });
+
+    test('PlaybackProgressNotifier isolates progress by episodeNumber and does not leak to next episode', () async {
+      final container = ProviderContainer();
+      final notifier = container.read(playbackProgressPreferencesProvider.notifier);
+
+      // Save progress for episode 1 (22 minutes into 24 minute episode)
+      await notifier.saveProgress(
+        mediaId: 195516,
+        episodeNumber: 1,
+        positionMs: 1320000,
+        durationMs: 1440000,
+      );
+
+      // Episode 1 must have progress
+      final ep1 = notifier.getProgress(195516, 1);
+      expect(ep1, isNotNull);
+      expect(ep1!.episodeNumber, 1);
+      expect(ep1.positionMs, 1320000);
+
+      // Episode 2 must NOT inherit episode 1 progress!
+      final ep2 = notifier.getProgress(195516, 2);
+      expect(ep2, isNull);
+    });
+
+    test('Movie with totalEpisodes 1 and progress 0 hasNextEpisodeAired is true', () {
+      final movie = AnimeEntry(
+        id: 5001,
+        mediaId: 5001,
+        title: 'Your Name',
+        progress: 0,
+        totalEpisodes: 1,
+        episodeNumber: 1,
+        status: 'CURRENT',
+      );
+      expect(movie.hasNextEpisodeAired, isTrue);
+
+      final movieFinished = movie.copyWith(progress: 1);
+      expect(movieFinished.hasNextEpisodeAired, isFalse);
+    });
+
+    test('OfflineLibraryService records movie watch as CURRENT and includes in getContinueWatching', () async {
+      final service = OfflineLibraryService.instance;
+      await service.recordAnimeWatch(
+        mediaId: 77777,
+        title: 'Kimi no Na wa',
+        episodeNumber: 1,
+        totalEpisodes: 1,
+      );
+
+      final entry = service.getAnimeEntry(77777);
+      expect(entry, isNotNull);
+      expect(entry!.status, 'CURRENT');
+      expect(entry.progress, 0);
+      expect(entry.totalEpisodes, 1);
+
+      final cwList = service.getContinueWatching();
+      expect(cwList.any((e) => e.mediaId == 77777), isTrue);
     });
   });
 }

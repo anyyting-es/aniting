@@ -1009,5 +1009,8 @@ abstract class AppTranslations {
   String get completedDownload;
   String get completedDownloads;
   String downloadingEpisode(int number);
+  String get downloading;
+  String get downloaded;
   String get viewAll;
 }
+

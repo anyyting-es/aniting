@@ -146,7 +146,7 @@ class LanDiscoveryService {
         InternetAddress.anyIPv4,
         _discoveryPort,
         reuseAddress: true,
-        reusePort: !Platform.isWindows,
+        reusePort: !Platform.isWindows && !Platform.isAndroid,
       );
       _isListening = true;
 

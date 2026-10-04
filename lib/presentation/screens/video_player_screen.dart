@@ -365,6 +365,9 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       },
       onPlaying: (playing) {
         if (mounted) setState(() => _isPlaying = playing);
+        if (!playing) {
+          _progressManager.savePlaybackProgress();
+        }
       },
       onBuffering: (buffering) {
         if (mounted) setState(() => _isBuffering = buffering);
@@ -417,13 +420,26 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     final isOnline = !widget.isLocalFile &&
         (widget.onlineStreamProvider != null || _currentOnlineStreamProvider != null);
 
+    final resolvedStartPosition = widget.startPosition ?? () {
+      if (widget.mediaId != null && _currentEpisodeNumber != null) {
+        final progress = ref.read(playbackProgressPreferencesProvider.notifier).getProgress(widget.mediaId!, _currentEpisodeNumber!);
+        if (progress != null && progress.positionMs > 0) {
+          final fraction = progress.durationMs > 0 ? progress.positionMs / progress.durationMs : 0.0;
+          if (fraction < 0.95) {
+            return Duration(milliseconds: progress.positionMs);
+          }
+        }
+      }
+      return null;
+    }();
+
     _coordinator.init(
       videoUrl: _currentVideoUrl,
       title: widget.title,
       episodeTitle: _currentEpisodeTitle,
       headers: _currentHeaders,
       mimeType: _currentMimeType,
-      startPosition: widget.startPosition,
+      startPosition: resolvedStartPosition,
       externalSubtitles: _currentExternalSubtitles,
       fitMode: _fitMode,
       activeShaderPreset: _activeShaderPreset,
@@ -481,7 +497,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
         }
       },
     );
-    _progressManager.startTracking(initialPosition: widget.startPosition);
+    _progressManager.startTracking(initialPosition: resolvedStartPosition);
 
     _sourceController = PlayerSourceController(
       repository: ref.read(repositoryProvider),

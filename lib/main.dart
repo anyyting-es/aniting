@@ -68,7 +68,7 @@ void main() async {
       center: true,
       backgroundColor: Colors.transparent,
       skipTaskbar: false,
-      titleBarStyle: Platform.isLinux ? TitleBarStyle.normal : TitleBarStyle.hidden,
+      titleBarStyle: TitleBarStyle.hidden,
       title: 'Aniting',
     );
     windowManager.waitUntilReadyToShow(windowOptions, () async {

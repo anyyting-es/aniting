@@ -303,7 +303,7 @@ class DesktopWindowFrame extends StatelessWidget {
   const DesktopWindowFrame({super.key, required this.child});
 
   static bool get isDesktopPlatform =>
-      !kIsWeb && (Platform.isWindows || Platform.isMacOS);
+      !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
 
   @override
   Widget build(BuildContext context) {
@@ -311,7 +311,7 @@ class DesktopWindowFrame extends StatelessWidget {
       return child;
     }
 
-    return Scaffold(
+    final frame = Scaffold(
       backgroundColor: Colors.transparent,
       body: Stack(
         fit: StackFit.expand,
@@ -326,5 +326,13 @@ class DesktopWindowFrame extends StatelessWidget {
         ],
       ),
     );
+
+    if (Platform.isLinux) {
+      return DragToResizeArea(
+        child: frame,
+      );
+    }
+
+    return frame;
   }
 }

@@ -7,6 +7,7 @@ import 'package:seanime_app/data/models/anizip_data.dart';
 import 'package:seanime_app/data/models/onlinestream_models.dart';
 import 'package:seanime_app/data/models/library_entry_details.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
+import 'package:seanime_app/presentation/providers/active_downloads_provider.dart';
 import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
 
 import 'desktop_episode_grid_card.dart';
@@ -226,6 +227,7 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
     final currentLanguage = ref.watch(appLanguageProvider);
     final iconPack = ref.watch(iconPackProvider);
     final l10n = ref.watch(translationsProvider);
+    final downloadingEpisodes = ref.watch(downloadingEpisodesProvider);
     final langCode = currentLanguage.name;
     final theme = Theme.of(context);
 
@@ -295,11 +297,39 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
       return true;
     }
 
-    final List<DesktopEpisodeItemData> items = [];
     final downloadedMap = {
       for (final ep in (_libraryEntry?.episodes ?? <LibraryEpisode>[]))
         if (ep.isDownloaded) ep.episodeNumber: ep.localFilePath,
     };
+
+    bool hasEpisodeAired(int episodeNumber, String? airDate, String? image) {
+      if (widget.progress >= episodeNumber || downloadedMap.containsKey(episodeNumber)) {
+        return true;
+      }
+      if (airDate != null && airDate.isNotEmpty) {
+        final dt = DateTime.tryParse(airDate);
+        if (dt != null && dt.isAfter(DateTime.now().add(const Duration(hours: 4)))) {
+          return false;
+        }
+      }
+      final nextAiring = widget.details?.rawMedia?['nextAiringEpisode'];
+      if (nextAiring is Map<String, dynamic>) {
+        final nextEpNum = nextAiring['episode'] as int?;
+        if (nextEpNum != null && episodeNumber >= nextEpNum) {
+          return false;
+        }
+      }
+      final status = widget.details?.status?.toUpperCase();
+      if (status == 'NOT_YET_RELEASED') return false;
+      if (status == 'RELEASING') {
+        if ((airDate == null || airDate.isEmpty) && (image == null || image.isEmpty)) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    final List<DesktopEpisodeItemData> items = [];
 
     if (widget.isLocalMode) {
       // ─── Mode: Local Library (Downloaded episodes directly from disk) ───
@@ -360,6 +390,11 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
             : (aniZipEp?.displayTitleForLang(langCode) ??
                 l10n.episodeNumber(ep.number));
 
+        final isDownloading =
+            downloadingEpisodes.contains('${widget.mediaId}_${ep.number}');
+        final downloadProgress =
+            downloadingEpisodes.getProgress(widget.mediaId, ep.number);
+
         items.add(DesktopEpisodeItemData(
           number: ep.number,
           title: epTitle,
@@ -368,6 +403,8 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
           aniDBEpisode: aniZipEp?.episode,
           isWatched: widget.progress >= ep.number,
           isDownloaded: downloadedMap.containsKey(ep.number),
+          isDownloading: isDownloading,
+          downloadProgress: downloadProgress,
           localFilePath: downloadedMap[ep.number],
         ));
       }
@@ -379,7 +416,15 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
           if (!isRealMainEpisode(ep.displayTitle, ep.isSpecial, ep.episodeNumber)) {
             continue;
           }
+          if (!hasEpisodeAired(ep.episodeNumber, ep.airDate, ep.image)) {
+            continue;
+          }
           if (seenTorrent.add(ep.episodeNumber)) {
+            final isDownloading =
+                downloadingEpisodes.contains('${widget.mediaId}_${ep.episodeNumber}');
+            final downloadProgress =
+                downloadingEpisodes.getProgress(widget.mediaId, ep.episodeNumber);
+
             items.add(DesktopEpisodeItemData(
               number: ep.episodeNumber,
               title: ep.displayTitleForLang(langCode),
@@ -388,6 +433,8 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
               aniDBEpisode: ep.episode,
               isWatched: widget.progress >= ep.episodeNumber,
               isDownloaded: downloadedMap.containsKey(ep.episodeNumber),
+              isDownloading: isDownloading,
+              downloadProgress: downloadProgress,
               localFilePath: downloadedMap[ep.episodeNumber],
             ));
           }
@@ -397,7 +444,15 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
           if (!isRealMainEpisode(ep.title, false, ep.episodeNumber)) {
             continue;
           }
+          if (!hasEpisodeAired(ep.episodeNumber, null, ep.image)) {
+            continue;
+          }
           if (seenTorrent.add(ep.episodeNumber)) {
+            final isDownloading =
+                downloadingEpisodes.contains('${widget.mediaId}_${ep.episodeNumber}');
+            final downloadProgress =
+                downloadingEpisodes.getProgress(widget.mediaId, ep.episodeNumber);
+
             items.add(DesktopEpisodeItemData(
               number: ep.episodeNumber,
               title: ep.title,
@@ -405,6 +460,8 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
               image: ep.image,
               isWatched: widget.progress >= ep.episodeNumber,
               isDownloaded: downloadedMap.containsKey(ep.episodeNumber),
+              isDownloading: isDownloading,
+              downloadProgress: downloadProgress,
               localFilePath: downloadedMap[ep.episodeNumber],
             ));
           }
@@ -413,11 +470,19 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
 
       if (items.isEmpty) {
         for (int i = 1; i <= totalCount; i++) {
+          if (!hasEpisodeAired(i, null, null)) continue;
+          final isDownloading =
+              downloadingEpisodes.contains('${widget.mediaId}_$i');
+          final downloadProgress =
+              downloadingEpisodes.getProgress(widget.mediaId, i);
+
           items.add(DesktopEpisodeItemData(
             number: i,
             title: l10n.episodeNumber(i),
             isWatched: widget.progress >= i,
             isDownloaded: downloadedMap.containsKey(i),
+            isDownloading: isDownloading,
+            downloadProgress: downloadProgress,
             localFilePath: downloadedMap[i],
           ));
         }

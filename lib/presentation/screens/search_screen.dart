@@ -44,6 +44,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   final List<AnimeEntry> _animeResults = [];
   final List<MangaEntry> _mangaResults = [];
   int _currentPage = 1;
+  int _searchRequestId = 0;
   bool _isLoading = false;
   bool _isLoadingMore = false;
   bool _hasMore = true;
@@ -91,7 +92,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         _isScrolledNotifier.value = scrolled;
       }
     }
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 400 &&
+    final maxScroll = _scrollController.position.maxScrollExtent;
+    if (maxScroll > 150 &&
+        _scrollController.position.pixels >= maxScroll - 400 &&
         !_isLoading &&
         !_isLoadingMore &&
         _hasMore &&
@@ -116,9 +119,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   }
 
   Future<void> _fetchResults({bool reset = true}) async {
+    final requestId = ++_searchRequestId;
+
     if (reset) {
       setState(() {
         _isLoading = true;
+        _isLoadingMore = false;
         _currentPage = 1;
         _hasMore = true;
         _animeResults.clear();
@@ -146,7 +152,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         perPage: 24,
       );
 
-      if (mounted) {
+      if (mounted && requestId == _searchRequestId) {
         setState(() {
           _isLoading = false;
           _isLoadingMore = false;
@@ -154,7 +160,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           if (results.isEmpty) {
             _hasMore = false;
           } else {
-            _animeResults.addAll(results);
+            final existingIds = _animeResults.map((e) => e.mediaId).toSet();
+            final unique = results.where((e) => !existingIds.contains(e.mediaId)).toList();
+            _animeResults.addAll(unique);
             if (results.length < 24) _hasMore = false;
           }
         });
@@ -172,7 +180,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         perPage: 24,
       );
 
-      if (mounted) {
+      if (mounted && requestId == _searchRequestId) {
         setState(() {
           _isLoading = false;
           _isLoadingMore = false;
@@ -180,7 +188,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           if (results.isEmpty) {
             _hasMore = false;
           } else {
-            _mangaResults.addAll(results);
+            final existingIds = _mangaResults.map((e) => e.id).toSet();
+            final unique = results.where((e) => !existingIds.contains(e.id)).toList();
+            _mangaResults.addAll(unique);
             if (results.length < 24) _hasMore = false;
           }
         });
@@ -648,7 +658,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                                       hintText: isAnime ? '${l10n.search} anime...' : '${l10n.search} manga...',
                                       isSearching: true,
                                       onChanged: _onSearchChanged,
-                                      onSubmitted: (_) => _fetchResults(reset: true),
+                                      onSubmitted: (_) {
+                                        _debounce?.cancel();
+                                        _fetchResults(reset: true);
+                                      },
                                       onBack: _exitSearch,
                                       onClear: _exitSearch,
                                     ),

@@ -182,7 +182,7 @@ class AnimeDetails {
     final cover = (mediaMap['coverImage'] is Map<String, dynamic>)
         ? mediaMap['coverImage'] as Map<String, dynamic>
         : (data['coverImage'] is Map<String, dynamic> ? data['coverImage'] as Map<String, dynamic> : null);
-    final coverUrl = cover?['extraLarge'] ?? cover?['large'] ?? cover?['medium'];
+    final coverUrl = cover?['large'] ?? cover?['extraLarge'] ?? cover?['medium'];
     final coverColor = cover?['color'] as String? ?? (data['coverColor'] as String?);
 
     final rawGenres = mediaMap['genres'] as List? ?? data['genres'] as List? ?? [];

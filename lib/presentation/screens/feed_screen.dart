@@ -118,12 +118,17 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     });
   }
 
-  void _openDetail(BuildContext context, AnimeEntry entry) {
-    AnimeDetailScreen.navigate(
+  Future<void> _openDetail(BuildContext context, AnimeEntry entry) async {
+    await AnimeDetailScreen.navigate(
       context,
       mediaId: entry.mediaId,
       initialEntry: entry,
     );
+    if (mounted) {
+      ref.invalidate(continueWatchingProvider);
+      ref.invalidate(animeCollectionProvider);
+      ref.invalidate(downloadedAnimeProvider);
+    }
   }
 
   List<AnimeEntry> _getSortedContinueWatching(
@@ -286,8 +291,9 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     final showFeedSkeleton = !_hasCompletedInitialLoad;
 
     final hasContinueWatching = continueWatchingEntries.isNotEmpty;
-    final hasWatching = collectionAsync.value?.any((e) =>
-        e.status.toUpperCase() == 'CURRENT' || e.status.toUpperCase() == 'WATCHING') ?? false;
+    final hasWatching = (collectionAsync.value?.any((e) =>
+        e.status.toUpperCase() == 'CURRENT' || e.status.toUpperCase() == 'WATCHING') ?? false) ||
+        continueWatchingEntries.isNotEmpty;
     final hasMissedSequels = missedSequelsAsync.value?.isNotEmpty ?? false;
     final hasRecommendations = recommendationsAsync.value?.isNotEmpty ?? false;
     final hasDownloadedAnime = downloadedAnimeAsync.value?.isNotEmpty ?? false;
@@ -616,6 +622,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                       // ─── 3. Viendo Actualmente (Currently Watching) ───
                       ..._buildWatchingSlivers(
                         collectionAsync: collectionAsync,
+                        continueWatchingEntries: continueWatchingEntries,
                         l10n: l10n,
                         theme: theme,
                         isDesktop: isDesktop,
@@ -715,14 +722,33 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
 
   List<Widget> _buildWatchingSlivers({
     required AsyncValue<List<AnimeEntry>> collectionAsync,
+    required List<AnimeEntry> continueWatchingEntries,
     required AppTranslations l10n,
     required ThemeData theme,
     required bool isDesktop,
   }) {
     final allCollection = collectionAsync.value ?? [];
-    final watching = allCollection
-        .where((e) => e.status.toUpperCase() == 'CURRENT' || e.status.toUpperCase() == 'WATCHING')
-        .toList();
+    final watching = <AnimeEntry>[];
+    final seenIds = <int>{};
+
+    for (final e in allCollection) {
+      final st = e.status.toUpperCase();
+      if (st == 'CURRENT' || st == 'WATCHING' || st == 'REPEATING' || (e.progress > 0 && st != 'COMPLETED' && st != 'DROPPED')) {
+        if (e.mediaId > 0 && !seenIds.contains(e.mediaId)) {
+          seenIds.add(e.mediaId);
+          watching.add(e);
+        }
+      }
+    }
+
+    // Also include any active anime currently in Continue Watching
+    for (final cw in continueWatchingEntries) {
+      if (cw.mediaId > 0 && !seenIds.contains(cw.mediaId)) {
+        seenIds.add(cw.mediaId);
+        watching.add(cw);
+      }
+    }
+
     if (watching.isEmpty) return const [];
 
     final animeCardWidth = isDesktop ? 180.0 : 125.0;

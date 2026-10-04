@@ -5,7 +5,9 @@ import 'package:seanime_app/core/preferences/episode_view_mode_provider.dart';
 import 'package:seanime_app/core/theme/app_theme_colors.dart';
 import 'package:seanime_app/data/models/anime_details.dart';
 import 'package:seanime_app/data/models/anizip_data.dart';
+import 'package:seanime_app/data/models/library_entry_details.dart';
 import 'package:seanime_app/presentation/providers/active_downloads_provider.dart';
+import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/widgets/episode_item_widget.dart';
 
 class AniZipEpisodeListView extends ConsumerStatefulWidget {
@@ -72,7 +74,13 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
   }
 
   /// Determines if an AniZip episode has already aired
-  bool _hasEpisodeAired(AniZipEpisode ep) {
+  bool _hasEpisodeAired(AniZipEpisode ep, [Map<int, String?>? downloadedMap]) {
+    // 0. If episode is already downloaded locally or watched, always allow it
+    if ((downloadedMap != null && downloadedMap.containsKey(ep.episodeNumber)) ||
+        (widget.progress >= ep.episodeNumber && ep.episodeNumber > 0)) {
+      return true;
+    }
+
     // 1. If airDate is explicitly in the future, it hasn't aired
     if (ep.airDate != null && ep.airDate!.isNotEmpty) {
       final dt = DateTime.tryParse(ep.airDate!);
@@ -111,7 +119,7 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
     return true;
   }
 
-  List<AniZipEpisode> _getFilteredAniZipEpisodes(String langCode) {
+  List<AniZipEpisode> _getFilteredAniZipEpisodes(String langCode, [Map<int, String?>? downloadedMap]) {
     if (widget.aniZipData == null) return [];
 
     // Only main episodes, no specials
@@ -121,7 +129,7 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
     }
 
     // Filter out unreleased episodes
-    list = list.where(_hasEpisodeAired).toList();
+    list = list.where((ep) => _hasEpisodeAired(ep, downloadedMap)).toList();
 
     // Apply search filter
     if (_searchQuery.trim().isNotEmpty) {
@@ -151,6 +159,11 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
     final langCode = appLang.code;
     final downloadingEpisodes = ref.watch(downloadingEpisodesProvider);
     final mediaId = widget.animeDetails?.id ?? 0;
+    final libraryEntryAsync = ref.watch(animeLibraryEntryProvider(mediaId));
+    final downloadedMap = {
+      for (final ep in (libraryEntryAsync.asData?.value?.episodes ?? <LibraryEpisode>[]))
+        if (ep.isDownloaded) ep.episodeNumber: ep.localFilePath,
+    };
     final hasAniZip = widget.aniZipData != null && widget.aniZipData!.episodes.isNotEmpty;
     final fallbackImage = widget.animeDetails?.bannerImage ?? widget.animeDetails?.coverImage;
     final viewMode = widget.viewMode ?? _localViewMode;
@@ -162,7 +175,7 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
 
     // Main AniZip episode view
     if (hasAniZip) {
-      final filteredEpisodes = _getFilteredAniZipEpisodes(langCode);
+      final filteredEpisodes = _getFilteredAniZipEpisodes(langCode, downloadedMap);
 
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -320,6 +333,10 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
               ),
               itemBuilder: (context, index) {
                 final ep = filteredEpisodes[index];
+                final isEpDownloaded = downloadedMap.containsKey(ep.episodeNumber);
+                final isEpDownloading = downloadingEpisodes.contains('${mediaId}_${ep.episodeNumber}');
+                final epDownloadProgress = downloadingEpisodes.getProgress(mediaId, ep.episodeNumber);
+
                 return EpisodeGridItem(
                   episodeNumber: ep.episodeNumber,
                   title: ep.displayTitleForLang(langCode),
@@ -332,7 +349,9 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
                   rating: ep.rating,
                   badgeText: ep.isSpecial ? ep.episodeBadge : null,
                   isWatched: widget.progress >= ep.episodeNumber && ep.episodeNumber > 0,
-                  isDownloading: downloadingEpisodes.contains('${mediaId}_${ep.episodeNumber}'),
+                  isDownloaded: isEpDownloaded,
+                  isDownloading: isEpDownloading,
+                  downloadProgress: epDownloadProgress,
                   onTap: () {
                     if (widget.onTapEpisode != null) {
                       widget.onTapEpisode!(ep);
@@ -372,6 +391,10 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
                       separatorBuilder: (context, index) => const SizedBox(height: 8),
                       itemBuilder: (context, index) {
                         final ep = pagedEpisodes[index];
+                        final isEpDownloaded = downloadedMap.containsKey(ep.episodeNumber);
+                        final isEpDownloading = downloadingEpisodes.contains('${mediaId}_${ep.episodeNumber}');
+                        final epDownloadProgress = downloadingEpisodes.getProgress(mediaId, ep.episodeNumber);
+
                         return EpisodeListItem(
                           episodeNumber: ep.episodeNumber,
                           title: ep.displayTitleForLang(langCode),
@@ -384,7 +407,9 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
                           rating: ep.rating,
                           badgeText: ep.isSpecial ? ep.episodeBadge : null,
                           isWatched: widget.progress >= ep.episodeNumber && ep.episodeNumber > 0,
-                          isDownloading: downloadingEpisodes.contains('${mediaId}_${ep.episodeNumber}'),
+                          isDownloaded: isEpDownloaded,
+                          isDownloading: isEpDownloading,
+                          downloadProgress: epDownloadProgress,
                           onTap: () {
                             if (widget.onTapEpisode != null) {
                               widget.onTapEpisode!(ep);
@@ -445,7 +470,25 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
     }
 
     // Fallback: Local Seanime episodes if available
-    if (widget.fallbackEpisodes.isNotEmpty) {
+    final filteredFallback = widget.fallbackEpisodes.where((ep) {
+      if (downloadedMap.containsKey(ep.episodeNumber) || (widget.progress >= ep.episodeNumber && ep.episodeNumber > 0)) {
+        return true;
+      }
+      final nextAiring = widget.animeDetails?.rawMedia?['nextAiringEpisode'];
+      if (nextAiring is Map<String, dynamic>) {
+        final nextEpNum = nextAiring['episode'] as int?;
+        if (nextEpNum != null && ep.episodeNumber >= nextEpNum) {
+          return false;
+        }
+      }
+      final status = widget.animeDetails?.status?.toUpperCase();
+      if (status == 'NOT_YET_RELEASED') {
+        return false;
+      }
+      return true;
+    }).toList();
+
+    if (filteredFallback.isNotEmpty) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -453,11 +496,11 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Episodios',
+                l10n.episodes,
                 style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
               ),
               Text(
-                '${widget.fallbackEpisodes.length} disponibles',
+                '${filteredFallback.length} ${l10n.availableCount}',
                 style: TextStyle(fontSize: 12, color: theme.colorScheme.primary),
               ),
             ],
@@ -468,7 +511,7 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               padding: EdgeInsets.zero,
-              itemCount: widget.fallbackEpisodes.length,
+              itemCount: filteredFallback.length,
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 3,
                 childAspectRatio: 1.35,
@@ -476,7 +519,11 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
                 mainAxisSpacing: 8,
               ),
               itemBuilder: (context, index) {
-                final ep = widget.fallbackEpisodes[index];
+                final ep = filteredFallback[index];
+                final isEpDownloaded = downloadedMap.containsKey(ep.episodeNumber);
+                final isEpDownloading = downloadingEpisodes.contains('${mediaId}_${ep.episodeNumber}');
+                final epDownloadProgress = downloadingEpisodes.getProgress(mediaId, ep.episodeNumber);
+
                 return EpisodeGridItem(
                   episodeNumber: ep.episodeNumber,
                   title: ep.title,
@@ -484,7 +531,9 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
                   image: ep.image,
                   fallbackImage: fallbackImage,
                   isWatched: widget.progress >= ep.episodeNumber && ep.episodeNumber > 0,
-                  isDownloading: downloadingEpisodes.contains('${mediaId}_${ep.episodeNumber}'),
+                  isDownloaded: isEpDownloaded,
+                  isDownloading: isEpDownloading,
+                  downloadProgress: epDownloadProgress,
                   onTap: () {
                     if (widget.onPlayFallbackEpisode != null) {
                       widget.onPlayFallbackEpisode!(ep);
@@ -499,12 +548,12 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
           else ...[
             Builder(
               builder: (context) {
-                final totalEpisodes = widget.fallbackEpisodes.length;
+                final totalEpisodes = filteredFallback.length;
                 final totalPages = (totalEpisodes / _listPageSize).ceil();
                 final page = _fallbackListPage.clamp(0, totalPages > 0 ? totalPages - 1 : 0);
                 final start = page * _listPageSize;
                 final end = (start + _listPageSize).clamp(0, totalEpisodes);
-                final pagedEpisodes = totalEpisodes > 0 ? widget.fallbackEpisodes.sublist(start, end) : <AnimeEpisode>[];
+                final pagedEpisodes = totalEpisodes > 0 ? filteredFallback.sublist(start, end) : <AnimeEpisode>[];
 
                 return Column(
                   mainAxisSize: MainAxisSize.min,
@@ -517,6 +566,10 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
                       separatorBuilder: (context, index) => const SizedBox(height: 8),
                       itemBuilder: (context, index) {
                         final ep = pagedEpisodes[index];
+                        final isEpDownloaded = downloadedMap.containsKey(ep.episodeNumber);
+                        final isEpDownloading = downloadingEpisodes.contains('${mediaId}_${ep.episodeNumber}');
+                        final epDownloadProgress = downloadingEpisodes.getProgress(mediaId, ep.episodeNumber);
+
                         return EpisodeListItem(
                           episodeNumber: ep.episodeNumber,
                           title: ep.title,
@@ -524,7 +577,9 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
                           image: ep.image,
                           fallbackImage: fallbackImage,
                           isWatched: widget.progress >= ep.episodeNumber && ep.episodeNumber > 0,
-                          isDownloading: downloadingEpisodes.contains('${mediaId}_${ep.episodeNumber}'),
+                          isDownloaded: isEpDownloaded,
+                          isDownloading: isEpDownloading,
+                          downloadProgress: epDownloadProgress,
                           onTap: () {
                             if (widget.onPlayFallbackEpisode != null) {
                               widget.onPlayFallbackEpisode!(ep);

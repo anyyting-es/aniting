@@ -2065,5 +2065,10 @@ class EnglishTranslations implements AppTranslations {
   @override
   String downloadingEpisode(int number) => 'Downloading Episode $number...';
   @override
+  String get downloading => 'Downloading';
+  @override
+  String get downloaded => 'Downloaded';
+  @override
   String get viewAll => 'View all';
 }
+

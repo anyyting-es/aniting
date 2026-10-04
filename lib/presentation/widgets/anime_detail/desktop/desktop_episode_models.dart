@@ -6,6 +6,8 @@ class DesktopEpisodeItemData {
   final String? aniDBEpisode;
   final bool isWatched;
   final bool isDownloaded;
+  final bool isDownloading;
+  final double? downloadProgress;
   final String? localFilePath;
 
   const DesktopEpisodeItemData({
@@ -16,6 +18,9 @@ class DesktopEpisodeItemData {
     this.aniDBEpisode,
     this.isWatched = false,
     this.isDownloaded = false,
+    this.isDownloading = false,
+    this.downloadProgress,
     this.localFilePath,
   });
 }
+

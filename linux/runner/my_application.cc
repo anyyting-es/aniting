@@ -95,11 +95,9 @@ static void my_application_activate(GApplication* application) {
   GtkWindow* window =
       GTK_WINDOW(gtk_application_window_new(GTK_APPLICATION(application)));
 
-  // Use standard native window decorations across all desktop environments
-  // (GNOME, KDE Plasma, XFCE, tiling WMs, etc.). Avoids GtkHeaderBar which
-  // in GTK3 enforces a bulky ~48-50px toolbar height instead of the standard
-  // compact ~34px window titlebar.
+  // Use custom client-side titlebar across desktop environments.
   gtk_window_set_title(window, "Aniting");
+  gtk_window_set_decorated(window, FALSE);
 
   setup_application_icons(window);
 

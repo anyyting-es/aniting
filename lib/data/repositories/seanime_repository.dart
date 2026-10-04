@@ -19,6 +19,7 @@ import 'package:seanime_app/data/models/torrent_file_preview.dart';
 import 'package:seanime_app/data/models/torrent_models.dart';
 import 'package:seanime_app/core/storage/app_storage_paths.dart';
 import 'package:seanime_app/data/services/feed_cache_service.dart';
+import 'package:seanime_app/data/services/offline_library_service.dart';
 
 class SeanimeRepository {
   final ApiClient _apiClient;
@@ -109,6 +110,7 @@ class SeanimeRepository {
             'episodeNumber': episodeNumber,
             'currentTime': currentTime ?? 0.0,
             'duration': duration ?? 0.0,
+            'kind': 'mediastream',
           },
         },
       );
@@ -413,12 +415,56 @@ class SeanimeRepository {
           }
           final rawLists = (root?['lists'] ?? root?['MediaListCollection']?['lists']) as List?;
           addEntriesFromLists(rawLists);
+
+          final unknownGroups = root?['unknownGroups'] as List?;
+          if (unknownGroups != null) {
+            for (final g in unknownGroups) {
+              if (g is Map<String, dynamic> && g['entries'] is List) {
+                for (final entry in g['entries'] as List) {
+                  if (entry is Map<String, dynamic>) {
+                    final entryMap = Map<String, dynamic>.from(entry);
+                    if (entryMap['media'] is Map) {
+                      final m = entryMap['media'] as Map;
+                      entryMap['mediaId'] ??= m['id'];
+                    }
+                    final animeEntry = AnimeEntry.fromJson(entryMap);
+                    if (animeEntry.mediaId > 0 && !seenMediaIds.contains(animeEntry.mediaId)) {
+                      seenMediaIds.add(animeEntry.mediaId);
+                      list.add(animeEntry);
+                    }
+                  }
+                }
+              }
+            }
+          }
         }
       } catch (e) {
         debugPrint('Error fetching library collection: $e');
       }
 
-      return list;
+      // 3. Merge entries from OfflineLibraryService
+      final localAnime = OfflineLibraryService.instance.getAnimeCollection();
+      for (final offEntry in localAnime) {
+        if (!seenMediaIds.contains(offEntry.mediaId)) {
+          seenMediaIds.add(offEntry.mediaId);
+          list.add(offEntry);
+        }
+      }
+
+      // 4. Update status to CURRENT for any anime the user is actively watching locally
+      final updatedList = list.map((e) {
+        final off = OfflineLibraryService.instance.getAnimeEntry(e.mediaId);
+        if (off != null && (off.status.toUpperCase() == 'CURRENT' || off.status.toUpperCase() == 'WATCHING')) {
+          return e.copyWith(
+            status: 'CURRENT',
+            progress: (e.totalEpisodes != null && e.progress >= e.totalEpisodes!) ? off.progress : math.max(e.progress, off.progress),
+            episodeNumber: off.episodeNumber ?? e.episodeNumber,
+          );
+        }
+        return e;
+      }).toList();
+
+      return updatedList;
     } catch (e) {
       debugPrint('Error fetching library: $e');
     }
@@ -436,41 +482,68 @@ class SeanimeRepository {
           root = data['data'] is Map<String, dynamic> ? data['data'] as Map<String, dynamic> : data;
         }
         final rawLists = (root?['lists'] ?? root?['MediaListCollection']?['lists']) as List?;
-        if (rawLists == null) return [];
         final list = <AnimeEntry>[];
         final seenMediaIds = <int>{};
-        for (final l in rawLists) {
-          if (l is Map<String, dynamic> && l['entries'] is List) {
-            final listStatus = l['status'] as String? ?? (l['name'] == 'Watching' ? 'CURRENT' : null);
-            for (final entry in l['entries'] as List) {
-              if (entry is Map<String, dynamic>) {
-                final libData = entry['libraryData'] as Map<String, dynamic>?;
-                final nakamaLibData = entry['nakamaLibraryData'] as Map<String, dynamic>?;
-                final mainFiles = (libData?['mainFileCount'] as num?)?.toInt() ??
-                    (nakamaLibData?['mainFileCount'] as num?)?.toInt() ??
-                    0;
-                // Only include entries that actually have local files downloaded!
-                if (mainFiles > 0 || (libData != null && libData.isNotEmpty)) {
-                  final entryMap = Map<String, dynamic>.from(entry);
-                  if (listStatus != null && (entryMap['status'] == null || entryMap['status'] == '')) {
-                    entryMap['status'] = listStatus;
-                  }
-                  if (entryMap['media'] is Map) {
-                    final m = entryMap['media'] as Map;
-                    entryMap['mediaId'] ??= m['id'];
-                  }
-                  entryMap['hasLocalFiles'] = true;
-                  entryMap['mainFileCount'] = mainFiles;
-                  final animeEntry = AnimeEntry.fromJson(entryMap);
-                  if (animeEntry.mediaId > 0 && !seenMediaIds.contains(animeEntry.mediaId)) {
-                    seenMediaIds.add(animeEntry.mediaId);
-                    list.add(animeEntry);
-                  }
+
+        void checkAndAdd(dynamic entry, String? listStatus) {
+          if (entry is Map<String, dynamic>) {
+            final libData = entry['libraryData'] as Map<String, dynamic>?;
+            final nakamaLibData = entry['nakamaLibraryData'] as Map<String, dynamic>?;
+            final mainFiles = (libData?['mainFileCount'] as num?)?.toInt() ??
+                (nakamaLibData?['mainFileCount'] as num?)?.toInt() ??
+                0;
+            // Only include entries that actually have local files downloaded!
+            if (mainFiles > 0 || (libData != null && libData.isNotEmpty)) {
+              final entryMap = Map<String, dynamic>.from(entry);
+              if (listStatus != null && (entryMap['status'] == null || entryMap['status'] == '')) {
+                entryMap['status'] = listStatus;
+              }
+              if (entryMap['media'] is Map) {
+                final m = entryMap['media'] as Map;
+                entryMap['mediaId'] ??= m['id'];
+              }
+              entryMap['hasLocalFiles'] = true;
+              entryMap['mainFileCount'] = mainFiles;
+              final animeEntry = AnimeEntry.fromJson(entryMap);
+              if (animeEntry.mediaId > 0 && !seenMediaIds.contains(animeEntry.mediaId)) {
+                seenMediaIds.add(animeEntry.mediaId);
+                final off = OfflineLibraryService.instance.getAnimeEntry(animeEntry.mediaId);
+                if (off != null) {
+                  list.add(animeEntry.copyWith(
+                    status: (off.status.toUpperCase() == 'CURRENT' || off.status.toUpperCase() == 'WATCHING') ? 'CURRENT' : animeEntry.status,
+                    progress: math.max(animeEntry.progress, off.progress),
+                    episodeNumber: off.episodeNumber ?? animeEntry.episodeNumber,
+                  ));
+                } else {
+                  list.add(animeEntry);
                 }
               }
             }
           }
         }
+
+        if (rawLists != null) {
+          for (final l in rawLists) {
+            if (l is Map<String, dynamic> && l['entries'] is List) {
+              final listStatus = l['status'] as String? ?? (l['name'] == 'Watching' ? 'CURRENT' : null);
+              for (final entry in l['entries'] as List) {
+                checkAndAdd(entry, listStatus);
+              }
+            }
+          }
+        }
+
+        final unknownGroups = root?['unknownGroups'] as List?;
+        if (unknownGroups != null) {
+          for (final g in unknownGroups) {
+            if (g is Map<String, dynamic> && g['entries'] is List) {
+              for (final entry in g['entries'] as List) {
+                checkAndAdd(entry, null);
+              }
+            }
+          }
+        }
+
         return list;
       }
     } catch (e) {
@@ -504,25 +577,35 @@ class SeanimeRepository {
           .get('/anilist/collection')
           .then<Response<dynamic>?>((r) => r)
           .catchError((_) => null);
+      final downloadedFuture = getDownloadedAnime().catchError((_) => <AnimeEntry>[]);
 
-      final results = await Future.wait([libraryFuture, historyFuture, localHistoryFuture, anilistFuture]);
+      final results = await Future.wait([
+        libraryFuture,
+        historyFuture,
+        localHistoryFuture,
+        anilistFuture,
+        downloadedFuture,
+      ]);
       final libraryResponse = results[0] as Response?;
       final serverHistory = results[1] as Map<int, dynamic>;
       final localHistory = results[2] as Map<int, int>;
       final anilistResponse = results[3] as Response?;
+      final downloadedAnime = results[4] as List<AnimeEntry>;
 
       // Offline protection: if neither server library nor AniList could be reached, return cached entries
       if (libraryResponse == null && anilistResponse == null) {
         final cached = FeedCacheService.instance.getAnimeList(FeedCacheService.kCacheContinueWatchingAnime);
         if (cached.isNotEmpty) return cached;
-        throw Exception('No network connection and no cached continue watching');
+        final offlineCw = OfflineLibraryService.instance.getContinueWatching(langCode: langCode);
+        if (offlineCw.isNotEmpty) return offlineCw;
+        return [];
       }
 
       final list = <AnimeEntry>[];
       final seenMediaIds = <int>{};
 
       // Helper to enrich and parse an episode entry
-      void addEpisode(Map<String, dynamic> item) {
+      void addEpisode(Map<String, dynamic> item, {int? explicitEpNum, bool? hasLocalFiles}) {
         final base = item['baseAnime'] as Map<String, dynamic>?;
         final media = item['media'] as Map<String, dynamic>?;
         final mediaId = (base?['id'] as num?)?.toInt() ??
@@ -534,17 +617,31 @@ class SeanimeRepository {
         seenMediaIds.add(mediaId);
 
         int? lastWatchedMs;
+        int? epFromHistory;
         if (localHistory.containsKey(mediaId)) {
           lastWatchedMs = localHistory[mediaId];
         }
         if (serverHistory.containsKey(mediaId)) {
           final sItem = serverHistory[mediaId];
-          if (sItem is Map && sItem['timeUpdated'] != null) {
-            final parsed = DateTime.tryParse(sItem['timeUpdated'].toString())?.millisecondsSinceEpoch;
-            if (parsed != null) {
-              lastWatchedMs = lastWatchedMs != null ? math.max(lastWatchedMs, parsed) : parsed;
+          if (sItem is Map) {
+            if (sItem['timeUpdated'] != null) {
+              final parsed = DateTime.tryParse(sItem['timeUpdated'].toString())?.millisecondsSinceEpoch;
+              if (parsed != null) {
+                lastWatchedMs = lastWatchedMs != null ? math.max(lastWatchedMs, parsed) : parsed;
+              }
+            }
+            if (sItem['episodeNumber'] != null) {
+              epFromHistory = (sItem['episodeNumber'] as num?)?.toInt();
             }
           }
+        }
+
+        final offEntry = OfflineLibraryService.instance.getAnimeEntry(mediaId);
+        if (offEntry != null) {
+          if (offEntry.lastWatchedTime != null && offEntry.lastWatchedTime! > 0) {
+            lastWatchedMs = lastWatchedMs != null ? math.max(lastWatchedMs, offEntry.lastWatchedTime!) : offEntry.lastWatchedTime;
+          }
+          epFromHistory ??= offEntry.episodeNumber ?? offEntry.currentEpisode;
         }
 
         final enrichedItem = Map<String, dynamic>.from(item);
@@ -553,12 +650,44 @@ class SeanimeRepository {
           enrichedItem['updatedAt'] = lastWatchedMs;
         }
 
+        final resolvedEp = explicitEpNum ?? epFromHistory;
+        if (resolvedEp != null && resolvedEp > 0) {
+          enrichedItem['episodeNumber'] = resolvedEp;
+          enrichedItem['currentEpisode'] = resolvedEp;
+        }
+
+        if (hasLocalFiles == true || enrichedItem['hasLocalFiles'] == true) {
+          enrichedItem['hasLocalFiles'] = true;
+        }
+
+        final hasActiveWatch = localHistory.containsKey(mediaId) ||
+            serverHistory.containsKey(mediaId) ||
+            (offEntry != null && offEntry.lastWatchedTime != null && offEntry.lastWatchedTime! > 0);
+
+        if (hasActiveWatch) {
+          enrichedItem['status'] = 'CURRENT';
+        }
+
         final entry = AnimeEntry.fromJson(enrichedItem);
         // Only include in Continue Watching if not already finished
         if (entry.totalEpisodes != null && entry.totalEpisodes! > 0 && entry.progress >= entry.totalEpisodes!) {
           return;
         }
-        list.add(entry);
+
+        final isMarkedCompleted = (entry.status.toUpperCase() == 'COMPLETED' ||
+            enrichedItem['userStatus']?.toString().toUpperCase() == 'COMPLETED');
+
+        if (isMarkedCompleted && !hasActiveWatch) {
+          return;
+        }
+
+        final nextEp = (entry.episodeNumber != null && entry.episodeNumber! > entry.progress)
+            ? entry.episodeNumber!
+            : (entry.progress + 1);
+        if (entry.totalEpisodes != null && entry.totalEpisodes! > 0 && nextEp > entry.totalEpisodes!) {
+          return;
+        }
+        list.add(hasActiveWatch ? entry.copyWith(status: 'CURRENT') : entry);
       }
 
       // 1. Seanime dedicated continueWatchingList (Local library files)
@@ -572,7 +701,7 @@ class SeanimeRepository {
         if (localCw != null) {
           for (final item in localCw) {
             if (item is Map<String, dynamic>) {
-              addEpisode(item);
+              addEpisode(item, hasLocalFiles: true);
             }
           }
         }
@@ -589,24 +718,29 @@ class SeanimeRepository {
           }
         }
 
-        // 2b. Seanime local library lists (Current / Watching entries)
+        // 2b. Seanime local library lists (Current / Watching entries and actively watched entries)
         final localLists = (root?['lists'] ?? root?['MediaListCollection']?['lists']) as List?;
         if (localLists != null) {
           for (final l in localLists) {
             if (l is Map<String, dynamic>) {
               final status = (l['status'] as String?)?.toUpperCase() ?? (l['name'] == 'Watching' ? 'CURRENT' : '');
-              if (status == 'CURRENT' || status == 'WATCHING' || status == 'REPEATING') {
-                final entries = l['entries'] as List?;
-                if (entries != null) {
-                  for (final e in entries) {
-                    if (e is Map<String, dynamic>) {
-                      final eMap = Map<String, dynamic>.from(e);
-                      if (eMap['media'] is Map) {
-                        final m = eMap['media'] as Map;
-                        eMap['mediaId'] ??= m['id'];
-                      }
+              final isCurrent = status == 'CURRENT' || status == 'WATCHING' || status == 'REPEATING';
+              final entries = l['entries'] as List?;
+              if (entries != null) {
+                for (final e in entries) {
+                  if (e is Map<String, dynamic>) {
+                    final eMap = Map<String, dynamic>.from(e);
+                    if (eMap['media'] is Map) {
+                      final m = eMap['media'] as Map;
+                      eMap['mediaId'] ??= m['id'];
+                    }
+                    final mId = (eMap['mediaId'] as num?)?.toInt() ?? 0;
+                    final hasLocalWatch = localHistory.containsKey(mId) ||
+                        serverHistory.containsKey(mId) ||
+                        OfflineLibraryService.instance.getAnimeEntry(mId) != null;
+                    if (isCurrent || hasLocalWatch) {
                       eMap['status'] ??= 'CURRENT';
-                      addEpisode(eMap);
+                      addEpisode(eMap, hasLocalFiles: true);
                     }
                   }
                 }
@@ -616,7 +750,7 @@ class SeanimeRepository {
         }
       }
 
-      // 3. User's CURRENT (Watching) list from AniList collection
+      // 3. User's AniList collection lists
       if (anilistResponse?.statusCode == 200 && anilistResponse?.data != null) {
         final aData = anilistResponse!.data;
         Map<String, dynamic>? aRoot;
@@ -628,16 +762,21 @@ class SeanimeRepository {
           for (final l in aLists) {
             if (l is Map<String, dynamic>) {
               final status = (l['status'] as String?)?.toUpperCase() ?? (l['name'] == 'Watching' ? 'CURRENT' : '');
-              if (status == 'CURRENT' || status == 'WATCHING' || status == 'REPEATING') {
-                final entries = l['entries'] as List?;
-                if (entries != null) {
-                  for (final e in entries) {
-                    if (e is Map<String, dynamic>) {
-                      final eMap = Map<String, dynamic>.from(e);
-                      if (eMap['media'] is Map) {
-                        final m = eMap['media'] as Map;
-                        eMap['mediaId'] ??= m['id'];
-                      }
+              final isCurrent = status == 'CURRENT' || status == 'WATCHING' || status == 'REPEATING';
+              final entries = l['entries'] as List?;
+              if (entries != null) {
+                for (final e in entries) {
+                  if (e is Map<String, dynamic>) {
+                    final eMap = Map<String, dynamic>.from(e);
+                    if (eMap['media'] is Map) {
+                      final m = eMap['media'] as Map;
+                      eMap['mediaId'] ??= m['id'];
+                    }
+                    final mId = (eMap['mediaId'] as num?)?.toInt() ?? 0;
+                    final hasLocalWatch = localHistory.containsKey(mId) ||
+                        serverHistory.containsKey(mId) ||
+                        OfflineLibraryService.instance.getAnimeEntry(mId) != null;
+                    if (isCurrent || hasLocalWatch) {
                       eMap['status'] ??= 'CURRENT';
                       addEpisode(eMap);
                     }
@@ -649,8 +788,37 @@ class SeanimeRepository {
         }
       }
 
+      // 3b. Downloaded Anime on local disk with active watch history or progress
+      for (final dEntry in downloadedAnime) {
+        if (!seenMediaIds.contains(dEntry.mediaId)) {
+          final hasWatch = localHistory.containsKey(dEntry.mediaId) ||
+              serverHistory.containsKey(dEntry.mediaId) ||
+              OfflineLibraryService.instance.getAnimeEntry(dEntry.mediaId) != null ||
+              dEntry.progress > 0;
+          if (hasWatch) {
+            addEpisode(dEntry.toJson(), hasLocalFiles: true);
+          }
+        }
+      }
+
+      // 3c. OfflineLibraryService continue watching entries
+      final offList = OfflineLibraryService.instance.getContinueWatching(langCode: langCode);
+      for (final offEntry in offList) {
+        if (!seenMediaIds.contains(offEntry.mediaId)) {
+          addEpisode(offEntry.toJson(), hasLocalFiles: offEntry.hasLocalFiles);
+        }
+      }
+
       // 4. Filtrar animes donde el siguiente episodio NO ha salido aún o ya se vieron todos
-      final validEntries = list.where((e) => e.hasNextEpisodeAired).toList();
+      final validEntries = list.where((e) {
+        if (e.totalEpisodes != null && e.totalEpisodes! > 0 && e.progress >= e.totalEpisodes!) {
+          return false;
+        }
+        if (e.status.toUpperCase() == 'COMPLETED') {
+          return false;
+        }
+        return e.hasNextEpisodeAired;
+      }).toList();
 
       // 5. Enriquecer con AniZip: carátula 16:9 real, título oficial y fecha de emisión exacta
       final enrichedList = (await Future.wait(validEntries.map((entry) async {
@@ -662,10 +830,10 @@ class SeanimeRepository {
             if (aniZip != null) {
               final aniEp = aniZip.getEpisode(epNum);
               if (aniEp != null) {
-                // Si la fecha de emisión de AniZip está en el futuro, descartar
-                if (aniEp.airDate != null && aniEp.airDate!.isNotEmpty) {
+                // Si la fecha de emisión de AniZip está en el futuro y NO es un archivo descargado localmente, descartar
+                if (!entry.hasLocalFiles && aniEp.airDate != null && aniEp.airDate!.isNotEmpty) {
                   final epAirDate = DateTime.tryParse(aniEp.airDate!);
-                  if (epAirDate != null && epAirDate.isAfter(DateTime.now())) {
+                  if (epAirDate != null && epAirDate.isAfter(DateTime.now().add(const Duration(hours: 12)))) {
                     return null;
                   }
                 }
@@ -680,7 +848,6 @@ class SeanimeRepository {
                   episodeThumbnail: thumb ?? entry.episodeThumbnail,
                   episodeTitle: (title != null && !title.toLowerCase().startsWith('episod')) ? title : entry.episodeTitle,
                   airDate: aniEp.airDate ?? entry.airDate,
-
                 );
               }
             }
@@ -1371,6 +1538,10 @@ class SeanimeRepository {
         queryParams.add('\$search: String');
         mediaArgs.add('search: \$search');
         variables['search'] = search.trim();
+        if (sort == 'TRENDING_DESC') {
+          sort = 'SEARCH_MATCH';
+          variables['sort'] = ['SEARCH_MATCH'];
+        }
       }
       if (genres != null && genres.isNotEmpty) {
         queryParams.add('\$genre_in: [String]');
@@ -1487,6 +1658,10 @@ class SeanimeRepository {
         queryParams.add('\$search: String');
         mediaArgs.add('search: \$search');
         variables['search'] = search.trim();
+        if (sort == 'TRENDING_DESC') {
+          sort = 'SEARCH_MATCH';
+          variables['sort'] = ['SEARCH_MATCH'];
+        }
       }
       if (genres != null && genres.isNotEmpty) {
         queryParams.add('\$genre_in: [String]');
@@ -1955,6 +2130,21 @@ class SeanimeRepository {
       return patchRes.statusCode == 200;
     } catch (e) {
       debugPrint('ensureTorrentStreamingEnabled fallback error: $e');
+      return false;
+    }
+  }
+
+  Future<bool> ensureWatchContinuityEnabled() async {
+    try {
+      final patchRes = await _apiClient.patch(
+        '/settings/path',
+        data: {
+          'path': 'library.enableWatchContinuity',
+          'value': true,
+        },
+      );
+      return patchRes.statusCode == 200;
+    } catch (_) {
       return false;
     }
   }

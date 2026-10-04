@@ -65,7 +65,15 @@ class OfflineLibraryService {
             if (item is Map<String, dynamic>) {
               final entry = AnimeEntry.fromJson(item);
               if (entry.mediaId > 0) {
-                _animeEntries[entry.mediaId] = entry;
+                // Self-healing: if an entry was marked COMPLETED but user has progress < totalEpisodes (e.g. movie watched with progress 0)
+                if (entry.status == 'COMPLETED' &&
+                    entry.totalEpisodes != null &&
+                    entry.totalEpisodes! > 0 &&
+                    entry.progress < entry.totalEpisodes!) {
+                  _animeEntries[entry.mediaId] = entry.copyWith(status: 'CURRENT');
+                } else {
+                  _animeEntries[entry.mediaId] = entry;
+                }
               }
             }
           }
@@ -82,7 +90,15 @@ class OfflineLibraryService {
             if (item is Map<String, dynamic>) {
               final entry = MangaEntry.fromJson(item);
               if (entry.mediaId > 0) {
-                _mangaEntries[entry.mediaId] = entry;
+                // Self-healing: if an entry was marked COMPLETED but user has progress < totalChapters
+                if (entry.status == 'COMPLETED' &&
+                    entry.totalChapters != null &&
+                    entry.totalChapters! > 0 &&
+                    entry.progress < entry.totalChapters!) {
+                  _mangaEntries[entry.mediaId] = entry.copyWith(status: 'CURRENT');
+                } else {
+                  _mangaEntries[entry.mediaId] = entry;
+                }
               }
             }
           }
@@ -105,6 +121,9 @@ class OfflineLibraryService {
     list.sort((a, b) => b.effectiveTimestamp.compareTo(a.effectiveTimestamp));
     return list;
   }
+
+  /// Retorna una entrada de anime específica por su mediaId si existe en la base de datos local.
+  AnimeEntry? getAnimeEntry(int mediaId) => _animeEntries[mediaId];
 
   /// Retorna la lista de anime en seguimiento para "Seguir Viendo".
   List<AnimeEntry> getContinueWatching({String? langCode}) {
@@ -170,13 +189,14 @@ class OfflineLibraryService {
     final existing = _animeEntries[mediaId];
     final epNum = episodeNumber ?? existing?.episodeNumber ?? 1;
 
-    final isCompleted = totalEpisodes != null && totalEpisodes > 0 && epNum >= totalEpisodes;
-    final status = isCompleted ? 'COMPLETED' : 'CURRENT';
+    // While actively playing/watching, the status is always CURRENT.
+    // Completing the media happens in updateAnimeProgress once the episode is finished (>= 80%).
+    const status = 'CURRENT';
 
     if (existing != null) {
       final newProgress = (epNum > 1 && existing.progress < epNum - 1)
           ? epNum - 1
-          : existing.progress;
+          : ((totalEpisodes != null && existing.progress >= totalEpisodes) ? 0 : existing.progress);
 
       _animeEntries[mediaId] = existing.copyWith(
         title: title.isNotEmpty && title != 'Anime' ? title : existing.title,
@@ -369,8 +389,9 @@ class OfflineLibraryService {
     final existing = _mangaEntries[mediaId];
     final chInt = chapterNumber.floor();
 
-    final isCompleted = totalChapters != null && totalChapters > 0 && chInt >= totalChapters;
-    final status = isCompleted ? 'COMPLETED' : 'CURRENT';
+    // While actively reading, the status is always CURRENT.
+    // Completing the manga happens in updateMangaProgress once the chapter is finished.
+    const status = 'CURRENT';
 
     if (existing != null) {
       final newProgress = chInt > existing.progress ? chInt : existing.progress;

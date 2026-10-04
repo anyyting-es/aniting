@@ -112,6 +112,7 @@ class MpvPlayerService {
       _safeSetProperty('keep-open', 'yes');
 
       // Subtitles: native libass with full styling, embedded MKV fonts, and fuzzy auto-match
+      _safeSetProperty('sub-visibility', 'yes');
       _safeSetProperty('sub-auto', 'fuzzy');
       _safeSetProperty('sub-ass', 'yes');
       _safeSetProperty('sub-ass-override', 'scale');
@@ -120,7 +121,16 @@ class MpvPlayerService {
       // basic instead of full to avoid expensive color conversions for every subtitle line
       _safeSetProperty('sub-ass-vsfilter-color-compat', 'basic');
       _safeSetProperty('embeddedfonts', 'yes');
-      _safeSetProperty('sub-font-provider', 'auto');
+
+      if (Platform.isAndroid) {
+        // Android has no fontconfig. Point libmpv directly to /system/fonts where Roboto lives
+        _safeSetProperty('sub-fonts-dir', '/system/fonts');
+        _safeSetProperty('sub-font', 'Roboto');
+        _safeSetProperty('sub-font-provider', 'none');
+      } else {
+        _safeSetProperty('sub-font-provider', 'auto');
+        _safeSetProperty('sub-font', 'sans-serif');
+      }
 
       // Plain text subtitle styling (SRT, VTT, etc.): clean white bold text, transparent bg, black outline
       _safeSetProperty('sub-color', '#FFFFFFFF');
@@ -128,7 +138,6 @@ class MpvPlayerService {
       _safeSetProperty('sub-border-color', '#FF000000');
       _safeSetProperty('sub-border-size', '3.0');
       _safeSetProperty('sub-bold', 'yes');
-      _safeSetProperty('sub-font', 'sans-serif');
       _safeSetProperty('sub-font-size', '48');
 
       // Audio: auto-safe channel mapping and volume downmix normalization
@@ -350,8 +359,8 @@ class MpvPlayerService {
       const baseFontSize = 48;
       String targetFont = prefs.fontFamily;
       if (Platform.isAndroid || Platform.isIOS) {
-        if (targetFont == 'Trebuchet MS' || targetFont == 'OpenDyslexic') {
-          targetFont = 'sans-serif';
+        if (targetFont == 'Trebuchet MS' || targetFont == 'OpenDyslexic' || targetFont == 'sans-serif') {
+          targetFont = 'Roboto';
         }
       }
       _safeSetProperty('sub-font', targetFont);

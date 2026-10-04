@@ -368,6 +368,8 @@ class EpisodeListItem extends ConsumerWidget {
   final bool isLoading;
   final bool isWatched;
   final bool isDownloading;
+  final double? downloadProgress;
+  final bool isDownloaded;
   final VoidCallback? onTap;
   final VoidCallback? onPlay;
   final VoidCallback? onDownload;
@@ -389,6 +391,8 @@ class EpisodeListItem extends ConsumerWidget {
     this.isLoading = false,
     this.isWatched = false,
     this.isDownloading = false,
+    this.downloadProgress,
+    this.isDownloaded = false,
     this.onTap,
     this.onPlay,
     this.onDownload,
@@ -537,6 +541,87 @@ class EpisodeListItem extends ConsumerWidget {
                             ),
                           ),
                         ],
+
+                        // Local downloaded badge on thumbnail
+                        if (isDownloaded)
+                          Positioned(
+                            top: 6,
+                            right: 6,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.82),
+                                borderRadius: BorderRadius.circular(5),
+                                border: Border.all(
+                                  color: Colors.greenAccent.withValues(alpha: 0.7),
+                                  width: 0.8,
+                                ),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.check_circle_rounded, color: Colors.greenAccent, size: 10),
+                                  SizedBox(width: 3.5),
+                                  Text(
+                                    'LOCAL',
+                                    style: TextStyle(
+                                      color: Colors.greenAccent,
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
+                        else if (isDownloading)
+                          Positioned(
+                            top: 6,
+                            right: 6,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.85),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(
+                                  color: theme.colorScheme.primary.withValues(alpha: 0.75),
+                                  width: 0.9,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  SizedBox(
+                                    width: 10,
+                                    height: 10,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      value: (downloadProgress != null && downloadProgress! > 0)
+                                          ? downloadProgress
+                                          : null,
+                                      valueColor: AlwaysStoppedAnimation(theme.colorScheme.primary),
+                                      backgroundColor: (downloadProgress != null && downloadProgress! > 0)
+                                          ? theme.colorScheme.primary.withValues(alpha: 0.25)
+                                          : null,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    downloadProgress != null && downloadProgress! > 0
+                                        ? '${(downloadProgress! * 100).toInt()}%'
+                                        : l10n.downloading,
+                                    style: TextStyle(
+                                      color: theme.colorScheme.primary,
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: 0.3,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   ),
@@ -624,16 +709,40 @@ class EpisodeListItem extends ConsumerWidget {
                 )
               else if (isDownloading)
                 Padding(
-                  padding: const EdgeInsets.only(left: 8, right: 4, top: 12),
+                  padding: const EdgeInsets.only(left: 8, right: 4, top: 10),
                   child: Tooltip(
-                    message: l10n.downloadStarted,
-                    child: SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation(theme.colorScheme.primary),
-                      ),
+                    message: downloadProgress != null
+                        ? '${l10n.downloading}: ${(downloadProgress! * 100).toInt()}%'
+                        : l10n.downloading,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.2,
+                            value: (downloadProgress != null && downloadProgress! > 0)
+                                ? downloadProgress
+                                : null,
+                            valueColor: AlwaysStoppedAnimation(theme.colorScheme.primary),
+                            backgroundColor: (downloadProgress != null && downloadProgress! > 0)
+                                ? theme.colorScheme.primary.withValues(alpha: 0.2)
+                                : null,
+                          ),
+                        ),
+                        if (downloadProgress != null && downloadProgress! > 0) ...[
+                          const SizedBox(height: 3),
+                          Text(
+                            '${(downloadProgress! * 100).toInt()}%',
+                            style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                              color: theme.colorScheme.primary,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                 ),
@@ -662,6 +771,8 @@ class EpisodeGridItem extends StatelessWidget {
   final bool isLoading;
   final bool isWatched;
   final bool isDownloading;
+  final double? downloadProgress;
+  final bool isDownloaded;
   final VoidCallback? onTap;
   final VoidCallback? onPlay;
   final VoidCallback? onDownload;
@@ -683,6 +794,8 @@ class EpisodeGridItem extends StatelessWidget {
     this.isLoading = false,
     this.isWatched = false,
     this.isDownloading = false,
+    this.downloadProgress,
+    this.isDownloaded = false,
     this.onTap,
     this.onPlay,
     this.onDownload,
@@ -697,7 +810,9 @@ class EpisodeGridItem extends StatelessWidget {
     return Material(
       color: isWatched && !isPlaying
           ? theme.colorScheme.primary.withValues(alpha: 0.08)
-          : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+          : isDownloaded
+              ? Colors.green.withValues(alpha: 0.08)
+              : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
       borderRadius: BorderRadius.circular(gridRadius),
       child: InkWell(
         borderRadius: BorderRadius.circular(gridRadius),
@@ -727,10 +842,14 @@ class EpisodeGridItem extends StatelessWidget {
             border: Border.all(
               color: isPlaying
                   ? theme.colorScheme.primary
-                  : isWatched
-                      ? theme.colorScheme.primary.withValues(alpha: 0.2)
-                      : theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
-              width: isPlaying ? 1.5 : 1.0,
+                  : isDownloading
+                      ? theme.colorScheme.primary.withValues(alpha: 0.6)
+                      : isDownloaded
+                          ? Colors.greenAccent.withValues(alpha: 0.5)
+                          : isWatched
+                              ? theme.colorScheme.primary.withValues(alpha: 0.2)
+                              : theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+              width: (isPlaying || isDownloading) ? 1.5 : 1.0,
             ),
           ),
           child: Column(
@@ -738,15 +857,57 @@ class EpisodeGridItem extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               if (isLoading || isDownloading)
-                SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: isDownloading
-                        ? AlwaysStoppedAnimation(theme.colorScheme.primary)
-                        : null,
-                  ),
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.2,
+                        value: isDownloading &&
+                                (downloadProgress != null && downloadProgress! > 0)
+                            ? downloadProgress
+                            : null,
+                        valueColor: isDownloading
+                            ? AlwaysStoppedAnimation(theme.colorScheme.primary)
+                            : null,
+                        backgroundColor: isDownloading &&
+                                (downloadProgress != null && downloadProgress! > 0)
+                            ? theme.colorScheme.primary.withValues(alpha: 0.25)
+                            : null,
+                      ),
+                    ),
+                    if (isDownloading &&
+                        downloadProgress != null &&
+                        downloadProgress! > 0) ...[
+                      const SizedBox(height: 2.5),
+                      Text(
+                        '${(downloadProgress! * 100).toInt()}%',
+                        style: TextStyle(
+                          fontSize: 8.5,
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.primary,
+                        ),
+                      ),
+                    ],
+                  ],
+                )
+              else if (isDownloaded)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.check_circle_rounded, size: 12, color: Colors.greenAccent),
+                    const SizedBox(width: 3),
+                    Text(
+                      'EP $episodeNumber',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: isPlaying ? theme.colorScheme.primary : theme.colorScheme.onSurface,
+                      ),
+                    ),
+                  ],
                 )
               else if (isWatched && !isPlaying)
                 Row(

@@ -120,6 +120,56 @@ class _DesktopGridEpisodeCardState extends State<DesktopGridEpisodeCard> {
                                 ],
                               ),
                             ),
+                          )
+                        else if (widget.ep.isDownloading)
+                          Positioned(
+                            top: 6,
+                            right: 6,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.85),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(
+                                  color: theme.colorScheme.primary.withValues(alpha: 0.7),
+                                  width: 0.9,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  SizedBox(
+                                    width: 10,
+                                    height: 10,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      value: (widget.ep.downloadProgress != null &&
+                                              widget.ep.downloadProgress! > 0)
+                                          ? widget.ep.downloadProgress
+                                          : null,
+                                      valueColor: AlwaysStoppedAnimation(theme.colorScheme.primary),
+                                      backgroundColor: (widget.ep.downloadProgress != null &&
+                                              widget.ep.downloadProgress! > 0)
+                                          ? theme.colorScheme.primary.withValues(alpha: 0.25)
+                                          : null,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    widget.ep.downloadProgress != null &&
+                                            widget.ep.downloadProgress! > 0
+                                        ? '${(widget.ep.downloadProgress! * 100).toInt()}%'
+                                        : '...',
+                                    style: TextStyle(
+                                      color: theme.colorScheme.primary,
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: 0.3,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
 
                       // Loading indicator

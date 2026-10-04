@@ -190,7 +190,9 @@ class _ServerSettingsScreenState extends ConsumerState<ServerSettingsScreen> {
                     ),
                     onPressed: () async {
                       if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
+                        final messenger = ScaffoldMessenger.of(context);
+                        messenger.hideCurrentSnackBar();
+                        messenger.showSnackBar(
                           SnackBar(
                             behavior: SnackBarBehavior.floating,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -220,8 +222,18 @@ class _ServerSettingsScreenState extends ConsumerState<ServerSettingsScreen> {
                         onPressed: serverState.state == ServerState.starting
                             ? null
                             : () => serverNotifier.startLocal(),
-                        icon: const Icon(Icons.play_arrow_rounded),
-                        label: Text(l10n.startLocal),
+                        icon: serverState.state == ServerState.starting
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.play_arrow_rounded),
+                        label: Text(
+                          serverState.state == ServerState.starting
+                              ? l10n.serverStarting
+                              : l10n.startLocal,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -231,7 +243,7 @@ class _ServerSettingsScreenState extends ConsumerState<ServerSettingsScreen> {
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                           padding: const EdgeInsets.symmetric(vertical: 13),
                         ),
-                        onPressed: serverState.isOnline
+                        onPressed: (serverState.isOnline || serverState.state == ServerState.starting)
                             ? () => serverNotifier.stopServer()
                             : null,
                         icon: const Icon(Icons.stop_rounded),
@@ -257,17 +269,42 @@ class _ServerSettingsScreenState extends ConsumerState<ServerSettingsScreen> {
         SettingsSectionHeader(title: l10n.discoveredServers),
         const SizedBox(height: 10),
         ServerDiscoveredListCard(
-          onSelectServer: (ip, port) {
+          onSelectServer: (ip, port) async {
             _hostController.text = ip;
             _portController.text = port.toString();
-            serverNotifier.checkConnection(host: ip, port: port);
-            ScaffoldMessenger.of(context).showSnackBar(
+            final messenger = ScaffoldMessenger.of(context);
+            messenger.hideCurrentSnackBar();
+            messenger.showSnackBar(
               SnackBar(
                 behavior: SnackBarBehavior.floating,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 content: Text(l10n.testingConnection),
+                duration: const Duration(seconds: 1),
               ),
             );
+            await serverNotifier.checkConnection(host: ip, port: port);
+            if (!context.mounted) return;
+            final currentState = ref.read(serverNotifierProvider);
+            messenger.hideCurrentSnackBar();
+            if (currentState.isOnline) {
+              messenger.showSnackBar(
+                SnackBar(
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  content: Text(l10n.connectedToServer),
+                  backgroundColor: const Color(0xFF22C55E),
+                ),
+              );
+            } else {
+              messenger.showSnackBar(
+                SnackBar(
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  content: Text(currentState.errorMessage ?? l10n.serverOffline),
+                  backgroundColor: Theme.of(context).colorScheme.error,
+                ),
+              );
+            }
           },
         ),
 
@@ -333,17 +370,42 @@ class _ServerSettingsScreenState extends ConsumerState<ServerSettingsScreen> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                     padding: const EdgeInsets.symmetric(vertical: 13),
                   ),
-                  onPressed: () {
+                  onPressed: () async {
                     final host = _hostController.text.trim();
                     final port = int.tryParse(_portController.text.trim()) ?? AppConstants.defaultPort;
-                    serverNotifier.checkConnection(host: host, port: port);
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    final messenger = ScaffoldMessenger.of(context);
+                    messenger.hideCurrentSnackBar();
+                    messenger.showSnackBar(
                       SnackBar(
                         behavior: SnackBarBehavior.floating,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         content: Text(l10n.testingConnection),
+                        duration: const Duration(seconds: 1),
                       ),
                     );
+                    await serverNotifier.checkConnection(host: host, port: port);
+                    if (!context.mounted) return;
+                    final currentState = ref.read(serverNotifierProvider);
+                    messenger.hideCurrentSnackBar();
+                    if (currentState.isOnline) {
+                      messenger.showSnackBar(
+                        SnackBar(
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          content: Text(l10n.connectedToServer),
+                          backgroundColor: const Color(0xFF22C55E),
+                        ),
+                      );
+                    } else {
+                      messenger.showSnackBar(
+                        SnackBar(
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          content: Text(currentState.errorMessage ?? l10n.serverOffline),
+                          backgroundColor: Theme.of(context).colorScheme.error,
+                        ),
+                      );
+                    }
                   },
                   icon: const Icon(Icons.wifi_find_rounded),
                   label: Text(l10n.testAndSave),

@@ -2071,5 +2071,10 @@ class SpanishTranslations implements AppTranslations {
   @override
   String downloadingEpisode(int number) => 'Descargando Episodio $number...';
   @override
+  String get downloading => 'Descargando';
+  @override
+  String get downloaded => 'Descargado';
+  @override
   String get viewAll => 'Ver todo';
 }
+

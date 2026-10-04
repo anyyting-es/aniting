@@ -86,6 +86,9 @@ class ActiveDownloadsNotifier extends Notifier<ActiveDownloadsState> {
         isLoading: false,
       );
 
+      // Sync active torrent progress with downloading episodes
+      ref.read(downloadingEpisodesProvider.notifier).syncWithTorrents(torrents);
+
       // Auto-scan detection: when a torrent reaches 100% or completion,
       // automatically trigger a library scan so Seanime indexes the downloaded episode.
       for (final t in torrents) {
@@ -139,6 +142,7 @@ class ActiveDownloadsNotifier extends Notifier<ActiveDownloadsState> {
       await repo.scanLibrary();
       ref.invalidate(downloadedAnimeProvider);
       ref.invalidate(animeCollectionProvider);
+      ref.invalidate(animeLibraryEntryProvider);
     } catch (e) {
       // Ignore scan failure in background
     } finally {
@@ -197,29 +201,172 @@ final activeDownloadsProvider =
   ActiveDownloadsNotifier.new,
 );
 
-class DownloadingEpisodesNotifier extends Notifier<Set<String>> {
-  @override
-  Set<String> build() => {};
+class EpisodeDownloadProgress {
+  final int mediaId;
+  final int episodeNumber;
+  final String? hash;
+  final String? torrentName;
+  final double? progress;
+  final String? speed;
+  final String? status;
 
-  void add(int mediaId, int episodeNumber) {
-    state = {...state, '${mediaId}_$episodeNumber'};
+  const EpisodeDownloadProgress({
+    required this.mediaId,
+    required this.episodeNumber,
+    this.hash,
+    this.torrentName,
+    this.progress,
+    this.speed,
+    this.status,
+  });
+
+  EpisodeDownloadProgress copyWith({
+    int? mediaId,
+    int? episodeNumber,
+    String? hash,
+    String? torrentName,
+    double? progress,
+    String? speed,
+    String? status,
+  }) {
+    return EpisodeDownloadProgress(
+      mediaId: mediaId ?? this.mediaId,
+      episodeNumber: episodeNumber ?? this.episodeNumber,
+      hash: hash ?? this.hash,
+      torrentName: torrentName ?? this.torrentName,
+      progress: progress ?? this.progress,
+      speed: speed ?? this.speed,
+      status: status ?? this.status,
+    );
+  }
+}
+
+class DownloadingEpisodesState {
+  final Map<String, EpisodeDownloadProgress> episodes;
+
+  const DownloadingEpisodesState([this.episodes = const {}]);
+
+  bool contains(String key) => episodes.containsKey(key);
+  bool isDownloading(int mediaId, int episodeNumber) =>
+      episodes.containsKey('${mediaId}_$episodeNumber');
+  double? getProgress(int mediaId, int episodeNumber) =>
+      episodes['${mediaId}_$episodeNumber']?.progress;
+  EpisodeDownloadProgress? getInfo(int mediaId, int episodeNumber) =>
+      episodes['${mediaId}_$episodeNumber'];
+  bool get isEmpty => episodes.isEmpty;
+  bool get isNotEmpty => episodes.isNotEmpty;
+  int get length => episodes.length;
+  Iterable<String> get keys => episodes.keys;
+}
+
+class DownloadingEpisodesNotifier extends Notifier<DownloadingEpisodesState> {
+  @override
+  DownloadingEpisodesState build() => const DownloadingEpisodesState();
+
+  void add(
+    int mediaId,
+    int episodeNumber, {
+    String? hash,
+    String? torrentName,
+  }) {
+    final key = '${mediaId}_$episodeNumber';
+    final current = Map<String, EpisodeDownloadProgress>.from(state.episodes);
+    current[key] = EpisodeDownloadProgress(
+      mediaId: mediaId,
+      episodeNumber: episodeNumber,
+      hash: hash,
+      torrentName: torrentName,
+    );
+    state = DownloadingEpisodesState(current);
   }
 
   void remove(int mediaId, int episodeNumber) {
-    state = state.where((k) => k != '${mediaId}_$episodeNumber').toSet();
+    final key = '${mediaId}_$episodeNumber';
+    if (!state.episodes.containsKey(key)) return;
+    final current = Map<String, EpisodeDownloadProgress>.from(state.episodes);
+    current.remove(key);
+    state = DownloadingEpisodesState(current);
   }
 
   void clearForMedia(int mediaId) {
-    state = state.where((k) => !k.startsWith('${mediaId}_')).toSet();
+    final prefix = '${mediaId}_';
+    final current = Map<String, EpisodeDownloadProgress>.from(state.episodes)
+      ..removeWhere((k, _) => k.startsWith(prefix));
+    state = DownloadingEpisodesState(current);
   }
 
   bool isDownloading(int mediaId, int episodeNumber) {
-    return state.contains('${mediaId}_$episodeNumber');
+    return state.isDownloading(mediaId, episodeNumber);
+  }
+
+  double? getProgress(int mediaId, int episodeNumber) {
+    return state.getProgress(mediaId, episodeNumber);
+  }
+
+  void syncWithTorrents(List<Map<String, dynamic>> activeTorrents) {
+    if (state.episodes.isEmpty) return;
+    final current = Map<String, EpisodeDownloadProgress>.from(state.episodes);
+    bool changed = false;
+
+    for (final entry in state.episodes.entries) {
+      final key = entry.key;
+      final info = entry.value;
+
+      Map<String, dynamic>? match;
+      for (final t in activeTorrents) {
+        final tHash = (t['hash']?.toString() ?? '').toLowerCase();
+        if (info.hash != null && info.hash!.isNotEmpty && tHash.isNotEmpty) {
+          if (tHash == info.hash!.toLowerCase()) {
+            match = t;
+            break;
+          }
+        }
+        if (info.torrentName != null && info.torrentName!.isNotEmpty) {
+          final tName = (t['name']?.toString() ?? '').toLowerCase();
+          if (tName == info.torrentName!.toLowerCase()) {
+            match = t;
+            break;
+          }
+        }
+      }
+
+      if (match != null) {
+        final rawProgress = match['progress'];
+        double progress = 0.0;
+        if (rawProgress is num) {
+          progress = rawProgress.toDouble();
+        } else if (rawProgress is String) {
+          progress = double.tryParse(rawProgress.replaceAll('%', '').trim()) ?? 0.0;
+        }
+        if (progress > 1.0) progress /= 100.0;
+        progress = progress.clamp(0.0, 1.0);
+
+        final downSpeed =
+            (match['downSpeed'] ?? match['downloadSpeed'])?.toString() ?? '';
+        final status = match['status']?.toString() ?? 'downloading';
+
+        if (info.progress != progress ||
+            info.speed != downSpeed ||
+            info.status != status) {
+          current[key] = info.copyWith(
+            progress: progress,
+            speed: downSpeed,
+            status: status,
+          );
+          changed = true;
+        }
+      }
+    }
+
+    if (changed) {
+      state = DownloadingEpisodesState(current);
+    }
   }
 }
 
 final downloadingEpisodesProvider =
-    NotifierProvider<DownloadingEpisodesNotifier, Set<String>>(
+    NotifierProvider<DownloadingEpisodesNotifier, DownloadingEpisodesState>(
   DownloadingEpisodesNotifier.new,
 );
+
 

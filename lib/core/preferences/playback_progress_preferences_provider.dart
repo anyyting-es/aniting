@@ -124,7 +124,65 @@ class PlaybackProgressNotifier
   }
 
   EpisodePlaybackProgress? getProgress(int mediaId, int episodeNumber) {
-    return state['${mediaId}_$episodeNumber'] ?? state[mediaId.toString()];
+    final epProgress = state['${mediaId}_$episodeNumber'];
+    if (epProgress != null) return epProgress;
+    final mediaProgress = state[mediaId.toString()];
+    if (mediaProgress != null && mediaProgress.episodeNumber == episodeNumber) {
+      return mediaProgress;
+    }
+    return null;
+  }
+
+  /// Synchronizes server continuity watch history items into the local progress map.
+  /// Server items that are newer or not present locally will update the progress map.
+  Future<void> syncWithServerContinuity(Map<int, dynamic> serverHistory) async {
+    if (serverHistory.isEmpty) return;
+
+    final next = Map<String, EpisodePlaybackProgress>.from(state);
+    bool changed = false;
+
+    serverHistory.forEach((mediaId, raw) {
+      if (raw is Map) {
+        final epNum = (raw['episodeNumber'] as num?)?.toInt() ?? 1;
+        final curSec = (raw['currentTime'] as num?)?.toDouble() ?? 0.0;
+        final durSec = (raw['duration'] as num?)?.toDouble() ?? 0.0;
+        if (curSec > 0 && durSec > 0) {
+          final posMs = (curSec * 1000).toInt();
+          final durMs = (durSec * 1000).toInt();
+          final updatedStr = raw['timeUpdated']?.toString();
+          final serverTs = updatedStr != null
+              ? DateTime.tryParse(updatedStr)?.millisecondsSinceEpoch ?? 0
+              : 0;
+
+          final key = '${mediaId}_$epNum';
+          final existing = next[key];
+          // Update if no local progress or server timestamp is newer or further along
+          if (existing == null || serverTs >= existing.updatedAt || posMs > existing.positionMs) {
+            final item = EpisodePlaybackProgress(
+              mediaId: mediaId,
+              episodeNumber: epNum,
+              positionMs: posMs,
+              durationMs: durMs,
+              updatedAt: serverTs > 0 ? serverTs : DateTime.now().millisecondsSinceEpoch,
+            );
+            next[key] = item;
+            next[mediaId.toString()] = item;
+            changed = true;
+          }
+        }
+      }
+    });
+
+    if (changed) {
+      state = next;
+      try {
+        final prefs = _cachedPrefs ?? await SharedPreferences.getInstance();
+        final jsonMap = next.map((k, v) => MapEntry(k, v.toJson()));
+        await prefs.setString(_storageKey, jsonEncode(jsonMap));
+      } catch (e) {
+        debugPrint('[PlaybackProgress] Error syncing with server continuity: $e');
+      }
+    }
   }
 }
 
