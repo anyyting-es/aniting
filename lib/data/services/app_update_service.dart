@@ -10,7 +10,7 @@ typedef UpdateDownloadProgressCallback = void Function(int received, int total, 
 
 /// Service for checking updates from GitHub Releases, downloading APKs, and installing them on Android.
 class AppUpdateService {
-  static const String currentAppVersion = '1.0.4';
+  static const String currentAppVersion = '1.0.6';
   static const String githubOwner = 'anyyting-es';
   static const String githubRepo = 'aniting';
   static const String latestReleaseUrl =

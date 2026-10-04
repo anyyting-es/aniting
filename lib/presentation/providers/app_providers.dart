@@ -284,7 +284,7 @@ class ServerNotifier extends Notifier<ServerStateModel> {
         discovery.startBroadcasting(
           serverName: serverName,
           serverPort: _manager.port,
-          version: version ?? '1.0.5',
+          version: version ?? '1.0.6',
         );
       }
     } catch (_) {}
