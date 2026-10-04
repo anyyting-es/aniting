@@ -307,6 +307,34 @@ class ExoPlayerService {
     } catch (_) {}
   }
 
+  Future<void> setSubtitleStyle({
+    required String fontFamily,
+    required double fontSizeMultiplier,
+    required bool bold,
+    required bool italic,
+    required int textColor,
+    required int backgroundColor,
+    required String borderStyle,
+    required int borderColor,
+    required double borderSize,
+    required bool overrideAss,
+  }) async {
+    try {
+      await _methodChannel.invokeMethod('setSubtitleStyle', {
+        'fontFamily': fontFamily,
+        'fontSizeMultiplier': fontSizeMultiplier,
+        'bold': bold,
+        'italic': italic,
+        'textColor': textColor,
+        'backgroundColor': backgroundColor,
+        'borderStyle': borderStyle,
+        'borderColor': borderColor,
+        'borderSize': borderSize,
+        'overrideAss': overrideAss,
+      });
+    } catch (_) {}
+  }
+
   Future<void> setVisible(bool visible) async {
     try {
       await _methodChannel.invokeMethod('setVisible', {

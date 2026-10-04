@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/preferences/streaming_preferences_provider.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
@@ -22,7 +24,7 @@ class _StreamingSettingsScreenState
     extends ConsumerState<StreamingSettingsScreen> {
   final TextEditingController _downloadDirController = TextEditingController();
   Map<String, dynamic>? _torrentSettings;
-  bool _autoDeletePrevious = false;
+  bool _autoDeletePrevious = true;
   bool _isLoading = true;
   bool _isSaving = false;
 
@@ -40,15 +42,28 @@ class _StreamingSettingsScreenState
 
   Future<void> _loadTorrentstreamSettings() async {
     try {
+      final prefs = await SharedPreferences.getInstance();
+      final hasConfigured =
+          prefs.getBool('has_configured_auto_delete_torrents_v1') ?? false;
+
       final settings =
           await ref.read(repositoryProvider).getTorrentstreamSettings();
       if (mounted && settings != null) {
+        bool autoDeleteVal;
+        if (!hasConfigured) {
+          autoDeleteVal = true;
+          settings['autoDeletePreviousTorrents'] = true;
+          unawaited(ref.read(repositoryProvider).saveTorrentstreamSettings(settings));
+          await prefs.setBool('has_configured_auto_delete_torrents_v1', true);
+        } else {
+          autoDeleteVal = settings['autoDeletePreviousTorrents'] == true;
+        }
+
         setState(() {
           _torrentSettings = settings;
           _downloadDirController.text =
               (settings['downloadDir'] as String?) ?? '';
-          _autoDeletePrevious =
-              settings['autoDeletePreviousTorrents'] == true;
+          _autoDeletePrevious = autoDeleteVal;
           _isLoading = false;
         });
         return;
@@ -61,6 +76,8 @@ class _StreamingSettingsScreenState
 
   Future<void> _saveAutoDelete(bool value) async {
     setState(() => _autoDeletePrevious = value);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('has_configured_auto_delete_torrents_v1', true);
     final current = Map<String, dynamic>.from(_torrentSettings ?? {});
     current['autoDeletePreviousTorrents'] = value;
     final ok = await ref
@@ -145,6 +162,14 @@ class _StreamingSettingsScreenState
         const SizedBox(height: 10),
         PixelSettingsGroupCard(
           children: [
+            PixelSwitchTile(
+              icon: Icons.pause_circle_outline_rounded,
+              title: l10n.pauseTorrentOnExitTitle,
+              subtitle: l10n.pauseTorrentOnExitDesc,
+              value: prefs.pauseTorrentStreamOnExit,
+              onChanged: (val) => notifier.setPauseTorrentStreamOnExit(val),
+            ),
+            const PixelTileDivider(),
             PixelSwitchTile(
               icon: Icons.delete_sweep_rounded,
               title: l10n.autoDeletePreviousTitle,

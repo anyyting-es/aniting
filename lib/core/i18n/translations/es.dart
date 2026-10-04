@@ -172,6 +172,8 @@ class SpanishTranslations implements AppTranslations {
   @override
   String get scanFailed => 'Error al iniciar escaneo';
   @override
+  String get openDownloadsFolder => 'Abrir Carpeta de Descargas';
+  @override
   String get statusWatching => 'Viendo';
   @override
   String get statusCompleted => 'Vistos';
@@ -333,6 +335,14 @@ class SpanishTranslations implements AppTranslations {
   @override
   String get mobileNavStyleClassic => 'Fija tradicional';
   @override
+  String get desktopNavStyle => 'Estilo de Barra en PC';
+  @override
+  String get desktopNavStyleDesc => 'Elige entre la barra lateral clásica o el dock flotante centrado';
+  @override
+  String get desktopNavStyleFloating => 'Dock flotante inferior';
+  @override
+  String get desktopNavStyleSidebar => 'Barra lateral clásica';
+  @override
   String get showScores => 'Mostrar Puntuaciones';
   @override
   String get showScoresDesc => 'Muestra la calificación con estrellas en las portadas de contenido';
@@ -385,7 +395,12 @@ class SpanishTranslations implements AppTranslations {
   String get autoDeletePreviousDesc =>
       'Conserva solo 1 torrent a la vez. Al reproducir o iniciar un nuevo torrent, borra automáticamente los archivos y carpetas del torrent anterior del disco para ahorrar espacio.';
   @override
-  String get defaultDirectoryHint => 'Por defecto (~/.cache/seanime/torrentstream en SSD)';
+  String get pauseTorrentOnExitTitle => 'Pausar descarga al salir del video';
+  @override
+  String get pauseTorrentOnExitDesc =>
+      'Pausa la descarga de piezas del torrent al salir del reproductor para ahorrar ancho de banda y batería.';
+  @override
+  String get defaultDirectoryHint => 'Por defecto (~/.cache/aniting/torrentstream en SSD)';
   @override
   String get savePath => 'Guardar ruta';
   @override
@@ -426,6 +441,48 @@ class SpanishTranslations implements AppTranslations {
   String get grantStorageAccess => 'Conceder Acceso a Archivos';
   @override
   String get coreVersion => 'Versión de Core';
+
+  // LAN Sharing & Discovery
+  @override
+  String get lanSharing => 'Compartir Servidor en Red';
+  @override
+  String get lanSharingDesc => 'Permite que otros dispositivos en tu Wi-Fi se conecten a este servidor';
+  @override
+  String get lanSharingActive => 'Servidor Compartido';
+  @override
+  String get lanSharingActiveDesc => 'Otros dispositivos pueden encontrar y conectarse a este servidor';
+  @override
+  String get serverName => 'Nombre del Servidor';
+  @override
+  String get serverNameHint => 'Mi Servidor';
+  @override
+  String get sharingOnNetwork => 'Compartiendo en la red';
+  @override
+  String get discoveredServers => 'Servidores en la Red';
+  @override
+  String get discoveredServersDesc => 'Servidores Aniting detectados en tu Wi-Fi';
+  @override
+  String get searchingServers => 'Buscando servidores...';
+  @override
+  String get searchServers => 'Buscar Servidores';
+  @override
+  String get noServersFound => 'No se encontraron servidores';
+  @override
+  String get noServersFoundDesc => 'Asegúrate de que un dispositivo en tu red tenga el servidor compartido activado';
+  @override
+  String get connectToServer => 'Conectar';
+  @override
+  String get connectedToServer => 'Conectado';
+  @override
+  String discoveredServerLabel(String name, String ip, int port) => '$name ($ip:$port)';
+  @override
+  String get restartingServer => 'Reiniciando servidor local para aplicar cambios de red...';
+  @override
+  String get useLocalServer => 'Cambiar a Servidor Local';
+  @override
+  String get connectedToRemoteDesc => 'Conectado a un servidor en tu red. El servidor local de este dispositivo está pausado para ahorrar batería y RAM.';
+  @override
+  String get lanSharingRequiresLocal => 'Solo disponible cuando se usa el servidor local en este dispositivo';
 
   // Extensions & Marketplace
   @override
@@ -1660,6 +1717,46 @@ class SpanishTranslations implements AppTranslations {
   String storageUsed(String formattedSize) => 'Espacio ocupado: $formattedSize';
   @override
   String get refreshDownloadsTooltip => 'Refrescar descargas';
+  @override
+  String get activeDownloads => 'En progreso';
+  @override
+  String get noActiveDownloads => 'No hay descargas activas';
+  @override
+  String get noActiveDownloadsDesc =>
+      'No hay torrents, anime ni capítulos de manga descargándose en este momento.';
+  @override
+  String get torrentStreamDownload => 'Streaming de Torrent Activo';
+  @override
+  String get mangaDownloadQueueTitle => 'Cola de Descarga de Manga';
+  @override
+  String get pauseDownload => 'Pausar';
+  @override
+  String get resumeDownload => 'Reanudar';
+  @override
+  String get cancelOrDeleteDownload => 'Descartar y borrar';
+  @override
+  String get pauseQueue => 'Pausar cola';
+  @override
+  String get resumeQueue => 'Reanudar cola';
+  @override
+  String get clearQueue => 'Limpiar cola';
+  @override
+  String get manageActiveAndCompletedDownloads =>
+      'Supervisa descargas en curso y archivos sin conexión de anime y manga';
+  @override
+  String get downloadSpeedLabel => 'Descarga';
+  @override
+  String get uploadSpeedLabel => 'Subida';
+  @override
+  String get downloadWithTorrentClient => 'Descargar con cliente torrent';
+  @override
+  String get downloadInBackground => 'Descargar en segundo plano';
+  @override
+  String get watchNowStream => 'Ver ahora (Streaming)';
+  @override
+  String get allBatches => 'Todos / Batches';
+  @override
+  String get downloadStarted => 'Descarga iniciada en cliente torrent';
 
   // Player & UI Details
   @override
@@ -1806,6 +1903,16 @@ class SpanishTranslations implements AppTranslations {
   String deleteLocalConfirm(String title) =>
       '¿Seguro que deseas eliminar "$title" de tus listas locales?';
   @override
+  String get deleteDownload => 'Eliminar descarga';
+  @override
+  String deleteDownloadConfirm(String title) =>
+      '¿Seguro que deseas eliminar las descargas de "$title"?';
+  @override
+  String get downloadDeleted => 'Descarga eliminada correctamente';
+  @override
+  String deleteEpisodeDownloadConfirm(int episodeNumber) =>
+      '¿Eliminar la descarga del Episodio $episodeNumber?';
+  @override
   String get removedFromList => 'Eliminado de tu lista';
   @override
   String get selectProviderToDownload => 'Selecciona un proveedor para descargar';
@@ -1873,4 +1980,96 @@ class SpanishTranslations implements AppTranslations {
   String get mangaSectionDesc => 'Mostrar pestaña de manga en la navegación';
   @override
   String get cannotDisableBothSections => 'Debes mantener al menos una sección habilitada';
+
+  // Subtitle Style Customization
+  @override
+  String get subtitleStyle => 'Estilo de subtítulos';
+  @override
+  String get subtitleStyleDesc => 'Tipografía, tamaño, colores, bordes y sombras';
+  @override
+  String get subtitlePreviewText => 'El veloz murciélago hindú comía feliz cardillo y kiwi';
+  @override
+  String get subtitleFont => 'Familia de fuente';
+  @override
+  String get subtitleFontSize => 'Tamaño de fuente';
+  @override
+  String get subtitleBold => 'Negrita';
+  @override
+  String get subtitleItalic => 'Cursiva';
+  @override
+  String get subtitleTextColor => 'Color de texto';
+  @override
+  String get subtitleBgColor => 'Fondo del subtítulo';
+  @override
+  String get subtitleBorderStyle => 'Borde y sombras';
+  @override
+  String get subtitleBorderSize => 'Grosor de borde / sombra';
+  @override
+  String get subtitleBorderColor => 'Color de borde';
+  @override
+  String get subtitleOverrideAss => 'Forzar estilo en subtítulos .ass (MPV)';
+  @override
+  String get subtitleOverrideAssDesc =>
+      'En MPV, anula el diseño de los subtítulos .ass y aplica tu estilo personalizado. En ExoPlayer, los subtítulos .ass conservan siempre sus fuentes y efectos originales avanzados.';
+  @override
+  String get subtitleStyleReset => 'Restablecer estilo';
+  @override
+  String get subtitleStyleResetConfirm =>
+      '¿Restablecer todos los estilos de subtítulos a los valores por defecto?';
+  @override
+  String get borderStyleNone => 'Ninguno';
+  @override
+  String get borderStyleOutline => 'Contorno';
+  @override
+  String get borderStyleDropShadow => 'Sombra';
+  @override
+  String get borderStyleRaised => 'Realzado';
+  @override
+  String get borderStyleDepressed => 'Hundido';
+  @override
+  String get bgTransparent => 'Transparente';
+  @override
+  String get bgSubtle => 'Sutil (30%)';
+  @override
+  String get bgMedium => 'Medio (60%)';
+  @override
+  String get bgSolid => 'Sólido (100%)';
+
+  // Torrent Batch Filter
+  @override
+  String get showOnlyBatches => 'Solo batches';
+
+  // Download Manager & History
+  @override
+  String get downloadManager => 'Gestor de descargas';
+  @override
+  String get downloadManagerDesc => 'Monitorea velocidades activas, tiempo restante e historial';
+  @override
+  String get downloadHistory => 'Historial de descargas';
+  @override
+  String get noDownloadHistory => 'Sin historial de descargas';
+  @override
+  String get noDownloadHistoryDesc => 'Las descargas completadas de anime y manga aparecerán aquí.';
+  @override
+  String get clearHistory => 'Limpiar historial';
+  @override
+  String get clearHistoryConfirm => '¿Seguro que deseas limpiar el historial de descargas?';
+  @override
+  String get timeRemaining => 'Tiempo restante';
+  @override
+  String etaLabel(String eta) => 'Faltan $eta';
+  @override
+  String get downloadedAnimeSection => 'Descargas de anime';
+  @override
+  String get downloadedMangaSection => 'Descargas de manga';
+  @override
+  String get activeDownloadsCount => 'Descargas activas';
+  @override
+  String get completedDownload => 'Completado';
+  @override
+  String get completedDownloads => 'Completadas y Seeding';
+  @override
+  String downloadingEpisode(int number) => 'Descargando Episodio $number...';
+  @override
+  String get viewAll => 'Ver todo';
 }

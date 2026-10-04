@@ -17,6 +17,7 @@ import 'package:seanime_app/data/models/onlinestream_models.dart';
 import 'package:seanime_app/data/models/server_status.dart';
 import 'package:seanime_app/data/models/torrent_file_preview.dart';
 import 'package:seanime_app/data/models/torrent_models.dart';
+import 'package:seanime_app/core/storage/app_storage_paths.dart';
 import 'package:seanime_app/data/services/feed_cache_service.dart';
 
 class SeanimeRepository {
@@ -584,6 +585,32 @@ class SeanimeRepository {
           for (final item in streamCw) {
             if (item is Map<String, dynamic>) {
               addEpisode(item);
+            }
+          }
+        }
+
+        // 2b. Seanime local library lists (Current / Watching entries)
+        final localLists = (root?['lists'] ?? root?['MediaListCollection']?['lists']) as List?;
+        if (localLists != null) {
+          for (final l in localLists) {
+            if (l is Map<String, dynamic>) {
+              final status = (l['status'] as String?)?.toUpperCase() ?? (l['name'] == 'Watching' ? 'CURRENT' : '');
+              if (status == 'CURRENT' || status == 'WATCHING' || status == 'REPEATING') {
+                final entries = l['entries'] as List?;
+                if (entries != null) {
+                  for (final e in entries) {
+                    if (e is Map<String, dynamic>) {
+                      final eMap = Map<String, dynamic>.from(e);
+                      if (eMap['media'] is Map) {
+                        final m = eMap['media'] as Map;
+                        eMap['mediaId'] ??= m['id'];
+                      }
+                      eMap['status'] ??= 'CURRENT';
+                      addEpisode(eMap);
+                    }
+                  }
+                }
+              }
             }
           }
         }
@@ -1180,6 +1207,20 @@ class SeanimeRepository {
       return response.statusCode == 200;
     } catch (e) {
       debugPrint('Error triggering library scan: $e');
+      return false;
+    }
+  }
+
+  /// Deletes local files by path from the server library database and disk.
+  Future<bool> deleteLocalFiles(List<String> paths) async {
+    try {
+      final response = await _apiClient.delete(
+        ApiEndpoints.libraryLocalFiles,
+        data: {'paths': paths},
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error deleting local files: $e');
       return false;
     }
   }
@@ -2253,6 +2294,9 @@ class SeanimeRepository {
       final response = await _apiClient.post(
         ApiEndpoints.torrentSearch,
         data: payload,
+        options: Options(
+          receiveTimeout: const Duration(seconds: 45),
+        ),
       );
       if (response.statusCode == 200 && response.data != null) {
         final data = response.data;
@@ -2370,24 +2414,294 @@ class SeanimeRepository {
   }
 
   Future<bool> stopTorrentStream() async {
-    // On Android/mobile, calling /torrentstream/stop in the embedded Go server causes
-    // a mutex deadlock because desktop media players are uninitialized (nil pointer).
-    // The Go server automatically handles dropping previous excess torrents when a new stream starts.
-    if (Platform.isAndroid || Platform.isIOS) {
-      debugPrint('[Repository] Skipping stopTorrentStream on mobile to prevent embedded server deadlock');
-      return true;
-    }
+    return pauseTorrentStream();
+  }
+
+  Future<bool> pauseTorrentStream() async {
     try {
       final response = await _apiClient.post(
-        ApiEndpoints.torrentstreamStop,
+        ApiEndpoints.torrentstreamPause,
         options: Options(
-          receiveTimeout: const Duration(seconds: 15),
-          sendTimeout: const Duration(seconds: 15),
+          receiveTimeout: const Duration(seconds: 10),
+          sendTimeout: const Duration(seconds: 10),
         ),
       );
       return response.statusCode == 200;
     } catch (e) {
-      debugPrint('Error stopping torrent stream: $e');
+      debugPrint('pauseTorrentStream error: $e');
+      return false;
+    }
+  }
+
+  Future<bool> resumeTorrentStream() async {
+    try {
+      final response = await _apiClient.post(
+        ApiEndpoints.torrentstreamResume,
+        options: Options(
+          receiveTimeout: const Duration(seconds: 10),
+          sendTimeout: const Duration(seconds: 10),
+        ),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('resumeTorrentStream error: $e');
+      return false;
+    }
+  }
+
+  Future<bool> dropTorrentStream() async {
+    try {
+      final response = await _apiClient.post(
+        ApiEndpoints.torrentstreamDrop,
+        options: Options(
+          receiveTimeout: const Duration(seconds: 10),
+          sendTimeout: const Duration(seconds: 10),
+        ),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('dropTorrentStream error: $e');
+      return false;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getActiveTorrentList() async {
+    try {
+      final response = await _apiClient.get(ApiEndpoints.torrentClientList);
+      if (response.statusCode == 200 && response.data != null) {
+        final d = response.data;
+        final list = d is Map<String, dynamic> && d['data'] is List
+            ? d['data'] as List
+            : (d is List ? d : []);
+        return list.whereType<Map<String, dynamic>>().toList();
+      }
+    } catch (e) {
+      debugPrint('getActiveTorrentList error: $e');
+    }
+    return [];
+  }
+
+  Future<bool> performTorrentClientAction({
+    required String hash,
+    required String action,
+  }) async {
+    try {
+      final response = await _apiClient.post(
+        ApiEndpoints.torrentClientAction,
+        data: {
+          'hash': hash,
+          'action': action,
+        },
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('performTorrentClientAction error: $e');
+      return false;
+    }
+  }
+
+  /// Fetches raw app settings from the backend
+  Future<Map<String, dynamic>?> getServerSettings() async {
+    try {
+      final response = await _apiClient.get(ApiEndpoints.settings);
+      if (response.statusCode == 200 && response.data != null) {
+        final data = response.data;
+        if (data is Map<String, dynamic>) {
+          if (data['data'] is Map<String, dynamic>) {
+            return data['data'] as Map<String, dynamic>;
+          }
+          return data;
+        }
+      }
+    } catch (e) {
+      debugPrint('getServerSettings error: $e');
+    }
+    return null;
+  }
+
+  /// Patches a specific setting key path on the backend
+  Future<bool> patchServerSetting(String path, dynamic value) async {
+    try {
+      final response = await _apiClient.patch(
+        ApiEndpoints.settingsPath,
+        data: {
+          'path': path,
+          'value': value,
+        },
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('patchServerSetting error ($path): $e');
+      return false;
+    }
+  }
+
+  /// Ensures that Seanime's internal built-in client is set as the active torrent client
+  Future<bool> ensureTorrentClientReady() async {
+    try {
+      final settings = await getServerSettings();
+      if (settings != null) {
+        final torrentSettings = settings['torrent'] as Map<String, dynamic>?;
+        final currentClient = torrentSettings?['defaultTorrentClient'] as String?;
+        if (currentClient != 'seanime') {
+          debugPrint('ensureTorrentClientReady: switching defaultTorrentClient to "seanime" (was "$currentClient")');
+          await patchServerSetting('torrent.defaultTorrentClient', 'seanime');
+        }
+        return true;
+      }
+    } catch (e) {
+      debugPrint('ensureTorrentClientReady error: $e');
+    }
+    return false;
+  }
+
+  /// Resolves the absolute download destination directory for an anime
+  Future<String?> resolveAnimeDownloadDestination({
+    Map<String, dynamic>? media,
+    String? animeTitle,
+    int? mediaId,
+  }) async {
+    try {
+      final id = mediaId ?? (media?['id'] as int?);
+
+      // 1. If anime already exists in local library, use its existing directory
+      if (id != null && id > 0) {
+        final entry = await getAnimeLibraryEntry(id);
+        if (entry != null && entry.hasLibraryData) {
+          for (final ep in entry.episodes) {
+            if (ep.localFilePath != null && ep.localFilePath!.isNotEmpty) {
+              final parentDir = File(ep.localFilePath!).parent.path;
+              if (parentDir.isNotEmpty) {
+                return parentDir;
+              }
+            }
+          }
+        }
+      }
+
+      // 2. Get library root from server settings or fallback to Aniting default Anime folder
+      final settings = await getServerSettings();
+      final librarySettings = settings?['library'] as Map<String, dynamic>?;
+      String? libraryPath = librarySettings?['libraryPath'] as String?;
+
+      if (libraryPath == null || libraryPath.trim().isEmpty) {
+        final defaultDir = await AppStoragePaths.getAnimeDownloadsDirectory();
+        libraryPath = defaultDir.path;
+        // Auto-patch server settings with the default library path so scanner/watcher works
+        await patchServerSetting('library.libraryPath', libraryPath);
+      }
+
+      String? title = animeTitle;
+      if (title == null || title.trim().isEmpty) {
+        final titleMap = media?['title'] as Map<String, dynamic>?;
+        title = titleMap?['romaji'] as String? ??
+            titleMap?['english'] as String? ??
+            titleMap?['userPreferred'] as String? ??
+            (id != null ? 'Anime_$id' : 'Anime');
+      }
+
+      title = title.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_').trim();
+      if (title.isEmpty) title = 'Anime_${id ?? 0}';
+
+      final isWindows = Platform.isWindows || libraryPath.contains(r'\');
+      final separator = isWindows ? r'\' : '/';
+      final cleanLibPath = libraryPath.endsWith(r'\') || libraryPath.endsWith('/')
+          ? libraryPath.substring(0, libraryPath.length - 1)
+          : libraryPath;
+
+      final finalDestination = '$cleanLibPath$separator$title';
+      final destDir = Directory(finalDestination);
+      if (!await destDir.exists()) {
+        await destDir.create(recursive: true);
+      }
+      return finalDestination;
+    } catch (e) {
+      debugPrint('resolveAnimeDownloadDestination error: $e');
+    }
+    return null;
+  }
+
+  Future<bool> downloadTorrentToClient({
+    required TorrentItem torrent,
+    String? destination,
+    Map<String, dynamic>? media,
+    String? animeTitle,
+    int? mediaId,
+  }) async {
+    try {
+      // 1. Ensure built-in torrent client is configured
+      await ensureTorrentClientReady();
+
+      // 2. Resolve destination if empty
+      String? resolvedDest = destination;
+      if (resolvedDest == null || resolvedDest.isEmpty) {
+        resolvedDest = await resolveAnimeDownloadDestination(
+          media: media,
+          animeTitle: animeTitle,
+          mediaId: mediaId,
+        );
+      }
+
+      if (resolvedDest == null || resolvedDest.isEmpty) {
+        debugPrint('downloadTorrentToClient: could not resolve destination');
+        return false;
+      }
+
+      // Ensure a valid BaseAnime payload is ALWAYS sent to the backend.
+      // This prevents the Go backend from crashing with a nil pointer dereference on b.Media.ID.
+      final resolvedId = (media?['id'] as int?) ?? mediaId ?? 0;
+      final titleString = animeTitle ??
+          (media?['title'] is Map
+              ? ((media!['title'] as Map)['userPreferred'] ??
+                  (media['title'] as Map)['romaji'] ??
+                  (media['title'] as Map)['english'])
+              : media?['title']?.toString()) ??
+          'Anime';
+
+      final Map<String, dynamic> mediaPayload;
+      if (media != null && media.isNotEmpty) {
+        mediaPayload = Map<String, dynamic>.from(media);
+        if (mediaPayload['id'] == null || mediaPayload['id'] == 0) {
+          mediaPayload['id'] = resolvedId;
+        }
+        if (mediaPayload['title'] == null || mediaPayload['title'] is! Map) {
+          mediaPayload['title'] = {
+            'romaji': titleString,
+            'english': titleString,
+            'userPreferred': titleString,
+          };
+        }
+      } else {
+        mediaPayload = {
+          'id': resolvedId,
+          'idMal': resolvedId,
+          'isAdult': false,
+          'status': 'FINISHED',
+          'format': 'TV',
+          'episodes': 12,
+          'synonyms': <String>[],
+          'genres': <String>[],
+          'title': {
+            'romaji': titleString,
+            'english': titleString,
+            'userPreferred': titleString,
+          },
+          'startDate': {'year': 2024, 'month': 1, 'day': 1},
+        };
+      }
+
+      final response = await _apiClient.post(
+        ApiEndpoints.torrentClientDownload,
+        data: {
+          'torrents': [torrent.toJson()],
+          'destination': resolvedDest,
+          'smartSelect': {'enabled': false, 'missingEpisodeNumbers': <int>[]},
+          'media': mediaPayload,
+        },
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('downloadTorrentToClient error: $e');
       return false;
     }
   }
@@ -2520,9 +2834,16 @@ class SeanimeRepository {
           'sort': ['TRENDING_DESC'],
         },
       );
-      return _parseMangaMediaPage(response.data);
+      final list = _parseMangaMediaPage(response.data);
+      if (list.isNotEmpty) return list;
     } catch (e) {
-      debugPrint('Error fetching trending manga: $e');
+      debugPrint('Error fetching trending manga via server: $e');
+    }
+    // Fallback directly to AniList GraphQL if server is offline, starting, or errored
+    try {
+      return await discoverManga(sort: 'TRENDING_DESC', page: page, perPage: perPage);
+    } catch (e) {
+      debugPrint('Error fetching trending manga fallback: $e');
       return [];
     }
   }
@@ -2537,9 +2858,16 @@ class SeanimeRepository {
           'sort': ['POPULARITY_DESC'],
         },
       );
-      return _parseMangaMediaPage(response.data);
+      final list = _parseMangaMediaPage(response.data);
+      if (list.isNotEmpty) return list;
     } catch (e) {
-      debugPrint('Error fetching popular manga: $e');
+      debugPrint('Error fetching popular manga via server: $e');
+    }
+    // Fallback directly to AniList GraphQL if server is offline, starting, or errored
+    try {
+      return await discoverManga(sort: 'POPULARITY_DESC', page: page, perPage: perPage);
+    } catch (e) {
+      debugPrint('Error fetching popular manga fallback: $e');
       return [];
     }
   }
@@ -2554,9 +2882,16 @@ class SeanimeRepository {
           'search': query,
         },
       );
-      return _parseMangaMediaPage(response.data);
+      final list = _parseMangaMediaPage(response.data);
+      if (list.isNotEmpty) return list;
     } catch (e) {
-      debugPrint('Error searching manga: $e');
+      debugPrint('Error searching manga via server: $e');
+    }
+    // Fallback directly to AniList GraphQL
+    try {
+      return await discoverManga(search: query, page: page, perPage: perPage);
+    } catch (e) {
+      debugPrint('Error searching manga fallback: $e');
       return [];
     }
   }
@@ -2803,6 +3138,26 @@ class SeanimeRepository {
       return response.statusCode == 200;
     } catch (e) {
       debugPrint('Error stopping manga download queue: $e');
+      return false;
+    }
+  }
+
+  Future<bool> clearMangaDownloadQueue() async {
+    try {
+      final response = await _apiClient.delete(ApiEndpoints.mangaDownloadQueue);
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error clearing manga download queue: $e');
+      return false;
+    }
+  }
+
+  Future<bool> resetErroredMangaQueue() async {
+    try {
+      final response = await _apiClient.post(ApiEndpoints.mangaDownloadQueueResetErrored);
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error resetting errored manga queue: $e');
       return false;
     }
   }

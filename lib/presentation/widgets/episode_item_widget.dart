@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
+import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/theme/app_theme_colors.dart';
 
 /// Shows the full details modal when an episode is long-pressed
@@ -18,6 +19,8 @@ void showEpisodeDetailModal({
   String? rating,
   String? badgeText,
   VoidCallback? onPlay,
+  VoidCallback? onDownload,
+  VoidCallback? onDelete,
 }) {
   final theme = Theme.of(context);
 
@@ -29,6 +32,7 @@ void showEpisodeDetailModal({
       return Consumer(
         builder: (ctx, ref, _) {
           final l10n = ref.watch(translationsProvider);
+          final iconPack = ref.watch(iconPackProvider);
           final modalRadius = context.themeColors.borderRadius;
           return Container(
             decoration: BoxDecoration(
@@ -284,7 +288,7 @@ void showEpisodeDetailModal({
                               Navigator.pop(ctx);
                               onPlay();
                             },
-                            icon: const Icon(Icons.play_arrow_rounded, size: 22),
+                            icon: Icon(AppIcons.play(iconPack), size: 22),
                             label: Text(l10n.play),
                             style: FilledButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 12),
@@ -292,11 +296,42 @@ void showEpisodeDetailModal({
                             ),
                           ),
                         ),
-                      if (onPlay != null) const SizedBox(width: 10),
+                      if (onDownload != null) ...[
+                        if (onPlay != null) const SizedBox(width: 8),
+                        IconButton.filledTonal(
+                          tooltip: l10n.downloadWithTorrentClient,
+                          onPressed: () {
+                            Navigator.pop(ctx);
+                            onDownload();
+                          },
+                          icon: Icon(AppIcons.download(iconPack), size: 20),
+                          style: IconButton.styleFrom(
+                            padding: const EdgeInsets.all(12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular((modalRadius * 0.75).clamp(0.0, 16.0))),
+                          ),
+                        ),
+                      ],
+                      if (onDelete != null) ...[
+                        const SizedBox(width: 8),
+                        IconButton.filledTonal(
+                          tooltip: l10n.deleteDownload,
+                          onPressed: () {
+                            Navigator.pop(ctx);
+                            onDelete();
+                          },
+                          icon: Icon(AppIcons.delete(iconPack), size: 20, color: theme.colorScheme.error),
+                          style: IconButton.styleFrom(
+                            backgroundColor: theme.colorScheme.errorContainer.withValues(alpha: 0.7),
+                            padding: const EdgeInsets.all(12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular((modalRadius * 0.75).clamp(0.0, 16.0))),
+                          ),
+                        ),
+                      ],
+                      const SizedBox(width: 8),
                       OutlinedButton(
                         onPressed: () => Navigator.pop(ctx),
                         style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 18),
+                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular((modalRadius * 0.75).clamp(0.0, 16.0))),
                         ),
                         child: Text(l10n.close),
@@ -332,8 +367,11 @@ class EpisodeListItem extends ConsumerWidget {
   final bool isPlaying;
   final bool isLoading;
   final bool isWatched;
+  final bool isDownloading;
   final VoidCallback? onTap;
   final VoidCallback? onPlay;
+  final VoidCallback? onDownload;
+  final VoidCallback? onDelete;
 
   const EpisodeListItem({
     super.key,
@@ -350,8 +388,11 @@ class EpisodeListItem extends ConsumerWidget {
     this.isPlaying = false,
     this.isLoading = false,
     this.isWatched = false,
+    this.isDownloading = false,
     this.onTap,
     this.onPlay,
+    this.onDownload,
+    this.onDelete,
   });
 
   @override
@@ -379,6 +420,8 @@ class EpisodeListItem extends ConsumerWidget {
             rating: rating,
             badgeText: badgeText,
             onPlay: onPlay ?? onTap,
+            onDownload: onDownload,
+            onDelete: onDelete,
           );
         },
         child: Padding(
@@ -569,7 +612,7 @@ class EpisodeListItem extends ConsumerWidget {
                 ),
               ),
 
-              // Loading indicator if starting playback
+              // Loading indicator if starting playback or downloading
               if (isLoading)
                 const Padding(
                   padding: EdgeInsets.only(left: 8, right: 4, top: 12),
@@ -577,6 +620,21 @@ class EpisodeListItem extends ConsumerWidget {
                     width: 20,
                     height: 20,
                     child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                )
+              else if (isDownloading)
+                Padding(
+                  padding: const EdgeInsets.only(left: 8, right: 4, top: 12),
+                  child: Tooltip(
+                    message: l10n.downloadStarted,
+                    child: SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation(theme.colorScheme.primary),
+                      ),
+                    ),
                   ),
                 ),
             ],
@@ -603,8 +661,11 @@ class EpisodeGridItem extends StatelessWidget {
   final bool isPlaying;
   final bool isLoading;
   final bool isWatched;
+  final bool isDownloading;
   final VoidCallback? onTap;
   final VoidCallback? onPlay;
+  final VoidCallback? onDownload;
+  final VoidCallback? onDelete;
 
   const EpisodeGridItem({
     super.key,
@@ -621,8 +682,11 @@ class EpisodeGridItem extends StatelessWidget {
     this.isPlaying = false,
     this.isLoading = false,
     this.isWatched = false,
+    this.isDownloading = false,
     this.onTap,
     this.onPlay,
+    this.onDownload,
+    this.onDelete,
   });
 
   @override
@@ -637,7 +701,7 @@ class EpisodeGridItem extends StatelessWidget {
       borderRadius: BorderRadius.circular(gridRadius),
       child: InkWell(
         borderRadius: BorderRadius.circular(gridRadius),
-        onTap: isLoading ? null : onTap,
+        onTap: (isLoading || isDownloading) ? null : onTap,
         onLongPress: () {
           showEpisodeDetailModal(
             context: context,
@@ -652,6 +716,8 @@ class EpisodeGridItem extends StatelessWidget {
             rating: rating,
             badgeText: badgeText,
             onPlay: onPlay ?? onTap,
+            onDownload: onDownload,
+            onDelete: onDelete,
           );
         },
         child: Container(
@@ -671,11 +737,16 @@ class EpisodeGridItem extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              if (isLoading)
-                const SizedBox(
+              if (isLoading || isDownloading)
+                SizedBox(
                   width: 20,
                   height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: isDownloading
+                        ? AlwaysStoppedAnimation(theme.colorScheme.primary)
+                        : null,
+                  ),
                 )
               else if (isWatched && !isPlaying)
                 Row(

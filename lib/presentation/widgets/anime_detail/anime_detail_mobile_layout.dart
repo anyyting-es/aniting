@@ -1050,6 +1050,19 @@ class _AnimeDetailMobileLayoutState
                             ),
                             const SizedBox(width: 2),
                             IconButton(
+                              tooltip: l10n.downloadWithTorrentClient,
+                              icon: const Icon(Icons.download_rounded, size: 22),
+                              onPressed: () {
+                                final nextEp = (progress + 1).clamp(1, totalEps ?? (progress + 1));
+                                final defaultEpTitle = l10n.episodeNumber(nextEp);
+                                widget.onOpenTorrentSelector(
+                                  episodeNumber: nextEp,
+                                  episodeTitle: defaultEpTitle,
+                                );
+                              },
+                            ),
+                            const SizedBox(width: 2),
+                            IconButton(
                               tooltip: l10n.editInAnilist,
                               icon: const Icon(Icons.edit_outlined, size: 22),
                               onPressed: () => widget.onOpenEditEntryModal(title),
@@ -1114,6 +1127,12 @@ class _AnimeDetailMobileLayoutState
                             onDubbedChanged: (dub) {
                               if (mounted) setState(() => _isDubbed = dub);
                             },
+                            onDownloadEpisode: (epNum, epTitle) {
+                              widget.onOpenTorrentSelector(
+                                episodeNumber: epNum,
+                                episodeTitle: epTitle,
+                              );
+                            },
                           )
                         else if (torrentEnabled &&
                             effectiveTab == AnimeDetailTab.torrent)
@@ -1150,6 +1169,19 @@ class _AnimeDetailMobileLayoutState
                                 episodeTitle: ep.title,
                               );
                             },
+                            onDownloadEpisode: (ep) {
+                              widget.onOpenTorrentSelector(
+                                episodeNumber: ep.episodeNumber,
+                                episodeTitle: ep.displayTitle,
+                                aniDBEpisode: ep.episode,
+                              );
+                            },
+                            onDownloadFallbackEpisode: (ep) {
+                              widget.onOpenTorrentSelector(
+                                episodeNumber: ep.episodeNumber,
+                                episodeTitle: ep.title,
+                              );
+                            },
                           )
                         else if (onlineEnabled)
                           OnlineStreamView(
@@ -1160,6 +1192,12 @@ class _AnimeDetailMobileLayoutState
                             controller: _onlineStreamController,
                             selectedProvider: _selectedProvider,
                             isDubbed: _isDubbed,
+                            onDownloadEpisode: (epNum, epTitle) {
+                              widget.onOpenTorrentSelector(
+                                episodeNumber: epNum,
+                                episodeTitle: epTitle,
+                              );
+                            },
                           )
                         else if (torrentEnabled)
                           AniZipEpisodeListView(
@@ -1190,6 +1228,19 @@ class _AnimeDetailMobileLayoutState
                               );
                             },
                             onPlayFallbackEpisode: (ep) {
+                              widget.onOpenTorrentSelector(
+                                episodeNumber: ep.episodeNumber,
+                                episodeTitle: ep.title,
+                              );
+                            },
+                            onDownloadEpisode: (ep) {
+                              widget.onOpenTorrentSelector(
+                                episodeNumber: ep.episodeNumber,
+                                episodeTitle: ep.displayTitle,
+                                aniDBEpisode: ep.episode,
+                              );
+                            },
+                            onDownloadFallbackEpisode: (ep) {
                               widget.onOpenTorrentSelector(
                                 episodeNumber: ep.episodeNumber,
                                 episodeTitle: ep.title,

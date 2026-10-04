@@ -5,6 +5,8 @@ class DesktopEpisodeItemData {
   final String? image;
   final String? aniDBEpisode;
   final bool isWatched;
+  final bool isDownloaded;
+  final String? localFilePath;
 
   const DesktopEpisodeItemData({
     required this.number,
@@ -13,5 +15,7 @@ class DesktopEpisodeItemData {
     this.image,
     this.aniDBEpisode,
     this.isWatched = false,
+    this.isDownloaded = false,
+    this.localFilePath,
   });
 }

@@ -5,6 +5,7 @@ import 'package:media_kit/media_kit.dart' as mk;
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/player/exo_player_service.dart';
 import 'package:seanime_app/core/player/mpv_player_service.dart';
+import 'package:seanime_app/core/preferences/subtitle_style_preferences_provider.dart';
 import 'package:seanime_app/presentation/widgets/player/models/player_types.dart';
 import 'package:seanime_app/presentation/widgets/player/services/player_shader_service.dart';
 
@@ -14,6 +15,7 @@ class PlayerPlaybackCoordinator {
   bool isUsingExoPlayer;
   ExoPlayerService? exoService;
   MpvPlayerService? mpvService;
+  SubtitleStylePrefs? currentSubtitleStyle;
 
   final PlayerShaderService shaderService;
   final AppTranslations l10n;
@@ -306,6 +308,9 @@ class PlayerPlaybackCoordinator {
     exo.initialize(top: initialSurfaceTop, height: initialSurfaceHeight).then((_) {
       if (exoService != exo) return;
       exo.setFitMode(fitMode.name);
+      if (currentSubtitleStyle != null) {
+        applySubtitleStyle(currentSubtitleStyle!);
+      }
       if (videoUrl.isNotEmpty) {
         exo.open(
           videoUrl,
@@ -332,6 +337,9 @@ class PlayerPlaybackCoordinator {
     _cancelMpvSubs();
     final mpv = MpvPlayerService();
     mpvService = mpv;
+    if (currentSubtitleStyle != null) {
+      mpv.applySubtitleStyle(currentSubtitleStyle!);
+    }
 
     _mpvPosSub = mpv.player.stream.position.listen((pos) {
       _currentPos = pos;
@@ -575,6 +583,26 @@ class PlayerPlaybackCoordinator {
       exoService?.setSubtitleDelay(ms);
     } else {
       mpvService?.setProperty('sub-delay', '${ms / 1000.0}');
+    }
+  }
+
+  void applySubtitleStyle(SubtitleStylePrefs prefs) {
+    currentSubtitleStyle = prefs;
+    if (isUsingExoPlayer) {
+      exoService?.setSubtitleStyle(
+        fontFamily: prefs.fontFamily,
+        fontSizeMultiplier: prefs.fontSizeMultiplier,
+        bold: prefs.bold,
+        italic: prefs.italic,
+        textColor: prefs.textColor,
+        backgroundColor: prefs.backgroundColor,
+        borderStyle: prefs.borderStyle.name,
+        borderColor: prefs.borderColor,
+        borderSize: prefs.borderSize,
+        overrideAss: prefs.overrideAss,
+      );
+    } else {
+      mpvService?.applySubtitleStyle(prefs);
     }
   }
 

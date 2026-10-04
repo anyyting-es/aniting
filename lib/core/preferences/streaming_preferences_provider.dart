@@ -4,21 +4,26 @@ import 'package:shared_preferences/shared_preferences.dart';
 class StreamingPreferences {
   final bool torrentStreamingEnabled;
   final bool onlineStreamingEnabled;
+  final bool pauseTorrentStreamOnExit;
 
   const StreamingPreferences({
     this.torrentStreamingEnabled = true,
     this.onlineStreamingEnabled = true,
+    this.pauseTorrentStreamOnExit = true,
   });
 
   StreamingPreferences copyWith({
     bool? torrentStreamingEnabled,
     bool? onlineStreamingEnabled,
+    bool? pauseTorrentStreamOnExit,
   }) {
     return StreamingPreferences(
       torrentStreamingEnabled:
           torrentStreamingEnabled ?? this.torrentStreamingEnabled,
       onlineStreamingEnabled:
           onlineStreamingEnabled ?? this.onlineStreamingEnabled,
+      pauseTorrentStreamOnExit:
+          pauseTorrentStreamOnExit ?? this.pauseTorrentStreamOnExit,
     );
   }
 }
@@ -26,6 +31,7 @@ class StreamingPreferences {
 class StreamingPreferencesNotifier extends Notifier<StreamingPreferences> {
   static const _prefTorrentKey = 'pref_torrent_streaming_enabled';
   static const _prefOnlineKey = 'pref_online_streaming_enabled';
+  static const _prefPauseTorrentKey = 'pref_pause_torrent_on_exit';
 
   @override
   StreamingPreferences build() {
@@ -38,9 +44,11 @@ class StreamingPreferencesNotifier extends Notifier<StreamingPreferences> {
       final prefs = await SharedPreferences.getInstance();
       final torrent = prefs.getBool(_prefTorrentKey) ?? true;
       final online = prefs.getBool(_prefOnlineKey) ?? true;
+      final pauseTorrent = prefs.getBool(_prefPauseTorrentKey) ?? true;
       state = StreamingPreferences(
         torrentStreamingEnabled: torrent,
         onlineStreamingEnabled: online,
+        pauseTorrentStreamOnExit: pauseTorrent,
       );
     } catch (_) {}
   }
@@ -58,6 +66,14 @@ class StreamingPreferencesNotifier extends Notifier<StreamingPreferences> {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool(_prefOnlineKey, enabled);
+    } catch (_) {}
+  }
+
+  Future<void> setPauseTorrentStreamOnExit(bool enabled) async {
+    state = state.copyWith(pauseTorrentStreamOnExit: enabled);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_prefPauseTorrentKey, enabled);
     } catch (_) {}
   }
 }

@@ -16,14 +16,21 @@ import android.provider.Settings
 import java.io.File
 
 object SeanimeServerRuntime {
-    const val host = "127.0.0.1"
+    const val defaultHost = "127.0.0.1"
     const val defaultPort = 43211
     const val actionStart = "com.anyyting.aniting.action.START"
     const val actionStop = "com.anyyting.aniting.action.STOP"
     const val actionOpen = "com.anyyting.aniting.action.OPEN"
     const val extraPort = "port"
+    const val extraHost = "host"
     const val notificationId = 43211
     const val notificationChannelId = "aniting-server"
+
+    // Mutable host for LAN sharing mode (0.0.0.0)
+    @Volatile
+    var currentHost: String = defaultHost
+
+    val host: String get() = currentHost
 
     private const val prefsName = "aniting-server"
     private const val keyState = "state"
@@ -36,7 +43,7 @@ object SeanimeServerRuntime {
 version = ''
 
 [server]
-host = '$host'
+host = '$defaultHost'
 port = $defaultPort
 offline = false
 useBinaryPath = false
@@ -72,9 +79,12 @@ dir = '${'$'}SEANIME_DATA_DIR/extensions'
 builtintorrentclient = true
 """.trimIndent() + "\n"
 
-    fun start(context: Context, port: Int = defaultPort): Map<String, Any?> {
+    fun start(context: Context, port: Int = defaultPort, host: String = defaultHost): Map<String, Any?> {
         val appContext = context.applicationContext
+        currentHost = host
         ensureConfigFile(appContext)
+        // Patch the config.toml to use the requested host binding
+        patchConfigHost(appContext, host)
         setState(appContext, "starting", null)
         prefs(appContext).edit()
             .putInt(keyPort, port)
@@ -84,6 +94,7 @@ builtintorrentclient = true
         val intent = Intent(appContext, SeanimeServerService::class.java)
             .setAction(actionStart)
             .putExtra(extraPort, port)
+            .putExtra(extraHost, host)
 
         runCatching {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -96,6 +107,22 @@ builtintorrentclient = true
         }
 
         return status(appContext)
+    }
+
+    /** Patches the host = '...' line in config.toml to the requested host binding. */
+    private fun patchConfigHost(context: Context, host: String) {
+        val cfg = configFile(context)
+        if (!cfg.exists()) return
+        try {
+            val content = cfg.readText()
+            val patched = content.replace(
+                Regex("""host\s*=\s*'[^']*'"""),
+                "host = '$host'"
+            )
+            if (patched != content) {
+                cfg.writeText(patched)
+            }
+        } catch (_: Exception) { /* best-effort */ }
     }
 
     fun stop(context: Context): Map<String, Any?> {
@@ -246,13 +273,13 @@ builtintorrentclient = true
             return File(customPath)
         }
 
-        // Default to Seanime directory on external storage if available, else internal files dir
+        // Dedicated Aniting directory on external storage if available, else internal files dir
         return if (isManageStorageGranted()) {
-            val extDir = File(Environment.getExternalStorageDirectory(), "Seanime")
+            val extDir = File(Environment.getExternalStorageDirectory(), "Aniting")
             if (!extDir.exists()) extDir.mkdirs()
             extDir
         } else {
-            val dir = File(appContext.filesDir, "seanime")
+            val dir = File(appContext.filesDir, "aniting")
             if (!dir.exists()) dir.mkdirs()
             dir
         }

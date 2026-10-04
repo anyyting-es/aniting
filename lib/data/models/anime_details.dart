@@ -432,4 +432,44 @@ class AnimeDetails {
       rawMedia: rawMedia,
     );
   }
+
+  /// Exports this [AnimeDetails] into an AniList `BaseAnime` compatible JSON map.
+  /// Guarantees that the Go backend unmarshaler will find a valid `id`, `title`, etc.
+  Map<String, dynamic> toBaseAnimeMap() {
+    final base = <String, dynamic>{
+      'id': id,
+      'idMal': id,
+      'isAdult': isAdult,
+      'status': status ?? 'FINISHED',
+      'format': format ?? 'TV',
+      'episodes': totalEpisodes ?? 12,
+      'synonyms': <String>[],
+      'genres': genres,
+      'title': {
+        'romaji': romajiTitle ?? title,
+        'english': englishTitle ?? title,
+        'userPreferred': title,
+        'native': nativeTitle ?? title,
+      },
+      'coverImage': {
+        'large': coverImage ?? '',
+        'medium': coverImage ?? '',
+        'color': coverColor ?? '#3b82f6',
+      },
+      'startDate': {'year': seasonYear ?? 2024, 'month': 1, 'day': 1},
+    };
+    if (rawMedia != null && rawMedia!.isNotEmpty) {
+      base.addAll(rawMedia!);
+      base['id'] = id > 0 ? id : (rawMedia!['id'] as int? ?? 0);
+      if (base['title'] == null || base['title'] is! Map) {
+        base['title'] = {
+          'romaji': romajiTitle ?? title,
+          'english': englishTitle ?? title,
+          'userPreferred': title,
+          'native': nativeTitle ?? title,
+        };
+      }
+    }
+    return base;
+  }
 }

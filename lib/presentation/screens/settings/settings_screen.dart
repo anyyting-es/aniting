@@ -5,6 +5,8 @@ import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/preferences/settings_sidebar_width_provider.dart';
 import 'package:seanime_app/core/theme/custom_route_transitions.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
+import 'package:seanime_app/presentation/screens/download_manager_screen.dart';
+import 'package:seanime_app/presentation/screens/downloads_screen.dart';
 import 'package:seanime_app/presentation/screens/extensions_marketplace_screen.dart';
 import 'package:seanime_app/presentation/screens/settings/subpages/about_settings_screen.dart';
 import 'package:seanime_app/presentation/screens/settings/subpages/manga_settings_screen.dart';
@@ -24,6 +26,8 @@ enum SettingsCategory {
   player,
   manga,
   streaming,
+  downloadManager,
+  downloads,
   server,
   about,
 }
@@ -63,6 +67,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         return const MangaSettingsScreen(isEmbedded: true);
       case SettingsCategory.streaming:
         return const StreamingSettingsScreen(isEmbedded: true);
+      case SettingsCategory.downloadManager:
+        return const DownloadManagerScreen(isEmbedded: true);
+      case SettingsCategory.downloads:
+        return const DownloadsScreen(isEmbedded: true);
       case SettingsCategory.server:
         return const ServerSettingsScreen(isEmbedded: true);
       case SettingsCategory.about:
@@ -93,6 +101,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           break;
         case SettingsCategory.streaming:
           page = const StreamingSettingsScreen();
+          break;
+        case SettingsCategory.downloadManager:
+          page = const DownloadManagerScreen();
+          break;
+        case SettingsCategory.downloads:
+          page = const DownloadsScreen();
           break;
         case SettingsCategory.server:
           page = const ServerSettingsScreen();
@@ -245,6 +259,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               title: l10n.streamingSources,
               isSelected: isWideScreen && _selectedCategory == SettingsCategory.streaming,
               onTap: () => _onSelectCategory(SettingsCategory.streaming, isWideScreen),
+            ),
+            SettingsTile(
+              icon: Icons.manage_history_rounded,
+              title: l10n.downloadManager,
+              isSelected: isWideScreen && _selectedCategory == SettingsCategory.downloadManager,
+              onTap: () => _onSelectCategory(SettingsCategory.downloadManager, isWideScreen),
+            ),
+            SettingsTile(
+              icon: AppIcons.downloadOffline(iconPack),
+              title: l10n.downloads,
+              isSelected: isWideScreen && _selectedCategory == SettingsCategory.downloads,
+              onTap: () => _onSelectCategory(SettingsCategory.downloads, isWideScreen),
             ),
 
             const SizedBox(height: 20),

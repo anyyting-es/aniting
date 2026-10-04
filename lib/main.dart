@@ -7,6 +7,7 @@ import 'package:media_kit/media_kit.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
+import 'package:seanime_app/core/preferences/desktop_nav_style_provider.dart';
 import 'package:seanime_app/core/preferences/desktop_scrollbar_provider.dart';
 import 'package:seanime_app/core/preferences/onboarding_provider.dart';
 import 'package:seanime_app/core/preferences/playback_progress_preferences_provider.dart';
@@ -21,6 +22,7 @@ import 'package:seanime_app/core/theme/theme_provider.dart';
 import 'package:seanime_app/presentation/screens/main_shell.dart';
 import 'package:seanime_app/presentation/screens/welcome_screen.dart';
 import 'package:seanime_app/presentation/widgets/desktop_title_bar.dart';
+import 'package:seanime_app/data/services/explore_carousel_service.dart';
 import 'package:seanime_app/data/services/feed_cache_service.dart';
 import 'package:seanime_app/data/services/offline_library_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -90,6 +92,8 @@ void main() async {
     OnboardingNotifier.setCachedPrefs(prefs);
     AnimeSectionEnabledNotifier.setCachedPrefs(prefs);
     MangaSectionEnabledNotifier.setCachedPrefs(prefs);
+    ExploreCarouselNotifier.setCachedPrefs(prefs);
+    DesktopNavStyleNotifier.setCachedPrefs(prefs);
   } catch (_) {}
   runApp(
     const ProviderScope(

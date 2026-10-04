@@ -134,10 +134,10 @@ class _AnimeCardState extends ConsumerState<AnimeCard> {
                                 ? CachedNetworkImage(
                                     imageUrl: widget.entry.coverImage!,
                                     fit: BoxFit.cover,
-                                    memCacheWidth: isCompact ? 350 : 440,
-                                    memCacheHeight: isCompact ? 500 : 640,
-                                    maxWidthDiskCache: 600,
-                                    maxHeightDiskCache: 850,
+                                    memCacheWidth: isCompact ? 220 : 280,
+                                    memCacheHeight: isCompact ? 310 : 390,
+                                    maxWidthDiskCache: 350,
+                                    maxHeightDiskCache: 500,
                                     placeholder: (context, url) => ColoredBox(
                                       color: theme.colorScheme.surfaceContainerHighest,
                                     ),

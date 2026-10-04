@@ -112,6 +112,8 @@ class AppIcons {
   static IconData trash([AppIconPack? pack]) =>
       _isLucide(pack) ? LucideIcons.trash2 : Icons.delete_outline_rounded;
 
+  static IconData delete([AppIconPack? pack]) => trash(pack);
+
   static IconData folder([AppIconPack? pack]) =>
       _isLucide(pack) ? LucideIcons.folder : Icons.folder_outlined;
 
@@ -138,6 +140,12 @@ class AppIcons {
 
   static IconData sliders([AppIconPack? pack]) =>
       _isLucide(pack) ? LucideIcons.sliders : Icons.tune_rounded;
+
+  static IconData type([AppIconPack? pack]) =>
+      _isLucide(pack) ? LucideIcons.type : Icons.text_fields_rounded;
+
+  static IconData fileText([AppIconPack? pack]) =>
+      _isLucide(pack) ? LucideIcons.fileText : Icons.description_rounded;
 
   static IconData tv([AppIconPack? pack]) =>
       _isLucide(pack) ? LucideIcons.tv : Icons.tv_rounded;
@@ -399,6 +407,24 @@ class AppIcons {
 
   static IconData video([AppIconPack? pack]) =>
       _isLucide(pack) ? LucideIcons.video : Icons.smart_display_rounded;
+
+  static IconData downloading([AppIconPack? pack]) =>
+      _isLucide(pack) ? LucideIcons.download : Icons.downloading_rounded;
+
+  static IconData deleteSweep([AppIconPack? pack]) =>
+      _isLucide(pack) ? LucideIcons.trash2 : Icons.delete_sweep_rounded;
+
+  static IconData cloudDone([AppIconPack? pack]) =>
+      _isLucide(pack) ? LucideIcons.cloud : Icons.cloud_done_outlined;
+
+  static IconData pauseCircle([AppIconPack? pack]) =>
+      _isLucide(pack) ? LucideIcons.pauseCircle : Icons.pause_circle_outline_rounded;
+
+  static IconData folderOpen([AppIconPack? pack]) =>
+      _isLucide(pack) ? LucideIcons.folderOpen : Icons.folder_open_rounded;
+
+  static IconData manageHistory([AppIconPack? pack]) =>
+      _isLucide(pack) ? LucideIcons.history : Icons.manage_history_rounded;
 
   static IconData voice([AppIconPack? pack]) =>
       _isLucide(pack) ? LucideIcons.mic : Icons.record_voice_over_rounded;

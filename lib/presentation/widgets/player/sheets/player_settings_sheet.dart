@@ -12,6 +12,8 @@ import 'package:seanime_app/presentation/widgets/player/sheets/chapters_view.dar
 import 'package:seanime_app/presentation/widgets/player/sheets/playback_speed_view.dart';
 import 'package:seanime_app/presentation/widgets/player/sheets/shaders_view.dart';
 import 'package:seanime_app/presentation/widgets/player/sheets/source_info_view.dart';
+import 'package:seanime_app/core/preferences/subtitle_style_preferences_provider.dart';
+import 'package:seanime_app/presentation/widgets/player/sheets/subtitle_style_view.dart';
 import 'package:seanime_app/presentation/widgets/player/sheets/subtitle_tracks_view.dart';
 import 'package:seanime_app/presentation/widgets/player/sheets/sync_offset_view.dart';
 import 'package:seanime_app/presentation/widgets/player/sheets/torrent_metrics_view.dart';
@@ -22,6 +24,7 @@ enum _SettingsSection {
   chapters,
   audioTracks,
   subtitleTracks,
+  subtitleStyle,
   subtitleSync,
   audioSync,
   speed,
@@ -335,6 +338,8 @@ class _PlayerSettingsSheetState extends ConsumerState<PlayerSettingsSheet> {
         return l10n.audioTracks;
       case _SettingsSection.subtitleTracks:
         return l10n.subtitleTracks;
+      case _SettingsSection.subtitleStyle:
+        return l10n.subtitleStyle;
       case _SettingsSection.subtitleSync:
         return l10n.subtitleSync;
       case _SettingsSection.audioSync:
@@ -500,6 +505,16 @@ class _PlayerSettingsSheetState extends ConsumerState<PlayerSettingsSheet> {
               value: _getActiveSubtitleTitle(l10n),
               onTap: () =>
                   setState(() => _currentSection = _SettingsSection.subtitleTracks),
+            ),
+            const Divider(color: Colors.white10, height: 1),
+
+            // 3.1 Subtitle Style
+            _buildMenuItem(
+              icon: AppIcons.palette(iconPack),
+              title: l10n.subtitleStyle,
+              value: '${ref.watch(subtitleStylePreferencesProvider).fontFamily} • ${(ref.watch(subtitleStylePreferencesProvider).fontSizeMultiplier * 100).round()}%',
+              onTap: () =>
+                  setState(() => _currentSection = _SettingsSection.subtitleStyle),
             ),
             const Divider(color: Colors.white10, height: 1),
 
@@ -930,6 +945,7 @@ class _PlayerSettingsSheetState extends ConsumerState<PlayerSettingsSheet> {
             widget.onSubtitleTrackSelected(track);
           },
         ),
+        _SettingsSection.subtitleStyle => const SubtitleStyleView(),
         _SettingsSection.subtitleSync => SyncOffsetView(
           title: l10n.subtitleSyncTitle,
           description: l10n.subtitleSyncDesc,

@@ -322,8 +322,12 @@ func (h *Handler) HandleAnilistListAnime(c echo.Context) error {
 		return h.RespondWithError(c, err)
 	}
 
-	if p.Page == nil || p.PerPage == nil {
+	if p.Page == nil {
+		p.Page = new(int)
 		*p.Page = 1
+	}
+	if p.PerPage == nil {
+		p.PerPage = new(int)
 		*p.PerPage = 20
 	}
 

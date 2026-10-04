@@ -1,8 +1,12 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:seanime_app/core/constants/app_constants.dart';
 import 'package:seanime_app/core/api/api_client.dart';
 import 'package:seanime_app/core/server/server_manager.dart';
+import 'package:seanime_app/core/server/lan_discovery_service.dart';
+import 'package:seanime_app/core/preferences/lan_sharing_provider.dart';
 import 'package:seanime_app/core/preferences/download_preferences_provider.dart';
 import 'package:seanime_app/data/models/anime_entry.dart';
 import 'package:seanime_app/data/models/anizip_data.dart';
@@ -34,6 +38,21 @@ final webSocketServiceProvider = Provider<WebSocketService>((ref) {
   final ws = WebSocketService();
   ref.onDispose(() => ws.dispose());
   return ws;
+});
+
+/// Servicio singleton para descubrir y anunciar servidores en red local vía UDP broadcast.
+final lanDiscoveryServiceProvider = Provider<LanDiscoveryService>((ref) {
+  final service = LanDiscoveryService();
+  ref.onDispose(() => service.dispose());
+  return service;
+});
+
+/// Stream de servidores Seanime/Aniting descubiertos en la misma red Wi-Fi.
+final discoveredServersProvider = StreamProvider.autoDispose<List<DiscoveredServer>>((ref) {
+  final service = ref.watch(lanDiscoveryServiceProvider);
+  service.startListening();
+  ref.onDispose(() => service.stopListening());
+  return service.serversStream;
 });
 
 class ServerStateModel {
@@ -77,6 +96,32 @@ class ServerNotifier extends Notifier<ServerStateModel> {
     final cachedStatus = FeedCacheService.instance.getServerStatus();
     state = ServerStateModel(state: ServerState.starting, status: cachedStatus);
 
+    // 0. Si el usuario guardó un servidor remoto previamente, intentar conectar primero
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedHost = prefs.getString(AppConstants.keyServerHost);
+      final savedPort = prefs.getInt(AppConstants.keyServerPort);
+      final isSavedRemote = savedHost != null &&
+          savedHost.isNotEmpty &&
+          savedHost != '127.0.0.1' &&
+          savedHost != 'localhost';
+
+      if (isSavedRemote) {
+        final isRemoteAlive = await _manager.checkHealth(host: savedHost, port: savedPort);
+        if (isRemoteAlive) {
+          final info = await _repo.getStatus();
+          if (info != null) {
+            FeedCacheService.instance.saveServerStatus(info);
+          }
+          state = ServerStateModel(state: ServerState.remote, status: info ?? cachedStatus);
+          _connectWebSocket();
+          _repo.ensureOnlineStreamingEnabled();
+          _repo.ensureTorrentStreamingEnabled();
+          return;
+        }
+      }
+    } catch (_) {}
+
     // 1. Check if server is already running
     final isAlive = await _manager.checkHealth();
     if (isAlive) {
@@ -88,11 +133,18 @@ class ServerNotifier extends Notifier<ServerStateModel> {
       _connectWebSocket();
       _repo.ensureOnlineStreamingEnabled();
       _repo.ensureTorrentStreamingEnabled();
+      _checkAndStartLanBroadcasting(info?.version);
       return;
     }
 
     // 2. Not running: auto-start local server
-    final started = await _manager.startLocalServer();
+    String bindHost = '127.0.0.1';
+    try {
+      final isSharing = ref.read(lanSharingProvider);
+      if (isSharing) bindHost = '0.0.0.0';
+    } catch (_) {}
+
+    final started = await _manager.startLocalServer(host: bindHost);
     if (started) {
       for (int i = 0; i < 15; i++) {
         await Future.delayed(const Duration(milliseconds: 500));
@@ -105,6 +157,7 @@ class ServerNotifier extends Notifier<ServerStateModel> {
           _connectWebSocket();
           _repo.ensureOnlineStreamingEnabled();
           _repo.ensureTorrentStreamingEnabled();
+          _checkAndStartLanBroadcasting(info?.version);
           return;
         }
       }
@@ -125,6 +178,21 @@ class ServerNotifier extends Notifier<ServerStateModel> {
       if (info != null) {
         FeedCacheService.instance.saveServerStatus(info);
       }
+      // Persistir configuración de conexión remota
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        if (host != null && host.isNotEmpty) {
+          await prefs.setString(AppConstants.keyServerHost, host);
+        }
+        if (port != null) {
+          await prefs.setInt(AppConstants.keyServerPort, port);
+        }
+      } catch (_) {}
+
+      // Limpiar caché previa del feed e invalidar providers para cargar datos frescos del nuevo servidor
+      await FeedCacheService.instance.clearUserCache();
+      _invalidateFeedProviders();
+
       state = ServerStateModel(state: _manager.state, status: info ?? cachedStatus);
       _connectWebSocket();
       _repo.ensureOnlineStreamingEnabled();
@@ -141,10 +209,59 @@ class ServerNotifier extends Notifier<ServerStateModel> {
     await initAndAutoStart();
   }
 
+  Future<void> switchToLocal() async {
+    state = const ServerStateModel(state: ServerState.starting);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(AppConstants.keyServerHost);
+      await prefs.remove(AppConstants.keyServerPort);
+    } catch (_) {}
+    _stopLanBroadcasting();
+    ref.read(webSocketServiceProvider).disconnect();
+    await _manager.stopServer();
+    _manager.resetToLocal();
+    await FeedCacheService.instance.clearUserCache();
+    _invalidateFeedProviders();
+    await initAndAutoStart();
+  }
+
+  void _invalidateFeedProviders() {
+    ref.invalidate(continueWatchingProvider);
+    ref.invalidate(animeCollectionProvider);
+    ref.invalidate(missedSequelsProvider);
+    ref.invalidate(recommendationsProvider);
+    ref.invalidate(mangaCollectionProvider);
+    ref.invalidate(continueReadingMangaProvider);
+    ref.invalidate(mangaRecommendationsProvider);
+  }
+
   Future<void> stopServer() async {
+    _stopLanBroadcasting();
     ref.read(webSocketServiceProvider).disconnect();
     await _manager.stopServer();
     state = const ServerStateModel(state: ServerState.stopped);
+  }
+
+  /// Inicia el anuncio UDP si el servidor local está activo y el usuario tiene activado compartir en red.
+  void _checkAndStartLanBroadcasting(String? version) {
+    try {
+      final isSharing = ref.read(lanSharingProvider);
+      if (isSharing && _manager.state == ServerState.running) {
+        final serverName = ref.read(lanServerNameProvider);
+        final discovery = ref.read(lanDiscoveryServiceProvider);
+        discovery.startBroadcasting(
+          serverName: serverName,
+          serverPort: _manager.port,
+          version: version ?? '1.0.5',
+        );
+      }
+    } catch (_) {}
+  }
+
+  void _stopLanBroadcasting() {
+    try {
+      ref.read(lanDiscoveryServiceProvider).stopBroadcasting();
+    } catch (_) {}
   }
 
   /// Conecta el WebSocket al servidor para recibir eventos en tiempo real.
@@ -197,19 +314,21 @@ Future<List<AnimeEntry>> loadAnimeWithCacheAndSwr({
 
   if (!serverState.isOnline) {
     if (cached.isNotEmpty) return cached;
-    if (serverState.state == ServerState.starting) {
-      final completer = Completer<void>();
-      final sub = ref.listen<ServerStateModel>(serverNotifierProvider, (prev, next) {
-        if (next.state != ServerState.starting && !completer.isCompleted) {
-          completer.complete();
-        }
-      });
-      ref.onDispose(() => sub.close());
-      await completer.future;
-      final currentState = ref.read(serverNotifierProvider);
-      if (!currentState.isOnline) return [];
-    } else {
-      return [];
+    if (requireAuth) {
+      if (serverState.state == ServerState.starting) {
+        final completer = Completer<void>();
+        final sub = ref.listen<ServerStateModel>(serverNotifierProvider, (prev, next) {
+          if (next.state != ServerState.starting && !completer.isCompleted) {
+            completer.complete();
+          }
+        });
+        ref.onDispose(() => sub.close());
+        await completer.future;
+        final currentState = ref.read(serverNotifierProvider);
+        if (!currentState.isOnline) return [];
+      } else {
+        return [];
+      }
     }
   }
 
@@ -242,19 +361,21 @@ Future<List<MangaEntry>> loadMangaWithCacheAndSwr({
 
   if (!serverState.isOnline) {
     if (cached.isNotEmpty) return cached;
-    if (serverState.state == ServerState.starting) {
-      final completer = Completer<void>();
-      final sub = ref.listen<ServerStateModel>(serverNotifierProvider, (prev, next) {
-        if (next.state != ServerState.starting && !completer.isCompleted) {
-          completer.complete();
-        }
-      });
-      ref.onDispose(() => sub.close());
-      await completer.future;
-      final currentState = ref.read(serverNotifierProvider);
-      if (!currentState.isOnline) return [];
-    } else {
-      return [];
+    if (requireAuth) {
+      if (serverState.state == ServerState.starting) {
+        final completer = Completer<void>();
+        final sub = ref.listen<ServerStateModel>(serverNotifierProvider, (prev, next) {
+          if (next.state != ServerState.starting && !completer.isCompleted) {
+            completer.complete();
+          }
+        });
+        ref.onDispose(() => sub.close());
+        await completer.future;
+        final currentState = ref.read(serverNotifierProvider);
+        if (!currentState.isOnline) return [];
+      } else {
+        return [];
+      }
     }
   }
 
@@ -279,25 +400,19 @@ Future<List<MangaEntry>> loadMangaWithCacheAndSwr({
 
 final animeCollectionProvider = FutureProvider<List<AnimeEntry>>((ref) async {
   final serverState = ref.watch(serverNotifierProvider);
-  final isLoggedIn = serverState.status?.isLoggedIn ?? false;
 
-  if (!isLoggedIn) {
+  if (!serverState.isOnline) {
+    final cached = FeedCacheService.instance.getAnimeList(FeedCacheService.kCacheAnimeCollection);
+    if (cached.isNotEmpty) return cached;
     return OfflineLibraryService.instance.getAnimeCollection();
   }
 
-  final remote = await loadAnimeWithCacheAndSwr(
+  return loadAnimeWithCacheAndSwr(
     ref: ref,
     cacheKey: FeedCacheService.kCacheAnimeCollection,
-    requireAuth: true,
+    requireAuth: false,
     fetchFresh: () => ref.read(repositoryProvider).getLibraryCollection(),
   );
-
-  if (remote.isEmpty) {
-    final local = OfflineLibraryService.instance.getAnimeCollection();
-    if (local.isNotEmpty) return local;
-  }
-
-  return remote;
 });
 
 final downloadedAnimeProvider = FutureProvider<List<AnimeEntry>>((ref) async {
@@ -315,32 +430,26 @@ final aniZipDataProvider = FutureProvider.family<AniZipData?, int>((ref, mediaId
 
 final continueWatchingProvider = FutureProvider<List<AnimeEntry>>((ref) async {
   final serverState = ref.watch(serverNotifierProvider);
-  final isLoggedIn = serverState.status?.isLoggedIn ?? false;
 
-  if (!isLoggedIn) {
+  if (!serverState.isOnline) {
+    final cached = FeedCacheService.instance.getAnimeList(FeedCacheService.kCacheContinueWatchingAnime);
+    if (cached.isNotEmpty) return cached;
     return OfflineLibraryService.instance.getContinueWatching();
   }
 
-  final remote = await loadAnimeWithCacheAndSwr(
+  return loadAnimeWithCacheAndSwr(
     ref: ref,
     cacheKey: FeedCacheService.kCacheContinueWatchingAnime,
-    requireAuth: true,
+    requireAuth: false,
     fetchFresh: () => ref.read(repositoryProvider).getContinueWatching(),
   );
-
-  if (remote.isEmpty) {
-    final local = OfflineLibraryService.instance.getContinueWatching();
-    if (local.isNotEmpty) return local;
-  }
-
-  return remote;
 });
 
 final trendingAnimeProvider = FutureProvider<List<AnimeEntry>>((ref) async {
   return loadAnimeWithCacheAndSwr(
     ref: ref,
     cacheKey: FeedCacheService.kCacheTrendingAnime,
-    fetchFresh: () => ref.read(repositoryProvider).getTrendingAnime(perPage: 25),
+    fetchFresh: () => ref.read(repositoryProvider).getTrendingAnime(perPage: 16),
   );
 });
 
@@ -371,9 +480,8 @@ final missedSequelsProvider = FutureProvider<List<AnimeEntry>>((ref) async {
 
 final recommendationsProvider = FutureProvider<List<AnimeEntry>>((ref) async {
   final serverState = ref.watch(serverNotifierProvider);
-  final isLoggedIn = serverState.status?.isLoggedIn ?? false;
 
-  if (!isLoggedIn) {
+  if (!serverState.isOnline) {
     final localCollection = OfflineLibraryService.instance.getAnimeCollection();
     if (localCollection.isEmpty) return [];
 
@@ -395,22 +503,10 @@ final recommendationsProvider = FutureProvider<List<AnimeEntry>>((ref) async {
   return loadAnimeWithCacheAndSwr(
     ref: ref,
     cacheKey: FeedCacheService.kCacheRecommendations,
-    requireAuth: true,
+    requireAuth: false,
     fetchFresh: () async {
       final collection = await ref.read(animeCollectionProvider.future);
       if (collection.isEmpty) {
-        final local = OfflineLibraryService.instance.getAnimeCollection();
-        if (local.isNotEmpty) {
-          final watchingOrCompleted = local
-              .where((e) => e.status == 'CURRENT' || e.status == 'WATCHING' || e.status == 'COMPLETED')
-              .toList();
-          if (watchingOrCompleted.isNotEmpty) {
-            return ref.read(repositoryProvider).getRecommendationsForUser(
-              mediaIds: watchingOrCompleted.take(4).map((e) => e.mediaId).toList(),
-              excludeMediaIds: local.map((e) => e.mediaId).toSet(),
-            );
-          }
-        }
         return [];
       }
 
@@ -435,55 +531,43 @@ final recommendationsProvider = FutureProvider<List<AnimeEntry>>((ref) async {
 
 final mangaCollectionProvider = FutureProvider<List<MangaEntry>>((ref) async {
   final serverState = ref.watch(serverNotifierProvider);
-  final isLoggedIn = serverState.status?.isLoggedIn ?? false;
 
-  if (!isLoggedIn) {
+  if (!serverState.isOnline) {
+    final cached = FeedCacheService.instance.getMangaList(FeedCacheService.kCacheMangaCollection);
+    if (cached.isNotEmpty) return cached;
     return OfflineLibraryService.instance.getMangaCollection();
   }
 
-  final remote = await loadMangaWithCacheAndSwr(
+  return loadMangaWithCacheAndSwr(
     ref: ref,
     cacheKey: FeedCacheService.kCacheMangaCollection,
-    requireAuth: true,
+    requireAuth: false,
     fetchFresh: () => ref.read(repositoryProvider).getMangaCollection(),
   );
-
-  if (remote.isEmpty) {
-    final local = OfflineLibraryService.instance.getMangaCollection();
-    if (local.isNotEmpty) return local;
-  }
-
-  return remote;
 });
 
 final continueReadingMangaProvider = FutureProvider<List<MangaEntry>>((ref) async {
   final serverState = ref.watch(serverNotifierProvider);
-  final isLoggedIn = serverState.status?.isLoggedIn ?? false;
 
-  if (!isLoggedIn) {
+  if (!serverState.isOnline) {
+    final cached = FeedCacheService.instance.getMangaList(FeedCacheService.kCacheContinueReadingManga);
+    if (cached.isNotEmpty) return cached;
     return OfflineLibraryService.instance.getContinueReading();
   }
 
-  final remote = await loadMangaWithCacheAndSwr(
+  return loadMangaWithCacheAndSwr(
     ref: ref,
     cacheKey: FeedCacheService.kCacheContinueReadingManga,
-    requireAuth: true,
+    requireAuth: false,
     fetchFresh: () => ref.read(repositoryProvider).getContinueReadingManga(),
   );
-
-  if (remote.isEmpty) {
-    final local = OfflineLibraryService.instance.getContinueReading();
-    if (local.isNotEmpty) return local;
-  }
-
-  return remote;
 });
 
 final trendingMangaProvider = FutureProvider<List<MangaEntry>>((ref) async {
   return loadMangaWithCacheAndSwr(
     ref: ref,
     cacheKey: FeedCacheService.kCacheTrendingManga,
-    fetchFresh: () => ref.read(repositoryProvider).getTrendingManga(perPage: 25),
+    fetchFresh: () => ref.read(repositoryProvider).getTrendingManga(perPage: 16),
   );
 });
 
@@ -497,9 +581,8 @@ final popularMangaProvider = FutureProvider<List<MangaEntry>>((ref) async {
 
 final mangaRecommendationsProvider = FutureProvider<List<MangaEntry>>((ref) async {
   final serverState = ref.watch(serverNotifierProvider);
-  final isLoggedIn = serverState.status?.isLoggedIn ?? false;
 
-  if (!isLoggedIn) {
+  if (!serverState.isOnline) {
     final localCollection = OfflineLibraryService.instance.getMangaCollection();
     if (localCollection.isEmpty) return [];
 
@@ -524,25 +607,10 @@ final mangaRecommendationsProvider = FutureProvider<List<MangaEntry>>((ref) asyn
   return loadMangaWithCacheAndSwr(
     ref: ref,
     cacheKey: FeedCacheService.kCacheMangaRecommendations,
-    requireAuth: true,
+    requireAuth: false,
     fetchFresh: () async {
       final collection = await ref.read(mangaCollectionProvider.future);
       if (collection.isEmpty) {
-        final local = OfflineLibraryService.instance.getMangaCollection();
-        if (local.isNotEmpty) {
-          final readingOrCompleted = local
-              .where((e) =>
-                  e.status.toUpperCase() == 'CURRENT' ||
-                  e.status.toUpperCase() == 'READING' ||
-                  e.status.toUpperCase() == 'COMPLETED')
-              .toList();
-          if (readingOrCompleted.isNotEmpty) {
-            return ref.read(repositoryProvider).getMangaRecommendationsForUser(
-              mediaIds: readingOrCompleted.take(4).map((e) => e.mediaId).toList(),
-              excludeMediaIds: local.map((e) => e.mediaId).toSet(),
-            );
-          }
-        }
         return [];
       }
 
@@ -578,37 +646,37 @@ final mangaProvidersListProvider = FutureProvider<List<MangaProvider>>((ref) asy
 final curatedRomanceAnimeProvider = FutureProvider<List<AnimeEntry>>((ref) async {
   final serverState = ref.watch(serverNotifierProvider);
   if (!serverState.isOnline) return [];
-  return ref.read(repositoryProvider).getAnimeByGenre(genre: 'Romance', sort: 'TRENDING_DESC', perPage: 25);
+  return ref.read(repositoryProvider).getAnimeByGenre(genre: 'Romance', sort: 'TRENDING_DESC', perPage: 16);
 });
 
 final curatedActionAnimeProvider = FutureProvider<List<AnimeEntry>>((ref) async {
   final serverState = ref.watch(serverNotifierProvider);
   if (!serverState.isOnline) return [];
-  return ref.read(repositoryProvider).getAnimeByGenre(genre: 'Action', sort: 'TRENDING_DESC', perPage: 25);
+  return ref.read(repositoryProvider).getAnimeByGenre(genre: 'Action', sort: 'TRENDING_DESC', perPage: 16);
 });
 
 final curatedComedyAnimeProvider = FutureProvider<List<AnimeEntry>>((ref) async {
   final serverState = ref.watch(serverNotifierProvider);
   if (!serverState.isOnline) return [];
-  return ref.read(repositoryProvider).getAnimeByGenre(genre: 'Comedy', sort: 'TRENDING_DESC', perPage: 25);
+  return ref.read(repositoryProvider).getAnimeByGenre(genre: 'Comedy', sort: 'TRENDING_DESC', perPage: 16);
 });
 
 final curatedRomanceMangaProvider = FutureProvider<List<MangaEntry>>((ref) async {
   final serverState = ref.watch(serverNotifierProvider);
   if (!serverState.isOnline) return [];
-  return ref.read(repositoryProvider).getMangaByGenre(genre: 'Romance', sort: 'TRENDING_DESC', perPage: 25);
+  return ref.read(repositoryProvider).getMangaByGenre(genre: 'Romance', sort: 'TRENDING_DESC', perPage: 16);
 });
 
 final curatedActionMangaProvider = FutureProvider<List<MangaEntry>>((ref) async {
   final serverState = ref.watch(serverNotifierProvider);
   if (!serverState.isOnline) return [];
-  return ref.read(repositoryProvider).getMangaByGenre(genre: 'Action', sort: 'TRENDING_DESC', perPage: 25);
+  return ref.read(repositoryProvider).getMangaByGenre(genre: 'Action', sort: 'TRENDING_DESC', perPage: 16);
 });
 
 final curatedComedyMangaProvider = FutureProvider<List<MangaEntry>>((ref) async {
   final serverState = ref.watch(serverNotifierProvider);
   if (!serverState.isOnline) return [];
-  return ref.read(repositoryProvider).getMangaByGenre(genre: 'Comedy', sort: 'TRENDING_DESC', perPage: 25);
+  return ref.read(repositoryProvider).getMangaByGenre(genre: 'Comedy', sort: 'TRENDING_DESC', perPage: 16);
 });
 
 // ─── OFFLINE MANGA PROVIDERS ─────────────────────────────────────────────────
@@ -639,8 +707,21 @@ final downloadedMangaListProvider = FutureProvider<List<MangaEntry>>((ref) async
           int downloadedCount = 0;
           final downloadData = raw['downloadData'];
           if (downloadData is Map<String, dynamic>) {
-            for (final list in downloadData.values) {
-              if (list is List) downloadedCount += list.length;
+            final downloadedMap = downloadData['downloaded'];
+            if (downloadedMap is Map<String, dynamic>) {
+              for (final list in downloadedMap.values) {
+                if (list is List) downloadedCount += list.length;
+              }
+            } else {
+              for (final val in downloadData.values) {
+                if (val is List) {
+                  downloadedCount += val.length;
+                } else if (val is Map<String, dynamic>) {
+                  for (final inner in val.values) {
+                    if (inner is List) downloadedCount += inner.length;
+                  }
+                }
+              }
             }
           }
 

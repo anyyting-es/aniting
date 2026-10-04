@@ -10,6 +10,7 @@ import 'package:seanime_app/core/preferences/playback_progress_preferences_provi
 import 'package:seanime_app/core/preferences/resume_bar_preferences_provider.dart';
 import 'package:seanime_app/core/preferences/tv_mode_provider.dart';
 import 'package:seanime_app/core/preferences/volume_boost_provider.dart';
+import 'package:seanime_app/core/preferences/streaming_preferences_provider.dart';
 import 'package:seanime_app/data/models/anime_details.dart';
 import 'package:seanime_app/data/models/anizip_data.dart';
 import 'package:seanime_app/data/models/onlinestream_models.dart';
@@ -28,6 +29,7 @@ import 'package:seanime_app/presentation/widgets/player/services/player_shader_s
 import 'package:seanime_app/presentation/widgets/player/services/player_source_controller.dart';
 import 'package:seanime_app/presentation/widgets/player/services/player_window_manager.dart';
 import 'package:seanime_app/presentation/widgets/player/sheets/player_settings_launcher.dart';
+import 'package:seanime_app/core/preferences/subtitle_style_preferences_provider.dart';
 import 'package:seanime_app/presentation/widgets/player/viewport/player_viewport.dart';
 
 export 'package:seanime_app/presentation/widgets/player/models/player_types.dart'
@@ -403,6 +405,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
         }
       },
     );
+    _coordinator.applySubtitleStyle(ref.read(subtitleStylePreferencesProvider));
 
     _windowManager = PlayerWindowManager(
       isTv: _isTvActive,
@@ -428,6 +431,11 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       initialSurfaceTop: winInit.initialTop,
       initialSurfaceHeight: winInit.initialHeight,
     );
+
+    ref.listenManual(subtitleStylePreferencesProvider, (_, next) {
+      _coordinator.applySubtitleStyle(next);
+      if (mounted) setState(() {});
+    });
 
     _progressManager = PlayerProgressManager(
       repository: ref.read(repositoryProvider),
@@ -655,8 +663,14 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
 
     _coordinator.dispose();
 
-    _positionNotifier.dispose();
-    _bufferNotifier.dispose();
+    final isTorrent = _currentVideoUrl.contains('torrentstream') ||
+        widget.videoUrl.contains('torrentstream') ||
+        ref.read(torrentStreamStatusProvider) != null;
+    final shouldPauseTorrent =
+        ref.read(streamingPreferencesProvider).pauseTorrentStreamOnExit;
+    if (isTorrent && shouldPauseTorrent) {
+      ref.read(repositoryProvider).pauseTorrentStream();
+    }
 
     try {
       _torrentStreamNotifier.reset();

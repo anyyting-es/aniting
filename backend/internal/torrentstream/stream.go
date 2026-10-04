@@ -622,6 +622,66 @@ func (r *Repository) DropTorrent() error {
 	return nil
 }
 
+// PauseStream pauses downloading pieces for the active stream without dropping the torrent or deleting files.
+func (r *Repository) PauseStream() error {
+	defer func() {
+		if rec := recover(); rec != nil {
+			r.logger.Error().Msgf("torrentstream: Panic in PauseStream: %v", rec)
+		}
+	}()
+
+	r.streamActionMu.Lock()
+	defer r.streamActionMu.Unlock()
+
+	r.logger.Info().Msg("torrentstream: Pausing torrent stream download")
+	if r.client == nil || r.client.torrentClient.IsAbsent() {
+		return nil
+	}
+
+	r.client.mu.Lock()
+	defer r.client.mu.Unlock()
+
+	if r.client.currentTorrent.IsPresent() {
+		currentTorrent := r.client.currentTorrent.MustGet()
+		for _, f := range currentTorrent.Files() {
+			f.SetPriority(torrent.PiecePriorityNone)
+		}
+		r.client.currentTorrentStatus.DownloadSpeed = "0 B/s"
+		r.sendStateEvent(eventTorrentStatus, r.client.currentTorrentStatus)
+		r.logger.Info().Msg("torrentstream: Paused downloading pieces for current torrent")
+	}
+
+	return nil
+}
+
+// ResumeStream resumes downloading pieces for the active torrent file.
+func (r *Repository) ResumeStream() error {
+	defer func() {
+		if rec := recover(); rec != nil {
+			r.logger.Error().Msgf("torrentstream: Panic in ResumeStream: %v", rec)
+		}
+	}()
+
+	r.streamActionMu.Lock()
+	defer r.streamActionMu.Unlock()
+
+	r.logger.Info().Msg("torrentstream: Resuming torrent stream download")
+	if r.client == nil || r.client.torrentClient.IsAbsent() {
+		return nil
+	}
+
+	r.client.mu.Lock()
+	defer r.client.mu.Unlock()
+
+	if r.client.currentTorrent.IsPresent() && r.client.currentFile.IsPresent() {
+		currentFile := r.client.currentFile.MustGet()
+		currentFile.Download()
+		r.logger.Info().Msg("torrentstream: Resumed downloading file for current torrent")
+	}
+
+	return nil
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 func (r *Repository) GetMediaInfoFromOptions(ctx context.Context, opts *StartStreamOptions) (media *anilist.CompleteAnime, animeMetadata *metadata.AnimeMetadata, err error) {

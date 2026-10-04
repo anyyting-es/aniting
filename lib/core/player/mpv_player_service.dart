@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
+import 'package:seanime_app/core/preferences/subtitle_style_preferences_provider.dart';
 import 'package:seanime_app/presentation/widgets/player/models/player_types.dart';
 
 /// MPV Player Service powered by media_kit with optimized libmpv engine
@@ -15,6 +16,7 @@ class MpvPlayerService {
 
   String? _currentTitle;
   String? _currentEpisodeTitle;
+  SubtitleStylePrefs? _lastSubtitlePrefs;
 
   MpvPlayerService({int? viewportWidth, int? viewportHeight}) {
     _player = Player(
@@ -112,7 +114,8 @@ class MpvPlayerService {
       // Subtitles: native libass with full styling, embedded MKV fonts, and fuzzy auto-match
       _safeSetProperty('sub-auto', 'fuzzy');
       _safeSetProperty('sub-ass', 'yes');
-      _safeSetProperty('sub-ass-override', 'no');
+      _safeSetProperty('sub-ass-override', 'scale');
+      _safeSetProperty('sub-scale', '1.0');
       _safeSetProperty('sub-ass-force-margins', 'yes');
       // basic instead of full to avoid expensive color conversions for every subtitle line
       _safeSetProperty('sub-ass-vsfilter-color-compat', 'basic');
@@ -142,9 +145,14 @@ class MpvPlayerService {
 
   void _safeSetProperty(String name, String value) {
     try {
-      (_player.platform as dynamic)?.setProperty(name, value);
-    } catch (_) {
-      // Best-effort property application
+      final res = (_player.platform as dynamic)?.setProperty(name, value);
+      if (res is Future) {
+        res.catchError((e) {
+          debugPrint('[MpvPlayerService] Error setting property $name=$value: $e');
+        });
+      }
+    } catch (e) {
+      debugPrint('[MpvPlayerService] Sync error setting property $name=$value: $e');
     }
   }
 
@@ -311,6 +319,10 @@ class MpvPlayerService {
       ),
       play: true,
     );
+
+    if (_lastSubtitlePrefs != null) {
+      applySubtitleStyle(_lastSubtitlePrefs!);
+    }
   }
 
   Future<void> play() => _player.play();
@@ -323,6 +335,67 @@ class MpvPlayerService {
 
   Future<void> setAudioTrack(AudioTrack track) => _player.setAudioTrack(track);
   Future<void> setSubtitleTrack(SubtitleTrack track) => _player.setSubtitleTrack(track);
+
+  /// Applies subtitle styling preferences (font, colors, borders, shadows, ASS override)
+  void applySubtitleStyle(SubtitleStylePrefs prefs) {
+    _lastSubtitlePrefs = prefs;
+    try {
+      debugPrint(
+        '[MpvPlayerService] applySubtitleStyle: overrideAss=${prefs.overrideAss}, '
+        'font=${prefs.fontFamily}, scale=${prefs.fontSizeMultiplier}, '
+        'color=${SubtitleStylePrefs.toMpvHexColor(prefs.textColor)}, '
+        'border=${prefs.borderStyle.name}, borderColor=${SubtitleStylePrefs.toMpvHexColor(prefs.borderColor)}',
+      );
+
+      const baseFontSize = 48;
+      String targetFont = prefs.fontFamily;
+      if (Platform.isAndroid || Platform.isIOS) {
+        if (targetFont == 'Trebuchet MS' || targetFont == 'OpenDyslexic') {
+          targetFont = 'sans-serif';
+        }
+      }
+      _safeSetProperty('sub-font', targetFont);
+      _safeSetProperty('sub-font-size', '$baseFontSize');
+      _safeSetProperty('sub-scale', '${prefs.fontSizeMultiplier}');
+      _safeSetProperty('sub-bold', prefs.bold ? 'yes' : 'no');
+      _safeSetProperty('sub-italic', prefs.italic ? 'yes' : 'no');
+      _safeSetProperty('sub-color', SubtitleStylePrefs.toMpvHexColor(prefs.textColor));
+      _safeSetProperty('sub-back-color', SubtitleStylePrefs.toMpvHexColor(prefs.backgroundColor));
+
+      switch (prefs.borderStyle) {
+        case SubtitleBorderStyle.none:
+          _safeSetProperty('sub-border-size', '0');
+          _safeSetProperty('sub-shadow-offset', '0');
+          break;
+        case SubtitleBorderStyle.outline:
+          _safeSetProperty('sub-border-size', '${prefs.borderSize}');
+          _safeSetProperty('sub-border-color', SubtitleStylePrefs.toMpvHexColor(prefs.borderColor));
+          _safeSetProperty('sub-shadow-offset', '0');
+          break;
+        case SubtitleBorderStyle.dropShadow:
+          _safeSetProperty('sub-border-size', '0.5');
+          _safeSetProperty('sub-border-color', SubtitleStylePrefs.toMpvHexColor(prefs.borderColor));
+          _safeSetProperty('sub-shadow-offset', '${prefs.borderSize.clamp(1.0, 5.0)}');
+          _safeSetProperty('sub-shadow-color', SubtitleStylePrefs.toMpvHexColor(prefs.borderColor));
+          break;
+        case SubtitleBorderStyle.raised:
+        case SubtitleBorderStyle.depressed:
+          _safeSetProperty('sub-border-size', '${(prefs.borderSize * 0.7).clamp(1.0, 4.0)}');
+          _safeSetProperty('sub-border-color', SubtitleStylePrefs.toMpvHexColor(prefs.borderColor));
+          _safeSetProperty('sub-shadow-offset', '${(prefs.borderSize * 0.6).clamp(1.0, 4.0)}');
+          _safeSetProperty('sub-shadow-color', SubtitleStylePrefs.toMpvHexColor(prefs.borderColor));
+          break;
+      }
+
+      if (prefs.overrideAss) {
+        _safeSetProperty('sub-ass-override', 'force');
+      } else {
+        _safeSetProperty('sub-ass-override', 'scale');
+      }
+    } catch (e) {
+      debugPrint('[MpvPlayerService] Error applying subtitle style: $e');
+    }
+  }
 
   Future<void> dispose() async {
     await _player.dispose();

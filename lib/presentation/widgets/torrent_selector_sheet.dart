@@ -1,8 +1,11 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
+import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/data/models/anime_details.dart';
 import 'package:seanime_app/data/models/torrent_models.dart';
+import 'package:seanime_app/presentation/providers/active_downloads_provider.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/widgets/torrent_batch_files_sheet.dart';
 
@@ -56,16 +59,22 @@ class _TorrentSelectorSheetState extends ConsumerState<TorrentSelectorSheet> {
   String? _errorMessage;
 
   bool _isSmartSearch = true;
+  bool _showOnlyBatches = false;
   String _selectedQuality = 'Todos';
   late final TextEditingController _searchController;
+  late int? _currentEpisodeNumber;
 
   String? _startingTorrentName;
 
   List<TorrentItem> get _filteredTorrents {
-    if (_selectedQuality == 'Todos') {
-      return _torrents;
+    var list = _torrents;
+    if (_showOnlyBatches) {
+      list = list.where((t) => _isBatchTorrent(t)).toList();
     }
-    return _torrents.where((t) {
+    if (_selectedQuality == 'Todos') {
+      return list;
+    }
+    return list.where((t) {
       final res = (t.resolution ?? '').toLowerCase();
       final name = t.name.toLowerCase();
       switch (_selectedQuality) {
@@ -86,6 +95,7 @@ class _TorrentSelectorSheetState extends ConsumerState<TorrentSelectorSheet> {
   @override
   void initState() {
     super.initState();
+    _currentEpisodeNumber = widget.episodeNumber;
     final defaultTitle = widget.animeDetails?.romajiTitle ??
         widget.animeDetails?.title ??
         '';
@@ -99,6 +109,23 @@ class _TorrentSelectorSheetState extends ConsumerState<TorrentSelectorSheet> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _onEpisodeChanged(int? newEp) {
+    setState(() {
+      _currentEpisodeNumber = newEp;
+      final defaultTitle = widget.animeDetails?.romajiTitle ??
+          widget.animeDetails?.title ??
+          '';
+      if (newEp != null) {
+        _showOnlyBatches = false;
+        _searchController.text = '$defaultTitle $newEp';
+      } else {
+        _showOnlyBatches = true;
+        _searchController.text = '$defaultTitle Batch';
+      }
+    });
+    _searchTorrents();
   }
 
   Future<void> _loadProviders() async {
@@ -137,10 +164,11 @@ class _TorrentSelectorSheetState extends ConsumerState<TorrentSelectorSheet> {
     try {
       final results = await repo.searchTorrents(
         mediaId: widget.mediaId,
-        episodeNumber: _isSmartSearch ? widget.episodeNumber : null,
+        episodeNumber: _isSmartSearch && !_showOnlyBatches ? _currentEpisodeNumber : null,
         provider: _selectedProviderId,
         query: _isSmartSearch ? null : _searchController.text.trim(),
         type: _isSmartSearch ? 'smart' : 'simple',
+        batch: _showOnlyBatches,
         animeDetails: widget.animeDetails,
       );
 
@@ -162,26 +190,45 @@ class _TorrentSelectorSheetState extends ConsumerState<TorrentSelectorSheet> {
   }
 
   bool _isBatchTorrent(TorrentItem torrent) {
-    if (torrent.isBatch) return true;
     final name = torrent.name.toLowerCase();
 
-    // 1. Explicit batch / complete release keywords
-    if (RegExp(r'\b(?:batch|complete|completa|completo)\b').hasMatch(name)) {
+    // 1. Explicit batch / complete release keywords ALWAYS identify a batch
+    if (RegExp(
+      r'\b(?:batch|complete\s*series?|completa|completo|temporada\s+completa|serie\s+completa|all\s+episodes|entire\s+series)\b',
+    ).hasMatch(name)) {
       return true;
     }
 
-    // 2. Explicit full-series / all-episodes indicators
-    if (RegExp(r'\b(?:entire\s+series|all\s+episodes|temporada\s+completa|serie\s+completa)\b').hasMatch(name)) {
+    // 2. Explicit single episode patterns: e.g. "S3-04", "S03E04", "S1 - 04", "Ep 04", "Capítulo 04", "E04", " - 04"
+    final singleEpPatterns = [
+      RegExp(r'\b[sS]\d{1,2}\s*[-_eE]\s*\d{1,3}\b'),
+      RegExp(r'\b(?:ep|eps|e|cap|capitulo|cap[ií]tulo|episodio)\.?\s*0*(\d{1,4})\b', caseSensitive: false),
+      RegExp(r'\s+-\s+0*(\d{1,3})(?:v\d+)?\b'),
+    ];
+
+    bool hasSingleEp = false;
+    for (final pattern in singleEpPatterns) {
+      if (pattern.hasMatch(torrent.name)) {
+        hasSingleEp = true;
+        break;
+      }
+    }
+
+    // 3. Multi-season ranges (e.g. "S01-S03", "Season 1-3", "Seasons 1-3")
+    // Both sides require explicit 's' or word 'season', preventing "S3-04" from false matching
+    final isMultiSeason = RegExp(
+      r'\b[sS]\d{1,2}\s*[-~]\s*[sS]\d{1,2}\b|\b(?:season|temporada)\s*\d{1,2}\s*[-~]\s*(?:season|temporada)?\s*\d{1,2}\b|\b(?:seasons|temporadas)\s*\d{1,2}\s*[-~]\s*\d{1,2}\b',
+      caseSensitive: false,
+    ).hasMatch(name);
+
+    if (isMultiSeason) {
       return true;
     }
 
-    // 3. Multi-season ranges (e.g. "S01-S03", "Season 1-3")
-    if (RegExp(r'\b(?:s|season|temporada)\s*\d{1,2}\s*[-~]\s*(?:s|season|temporada)?\s*\d{1,2}\b').hasMatch(name)) {
-      return true;
-    }
-
-    // 4. Bracketed/parenthesized episode ranges: e.g. "(01-12)", "[01~12]", "[01 - 24]"
-    final bracketedRange = RegExp(r'[\[\(]\s*(?:ep|eps|e)?\s*(\d{1,3})\s*[-~]\s*(?:ep|eps|e)?\s*(\d{1,3})\s*[\]\)]').firstMatch(name);
+    // 4. Bracketed or explicit episode ranges (e.g. "(01-12)", "[01~12]", "ep01-ep12")
+    final bracketedRange = RegExp(
+      r'[\[\(]\s*(?:ep|eps|e)?\s*(\d{1,3})\s*[-~]\s*(?:ep|eps|e)?\s*(\d{1,3})\s*[\]\)]',
+    ).firstMatch(name);
     if (bracketedRange != null) {
       final start = int.tryParse(bracketedRange.group(1) ?? '');
       final end = int.tryParse(bracketedRange.group(2) ?? '');
@@ -190,8 +237,9 @@ class _TorrentSelectorSheetState extends ConsumerState<TorrentSelectorSheet> {
       }
     }
 
-    // 5. Episode ranges with "ep" / "eps" or tilde "~": e.g. "ep01-ep12", "01~12", "eps 01-24"
-    final epRange = RegExp(r'\b(?:ep|eps|e)\s*(\d{1,3})\s*[-~]\s*(?:ep|eps|e)?\s*(\d{1,3})\b').firstMatch(name);
+    final epRange = RegExp(
+      r'\b(?:ep|eps|e)\s*(\d{1,3})\s*[-~]\s*(?:ep|eps|e)?\s*(\d{1,3})\b',
+    ).firstMatch(name);
     if (epRange != null) {
       final start = int.tryParse(epRange.group(1) ?? '');
       final end = int.tryParse(epRange.group(2) ?? '');
@@ -209,17 +257,13 @@ class _TorrentSelectorSheetState extends ConsumerState<TorrentSelectorSheet> {
       }
     }
 
-    // 6. Explicit episode range like "01-12" that is NOT preceded by season prefix ("S3 - 07")
-    final standaloneRange = RegExp(r'(?<!(?:s|season|temporada)\s*)\b0*([1-9]\d{0,2})\s*-\s*0*([1-9]\d{0,2})\b').firstMatch(name);
-    if (standaloneRange != null) {
-      final start = int.tryParse(standaloneRange.group(1) ?? '');
-      final end = int.tryParse(standaloneRange.group(2) ?? '');
-      if (start != null && end != null && end > start && (end - start) >= 2) {
-        return true;
-      }
+    // If single episode pattern was found and no multi-episode range exists, it's NOT a batch
+    if (hasSingleEp) {
+      return false;
     }
 
-    return false;
+    // 5. Fallback to server-parsed flag (Habari/Anitomy)
+    return torrent.isBatch;
   }
 
   Future<void> _handleTorrentTap(TorrentItem torrent) async {
@@ -230,7 +274,73 @@ class _TorrentSelectorSheetState extends ConsumerState<TorrentSelectorSheet> {
     }
   }
 
-  Future<void> _inspectBatchAndStream(TorrentItem torrent, {bool defaultExternalPlayer = false}) async {
+  Future<void> _downloadTorrent(TorrentItem torrent) async {
+    final l10n = ref.read(translationsProvider);
+    final repo = ref.read(repositoryProvider);
+    final messenger = ScaffoldMessenger.of(context);
+    final nav = Navigator.of(context);
+
+    // 1. Immediately close the sheet so user returns to the episode view cleanly
+    if (nav.canPop()) {
+      nav.pop();
+    }
+
+    // 2. Mark episode as downloading for inline spinning indicator
+    final epNum = _currentEpisodeNumber ?? widget.episodeNumber;
+    ref.read(downloadingEpisodesProvider.notifier).add(widget.mediaId, epNum);
+
+    // 3. Initiate download in background
+    try {
+      final success = await repo.downloadTorrentToClient(
+        torrent: torrent,
+        media: widget.animeDetails?.toBaseAnimeMap() ?? widget.animeDetails?.rawMedia,
+        animeTitle: widget.animeDetails?.title,
+        mediaId: widget.animeDetails?.id ?? widget.mediaId,
+      );
+
+      ref.read(activeDownloadsProvider.notifier).refresh();
+
+      if (!success) {
+        ref.read(downloadingEpisodesProvider.notifier).remove(widget.mediaId, epNum);
+        messenger.showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error_rounded, color: Colors.white, size: 20),
+                const SizedBox(width: 8),
+                Expanded(child: Text(l10n.error)),
+              ],
+            ),
+            backgroundColor: Colors.red.shade700,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      ref.read(downloadingEpisodesProvider.notifier).remove(widget.mediaId, epNum);
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('${l10n.error}: $e'),
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  void _onDownloadTorrentPressed(TorrentItem torrent) {
+    if (_isBatchTorrent(torrent)) {
+      _inspectBatchAndStream(torrent, defaultDownload: true);
+    } else {
+      _downloadTorrent(torrent);
+    }
+  }
+
+  Future<void> _inspectBatchAndStream(
+    TorrentItem torrent, {
+    bool defaultExternalPlayer = false,
+    bool defaultDownload = false,
+  }) async {
     final l10n = ref.read(translationsProvider);
     final isOnline = ref.read(serverNotifierProvider).isOnline;
 
@@ -251,7 +361,7 @@ class _TorrentSelectorSheetState extends ConsumerState<TorrentSelectorSheet> {
     final repo = ref.read(repositoryProvider);
     final files = await repo.getTorrentFilePreviews(
       torrent: torrent,
-      episodeNumber: widget.episodeNumber,
+      episodeNumber: _currentEpisodeNumber ?? widget.episodeNumber,
       mediaId: widget.mediaId,
       animeDetails: widget.animeDetails,
     );
@@ -269,32 +379,43 @@ class _TorrentSelectorSheetState extends ConsumerState<TorrentSelectorSheet> {
         builder: (ctx) => TorrentBatchFilesSheet(
           torrent: torrent,
           files: files,
-          targetEpisodeNumber: widget.episodeNumber,
+          targetEpisodeNumber: _currentEpisodeNumber ?? widget.episodeNumber,
         ),
       );
 
       if (result != null && mounted) {
-        await _startStream(
-          torrent,
-          fileIndex: result.file.index,
-          fileTitle: result.file.displayTitle.isNotEmpty
-              ? result.file.displayTitle
-              : result.file.fileName,
-          useExternalPlayer: result.useExternalPlayer,
-        );
+        if (result.isDownloadAction || defaultDownload) {
+          await _downloadTorrent(torrent);
+        } else {
+          await _startStream(
+            torrent,
+            fileIndex: result.file.index,
+            fileTitle: result.file.displayTitle.isNotEmpty
+                ? result.file.displayTitle
+                : result.file.fileName,
+            useExternalPlayer: result.useExternalPlayer,
+          );
+        }
       }
     } else if (files.length == 1) {
-      await _startStream(
-        torrent,
-        fileIndex: files.first.index,
-        fileTitle: files.first.displayTitle.isNotEmpty
-            ? files.first.displayTitle
-            : files.first.fileName,
-        useExternalPlayer: defaultExternalPlayer,
-      );
+      if (defaultDownload) {
+        await _downloadTorrent(torrent);
+      } else {
+        await _startStream(
+          torrent,
+          fileIndex: files.first.index,
+          fileTitle: files.first.displayTitle.isNotEmpty
+              ? files.first.displayTitle
+              : files.first.fileName,
+          useExternalPlayer: defaultExternalPlayer,
+        );
+      }
     } else {
-      // Fallback: start directly without fileIndex if fetching previews failed
-      await _startStream(torrent, useExternalPlayer: defaultExternalPlayer);
+      if (defaultDownload) {
+        await _downloadTorrent(torrent);
+      } else {
+        await _startStream(torrent, useExternalPlayer: defaultExternalPlayer);
+      }
     }
   }
 
@@ -383,6 +504,7 @@ class _TorrentSelectorSheetState extends ConsumerState<TorrentSelectorSheet> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = ref.watch(translationsProvider);
+    final iconPack = ref.watch(iconPackProvider);
 
     return DraggableScrollableSheet(
       initialChildSize: 0.85,
@@ -412,7 +534,7 @@ class _TorrentSelectorSheetState extends ConsumerState<TorrentSelectorSheet> {
 
               // Sheet Header
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: Row(
                   children: [
                     Container(
@@ -424,22 +546,23 @@ class _TorrentSelectorSheetState extends ConsumerState<TorrentSelectorSheet> {
                       child: Icon(
                         Icons.cloud_download_rounded,
                         color: theme.colorScheme.primary,
-                        size: 22,
+                        size: 20,
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Torrents - ${l10n.episode} ${widget.episodeNumber}',
+                            'Torrents',
                             style: theme.textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.bold,
+                              fontSize: 15,
                             ),
                           ),
                           Text(
-                            widget.episodeTitle,
+                            widget.animeDetails?.title ?? widget.episodeTitle,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
@@ -450,8 +573,57 @@ class _TorrentSelectorSheetState extends ConsumerState<TorrentSelectorSheet> {
                         ],
                       ),
                     ),
+                    const SizedBox(width: 8),
+                    // Episode Selector Dropdown
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<int?>(
+                          value: _currentEpisodeNumber,
+                          isDense: true,
+                          icon: const Icon(Icons.arrow_drop_down, size: 20),
+                          dropdownColor: theme.colorScheme.surfaceContainerHigh,
+                          borderRadius: BorderRadius.circular(12),
+                          items: [
+                            DropdownMenuItem<int?>(
+                              value: null,
+                              child: Text(
+                                l10n.allBatches,
+                                style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                            ...List.generate(
+                              widget.animeDetails?.episodes.isNotEmpty == true
+                                  ? widget.animeDetails!.episodes.length
+                                  : (widget.animeDetails?.totalEpisodes ?? math.max(widget.episodeNumber, 12)),
+                              (i) {
+                                final epNum = i + 1;
+                                return DropdownMenuItem<int?>(
+                                  value: epNum,
+                                  child: Text(
+                                    l10n.episodeNumber(epNum),
+                                    style: const TextStyle(fontSize: 12.5),
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                          onChanged: _onEpisodeChanged,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
                     IconButton(
-                      icon: const Icon(Icons.close_rounded),
+                      icon: const Icon(Icons.close_rounded, size: 20),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                       onPressed: () => Navigator.pop(context),
                     ),
                   ],
@@ -460,15 +632,16 @@ class _TorrentSelectorSheetState extends ConsumerState<TorrentSelectorSheet> {
 
               const Divider(height: 1),
 
-              // Filter Controls (Provider & Search Type)
+              // Filter Controls (Provider, Quality, Batch toggle, Smart toggle, Refresh)
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 6),
                 child: Row(
                   children: [
                     // Provider Dropdown
                     Expanded(
-                      flex: 3,
+                      flex: 4,
                       child: Container(
+                        height: 38,
                         padding: const EdgeInsets.symmetric(horizontal: 10),
                         decoration: BoxDecoration(
                           color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
@@ -481,21 +654,22 @@ class _TorrentSelectorSheetState extends ConsumerState<TorrentSelectorSheet> {
                           child: DropdownButton<String>(
                             value: _selectedProviderId,
                             isExpanded: true,
+                            isDense: true,
                             hint: Text(
                               _isLoadingProviders ? l10n.loadingProviders : l10n.onlineProvider,
-                              style: const TextStyle(fontSize: 13),
+                              style: const TextStyle(fontSize: 12),
                             ),
-                            icon: const Icon(Icons.arrow_drop_down, size: 20),
+                            icon: const Icon(Icons.arrow_drop_down, size: 18),
                             items: [
                               DropdownMenuItem<String>(
                                 value: null,
-                                child: Text(l10n.allProviders, style: const TextStyle(fontSize: 13)),
+                                child: Text(l10n.allProviders, style: const TextStyle(fontSize: 12)),
                               ),
                               ..._providers.map((p) => DropdownMenuItem<String>(
                                     value: p.id,
                                     child: Text(
                                       p.name,
-                                      style: const TextStyle(fontSize: 13),
+                                      style: const TextStyle(fontSize: 12),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                     ),
@@ -511,13 +685,77 @@ class _TorrentSelectorSheetState extends ConsumerState<TorrentSelectorSheet> {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 6),
+
+                    // Quality Dropdown
+                    Expanded(
+                      flex: 3,
+                      child: Container(
+                        height: 38,
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _selectedQuality,
+                            isExpanded: true,
+                            isDense: true,
+                            icon: const Icon(Icons.arrow_drop_down, size: 18),
+                            items: [
+                              DropdownMenuItem<String>(
+                                value: 'Todos',
+                                child: Text(l10n.filterAll, style: const TextStyle(fontSize: 12)),
+                              ),
+                              for (final q in const ['1080p', '720p', '2160p / 4K', '480p'])
+                                DropdownMenuItem<String>(
+                                  value: q,
+                                  child: Text(q, style: const TextStyle(fontSize: 12)),
+                                ),
+                            ],
+                            onChanged: (val) {
+                              if (val != null) {
+                                setState(() => _selectedQuality = val);
+                              }
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+
+                    // Batch toggle button
+                    IconButton(
+                      icon: Icon(
+                        Icons.folder_zip_rounded,
+                        size: 19,
+                        color: _showOnlyBatches ? Colors.purpleAccent : theme.colorScheme.onSurfaceVariant,
+                      ),
+                      tooltip: l10n.showOnlyBatches,
+                      constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
+                      style: IconButton.styleFrom(
+                        backgroundColor: _showOnlyBatches
+                            ? Colors.purple.withValues(alpha: 0.25)
+                            : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        padding: const EdgeInsets.all(8),
+                      ),
+                      onPressed: () {
+                        setState(() => _showOnlyBatches = !_showOnlyBatches);
+                        _searchTorrents();
+                      },
+                    ),
+                    const SizedBox(width: 4),
 
                     // Smart / Simple search compact toggle icon
                     IconButton(
                       icon: Icon(
                         _isSmartSearch ? Icons.auto_awesome_rounded : Icons.manage_search_rounded,
-                        size: 20,
+                        size: 19,
                         color: _isSmartSearch ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
                       ),
                       tooltip: _isSmartSearch ? '${l10n.smartSearch} (Activo)' : '${l10n.simpleSearch} (Activo)',
@@ -536,42 +774,16 @@ class _TorrentSelectorSheetState extends ConsumerState<TorrentSelectorSheet> {
                         _searchTorrents();
                       },
                     ),
+                    const SizedBox(width: 4),
 
-                    const SizedBox(width: 6),
                     // Refresh button
                     IconButton(
                       icon: const Icon(Icons.refresh_rounded, size: 20),
                       tooltip: l10n.refresh,
+                      constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
                       onPressed: _isLoadingTorrents ? null : _searchTorrents,
                     ),
                   ],
-                ),
-              ),
-
-              // Quality Filter Chips
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 2, 16, 6),
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      for (final quality in const ['Todos', '1080p', '720p', '2160p / 4K', '480p']) ...[
-                        FilterChip(
-                          selected: _selectedQuality == quality,
-                          label: Text(quality == 'Todos' ? l10n.filterAll : quality, style: const TextStyle(fontSize: 11)),
-                          visualDensity: VisualDensity.compact,
-                          padding: const EdgeInsets.symmetric(horizontal: 4),
-                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          onSelected: (selected) {
-                            if (selected) {
-                              setState(() => _selectedQuality = quality);
-                            }
-                          },
-                        ),
-                        const SizedBox(width: 6),
-                      ],
-                    ],
-                  ),
                 ),
               ),
 
@@ -621,9 +833,9 @@ class _TorrentSelectorSheetState extends ConsumerState<TorrentSelectorSheet> {
                     Text(
                       _isLoadingTorrents
                           ? l10n.searchingTorrents
-                          : (_selectedQuality == 'Todos'
+                          : (_selectedQuality == 'Todos' && !_showOnlyBatches
                               ? '${_torrents.length} ${l10n.resultsFound}'
-                              : l10n.torrentsFilterCount(_filteredTorrents.length, _torrents.length, _selectedQuality)),
+                              : '${_filteredTorrents.length} / ${_torrents.length} ${l10n.resultsFound}'),
                       style: TextStyle(
                         fontSize: 12,
                         color: theme.colorScheme.onSurfaceVariant,
@@ -637,7 +849,7 @@ class _TorrentSelectorSheetState extends ConsumerState<TorrentSelectorSheet> {
 
               // Torrents List Body
               Expanded(
-                child: _buildBody(theme, scrollController, l10n),
+                child: _buildBody(theme, scrollController, l10n, iconPack),
               ),
             ],
           ),
@@ -646,7 +858,7 @@ class _TorrentSelectorSheetState extends ConsumerState<TorrentSelectorSheet> {
     );
   }
 
-  Widget _buildBody(ThemeData theme, ScrollController scrollController, AppTranslations l10n) {
+  Widget _buildBody(ThemeData theme, ScrollController scrollController, AppTranslations l10n, AppIconPack iconPack) {
     if (_isLoadingTorrents) {
       return Center(
         child: Column(
@@ -799,15 +1011,15 @@ class _TorrentSelectorSheetState extends ConsumerState<TorrentSelectorSheet> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             IconButton(
-                              tooltip: 'Ver archivos del torrent',
+                              tooltip: l10n.downloadWithTorrentClient,
                               padding: const EdgeInsets.all(4),
                               constraints: const BoxConstraints(),
                               icon: Icon(
-                                Icons.folder_open_rounded,
-                                size: 19,
-                                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+                                AppIcons.download(iconPack),
+                                size: 20,
+                                color: theme.colorScheme.primary,
                               ),
-                              onPressed: () => _inspectBatchAndStream(torrent),
+                              onPressed: () => _onDownloadTorrentPressed(torrent),
                             ),
                             const SizedBox(width: 4),
                             IconButton(
@@ -815,7 +1027,7 @@ class _TorrentSelectorSheetState extends ConsumerState<TorrentSelectorSheet> {
                               padding: const EdgeInsets.all(4),
                               constraints: const BoxConstraints(),
                               icon: Icon(
-                                Icons.open_in_new_rounded,
+                                AppIcons.openInNew(iconPack),
                                 size: 19,
                                 color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
                               ),

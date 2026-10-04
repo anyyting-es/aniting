@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
+import 'package:seanime_app/core/preferences/desktop_nav_style_provider.dart';
 import 'package:seanime_app/core/preferences/mobile_nav_style_provider.dart';
 import 'package:seanime_app/core/preferences/resume_bar_preferences_provider.dart';
 import 'package:seanime_app/core/preferences/section_visibility_provider.dart';
@@ -22,6 +23,7 @@ import 'package:seanime_app/presentation/widgets/mobile_floating_nav.dart';
 import 'package:seanime_app/presentation/providers/app_update_provider.dart';
 import 'package:seanime_app/presentation/widgets/shell_animated_indexed_stack.dart';
 import 'package:seanime_app/presentation/widgets/update/app_update_dialog.dart';
+import 'package:seanime_app/data/services/explore_carousel_service.dart';
 
 enum ShellSection {
   anime,
@@ -70,6 +72,7 @@ class _MainShellState extends ConsumerState<MainShell> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkAutoUpdate();
+      ref.read(exploreCarouselNotifierProvider.notifier).syncOnStartup();
     });
   }
 
@@ -147,6 +150,7 @@ class _MainShellState extends ConsumerState<MainShell> {
     final isDesktop = MediaQuery.of(context).size.width >= 720;
     final l10n = ref.watch(translationsProvider);
     final mobileNavStyle = ref.watch(mobileNavStyleProvider);
+    final desktopNavStyle = ref.watch(desktopNavStyleProvider);
     final iconPack = ref.watch(iconPackProvider);
 
     final serverState = ref.watch(serverNotifierProvider);
@@ -273,38 +277,73 @@ class _MainShellState extends ConsumerState<MainShell> {
     }
 
     if (isDesktop) {
-      return wrapWithSystemOverlay(
-        Scaffold(
-          backgroundColor: theme.scaffoldBackgroundColor,
-          body: Row(
-            children: [
-              // Vertical Desktop Sidebar Rail
-              DesktopSidebar(
-                selectedIndex: activeIndex,
-                isSearchActive: _activeSection == ShellSection.explore,
-                onDestinationSelected: (idx) {
-                  if (idx >= 0 && idx < availableSections.length) {
-                    setState(() => _activeSection = availableSections[idx]);
-                  }
-                },
-                onSearchPressed: () {
-                  setState(() => _activeSection = ShellSection.explore);
-                },
-                onSettingsPressed: _openSettings,
-                items: desktopSidebarItems,
-              ),
-
-              // Full-width Main Content Area for Desktop & TV with Smooth Animation
-              Expanded(
-                child: ShellAnimatedIndexedStack(
-                  index: activeIndex,
-                  children: availablePages,
+      if (desktopNavStyle == DesktopNavStyle.sidebar) {
+        return wrapWithSystemOverlay(
+          Scaffold(
+            backgroundColor: theme.scaffoldBackgroundColor,
+            body: Row(
+              children: [
+                // Vertical Desktop Sidebar Rail
+                DesktopSidebar(
+                  selectedIndex: activeIndex,
+                  isSearchActive: _activeSection == ShellSection.explore,
+                  onDestinationSelected: (idx) {
+                    if (idx >= 0 && idx < availableSections.length) {
+                      setState(() => _activeSection = availableSections[idx]);
+                    }
+                  },
+                  onSearchPressed: () {
+                    setState(() => _activeSection = ShellSection.explore);
+                  },
+                  onSettingsPressed: _openSettings,
+                  items: desktopSidebarItems,
                 ),
-              ),
-            ],
+
+                // Full-width Main Content Area for Desktop & TV with Smooth Animation
+                Expanded(
+                  child: ShellAnimatedIndexedStack(
+                    index: activeIndex,
+                    children: availablePages,
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-      );
+        );
+      } else {
+        // Desktop Floating Navigation Mode: Full-bleed canvas with bottom centered floating dock
+        return wrapWithSystemOverlay(
+          Scaffold(
+            extendBody: true,
+            body: NotificationListener<ScrollNotification>(
+              onNotification: _onScrollNotification,
+              child: ShellAnimatedIndexedStack(
+                index: activeIndex,
+                children: availablePages,
+              ),
+            ),
+            bottomNavigationBar: SafeArea(
+              bottom: true,
+              child: ValueListenableBuilder<bool>(
+                valueListenable: _isResumeExpandedNotifier,
+                builder: (context, isResumeExpanded, _) {
+                  return MobileFloatingNav(
+                    selectedIndex: activeIndex,
+                    onDestinationSelected: (idx) {
+                      if (idx >= 0 && idx < availableSections.length) {
+                        setState(() => _activeSection = availableSections[idx]);
+                      }
+                      _isResumeExpandedNotifier.value = true;
+                    },
+                    items: sidebarItems,
+                    isResumeExpanded: isResumeExpanded,
+                  );
+                },
+              ),
+            ),
+          ),
+        );
+      }
     }
 
     if (mobileNavStyle == MobileNavStyle.floating) {

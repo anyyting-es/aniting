@@ -9,6 +9,7 @@ import 'package:seanime_app/core/server/server_manager.dart';
 import 'package:seanime_app/data/models/anime_entry.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
+import 'package:seanime_app/presentation/screens/downloads_screen.dart';
 import 'package:seanime_app/presentation/widgets/anime_card.dart';
 import 'package:seanime_app/presentation/widgets/compact_search_bar.dart';
 import 'package:seanime_app/presentation/widgets/continue_watching_card.dart';
@@ -243,6 +244,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     final collectionAsync = ref.watch(animeCollectionProvider);
     final missedSequelsAsync = ref.watch(missedSequelsProvider);
     final recommendationsAsync = ref.watch(recommendationsProvider);
+    final downloadedAnimeAsync = ref.watch(downloadedAnimeProvider);
 
     final screenWidth = MediaQuery.of(context).size.width;
     final isDesktop = screenWidth >= 720;
@@ -255,27 +257,28 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     final carouselSpacing = isDesktop ? 14.0 : 10.0;
     final topPadding = MediaQuery.of(context).padding.top;
     final isLoggedIn = serverState.status?.isLoggedIn ?? false;
+    final isOffline = !serverState.isOnline || serverState.state == ServerState.error;
 
     // Cache / Readiness check for user library
     final cachedCw = FeedCacheService.instance.getAnimeList(FeedCacheService.kCacheContinueWatchingAnime);
     final offlineCw = OfflineLibraryService.instance.getContinueWatching();
     final continueWatchingEntries = continueWatchingAsync.value ??
         (continueWatchingAsync.isLoading
-            ? (cachedCw.isNotEmpty ? cachedCw : offlineCw)
-            : (!isLoggedIn ? offlineCw : <AnimeEntry>[]));
+            ? (cachedCw.isNotEmpty ? cachedCw : (isOffline ? offlineCw : <AnimeEntry>[]))
+            : (isOffline ? offlineCw : <AnimeEntry>[]));
     final hasUserCachedData = cachedCw.isNotEmpty ||
-        offlineCw.isNotEmpty ||
+        (isOffline && offlineCw.isNotEmpty) ||
         (collectionAsync.value?.isNotEmpty ?? false) ||
-        OfflineLibraryService.instance.getAnimeCollection().isNotEmpty;
+        (isOffline && OfflineLibraryService.instance.getAnimeCollection().isNotEmpty);
     final isServerUnavailable = serverState.state == ServerState.stopped || serverState.state == ServerState.error;
 
     // Both continueWatching (or its cache) and collection must be settled before removing skeleton to prevent CLS
-    final isCwSettled = continueWatchingAsync.hasValue || cachedCw.isNotEmpty || offlineCw.isNotEmpty || continueWatchingAsync.hasError;
+    final isCwSettled = continueWatchingAsync.hasValue || cachedCw.isNotEmpty || (isOffline && offlineCw.isNotEmpty) || continueWatchingAsync.hasError;
     final isCollectionSettled = collectionAsync.hasValue || collectionAsync.hasError;
     final isUserFeedReady = isCwSettled && isCollectionSettled;
 
     if (!_hasCompletedInitialLoad) {
-      if ((hasUserCachedData && isCwSettled) || isServerUnavailable || (serverState.isOnline && isUserFeedReady) || !isLoggedIn) {
+      if ((hasUserCachedData && isCwSettled) || isServerUnavailable || (serverState.isOnline && isUserFeedReady)) {
         _hasCompletedInitialLoad = true;
       }
     }
@@ -287,10 +290,8 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
         e.status.toUpperCase() == 'CURRENT' || e.status.toUpperCase() == 'WATCHING') ?? false;
     final hasMissedSequels = missedSequelsAsync.value?.isNotEmpty ?? false;
     final hasRecommendations = recommendationsAsync.value?.isNotEmpty ?? false;
-    final hasAnyContent = hasContinueWatching || hasWatching || hasMissedSequels || hasRecommendations;
-    final isOffline = !serverState.isOnline ||
-        (serverState.state == ServerState.error) ||
-        (collectionAsync.hasError && (continueWatchingAsync.hasError || continueWatchingEntries.isEmpty));
+    final hasDownloadedAnime = downloadedAnimeAsync.value?.isNotEmpty ?? false;
+    final hasAnyContent = hasContinueWatching || hasWatching || hasMissedSequels || hasRecommendations || hasDownloadedAnime;
 
     return PopScope(
       canPop: !_isSearching && _searchController.text.isEmpty,
@@ -309,6 +310,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                 ref.invalidate(animeCollectionProvider);
                 ref.invalidate(missedSequelsProvider);
                 ref.invalidate(recommendationsProvider);
+                ref.invalidate(downloadedAnimeProvider);
               },
               child: CustomScrollView(
                 controller: _scrollController,
@@ -554,7 +556,64 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                           },
                         ),
 
-                      // ─── 2. Viendo Actualmente (Currently Watching) ───
+                      // ─── 2. Descargas de anime (Downloaded Anime) ───
+                      downloadedAnimeAsync.when(
+                        data: (downloaded) {
+                          if (downloaded.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+                          return SliverToBoxAdapter(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _SectionHeader(
+                                  title: '${l10n.downloadedAnimeSection} (${downloaded.length})',
+                                  trailing: TextButton(
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => const DownloadsScreen(initialTabIndex: 0),
+                                        ),
+                                      );
+                                    },
+                                    child: Text(
+                                      l10n.viewAll,
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: theme.colorScheme.primary,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(
+                                  height: carouselHeight + 16,
+                                  child: ListView.separated(
+                                    clipBehavior: Clip.none,
+                                    scrollDirection: Axis.horizontal,
+                                    cacheExtent: 350,
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                    itemCount: downloaded.length,
+                                    separatorBuilder: (context, index) => SizedBox(width: carouselSpacing),
+                                    itemBuilder: (context, index) {
+                                      final item = downloaded[index];
+                                      return AnimeCard(
+                                        entry: item,
+                                        width: animeCardWidth,
+                                        onTap: () => _openDetail(context, item),
+                                      );
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(height: 20),
+                              ],
+                            ),
+                          );
+                        },
+                        loading: () => const SliverToBoxAdapter(child: SizedBox.shrink()),
+                        error: (err, stack) => const SliverToBoxAdapter(child: SizedBox.shrink()),
+                      ),
+
+                      // ─── 3. Viendo Actualmente (Currently Watching) ───
                       ..._buildWatchingSlivers(
                         collectionAsync: collectionAsync,
                         l10n: l10n,

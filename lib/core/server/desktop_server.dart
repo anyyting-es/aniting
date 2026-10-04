@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:seanime_app/core/storage/app_storage_paths.dart';
 
 class DesktopServer {
   Process? _process;
@@ -39,9 +40,24 @@ class DesktopServer {
     return null;
   }
 
+  void _ensureBuiltinTorrentConfig(String dir) {
+    try {
+      final configFile = File('$dir/config.toml');
+      if (configFile.existsSync()) {
+        final content = configFile.readAsStringSync();
+        if (!content.contains('builtintorrentclient')) {
+          configFile.writeAsStringSync('$content\n\n[experimental]\nbuiltintorrentclient = true\n');
+        }
+      }
+    } catch (e) {
+      debugPrint('DesktopServer: could not ensure builtin torrent config: $e');
+    }
+  }
+
   Future<bool> start({
     String? executablePath,
     int port = 43211,
+    String host = '127.0.0.1',
     String? dataDir,
   }) async {
     if (_isRunning) return true;
@@ -52,13 +68,18 @@ class DesktopServer {
       return false;
     }
 
+    // Always use dedicated Aniting server directory (%APPDATA%\Aniting or ~/.config/aniting)
+    final resolvedDataDir = dataDir ?? await AppStoragePaths.getServerDataDirectory();
+
+    _ensureBuiltinTorrentConfig(resolvedDataDir);
+
     try {
       final args = <String>[
         '--desktop-sidecar',
         '--disable-password',
         '--port', port.toString(),
-        '--host', '127.0.0.1',
-        if (dataDir != null) ...['--datadir', dataDir],
+        '--host', host,
+        '--datadir', resolvedDataDir,
       ];
 
       debugPrint('DesktopServer: Launching $resolvedBinary with args: $args');

@@ -235,6 +235,32 @@ class ExoPlayerPlugin :
                 selectTrack(C.TRACK_TYPE_TEXT, index)
                 result.success(null)
             }
+            "setSubtitleStyle" -> {
+                val fontFamily = call.argument<String>("fontFamily") ?: "sans-serif"
+                val fontSizeMultiplier = (call.argument<Number>("fontSizeMultiplier"))?.toFloat() ?: 1.0f
+                val bold = call.argument<Boolean>("bold") ?: true
+                val italic = call.argument<Boolean>("italic") ?: false
+                val textColor = (call.argument<Number>("textColor"))?.toInt() ?: Color.WHITE
+                val backgroundColor = (call.argument<Number>("backgroundColor"))?.toInt() ?: Color.TRANSPARENT
+                val borderStyle = call.argument<String>("borderStyle") ?: "outline"
+                val borderColor = (call.argument<Number>("borderColor"))?.toInt() ?: Color.BLACK
+                val borderSize = (call.argument<Number>("borderSize"))?.toFloat() ?: 3.0f
+                val overrideAss = call.argument<Boolean>("overrideAss") ?: false
+
+                applySubtitleStyle(
+                    fontFamily,
+                    fontSizeMultiplier,
+                    bold,
+                    italic,
+                    textColor,
+                    backgroundColor,
+                    borderStyle,
+                    borderColor,
+                    borderSize,
+                    overrideAss
+                )
+                result.success(null)
+            }
             "setVisible" -> {
                 val visible = call.argument<Boolean>("visible") ?: true
                 surfaceContainer?.visibility = if (visible) View.VISIBLE else View.GONE
@@ -498,18 +524,9 @@ class ExoPlayerPlugin :
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.MATCH_PARENT
             )
-            val customStyle = CaptionStyleCompat(
-                Color.WHITE,
-                Color.TRANSPARENT,
-                Color.TRANSPARENT,
-                CaptionStyleCompat.EDGE_TYPE_OUTLINE,
-                Color.BLACK,
-                Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
-            )
-            setStyle(customStyle)
-            setFractionalTextSize(SubtitleView.DEFAULT_TEXT_SIZE_FRACTION * 1.15f)
-            setBottomPaddingFraction(SubtitleView.DEFAULT_BOTTOM_PADDING_FRACTION)
-            setApplyEmbeddedStyles(false)
+            // Native view is hidden because Flutter's PlayerViewport renders the smooth,
+            // anti-aliased cues overlay directly, eliminating Canvas stroke miter spikes and double rendering.
+            visibility = View.GONE
         }
         standardSubtitleView = standardSubView
         container.addView(standardSubView)
@@ -894,12 +911,65 @@ class ExoPlayerPlugin :
             .filter { it.isNotBlank() }
             .joinToString("\n")
         mainHandler.post {
-            standardSubtitleView?.setCues(cueGroup.cues)
+            // Flutter's PlayerViewport renders these cues cleanly with customizable styles and anti-aliasing.
+            // Keeping native SubtitleView dormant prevents double-rendering artifacts and outline pixelation.
             eventSink?.success(
                 mapOf(
                     "event" to "cues",
                     "text" to text
                 )
+            )
+        }
+    }
+
+    private fun applySubtitleStyle(
+        fontFamily: String,
+        fontSizeMultiplier: Float,
+        bold: Boolean,
+        italic: Boolean,
+        textColor: Int,
+        backgroundColor: Int,
+        borderStyle: String,
+        borderColor: Int,
+        borderSize: Float,
+        overrideAss: Boolean
+    ) {
+        val edgeType = when (borderStyle) {
+            "none" -> CaptionStyleCompat.EDGE_TYPE_NONE
+            "outline" -> CaptionStyleCompat.EDGE_TYPE_OUTLINE
+            "dropShadow" -> CaptionStyleCompat.EDGE_TYPE_DROP_SHADOW
+            "raised" -> CaptionStyleCompat.EDGE_TYPE_RAISED
+            "depressed" -> CaptionStyleCompat.EDGE_TYPE_DEPRESSED
+            else -> CaptionStyleCompat.EDGE_TYPE_OUTLINE
+        }
+
+        val typefaceStyle = when {
+            bold && italic -> Typeface.BOLD_ITALIC
+            bold -> Typeface.BOLD
+            italic -> Typeface.ITALIC
+            else -> Typeface.NORMAL
+        }
+
+        val baseTypeface = when (fontFamily.lowercase()) {
+            "serif" -> Typeface.SERIF
+            "monospace" -> Typeface.MONOSPACE
+            else -> Typeface.SANS_SERIF
+        }
+        val customTypeface = Typeface.create(baseTypeface, typefaceStyle)
+
+        val customStyle = CaptionStyleCompat(
+            textColor,
+            backgroundColor,
+            Color.TRANSPARENT,
+            edgeType,
+            borderColor,
+            customTypeface
+        )
+
+        mainHandler.post {
+            standardSubtitleView?.setStyle(customStyle)
+            standardSubtitleView?.setFractionalTextSize(
+                SubtitleView.DEFAULT_TEXT_SIZE_FRACTION * 1.15f * fontSizeMultiplier
             )
         }
     }

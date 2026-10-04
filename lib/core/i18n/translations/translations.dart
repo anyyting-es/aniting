@@ -87,6 +87,7 @@ abstract class AppTranslations {
   String get scanLocalFolder;
   String get scanStarted;
   String get scanFailed;
+  String get openDownloadsFolder;
   String get statusWatching;
   String get statusCompleted;
   String get statusPlanning;
@@ -174,6 +175,10 @@ abstract class AppTranslations {
   String get mobileNavStyleDesc;
   String get mobileNavStyleFloating;
   String get mobileNavStyleClassic;
+  String get desktopNavStyle;
+  String get desktopNavStyleDesc;
+  String get desktopNavStyleSidebar;
+  String get desktopNavStyleFloating;
   String get showScores;
   String get showScoresDesc;
   String get floatingResumeBar;
@@ -198,6 +203,8 @@ abstract class AppTranslations {
   String get workingDirectoryDesc;
   String get autoDeletePreviousTitle;
   String get autoDeletePreviousDesc;
+  String get pauseTorrentOnExitTitle;
+  String get pauseTorrentOnExitDesc;
   String get defaultDirectoryHint;
   String get savePath;
   String get resetPath;
@@ -220,6 +227,28 @@ abstract class AppTranslations {
   String get storageAccessDenied;
   String get grantStorageAccess;
   String get coreVersion;
+
+  // LAN Sharing & Discovery
+  String get lanSharing;
+  String get lanSharingDesc;
+  String get lanSharingActive;
+  String get lanSharingActiveDesc;
+  String get serverName;
+  String get serverNameHint;
+  String get sharingOnNetwork;
+  String get discoveredServers;
+  String get discoveredServersDesc;
+  String get searchingServers;
+  String get searchServers;
+  String get noServersFound;
+  String get noServersFoundDesc;
+  String get connectToServer;
+  String get connectedToServer;
+  String discoveredServerLabel(String name, String ip, int port);
+  String get restartingServer;
+  String get useLocalServer;
+  String get connectedToRemoteDesc;
+  String get lanSharingRequiresLocal;
 
   // Extensions & Marketplace
   String get installed;
@@ -802,6 +831,25 @@ abstract class AppTranslations {
   String downloadedMangaCount(int mangaCount, int chaptersCount);
   String storageUsed(String formattedSize);
   String get refreshDownloadsTooltip;
+  String get activeDownloads;
+  String get noActiveDownloads;
+  String get noActiveDownloadsDesc;
+  String get torrentStreamDownload;
+  String get mangaDownloadQueueTitle;
+  String get pauseDownload;
+  String get resumeDownload;
+  String get cancelOrDeleteDownload;
+  String get pauseQueue;
+  String get resumeQueue;
+  String get clearQueue;
+  String get manageActiveAndCompletedDownloads;
+  String get downloadSpeedLabel;
+  String get uploadSpeedLabel;
+  String get downloadWithTorrentClient;
+  String get downloadInBackground;
+  String get watchNowStream;
+  String get allBatches;
+  String get downloadStarted;
 
   // Player & UI Details
   String prevEpisodeNumbered(int number);
@@ -877,6 +925,10 @@ abstract class AppTranslations {
   String get deleteFromList;
   String deleteAnilistConfirm(String title);
   String deleteLocalConfirm(String title);
+  String get deleteDownload;
+  String deleteDownloadConfirm(String title);
+  String get downloadDeleted;
+  String deleteEpisodeDownloadConfirm(int episodeNumber);
   String get removedFromList;
   String get selectProviderToDownload;
   String downloadingChapter(String chapter);
@@ -910,4 +962,52 @@ abstract class AppTranslations {
   String get mangaSection;
   String get mangaSectionDesc;
   String get cannotDisableBothSections;
+
+  // Subtitle Style Customization
+  String get subtitleStyle;
+  String get subtitleStyleDesc;
+  String get subtitlePreviewText;
+  String get subtitleFont;
+  String get subtitleFontSize;
+  String get subtitleBold;
+  String get subtitleItalic;
+  String get subtitleTextColor;
+  String get subtitleBgColor;
+  String get subtitleBorderStyle;
+  String get subtitleBorderSize;
+  String get subtitleBorderColor;
+  String get subtitleOverrideAss;
+  String get subtitleOverrideAssDesc;
+  String get subtitleStyleReset;
+  String get subtitleStyleResetConfirm;
+  String get borderStyleNone;
+  String get borderStyleOutline;
+  String get borderStyleDropShadow;
+  String get borderStyleRaised;
+  String get borderStyleDepressed;
+  String get bgTransparent;
+  String get bgSubtle;
+  String get bgMedium;
+  String get bgSolid;
+
+  // Torrent Batch Filter
+  String get showOnlyBatches;
+
+  // Download Manager & History
+  String get downloadManager;
+  String get downloadManagerDesc;
+  String get downloadHistory;
+  String get noDownloadHistory;
+  String get noDownloadHistoryDesc;
+  String get clearHistory;
+  String get clearHistoryConfirm;
+  String get timeRemaining;
+  String etaLabel(String eta);
+  String get downloadedAnimeSection;
+  String get downloadedMangaSection;
+  String get activeDownloadsCount;
+  String get completedDownload;
+  String get completedDownloads;
+  String downloadingEpisode(int number);
+  String get viewAll;
 }

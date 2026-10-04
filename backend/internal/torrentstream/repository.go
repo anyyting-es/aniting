@@ -273,10 +273,10 @@ func (r *Repository) GetDownloadDir() string {
 func (r *Repository) getDefaultDownloadPath() string {
 	cacheDir, err := os.UserCacheDir()
 	if err == nil && cacheDir != "" {
-		downloadDirPath := filepath.Join(cacheDir, "seanime", "torrentstream")
+		downloadDirPath := filepath.Join(cacheDir, "aniting", "torrentstream")
 		return downloadDirPath
 	}
 	tempDir := os.TempDir()
-	downloadDirPath := filepath.Join(tempDir, "seanime", "torrentstream")
+	downloadDirPath := filepath.Join(tempDir, "aniting", "torrentstream")
 	return downloadDirPath
 }

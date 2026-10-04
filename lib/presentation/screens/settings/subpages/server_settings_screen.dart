@@ -7,6 +7,8 @@ import 'package:seanime_app/core/server/server_manager.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/screens/settings/widgets/pixel_settings_widgets.dart';
 import 'package:seanime_app/presentation/screens/settings/widgets/pixel_subpage_scaffold.dart';
+import 'package:seanime_app/presentation/screens/settings/widgets/server_lan_sharing_card.dart';
+import 'package:seanime_app/presentation/screens/settings/widgets/server_discovered_list_card.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PÁGINA: SERVIDOR Y RED
@@ -65,8 +67,12 @@ class _ServerSettingsScreenState extends ConsumerState<ServerSettingsScreen> {
       title: l10n.serverAndNetwork,
       isEmbedded: widget.isEmbedded,
       children: [
-        // ─── ESTADO DEL SERVIDOR LOCAL ──────────────────────────────
-        SettingsSectionHeader(title: l10n.localServer),
+        // ─── ESTADO DEL SERVIDOR ────────────────────────────────────
+        SettingsSectionHeader(
+          title: serverState.state == ServerState.remote
+              ? l10n.serverAndNetwork
+              : l10n.localServer,
+        ),
         const SizedBox(height: 10),
         PixelCardContainer(
           child: Column(
@@ -78,18 +84,24 @@ class _ServerSettingsScreenState extends ConsumerState<ServerSettingsScreen> {
                     width: 42,
                     height: 42,
                     decoration: BoxDecoration(
-                      color: serverState.isOnline
-                          ? const Color(0xFF22C55E).withValues(alpha: 0.15)
-                          : theme.colorScheme.errorContainer.withValues(alpha: 0.4),
+                      color: serverState.state == ServerState.remote
+                          ? theme.colorScheme.primaryContainer.withValues(alpha: 0.7)
+                          : serverState.isOnline
+                              ? const Color(0xFF22C55E).withValues(alpha: 0.15)
+                              : theme.colorScheme.errorContainer.withValues(alpha: 0.4),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
-                      serverState.isOnline
-                          ? Icons.check_circle_rounded
-                          : Icons.cancel_rounded,
-                      color: serverState.isOnline
-                          ? const Color(0xFF22C55E)
-                          : theme.colorScheme.error,
+                      serverState.state == ServerState.remote
+                          ? Icons.lan_rounded
+                          : serverState.isOnline
+                              ? Icons.check_circle_rounded
+                              : Icons.cancel_rounded,
+                      color: serverState.state == ServerState.remote
+                          ? theme.colorScheme.primary
+                          : serverState.isOnline
+                              ? const Color(0xFF22C55E)
+                              : theme.colorScheme.error,
                       size: 24,
                     ),
                   ),
@@ -99,24 +111,56 @@ class _ServerSettingsScreenState extends ConsumerState<ServerSettingsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          serverState.isOnline ? l10n.serverConnected : l10n.serverOffline,
+                          serverState.state == ServerState.remote
+                              ? l10n.serverActiveRemote
+                              : serverState.isOnline
+                                  ? l10n.serverActiveLocal
+                                  : l10n.serverOffline,
                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                         ),
-                        if (serverState.status?.version != null) ...[
-                          const SizedBox(height: 2),
-                          Text(
-                            '${l10n.coreVersion}: ${serverState.status!.version}',
-                            style: TextStyle(
-                              color: theme.colorScheme.onSurfaceVariant,
-                              fontSize: 12.5,
-                            ),
+                        const SizedBox(height: 2),
+                        Text(
+                          serverState.state == ServerState.remote
+                              ? '${ref.watch(serverManagerProvider).host}:${ref.watch(serverManagerProvider).port}${serverState.status?.version != null ? ' • v${serverState.status!.version}' : ''}'
+                              : serverState.isOnline
+                                  ? '127.0.0.1:${ref.watch(serverManagerProvider).port}${serverState.status?.version != null ? ' • ${l10n.coreVersion}: ${serverState.status!.version}' : ''}'
+                                  : '127.0.0.1:${ref.watch(serverManagerProvider).port}',
+                          style: TextStyle(
+                            color: theme.colorScheme.onSurfaceVariant,
+                            fontSize: 12.5,
                           ),
-                        ],
+                        ),
                       ],
                     ),
                   ),
                 ],
               ),
+              if (serverState.state == ServerState.remote) ...[
+                const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primaryContainer.withValues(alpha: 0.25),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: theme.colorScheme.primary.withValues(alpha: 0.2),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.info_outline_rounded, size: 18, color: theme.colorScheme.primary),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          l10n.connectedToRemoteDesc,
+                          style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 12),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               if (serverState.errorMessage != null && !serverState.isOnline) ...[
                 const SizedBox(height: 12),
                 Container(
@@ -136,39 +180,95 @@ class _ServerSettingsScreenState extends ConsumerState<ServerSettingsScreen> {
                 ),
               ],
               const SizedBox(height: 18),
-              Row(
-                children: [
-                  Expanded(
-                    child: FilledButton.icon(
-                      style: FilledButton.styleFrom(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                        padding: const EdgeInsets.symmetric(vertical: 13),
-                      ),
-                      onPressed: serverState.state == ServerState.starting
-                          ? null
-                          : () => serverNotifier.startLocal(),
-                      icon: const Icon(Icons.play_arrow_rounded),
-                      label: Text(l10n.startLocal),
+              if (serverState.state == ServerState.remote)
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.tonalIcon(
+                    style: FilledButton.styleFrom(
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      padding: const EdgeInsets.symmetric(vertical: 13),
                     ),
+                    onPressed: () async {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            content: Text(l10n.serverStarting),
+                            duration: const Duration(seconds: 2),
+                          ),
+                        );
+                      }
+                      await serverNotifier.switchToLocal();
+                      final mgr = ref.read(serverManagerProvider);
+                      _hostController.text = mgr.host;
+                      _portController.text = mgr.port.toString();
+                    },
+                    icon: const Icon(Icons.phonelink_setup_rounded),
+                    label: Text(l10n.useLocalServer),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                        padding: const EdgeInsets.symmetric(vertical: 13),
+                )
+              else
+                Row(
+                  children: [
+                    Expanded(
+                      child: FilledButton.icon(
+                        style: FilledButton.styleFrom(
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          padding: const EdgeInsets.symmetric(vertical: 13),
+                        ),
+                        onPressed: serverState.state == ServerState.starting
+                            ? null
+                            : () => serverNotifier.startLocal(),
+                        icon: const Icon(Icons.play_arrow_rounded),
+                        label: Text(l10n.startLocal),
                       ),
-                      onPressed: serverState.isOnline
-                          ? () => serverNotifier.stopServer()
-                          : null,
-                      icon: const Icon(Icons.stop_rounded),
-                      label: Text(l10n.stopServer),
                     ),
-                  ),
-                ],
-              ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          padding: const EdgeInsets.symmetric(vertical: 13),
+                        ),
+                        onPressed: serverState.isOnline
+                            ? () => serverNotifier.stopServer()
+                            : null,
+                        icon: const Icon(Icons.stop_rounded),
+                        label: Text(l10n.stopServer),
+                      ),
+                    ),
+                  ],
+                ),
             ],
           ),
+        ),
+
+        const SizedBox(height: 24),
+
+        // ─── COMPARTIR SERVIDOR EN RED LOCAL ───────────────────────
+        SettingsSectionHeader(title: l10n.lanSharing),
+        const SizedBox(height: 10),
+        const ServerLanSharingCard(),
+
+        const SizedBox(height: 24),
+
+        // ─── SERVIDORES DESCUBIERTOS EN RED ────────────────────────
+        SettingsSectionHeader(title: l10n.discoveredServers),
+        const SizedBox(height: 10),
+        ServerDiscoveredListCard(
+          onSelectServer: (ip, port) {
+            _hostController.text = ip;
+            _portController.text = port.toString();
+            serverNotifier.checkConnection(host: ip, port: port);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                content: Text(l10n.testingConnection),
+              ),
+            );
+          },
         ),
 
         const SizedBox(height: 24),

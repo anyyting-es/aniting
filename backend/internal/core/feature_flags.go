@@ -146,7 +146,7 @@ type (
 // NewFeatureFlags initializes the feature flags
 func NewFeatureFlags(cfg *Config, logger *zerolog.Logger) FeatureFlags {
 	ff := FeatureFlags{
-		BuiltinTorrentClient: cfg.Experimental.BuiltinTorrentClient,
+		BuiltinTorrentClient: true,
 		DummyDebrid:          cfg.Experimental.DummyDebrid,
 	}
 

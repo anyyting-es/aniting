@@ -4,9 +4,12 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/preferences/title_language_provider.dart';
 import 'package:seanime_app/data/models/anime_entry.dart';
+import 'package:seanime_app/data/models/explore_carousel_config.dart';
 import 'package:seanime_app/data/models/manga_entry.dart';
+import 'package:seanime_app/data/services/explore_carousel_service.dart' show optimizeTmdbImageUrl;
 import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
 import 'package:seanime_app/presentation/screens/manga_detail_screen.dart';
 
@@ -17,6 +20,9 @@ class ExploreCarouselItem {
   final String title;
   final String? bannerImage;
   final String? coverImage;
+  final String? horizontalBackground;
+  final String? verticalBackground;
+  final String? logoImage;
   final String? format;
   final double? score;
   final int? year;
@@ -28,12 +34,38 @@ class ExploreCarouselItem {
     required this.title,
     this.bannerImage,
     this.coverImage,
+    this.horizontalBackground,
+    this.verticalBackground,
+    this.logoImage,
     this.format,
     this.score,
     this.year,
     this.genres = const [],
     required this.onTap,
   });
+
+  factory ExploreCarouselItem.fromFeatured(
+    ExploreFeaturedItem item,
+    BuildContext context,
+  ) {
+    return ExploreCarouselItem(
+      mediaId: item.mediaId,
+      title: item.title,
+      horizontalBackground: item.horizontalBackground,
+      verticalBackground: item.verticalBackground,
+      logoImage: item.logo,
+      format: item.format,
+      score: item.score,
+      year: item.year,
+      genres: item.genres,
+      onTap: () {
+        AnimeDetailScreen.navigate(
+          context,
+          mediaId: item.mediaId,
+        );
+      },
+    );
+  }
 
   factory ExploreCarouselItem.fromAnime(
     AnimeEntry anime,
@@ -152,7 +184,7 @@ class _ExploreHeroCarouselState extends ConsumerState<ExploreHeroCarousel> {
     if (widget.items.length <= 1 || _isInTest) return;
 
     _autoPlayTimer = Timer.periodic(const Duration(seconds: 7), (_) {
-      if (!mounted || _isInteracting || !_pageController.hasClients) return;
+      if (!mounted || _isInteracting || !_pageController.hasClients || !TickerMode.of(context)) return;
       // Seamlessly advance forward without fast backward rewinding
       final nextPage = _currentPage + 1;
       _pageController.animateToPage(
@@ -180,10 +212,17 @@ class _ExploreHeroCarouselState extends ConsumerState<ExploreHeroCarousel> {
     }
 
     final isDesktop = MediaQuery.of(context).size.width >= 720;
+    final screenHeight = MediaQuery.of(context).size.height;
     final topPadding = MediaQuery.of(context).padding.top;
-    // Slimmer, cinematic height (260dp on mobile, 340dp on desktop + topPadding)
-    final carouselHeight = widget.height ?? ((isDesktop ? 340.0 : 260.0) + topPadding);
+    // Generous, expansive cinematic height:
+    // On Desktop: ~70% of screen height (clamped between 620.0 and 760.0) + topPadding
+    // On Mobile: ~58% of screen height (clamped between 470.0 and 580.0) + topPadding
+    final defaultHeight = (isDesktop
+        ? (screenHeight * 0.70).clamp(620.0, 760.0) + topPadding
+        : (screenHeight * 0.58).clamp(470.0, 580.0) + topPadding).roundToDouble();
+    final carouselHeight = widget.height ?? defaultHeight;
     final theme = Theme.of(context);
+    final l10n = ref.watch(translationsProvider);
 
     return SizedBox(
       height: carouselHeight,
@@ -222,8 +261,14 @@ class _ExploreHeroCarouselState extends ConsumerState<ExploreHeroCarousel> {
                               }
 
                               final double pageOffset = page - index;
+                              if (pageOffset.abs() >= 1.0) {
+                                return const SizedBox.shrink();
+                              }
                               final double absOffset = pageOffset.abs().clamp(0.0, 1.0);
                               final double opacity = (1.0 - absOffset).clamp(0.0, 1.0);
+                              if (opacity <= 0.005) {
+                                return const SizedBox.shrink();
+                              }
                               final double smoothOpacity = Curves.easeInOut.transform(opacity);
 
                               // Counteract PageView's horizontal translation completely:
@@ -248,6 +293,7 @@ class _ExploreHeroCarouselState extends ConsumerState<ExploreHeroCarousel> {
                                 key: ValueKey('hero_slide_${item.mediaId}_$index'),
                                 item: item,
                                 theme: theme,
+                                l10n: l10n,
                                 isDesktop: isDesktop,
                               ),
                             ),
@@ -257,10 +303,104 @@ class _ExploreHeroCarouselState extends ConsumerState<ExploreHeroCarousel> {
                     },
                   ),
 
-                  // 2. Indicator Dots near bottom
+                  // 2. Persistent Static Viewport Bottom Blend
+                  // Fixed to the carousel viewport (outside the PageView and never faded by slide Opacity).
+                  // Permanently anchors the bottom of the carousel to theme.scaffoldBackgroundColor,
+                  // guaranteeing zero gap, zero separation from the section below, and preventing any
+                  // backdrop artwork colors from bleeding at the seam during in-place dissolve.
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    height: isDesktop ? 68.0 : 44.0,
+                    child: IgnorePointer(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            stops: const [0.0, 0.35, 0.70, 0.90, 1.0],
+                            colors: [
+                              theme.scaffoldBackgroundColor.withValues(alpha: 0.0),
+                              theme.scaffoldBackgroundColor.withValues(alpha: 0.22),
+                              theme.scaffoldBackgroundColor.withValues(alpha: 0.65),
+                              theme.scaffoldBackgroundColor.withValues(alpha: 0.95),
+                              theme.scaffoldBackgroundColor,
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // 2b. Subpixel Seam Bridge
+                  // Eliminates any fractional floating-point rasterization seams on Windows high-DPI scaling.
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: -1,
+                    height: 2.5,
+                    child: IgnorePointer(
+                      child: ColoredBox(color: theme.scaffoldBackgroundColor),
+                    ),
+                  ),
+
+                  // 3. Desktop Navigation Arrows (Prev / Next)
+                  if (isDesktop && widget.items.length > 1) ...[
+                    Positioned(
+                      left: 16,
+                      top: 0,
+                      bottom: 0,
+                      child: Center(
+                        child: Material(
+                          color: Colors.black.withValues(alpha: 0.35),
+                          shape: const CircleBorder(),
+                          child: InkWell(
+                            customBorder: const CircleBorder(),
+                            onTap: () {
+                              _pageController.previousPage(
+                                duration: const Duration(milliseconds: 600),
+                                curve: Curves.easeOutCubic,
+                              );
+                            },
+                            child: const Padding(
+                              padding: EdgeInsets.all(8),
+                              child: Icon(Icons.chevron_left_rounded, size: 28, color: Colors.white),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      right: 16,
+                      top: 0,
+                      bottom: 0,
+                      child: Center(
+                        child: Material(
+                          color: Colors.black.withValues(alpha: 0.35),
+                          shape: const CircleBorder(),
+                          child: InkWell(
+                            customBorder: const CircleBorder(),
+                            onTap: () {
+                              _pageController.nextPage(
+                                duration: const Duration(milliseconds: 600),
+                                curve: Curves.easeOutCubic,
+                              );
+                            },
+                            child: const Padding(
+                              padding: EdgeInsets.all(8),
+                              child: Icon(Icons.chevron_right_rounded, size: 28, color: Colors.white),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+
+                  // 4. Indicator Dots near bottom
                   if (widget.items.length > 1)
                     Positioned(
-                      bottom: 8,
+                      bottom: 12,
                       left: 0,
                       right: 0,
                       child: _buildIndicatorRow(theme),
@@ -287,7 +427,7 @@ class _ExploreHeroCarouselState extends ConsumerState<ExploreHeroCarousel> {
             duration: const Duration(milliseconds: 250),
             curve: Curves.easeOut,
             margin: const EdgeInsets.symmetric(horizontal: 3),
-            width: isSelected ? 18.0 : 5.0,
+            width: isSelected ? 20.0 : 5.0,
             height: 4.5,
             decoration: BoxDecoration(
               color: isSelected
@@ -302,73 +442,48 @@ class _ExploreHeroCarouselState extends ConsumerState<ExploreHeroCarousel> {
   }
 }
 
-class _HeroBannerSlide extends StatefulWidget {
+class _HeroBannerSlide extends StatelessWidget {
   final ExploreCarouselItem item;
   final ThemeData theme;
+  final AppTranslations l10n;
   final bool isDesktop;
 
   const _HeroBannerSlide({
     super.key,
     required this.item,
     required this.theme,
+    required this.l10n,
     required this.isDesktop,
   });
 
   @override
-  State<_HeroBannerSlide> createState() => _HeroBannerSlideState();
-}
-
-class _HeroBannerSlideState extends State<_HeroBannerSlide> with SingleTickerProviderStateMixin {
-  late final AnimationController _panController;
-  late final Animation<double> _panAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    // Ultra-slow, peaceful ambient pan animation (28 seconds duration)
-    _panController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 28),
-    );
-
-    // Subtle ambient pan range (-0.20 to 0.20 on mobile, -0.08 to 0.08 on desktop)
-    final panRange = widget.isDesktop ? 0.08 : 0.20;
-    _panAnimation = Tween<double>(
-      begin: -panRange,
-      end: panRange,
-    ).animate(CurvedAnimation(
-      parent: _panController,
-      curve: Curves.easeInOutSine,
-    ));
-
-    if (!_isInTest) {
-      _panController.repeat(reverse: true);
-    }
-  }
-
-  @override
-  void dispose() {
-    _panController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final item = widget.item;
-    final isDesktop = widget.isDesktop;
-    final bgColor = widget.theme.scaffoldBackgroundColor;
+    final bgColor = theme.scaffoldBackgroundColor;
     final topPadding = MediaQuery.of(context).padding.top;
 
-    final imageUrl = (item.bannerImage != null && item.bannerImage!.isNotEmpty)
-        ? item.bannerImage!
-        : (item.coverImage ?? '');
+    final String rawImageUrl;
+    if (isDesktop) {
+      rawImageUrl = item.horizontalBackground ??
+          item.bannerImage ??
+          item.verticalBackground ??
+          item.coverImage ??
+          '';
+    } else {
+      rawImageUrl = item.verticalBackground ??
+          item.horizontalBackground ??
+          item.bannerImage ??
+          item.coverImage ??
+          '';
+    }
+    final imageUrl = optimizeTmdbImageUrl(rawImageUrl, isDesktop: isDesktop, isLogo: false);
 
     final scoreVal = item.score != null
         ? (item.score! > 10 ? (item.score! / 10).toStringAsFixed(1) : item.score!.toStringAsFixed(1))
         : null;
 
-    // Compact, non-intrusive bottom shadow height (only covers metadata area, not the whole banner)
-    final bottomShadowHeight = isDesktop ? 140.0 : 115.0;
+    final hasLogo = item.logoImage != null && item.logoImage!.isNotEmpty;
+    // Generous bottom shadow height (smooth cubic feather into page background)
+    final bottomShadowHeight = isDesktop ? 320.0 : 230.0;
 
     return ClipRect(
       child: Material(
@@ -378,33 +493,29 @@ class _HeroBannerSlideState extends State<_HeroBannerSlide> with SingleTickerPro
           child: Stack(
             fit: StackFit.expand,
             children: [
-              // 1. Banner Background Image with Slow Ambient Pan (Ken Burns)
+              // 1. Static Banner Background Image (Zero continuous repaint, 0% idle GPU)
+              // Aligned towards the upper portion (-0.42 desktop / -0.15 mobile) to fully reveal character heads & composition
               if (imageUrl.isNotEmpty)
-                AnimatedBuilder(
-                  animation: _panAnimation,
-                  builder: (context, child) {
-                    return CachedNetworkImage(
-                      imageUrl: imageUrl,
-                      alignment: Alignment(_panAnimation.value, 0.0),
-                      fit: BoxFit.cover,
-                      fadeInDuration: const Duration(milliseconds: 250),
-                      memCacheWidth: 1080,
-                      maxWidthDiskCache: 1400,
-                      placeholder: (context, url) => Container(
-                        color: Colors.black26,
+                CachedNetworkImage(
+                  imageUrl: imageUrl,
+                  alignment: Alignment(0.0, isDesktop ? -0.42 : -0.15),
+                  fit: BoxFit.cover,
+                  fadeInDuration: const Duration(milliseconds: 200),
+                  memCacheWidth: isDesktop ? 1920 : 1080,
+                  maxWidthDiskCache: isDesktop ? 1920 : 1080,
+                  placeholder: (context, url) => Container(
+                    color: Colors.black26,
+                  ),
+                  errorWidget: (context, url, error) => Container(
+                    color: Colors.black26,
+                    child: const Center(
+                      child: Icon(
+                        Icons.broken_image_rounded,
+                        color: Colors.white24,
+                        size: 32,
                       ),
-                      errorWidget: (context, url, error) => Container(
-                        color: Colors.black26,
-                        child: const Center(
-                          child: Icon(
-                            Icons.broken_image_rounded,
-                            color: Colors.white24,
-                            size: 32,
-                          ),
-                        ),
-                      ),
-                    );
-                  },
+                    ),
+                  ),
                 ),
 
               // 2. Subtle Top Status Bar Scrim (low-profile protection for status bar icons only)
@@ -412,7 +523,7 @@ class _HeroBannerSlideState extends State<_HeroBannerSlide> with SingleTickerPro
                 top: 0,
                 left: 0,
                 right: 0,
-                height: topPadding + 36,
+                height: topPadding + 42,
                 child: IgnorePointer(
                   child: DecoratedBox(
                     decoration: BoxDecoration(
@@ -429,6 +540,28 @@ class _HeroBannerSlideState extends State<_HeroBannerSlide> with SingleTickerPro
                 ),
               ),
 
+              // 2b. Desktop Horizontal Vignette Scrim (Left-to-Right contrast protection for logo & text, preserving art vibrance)
+              if (isDesktop)
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                          stops: const [0.0, 0.30, 0.65, 1.0],
+                          colors: [
+                            Colors.black.withValues(alpha: 0.65),
+                            Colors.black.withValues(alpha: 0.30),
+                            Colors.black.withValues(alpha: 0.05),
+                            Colors.transparent,
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
               // 3. Compact Eased Bottom Shadow (Ultra-smooth cubic feather, zero harsh cuts or solid block look)
               Positioned(
                 left: 0,
@@ -441,13 +574,14 @@ class _HeroBannerSlideState extends State<_HeroBannerSlide> with SingleTickerPro
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
-                        stops: const [0.0, 0.22, 0.45, 0.68, 0.86, 1.0],
+                        stops: const [0.0, 0.22, 0.45, 0.68, 0.85, 0.94, 1.0],
                         colors: [
                           bgColor.withValues(alpha: 0.0),
-                          bgColor.withValues(alpha: 0.06),
-                          bgColor.withValues(alpha: 0.22),
-                          bgColor.withValues(alpha: 0.52),
-                          bgColor.withValues(alpha: 0.85),
+                          bgColor.withValues(alpha: 0.04),
+                          bgColor.withValues(alpha: 0.16),
+                          bgColor.withValues(alpha: 0.46),
+                          bgColor.withValues(alpha: 0.82),
+                          bgColor,
                           bgColor,
                         ],
                       ),
@@ -456,35 +590,36 @@ class _HeroBannerSlideState extends State<_HeroBannerSlide> with SingleTickerPro
                 ),
               ),
 
-            // 4. Clean Bottom Metadata (ON TOP OF GRADIENTS! FULLY VISIBLE!)
+            // 4. Clean Bottom Metadata & Action Pills
             Positioned(
-              left: 16,
-              right: 16,
-              bottom: 22,
+              left: isDesktop ? 36 : 16,
+              right: isDesktop ? 36 : 16,
+              bottom: isDesktop ? 34 : 22,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    item.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                      fontSize: isDesktop ? 24 : 19,
-                      letterSpacing: -0.3,
-                      height: 1.15,
-                      shadows: const [
-                        Shadow(
-                          offset: Offset(0, 1),
-                          blurRadius: 4,
-                          color: Colors.black87,
-                        ),
-                      ],
+                  Padding(
+                    padding: EdgeInsets.only(bottom: isDesktop ? 12 : 8),
+                    child: SizedBox(
+                      height: isDesktop ? 120 : 65,
+                      child: Align(
+                        alignment: Alignment.bottomLeft,
+                        child: hasLogo
+                            ? CachedNetworkImage(
+                                imageUrl: optimizeTmdbImageUrl(item.logoImage!, isDesktop: isDesktop, isLogo: true),
+                                fit: BoxFit.contain,
+                                alignment: Alignment.bottomLeft,
+                                fadeInDuration: Duration.zero,
+                                memCacheHeight: isDesktop ? 240 : 140,
+                                maxHeightDiskCache: isDesktop ? 240 : 140,
+                                placeholder: (context, url) => const SizedBox.shrink(),
+                                errorWidget: (context, url, error) => _buildTitleText(item.title, isDesktop),
+                              )
+                            : _buildTitleText(item.title, isDesktop),
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 6),
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     physics: const BouncingScrollPhysics(),
@@ -554,6 +689,38 @@ class _HeroBannerSlideState extends State<_HeroBannerSlide> with SingleTickerPro
                       ],
                     ),
                   ),
+
+                  SizedBox(height: isDesktop ? 12 : 8),
+
+                  // Action Pill Button (Ver detalles)
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      FilledButton.icon(
+                        onPressed: item.onTap,
+                        icon: const Icon(Icons.info_outline_rounded, size: 16),
+                        label: Text(
+                          l10n.details,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: isDesktop ? 13 : 12,
+                          ),
+                        ),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: theme.colorScheme.primary,
+                          foregroundColor: theme.colorScheme.onPrimary,
+                          visualDensity: VisualDensity.compact,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: isDesktop ? 18 : 14,
+                            vertical: isDesktop ? 10 : 6,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -574,6 +741,28 @@ class _HeroBannerSlideState extends State<_HeroBannerSlide> with SingleTickerPro
           fontSize: 11,
           fontWeight: FontWeight.bold,
         ),
+      ),
+    );
+  }
+
+  Widget _buildTitleText(String title, bool isDesktop) {
+    return Text(
+      title,
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
+      style: TextStyle(
+        color: Colors.white,
+        fontWeight: FontWeight.w800,
+        fontSize: isDesktop ? 24 : 19,
+        letterSpacing: -0.3,
+        height: 1.15,
+        shadows: const [
+          Shadow(
+            offset: Offset(0, 1),
+            blurRadius: 4,
+            color: Colors.black87,
+          ),
+        ],
       ),
     );
   }

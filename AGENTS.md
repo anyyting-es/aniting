@@ -62,14 +62,14 @@ seanime_app/
 │   │   ├── player/                   # Video playback service wrappers
 │   │   │   ├── exo_player_service.dart   # Android Media3 platform channel bridge
 │   │   │   └── mpv_player_service.dart   # media_kit / libmpv service with Plezy optimizations
-│   │   ├── preferences/              # PlayerEngineProvider, TitleLanguageProvider, EpisodeViewModeProvider, OnboardingProvider, DownloadPreferencesProvider, LayoutModeProvider, PlaybackProgressPreferencesProvider, AnimeFavoritesProvider, BannerBlurProvider
+│   │   ├── preferences/              # PlayerEngineProvider, TitleLanguageProvider, EpisodeViewModeProvider, OnboardingProvider, DownloadPreferencesProvider, LayoutModeProvider, PlaybackProgressPreferencesProvider, AnimeFavoritesProvider, BannerBlurProvider, SubtitleStylePreferencesProvider, DesktopNavStyleProvider
 │   │   ├── server/                   # ServerManager, AndroidServerChannel, DesktopServer
 │   │   ├── storage/                  # AppStoragePaths (Aniting/Downloads resolution for Android and Desktop)
 │   │   └── theme/                    # AppTheme, ThemeProvider, AppPalette, AppThemeColors, AppScrollBehavior, smooth_scroll_controller (SmoothScrollController, SmoothTrackingScrollController, DynMouseScroll), custom_route_transitions (WebPageTransitionsBuilder, SmoothPageRoute)
 │   ├── data/
-│   │   ├── models/                   # Data models (AnimeEntry, MangaEntry, ExtensionItem, Torrent, etc.)
+│   │   ├── models/                   # Data models (AnimeEntry, MangaEntry, ExtensionItem, Torrent, ExploreCarouselConfig, etc.)
 │   │   ├── repositories/             # SeanimeRepository (API methods, marketplace fetching, cache)
-│   │   └── services/                 # MangaOfflineService, FeedCacheService (persistent SWR feed cache), OfflineLibraryService (autonomous local library & feed tracking)
+│   │   └── services/                 # MangaOfflineService, FeedCacheService (persistent SWR feed cache), OfflineLibraryService, ExploreCarouselService
 │   └── presentation/
 │       ├── providers/                # Global UI and repository providers
 │       ├── screens/                  # Main application views
@@ -157,7 +157,7 @@ seanime_app/
 │           │   │   ├── player_source_controller.dart    # Online stream source resolution, auto-streaming, live switcher & episode transition
 │           │   │   ├── player_episode_resolver.dart     # Media source resolution and background prefetching
 │           │   │   └── player_shader_service.dart       # Real-time mpv GLSL shader presets and pipeline
-│           │   └── sheets/           # Unified settings launcher & settings subviews
+│           │   └── sheets/           # Unified settings launcher, subtitle_style_view & settings subviews
 │           ├── manga/                # Manga reader widgets & keep-alive components
 │           │   ├── manga_keep_alive_page.dart # Preserves offscreen manga pages in memory
 │           │   ├── manga_chapter_item.dart
@@ -209,6 +209,10 @@ seanime_app/
     - **New User / Unwatched Behavior**: When an episode has not yet been played locally in the app, no progress bar is rendered—displaying only the clean episode card.
     - **In-Progress Tracking**: As the user watches the video, `PlayerProgressManager` updates the local position (`mediaId_episodeNumber` -> `positionMs`, `durationMs`, `fraction`). `ContinueWatchingCard` displays a smooth progress bar for fractions between 1% and 98%.
     - **AniZip Persistent Metadata Caching (`FeedCacheService`, `seanime_repository.dart`)**: AniZip metadata (16:9 real episode thumbnails, official localized titles, and air dates) is cached in RAM (`_aniZipMemoryCache`) and local storage (`saveAniZipRaw` / `getAniZipData`), eliminating repetitive API requests and ensuring instant 0ms episode loading.
+    - **Server-First Multi-Device Synchronization & Offline Fallback (`app_providers.dart`, `feed_screen.dart`, `manga_feed_screen.dart`, `seanime_repository.dart`)**:
+      - Whenever the server is online (`serverState.isOnline == true`, whether hosted locally or accessed remotely over LAN from phone/tablet), the server's database and library collections (`/api/v1/library/collection`, `/api/v1/continuity/watch-history`) are the single source of truth for `animeCollectionProvider`, `continueWatchingProvider`, `mangaCollectionProvider`, and `continueReadingMangaProvider`.
+      - Removed the erroneous `if (!isLoggedIn) return OfflineLibraryService...` guard that previously forced devices to bypass the server and display out-of-sync local device databases when AniList was unauthenticated or simulated.
+      - `OfflineLibraryService` is preserved strictly as an offline fallback when `serverState.isOnline == false`.
     - **Anti-CLS & Offline Cache Fallback (`feed_screen.dart`, `seanime_repository.dart`)**:
       - `continueWatchingEntries` uses memory-cached entries immediately on frame 0 while revalidation runs in the background. If the user is on a cold start without cache, the feed skeleton is preserved until both continue watching and library collections settle, eliminating layout shift (CLS).
       - If network/AniList is offline, `getContinueWatching()` and `getContinueReadingManga()` fall back to cached data without wiping local storage with empty arrays `[]`.
@@ -229,6 +233,32 @@ seanime_app/
     - Replaced static "Popular ahora mismo" with "En tendencia ahora" sorted by `TRENDING_DESC` with extended 25-item carousels (`perPage: 25`).
     - Replaced fantasy row with curated trending genre carousels: "Romance en tendencia", "Acción en tendencia", and "Comedia en tendencia" (`genre: 'Romance'|'Action'|'Comedy'`, `sort: 'TRENDING_DESC'`, `perPage: 25`).
     - Mirroring identical trending structure for manga explore curation.
+  - **Explore Hero Carousel Remote Configuration & HQ Assets (`explore_carousel_config.dart`, `explore_carousel_service.dart`, `explore_hero_carousel.dart`, `data/explore_carousel.json`)**:
+    - **Remote JSON GitHub Source**: Featured hero carousel entries are dynamically controlled via `data/explore_carousel.json` (hosted at `https://raw.githubusercontent.com/anyyting-es/aniting/main/data/explore_carousel.json`), allowing instant updates without app recompilation.
+    - **Startup-Only Synchronization**: Verification executes strictly **once at application startup** (`ExploreCarouselNotifier.syncOnStartup()` triggered in `MainShell.initState()`), never pinging the network on tab switches to Explore.
+    - **SWR & Local Offline Cache**: Employs bundled asset fallback (`assets/data/explore_carousel.json` / `defaultFallbackConfig`) and `SharedPreferences` caching (`explore_carousel_config_json_v1`). Renders frame 0 instantly with 0ms delay.
+    - **HQ TMDB Assets, Prominent Logos & Cinematic Layout Overhaul**:
+      - **Expanded Cinematic Dimensions & Framing**: Height dynamically scales to **~70% of screen height (clamped between 620–760dp) + topPadding on Desktop** and **~58% of screen height (470–580dp) + topPadding on Mobile**, commanding the viewport like Netflix/Apple TV+. Vertical image framing is tuned to `y = -0.42` on desktop horizontal backdrops, completely eliminating character head cropping and revealing the full artwork composition.
+      - **In-Place Dissolve & Fixed Logo Stability**: Crossfades between slides in-place using `Transform.translate(counterOffset)` and `Opacity(smoothOpacity)` without physical page sliding. Logos are anchored inside a constant-height container (`SizedBox(height: isDesktop ? 120 : 65)`) with `bottomLeft` alignment and `fadeInDuration: Duration.zero`, eliminating vertical jumps (CLS) during slide transitions.
+      - **Persistent Viewport Bottom Blend & Subpixel Bridge**: Anchored on the outer `ExploreHeroCarousel` Stack, a persistent static bottom gradient (`68dp` desktop / `44dp` mobile) and a 2.5px subpixel seam bridge permanently seal the carousel foot to `theme.scaffoldBackgroundColor`. This prevents slide `Opacity` from fading the bottom shadow mid-animation, completely stopping backdrop artwork colors from bleeding at the seam or creating an ugly separating line of color before the following section.
+      - **Prominent Transparent PNG Logos**: Scaled up to 120dp maxHeight (Desktop) and 65dp (Mobile), with fallback to stylized title typography if loading or absent.
+      - **Refined Horizontal Vignette & Eased Shadows**: Softened left-to-right gradient scrim to maximize character vibrancy on the left while ensuring 100% logo and typography contrast. Smooth cubic 320dp bottom feather into background.
+      - **Desktop Navigation Arrows**: Discrete circular floating Prev/Next chevron buttons for smooth mouse interaction on desktop monitors.
+      - **Interactive Details Action Button**: Direct `FilledButton.icon` ("Detalles" / "Details") linking straight to `AnimeDetailScreen`.
+      - **0% Idle GPU & RAM Texture Optimizations (`optimizeTmdbImageUrl`, `AnimeCard`, `ExploreHeroCarousel`)**:
+        - Removed continuous 24/7 Ken Burns pan animation controllers in `_HeroBannerSlide`, rendering the backdrop statically so the GPU sits at 0% when idle instead of spinning at 60% with continuous 144Hz repaints.
+        - **TMDB Native Downscaling Pipeline (`optimizeTmdbImageUrl`)**: Replaces heavy uncompressed 4K `original` endpoints (which weighed 1.14 MB compressed and decoded to ~33.1 MB RGBA each) with native TMDB endpoints (`w1280` backdrops on desktop, `w780` on mobile; `w500` logos on desktop, `w300` on mobile). This reduces texture payload by >90% and logo size by 99.5% (from 2.9 MB to 15 KB), eliminating GPU texture upload hitches ("tirones de lag").
+        - **Offscreen Slide Pruning in Carousel**: Early returns `SizedBox.shrink()` whenever `pageOffset.abs() >= 1.0` or `opacity <= 0.005`, completely preventing Flutter from creating offscreen Skia GPU layers and painting heavy textures for non-visible carousel items.
+        - **AniList Cover Downscaling (`large` over `extraLarge`)**: In `AnimeEntry.fromJson` and `MangaEntry.fromJson`, prioritizes `cover['large']` (~350x500) over `cover['extraLarge']` (~1000x1400), slashing raw bitmap memory by >80% across all lists, grids, and cards.
+        - **Right-Sized Card Cache Bounds**: Reduced `memCacheWidth` / `memCacheHeight` in `AnimeCard` and `MangaCard` from 440x640 to 220x310 (compact) / 280x390, matching actual display bounds and saving ~75% RAM per card. Added `cacheExtent: 150` to curated Explore rows and removed unnecessary startup genre precaching.
+        - **Offscreen Auto-Play Pausing**: Guarded `_autoPlayTimer` with `TickerMode.of(context)` so the carousel never cycles or forces repaints in the background while the user is viewing other tabs.
+        - **Zero Startup Eager Allocations**: Eliminated aggressive startup pre-caching from `ExploreCarouselNotifier.syncOnStartup()`, ensuring baseline app startup memory remains lean until the user actively browses Explore.
+  - **Dual-Mode Desktop Navigation Architecture (`desktop_nav_style_provider.dart`, `mobile_floating_nav.dart`, `main_shell.dart`, `personalizacion_settings_screen.dart`)**:
+    - Introduced user-configurable desktop navigation mode via `desktopNavStyleProvider` (`desktop_nav_style_v1` in `SharedPreferences`), allowing users on desktop and wide screens (>= 720dp) to choose their preferred navigation paradigm:
+      - **Sidebar Clásico (`DesktopNavStyle.sidebar`, predeterminado)**: Classic vertical icon sidebar (`DesktopSidebar`) fixed to the left rail.
+      - **Dock Flotante (`DesktopNavStyle.floating`)**: Enables full-bleed canvas width (`extendBody: true`) where hero carousels and multi-column feeds span 100% of the display, coupled with a bottom-centered floating dock pill and hero resume companion.
+    - **Ultra-Wide Desktop Geometry Adaptation (`mobile_floating_nav.dart`)**: On desktop resolutions (e.g. 1920x1080, 2K, 4K), the resume companion width is capped to `math.min(availableWidth, 560.0)` and horizontally centered symmetrically above the centered dock pill, ensuring balanced, modern aesthetic proportions.
+    - Configurable from Settings -> Personalización -> Estilo de navegación en escritorio (`desktopNavStyle`).
   - **Zero-Width & Negative Constraints Protection in Floating Navigation (`mobile_floating_nav.dart`, `floating_resume_companion.dart`)**:
     - During initial window frames (e.g. Waydroid initialization or Android split-screen mapping), `constraints.maxWidth` can transiently report `0.0`. Subtracting margins (`totalWidth - marginH * 2`) previously created negative box constraints (`w=-52.0`), throwing a Flutter `BoxConstraints has a negative minimum width` rendering assertion.
     - Added guard conditions: `totalWidth <= 0 || constraints.maxHeight <= 0` yields `SizedBox.shrink()`, `availableWidth` and `resumeWidth` are clamped to `math.max(0.0, ...)`, and `FloatingResumeCompanion` Container enforces non-negative width/height, eliminating initialization crashes.
@@ -242,16 +272,21 @@ seanime_app/
     - **Precision Touchpad & Trackpad Heuristic**: Sub-4px continuous deltas are identified as touchpad signals and bypass the ticker for instantaneous 1:1 direct tracking, eliminating touchpad lag or molasses resistance.
     - Direct gesture interruptions (touch dragging, scrollbar dragging, programmatic `jumpTo`) immediately stop the ticker and grant 1:1 control with zero resistance.
     - Integrated across primary application views: `FeedScreen`, `MangaFeedScreen`, `SearchScreen`, `LibraryScreen`, `AnimeDetailDesktopLayout`, `MangaDetailDesktopLayout`, and `GenreDetailScreen`.
-- **Plain-Text Subtitle Styling Architecture (`ExoPlayerPlugin.kt`, `mpv_player_service.dart`)**:
-  - **ExoPlayer (Android)**:
-    - Replaced OS accessibility defaults in `SubtitleView` with explicit custom `CaptionStyleCompat`:
-      - `Color.WHITE` text with transparent background and window (`Color.TRANSPARENT`), eliminating the black background box.
-      - Strong black outline (`CaptionStyleCompat.EDGE_TYPE_OUTLINE`, `Color.BLACK`).
-      - Bold, wide typography (`Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)`).
-      - Comfortably scaled font size (`SubtitleView.DEFAULT_TEXT_SIZE_FRACTION * 1.15f`).
-      - `setApplyEmbeddedStyles(false)` to prevent erratic embedded SRT tags from distorting colors.
-  - **MPV (Desktop / Fallback Engine)**:
-    - Configured explicit plain-text properties matching ExoPlayer: `sub-color=#FFFFFFFF`, `sub-back-color=#00000000`, `sub-border-color=#FF000000`, `sub-border-size=3.0`, `sub-bold=yes`, `sub-font=sans-serif`, and `sub-font-size=48`.
+- **Comprehensive Subtitle Customization & Styling Architecture (`subtitle_style_preferences_provider.dart`, `subtitle_style_view.dart`, `ExoPlayerPlugin.kt`, `mpv_player_service.dart`, `player_playback_coordinator.dart`)**:
+  - **Universal Preference Store (`subtitle_style_preferences_provider.dart`)**:
+    - Centralized `SubtitleStylePrefs` state stored in `SharedPreferences` (`subtitle_style_prefs_v1`) managing: font family, font size scale (0.7x - 2.0x), bold, italic, text color (HEX ARGB), background box color & opacity (none, subtle, medium, solid), border & shadow style (`none`, `outline`, `dropShadow`, `raised`, `depressed`), border/shadow size (0 - 6px), and `overrideAss` flag.
+    - Includes one-tap `resetToDefaults()` and helper getters for Flutter `TextStyle`, text shadows, and MPV color formatting (`&HAABBGGRR`).
+  - **ExoPlayer Pipeline (Android Native Media3 & LibASS)**:
+    - Android platform bridge (`ExoPlayerPlugin.kt`): method `"setSubtitleStyle"` dynamically builds a native `CaptionStyleCompat` specifying edge type, edge color, foreground color, background color, and window color, alongside fractional text sizing (`setFractionalTextSize`).
+    - **Dual Subtitle View Coordination & ASS Override Control**: When `overrideAss` is disabled (default), original `.ass` styles are strictly preserved via `assSubtitleSurfaceView` and plain-text fallback cues are suppressed. When `overrideAss` is enabled, `.ass` view is muted and native `standardSubtitleView` applies the user's custom typography, colors, and shadows to all subtitles.
+    - Viewport overlay (`player_viewport.dart`): Cues rendered directly in Flutter are dynamically styled using `ref.watch(subtitleStylePreferencesProvider)` with matching multi-directional text shadows.
+  - **MPV Engine Pipeline (Desktop & Fallback Engine)**:
+    - `applySubtitleStyle` in `mpv_player_service.dart` sets properties dynamically: `sub-font`, `sub-font-size`, `sub-bold`, `sub-italic`, `sub-color`, `sub-back-color`, `sub-border-color`, `sub-border-size`, `sub-shadow-offset`, and `sub-ass-override` (`'force'` when overridden, `'no'` to preserve `.ass` typesetting).
+  - **Playback Orchestration (`player_playback_coordinator.dart`, `video_player_screen.dart`)**:
+    - Active engine (`ExoPlayer` or `MPV`) applies the user's subtitle styling upon initialization and live-updates during playback whenever preferences change via Riverpod listener.
+  - **Modular Settings & In-Player UI (`subtitle_style_view.dart`, `player_settings_sheet.dart`, `player_settings_screen.dart`)**:
+    - Accessible both inside the video player settings sheet and from the global App Settings > Player subpage.
+    - Features a real-time live preview card with video aspect ratio, ASS override toggle card, font family chips, font size slider, bold/italic toggles, 7 text color presets, 4 background transparency options, 5 border/shadow styles, border size slider, reset button with confirmation modal, and complete i18n support.
 - **Mobile Beta 1.0.0 Defaults & UI Refinements (`mobile_nav_style_provider.dart`, `resume_bar_preferences_provider.dart`, `theme_provider.dart`)**:
   - **Floating Dock Navigation as Default**: Mobile navigation style is defaulted to `MobileNavStyle.floating` for a sleek, non-intrusive bottom navigation dock.
   - **Resume Companion Disabled by Default**: The "Sigue donde estabas" resume companion is turned off by default (`resume_bar_enabled = false`) to keep the interface clean and spacious for first-time users.
@@ -265,8 +300,19 @@ seanime_app/
   - **Player & Reader Exit Cleanup**: `PlayerWindowManager` and `MangaReaderScreen` dispose callbacks safely restore standard edge-to-edge orientation and status bar overlay styles reflecting the current theme.
 - **Desktop Player Default Viewport Optimization (`video_player_screen.dart`)**:
   - `_isSidePanelCollapsed` defaults to `true` on desktop platforms (`!Platform.isAndroid && !Platform.isIOS`), allowing the player viewport to claim 100% of the window width by default while retaining the collapsible sidebar toggle button.
-- **Batch Torrent Precision Detection (`torrent_selector_sheet.dart`)**:
-  - Replaced naive keyword matching (which previously matched words like "season" or "temporada" and mislabeled episodic seasonal releases like `Oshi no Ko 3rd Season - 07` as batches) with strict release heuristics: explicit batch keywords, multi-season ranges, and bracketed/tilde episode ranges (`01-12`, `(01-11)`, `01~28`), while strictly protecting single-episode releases.
+- **Batch Torrent Precision Detection & Built-In Torrent Client Downloads (`torrent_selector_sheet.dart`, `torrent_batch_files_sheet.dart`, `seanime_repository.dart`, `desktop_action_bar.dart`, `anime_detail_mobile_layout.dart`)**:
+  - **Batch Misdetection Fix (`S3-04` and Single-Episode Releases)**:
+    - Addressed root cause of false-positive batch labeling where releases formatted like `S3-04`, `S03E04`, `S1 - 04`, `Ep 04`, or `Capítulo 04` were wrongly flagged as batches due to an overly broad season range regex (`(?:s|season)?\d{1,2}[-~](?:s|season)?\d{1,2}`) matching single season + episode notation as a season range (`Season 3 to Season 4`).
+    - Aligned batch detection logic with official Seanime (`5rahim/seanime`): single episode patterns (`\b[sS]\d{1,2}\s*[-_eE]\s*\d{1,3}\b`, `\b(?:ep|eps|e|cap|capitulo|cap[ií]tulo|episodio)\.?\s*0*(\d{1,4})\b`, `\s+-\s+0*(\d{1,3})(?:v\d+)?\b`) are checked first, and if present without multi-episode ranges or explicit batch keywords (`\b(batch|complete\s*series?|completa|completo)\b`), strictly disqualify the release from being a batch.
+    - Multi-season range regex now strictly requires `s` or `season` on both sides (`\b[sS]\d{1,2}\s*[-~]\s*[sS]\d{1,2}\b` or `\b(?:season|temporada)\s*\d{1,2}\s*[-~]\s*(?:season|temporada)?\s*\d{1,2}\b`), eliminating false positives.
+  - **In-Sheet Episode Selector Dropdown (`TorrentSelectorSheet`)**:
+    - The top header now features an integrated Episode Dropdown Selector allowing users to jump directly between episodes (`Ep 1`, `Ep 2`, ..., `Todos / Batches`) without closing and re-opening the sheet.
+    - Selecting an episode automatically updates the search query and re-triggers torrent search. Selecting "Todos / Batches" sets `_showOnlyBatches = true` and searches for complete releases.
+  - **Compact Filter Controls Bar**:
+    - Consolidated provider and quality selection into sleek, compact side-by-side dropdowns alongside the Batch toggle chip, Smart Search toggle button, and Refresh icon, saving significant vertical screen real estate.
+  - **Built-in Torrent Client Background Downloads (`/api/v1/torrent-client/download`)**:
+    - Integrated direct download actions into every torrent card (`Icons.download_rounded`), batch files bottom action sheet, and anime detail desktop/mobile action bars.
+    - Tapping download triggers `repo.downloadTorrentToClient(...)` which queues background downloading in the embedded Seanime BitTorrent client directly into the anime library folder, accompanied by confirmation snackbars.
 - **Feed Initial Loading Barrier, Cache-First & SWR Anti-CLS Architecture (`feed_screen.dart`, `FeedCacheService`, `app_providers.dart`)**:
   - **Zero Content Layout Shift (CLS) via Persistent SWR**:
     - Rather than letting fast public providers (`trendingAnimeProvider`, `popularAnimeProvider`) resolve first and render at the top while slow private providers (`continueWatchingProvider`, `animeCollectionProvider`) pop in seconds later to violently push content down, the feed employs a high-performance **Stale-While-Revalidate (SWR) cache-first pipeline**:
@@ -378,7 +424,19 @@ seanime_app/
     - Added `<uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />`.
 - **Permanent Release Signing & In-App Auto-Update Integrity (`android/app/release.jks`, `android/app/build.gradle.kts`)**:
   - **Cryptographic Signature Stability**: Previously, `buildTypes.release` defaulted to `signingConfigs.getByName("debug")`, signing APKs with the local machine's ephemeral `~/.android/debug.keystore`. When `debug.keystore` was regenerated or built across different machines, Android Package Manager blocked in-app updates with `INSTALL_FAILED_UPDATE_INCOMPATIBLE` ("No se instaló la app").
-  - **Dedicated Release Keystore**: Added a permanent, reproducible release keystore (`android/app/release.jks`) configured under `signingConfigs.create("release")` in `build.gradle.kts` and whitelisted in `.gitignore`. All APK builds across developers, CI/CD, and machines produce identical cryptographic signatures (`SHA-256: 7e7960daf8...`), ensuring seamless in-app auto-updates for all users.
+  - **Dedicated Release Keystore & Multi-Scheme Signatures (v1 + v2 + v3)**: Added a permanent, reproducible release keystore (`android/app/release.jks`) configured under `signingConfigs.create("release")` in `build.gradle.kts` and whitelisted in `.gitignore`. Explicitly enabled `isV1SigningEnabled = true` and `isV2SigningEnabled = true`, preventing OEM package installers (One UI, HyperOS/MIUI) from rejecting APKs with `INSTALL_PARSE_FAILED_NO_CERTIFICATES` ("App not installed as package appears to be invalid"). All APK builds produce identical cryptographic signatures (`SHA-256: 7e7960daf8...`), ensuring seamless in-app auto-updates for all users.
+- **LAN Server Sharing & Zero-Config Auto-Discovery (`LanDiscoveryService`, `lan_sharing_provider.dart`, `ServerLanSharingCard`, `ServerDiscoveredListCard`)**:
+  - **Zero-Config UDP Broadcast Protocol**: Implemented `LanDiscoveryService` (`lib/core/server/lan_discovery_service.dart`) utilizing UDP broadcast beacons on port `43212` (~120 bytes every 3 seconds). Broadcasts magic header `ANITING_SRV`, custom server display name, local Wi-Fi IP, API port, and core version. Stale servers are automatically evicted after 10 seconds of silence.
+  - **Host Mode ("Compartir Servidor en Red")**:
+    - Controlled by `lanSharingProvider` and `lanServerNameProvider` (`lib/core/preferences/lan_sharing_provider.dart`), persisted in `SharedPreferences`.
+    - When enabled, `ServerManager.startLocalServer()` dynamically passes `host: '0.0.0.0'`.
+    - Desktop: `DesktopServer` binds `--host 0.0.0.0` allowing connections across local subnets.
+    - Android: `SeanimeServerRuntime.kt` dynamically patches `config.toml` (`host = '0.0.0.0'`) and accepts `extraHost` via `MethodChannel`.
+    - Active broadcasting status displays real-time local Wi-Fi IP and port (`ServerLanSharingCard`).
+  - **Client Mode ("Servidores en la Red" & TV Auto-Connect)**:
+    - `discoveredServersProvider` automatically listens for LAN beacons.
+    - `ServerDiscoveredListCard` displays discovered servers with real-time status badges, version info, and 1-click connect (`serverNotifier.checkConnection(host: ip, port: port)`).
+    - Remote connection host and port are permanently persisted (`AppConstants.keyServerHost`, `AppConstants.keyServerPort`) in `SharedPreferences` so client devices (including Android TV) automatically re-connect to the LAN host on subsequent launches without manual IP entry.
 - **Official Package ID & Namespace Migration (`com.anyyting.aniting`)**:
   - Replaced legacy `com.seanime.app.seanime_app` application ID and Gradle namespace with the official brand package name `com.anyyting.aniting` matching the GitHub organization (`anyyting-es/aniting`).
   - Refactored Kotlin sources into `android/app/src/main/kotlin/com/anyyting/aniting/`, updated MethodChannels (`com.anyyting.aniting/server`, `com.anyyting.aniting/exo_player`), and updated foreground notification branding to "Servidor Aniting".
@@ -640,11 +698,17 @@ Inspired by **Plezy** (`edde746/plezy`), the player focuses on high performance,
   - **Dual-Engine Fallback Execution (`PlayerPlaybackCoordinator`)**:
     - When ExoPlayer encounters an unrecoverable format or playback error on Android, `triggerFallbackToMpv` disposes the native ExoPlayer instance and seamlessly activates `MpvPlayerService` on-the-fly at `fallbackPos`. The player viewport immediately transitions to MPV's `Video` texture without leaving the user stuck on an indefinite loading spinner with null controllers.
     - Caches playback parameters (`_videoUrl`, `_title`, `_episodeTitle`, `_headers`, `_startPosition`, `_externalSubtitles`, `_activeShaderPreset`, `_isOnlineStream`) so engine fallback preserves title, start position, shaders, and external subtitles seamlessly.
-  - **Torrent Streaming Resilience (`mpv_player_service.dart`, `ExoPlayerPlugin.kt`, `handler.go`)**:
+  - **Torrent Streaming Resilience (`mpv_player_service.dart`, `ExoPlayerPlugin.kt`, `handler.go`, `repository.go`)**:
+    - `backend/internal/torrentstream/repository.go`: Default torrentstream cache working directory updated from `seanime/torrentstream` to `aniting/torrentstream` (`getDefaultDownloadPath`).
+    - `AutoDeletePreviousTorrents`: Defaulted to `true` across database models (`default:true`), core initial settings, and UI (`streaming_settings_screen.dart`), automatically purging temporary torrent chunks from prior streams to conserve device storage without requiring manual user toggling.
     - `mpv_player_service.dart`: Prioritizes `isTorrentStream` over `effectiveOnlineStream`. Prevents torrent streams on local network IPs (e.g. `http://192.168.1.x:.../api/v1/torrentstream/...`) from being misclassified as remote HLS online streams with restrictive 10s network timeouts. Sets `network-timeout: 60` and `demuxer-lavf-probesize: 1MB`.
     - `ExoPlayerPlugin.kt`: Sets 60s connect and read timeouts on `DefaultHttpDataSource` for torrent streams, applies `DefaultLoadErrorHandlingPolicy(6)` for automatic retry while pieces buffer, and prevents erroneous HLS manifest retries on torrent streams.
     - `handler.go`: Adds a 15-second polling window in `ServeHTTP` before returning 404, eliminating race conditions when players connect immediately after `torrentstream/start` before initial metadata is fully populated.
   - Supports external subtitle streams via `OnlinestreamVideoSource.subtitles`.
+- **Manga Explore & Carousel Fault-Tolerant Resilience (`search_screen.dart`, `app_providers.dart`, `seanime_repository.dart`, `manga.go`)**:
+  - `loadMangaWithCacheAndSwr` and `loadAnimeWithCacheAndSwr`: Explore/curated public feeds (`requireAuth == false`) no longer abort with empty `[]` when the embedded/LAN server is starting or offline, allowing `fetchFresh()` to query AniList directly.
+  - `seanime_repository.dart`: `getTrendingManga()`, `getPopularManga()`, and `searchManga()` now seamlessly fall back to direct AniList GraphQL queries (`discoverManga`) if the server is offline or fails, ensuring the Manga explore carousel and curated sections load 100% reliably.
+  - `backend/internal/handlers/manga.go` & `anilist.go`: Safely allocate pointers for `Page` and `PerPage` when omitted, preventing nil pointer dereferences.
 - **In-Player Online Source Resolution & Live Switching Pipeline (`PlayerSourceCard`, `video_player_screen.dart`, `OnlineStreamView`, `anime_detail_desktop_layout.dart`)**:
   - **Zero Outside Delay (~0ms Instant Navigation)**:
     - Previously, clicking an episode in `AnimeDetailScreen` (mobile `OnlineStreamView` and desktop `AnimeDetailDesktopLayout`) displayed a loading spinner on the detail screen while awaiting `repo.getOnlinestreamSource(...)`, followed by a modal bottom sheet/dialog to pick a server/quality before navigating to the player.
@@ -853,16 +917,18 @@ Inspired by **Plezy** (`edde746/plezy`), the player focuses on high performance,
   - **Zero-Overflow Bottom Navigation**: Bottom bar is borderless (no harsh top divider line) and uses compact circular action buttons (`IconButton.filledTonal` for back `<`, `IconButton.filled` for next `>` / finish `✓`) centered around animated step dots. Prevents any `RenderFlex` overflow across all compact mobile viewports (`w <= 386.7`).
   - **Borderless Modern Cards**: Replaced heavy enclosing borders and nested boxes with subtle `surfaceElevated.withValues(alpha: 0.40)` containers, breathing space, and sleek tinted selection outlines.
 
-### 4.6. In-Place Breathing Route Transitions Architecture (`custom_route_transitions.dart`, `WebPageTransitionsBuilder`, `SmoothPageRoute`)
-- **In-Place Subtle Breathing Motion (Zero Fade Ghosting, 100% Solid Opacity)**:
-  - Eliminated both full-screen side slide sweeps and opacity fade transitions (`FadeTransition`).
-  - Screen appears directly in-place without travelling across the viewport or turning semi-transparent.
-  - **Subtle Breathing Expansion on Enter**: Micro-scale expansion from `0.98` to `1.0` combined with a gentle vertical micro-lift (~10px, `Offset(0.0, 0.015) -> Offset.zero`) in 220ms using the responsive deceleration curve `Cubic(0.16, 1.0, 0.3, 1.0)`.
-  - **Dynamic Return Page Motion on Exit**: When popping/closing, rather than a frozen static screen, the underlying page (Feed, Search, Library) gracefully steps forward, expanding from `0.96` to `1.0` and rising ~16px into place (`reverseCurve: Curves.easeOutCubic`) over 200ms, while the exiting child dissolves cleanly without awkward shrinking. This makes the return page feel completely alive, tactile, and fluid.
-- **Global Application Integration**:
-  - `WebPageTransitionsBuilder`: Registered in `ThemeData.pageTransitionsTheme` for all platforms (`TargetPlatform.android`, `iOS`, `linux`, `macOS`, `windows`, `fuchsia`) in both `AppThemeBuilder.buildTheme` (`theme_provider.dart`) and `AppTheme.darkTheme` (`app_theme.dart`).
-  - Standard `MaterialPageRoute` and pushed routes automatically inherit this cohesive transition.
-  - `SmoothPageRoute` and `SlideRightToLeftPageRoute` in `custom_route_transitions.dart` are unified subclasses of `WebPageRoute`, guaranteeing that `AnimeDetailScreen.navigate`, `MangaDetailScreen.navigate`, Settings, Lists, Airing Calendar, Downloads, and Extensions share the exact same clean, in-place organic feel.
+### 4.6. Refined Fluid Route Transitions Architecture (`custom_route_transitions.dart`, `WebPageTransitionsBuilder`, `SmoothPageRoute`, `SlideRightToLeftPageRoute`)
+- **Smooth Fade & Vertical Motion for Details/Full Screens (`buildWebPageTransition`, `SmoothPageRoute`)**:
+  - Used for `AnimeDetailScreen.navigate`, `MangaDetailScreen.navigate`, and global `WebPageTransitionsBuilder`.
+  - **Progressive Fade-In**: Smooth progressive opacity (0.0 -> 1.0) over `Curves.easeOutCubic`, completely eliminating the jarring 1-frame opacity pop previously caused by `Interval(0.0, 0.001)`.
+  - **Vertical Micro-Slide**: Gentle upward motion (~3-4% screen height, `Offset(0.0, 0.035) -> Offset.zero`) in 260ms using the expressive deceleration curve `Cubic(0.1, 0.9, 0.2, 1.0)`.
+  - **Stable Underlying Screen**: The parent screen maintains crisp typography and layout stability with a subtle micro-parallax shift (`Offset(0.0, -0.015)`), completely avoiding heavy scale transforms (0.96) that previously caused pixel blurring and sudden jumps.
+  - **Clean Pop / Exit**: Smooth reverse fade-out and subtle descend in 220ms (`Curves.easeInCubic`).
+- **Native Horizontal Slide for Settings & Subpages (`SlideRightToLeftPageRoute`)**:
+  - Dedicated route builder for drilling down into Settings (`ServerSettingsScreen`, `AppearanceSettingsScreen`, `PlayerSettingsScreen`, etc.), `MyListsScreen`, `DownloadsScreen`, `ExtensionsMarketplaceScreen`, and `GenresScreen`.
+  - **Right-to-Left Entrance**: The child route slides smoothly from the right (`Offset(1.0, 0.0) -> Offset.zero`) over 280ms with a subtle elevation drop shadow on its left edge.
+  - **Parallax Depth**: The parent view recedes gently to the left (`Offset.zero -> Offset(-0.25, 0.0)`).
+  - **Natural Pop/Back**: On exit (240ms), the subpage slides away cleanly to the right (`Offset.zero -> Offset(1.0, 0.0)`), restoring the parent view seamlessly without sudden jumps or scaling artifacts.
 - **5-Step Onboarding Flow**:
   0. **Language Selection**: Real-time switch between Spanish (`es`) and English (`en`) via `i18nProvider`. Updating language dynamically refreshes extension recommendations in Step 4.
    1. **Appearance & Theming**:
@@ -988,6 +1054,36 @@ Inspired by **Plezy** (`edde746/plezy`), the player focuses on high performance,
      - All user-facing strings across `MangaReaderScreen`, `MangaSettingsScreen`, `MangaReaderSettingsSheet`, `MangaChapterItem`, and `MangaDetailsModalSheet` are bound to `translationsProvider` (`l10n`), supporting English and Spanish dynamically.
      - Enums `MangaReadingMode` and `MangaStatusBarMode` provide localized display labels via extension methods (`localizedName(l10n)`).
      - Subtitles for manga in floating companions and bottom docks (`FloatingResumeCompanion`, `FloatingResumeBar`) format chapters and page numbers dynamically with zero hardcoded strings.
+- **Internal Torrent Downloads & Destination Architecture (`TorrentSelectorSheet`, `SeanimeRepository`, `DesktopServer`)**:
+  - **Internal Built-in Client Direct Activation**:
+    - Aniting uses Seanime's internal BitTorrent engine (`anacrolix/torrent`) running within the app process rather than requiring external third-party software (such as qBittorrent or Transmission).
+    - `DesktopServer` automatically ensures `[experimental] builtintorrentclient = true` is set in Seanime's `config.toml` prior to launching the server sidecar.
+    - `SeanimeRepository.ensureTorrentClientReady()` checks server settings (`GET /api/v1/settings`) and automatically updates `torrent.defaultTorrentClient` to `"seanime"` via `PATCH /api/v1/settings/path`.
+    - Go backend (`HandleTorrentClientDownload`) has automatic fallback: if an external client is configured but unreachable (`Start() == false`), it gracefully switches `torrent.defaultTorrentClient` to `"seanime"` and starts the internal client.
+  - **Automatic Destination Directory Resolution**:
+    - `SeanimeRepository.resolveAnimeDownloadDestination({media})`:
+      1. First checks if the show already has downloaded files in the library via `getAnimeLibraryEntry(mediaId)` and reuses its existing folder.
+      2. If not yet in the library, fetches the root `libraryPath` from server settings and appends the sanitized anime title (`cleanLibPath/sanitizedTitle`), guaranteeing `destination` is never empty.
+    - Go backend (`HandleTorrentClientDownload`) provides secondary fallback: if `b.Destination` is empty, it resolves the folder from `library.libraryPath` and `b.Media.GetPreferredTitle()`.
+  - **Interactive Torrent Selector & Batch Improvements (`TorrentSelectorSheet`)**:
+    - **Accurate Batch Discrimination**: Regex enhanced to treat patterns like `S3-04` or `S01-E12` strictly as single episodes, preventing false batch flags.
+    - **Header Episode Dropdown**: Allows filtering torrents by episode number directly from the sheet header.
+    - **Instant Feedback**: Interactive download action displays dynamic status feedback without overlapping snackbars.
+  - **Automatic Library Indexing & Completed Torrent Scans (`active_downloads_provider.dart`, `downloads_screen.dart`, `local_library_view.dart`)**:
+    - **Auto-Scan on Completion**: When a torrent download reaches 100% or enters completion/seeding state in `ActiveDownloadsNotifier`, the app automatically triggers `repo.scanLibrary()` and invalidates `downloadedAnimeProvider` and `animeCollectionProvider`. This enables Seanime's backend scanner to parse and match downloaded video files into local library entries without requiring user intervention.
+    - **Manual Scan & Folder Navigation**:
+      - `DownloadsScreen`: Empty state and header refresh buttons trigger `repo.scanLibrary()` and allow opening the native downloads folder via `AppStoragePaths.openDirectoryInFileManager`.
+      - `LocalLibraryView`: Empty local files state includes a dedicated "Escanear Carpeta Local" button so users can immediately index newly downloaded media.
+- **Aniting Dedicated Storage & Data Directory Isolation (`AppStoragePaths`, `DesktopServer`, `SeanimeServerRuntime`, `backend/config.go`)**:
+  - **Full Namespace & Directory Isolation**:
+    - Completely eliminates shared configuration or database file collisions with the upstream Seanime app.
+    - **Windows**: `%APPDATA%\Aniting\` (previously `%APPDATA%\Seanime\`).
+    - **Linux/macOS**: `~/.config/aniting/` (previously `~/.config/seanime/`).
+    - **Android**: Public storage `Aniting/` (previously `Seanime/`) or internal files `aniting/`.
+  - **Clean Slate & Zero Cross-App Interference**:
+    - No migration or automatic copying is performed from legacy `Seanime` folders. `Aniting` starts completely fresh in its own dedicated space, preventing legacy corrupted states, duplicate extension conflicts, or server settings collisions.
+    - `DesktopServer` launches `seanime.exe` explicitly passing `--datadir "%APPDATA%\Aniting"`.
+    - Go backend (`initAppDataDir`) defaults directly to `Aniting` and supports `ANITING_DATA_DIR`, `ANITING_SERVER_HOST`, and `ANITING_SERVER_PORT` environment variables with graceful fallback to `SEANIME_*`.
 
 ---
 
@@ -1206,3 +1302,81 @@ Inspired by **Plezy** (`edde746/plezy`), the player focuses on high performance,
   - Fixed 1.1px vertical RenderFlex overflow on high-density / fractional font scale mobile screens (e.g. Infinix X6837) by increasing mini window container height from 54dp to 58dp and trimming internal padding in `_buildThemeModeGraphic`.
 - **Floating SnackBar Collision Clearance (`personalizacion_settings_screen.dart`)**:
   - Added `messenger.clearSnackBars()` prior to displaying `cannotDisableBothSections`, preventing floating snackbar positioning exceptions during active settings navigation.
+
+### 7.14. Subtitle Customization Parity, Torrent Stream Auto-Pause & Active Downloads Hub (2026-10-03)
+- **Subtitle Styling & MPV Color Format Correction (`subtitle_style_preferences_provider.dart`, `mpv_player_service.dart`, `ExoPlayerPlugin.kt`)**:
+  - Fixed MPV hex color serializer: aligned with MPV's standard `#RRGGBBAA` CSS color format (previously `#AARRGGBB` which inverted alpha with color channels, causing black/colored borders and text to render 100% transparent and invisible on mobile).
+  - Improved ASS subtitle override mode: switched from destructive `force` (which stripped dialogue positioning glyphs) to non-destructive `yes` in MPV, preserving subtitle typesetting while applying user font, size, and color overrides.
+  - Added mobile font fallback mapping for Android system font compatibility (`sans-serif`, `serif`, `monospace`), preventing font resolution errors on mobile.
+- **Torrent Stream Auto-Pause on Video Exit (`video_player_screen.dart`, `streaming_preferences_provider.dart`, `seanime_repository.dart`, Go backend)**:
+  - Added new setting: **Pausar descarga al salir del video / Pause torrent download on exit** (enabled by default).
+  - When leaving video playback while streaming a torrent, downloading is automatically halted without deleting or dropping the torrent or downloaded chunks from disk.
+  - Implemented `/torrentstream/pause` and `/torrentstream/resume` in the Go backend (`stream.go`, `routes.go`, `torrentstream.go`), safely deprioritizing file pieces while preserving all downloaded content until the user selects another torrent.
+  - **Pixel UI Unification for Downloads Screen (`downloads_screen.dart`, `active_downloads_tab.dart`)**:
+    - Refactored `DownloadsScreen` to strictly adhere to the `PixelSubpageScaffold` architecture:
+      - On PC / Tablet (dual-pane master-detail, `isEmbedded: true`): renders centered within `maxWidth: 820`, with `PixelPageHeader(title: "Descargas", showBackButton: false)`, matching 100% of all other settings subpages.
+      - On Mobile (standalone push, `isEmbedded: false`): renders with the M3/Pixel fluid collapsing header `_PixelSubpageHeaderDelegate` and circular back button.
+    - Added expressive M3/Android 16 segmented pill tab bar (`[ Descargas activas | Anime | Manga ]`) with animated indicators, font styling, and real-time numeric badges (`activeCount`, `animeCount`, `mangaCount`).
+    - Standardized all sub-widgets inside `active_downloads_tab.dart`, anime tab, and manga tab with `PixelCardContainer`, `SettingsSectionHeader`, and smooth `GridView.builder(shrinkWrap: true, physics: const NeverScrollableScrollPhysics())` to eliminate nested viewport conflicts and preserve seamless single-axis scrolling.
+  - Complete internationalization across all three i18n contracts (`translations.dart`, `en.dart`, `es.dart`).
+
+### 7.15. Subtitle Style Architecture Parity & MPV ASS Engine Overhaul (2026-10-04)
+- **libmpv ASS Subtitle Styling & Scaling Pipeline (`mpv_player_service.dart`, `subtitle_style_preferences_provider.dart`, `player_viewport.dart`)**:
+  - **Correct MPV ARGB Hex Serialization (`toMpvHexColor`)**:
+    - Aligned with mpv's native color parser: ARGB hex format `#AARRGGBB` (`#$a$r$g$b`), where the first two digits represent the alpha channel.
+    - Corrects the previous `#RRGGBBAA` bug that caused opaque black borders (`0xFF000000` -> `#000000FF`) to be parsed with `alpha: 00` (100% transparent/invisible) and tinted colors into inverted hues.
+  - **Dynamic ASS Subtitle Scaling & Override Modes**:
+    - **Script Preservation with Dynamic Scaling (`sub-ass-override=scale`)**: When `overrideAss == false`, mpv keeps the fansub/author's fonts, colors, and styling, while applying `sub-scale = ${prefs.fontSizeMultiplier}`. This allows users to smoothly resize ASS subtitles using the font size slider without destroying fonts or styling.
+    - **Full User Override (`sub-ass-override=force`)**: When `overrideAss == true`, mpv forces all user-configured styles (`sub-font`, `sub-font-size`, `sub-scale`, `sub-color`, `sub-back-color`, `sub-border-color`, `sub-border-size`, `sub-shadow-color`, `sub-shadow-offset`, `sub-bold`, `sub-italic`) onto ASS subtitles.
+    - Added real-time property application with robust async error handling, logging, and automatic style re-application upon opening new media files.
+  - **Platform Specialization (ExoPlayer vs libmpv)**:
+    - **ExoPlayer (Android)**: Renders ASS subtitles natively via `libass-android` preserving script typesetting without applying destructive overrides, while applying user font, size, and color preferences to plain subtitles (SRT, VTT) via `standardSubtitleView`.
+    - **libmpv (Desktop/Windows)**: Supports both dynamic font scaling (`scale`) and full styling overrides (`force`) for ASS and plain text subtitles.
+
+### 7.16. Dedicated Download Manager, Download History, Feed Sections & Subtitle Anti-Aliasing (2026-10-04)
+- **Dedicated Download Manager Screen (`download_manager_screen.dart`, `downloads_screen.dart`)**:
+  - Separated active download progress from downloaded offline media: `DownloadsScreen` now strictly hosts offline downloaded Anime and Manga libraries across 2 clean tabs (`Anime`, `Manga`) with a prominent launcher card to the Download Manager.
+  - `DownloadManagerScreen` provides a high-density, real-time dashboard displaying active torrent streams, qBittorrent downloads, and manga downloads in vibrant full-color cards with download speed (`MB/s`), upload speed (`MB/s`), ETA / time remaining, downloaded vs total sizes, and pause/resume/delete actions.
+  - **Resilient Torrent Metrics Parsing (`download_manager_screen.dart`, `active_downloads_provider.dart`)**: Safely handles Seanime backend payloads where `size` and `eta` are formatted strings (e.g., `"1.5 GiB"`, `"12m 30s"`) or raw integers, and speeds can come via `downSpeed`, `downloadSpeed`, or `dlspeed`, completely preventing `TypeError` crashes during widget builds and auto-scan background detection.
+  - **Dimmed Download History (`download_history_provider.dart`, `opacity: 0.76`)**: Records all completed anime and manga downloads with timestamps and file sizes, backed by persistent local storage (`download_history_items_v1`) with clear history confirmation dialogs.
+- **Downloaded Content Sections in Anime and Manga Feeds (`feed_screen.dart`, `manga_feed_screen.dart`)**:
+  - In `feed_screen.dart`: Added a horizontal carousel for "Descargas de anime" (downloaded anime) querying `downloadedAnimeProvider` right below Continue Watching, with a "Ver todo" header action navigating to `DownloadsScreen(initialTabIndex: 0)`.
+  - In `manga_feed_screen.dart`: Added a horizontal carousel for "Descargas de manga" (downloaded manga) querying `downloadedMangaListProvider` right below Continue Reading, with a "Ver todo" header action navigating to `DownloadsScreen(initialTabIndex: 1)`.
+  - Added "Gestor de descargas" quick navigation tile in `library_screen.dart`.
+- **ExoPlayer Plain Text Subtitle Anti-Aliasing & Rendering Quality (`ExoPlayerPlugin.kt`, `player_viewport.dart`)**:
+  - Eliminated the double-rendering artifact where Android's native `standardSubtitleView` (using Canvas miter strokes) and Flutter's `PlayerViewport` both rendered subtitles simultaneously. Native `standardSubtitleView` is kept hidden (`GONE`) and dormant, allowing Flutter's high-performance anti-aliased font engine to render plain subtitles (SRT, VTT) smoothly.
+  - Softened text outline shadows in `PlayerViewport` with adaptive `blurRadius: math.max(1.0, bSize * 0.5)` to eliminate stair-stepped jagged edges on all screen densities.
+- **Full Internationalization (i18n)**:
+  - Added new keys in `translations.dart`, `en.dart`, and `es.dart`: `downloadManager`, `downloadManagerDesc`, `downloadHistory`, `noDownloadHistory`, `noDownloadHistoryDesc`, `clearHistory`, `clearHistoryConfirm`, `timeRemaining`, `etaLabel`, `downloadedAnimeSection`, `downloadedMangaSection`, `activeDownloadsCount`, `completedDownload`, `viewAll`.
+
+### 7.17. Torrent UX Overhaul, Download Manager Navigation, Icon Pack Parity & Manga Discovery (2026-10-04)
+- **Torrent Download Immediate Feedback & Auto-Close (`torrent_selector_sheet.dart`)**:
+  - Tapping the download button on any single or batch torrent immediately dismisses the modal bottom sheet (`Navigator.pop(context)`), preventing the UI from freezing or feeling unresponsive.
+  - Instantly displays a persistent floating SnackBar with a progress spinner announcing `"Descargando Episodio X..."` and a direct action button to open the Download Manager (`DownloadManagerScreen`).
+  - Completely removed the redundant and confusing folder open icon button (`Icons.folder_open_rounded`) that was rendered on every single torrent card.
+- **Mobile Episode Long-Press Action Hub (`episode_item_widget.dart`, `anizip_episode_list.dart`, `online_stream_view.dart`, `anime_detail_mobile_layout.dart`)**:
+  - Enhanced `showEpisodeDetailModal` with a dedicated "Descargar" (Download) button equipped with `AppIcons.download(iconPack)`.
+  - Wired `onDownload` callbacks across `EpisodeListItem` and `EpisodeGridItem` in both Online Streaming and Torrent mode, enabling users on mobile to download any episode immediately from the long-press preview modal.
+- **Download Manager Folder Navigation & Completed Torrents Separation (`download_manager_screen.dart`)**:
+  - Added an `AppIcons.folderOpen(iconPack)` button in the Download Manager top summary header that opens the user's downloads folder directly in the system file manager via `AppStoragePaths.openDirectoryInFileManager`.
+  - Separated completed / seeding torrents from truly active downloads: Torrents at 100% (`progress >= 0.999`, `status == 'seeding'`, or `status == 'completed'`) no longer clutter the "En progreso" (Active Downloads) section. Instead, they are neatly displayed in a dedicated "Completadas y Seeding" section with completion checkmarks, seeding status, upload metrics, and pause/delete actions.
+  - Top active count badge counts only downloads that are actively downloading or queued.
+- **Server Manga Downloads Discovery Bug Fix (`app_providers.dart`)**:
+  - Fixed a critical type-mismatch bug in `downloadedMangaListProvider` where Seanime's nested `downloadData['downloaded'][providerId]` structure was treated as a flat map of lists, causing `downloadedCount` to remain 0 and omitting downloaded manga from the Downloads screen.
+  - Server-downloaded manga chapters are now discovered and displayed in the Manga downloads tab.
+
+### 7.18. Download Management Enhancements, Android Storage Introspection & Inline Download Feedback (2026-10-04)
+- **In-App Download Deletion (`downloads_screen.dart`, `local_library_view.dart`, `seanime_repository.dart`, `api_endpoints.dart`)**:
+  - Added full download deletion support across the application for both anime and manga:
+    - In `downloads_screen.dart`: Long-pressing or tapping the subtle delete button on any downloaded anime or manga card opens a confirmation dialog. Confirming removes local files from disk (via `localFiles` or `MangaOfflineService.deleteEntireManga`), invokes backend deletion endpoints (`DELETE /api/v1/library/local-files` and `DELETE /api/v1/manga/download-chapter`), and cleans up parent directories.
+    - In `local_library_view.dart`: Users can delete individual local anime episodes via a confirmation dialog that triggers `deleteLocalFiles`, disk removal, and automatic library re-scan.
+    - In `episode_item_widget.dart`: The mobile long-press episode modal (`showEpisodeDetailModal`) displays a red delete button when `onDelete` is supplied.
+  - Added new mandatory i18n keys: `deleteDownload`, `deleteDownloadConfirm`, `downloadDeleted`, `deleteEpisodeDownloadConfirm`.
+- **Android File Manager Integration (`MainActivity.kt`, `app_storage_paths.dart`)**:
+  - Implemented the `"openDirectory"` method in `MainActivity.kt`'s `MethodChannel` (`com.anyyting.aniting/server`).
+  - Utilizes `DocumentsContract.buildRootUri` / `DocumentsContract.buildDocumentUri` targeting primary external storage to launch the Android DocumentsUI file manager directly in the downloads folder (`Aniting/Downloads`), with fallbacks to `ACTION_VIEW` FileProvider and `DownloadManager.ACTION_VIEW_DOWNLOADS`.
+- **Inline Episode Download Spinner & Zero-SnackBar UX (`torrent_selector_sheet.dart`, `episode_item_widget.dart`, `active_downloads_provider.dart`, `anizip_episode_list.dart`, `online_stream_view.dart`)**:
+  - Completely removed the disruptive floating SnackBar when initiating a download. The torrent selector modal closes immediately (`Navigator.pop`).
+  - Created `downloadingEpisodesProvider` (`DownloadingEpisodesNotifier`) in `active_downloads_provider.dart` tracking active download keys (`"${mediaId}_${episodeNumber}"`).
+  - `EpisodeListItem` and `EpisodeGridItem` render a sleek inline circular progress indicator (`CircularProgressIndicator(strokeWidth: 2)`) on the right of the episode card while downloading, auto-clearing when completed or refreshed.
+

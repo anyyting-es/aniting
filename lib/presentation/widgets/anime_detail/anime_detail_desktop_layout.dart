@@ -211,6 +211,35 @@ class _AnimeDetailDesktopLayoutState
   }
 
   void _onEpisodeClicked(DesktopEpisodeItemData ep) {
+    if (widget.isLocalMode || ep.isDownloaded) {
+      final serverManager = ref.read(serverManagerProvider);
+      final l10n = ref.read(translationsProvider);
+      final titleLang = ref.read(titleLanguageProvider);
+      final animeTitle = widget.details?.displayTitle(titleLang) ?? 'Anime';
+      final streamUrl = ep.localFilePath != null && ep.localFilePath!.isNotEmpty
+          ? 'http://${serverManager.host}:${serverManager.port}/api/v1/mediastream/file?path=${Uri.encodeComponent(ep.localFilePath!)}'
+          : 'http://${serverManager.host}:${serverManager.port}/api/v1/mediastream?mediaId=${widget.mediaId}&episodeNumber=${ep.number}';
+      final fileName = ep.localFilePath != null && ep.localFilePath!.isNotEmpty
+          ? ep.localFilePath!.split(RegExp(r'[/\\]')).last
+          : null;
+      final sourceDesc = fileName != null ? 'Local • $fileName' : l10n.localLibrary;
+
+      Navigator.of(context, rootNavigator: true).push(
+        VideoPlayerScreen.route(
+          mediaId: widget.mediaId,
+          videoUrl: streamUrl,
+          title: animeTitle,
+          episodeTitle: ep.title,
+          episodeNumber: ep.number,
+          videoSource: sourceDesc,
+          isLocalFile: true,
+          animeDetails: widget.details,
+          aniZipData: widget.aniZipData ?? widget.details?.aniZipData,
+        ),
+      );
+      return;
+    }
+
     if (widget.currentTab == AnimeDetailTab.torrent) {
       widget.onOpenTorrentSelector(
         episodeNumber: ep.number,
@@ -478,6 +507,15 @@ class _AnimeDetailDesktopLayoutState
                                       onOpenEditEntryModal: widget.onOpenEditEntryModal,
                                       onToggleLocalMode: widget.onToggleLocalMode,
                                       onTabChanged: widget.onTabChanged,
+                                      onDownload: () {
+                                        final totalEps = widget.details?.totalEpisodes ?? widget.initialEntry?.totalEpisodes;
+                                        final nextEp = (progress + 1).clamp(1, totalEps ?? (progress + 1));
+                                        final defaultEpTitle = l10n.episodeNumber(nextEp);
+                                        widget.onOpenTorrentSelector(
+                                          episodeNumber: nextEp,
+                                          episodeTitle: defaultEpTitle,
+                                        );
+                                      },
                                     ),
                                   ],
                                 ),

@@ -31,6 +31,14 @@ class ServerManager {
   int get port => _port;
   AndroidServerChannel get androidChannel => _androidChannel;
 
+  void resetToLocal() {
+    _host = AppConstants.defaultHost;
+    _port = AppConstants.defaultPort;
+    _apiClient.updateConfig(host: _host, port: _port);
+    _state = ServerState.stopped;
+    _lastError = null;
+  }
+
   Future<bool> isBatteryOptimizationIgnored() => _androidChannel.isBatteryOptimizationIgnored();
   Future<bool> requestIgnoreBatteryOptimization() => _androidChannel.requestIgnoreBatteryOptimization();
   Future<bool> isManageStorageGranted() => _androidChannel.isManageStorageGranted();
@@ -38,14 +46,17 @@ class ServerManager {
 
   Future<bool> startLocalServer({
     int port = AppConstants.defaultPort,
+    String host = '127.0.0.1',
     String? desktopBinaryPath,
   }) async {
     _port = port;
+    _host = AppConstants.defaultHost;
+    _apiClient.updateConfig(host: _host, port: _port);
     _state = ServerState.starting;
     _lastError = null;
 
     if (Platform.isAndroid) {
-      final res = await _androidChannel.startServer(port: port);
+      final res = await _androidChannel.startServer(port: port, host: host);
       if (res != null) {
         _state = ServerState.running;
         return true;
@@ -55,7 +66,11 @@ class ServerManager {
         return false;
       }
     } else if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
-      final success = await _desktopServer.start(executablePath: desktopBinaryPath, port: port);
+      final success = await _desktopServer.start(
+        executablePath: desktopBinaryPath,
+        port: port,
+        host: host,
+      );
       if (success) {
         _state = ServerState.running;
         return true;

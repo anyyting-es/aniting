@@ -4,6 +4,7 @@ import (
 	"cmp"
 	"context"
 	"fmt"
+	"regexp"
 	"seanime/internal/api/anilist"
 	"seanime/internal/api/metadata"
 	"seanime/internal/constants"
@@ -572,10 +573,17 @@ func (r *Repository) createAnimeTorrentPreview(opts createAnimeTorrentPreviewOpt
 	}
 	parsedData = tMetadata.Metadata
 
-	isBatch := opts.torrent.IsBestRelease ||
-		opts.torrent.IsBatch ||
-		//comparison.ValueContainsBatchKeywords(opts.torrent.Name) || // Contains batch keywords
-		(!opts.media.IsMovieOrSingleEpisode() && (len(parsedData.EpisodeNumber) > 1 || len(parsedData.EpisodeNumber) == 0)) // Multiple episodes parsed & not a movie
+	// Fallback Spanish/multilingual single episode parsing if habari returned no episodes
+	if len(parsedData.EpisodeNumber) == 0 {
+		spanishEpRegex := regexp.MustCompile(`(?i)(?:cap[ií]tulo|episodio|cap)\s*0*(\d{1,4})\b`)
+		if matches := spanishEpRegex.FindStringSubmatch(opts.torrent.Name); len(matches) > 1 {
+			parsedData.EpisodeNumber = []string{matches[1]}
+		}
+	}
+
+	isBatch := opts.torrent.IsBatch ||
+		(!opts.media.IsMovieOrSingleEpisode() && len(parsedData.EpisodeNumber) > 1) ||
+		(!opts.media.IsMovieOrSingleEpisode() && len(parsedData.EpisodeNumber) == 0 && (opts.torrent.IsBestRelease || comparison.ValueContainsBatchKeywords(opts.torrent.Name)))
 
 	if isBatch && !opts.torrent.IsBatch {
 		opts.torrent.IsBatch = true

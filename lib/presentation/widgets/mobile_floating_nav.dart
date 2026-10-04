@@ -154,8 +154,9 @@ class _MobileFloatingNavState extends ConsumerState<MobileFloatingNav>
                 labelProgress: tWidth,
               );
 
-              // Resume Companion Geometry
-              final targetAvailableWidth = math.max(_kCompanionWidth, availableWidth);
+              // Resume Companion Geometry (capped to 560dp on desktop)
+              final maxCompanionWidth = math.min(availableWidth, 560.0);
+              final targetAvailableWidth = math.max(_kCompanionWidth, maxCompanionWidth);
               final resumeWidth = math.max(
                 0.0,
                 lerpDouble(
@@ -184,10 +185,14 @@ class _MobileFloatingNavState extends ConsumerState<MobileFloatingNav>
 
               // When expanded above (tHeight = 1):
               //   - Dock is centered alone: (totalWidth - dockWidth) / 2
-              //   - Companion parked above: right edge aligned to marginH, or full availableWidth
+              //   - Companion parked above: centered smoothly on both mobile and wide screens
               final dockLeftExpanded = (totalWidth - dockWidth) / 2;
-              final companionLeftParked = totalWidth - marginH - _kCompanionWidth;
-              final companionLeftAtTop = lerpDouble(companionLeftParked, marginH, tWidth)!;
+              final companionParkedRight = (totalWidth + maxCompanionWidth) / 2 - _kCompanionWidth;
+              final companionLeftAtTop = lerpDouble(
+                companionParkedRight,
+                (totalWidth - maxCompanionWidth) / 2,
+                tWidth,
+              )!;
 
               final dockLeft = lerpDouble(dockLeftCollapsed, dockLeftExpanded, tHeight)!;
               final companionLeft = lerpDouble(companionLeftCollapsed, companionLeftAtTop, tHeight)!;

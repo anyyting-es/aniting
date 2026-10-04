@@ -13,6 +13,7 @@ import (
 	"seanime/internal/torrent_clients/torrent_client"
 	torrentrepo "seanime/internal/torrents/torrent"
 	"seanime/internal/util"
+	"time"
 
 	"github.com/goccy/go-json"
 	"github.com/labstack/echo/v4"
@@ -292,8 +293,16 @@ func (h *Handler) HandleTorrentClientDownload(c echo.Context) error {
 		return err
 	}
 
-	if err := h.guardStrictFilesystemPath(c, b.Destination); err != nil {
-		return err
+	// Auto-resolve destination if empty and media is provided
+	if b.Destination == "" && b.Media != nil && h.App.Settings != nil && h.App.Settings.Library != nil {
+		libPath := h.App.Settings.Library.LibraryPath
+		if libPath != "" {
+			title := b.Media.GetPreferredTitle()
+			if title == "" {
+				title = fmt.Sprintf("Anime %d", b.Media.ID)
+			}
+			b.Destination = filepath.Join(libPath, util.ToValidFilename(title))
+		}
 	}
 
 	if b.Destination == "" {
@@ -308,30 +317,38 @@ func (h *Handler) HandleTorrentClientDownload(c echo.Context) error {
 		return err
 	}
 
-	// Check that the destination path is a library path
-	//libraryPaths, err := h.App.Database.GetAllLibraryPathsFromSettings()
-	//if err != nil {
-	//	return h.RespondWithError(c, err)
-	//}
-	//isInLibrary := util.IsSubdirectoryOfAny(libraryPaths, b.Destination)
-	//if !isInLibrary {
-	//	return h.RespondWithError(c, errors.New("destination path is not a library path"))
-	//}
-
 	// try to start torrent client if it's not running
 	if err := h.guardPrivilegedTorrentClient(c, h.App.Settings); err != nil {
 		return err
 	}
 	ok := h.App.TorrentClientRepository.Start()
 	if !ok {
-		return h.RespondWithError(c, errors.New("could not contact torrent client, verify your settings or make sure it's running"))
+		// Attempt fallback to built-in Seanime client if external client failed
+		if h.App.TorrentClientRepository.GetProvider() != torrent_client.SeanimeClient {
+			h.App.Logger.Warn().Msg("torrent client: Selected client failed to start, attempting fallback to built-in Seanime client")
+			if settings, err := h.App.Database.GetSettings(); err == nil && settings != nil {
+				if nextSettings, err := models.SetSettingsPath(settings, "torrent.defaultTorrentClient", torrent_client.SeanimeClient); err == nil {
+					nextSettings.BaseModel = models.BaseModel{ID: 1, UpdatedAt: time.Now()}
+					if s, err := h.App.Database.UpsertSettings(nextSettings); err == nil {
+						h.App.WSEventManager.SendEvent("settings", s)
+						h.App.InitOrRefreshModules()
+						ok = h.App.TorrentClientRepository.Start()
+					}
+				}
+			}
+		}
+		if !ok {
+			return h.RespondWithError(c, errors.New("could not contact torrent client, verify your settings or make sure it's running"))
+		}
 	}
 
 	var completeAnime *anilist.CompleteAnime
 	var err error
-	completeAnime, err = h.App.AnilistPlatformRef.Get().GetAnimeWithRelations(c.Request().Context(), b.Media.ID)
-	if err != nil {
-		completeAnime = b.Media.ToCompleteAnime()
+	if b.Media != nil {
+		completeAnime, err = h.App.AnilistPlatformRef.Get().GetAnimeWithRelations(c.Request().Context(), b.Media.ID)
+		if err != nil {
+			completeAnime = b.Media.ToCompleteAnime()
+		}
 	}
 
 	if b.SmartSelect.Enabled {

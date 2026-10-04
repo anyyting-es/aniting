@@ -5,8 +5,9 @@ import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/data/models/anime_details.dart';
 import 'package:seanime_app/data/models/anizip_data.dart';
 import 'package:seanime_app/data/models/onlinestream_models.dart';
+import 'package:seanime_app/data/models/library_entry_details.dart';
+import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
-import 'package:seanime_app/presentation/widgets/local_library_view.dart';
 
 import 'desktop_episode_grid_card.dart';
 import 'desktop_episode_list_card.dart';
@@ -68,6 +69,49 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
   int _currentPage = 0;
   static const int _episodesPerPage = 20;
 
+  LibraryEntryDetails? _libraryEntry;
+  bool _isLoadingLocal = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLocalEntry();
+  }
+
+  Future<void> _loadLocalEntry() async {
+    if (!mounted) return;
+    setState(() => _isLoadingLocal = true);
+    try {
+      final repo = ref.read(repositoryProvider);
+      final entry = await repo.getAnimeLibraryEntry(widget.mediaId);
+      if (mounted) {
+        setState(() {
+          _libraryEntry = entry;
+          _isLoadingLocal = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoadingLocal = false);
+    }
+  }
+
+  Future<void> _scanAndRefreshLocal() async {
+    final repo = ref.read(repositoryProvider);
+    final l10n = ref.read(translationsProvider);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.scanStarted),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+    await repo.scanLibrary();
+    await _loadLocalEntry();
+    ref.invalidate(downloadedAnimeProvider);
+    ref.invalidate(animeCollectionProvider);
+  }
+
   @override
   void didUpdateWidget(covariant DesktopEpisodesTab oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -77,6 +121,9 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
       setState(() {
         _currentPage = 0;
       });
+    }
+    if (oldWidget.mediaId != widget.mediaId || oldWidget.isLocalMode != widget.isLocalMode) {
+      _loadLocalEntry();
     }
   }
 
@@ -96,28 +143,119 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
     return 'EP ${ep.number}. $t';
   }
 
+  Widget _buildLocalEmptyState(ThemeData theme, AppTranslations l10n) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.amber.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.folder_off_outlined,
+              size: 40,
+              color: Colors.amber,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Text(
+            l10n.notInLocalLibrary,
+            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 6),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 480),
+            child: Text(
+              l10n.notInLocalLibraryDesc,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 13,
+                color: theme.colorScheme.onSurfaceVariant,
+                height: 1.4,
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Wrap(
+            spacing: 12,
+            runSpacing: 10,
+            alignment: WrapAlignment.center,
+            children: [
+              FilledButton.icon(
+                onPressed: () {
+                  widget.onToggleLocalMode();
+                  widget.onTabChanged(AnimeDetailTab.online);
+                },
+                icon: const Icon(Icons.public, size: 16),
+                label: Text(l10n.watchOnlineStream),
+              ),
+              OutlinedButton.icon(
+                onPressed: () {
+                  widget.onToggleLocalMode();
+                  widget.onTabChanged(AnimeDetailTab.torrent);
+                },
+                icon: const Icon(Icons.cloud_download_rounded, size: 16),
+                label: Text(l10n.searchTorrents),
+              ),
+              OutlinedButton.icon(
+                onPressed: _scanAndRefreshLocal,
+                icon: const Icon(Icons.sync_rounded, size: 16),
+                label: Text(l10n.scanLocalFolder),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    if (widget.isLocalMode) {
-      return LocalLibraryView(
-        mediaId: widget.mediaId,
-        animeDetails: widget.details,
-        progress: widget.progress,
-        onSwitchToTorrent: () {
-          widget.onToggleLocalMode();
-          widget.onTabChanged(AnimeDetailTab.torrent);
-        },
-        onSwitchToOnline: () {
-          widget.onToggleLocalMode();
-          widget.onTabChanged(AnimeDetailTab.online);
-        },
-      );
-    }
-
     final currentLanguage = ref.watch(appLanguageProvider);
     final iconPack = ref.watch(iconPackProvider);
     final l10n = ref.watch(translationsProvider);
     final langCode = currentLanguage.name;
+    final theme = Theme.of(context);
+
+    if (widget.isLocalMode) {
+      if (_isLoadingLocal && _libraryEntry == null) {
+        return Container(
+          padding: const EdgeInsets.all(48),
+          alignment: Alignment.center,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(height: 14),
+              Text(
+                l10n.checkingLocalFiles,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+
+      final downloadedEps = _libraryEntry?.episodes.where((e) => e.isDownloaded).toList() ?? [];
+      if (downloadedEps.isEmpty) {
+        return _buildLocalEmptyState(theme, l10n);
+      }
+    }
 
     final aniZipData = widget.aniZipData ?? widget.details?.aniZipData;
     final aniZipMainEps = aniZipData?.mainEpisodes ??
@@ -158,8 +296,44 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
     }
 
     final List<DesktopEpisodeItemData> items = [];
+    final downloadedMap = {
+      for (final ep in (_libraryEntry?.episodes ?? <LibraryEpisode>[]))
+        if (ep.isDownloaded) ep.episodeNumber: ep.localFilePath,
+    };
 
-    if (widget.currentTab == AnimeDetailTab.online) {
+    if (widget.isLocalMode) {
+      // ─── Mode: Local Library (Downloaded episodes directly from disk) ───
+      final downloadedEps = _libraryEntry?.episodes.where((e) => e.isDownloaded).toList() ?? [];
+      for (final ep in downloadedEps) {
+        final aniZipEp = aniZipData?.episodes
+            .where((e) => e.episodeNumber == ep.episodeNumber)
+            .firstOrNull;
+        final thumb = (ep.thumbnail != null && ep.thumbnail!.isNotEmpty)
+            ? ep.thumbnail
+            : (aniZipEp?.image ?? widget.fallbackCoverImage);
+        final synopsis = aniZipEp?.synopsis;
+        final rawTitle = (ep.episodeTitle != null && ep.episodeTitle!.isNotEmpty)
+            ? ep.episodeTitle!
+            : ep.displayTitle;
+        final isGeneric = rawTitle.isEmpty ||
+            rawTitle.toLowerCase() == 'episode ${ep.episodeNumber}' ||
+            rawTitle.toLowerCase() == 'episodio ${ep.episodeNumber}';
+        final epTitle = !isGeneric
+            ? rawTitle
+            : (aniZipEp?.displayTitleForLang(langCode) ?? l10n.episodeNumber(ep.episodeNumber));
+
+        items.add(DesktopEpisodeItemData(
+          number: ep.episodeNumber,
+          title: epTitle,
+          synopsis: synopsis,
+          image: thumb,
+          aniDBEpisode: aniZipEp?.episode,
+          isWatched: widget.progress >= ep.episodeNumber,
+          isDownloaded: true,
+          localFilePath: ep.localFilePath,
+        ));
+      }
+    } else if (widget.currentTab == AnimeDetailTab.online) {
       // ─── Mode: Online Streaming (Consult the selected source) ───
       final Map<int, dynamic> aniZipByNumber = {
         for (final ep in aniZipMainEps) ep.episodeNumber: ep,
@@ -193,6 +367,8 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
           image: thumb,
           aniDBEpisode: aniZipEp?.episode,
           isWatched: widget.progress >= ep.number,
+          isDownloaded: downloadedMap.containsKey(ep.number),
+          localFilePath: downloadedMap[ep.number],
         ));
       }
     } else {
@@ -211,6 +387,8 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
               image: ep.image,
               aniDBEpisode: ep.episode,
               isWatched: widget.progress >= ep.episodeNumber,
+              isDownloaded: downloadedMap.containsKey(ep.episodeNumber),
+              localFilePath: downloadedMap[ep.episodeNumber],
             ));
           }
         }
@@ -226,6 +404,8 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
               synopsis: ep.description,
               image: ep.image,
               isWatched: widget.progress >= ep.episodeNumber,
+              isDownloaded: downloadedMap.containsKey(ep.episodeNumber),
+              localFilePath: downloadedMap[ep.episodeNumber],
             ));
           }
         }
@@ -237,6 +417,8 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
             number: i,
             title: l10n.episodeNumber(i),
             isWatched: widget.progress >= i,
+            isDownloaded: downloadedMap.containsKey(i),
+            localFilePath: downloadedMap[i],
           ));
         }
       }
@@ -267,7 +449,6 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
         ? '${items.length} ${l10n.episodes} • ${l10n.page} ${_currentPage + 1}/$totalPages'
         : '${items.length} ${l10n.episodes}';
 
-    final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
     return Column(
@@ -288,8 +469,43 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
 
             const Spacer(),
 
-            // If Online mode, show provider selector and dub toggle
-            if (widget.currentTab == AnimeDetailTab.online && widget.providers.isNotEmpty) ...[
+            // If Local mode, show local count pill and scan button
+            if (widget.isLocalMode) ...[
+              Container(
+                height: 32,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: Colors.green.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.check_circle_rounded, size: 14, color: Colors.green),
+                    const SizedBox(width: 6),
+                    Text(
+                      '${items.length} ${l10n.localEpisodes}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 6),
+              IconButton(
+                style: IconButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  padding: const EdgeInsets.all(6),
+                ),
+                tooltip: l10n.scanLocalFolder,
+                icon: const Icon(Icons.sync_rounded, size: 18),
+                onPressed: _scanAndRefreshLocal,
+              ),
+            ] else if (widget.currentTab == AnimeDetailTab.online && widget.providers.isNotEmpty) ...[
               Container(
                 height: 32,
                 padding: const EdgeInsets.symmetric(horizontal: 12),

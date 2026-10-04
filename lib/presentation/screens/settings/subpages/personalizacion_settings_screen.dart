@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/preferences/banner_blur_provider.dart';
+import 'package:seanime_app/core/preferences/desktop_nav_style_provider.dart';
 import 'package:seanime_app/core/preferences/desktop_scrollbar_provider.dart';
 import 'package:seanime_app/core/preferences/episode_view_mode_provider.dart';
 import 'package:seanime_app/core/preferences/layout_mode_provider.dart';
@@ -29,6 +30,7 @@ class PersonalizacionSettingsScreen extends ConsumerWidget {
     final titleLang = ref.watch(titleLanguageProvider);
     final episodeViewMode = ref.watch(episodeViewModeProvider);
     final mobileNavStyle = ref.watch(mobileNavStyleProvider);
+    final desktopNavStyle = ref.watch(desktopNavStyleProvider);
     final layoutMode = ref.watch(layoutModeProvider);
     final theme = Theme.of(context);
     final l10n = ref.watch(translationsProvider);
@@ -315,6 +317,57 @@ class PersonalizacionSettingsScreen extends ConsumerWidget {
 
         const SizedBox(height: 24),
 
+        // ─── ESTILO DE NAVEGACIÓN EN ESCRITORIO ──────────────────
+        SettingsSectionHeader(title: l10n.desktopNavStyle),
+        const SizedBox(height: 10),
+        PixelCardContainer(
+          child: InkWell(
+            onTap: () => _showDesktopNavStyleDialog(context, ref, l10n, desktopNavStyle),
+            borderRadius: BorderRadius.circular(12),
+            child: Row(
+              children: [
+                Icon(
+                  desktopNavStyle == DesktopNavStyle.sidebar
+                      ? Icons.view_sidebar_rounded
+                      : Icons.dock_rounded,
+                  size: 20,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.desktopNavStyleDesc,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        desktopNavStyle.localizedLabel(l10n),
+                        style: TextStyle(
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_drop_down_rounded,
+                  color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 24),
+
         // ─── SECCIONES DE NAVEGACIÓN ──────────────────────────────
         SettingsSectionHeader(title: l10n.navigationSections),
         const SizedBox(height: 10),
@@ -552,6 +605,74 @@ void _showMobileNavStyleDialog(
                 ),
                 onTap: () {
                   ref.read(mobileNavStyleProvider.notifier).setStyle(style);
+                  Navigator.of(ctx).pop();
+                },
+              );
+            }).toList(),
+          ),
+        ),
+      );
+    },
+  );
+}
+
+/// Muestra un diálogo flotante para elegir el estilo de navegación en escritorio (Sidebar clásico / Dock flotante)
+void _showDesktopNavStyleDialog(
+  BuildContext context,
+  WidgetRef ref,
+  AppTranslations l10n,
+  DesktopNavStyle currentStyle,
+) {
+  showDialog(
+    context: context,
+    builder: (ctx) {
+      final theme = Theme.of(ctx);
+      return AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Text(
+          l10n.desktopNavStyle,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        ),
+        contentPadding: const EdgeInsets.fromLTRB(8, 16, 8, 8),
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 360),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: DesktopNavStyle.values.map((style) {
+              final isSelected = style == currentStyle;
+              final icon = style == DesktopNavStyle.sidebar
+                  ? Icons.view_sidebar_rounded
+                  : Icons.dock_rounded;
+
+              return ListTile(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                leading: Icon(
+                  icon,
+                  color: isSelected
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.onSurfaceVariant,
+                  size: 20,
+                ),
+                title: Text(
+                  style.localizedLabel(l10n),
+                  style: TextStyle(
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                    color: isSelected
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.onSurface,
+                  ),
+                ),
+                trailing: Icon(
+                  isSelected ? Icons.check_circle_rounded : Icons.circle_outlined,
+                  color: isSelected
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.outline.withValues(alpha: 0.35),
+                  size: 22,
+                ),
+                onTap: () {
+                  ref.read(desktopNavStyleProvider.notifier).setStyle(style);
                   Navigator.of(ctx).pop();
                 },
               );

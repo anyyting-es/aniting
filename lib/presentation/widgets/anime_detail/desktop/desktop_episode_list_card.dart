@@ -109,6 +109,40 @@ class _DesktopListEpisodeCardState extends ConsumerState<DesktopListEpisodeCard>
                                   )
                                 : _buildPlaceholder(),
 
+                          // Local downloaded badge
+                          if (widget.ep.isDownloaded)
+                            Positioned(
+                              top: 6,
+                              right: 6,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.8),
+                                  borderRadius: BorderRadius.circular(5),
+                                  border: Border.all(
+                                    color: Colors.greenAccent.withValues(alpha: 0.6),
+                                    width: 0.8,
+                                  ),
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.check_circle_rounded, color: Colors.greenAccent, size: 10),
+                                    SizedBox(width: 3.5),
+                                    Text(
+                                      'LOCAL',
+                                      style: TextStyle(
+                                        color: Colors.greenAccent,
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+
                           if (widget.isLoading)
                             Container(
                               color: Colors.black45,

@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart' as path_provider;
 
 /// Gestiona la resolución y estructura de carpetas de almacenamiento para Aniting.
@@ -139,6 +140,54 @@ class AppStoragePaths {
       await targetDir.create(recursive: true);
     }
     return targetDir;
+  }
+
+  /// Obtiene y asegura el directorio dedicado de datos y configuración del servidor para Aniting.
+  /// Windows: %APPDATA%\Aniting
+  /// Linux/macOS: ~/.config/aniting
+  static Future<String> getServerDataDirectory() async {
+    String anitingDir;
+
+    if (Platform.isWindows) {
+      final appData = Platform.environment['APPDATA'] ??
+          '${Platform.environment['USERPROFILE']}\\AppData\\Roaming';
+      anitingDir = '$appData\\Aniting';
+    } else if (Platform.isLinux || Platform.isMacOS) {
+      final home = Platform.environment['HOME'] ?? Directory.current.path;
+      anitingDir = '$home/.config/aniting';
+    } else {
+      final docs = await path_provider.getApplicationSupportDirectory();
+      anitingDir = '${docs.path}/Aniting';
+    }
+
+    final targetDir = Directory(anitingDir);
+    if (!await targetDir.exists()) {
+      await targetDir.create(recursive: true);
+    }
+
+    return anitingDir;
+  }
+
+  /// Abre la carpeta indicada en el explorador de archivos del sistema operativo
+  static Future<void> openDirectoryInFileManager(String path) async {
+    try {
+      final dir = Directory(path);
+      if (!await dir.exists()) {
+        await dir.create(recursive: true);
+      }
+      if (Platform.isAndroid) {
+        const channel = MethodChannel('com.anyyting.aniting/server');
+        await channel.invokeMethod('openDirectory', {'path': path});
+      } else if (Platform.isWindows) {
+        await Process.run('explorer.exe', [path]);
+      } else if (Platform.isMacOS) {
+        await Process.run('open', [path]);
+      } else if (Platform.isLinux) {
+        await Process.run('xdg-open', [path]);
+      }
+    } catch (e) {
+      debugPrint('Error opening directory in file manager: $e');
+    }
   }
 
   static String _sanitizeFolderName(String name) {

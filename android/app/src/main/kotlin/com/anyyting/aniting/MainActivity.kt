@@ -73,7 +73,8 @@ class MainActivity : FlutterActivity() {
                 "startServer" -> {
                     try {
                         val port = call.argument<Int>("port") ?: SeanimeServerRuntime.defaultPort
-                        val status = SeanimeServerRuntime.start(applicationContext, port)
+                        val host = call.argument<String>("host") ?: SeanimeServerRuntime.defaultHost
+                        val status = SeanimeServerRuntime.start(applicationContext, port, host)
                         result.success(status)
                     } catch (e: Throwable) {
                         result.error("SERVER_START_ERROR", e.localizedMessage, null)
@@ -177,6 +178,82 @@ class MainActivity : FlutterActivity() {
                         result.success(pInfo.versionName)
                     } catch (e: Exception) {
                         result.success(null)
+                    }
+                }
+                "openDirectory" -> {
+                    val dirPath = call.argument<String>("path")
+                    if (dirPath.isNullOrEmpty()) {
+                        result.error("INVALID_PATH", "Directory path cannot be null or empty", null)
+                        return@setMethodCallHandler
+                    }
+                    val dir = java.io.File(dirPath)
+                    if (!dir.exists()) {
+                        dir.mkdirs()
+                    }
+                    try {
+                        var opened = false
+
+                        // Attempt 1: DocumentsContract for primary storage path
+                        val downloadMarker = "Download"
+                        val dlIndex = dirPath.indexOf(downloadMarker, ignoreCase = true)
+                        if (dlIndex != -1) {
+                            val subPath = dirPath.substring(dlIndex)
+                            try {
+                                val encoded = java.net.URLEncoder.encode("primary:$subPath", "UTF-8")
+                                val docUri = android.net.Uri.parse("content://com.android.externalstorage.documents/document/$encoded")
+                                val intent = Intent(Intent.ACTION_VIEW).apply {
+                                    setDataAndType(docUri, "vnd.android.document/directory")
+                                    addCategory(Intent.CATEGORY_DEFAULT)
+                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                }
+                                startActivity(intent)
+                                opened = true
+                            } catch (_: Exception) {}
+                        }
+
+                        // Attempt 2: ACTION_VIEW on FileProvider URI with broad MIME type
+                        if (!opened) {
+                            try {
+                                val contentUri = androidx.core.content.FileProvider.getUriForFile(
+                                    applicationContext,
+                                    "${applicationContext.packageName}.fileprovider",
+                                    dir
+                                )
+                                val intent = Intent(Intent.ACTION_VIEW).apply {
+                                    setDataAndType(contentUri, "*/*")
+                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+                                }
+                                startActivity(intent)
+                                opened = true
+                            } catch (_: Exception) {}
+                        }
+
+                        // Attempt 3: ACTION_VIEW_DOWNLOADS
+                        if (!opened) {
+                            try {
+                                val intent = Intent(android.app.DownloadManager.ACTION_VIEW_DOWNLOADS).apply {
+                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                }
+                                startActivity(intent)
+                                opened = true
+                            } catch (_: Exception) {}
+                        }
+
+                        // Attempt 4: Launch Files app directly
+                        if (!opened) {
+                            val filesIntent = packageManager.getLaunchIntentForPackage("com.google.android.documentsui")
+                                ?: packageManager.getLaunchIntentForPackage("com.android.documentsui")
+                                ?: packageManager.getLaunchIntentForPackage("com.google.android.apps.nbu.files")
+                            if (filesIntent != null) {
+                                filesIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                startActivity(filesIntent)
+                                opened = true
+                            }
+                        }
+
+                        result.success(opened)
+                    } catch (e: Exception) {
+                        result.error("OPEN_DIR_ERROR", e.localizedMessage, null)
                     }
                 }
                 else -> result.notImplemented()

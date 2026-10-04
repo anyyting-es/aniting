@@ -4,10 +4,12 @@ class ApiEndpoints {
   static const String login = '/auth/login';
   static const String logout = '/auth/logout';
   static const String settings = '/settings';
+  static const String settingsPath = '/settings/path';
 
   // Library
   static const String libraryCollection = '/library/collection';
   static const String libraryScan = '/library/scan';
+  static const String libraryLocalFiles = '/library/local-files';
   static const String animeEntry = '/library/anime-entry';
   static const String animeUpdateProgress = '/library/anime-entry/update-progress';
   static const String animeUpdateRepeat = '/library/anime-entry/update-repeat';
@@ -17,8 +19,14 @@ class ApiEndpoints {
   // Playback & Torrent
   static const String torrentstreamStart = '/torrentstream/start';
   static const String torrentstreamStop = '/torrentstream/stop';
+  static const String torrentstreamDrop = '/torrentstream/drop';
+  static const String torrentstreamPause = '/torrentstream/pause';
+  static const String torrentstreamResume = '/torrentstream/resume';
   static const String torrentstreamFilePreviews = '/torrentstream/torrent-file-previews';
   static const String torrentSearch = '/torrent/search';
+  static const String torrentClientList = '/torrent-client/list';
+  static const String torrentClientAction = '/torrent-client/action';
+  static const String torrentClientDownload = '/torrent-client/download';
   static const String mediastream = '/mediastream';
 
   // Extensions
@@ -61,6 +69,7 @@ class ApiEndpoints {
   static const String mangaDownloadQueue = '/manga/download-queue';
   static const String mangaDownloadQueueStart = '/manga/download-queue/start';
   static const String mangaDownloadQueueStop = '/manga/download-queue/stop';
+  static const String mangaDownloadQueueResetErrored = '/manga/download-queue/reset-errored';
   static const String mangaDownloadChapterDelete = '/manga/download-chapter';
   static const String mangaDownloadsList = '/manga/downloads';
   static const String mangaDownloadedChapters = '/manga/downloaded-chapters';

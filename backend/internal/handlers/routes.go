@@ -487,6 +487,8 @@ func InitRoutes(app *core.App, e *echo.Echo) {
 	v1.POST("/torrentstream/start", h.HandleTorrentstreamStartStream)
 	v1.POST("/torrentstream/stop", h.HandleTorrentstreamStopStream)
 	v1.POST("/torrentstream/drop", h.HandleTorrentstreamDropTorrent)
+	v1.POST("/torrentstream/pause", h.HandleTorrentstreamPauseStream)
+	v1.POST("/torrentstream/resume", h.HandleTorrentstreamResumeStream)
 	v1.POST("/torrentstream/torrent-file-previews", h.HandleGetTorrentstreamTorrentFilePreviews)
 	v1.POST("/torrentstream/batch-history", h.HandleGetTorrentstreamBatchHistory)
 	v1.POST("/torrentstream/batch-history/delete", h.HandleDeleteTorrentstreamBatchHistory)

@@ -290,3 +290,15 @@ func CleanMediaTitle(title string) string {
 	)
 	return strings.TrimSpace(replacer.Replace(title))
 }
+
+var invalidFilenameChars = regexp.MustCompile(`[<>:"/\\|?*\x00-\x1F]`)
+
+func ToValidFilename(name string) string {
+	cleaned := invalidFilenameChars.ReplaceAllString(name, "_")
+	cleaned = strings.TrimSpace(cleaned)
+	cleaned = strings.Trim(cleaned, ".")
+	if cleaned == "" {
+		return "download"
+	}
+	return cleaned
+}

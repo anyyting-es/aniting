@@ -215,6 +215,36 @@ func (h *Handler) HandleTorrentstreamDropTorrent(c echo.Context) error {
 	return h.RespondWithData(c, true)
 }
 
+// HandleTorrentstreamPauseStream
+//
+//	@summary pauses downloading for the current torrent stream.
+//	@desc This deprioritizes file pieces to stop downloading without dropping the torrent or deleting files.
+//	@returns bool
+//	@route /api/v1/torrentstream/pause [POST]
+func (h *Handler) HandleTorrentstreamPauseStream(c echo.Context) error {
+	err := h.App.TorrentstreamRepository.PauseStream()
+	if err != nil {
+		return h.RespondWithError(c, err)
+	}
+
+	return h.RespondWithData(c, true)
+}
+
+// HandleTorrentstreamResumeStream
+//
+//	@summary resumes downloading for the current torrent stream.
+//	@desc This re-enables downloading for the current torrent stream file.
+//	@returns bool
+//	@route /api/v1/torrentstream/resume [POST]
+func (h *Handler) HandleTorrentstreamResumeStream(c echo.Context) error {
+	err := h.App.TorrentstreamRepository.ResumeStream()
+	if err != nil {
+		return h.RespondWithError(c, err)
+	}
+
+	return h.RespondWithData(c, true)
+}
+
 // HandleGetTorrentstreamBatchHistory
 //
 //	@summary returns the most recent batch selected.

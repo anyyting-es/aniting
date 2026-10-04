@@ -6,6 +6,7 @@ import 'package:seanime_app/core/preferences/episode_view_mode_provider.dart';
 import 'package:seanime_app/core/theme/app_theme_colors.dart';
 import 'package:seanime_app/data/models/anime_details.dart';
 import 'package:seanime_app/data/models/onlinestream_models.dart';
+import 'package:seanime_app/presentation/providers/active_downloads_provider.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/screens/extensions_marketplace_screen.dart';
 import 'package:seanime_app/presentation/screens/video_player_screen.dart';
@@ -41,7 +42,10 @@ class OnlineStreamView extends ConsumerStatefulWidget {
     this.onProvidersLoaded,
     this.onProviderChanged,
     this.onDubbedChanged,
+    this.onDownloadEpisode,
   });
+
+  final void Function(int episodeNumber, String episodeTitle)? onDownloadEpisode;
 
   @override
   ConsumerState<OnlineStreamView> createState() => _OnlineStreamViewState();
@@ -582,6 +586,7 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = ref.watch(translationsProvider);
+    final downloadingEpisodes = ref.watch(downloadingEpisodesProvider);
 
     // 1. Loading providers
     if (_isLoadingProviders) {
@@ -1064,7 +1069,11 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
                 badgeText: ep.isFiller ? l10n.filler.toUpperCase() : null,
                 isLoading: isLoading,
                 isWatched: widget.progress >= ep.number && ep.number > 0,
+                isDownloading: downloadingEpisodes.contains('${widget.mediaId}_${ep.number}'),
                 onTap: isLoading ? null : () => _handleEpisodeTap(ep),
+                onDownload: widget.onDownloadEpisode != null
+                    ? () => widget.onDownloadEpisode!(ep.number, ep.localizedDisplayTitle(l10n))
+                    : null,
               );
             },
           )
@@ -1110,8 +1119,12 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
                         badgeText: ep.isFiller ? l10n.filler.toUpperCase() : null,
                         isLoading: isLoading,
                         isWatched: widget.progress >= ep.number && ep.number > 0,
+                        isDownloading: downloadingEpisodes.contains('${widget.mediaId}_${ep.number}'),
                         onTap: isLoading ? null : () => _handleEpisodeTap(ep),
                         onPlay: isLoading ? null : () => _handleEpisodeTap(ep),
+                        onDownload: widget.onDownloadEpisode != null
+                            ? () => widget.onDownloadEpisode!(ep.number, ep.localizedDisplayTitle(l10n))
+                            : null,
                       );
                     },
                   ),

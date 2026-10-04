@@ -8,10 +8,12 @@ import 'package:seanime_app/data/models/torrent_models.dart';
 class TorrentBatchSelectionResult {
   final TorrentFilePreview file;
   final bool useExternalPlayer;
+  final bool isDownloadAction;
 
   const TorrentBatchSelectionResult({
     required this.file,
     this.useExternalPlayer = false,
+    this.isDownloadAction = false,
   });
 }
 
@@ -413,6 +415,26 @@ class _TorrentBatchFilesSheetState extends ConsumerState<TorrentBatchFilesSheet>
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton.filledTonal(
+                        tooltip: l10n.downloadWithTorrentClient,
+                        icon: const Icon(Icons.download_rounded),
+                        onPressed: () {
+                          Navigator.pop(
+                            context,
+                            TorrentBatchSelectionResult(
+                              file: _selectedFile ?? widget.files.first,
+                              isDownloadAction: true,
+                            ),
+                          );
+                        },
+                        style: IconButton.styleFrom(
+                          minimumSize: const Size(46, 46),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
                           ),
                         ),
                       ),

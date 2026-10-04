@@ -4,6 +4,7 @@ import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/theme/custom_route_transitions.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
+import 'package:seanime_app/presentation/screens/download_manager_screen.dart';
 import 'package:seanime_app/presentation/screens/downloads_screen.dart';
 import 'package:seanime_app/presentation/screens/my_lists_screen.dart';
 import 'package:seanime_app/presentation/screens/settings/settings_screen.dart';
@@ -200,6 +201,20 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     Navigator.push(
                       context,
                       SlideRightToLeftPageRoute(child: const DownloadsScreen(initialTabIndex: 1)),
+                    );
+                  },
+                ),
+
+                _buildNavigationTile(
+                  context,
+                  theme: theme,
+                  icon: AppIcons.download(iconPack),
+                  iconPack: iconPack,
+                  title: l10n.downloadManager,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      SlideRightToLeftPageRoute(child: const DownloadManagerScreen()),
                     );
                   },
                 ),

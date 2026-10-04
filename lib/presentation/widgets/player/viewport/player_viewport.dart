@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit_video/media_kit_video.dart';
@@ -5,6 +6,7 @@ import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/player/mpv_player_service.dart';
 import 'package:seanime_app/core/preferences/player_gesture_provider.dart';
+import 'package:seanime_app/core/preferences/subtitle_style_preferences_provider.dart';
 import 'package:seanime_app/core/preferences/volume_boost_provider.dart';
 import 'package:seanime_app/presentation/widgets/player/controls/player_bottom_bar.dart';
 import 'package:seanime_app/presentation/widgets/player/controls/player_gesture_overlay.dart';
@@ -134,6 +136,7 @@ class PlayerViewport extends ConsumerWidget {
     final primaryColor = theme.colorScheme.primary;
     final l10n = ref.watch(translationsProvider);
     final iconPack = ref.watch(iconPackProvider);
+    final subStyle = ref.watch(subtitleStylePreferencesProvider);
 
     return ColoredBox(
       color: isUsingExoPlayer ? Colors.transparent : Colors.black,
@@ -156,11 +159,15 @@ class PlayerViewport extends ConsumerWidget {
                               visible: selectedSubtitleTrackId != null &&
                                   selectedSubtitleTrackId != 'no' &&
                                   selectedSubtitleTrackId != 'none',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 height: 1.4,
-                                fontSize: 26.0,
-                                color: Colors.white,
-                                shadows: [
+                                fontFamily: subStyle.fontFamily == 'sans-serif' ? null : subStyle.fontFamily,
+                                fontSize: 26.0 * subStyle.fontSizeMultiplier,
+                                fontWeight: subStyle.bold ? FontWeight.bold : FontWeight.normal,
+                                fontStyle: subStyle.italic ? FontStyle.italic : FontStyle.normal,
+                                color: subStyle.textFlutterColor,
+                                backgroundColor: subStyle.backgroundColor != 0 ? subStyle.bgFlutterColor : null,
+                                shadows: const [
                                   Shadow(color: Colors.black, blurRadius: 4, offset: Offset(1, 1)),
                                   Shadow(color: Colors.black, blurRadius: 4, offset: Offset(-1, -1)),
                                 ],
@@ -280,21 +287,20 @@ class PlayerViewport extends ConsumerWidget {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.65),
+                      color: subStyle.bgFlutterColor,
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
                       currentSubtitleText,
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: Colors.white,
-                        fontSize: isFullscreen ? 20.0 : 15.0,
-                        fontWeight: FontWeight.w600,
+                        color: subStyle.textFlutterColor,
+                        fontFamily: subStyle.fontFamily == 'sans-serif' ? null : subStyle.fontFamily,
+                        fontSize: (isFullscreen ? 20.0 : 15.0) * subStyle.fontSizeMultiplier,
+                        fontWeight: subStyle.bold ? FontWeight.bold : FontWeight.normal,
+                        fontStyle: subStyle.italic ? FontStyle.italic : FontStyle.normal,
                         height: 1.3,
-                        shadows: const [
-                          Shadow(color: Colors.black, blurRadius: 4, offset: Offset(1, 1)),
-                          Shadow(color: Colors.black, blurRadius: 4, offset: Offset(-1, -1)),
-                        ],
+                        shadows: _buildViewportSubtitleShadows(subStyle),
                       ),
                     ),
                   ),
@@ -385,6 +391,43 @@ class PlayerViewport extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  List<Shadow>? _buildViewportSubtitleShadows(SubtitleStylePrefs prefs) {
+    final borderCol = prefs.borderFlutterColor;
+    final bSize = prefs.borderSize;
+
+    switch (prefs.borderStyle) {
+      case SubtitleBorderStyle.none:
+        return null;
+      case SubtitleBorderStyle.outline:
+        // Adding a subtle blurRadius softens discrete directional shadow steps into smooth anti-aliased outlines.
+        final blur = math.max(1.0, bSize * 0.5);
+        return [
+          Shadow(offset: Offset(-bSize, -bSize), blurRadius: blur, color: borderCol),
+          Shadow(offset: Offset(bSize, -bSize), blurRadius: blur, color: borderCol),
+          Shadow(offset: Offset(-bSize, bSize), blurRadius: blur, color: borderCol),
+          Shadow(offset: Offset(bSize, bSize), blurRadius: blur, color: borderCol),
+          Shadow(offset: Offset(0, -bSize), blurRadius: blur, color: borderCol),
+          Shadow(offset: Offset(0, bSize), blurRadius: blur, color: borderCol),
+          Shadow(offset: Offset(-bSize, 0), blurRadius: blur, color: borderCol),
+          Shadow(offset: Offset(bSize, 0), blurRadius: blur, color: borderCol),
+        ];
+      case SubtitleBorderStyle.dropShadow:
+        return [
+          Shadow(offset: Offset(bSize, bSize), blurRadius: bSize * 1.5, color: borderCol),
+        ];
+      case SubtitleBorderStyle.raised:
+        return [
+          Shadow(offset: Offset(-bSize * 0.7, -bSize * 0.7), color: Colors.white54),
+          Shadow(offset: Offset(bSize * 0.7, bSize * 0.7), color: borderCol),
+        ];
+      case SubtitleBorderStyle.depressed:
+        return [
+          Shadow(offset: Offset(bSize * 0.7, bSize * 0.7), color: Colors.white54),
+          Shadow(offset: Offset(-bSize * 0.7, -bSize * 0.7), color: borderCol),
+        ];
+    }
   }
 }
 

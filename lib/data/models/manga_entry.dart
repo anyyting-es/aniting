@@ -246,7 +246,7 @@ class MangaEntry {
     final mediaId = (media['id'] is num) ? (media['id'] as num).toInt() : id;
 
     final String? resolvedCover = cover is Map<String, dynamic>
-        ? (cover['extraLarge'] ?? cover['large'] ?? cover['medium'] ?? cover['url'])
+        ? (cover['large'] ?? cover['extraLarge'] ?? cover['medium'] ?? cover['url'])
         : (json['coverImage'] is String
             ? json['coverImage'] as String
             : (media['coverImage'] is String ? media['coverImage'] as String : null));

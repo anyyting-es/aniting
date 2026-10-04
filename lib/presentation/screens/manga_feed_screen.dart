@@ -5,6 +5,7 @@ import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/data/models/manga_entry.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
+import 'package:seanime_app/presentation/screens/downloads_screen.dart';
 import 'package:seanime_app/presentation/screens/manga_detail_screen.dart';
 import 'package:seanime_app/presentation/widgets/compact_search_bar.dart';
 import 'package:seanime_app/presentation/widgets/continue_reading_card.dart';
@@ -113,6 +114,7 @@ class _MangaFeedScreenState extends ConsumerState<MangaFeedScreen> {
     ref.invalidate(continueReadingMangaProvider);
     ref.invalidate(mangaCollectionProvider);
     ref.invalidate(mangaRecommendationsProvider);
+    ref.invalidate(downloadedMangaListProvider);
   }
 
   @override
@@ -126,23 +128,23 @@ class _MangaFeedScreenState extends ConsumerState<MangaFeedScreen> {
     final continueReadingAsync = ref.watch(continueReadingMangaProvider);
     final mangaCollectionAsync = ref.watch(mangaCollectionProvider);
     final mangaRecommendationsAsync = ref.watch(mangaRecommendationsProvider);
+    final downloadedMangaAsync = ref.watch(downloadedMangaListProvider);
     final isLoggedIn = serverState.status?.isLoggedIn ?? false;
+    final isOffline = !serverState.isOnline || serverState.state == ServerState.error;
 
     final cachedCr = FeedCacheService.instance.getMangaList(FeedCacheService.kCacheContinueReadingManga);
     final offlineCr = OfflineLibraryService.instance.getContinueReading();
     final continueReadingEntries = continueReadingAsync.value ??
         (continueReadingAsync.isLoading
-            ? (cachedCr.isNotEmpty ? cachedCr : offlineCr)
-            : (!isLoggedIn ? offlineCr : <MangaEntry>[]));
+            ? (cachedCr.isNotEmpty ? cachedCr : (isOffline ? offlineCr : <MangaEntry>[]))
+            : (isOffline ? offlineCr : <MangaEntry>[]));
 
     final hasContinueReading = continueReadingEntries.isNotEmpty;
     final hasCompleted = mangaCollectionAsync.value?.any((e) => e.status.toUpperCase() == 'COMPLETED') ?? false;
     final hasReading = mangaCollectionAsync.value?.any((e) => e.status.toUpperCase() == 'CURRENT' || e.status.toUpperCase() == 'READING') ?? false;
     final hasMangaRecs = mangaRecommendationsAsync.value?.isNotEmpty ?? false;
-    final hasAnyMangaContent = hasContinueReading || hasCompleted || hasReading || hasMangaRecs;
-    final isOffline = (!serverState.isOnline || (serverState.state == ServerState.error)) &&
-        !hasAnyMangaContent &&
-        mangaCollectionAsync.hasError;
+    final hasDownloadedManga = downloadedMangaAsync.value?.isNotEmpty ?? false;
+    final hasAnyMangaContent = hasContinueReading || hasCompleted || hasReading || hasMangaRecs || hasDownloadedManga;
 
     final isDesktop = MediaQuery.of(context).size.width >= 720;
     final mangaCardWidth = isDesktop ? 180.0 : 125.0;
@@ -306,7 +308,71 @@ class _MangaFeedScreenState extends ConsumerState<MangaFeedScreen> {
                               isDesktop: isDesktop,
                             ),
 
-                          // ─── 2. Mangas Completados (Completed Manga) ───
+                          // ─── 2. Descargas de Manga (Downloaded Manga) ───
+                          downloadedMangaAsync.when(
+                            data: (downloaded) {
+                              if (downloaded.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+
+                              return SliverToBoxAdapter(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    _SectionHeader(
+                                      title: '${l10n.downloadedMangaSection} (${downloaded.length})',
+                                      trailing: TextButton(
+                                        onPressed: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) => const DownloadsScreen(initialTabIndex: 1),
+                                            ),
+                                          );
+                                        },
+                                        child: Text(
+                                          l10n.viewAll,
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600,
+                                            color: theme.colorScheme.primary,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      height: carouselHeight + 16,
+                                      child: ListView.separated(
+                                        clipBehavior: Clip.none,
+                                        scrollDirection: Axis.horizontal,
+                                        cacheExtent: 350,
+                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                        itemCount: downloaded.length,
+                                        separatorBuilder: (context, index) => SizedBox(width: carouselSpacing),
+                                        itemBuilder: (context, index) {
+                                          final item = downloaded[index];
+                                          return MangaCard(
+                                            entry: item,
+                                            width: mangaCardWidth,
+                                            onTap: () {
+                                              MangaDetailScreen.navigate(
+                                                context,
+                                                mediaId: item.mediaId,
+                                                initialEntry: item,
+                                              );
+                                            },
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                    const SizedBox(height: 20),
+                                  ],
+                                ),
+                              );
+                            },
+                            loading: () => const SliverToBoxAdapter(child: SizedBox.shrink()),
+                            error: (err, stack) => const SliverToBoxAdapter(child: SizedBox.shrink()),
+                          ),
+
+                          // ─── 3. Mangas Completados (Completed Manga) ───
                           mangaCollectionAsync.when(
                             data: (collection) {
                               final completed = collection
@@ -458,8 +524,9 @@ class _MangaFeedScreenState extends ConsumerState<MangaFeedScreen> {
 
 class _SectionHeader extends StatelessWidget {
   final String title;
+  final Widget? trailing;
 
-  const _SectionHeader({required this.title});
+  const _SectionHeader({required this.title, this.trailing});
 
   @override
   Widget build(BuildContext context) {
@@ -468,17 +535,23 @@ class _SectionHeader extends StatelessWidget {
       padding: const EdgeInsets.only(left: 16, right: 16, top: 4, bottom: 8),
       child: SizedBox(
         height: 36,
-        child: Align(
-          alignment: Alignment.centerLeft,
-          child: Text(
-            title,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              letterSpacing: -0.2,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: Text(
+                title,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: -0.2,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
+            ?trailing,
+          ],
         ),
       ),
     );

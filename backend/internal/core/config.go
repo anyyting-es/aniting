@@ -89,7 +89,9 @@ func NewConfig(options *ConfigOptions, logger *zerolog.Logger) (*Config, error) 
 	definedDataDir := ""
 
 	// Set data dir (flag overrides env var)
-	if os.Getenv("SEANIME_DATA_DIR") != "" {
+	if os.Getenv("ANITING_DATA_DIR") != "" {
+		definedDataDir = os.Getenv("ANITING_DATA_DIR")
+	} else if os.Getenv("SEANIME_DATA_DIR") != "" {
 		definedDataDir = os.Getenv("SEANIME_DATA_DIR")
 	}
 
@@ -101,10 +103,18 @@ func NewConfig(options *ConfigOptions, logger *zerolog.Logger) (*Config, error) 
 	defaultPort := 43211
 
 	// Environment variables override defaults
-	if os.Getenv("SEANIME_SERVER_HOST") != "" {
+	if os.Getenv("ANITING_SERVER_HOST") != "" {
+		defaultHost = os.Getenv("ANITING_SERVER_HOST")
+	} else if os.Getenv("SEANIME_SERVER_HOST") != "" {
 		defaultHost = os.Getenv("SEANIME_SERVER_HOST")
 	}
-	if os.Getenv("SEANIME_SERVER_PORT") != "" {
+	if os.Getenv("ANITING_SERVER_PORT") != "" {
+		var err error
+		defaultPort, err = strconv.Atoi(os.Getenv("ANITING_SERVER_PORT"))
+		if err != nil {
+			return nil, fmt.Errorf("invalid ANITING_SERVER_PORT environment variable: %s", os.Getenv("ANITING_SERVER_PORT"))
+		}
+	} else if os.Getenv("SEANIME_SERVER_PORT") != "" {
 		var err error
 		defaultPort, err = strconv.Atoi(os.Getenv("SEANIME_SERVER_PORT"))
 		if err != nil {
@@ -167,6 +177,7 @@ func NewConfig(options *ConfigOptions, logger *zerolog.Logger) (*Config, error) 
 	viper.SetDefault("offline.assetDir", "$SEANIME_DATA_DIR/offline/assets")
 	viper.SetDefault("extensions.dir", "$SEANIME_DATA_DIR/extensions")
 	viper.SetDefault("torrent.dir", "$SEANIME_DATA_DIR/torrent")
+	viper.SetDefault("experimental.builtinTorrentClient", true)
 
 	// Create and populate the config file if it doesn't exist
 	if err = createConfigFile(configPath); err != nil {
@@ -318,13 +329,8 @@ func getWorkingDir(useBinaryPath bool) (string, error) {
 }
 
 func setDataDirEnv(dataDir string) error {
-	// Set the data directory environment variable
-	if os.Getenv("SEANIME_DATA_DIR") == "" {
-		if err := os.Setenv("SEANIME_DATA_DIR", dataDir); err != nil {
-			return err
-		}
-	}
-
+	_ = os.Setenv("ANITING_DATA_DIR", dataDir)
+	_ = os.Setenv("SEANIME_DATA_DIR", dataDir)
 	return nil
 }
 
@@ -531,7 +537,7 @@ func initAppDataDir(definedDataDir string, logger *zerolog.Logger) (dataDir stri
 			return "", "", err
 		}
 		// Get the app directory
-		dataDir = filepath.Join(dataDir, "Seanime")
+		dataDir = filepath.Join(dataDir, "Aniting")
 	}
 
 	// Create data dir if it doesn't exist

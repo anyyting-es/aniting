@@ -34,6 +34,8 @@ android {
             storePassword = "anitingapp"
             keyAlias = "aniting"
             keyPassword = "anitingapp"
+            isV1SigningEnabled = true
+            isV2SigningEnabled = true
         }
     }
 

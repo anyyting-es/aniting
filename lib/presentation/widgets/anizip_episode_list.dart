@@ -5,6 +5,7 @@ import 'package:seanime_app/core/preferences/episode_view_mode_provider.dart';
 import 'package:seanime_app/core/theme/app_theme_colors.dart';
 import 'package:seanime_app/data/models/anime_details.dart';
 import 'package:seanime_app/data/models/anizip_data.dart';
+import 'package:seanime_app/presentation/providers/active_downloads_provider.dart';
 import 'package:seanime_app/presentation/widgets/episode_item_widget.dart';
 
 class AniZipEpisodeListView extends ConsumerStatefulWidget {
@@ -31,9 +32,14 @@ class AniZipEpisodeListView extends ConsumerStatefulWidget {
     this.onPlayEpisode,
     this.onTapEpisode,
     this.onPlayFallbackEpisode,
+    this.onDownloadEpisode,
+    this.onDownloadFallbackEpisode,
     this.viewMode,
     this.onToggleViewMode,
   });
+
+  final void Function(AniZipEpisode episode)? onDownloadEpisode;
+  final void Function(AnimeEpisode episode)? onDownloadFallbackEpisode;
 
   @override
   ConsumerState<AniZipEpisodeListView> createState() => _AniZipEpisodeListViewState();
@@ -143,6 +149,8 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
     final l10n = ref.watch(translationsProvider);
     final appLang = ref.watch(appLanguageProvider);
     final langCode = appLang.code;
+    final downloadingEpisodes = ref.watch(downloadingEpisodesProvider);
+    final mediaId = widget.animeDetails?.id ?? 0;
     final hasAniZip = widget.aniZipData != null && widget.aniZipData!.episodes.isNotEmpty;
     final fallbackImage = widget.animeDetails?.bannerImage ?? widget.animeDetails?.coverImage;
     final viewMode = widget.viewMode ?? _localViewMode;
@@ -324,6 +332,7 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
                   rating: ep.rating,
                   badgeText: ep.isSpecial ? ep.episodeBadge : null,
                   isWatched: widget.progress >= ep.episodeNumber && ep.episodeNumber > 0,
+                  isDownloading: downloadingEpisodes.contains('${mediaId}_${ep.episodeNumber}'),
                   onTap: () {
                     if (widget.onTapEpisode != null) {
                       widget.onTapEpisode!(ep);
@@ -336,6 +345,9 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
                       widget.onPlayEpisode!(ep);
                     }
                   },
+                  onDownload: widget.onDownloadEpisode != null
+                      ? () => widget.onDownloadEpisode!(ep)
+                      : null,
                 );
               },
             )
@@ -372,6 +384,7 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
                           rating: ep.rating,
                           badgeText: ep.isSpecial ? ep.episodeBadge : null,
                           isWatched: widget.progress >= ep.episodeNumber && ep.episodeNumber > 0,
+                          isDownloading: downloadingEpisodes.contains('${mediaId}_${ep.episodeNumber}'),
                           onTap: () {
                             if (widget.onTapEpisode != null) {
                               widget.onTapEpisode!(ep);
@@ -384,6 +397,9 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
                               widget.onPlayEpisode!(ep);
                             }
                           },
+                          onDownload: widget.onDownloadEpisode != null
+                              ? () => widget.onDownloadEpisode!(ep)
+                              : null,
                         );
                       },
                     ),
@@ -468,11 +484,15 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
                   image: ep.image,
                   fallbackImage: fallbackImage,
                   isWatched: widget.progress >= ep.episodeNumber && ep.episodeNumber > 0,
+                  isDownloading: downloadingEpisodes.contains('${mediaId}_${ep.episodeNumber}'),
                   onTap: () {
                     if (widget.onPlayFallbackEpisode != null) {
                       widget.onPlayFallbackEpisode!(ep);
                     }
                   },
+                  onDownload: widget.onDownloadFallbackEpisode != null
+                      ? () => widget.onDownloadFallbackEpisode!(ep)
+                      : null,
                 );
               },
             )
@@ -504,6 +524,7 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
                           image: ep.image,
                           fallbackImage: fallbackImage,
                           isWatched: widget.progress >= ep.episodeNumber && ep.episodeNumber > 0,
+                          isDownloading: downloadingEpisodes.contains('${mediaId}_${ep.episodeNumber}'),
                           onTap: () {
                             if (widget.onPlayFallbackEpisode != null) {
                               widget.onPlayFallbackEpisode!(ep);
@@ -514,6 +535,9 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
                               widget.onPlayFallbackEpisode!(ep);
                             }
                           },
+                          onDownload: widget.onDownloadFallbackEpisode != null
+                              ? () => widget.onDownloadFallbackEpisode!(ep)
+                              : null,
                         );
                       },
                     ),

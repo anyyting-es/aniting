@@ -235,7 +235,7 @@ class AnimeEntry {
         englishTitle: english,
         romajiTitle: romaji,
         nativeTitle: native,
-        coverImage: cover?['extraLarge'] ?? cover?['large'] ?? cover?['medium'],
+        coverImage: cover?['large'] ?? cover?['extraLarge'] ?? cover?['medium'],
         coverColor: cover?['color'] as String?,
         bannerImage: base['bannerImage'] as String?,
         progress: epNum,
@@ -276,7 +276,7 @@ class AnimeEntry {
         ? media['coverImage'] as Map<String, dynamic>
         : (json['coverImage'] is Map<String, dynamic> ? json['coverImage'] as Map<String, dynamic> : null);
 
-    final coverUrl = cover?['extraLarge'] ?? cover?['large'] ?? cover?['medium'];
+    final coverUrl = cover?['large'] ?? cover?['extraLarge'] ?? cover?['medium'];
 
     final listData = json['listData'] is Map ? json['listData'] as Map : null;
     final int entryProgress = (json['progress'] as num?)?.toInt() ??

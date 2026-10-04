@@ -7,10 +7,13 @@ class AndroidServerChannel {
 
   static bool get isSupported => Platform.isAndroid;
 
-  Future<Map<String, dynamic>?> startServer({int port = 43211}) async {
+  Future<Map<String, dynamic>?> startServer({int port = 43211, String host = '127.0.0.1'}) async {
     if (!isSupported) return null;
     try {
-      final result = await _channel.invokeMethod<Map<dynamic, dynamic>>('startServer', {'port': port});
+      final result = await _channel.invokeMethod<Map<dynamic, dynamic>>('startServer', {
+        'port': port,
+        'host': host,
+      });
       return result?.cast<String, dynamic>();
     } on PlatformException catch (e) {
       debugPrint('AndroidServerChannel startServer error: ${e.message}');

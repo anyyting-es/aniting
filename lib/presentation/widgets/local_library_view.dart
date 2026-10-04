@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
@@ -59,6 +60,24 @@ class _LocalLibraryViewState extends ConsumerState<LocalLibraryView> {
     }
   }
 
+  Future<void> _scanAndRefresh() async {
+    setState(() => _isLoading = true);
+    final repo = ref.read(repositoryProvider);
+    final l10n = ref.read(translationsProvider);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.scanStarted),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+    await repo.scanLibrary();
+    await _loadLibraryEntry();
+    ref.invalidate(downloadedAnimeProvider);
+    ref.invalidate(animeCollectionProvider);
+  }
+
   void _playLocalEpisode(LibraryEpisode ep) {
     final serverManager = ref.read(serverManagerProvider);
     final l10n = ref.read(translationsProvider);
@@ -84,6 +103,50 @@ class _LocalLibraryViewState extends ConsumerState<LocalLibraryView> {
         isLocalFile: true,
       ),
     );
+  }
+
+  Future<void> _deleteLocalEpisode(LibraryEpisode ep) async {
+    final l10n = ref.read(translationsProvider);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.deleteDownload),
+        content: Text(l10n.deleteEpisodeDownloadConfirm(ep.episodeNumber)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(ctx).colorScheme.error,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l10n.delete),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      final repo = ref.read(repositoryProvider);
+      final messenger = ScaffoldMessenger.of(context);
+      final path = ep.localFilePath;
+      if (path != null && path.isNotEmpty) {
+        await repo.deleteLocalFiles([path]);
+        try {
+          final f = File(path);
+          if (f.existsSync()) f.deleteSync();
+        } catch (_) {}
+      }
+      await _scanAndRefresh();
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(l10n.downloadDeleted),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   @override
@@ -205,6 +268,7 @@ class _LocalLibraryViewState extends ConsumerState<LocalLibraryView> {
                   isWatched: effectiveProgress >= ep.episodeNumber && ep.episodeNumber > 0,
                   onTap: () => _playLocalEpisode(ep),
                   onPlay: () => _playLocalEpisode(ep),
+                  onDelete: () => _deleteLocalEpisode(ep),
                 );
               },
             )
@@ -257,6 +321,7 @@ class _LocalLibraryViewState extends ConsumerState<LocalLibraryView> {
                           isWatched: effectiveProgress >= ep.episodeNumber && ep.episodeNumber > 0,
                           onTap: () => _playLocalEpisode(ep),
                           onPlay: () => _playLocalEpisode(ep),
+                          onDelete: () => _deleteLocalEpisode(ep),
                         );
                       },
                     ),
@@ -358,6 +423,14 @@ class _LocalLibraryViewState extends ConsumerState<LocalLibraryView> {
                 onPressed: widget.onSwitchToTorrent,
                 icon: const Icon(Icons.cloud_download_rounded, size: 16),
                 label: Text(l10n.searchTorrents, style: const TextStyle(fontSize: 12)),
+                style: OutlinedButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                ),
+              ),
+              OutlinedButton.icon(
+                onPressed: _scanAndRefresh,
+                icon: const Icon(Icons.sync_rounded, size: 16),
+                label: Text(l10n.scanLocalFolder, style: const TextStyle(fontSize: 12)),
                 style: OutlinedButton.styleFrom(
                   visualDensity: VisualDensity.compact,
                 ),

@@ -802,6 +802,7 @@ func (a *App) InitOrRefreshTorrentstreamSettings() {
 			SlowSeeding:               false,
 			PreloadNextStream:         false,
 			DisableAcceleratedStartup: false,
+			AutoDeletePreviousTorrents: true,
 		})
 		if err != nil {
 			a.Logger.Error().Err(err).Msg("app: Failed to initialize mediastream module")

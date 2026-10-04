@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
@@ -19,6 +18,7 @@ import 'package:seanime_app/presentation/widgets/anime_card.dart';
 import 'package:seanime_app/presentation/widgets/compact_search_bar.dart';
 import 'package:seanime_app/presentation/widgets/discover_filter_sheet.dart';
 import 'package:seanime_app/presentation/widgets/explore_hero_carousel.dart';
+import 'package:seanime_app/data/services/explore_carousel_service.dart';
 import 'package:seanime_app/core/theme/smooth_scroll_controller.dart';
 import 'package:seanime_app/presentation/widgets/manga_card.dart';
 import 'package:seanime_app/presentation/widgets/media_type_toggle.dart';
@@ -59,25 +59,6 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final animeEnabled = ref.read(animeSectionEnabledProvider);
     _filterState = DiscoverFilterState(mediaType: animeEnabled ? 'ANIME' : 'MANGA');
     _scrollController.addListener(_onScroll);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _precacheTopGenres();
-      }
-    });
-  }
-
-  void _precacheTopGenres() {
-    // Silently pre-cache first 6 genre cards in background for instant opening
-    for (final genre in kAppGenres.take(6)) {
-      precacheImage(
-        CachedNetworkImageProvider(
-          genre.imageUrl,
-          maxWidth: 300,
-          maxHeight: 200,
-        ),
-        context,
-      ).catchError((_) {});
-    }
   }
 
   @override
@@ -328,6 +309,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             child: ListView.separated(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             scrollDirection: Axis.horizontal,
+            cacheExtent: 150,
             itemCount: entries.length,
             separatorBuilder: (context, index) => const SizedBox(width: 10),
             itemBuilder: (context, index) {
@@ -428,6 +410,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             child: ListView.separated(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             scrollDirection: Axis.horizontal,
+            cacheExtent: 150,
             itemCount: entries.length,
             separatorBuilder: (context, index) => const SizedBox(width: 10),
             itemBuilder: (context, index) {
@@ -599,7 +582,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final animeEnabled = ref.watch(animeSectionEnabledProvider);
     final mangaEnabled = ref.watch(mangaSectionEnabledProvider);
 
-    // Trending providers for Explore Hero Carousel
+    // Trending & Featured providers for Explore Hero Carousel
+    final featuredAnimeConfig = isAnime ? ref.watch(exploreCarouselNotifierProvider) : null;
     final trendingAnimeAsync = isAnime ? ref.watch(trendingAnimeProvider) : null;
     final trendingMangaAsync = !isAnime ? ref.watch(trendingMangaProvider) : null;
 
@@ -635,6 +619,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     ref.invalidate(curatedRomanceAnimeProvider);
                     ref.invalidate(curatedActionAnimeProvider);
                     ref.invalidate(curatedComedyAnimeProvider);
+                    ref.read(exploreCarouselNotifierProvider.notifier).refresh();
                   } else {
                     ref.invalidate(trendingMangaProvider);
                     ref.invalidate(curatedRomanceMangaProvider);
@@ -787,30 +772,43 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         ),
                     ] else ...[
                       // Discover & Curated Explore Mode Slivers
-                      if ((isAnime && (trendingAnimeAsync == null || trendingAnimeAsync.isLoading)) || (!isAnime && (trendingMangaAsync == null || trendingMangaAsync.isLoading)))
+                      if ((isAnime && (featuredAnimeConfig == null || featuredAnimeConfig.items.isEmpty) && (trendingAnimeAsync == null || trendingAnimeAsync.isLoading)) ||
+                          (!isAnime && (trendingMangaAsync == null || trendingMangaAsync.isLoading)))
                         const SliverToBoxAdapter(
                           child: ExploreSkeleton(),
                         )
                       else ...[
                         // 1. Full-bleed Hero Carousel at the very top (Edge to Edge, extends behind status bar)
-                        if (isAnime && trendingAnimeAsync != null && trendingAnimeAsync.asData != null)
+                        if (isAnime)
                           Builder(builder: (context) {
-                            final items = trendingAnimeAsync.asData!.value;
-                            if (items.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
-                            final carouselItems = items
-                                .take(6)
-                                .map((e) => ExploreCarouselItem.fromAnime(e, context, titleLang))
-                                .toList();
+                            final config = featuredAnimeConfig;
+                            final List<ExploreCarouselItem> carouselItems;
+                            if (config != null && config.items.isNotEmpty) {
+                              carouselItems = config.items
+                                  .map((e) => ExploreCarouselItem.fromFeatured(e, context))
+                                  .toList();
+                            } else if (trendingAnimeAsync != null && trendingAnimeAsync.asData != null) {
+                              final items = trendingAnimeAsync.asData!.value;
+                              if (items.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+                              carouselItems = items
+                                  .take(6)
+                                  .map((e) => ExploreCarouselItem.fromAnime(e, context, titleLang))
+                                  .toList();
+                            } else {
+                              return const SliverToBoxAdapter(child: SizedBox.shrink());
+                            }
                             return SliverToBoxAdapter(
                               child: ExploreHeroCarousel(
-                                key: const ValueKey('explore_hero_anime'),
+                                key: ValueKey('explore_hero_anime_v${config?.version ?? 0}_${carouselItems.length}'),
                                 items: carouselItems,
                               ),
                             );
                           })
-                        else if (!isAnime && trendingMangaAsync != null && trendingMangaAsync.asData != null)
+                        else if (!isAnime)
                           Builder(builder: (context) {
-                            final items = trendingMangaAsync.asData!.value;
+                            final trendingItems = trendingMangaAsync?.asData?.value ?? [];
+                            final popularItems = ref.watch(popularMangaProvider).asData?.value ?? [];
+                            final items = trendingItems.isNotEmpty ? trendingItems : popularItems;
                             if (items.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
                             final carouselItems = items
                                 .take(6)
@@ -818,7 +816,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                                 .toList();
                             return SliverToBoxAdapter(
                               child: ExploreHeroCarousel(
-                                key: const ValueKey('explore_hero_manga'),
+                                key: ValueKey('explore_hero_manga_${carouselItems.length}'),
                                 items: carouselItems,
                               ),
                             );

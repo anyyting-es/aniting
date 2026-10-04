@@ -22,6 +22,7 @@ class DesktopActionBar extends ConsumerWidget {
   final void Function(String title) onOpenEditEntryModal;
   final VoidCallback onToggleLocalMode;
   final ValueChanged<AnimeDetailTab> onTabChanged;
+  final VoidCallback? onDownload;
 
   const DesktopActionBar({
     super.key,
@@ -40,6 +41,7 @@ class DesktopActionBar extends ConsumerWidget {
     required this.onOpenEditEntryModal,
     required this.onToggleLocalMode,
     required this.onTabChanged,
+    this.onDownload,
   });
 
   Future<void> _launchAnilist(int mediaId) async {
@@ -124,6 +126,16 @@ class DesktopActionBar extends ConsumerWidget {
             tooltip: l10n.watchTrailer,
             icon: AppIcons.video(iconPack),
             onTap: _launchTrailer,
+          ),
+          const SizedBox(width: 8),
+        ],
+
+        // Download Button (Torrents modal)
+        if (onDownload != null) ...[
+          _HoverIconButton(
+            tooltip: l10n.downloadWithTorrentClient,
+            icon: Icons.download_rounded,
+            onTap: onDownload!,
           ),
           const SizedBox(width: 8),
         ],

@@ -1,0 +1,54 @@
+{
+  "version": 3,
+  "updated_at": "2026-10-04T03:35:00Z",
+  "items": [
+    {
+      "media_id": 195604,
+      "title": "Black Clover Season 2",
+      "horizontal_background": "https://image.tmdb.org/t/p/w1280/qu9epTZh29fGUkY7ZYc9PVsv0Ig.jpg",
+      "vertical_background": "https://image.tmdb.org/t/p/w780/hPz1086iC2NSPgs8PKtBplddpvs.jpg",
+      "logo": "https://image.tmdb.org/t/p/w500/j9ZZ7WV5pwLLXbbebyGdMUxbqrc.png",
+      "year": 2026,
+      "format": "TV"
+    },
+    {
+      "media_id": 195516,
+      "title": "The Apothecary Diaries Season 3",
+      "horizontal_background": "https://image.tmdb.org/t/p/w1280/4kR7cOsf6r86nrHL9UHzxgoQXAz.jpg",
+      "vertical_background": "https://image.tmdb.org/t/p/w780/dCJ0OyPQfRvsgP5IvlgT0zoE6bc.jpg",
+      "logo": "https://image.tmdb.org/t/p/w500/6JpmIe9cJcbG6hecyN6ml8AG6RC.png",
+      "year": 2026,
+      "format": "TV",
+      "score": 8.6
+    },
+    {
+      "media_id": 189123,
+      "title": "Blue Box Season 2",
+      "horizontal_background": "https://image.tmdb.org/t/p/w1280/edb6wIacGgLI1PzPd3ua4mY3Vne.jpg",
+      "vertical_background": "https://image.tmdb.org/t/p/w780/r3BISdv0sAqfzNaBDSjwsRzIgo6.jpg",
+      "logo": "https://image.tmdb.org/t/p/w500/ubw6k78dv5SU9y9JoHRkBW8pGuN.png",
+      "year": 2026,
+      "format": "TV"
+    },
+    {
+      "media_id": 213805,
+      "title": "The Ramparts of Ice Season 2",
+      "horizontal_background": "https://image.tmdb.org/t/p/w1280/xwoRomUq2YmpgXlDgBQCZIcgXEc.jpg",
+      "vertical_background": "https://image.tmdb.org/t/p/w780/al6q31WdsER7ailNIDelCPCRGWB.jpg",
+      "logo": "https://image.tmdb.org/t/p/w500/a5okATkpmXxAClSnAjGP4ums77c.png",
+      "year": 2026,
+      "format": "TV",
+      "score": 8.4
+    },
+    {
+      "media_id": 178083,
+      "title": "Tokyo Revengers: Santen Sensou-hen",
+      "horizontal_background": "https://image.tmdb.org/t/p/w1280/4R9nNlt23s66GYrRRy1mcD6NIFI.jpg",
+      "vertical_background": "https://image.tmdb.org/t/p/w780/nMti438Lk0Sp5aAFkRBk4cnkwz4.jpg",
+      "logo": "https://image.tmdb.org/t/p/w500/65tCEJcUZud5Pwixqv6xsKNjqYf.png",
+      "year": 2026,
+      "format": "TV",
+      "score": 7.8
+    }
+  ]
+}
