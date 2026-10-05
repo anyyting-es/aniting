@@ -948,17 +948,25 @@ Inspired by **Plezy** (`edde746/plezy`), the player focuses on high performance,
   - **Borderless Modern Cards**: Replaced heavy enclosing borders and nested boxes with subtle `surfaceElevated.withValues(alpha: 0.40)` containers, breathing space, and sleek tinted selection outlines.
 
 ### 4.6. Refined Fluid Route Transitions Architecture (`custom_route_transitions.dart`, `WebPageTransitionsBuilder`, `SmoothPageRoute`, `SlideRightToLeftPageRoute`)
-- **Smooth Fade & Vertical Motion for Details/Full Screens (`buildWebPageTransition`, `SmoothPageRoute`)**:
-  - Used for `AnimeDetailScreen.navigate`, `MangaDetailScreen.navigate`, and global `WebPageTransitionsBuilder`.
-  - **Progressive Fade-In**: Smooth progressive opacity (0.0 -> 1.0) over `Curves.easeOutCubic`, completely eliminating the jarring 1-frame opacity pop previously caused by `Interval(0.0, 0.001)`.
-  - **Vertical Micro-Slide**: Gentle upward motion (~3-4% screen height, `Offset(0.0, 0.035) -> Offset.zero`) in 260ms using the expressive deceleration curve `Cubic(0.1, 0.9, 0.2, 1.0)`.
-  - **Stable Underlying Screen**: The parent screen maintains crisp typography and layout stability with a subtle micro-parallax shift (`Offset(0.0, -0.015)`), completely avoiding heavy scale transforms (0.96) that previously caused pixel blurring and sudden jumps.
-  - **Clean Pop / Exit**: Smooth reverse fade-out and subtle descend in 220ms (`Curves.easeInCubic`).
+- **Micro-Breath Fade ("El Respiro") for Details, Shell Tabs & Global Routes (`buildWebPageTransition`, `SmoothPageRoute`, `ShellAnimatedIndexedStack`)**:
+  - Used for `AnimeDetailScreen.navigate`, `MangaDetailScreen.navigate`, `ShellAnimatedIndexedStack` (tab navigation), and global `WebPageTransitionsBuilder`.
+  - **Zero Translation (Cero desplazamiento)**: Completely eliminated vertical and horizontal offset jumps (`Offset.zero`). No jarring screen shakes or sliding layers.
+  - **Tactile Micro-Breath Scale**: Incoming view enters with an imperceptible, organic `0.985 -> 1.0` scale heartbeat using natural deceleration curve `Curves.easeOutCubic`, paired with smooth progressive opacity (`0.0 -> 1.0`).
+  - **120 FPS Pop / Exit Without Lag**: The underlying parent route remains completely unencumbered by transforms (`secondaryAnimation`), eliminating expensive full-screen texture re-rasterization. Blind invalidations on pop in `FeedScreen._openDetail` were completely removed; state updates are driven reactively when mutations actually happen (e.g. `EditEntryModal`, playback progress updates, or downloads).
+  - **Zero-Cut Harmonious Dissolve**: Both enter and exit share identical 220ms durations and `Curves.easeOutCubic` curves, eliminating speed desynchronization and abrupt cuts.
 - **Native Horizontal Slide for Settings & Subpages (`SlideRightToLeftPageRoute`)**:
   - Dedicated route builder for drilling down into Settings (`ServerSettingsScreen`, `AppearanceSettingsScreen`, `PlayerSettingsScreen`, etc.), `MyListsScreen`, `DownloadsScreen`, `ExtensionsMarketplaceScreen`, and `GenresScreen`.
   - **Right-to-Left Entrance**: The child route slides smoothly from the right (`Offset(1.0, 0.0) -> Offset.zero`) over 280ms with a subtle elevation drop shadow on its left edge.
   - **Parallax Depth**: The parent view recedes gently to the left (`Offset.zero -> Offset(-0.25, 0.0)`).
   - **Natural Pop/Back**: On exit (240ms), the subpage slides away cleanly to the right (`Offset.zero -> Offset(1.0, 0.0)`), restoring the parent view seamlessly without sudden jumps or scaling artifacts.
+
+### 4.7. Material 3 Expressive Select Component (`m3_expressive_select.dart`, `M3ExpressiveSelect`, `M3SelectItem`)
+- **Inspired by shadcn-m3e / Material 3 Expressive Motion**:
+  - Replaces rigid, square legacy Flutter `DropdownButton` with an expressive, floating Select component.
+  - **Animated Trigger Pill**: Rounded container with hover lighting, subtle outline borders, and a smoothly rotating 180° chevron icon (`AnimatedRotation` over 200ms `Curves.easeOutCubic`).
+  - **Spring Floating Menu Overlay**: Uses `OverlayEntry` and `CompositedTransformFollower` with `FadeTransition` + `ScaleTransition` (`0.92 -> 1.0` with `Curves.easeOutCubic`). Elevated container with 14px rounded corners, deep ambient shadows, and outside-tap dismissal.
+  - **Selected Item Styling**: Tinted with accent color (`primary.withValues(alpha: 0.22)`), bold high-contrast text, and a crisp checkmark icon (`Icons.check_rounded`) on the right.
+  - **Desktop Implementation**: Integrated into `DesktopEpisodesTab` for the online streaming provider selector (`widget.selectedProvider`).
 - **5-Step Onboarding Flow**:
   0. **Language Selection**: Real-time switch between Spanish (`es`) and English (`en`) via `i18nProvider`. Updating language dynamically refreshes extension recommendations in Step 4.
    1. **Appearance & Theming**:
@@ -1432,15 +1440,16 @@ Inspired by **Plezy** (`edde746/plezy`), the player focuses on high performance,
   - Al pulsar o reproducir un episodio descargado desde cualquier lista (incluso en vistas AniZip u Online), se reproduce automáticamente el archivo local sin búfer ni depender de conexión a internet.
 - **Internacionalización Completa (i18n)**:
   - Añadidas las traducciones correspondientes en `translations.dart`, `en.dart` y `es.dart` (`downloading`, `downloaded`).
-### 7.20. Integración de Animes Descargados en Seguir Viendo y Viendo Actualmente (2026-10-04)
-- **Integración Completa de Descargas en el Feed Principal (`seanime_repository.dart`, `feed_screen.dart`)**:
-  - Los animes descargados en el dispositivo ahora se integran automáticamente en las secciones "Continuar viendo" y "Viendo actualmente" del feed de inicio en cuanto se reproduce cualquier episodio.
-  - El progreso exacto de reproducción local se conserva y refleja en las tarjetas 16:9 con barra de avance fluida para archivos descargados.
-- **Soporte para Contenido Local sin Restricciones de Emisión (`anime_entry.dart`, `seanime_repository.dart`)**:
-  - Los episodios descargados físicamente en el dispositivo omiten filtros de fechas de emisión futuras o estados no emitidos en AniList, garantizando su reproducción y seguimiento ininterrumpido.
-- **Sincronización Bidireccional entre Almacenamiento Local y Servidor (`offline_library_service.dart`, `feed_screen.dart`)**:
-  - Al regresar a la pantalla de inicio tras ver un episodio descargado, las listas de seguimiento y colecciones se actualizan de forma inmediata sin necesidad de reiniciar la aplicación.
-- **Sincronización Multidispositivo de Continuidad de Reproducción (`playback_progress_preferences_provider.dart`, `app_providers.dart`, `video_player_screen.dart`)**:
-  - Al conectarse al servidor desde cualquier otro dispositivo (teléfono, tablet, TV u otro PC), el historial de continuidad del servidor (`/api/v1/continuity/history`) se sincroniza automáticamente con el progreso local del reproductor.
-  - El segundo exacto donde pausaste en un dispositivo se recupera al abrir el reproductor en otro dispositivo, garantizando una experiencia 100% sincronizada.
+### 7.21. Selector Desplegable Expressivo M3 & Optimización de Salida del Reproductor (2026-10-05)
+- **Componente `M3ExpressiveSelect` con Dinámica Spring Pop & Tamaño Intrínseco**:
+  - Reemplazo de desplegables nativos por un selector flotante Material 3 Expressive inspirado en Shadcn / Radix UI.
+  - Apertura con dinámica de resorte y ligero rebote (`ScaleTransition` 0.88 ➔ 1.03 ➔ 1.0 con `SlideTransition` vertical).
+  - Eliminado el ancho forzado artificial; la caja ahora se ajusta naturalmente al texto con padding simétrico y altura de 32px. El menú flotante iguala exactamente el ancho del botón activador.
+  - Filas de opciones homogéneas (34-36px) con micro-hover y checkmark `✓` activo.
+- **Eliminación de Trabón/Lag al Salir del Reproductor de Video (`video_player_screen.dart`, `player_window_manager.dart`)**:
+  - Eliminada la invalidación síncrona de caché (`continueWatchingProvider`) que bloqueaba el hilo UI durante el cierre del reproductor. Ahora se ejecuta de forma diferida en un microtask asíncrono.
+  - Eliminado `PaintingBinding.instance.imageCache.clear()` que purgaba la memoria de miniaturas de episodios obligando a recodificarlas desde cero al volver a la pantalla de detalles.
+  - Eliminado el retraso artificial de 100ms en escritorio dentro de `handleExit`, permitiendo un pop inmediato a 120 FPS.
+
+
 

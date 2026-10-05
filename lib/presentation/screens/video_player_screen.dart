@@ -535,7 +535,6 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     _initStatsService();
     _startHideTimer();
     _initBrightness();
-    PaintingBinding.instance.imageCache.clear();
     _sourceController.schedulePrefetchNextEpisode();
 
     if (_currentVideoUrl.isEmpty && _currentOnlineStreamProvider != null) {
@@ -703,9 +702,12 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       context: context,
       onSaveProgress: () async {
         _progressManager.savePlaybackProgress();
-        try {
-          ref.invalidate(continueWatchingProvider);
-        } catch (_) {}
+        // Schedule cache refresh in microtask after pop animation has unmounted
+        Future.microtask(() {
+          try {
+            ref.invalidate(continueWatchingProvider);
+          } catch (_) {}
+        });
       },
       onUpdateUi: () {
         if (mounted) setState(() {});

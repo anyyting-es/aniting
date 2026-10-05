@@ -22,7 +22,7 @@ class _ShellAnimatedIndexedStackState extends State<ShellAnimatedIndexedStack>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late final Animation<double> _fadeAnimation;
-  late final Animation<Offset> _slideAnimation;
+  late final Animation<double> _scaleAnimation;
   late int _currentIndex;
 
   @override
@@ -37,12 +37,12 @@ class _ShellAnimatedIndexedStackState extends State<ShellAnimatedIndexedStack>
       parent: _controller,
       curve: Curves.easeOutCubic,
     );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0.0, 0.015),
-      end: Offset.zero,
+    _scaleAnimation = Tween<double>(
+      begin: 0.99,
+      end: 1.0,
     ).animate(CurvedAnimation(
       parent: _controller,
-      curve: Curves.easeOutCubic,
+      curve: const Cubic(0.16, 1.0, 0.3, 1.0),
     ));
     _controller.forward();
   }
@@ -72,8 +72,8 @@ class _ShellAnimatedIndexedStackState extends State<ShellAnimatedIndexedStack>
 
     return FadeTransition(
       opacity: _fadeAnimation,
-      child: SlideTransition(
-        position: _slideAnimation,
+      child: ScaleTransition(
+        scale: _scaleAnimation,
         child: IndexedStack(
           index: effectiveIndex,
           children: [

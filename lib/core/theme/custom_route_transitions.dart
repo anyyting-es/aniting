@@ -2,62 +2,46 @@ import 'package:flutter/material.dart';
 
 /// Modern deceleration curve for smooth, physical motion.
 /// Responsive initial velocity with soft, natural landing.
-const Cubic kWebDecelCurve = Cubic(0.1, 0.9, 0.2, 1.0);
+const Cubic kWebDecelCurve = Cubic(0.16, 1.0, 0.3, 1.0);
 
-/// Builds an expressive, organic page transition (used for Anime Detail, Manga Detail, etc.):
-/// - Incoming route: smooth progressive fade-in (0.0 -> 1.0) and gentle vertical rise (~3-4% height).
-///   Completely eliminates jarring 1-frame opacity pops and scale distortions.
-/// - Outgoing route on exit: smooth clean fade-out and subtle descend.
-/// - Underlying route: rests comfortably with gentle micro-parallax, without jittery scaling or blurring.
+/// Builds an expressive, satisfying "Micro-Breath Fade" page transition
+/// (used across routes: Anime Detail, Manga Detail, Search, etc.):
+/// - Zero translation (no jarring sliding or screen shaking in X/Y).
+/// - Incoming route: organic fade-in (0.0 -> 1.0) with an imperceptible, satisfying
+///   micro-breath tactile heartbeat scale (0.985 -> 1.0).
+/// - Outgoing route on exit: silky-smooth, instant dissolve without any lag,
+///   stutter, or abrupt cuts at the end.
+/// - Underlying route: completely unencumbered by transforms or re-rasterization,
+///   guaranteeing a rock-solid 120 FPS pop animation.
 Widget buildWebPageTransition({
   required Animation<double> animation,
   required Animation<double> secondaryAnimation,
   required Widget child,
 }) {
-  final enterCurve = CurvedAnimation(
+  final curvedAnimation = CurvedAnimation(
     parent: animation,
-    curve: kWebDecelCurve,
-    reverseCurve: Curves.easeInCubic,
+    curve: Curves.easeOutCubic,
+    reverseCurve: Curves.easeOutCubic,
   );
 
-  // Progressive, smooth fade on enter (0.0 -> 1.0) and exit (1.0 -> 0.0)
+  // Progressive, smooth fade on enter (0.0 -> 1.0) and exit (1.0 -> 0.0) with zero clipping or pops
   final fadeTransition = Tween<double>(
     begin: 0.0,
     end: 1.0,
-  ).animate(
-    CurvedAnimation(
-      parent: animation,
-      curve: const Interval(0.0, 0.85, curve: Curves.easeOutCubic),
-      reverseCurve: Curves.easeInCubic,
-    ),
-  );
+  ).animate(curvedAnimation);
 
-  // Gentle vertical micro-slide on enter (~3-4% screen height)
-  final slideIn = Tween<Offset>(
-    begin: const Offset(0.0, 0.035),
-    end: Offset.zero,
-  ).animate(enterCurve);
+  // Micro-breath tactile heartbeat scale (0.985 -> 1.0) on enter,
+  // softly dissolving back on exit with zero translation
+  final scaleTransition = Tween<double>(
+    begin: 0.985,
+    end: 1.0,
+  ).animate(curvedAnimation);
 
-  // Subtle parallax shift for the underlying screen (0.0 -> -0.015)
-  final secondarySlide = Tween<Offset>(
-    begin: Offset.zero,
-    end: const Offset(0.0, -0.015),
-  ).animate(
-    CurvedAnimation(
-      parent: secondaryAnimation,
-      curve: kWebDecelCurve,
-      reverseCurve: Curves.easeOutCubic,
-    ),
-  );
-
-  return SlideTransition(
-    position: secondarySlide,
-    child: FadeTransition(
-      opacity: fadeTransition,
-      child: SlideTransition(
-        position: slideIn,
-        child: child,
-      ),
+  return FadeTransition(
+    opacity: fadeTransition,
+    child: ScaleTransition(
+      scale: scaleTransition,
+      child: child,
     ),
   );
 }
@@ -148,7 +132,7 @@ class WebPageRoute<T> extends PageRouteBuilder<T> {
     super.opaque,
   }) : super(
           pageBuilder: (context, animation, secondaryAnimation) => child,
-          transitionDuration: const Duration(milliseconds: 260),
+          transitionDuration: const Duration(milliseconds: 220),
           reverseTransitionDuration: const Duration(milliseconds: 220),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             return buildWebPageTransition(

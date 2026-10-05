@@ -118,17 +118,12 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     });
   }
 
-  Future<void> _openDetail(BuildContext context, AnimeEntry entry) async {
-    await AnimeDetailScreen.navigate(
+  void _openDetail(BuildContext context, AnimeEntry entry) {
+    AnimeDetailScreen.navigate(
       context,
       mediaId: entry.mediaId,
       initialEntry: entry,
     );
-    if (mounted) {
-      ref.invalidate(continueWatchingProvider);
-      ref.invalidate(animeCollectionProvider);
-      ref.invalidate(downloadedAnimeProvider);
-    }
   }
 
   List<AnimeEntry> _getSortedContinueWatching(

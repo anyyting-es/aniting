@@ -14,6 +14,7 @@ import 'desktop_episode_grid_card.dart';
 import 'desktop_episode_list_card.dart';
 import 'desktop_episode_models.dart';
 import 'desktop_episode_pagination.dart';
+import 'package:seanime_app/presentation/widgets/m3_expressive_select.dart';
 
 export 'desktop_episode_models.dart';
 
@@ -575,32 +576,16 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
                 onPressed: _scanAndRefreshLocal,
               ),
             ] else if (widget.currentTab == AnimeDetailTab.online && widget.providers.isNotEmpty) ...[
-              Container(
+              M3ExpressiveSelect<OnlinestreamProvider>(
+                value: widget.selectedProvider,
                 height: 32,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                decoration: BoxDecoration(
-                  color: isDark ? Colors.white.withValues(alpha: 0.06) : theme.colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<OnlinestreamProvider>(
-                    value: widget.selectedProvider,
-                    dropdownColor: isDark ? const Color(0xFF1E2228) : theme.colorScheme.surfaceContainerHigh,
-                    icon: Padding(
-                      padding: const EdgeInsets.only(left: 4),
-                      child: Icon(AppIcons.chevronDown(iconPack), size: 15, color: isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant),
-                    ),
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: isDark ? Colors.white : theme.colorScheme.onSurface,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    items: widget.providers
-                        .map((p) => DropdownMenuItem(value: p, child: Text(p.name)))
-                        .toList(),
-                    onChanged: widget.onProviderChanged,
-                  ),
-                ),
+                items: widget.providers
+                    .map((p) => M3SelectItem<OnlinestreamProvider>(
+                          value: p,
+                          label: p.name,
+                        ))
+                    .toList(),
+                onChanged: widget.onProviderChanged,
               ),
               if (widget.selectedProvider?.supportsDub ?? false) ...[
                 const SizedBox(width: 4),

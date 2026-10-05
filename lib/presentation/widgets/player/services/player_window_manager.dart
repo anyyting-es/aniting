@@ -184,9 +184,8 @@ class PlayerWindowManager {
         DeviceOrientation.portraitUp,
       ]);
       await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+      await Future.delayed(const Duration(milliseconds: 60));
     }
-
-    await Future.delayed(const Duration(milliseconds: 100));
 
     if (context.mounted) {
       Navigator.of(context).pop();
