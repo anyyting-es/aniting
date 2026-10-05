@@ -34,6 +34,9 @@ func (h *Handler) HandleGetActiveTorrentList(c echo.Context) error {
 	sort := c.QueryParam("sort")
 
 	// Get torrent list
+	if h.App.TorrentClientRepository == nil {
+		return h.RespondWithData(c, make([]*torrent_client.Torrent, 0))
+	}
 	res, err := h.App.TorrentClientRepository.GetActiveTorrents(&torrent_client.GetListOptions{
 		Category: category,
 		Sort:     sort,

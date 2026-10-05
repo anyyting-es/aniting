@@ -1104,6 +1104,16 @@ Inspired by **Plezy** (`edde746/plezy`), the player focuses on high performance,
     - **Manual Scan & Folder Navigation**:
       - `DownloadsScreen`: Empty state and header refresh buttons trigger `repo.scanLibrary()` and allow opening the native downloads folder via `AppStoragePaths.openDirectoryInFileManager`.
       - `LocalLibraryView`: Empty local files state includes a dedicated "Escanear Carpeta Local" button so users can immediately index newly downloaded media.
+    - **Resilient Anime Library Scan & Empty Path Handling (`seanime_repository.dart`, `backend/handlers/scan.go`, `streaming_settings_screen.dart`)**:
+      - `scanLibrary({bool enhanced = true})` checks whether `library.libraryPath` is configured in backend settings; if empty, it auto-patches `library.libraryPath` to `AppStoragePaths.getAnimeDownloadsDirectory()` (`~/Downloads/Aniting/Downloads/Anime`) before requesting a scan.
+      - Dispatches `{ "enhanced": true, "enhanceWithOfflineDatabase": true }` to allow title-based AniList and offline matching for untracked local video files.
+      - Backend Go scanner guards against empty paths to prevent walking the server working directory (`.`) and treats unmatched local media gracefully without HTTP 500 errors.
+      - Backend `HandleGetActiveTorrentList` checks for `TorrentClientRepository == nil` to prevent panic crashes on fresh/unconfigured databases.
+      - `StreamingSettingsScreen` includes a dedicated Anime Library Folder UI card (`library.libraryPath`) with open-in-file-manager, restore default, and save actions.
+    - **AniZip Movie Episode Resolution & UI Polish (`anizip_data.dart`, `desktop_episodes_tab.dart`, `episode_item_widget.dart`)**:
+      - `AniZipData.getEpisode()` and `mainEpisodes` now include fallbacks for single-episode works and movies where TVDB classifies episodes under Season 0 (`isSpecial: true`), preventing null metadata lookups and distorted banner fallbacks in Continue Watching.
+      - `DesktopEpisodesTab` suppresses generic placeholder episode flashing during initial AniZip data loading by displaying smooth skeleton loaders.
+      - `EpisodeListItem` streamlines downloading state feedback to the thumbnail badge, removing duplicate trailing spinners.
 - **Aniting Dedicated Storage & Data Directory Isolation (`AppStoragePaths`, `DesktopServer`, `SeanimeServerRuntime`, `backend/config.go`)**:
   - **Full Namespace & Directory Isolation**:
     - Completely eliminates shared configuration or database file collisions with the upstream Seanime app.

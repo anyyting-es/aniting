@@ -697,7 +697,8 @@ class EpisodeListItem extends ConsumerWidget {
                 ),
               ),
 
-              // Loading indicator if starting playback or downloading
+              // Loading indicator only when starting playback (not downloading —
+              // the thumbnail badge already shows the download state)
               if (isLoading)
                 const Padding(
                   padding: EdgeInsets.only(left: 8, right: 4, top: 12),
@@ -705,45 +706,6 @@ class EpisodeListItem extends ConsumerWidget {
                     width: 20,
                     height: 20,
                     child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                )
-              else if (isDownloading)
-                Padding(
-                  padding: const EdgeInsets.only(left: 8, right: 4, top: 10),
-                  child: Tooltip(
-                    message: downloadProgress != null
-                        ? '${l10n.downloading}: ${(downloadProgress! * 100).toInt()}%'
-                        : l10n.downloading,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.2,
-                            value: (downloadProgress != null && downloadProgress! > 0)
-                                ? downloadProgress
-                                : null,
-                            valueColor: AlwaysStoppedAnimation(theme.colorScheme.primary),
-                            backgroundColor: (downloadProgress != null && downloadProgress! > 0)
-                                ? theme.colorScheme.primary.withValues(alpha: 0.2)
-                                : null,
-                          ),
-                        ),
-                        if (downloadProgress != null && downloadProgress! > 0) ...[
-                          const SizedBox(height: 3),
-                          Text(
-                            '${(downloadProgress! * 100).toInt()}%',
-                            style: TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.bold,
-                              color: theme.colorScheme.primary,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
                   ),
                 ),
             ],

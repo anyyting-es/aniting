@@ -603,6 +603,7 @@ class _AnimeDetailDesktopLayoutState
                                           mediaId: widget.mediaId,
                                           details: widget.details,
                                           aniZipData: widget.aniZipData,
+                                          isLoadingAniZip: widget.isLoadingAniZip,
                                           progress: progress,
                                           isLocalMode: widget.isLocalMode,
                                           currentTab: widget.currentTab,

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"strings"
 	"seanime/internal/database/db_bridge"
 	"seanime/internal/library/scanner"
 	"seanime/internal/library/summary"
@@ -41,6 +42,10 @@ func (h *Handler) HandleScanLocalFiles(c echo.Context) error {
 	additionalLibraryPaths, err := h.App.Database.GetAdditionalLibraryPathsFromSettings()
 	if err != nil {
 		return h.RespondWithError(c, err)
+	}
+
+	if strings.TrimSpace(libraryPath) == "" && len(additionalLibraryPaths) == 0 {
+		return h.RespondWithData(c, []interface{}{})
 	}
 
 	// Get the latest local files
@@ -98,7 +103,7 @@ func (h *Handler) HandleScanLocalFiles(c echo.Context) error {
 	// Scan the library
 	allLfs, err := sc.Scan(c.Request().Context())
 	if err != nil {
-		if errors.Is(err, scanner.ErrNoLocalFiles) {
+		if errors.Is(err, scanner.ErrNoLocalFiles) || strings.Contains(err.Error(), "no media fed into the matcher") {
 			return h.RespondWithData(c, []interface{}{})
 		}
 

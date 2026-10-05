@@ -199,6 +199,8 @@ abstract class AppTranslations {
   String get onlineStreamingDesc;
   String get streamingSourcesNotice;
   String get torrentStorageSection;
+  String get animeLibraryFolderTitle;
+  String get animeLibraryFolderDesc;
   String get workingDirectoryTitle;
   String get workingDirectoryDesc;
   String get autoDeletePreviousTitle;

@@ -385,6 +385,11 @@ class SpanishTranslations implements AppTranslations {
   @override
   String get torrentStorageSection => 'Almacenamiento y Caché de Torrents';
   @override
+  String get animeLibraryFolderTitle => 'Carpeta de biblioteca de Anime';
+  @override
+  String get animeLibraryFolderDesc =>
+      'Carpeta de tu equipo donde Seanime escanea tus archivos locales de anime y descargas de vídeo.';
+  @override
   String get workingDirectoryTitle => 'Directorio de trabajo / caché';
   @override
   String get workingDirectoryDesc =>

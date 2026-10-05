@@ -210,18 +210,37 @@ class AniZipData {
     this.mappings,
   });
 
-  List<AniZipEpisode> get mainEpisodes =>
-      episodes.where((e) => !e.isSpecial).toList();
+  List<AniZipEpisode> get mainEpisodes {
+    final mains = episodes.where((e) => !e.isSpecial).toList();
+    if (mains.isEmpty && episodes.isNotEmpty) {
+      // If all episodes were classified as special (e.g. movies in TVDB Season 0),
+      // treat them as main episodes so movies/single-episode works aren't left empty.
+      return episodes;
+    }
+    return mains;
+  }
 
   List<AniZipEpisode> get specialEpisodes =>
       episodes.where((e) => e.isSpecial).toList();
 
-  /// Returns main episode by episode number, prioritizing main episodes (excludes specials)
+  /// Returns main episode by episode number, prioritizing main episodes (excludes specials).
+  /// Falls back to special episodes or single-episode movie if no main episode matches.
   AniZipEpisode? getEpisode(int episodeNumber) {
     for (final ep in episodes) {
       if (!ep.isSpecial && ep.episodeNumber == episodeNumber) {
         return ep;
       }
+    }
+    // Fallback: If no non-special episode found (e.g. movies where seasonNumber is 0 in TVDB),
+    // check all episodes matching episodeNumber
+    for (final ep in episodes) {
+      if (ep.episodeNumber == episodeNumber) {
+        return ep;
+      }
+    }
+    // Fallback 2: Single-episode movie where episodeNumber might be 1
+    if (episodeNumber == 1 && episodes.length == 1) {
+      return episodes.first;
     }
     return null;
   }

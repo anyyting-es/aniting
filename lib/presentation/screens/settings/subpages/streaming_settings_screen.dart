@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/preferences/streaming_preferences_provider.dart';
+import 'package:seanime_app/core/storage/app_storage_paths.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/screens/settings/widgets/pixel_settings_widgets.dart';
 import 'package:seanime_app/presentation/screens/settings/widgets/pixel_subpage_scaffold.dart';
@@ -23,21 +24,73 @@ class StreamingSettingsScreen extends ConsumerStatefulWidget {
 class _StreamingSettingsScreenState
     extends ConsumerState<StreamingSettingsScreen> {
   final TextEditingController _downloadDirController = TextEditingController();
+  final TextEditingController _libraryDirController = TextEditingController();
+  String _defaultAnimePath = '';
   Map<String, dynamic>? _torrentSettings;
   bool _autoDeletePrevious = true;
   bool _isLoading = true;
   bool _isSaving = false;
+  bool _isSavingLibraryDir = false;
 
   @override
   void initState() {
     super.initState();
     _loadTorrentstreamSettings();
+    _loadLibrarySettings();
+    AppStoragePaths.getAnimeDownloadsDirectory().then((dir) {
+      if (mounted) setState(() => _defaultAnimePath = dir.path);
+    });
   }
 
   @override
   void dispose() {
     _downloadDirController.dispose();
+    _libraryDirController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadLibrarySettings() async {
+    try {
+      final serverSettings =
+          await ref.read(repositoryProvider).getServerSettings();
+      if (serverSettings != null) {
+        final libSettings = serverSettings['library'] as Map<String, dynamic>?;
+        final currentLibPath = (libSettings?['libraryPath'] as String?) ?? '';
+        if (mounted) {
+          _libraryDirController.text = currentLibPath;
+        }
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _saveLibraryDir([String? explicitPath]) async {
+    setState(() => _isSavingLibraryDir = true);
+    final path = (explicitPath ?? _libraryDirController.text).trim();
+    final ok = await ref
+        .read(repositoryProvider)
+        .patchServerSetting('library.libraryPath', path);
+
+    if (mounted) {
+      setState(() {
+        _isSavingLibraryDir = false;
+        if (ok) {
+          _libraryDirController.text = path;
+        }
+      });
+
+      final l10n = ref.read(translationsProvider);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(ok
+              ? (path.isEmpty
+                  ? l10n.pathRestoredDefault
+                  : l10n.workDirSavedSuccess)
+              : l10n.workDirSaveError),
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   Future<void> _loadTorrentstreamSettings() async {
@@ -180,6 +233,111 @@ class _StreamingSettingsScreenState
               },
             ),
           ],
+        ),
+        const SizedBox(height: 12),
+
+        // ─── CARPETA DE BIBLIOTECA DE ANIME (LOCAL) ───────────────────────────
+        PixelCardContainer(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      Icons.video_library_rounded,
+                      color: theme.colorScheme.primary,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          l10n.animeLibraryFolderTitle,
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          l10n.animeLibraryFolderDesc,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: _libraryDirController,
+                decoration: InputDecoration(
+                  hintText: _defaultAnimePath.isNotEmpty
+                      ? _defaultAnimePath
+                      : l10n.defaultDirectoryHint,
+                  hintStyle: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.outline,
+                  ),
+                  filled: true,
+                  fillColor: theme.colorScheme.surface,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(
+                      color: theme.colorScheme.outlineVariant
+                          .withValues(alpha: 0.5),
+                    ),
+                  ),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  if (_libraryDirController.text.isNotEmpty || _defaultAnimePath.isNotEmpty)
+                    IconButton.filledTonal(
+                      tooltip: l10n.openDownloadsFolder,
+                      onPressed: () {
+                        final p = _libraryDirController.text.trim().isNotEmpty
+                            ? _libraryDirController.text.trim()
+                            : _defaultAnimePath;
+                        AppStoragePaths.openDirectoryInFileManager(p);
+                      },
+                      icon: const Icon(Icons.folder_open_rounded, size: 18),
+                    ),
+                  const Spacer(),
+                  TextButton.icon(
+                    onPressed: _isSavingLibraryDir ? null : () => _saveLibraryDir(''),
+                    icon: const Icon(Icons.restore_rounded, size: 18),
+                    label: Text(l10n.resetPath),
+                  ),
+                  const SizedBox(width: 8),
+                  FilledButton.tonalIcon(
+                    onPressed: _isSavingLibraryDir ? null : () => _saveLibraryDir(),
+                    icon: _isSavingLibraryDir
+                        ? const SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.save_rounded, size: 18),
+                    label: Text(l10n.savePath),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: 12),
 

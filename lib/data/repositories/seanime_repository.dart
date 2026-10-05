@@ -1368,9 +1368,24 @@ class SeanimeRepository {
     }
   }
 
-  Future<bool> scanLibrary() async {
+  Future<bool> scanLibrary({bool enhanced = true}) async {
     try {
-      final response = await _apiClient.post(ApiEndpoints.libraryScan);
+      // Ensure server has a library path configured; default to Aniting/Downloads/Anime
+      final settings = await getServerSettings();
+      final librarySettings = settings?['library'] as Map<String, dynamic>?;
+      String? libraryPath = librarySettings?['libraryPath'] as String?;
+      if (libraryPath == null || libraryPath.trim().isEmpty) {
+        final defaultDir = await AppStoragePaths.getAnimeDownloadsDirectory();
+        await patchServerSetting('library.libraryPath', defaultDir.path);
+      }
+
+      final response = await _apiClient.post(
+        ApiEndpoints.libraryScan,
+        data: {
+          'enhanced': enhanced,
+          'enhanceWithOfflineDatabase': true,
+        },
+      );
       return response.statusCode == 200;
     } catch (e) {
       debugPrint('Error triggering library scan: $e');

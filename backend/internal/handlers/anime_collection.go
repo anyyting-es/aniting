@@ -163,6 +163,38 @@ func (h *Handler) HandleGetLibraryCollection(c echo.Context) error {
 		if err != nil {
 			return h.RespondWithError(c, err)
 		}
+
+		// Ensure any indexed local files missing from animeCollection are auto-added
+		userMediaIds := make(map[int]struct{})
+		if animeCollection != nil && animeCollection.MediaListCollection != nil {
+			for _, list := range animeCollection.MediaListCollection.GetLists() {
+				for _, entry := range list.GetEntries() {
+					if entry.GetMedia() != nil {
+						userMediaIds[entry.GetMedia().GetID()] = struct{}{}
+					}
+				}
+			}
+		}
+
+		missingMediaIds := make([]int, 0)
+		seenMissing := make(map[int]struct{})
+		for _, lf := range lfs {
+			if lf.MediaId > 0 && !customsource.IsExtensionId(lf.MediaId) {
+				if _, ok := userMediaIds[lf.MediaId]; !ok {
+					if _, seen := seenMissing[lf.MediaId]; !seen {
+						seenMissing[lf.MediaId] = struct{}{}
+						missingMediaIds = append(missingMediaIds, lf.MediaId)
+					}
+				}
+			}
+		}
+
+		if len(missingMediaIds) > 0 {
+			_ = h.App.AnilistPlatformRef.Get().AddMediaToCollection(c.Request().Context(), missingMediaIds)
+			if updatedCol, err := h.App.GetAnimeCollection(false); err == nil && updatedCol != nil {
+				animeCollection = updatedCol
+			}
+		}
 	}
 
 	libraryCollection, err := anime.NewLibraryCollection(c.Request().Context(), &anime.NewLibraryCollectionOptions{

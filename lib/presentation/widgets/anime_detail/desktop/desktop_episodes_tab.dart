@@ -21,6 +21,7 @@ class DesktopEpisodesTab extends ConsumerStatefulWidget {
   final int mediaId;
   final AnimeDetails? details;
   final AniZipData? aniZipData;
+  final bool isLoadingAniZip;
   final int progress;
   final bool isLocalMode;
   final AnimeDetailTab currentTab;
@@ -43,6 +44,7 @@ class DesktopEpisodesTab extends ConsumerStatefulWidget {
     required this.mediaId,
     required this.details,
     required this.aniZipData,
+    this.isLoadingAniZip = false,
     required this.progress,
     required this.isLocalMode,
     required this.currentTab,
@@ -468,7 +470,9 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
         }
       }
 
-      if (items.isEmpty) {
+      // Only generate numbered placeholders when AniZip has definitively finished
+      // loading with no data — never during the initial load (prevents flash).
+      if (items.isEmpty && !widget.isLoadingAniZip) {
         for (int i = 1; i <= totalCount; i++) {
           if (!hasEpisodeAired(i, null, null)) continue;
           final isDownloading =
@@ -691,6 +695,74 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
                   ),
                 ],
               ),
+            ),
+          )
+        // ─── Loading State for AniZip (Torrent/Default Mode) ───
+        else if (widget.currentTab != AnimeDetailTab.online && widget.isLoadingAniZip && items.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 32),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (int i = 0; i < 4; i++)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 220,
+                          height: 124,
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? Colors.white.withValues(alpha: 0.06)
+                                : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                height: 14,
+                                width: 180,
+                                decoration: BoxDecoration(
+                                  color: isDark
+                                      ? Colors.white.withValues(alpha: 0.08)
+                                      : theme.colorScheme.surfaceContainerHighest,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              Container(
+                                height: 11,
+                                width: double.infinity,
+                                decoration: BoxDecoration(
+                                  color: isDark
+                                      ? Colors.white.withValues(alpha: 0.05)
+                                      : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.7),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Container(
+                                height: 11,
+                                width: 140,
+                                decoration: BoxDecoration(
+                                  color: isDark
+                                      ? Colors.white.withValues(alpha: 0.05)
+                                      : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.7),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
             ),
           )
         // ─── Empty State for Online Mode ───

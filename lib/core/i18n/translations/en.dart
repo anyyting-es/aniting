@@ -384,6 +384,11 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get torrentStorageSection => 'Torrent Storage & Cache';
   @override
+  String get animeLibraryFolderTitle => 'Anime Library Folder';
+  @override
+  String get animeLibraryFolderDesc =>
+      'Folder on your device where Seanime scans for local anime files and video downloads.';
+  @override
   String get workingDirectoryTitle => 'Working / Cache Directory';
   @override
   String get workingDirectoryDesc =>
