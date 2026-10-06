@@ -14,6 +14,7 @@
 #include <epoxy/glx.h>
 #include <gdk/gdkwayland.h>
 #include <gdk/gdkx.h>
+#include <thread>
 
 struct _VideoOutput {
   GObject parent_instance;
@@ -50,44 +51,47 @@ static void video_output_dispose(GObject* object) {
   if (self->texture_gl) {
     fl_texture_registrar_unregister_texture(self->texture_registrar,
                                             FL_TEXTURE(self->texture_gl));
-    
-    // Save Flutter's current context before cleanup
-    EGLDisplay current_display = eglGetCurrentDisplay();
-    EGLContext flutter_context = eglGetCurrentContext();
-    EGLSurface flutter_draw_surface = eglGetCurrentSurface(EGL_DRAW);
-    EGLSurface flutter_read_surface = eglGetCurrentSurface(EGL_READ);
-    
-    // Free mpv_render_context with our own isolated EGL context
-    if (self->render_context != NULL) {
-      if (self->egl_context != EGL_NO_CONTEXT) {
-        eglMakeCurrent(self->egl_display, EGL_NO_SURFACE, EGL_NO_SURFACE, self->egl_context);
-      }
-      mpv_render_context_free(self->render_context);
-      self->render_context = NULL;
-      
-      // Restore Flutter's context
-      if (flutter_context != EGL_NO_CONTEXT) {
-        eglMakeCurrent(current_display, flutter_draw_surface, flutter_read_surface, flutter_context);
-      }
-    }
-    
-    // Clean up EGL resources
-    if (self->egl_context != EGL_NO_CONTEXT) {
-      eglDestroyContext(self->egl_display, self->egl_context);
-      self->egl_context = EGL_NO_CONTEXT;
-    }
-    
+
+    // Dispose texture_gl on Flutter's main thread so Flutter's GL textures are cleaned up
     g_object_unref(self->texture_gl);
+    self->texture_gl = NULL;
+
+    // Asynchronously destroy mpv_render_context and the isolated EGL context
+    // on a detached background worker thread so we NEVER stall Flutter's GTK UI loop!
+    mpv_render_context* render_context = self->render_context;
+    EGLDisplay egl_display = self->egl_display;
+    EGLContext egl_context = self->egl_context;
+    self->render_context = NULL;
+    self->egl_context = EGL_NO_CONTEXT;
+    self->egl_display = EGL_NO_DISPLAY;
+
+    if (render_context != NULL) {
+      std::thread([render_context, egl_display, egl_context]() {
+        if (egl_context != EGL_NO_CONTEXT && egl_display != EGL_NO_DISPLAY) {
+          eglMakeCurrent(egl_display, EGL_NO_SURFACE, EGL_NO_SURFACE, egl_context);
+        }
+        mpv_render_context_free(render_context);
+        if (egl_context != EGL_NO_CONTEXT && egl_display != EGL_NO_DISPLAY) {
+          eglMakeCurrent(egl_display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+          eglDestroyContext(egl_display, egl_context);
+        }
+      }).detach();
+    }
   }
   // S/W
   if (self->texture_sw) {
     fl_texture_registrar_unregister_texture(self->texture_registrar,
                                             FL_TEXTURE(self->texture_sw));
     g_free(self->pixel_buffer);
+    self->pixel_buffer = NULL;
     g_object_unref(self->texture_sw);
+    self->texture_sw = NULL;
     if (self->render_context != NULL) {
-      mpv_render_context_free(self->render_context);
+      mpv_render_context* render_context = self->render_context;
       self->render_context = NULL;
+      std::thread([render_context]() {
+        mpv_render_context_free(render_context);
+      }).detach();
     }
   }
   

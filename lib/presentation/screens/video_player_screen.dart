@@ -102,8 +102,8 @@ class VideoPlayerScreen extends ConsumerStatefulWidget {
   }) {
     return PageRouteBuilder(
       opaque: true,
-      transitionDuration: Duration.zero,
-      reverseTransitionDuration: Duration.zero,
+      transitionDuration: const Duration(milliseconds: 180),
+      reverseTransitionDuration: const Duration(milliseconds: 150),
       pageBuilder: (context, animation, secondaryAnimation) => VideoPlayerScreen(
         mediaId: mediaId,
         videoUrl: videoUrl,
@@ -124,6 +124,16 @@ class VideoPlayerScreen extends ConsumerStatefulWidget {
         onlineStreamServer: onlineStreamServer,
         isLocalFile: isLocalFile,
       ),
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        return FadeTransition(
+          opacity: CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutCubic,
+            reverseCurve: Curves.easeInCubic,
+          ),
+          child: child,
+        );
+      },
     );
   }
 
@@ -433,21 +443,6 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       return null;
     }();
 
-    _coordinator.init(
-      videoUrl: _currentVideoUrl,
-      title: widget.title,
-      episodeTitle: _currentEpisodeTitle,
-      headers: _currentHeaders,
-      mimeType: _currentMimeType,
-      startPosition: resolvedStartPosition,
-      externalSubtitles: _currentExternalSubtitles,
-      fitMode: _fitMode,
-      activeShaderPreset: _activeShaderPreset,
-      isOnlineStream: isOnline,
-      initialSurfaceTop: winInit.initialTop,
-      initialSurfaceHeight: winInit.initialHeight,
-    );
-
     ref.listenManual(subtitleStylePreferencesProvider, (_, next) {
       _coordinator.applySubtitleStyle(next);
       if (mounted) setState(() {});
@@ -497,7 +492,6 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
         }
       },
     );
-    _progressManager.startTracking(initialPosition: resolvedStartPosition);
 
     _sourceController = PlayerSourceController(
       repository: ref.read(repositoryProvider),
@@ -532,21 +526,40 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       },
     );
 
-    _initStatsService();
-    _startHideTimer();
-    _initBrightness();
-    _sourceController.schedulePrefetchNextEpisode();
-
-    if (_currentVideoUrl.isEmpty && _currentOnlineStreamProvider != null) {
-      _sourceController.resolveInitialSources();
-    } else if (_currentOnlineStreamProvider != null) {
-      _sourceController.fetchAvailableSourcesInBackground(currentVideoUrl: _currentVideoUrl);
-    }
-
+    // Defer heavy native playback engine creation (C libmpv / ExoPlayer) and
+    // initial stream resolution to the post-frame callback so frame 0 mounts
+    // immediately with smooth 60-120 FPS transitions without gesture thread freezing.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _focusNode.requestFocus();
+      if (!mounted) return;
+
+      _coordinator.init(
+        videoUrl: _currentVideoUrl,
+        title: widget.title,
+        episodeTitle: _currentEpisodeTitle,
+        headers: _currentHeaders,
+        mimeType: _currentMimeType,
+        startPosition: resolvedStartPosition,
+        externalSubtitles: _currentExternalSubtitles,
+        fitMode: _fitMode,
+        activeShaderPreset: _activeShaderPreset,
+        isOnlineStream: isOnline,
+        initialSurfaceTop: winInit.initialTop,
+        initialSurfaceHeight: winInit.initialHeight,
+      );
+
+      _progressManager.startTracking(initialPosition: resolvedStartPosition);
+      _initStatsService();
+      _startHideTimer();
+      _initBrightness();
+      _sourceController.schedulePrefetchNextEpisode();
+
+      if (_currentVideoUrl.isEmpty && _currentOnlineStreamProvider != null) {
+        _sourceController.resolveInitialSources();
+      } else if (_currentOnlineStreamProvider != null) {
+        _sourceController.fetchAvailableSourcesInBackground(currentVideoUrl: _currentVideoUrl);
       }
+
+      _focusNode.requestFocus();
     });
   }
 
@@ -1108,8 +1121,8 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
         _handleExit();
       },
       child: Scaffold(
-        backgroundColor: _isExiting ? Colors.black : scaffoldBg,
-        body: _isExiting
+        backgroundColor: (!isDesktop && _isExiting) ? Colors.black : scaffoldBg,
+        body: (!isDesktop && _isExiting)
             ? const ColoredBox(color: Colors.black, child: SizedBox.expand())
             : Focus(
                 focusNode: _focusNode,

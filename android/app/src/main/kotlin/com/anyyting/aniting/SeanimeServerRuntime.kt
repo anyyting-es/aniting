@@ -17,13 +17,13 @@ import java.io.File
 
 object SeanimeServerRuntime {
     const val defaultHost = "127.0.0.1"
-    const val defaultPort = 43211
+    const val defaultPort = 43311
     const val actionStart = "com.anyyting.aniting.action.START"
     const val actionStop = "com.anyyting.aniting.action.STOP"
     const val actionOpen = "com.anyyting.aniting.action.OPEN"
     const val extraPort = "port"
     const val extraHost = "host"
-    const val notificationId = 43211
+    const val notificationId = 43311
     const val notificationChannelId = "aniting-server"
 
     // Mutable host for LAN sharing mode (0.0.0.0)
@@ -52,28 +52,28 @@ password = ''
 secureMode = 'lax'
 
 [database]
-name = 'seanime'
+name = 'aniting'
 
 [web]
-assetDir = '${'$'}SEANIME_DATA_DIR/assets'
+assetDir = '${'$'}ANITING_DATA_DIR/assets'
 
 [logs]
-dir = '${'$'}SEANIME_DATA_DIR/logs'
+dir = '${'$'}ANITING_DATA_DIR/logs'
 
 [cache]
-dir = '${'$'}SEANIME_DATA_DIR/cache'
-transcodeDir = '${'$'}SEANIME_DATA_DIR/cache/transcode'
+dir = '${'$'}ANITING_DATA_DIR/cache'
+transcodeDir = '${'$'}ANITING_DATA_DIR/cache/transcode'
 
 [offline]
-dir = '${'$'}SEANIME_DATA_DIR/offline'
-assetDir = '${'$'}SEANIME_DATA_DIR/offline/assets'
+dir = '${'$'}ANITING_DATA_DIR/offline'
+assetDir = '${'$'}ANITING_DATA_DIR/offline/assets'
 
 [manga]
-downloadDir = '${'$'}SEANIME_DATA_DIR/manga'
-localDir = '${'$'}SEANIME_DATA_DIR/manga-local'
+downloadDir = '${'$'}ANITING_DATA_DIR/manga'
+localDir = '${'$'}ANITING_DATA_DIR/manga-local'
 
 [extensions]
-dir = '${'$'}SEANIME_DATA_DIR/extensions'
+dir = '${'$'}ANITING_DATA_DIR/extensions'
 
 [experimental]
 builtintorrentclient = true

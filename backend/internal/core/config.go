@@ -100,7 +100,7 @@ func NewConfig(options *ConfigOptions, logger *zerolog.Logger) (*Config, error) 
 	}
 
 	defaultHost := "127.0.0.1"
-	defaultPort := 43211
+	defaultPort := 43311
 
 	// Environment variables override defaults
 	if os.Getenv("ANITING_SERVER_HOST") != "" {
@@ -139,7 +139,7 @@ func NewConfig(options *ConfigOptions, logger *zerolog.Logger) (*Config, error) 
 	// Create assets directory if it doesn't exist
 	_ = os.MkdirAll(filepath.Join(dataDir, "assets"), 0700)
 
-	// Set Seanime's default custom environment variables
+	// Set Aniting's default custom environment variables
 	if err = setDataDirEnv(dataDir); err != nil {
 		return nil, err
 	}
@@ -166,17 +166,17 @@ func NewConfig(options *ConfigOptions, logger *zerolog.Logger) (*Config, error) 
 	// Use the binary's directory as the working directory environment variable on macOS
 	viper.SetDefault("server.useBinaryPath", true)
 	// viper.SetDefault("server.systray", true)
-	viper.SetDefault("database.name", "seanime")
-	viper.SetDefault("web.assetDir", "$SEANIME_DATA_DIR/assets")
-	viper.SetDefault("cache.dir", "$SEANIME_DATA_DIR/cache")
-	viper.SetDefault("cache.transcodeDir", "$SEANIME_DATA_DIR/cache/transcode")
-	viper.SetDefault("manga.downloadDir", "$SEANIME_DATA_DIR/manga")
-	viper.SetDefault("manga.localDir", "$SEANIME_DATA_DIR/manga-local")
-	viper.SetDefault("logs.dir", "$SEANIME_DATA_DIR/logs")
-	viper.SetDefault("offline.dir", "$SEANIME_DATA_DIR/offline")
-	viper.SetDefault("offline.assetDir", "$SEANIME_DATA_DIR/offline/assets")
-	viper.SetDefault("extensions.dir", "$SEANIME_DATA_DIR/extensions")
-	viper.SetDefault("torrent.dir", "$SEANIME_DATA_DIR/torrent")
+	viper.SetDefault("database.name", "aniting")
+	viper.SetDefault("web.assetDir", "$ANITING_DATA_DIR/assets")
+	viper.SetDefault("cache.dir", "$ANITING_DATA_DIR/cache")
+	viper.SetDefault("cache.transcodeDir", "$ANITING_DATA_DIR/cache/transcode")
+	viper.SetDefault("manga.downloadDir", "$ANITING_DATA_DIR/manga")
+	viper.SetDefault("manga.localDir", "$ANITING_DATA_DIR/manga-local")
+	viper.SetDefault("logs.dir", "$ANITING_DATA_DIR/logs")
+	viper.SetDefault("offline.dir", "$ANITING_DATA_DIR/offline")
+	viper.SetDefault("offline.assetDir", "$ANITING_DATA_DIR/offline/assets")
+	viper.SetDefault("extensions.dir", "$ANITING_DATA_DIR/extensions")
+	viper.SetDefault("torrent.dir", "$ANITING_DATA_DIR/torrent")
 	viper.SetDefault("experimental.builtinTorrentClient", true)
 
 	// Create and populate the config file if it doesn't exist
@@ -195,11 +195,11 @@ func NewConfig(options *ConfigOptions, logger *zerolog.Logger) (*Config, error) 
 	hostChanged := false
 	portChanged := false
 
-	if (flags.Host != "" || os.Getenv("SEANIME_SERVER_HOST") != "") && existingHost != defaultHost {
+	if (flags.Host != "" || os.Getenv("ANITING_SERVER_HOST") != "" || os.Getenv("SEANIME_SERVER_HOST") != "") && existingHost != defaultHost {
 		viper.Set("server.host", defaultHost)
 		hostChanged = true
 	}
-	if (flags.Port != 0 || os.Getenv("SEANIME_SERVER_PORT") != "") && existingPort != defaultPort {
+	if (flags.Port != 0 || os.Getenv("ANITING_SERVER_PORT") != "" || os.Getenv("SEANIME_SERVER_PORT") != "") && existingPort != defaultPort {
 		viper.Set("server.port", defaultPort)
 		portChanged = true
 	}

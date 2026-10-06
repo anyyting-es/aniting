@@ -35,7 +35,7 @@ func GetSeanimeFlags() SeanimeFlags {
 		fmt.Printf("Flags:\n")
 		fmt.Printf("  --datadir string              directory that contains all Seanime data\n")
 		fmt.Printf("  --host string                 host address to bind to (default: 127.0.0.1)\n")
-		fmt.Printf("  --port int                    port to bind to (default: 43211)\n")
+		fmt.Printf("  --port int                    port to bind to (default: 43311)\n")
 		fmt.Printf("  --update                      update the application\n")
 		fmt.Printf("  --desktop-sidecar             run as the desktop sidecar\n")
 		fmt.Printf("  --disable-features string     comma-separated list of features to disable\n")

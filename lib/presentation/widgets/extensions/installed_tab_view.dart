@@ -102,132 +102,168 @@ class InstalledTabView extends ConsumerWidget {
       );
     }
 
-    return ListView.builder(
-      physics: const ClampingScrollPhysics(),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      itemCount: installedExtensions.length + 1,
-      itemBuilder: (context, index) {
-        if (index == 0) {
-          return LayoutBuilder(
-            builder: (context, constraints) {
-              final isCompact = constraints.maxWidth < 520;
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isDesktop = constraints.maxWidth >= 650;
+        final isCompact = constraints.maxWidth < 520;
+
+        final header = Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (isCompact) ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  if (isCompact) ...[
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  Text(
+                    '${l10n.installed} (${installedExtensions.length})',
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    '${installedExtensions.length} ${l10n.installed.toLowerCase()}',
+                    style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: isCheckingUpdates ? null : onCheckForUpdates,
+                      icon: isCheckingUpdates
+                          ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Icon(Icons.system_update_alt_rounded, size: 16),
+                      label: Text(
+                        l10n.checkForUpdates,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: onReloadAll,
+                      icon: const Icon(Icons.refresh_rounded, size: 16),
+                      label: Text(
+                        l10n.reloadAll,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ] else ...[
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           '${l10n.installed} (${installedExtensions.length})',
                           style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                         ),
+                        const SizedBox(height: 2),
                         Text(
                           '${installedExtensions.length} ${l10n.installed.toLowerCase()}',
                           style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: isCheckingUpdates ? null : onCheckForUpdates,
-                            icon: isCheckingUpdates
-                                ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
-                                : const Icon(Icons.system_update_alt_rounded, size: 16),
-                            label: Text(
-                              l10n.checkForUpdates,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            style: OutlinedButton.styleFrom(
-                              visualDensity: VisualDensity.compact,
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: onReloadAll,
-                            icon: const Icon(Icons.refresh_rounded, size: 16),
-                            label: Text(
-                              l10n.reloadAll,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            style: OutlinedButton.styleFrom(
-                              visualDensity: VisualDensity.compact,
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            ),
-                          ),
-                        ),
-                      ],
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: isCheckingUpdates ? null : onCheckForUpdates,
+                    icon: isCheckingUpdates
+                        ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Icon(Icons.system_update_alt_rounded, size: 16),
+                    label: Text(l10n.checkForUpdates),
+                    style: OutlinedButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
-                  ] else ...[
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '${l10n.installed} (${installedExtensions.length})',
-                                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                '${installedExtensions.length} ${l10n.installed.toLowerCase()}',
-                                style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12),
-                              ),
-                            ],
-                          ),
-                        ),
-                        OutlinedButton.icon(
-                          onPressed: isCheckingUpdates ? null : onCheckForUpdates,
-                          icon: isCheckingUpdates
-                              ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
-                              : const Icon(Icons.system_update_alt_rounded, size: 16),
-                          label: Text(l10n.checkForUpdates),
-                          style: OutlinedButton.styleFrom(
-                            visualDensity: VisualDensity.compact,
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        OutlinedButton.icon(
-                          onPressed: onReloadAll,
-                          icon: const Icon(Icons.refresh_rounded, size: 16),
-                          label: Text(l10n.reloadAll),
-                          style: OutlinedButton.styleFrom(
-                            visualDensity: VisualDensity.compact,
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          ),
-                        ),
-                      ],
+                  ),
+                  const SizedBox(width: 8),
+                  OutlinedButton.icon(
+                    onPressed: onReloadAll,
+                    icon: const Icon(Icons.refresh_rounded, size: 16),
+                    label: Text(l10n.reloadAll),
+                    style: OutlinedButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
-                  ],
-                  const SizedBox(height: 16),
+                  ),
                 ],
-              );
-            },
+              ),
+            ],
+            const SizedBox(height: 16),
+          ],
+        );
+
+        if (isDesktop) {
+          return CustomScrollView(
+            physics: const ClampingScrollPhysics(),
+            slivers: [
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                sliver: SliverToBoxAdapter(child: header),
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
+                sliver: SliverGrid.builder(
+                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: 440,
+                    mainAxisExtent: 172,
+                    crossAxisSpacing: 14,
+                    mainAxisSpacing: 14,
+                  ),
+                  itemCount: installedExtensions.length,
+                  itemBuilder: (context, index) {
+                    final ext = installedExtensions[index];
+                    return InstalledExtensionCard(
+                      extension: ext,
+                      isUpdating: installingExtensionId == ext.id,
+                      onToggle: (val) => onToggle(ext, !val),
+                      onUninstall: () => onUninstall(ext),
+                      onUpdate: () => onUpdate(ext),
+                      onShowCode: () => onShowCode(ext),
+                    );
+                  },
+                ),
+              ),
+            ],
           );
         }
 
-        final ext = installedExtensions[index - 1];
-        return InstalledExtensionCard(
-          extension: ext,
-          isUpdating: installingExtensionId == ext.id,
-          onToggle: (val) => onToggle(ext, !val),
-          onUninstall: () => onUninstall(ext),
-          onUpdate: () => onUpdate(ext),
-          onShowCode: () => onShowCode(ext),
+        return ListView.builder(
+          physics: const ClampingScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          itemCount: installedExtensions.length + 1,
+          itemBuilder: (context, index) {
+            if (index == 0) return header;
+            final ext = installedExtensions[index - 1];
+            return InstalledExtensionCard(
+              extension: ext,
+              isUpdating: installingExtensionId == ext.id,
+              onToggle: (val) => onToggle(ext, !val),
+              onUninstall: () => onUninstall(ext),
+              onUpdate: () => onUpdate(ext),
+              onShowCode: () => onShowCode(ext),
+            );
+          },
         );
       },
     );

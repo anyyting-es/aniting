@@ -20,7 +20,7 @@ class ApiClient {
       final portPart = uri.hasPort ? ':${uri.port}' : '';
       return '${uri.scheme}://${uri.host}$portPart';
     }
-    return 'http://127.0.0.1:43211';
+    return 'http://${AppConstants.defaultHost}:${AppConstants.defaultPort}';
   }
 
   void _initDio() {

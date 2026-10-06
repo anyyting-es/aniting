@@ -114,6 +114,37 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen>
       }
     }
 
+    // Pre-populate details and aniZip on frame 0 from repository in-memory cache or initialEntry
+    final repo = ref.read(repositoryProvider);
+    final cachedDetails = repo.getCachedAnimeDetails(widget.mediaId);
+    if (cachedDetails != null) {
+      _details = cachedDetails;
+      _isLoading = false;
+    } else if (widget.initialEntry != null) {
+      _details = AnimeDetails(
+        id: widget.mediaId,
+        title: widget.initialEntry!.title,
+        englishTitle: widget.initialEntry!.englishTitle,
+        romajiTitle: widget.initialEntry!.romajiTitle,
+        nativeTitle: widget.initialEntry!.nativeTitle,
+        coverImage: widget.initialEntry!.coverImage,
+        coverColor: widget.initialEntry!.coverColor,
+        bannerImage: widget.initialEntry!.bannerImage,
+        description: widget.initialEntry!.description,
+        totalEpisodes: widget.initialEntry!.totalEpisodes,
+        format: widget.initialEntry!.format,
+        score: widget.initialEntry!.score,
+        status: widget.initialEntry!.status,
+      );
+      _isLoading = true;
+    }
+
+    final cachedAniZip = repo.getCachedAniZipData(widget.mediaId);
+    if (cachedAniZip != null) {
+      _aniZipData = cachedAniZip;
+      _isLoadingAniZip = false;
+    }
+
     _restoreSavedMode();
 
     _bannerAnimController = AnimationController(
@@ -194,26 +225,27 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen>
   }
 
   Future<void> _loadDetails() async {
-    await _restoreSavedMode();
+    _restoreSavedMode();
     final repo = ref.read(repositoryProvider);
 
-    AnimeDetails? details = widget.initialEntry != null
-        ? AnimeDetails(
-            id: widget.mediaId,
-            title: widget.initialEntry!.title,
-            englishTitle: widget.initialEntry!.englishTitle,
-            romajiTitle: widget.initialEntry!.romajiTitle,
-            nativeTitle: widget.initialEntry!.nativeTitle,
-            coverImage: widget.initialEntry!.coverImage,
-            coverColor: widget.initialEntry!.coverColor,
-            bannerImage: widget.initialEntry!.bannerImage,
-            description: widget.initialEntry!.description,
-            totalEpisodes: widget.initialEntry!.totalEpisodes,
-            format: widget.initialEntry!.format,
-            score: widget.initialEntry!.score,
-            status: widget.initialEntry!.status,
-          )
-        : null;
+    AnimeDetails? details = _details ??
+        (widget.initialEntry != null
+            ? AnimeDetails(
+                id: widget.mediaId,
+                title: widget.initialEntry!.title,
+                englishTitle: widget.initialEntry!.englishTitle,
+                romajiTitle: widget.initialEntry!.romajiTitle,
+                nativeTitle: widget.initialEntry!.nativeTitle,
+                coverImage: widget.initialEntry!.coverImage,
+                coverColor: widget.initialEntry!.coverColor,
+                bannerImage: widget.initialEntry!.bannerImage,
+                description: widget.initialEntry!.description,
+                totalEpisodes: widget.initialEntry!.totalEpisodes,
+                format: widget.initialEntry!.format,
+                score: widget.initialEntry!.score,
+                status: widget.initialEntry!.status,
+              )
+            : null);
 
     final fetchedDetails = await repo.getAnimeDetails(
       widget.mediaId,
@@ -242,12 +274,14 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen>
       });
     }
 
-    final aniZip = await repo.getAniZipData(widget.mediaId);
-    if (mounted) {
-      setState(() {
-        _aniZipData = aniZip;
-        _isLoadingAniZip = false;
-      });
+    if (_aniZipData == null) {
+      final aniZip = await repo.getAniZipData(widget.mediaId);
+      if (mounted) {
+        setState(() {
+          _aniZipData = aniZip;
+          _isLoadingAniZip = false;
+        });
+      }
     }
   }
 

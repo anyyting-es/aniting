@@ -96,6 +96,23 @@ class _AnimeDetailDesktopLayoutState
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+
+    final repo = ref.read(repositoryProvider);
+    final cachedProviders = repo.getCachedOnlinestreamProviders();
+    if (cachedProviders != null && cachedProviders.isNotEmpty) {
+      _providers = cachedProviders;
+      _selectedProvider = cachedProviders.first;
+      final cachedEps = repo.getCachedOnlinestreamEpisodes(
+        mediaId: widget.mediaId,
+        provider: _selectedProvider!.id,
+        dubbed: _isDubbed,
+      );
+      if (cachedEps != null && cachedEps.isNotEmpty) {
+        _onlineEpisodes = cachedEps;
+        _isLoadingOnlineEpisodes = false;
+      }
+    }
+
     _loadOnlineProviders();
   }
 
@@ -158,11 +175,22 @@ class _AnimeDetailDesktopLayoutState
 
   Future<void> _loadOnlineEpisodes() async {
     if (_selectedProvider == null) return;
-    setState(() {
-      _isLoadingOnlineEpisodes = true;
-      _onlineEpisodes = [];
-    });
     final repo = ref.read(repositoryProvider);
+    final cached = repo.getCachedOnlinestreamEpisodes(
+      mediaId: widget.mediaId,
+      provider: _selectedProvider!.id,
+      dubbed: _isDubbed,
+    );
+    if (cached != null && cached.isNotEmpty && _onlineEpisodes.isEmpty) {
+      setState(() {
+        _onlineEpisodes = cached;
+        _isLoadingOnlineEpisodes = false;
+      });
+    } else if (_onlineEpisodes.isEmpty) {
+      setState(() {
+        _isLoadingOnlineEpisodes = true;
+      });
+    }
     try {
       final list = await repo.getOnlinestreamEpisodes(
         mediaId: widget.mediaId,
@@ -478,77 +506,71 @@ class _AnimeDetailDesktopLayoutState
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Header & Action Bar bottom-aligned with poster (360px)
-                              ConstrainedBox(
-                                constraints: const BoxConstraints(minHeight: 360),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                              DesktopHeader(
+                                seasonYearStr: seasonYearStr,
+                                title: title,
+                                genres: widget.details?.genres ?? [],
+                                description: description,
+                              ),
+                              const SizedBox(height: 18),
+                              DesktopActionBar(
+                                mediaId: widget.mediaId,
+                                title: title,
+                                progress: progress,
+                                idMal: idMal,
+                                trailerId: trailerId,
+                                trailerSite: trailerSite,
+                                hasTrailer: hasTrailer,
+                                currentTab: widget.currentTab,
+                                isLocalMode: widget.isLocalMode,
+                                onlineEnabled: onlineEnabled,
+                                torrentEnabled: torrentEnabled,
+                                onPlayNext: () => _handlePlayNext(progress),
+                                onOpenEditEntryModal: widget.onOpenEditEntryModal,
+                                onToggleLocalMode: widget.onToggleLocalMode,
+                                onTabChanged: widget.onTabChanged,
+                                onDownload: () {
+                                  final totalEps = widget.details?.totalEpisodes ?? widget.initialEntry?.totalEpisodes;
+                                  final nextEp = (progress + 1).clamp(1, totalEps ?? (progress + 1));
+                                  final defaultEpTitle = l10n.episodeNumber(nextEp);
+                                  widget.onOpenTorrentSelector(
+                                    episodeNumber: nextEp,
+                                    episodeTitle: defaultEpTitle,
+                                  );
+                                },
+                              ),
+                              const SizedBox(height: 28),
+
+                              // Desktop Sub-Navigation Tab Bar
+                              SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: Row(
                                   children: [
-                                    DesktopHeader(
-                                      seasonYearStr: seasonYearStr,
-                                      title: title,
-                                      genres: widget.details?.genres ?? [],
-                                      description: description,
+                                    DesktopTabButton(
+                                      label: l10n.episodes,
+                                      isSelected: _selectedTab == DesktopDetailTab.episodes,
+                                      onTap: () => setState(() => _selectedTab = DesktopDetailTab.episodes),
                                     ),
-                                    DesktopActionBar(
-                                      mediaId: widget.mediaId,
-                                      title: title,
-                                      progress: progress,
-                                      idMal: idMal,
-                                      trailerId: trailerId,
-                                      trailerSite: trailerSite,
-                                      hasTrailer: hasTrailer,
-                                      currentTab: widget.currentTab,
-                                      isLocalMode: widget.isLocalMode,
-                                      onlineEnabled: onlineEnabled,
-                                      torrentEnabled: torrentEnabled,
-                                      onPlayNext: () => _handlePlayNext(progress),
-                                      onOpenEditEntryModal: widget.onOpenEditEntryModal,
-                                      onToggleLocalMode: widget.onToggleLocalMode,
-                                      onTabChanged: widget.onTabChanged,
-                                      onDownload: () {
-                                        final totalEps = widget.details?.totalEpisodes ?? widget.initialEntry?.totalEpisodes;
-                                        final nextEp = (progress + 1).clamp(1, totalEps ?? (progress + 1));
-                                        final defaultEpTitle = l10n.episodeNumber(nextEp);
-                                        widget.onOpenTorrentSelector(
-                                          episodeNumber: nextEp,
-                                          episodeTitle: defaultEpTitle,
-                                        );
-                                      },
+                                    const SizedBox(width: 24),
+                                    DesktopTabButton(
+                                      label: l10n.characters,
+                                      isSelected: _selectedTab == DesktopDetailTab.characters,
+                                      onTap: () => setState(() => _selectedTab = DesktopDetailTab.characters),
+                                    ),
+                                    const SizedBox(width: 24),
+                                    DesktopTabButton(
+                                      label: l10n.relations,
+                                      isSelected: _selectedTab == DesktopDetailTab.related,
+                                      onTap: () => setState(() => _selectedTab = DesktopDetailTab.related),
+                                    ),
+                                    const SizedBox(width: 24),
+                                    DesktopTabButton(
+                                      label: l10n.recommendations,
+                                      isSelected: _selectedTab == DesktopDetailTab.recommendations,
+                                      onTap: () => setState(() => _selectedTab = DesktopDetailTab.recommendations),
                                     ),
                                   ],
                                 ),
-                              ),
-                              const SizedBox(height: 24),
-
-                              // Desktop Sub-Navigation Tab Bar
-                              Row(
-                                children: [
-                                  DesktopTabButton(
-                                    label: l10n.episodes,
-                                    isSelected: _selectedTab == DesktopDetailTab.episodes,
-                                    onTap: () => setState(() => _selectedTab = DesktopDetailTab.episodes),
-                                  ),
-                                  const SizedBox(width: 24),
-                                  DesktopTabButton(
-                                    label: l10n.characters,
-                                    isSelected: _selectedTab == DesktopDetailTab.characters,
-                                    onTap: () => setState(() => _selectedTab = DesktopDetailTab.characters),
-                                  ),
-                                  const SizedBox(width: 24),
-                                  DesktopTabButton(
-                                    label: l10n.relations,
-                                    isSelected: _selectedTab == DesktopDetailTab.related,
-                                    onTap: () => setState(() => _selectedTab = DesktopDetailTab.related),
-                                  ),
-                                  const SizedBox(width: 24),
-                                  DesktopTabButton(
-                                    label: l10n.recommendations,
-                                    isSelected: _selectedTab == DesktopDetailTab.recommendations,
-                                    onTap: () => setState(() => _selectedTab = DesktopDetailTab.recommendations),
-                                  ),
-                                ],
                               ),
                               const SizedBox(height: 20),
 

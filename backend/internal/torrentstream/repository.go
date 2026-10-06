@@ -199,10 +199,10 @@ func (r *Repository) InitModules(settings *models.TorrentstreamSettings, host st
 	//_ = os.RemoveAll(s.DownloadDir)
 
 	if s.StreamingServerPort == 0 {
-		s.StreamingServerPort = 43214
+		s.StreamingServerPort = 43314
 	}
 	if s.TorrentClientPort == 0 {
-		s.TorrentClientPort = 43213
+		s.TorrentClientPort = 43313
 	}
 	if s.StreamingServerHost == "" {
 		s.StreamingServerHost = "127.0.0.1"

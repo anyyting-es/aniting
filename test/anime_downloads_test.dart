@@ -45,6 +45,13 @@ void main() {
     });
 
     testWidgets('DownloadsScreen renders empty state when downloadedAnimeProvider is empty', (tester) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -68,6 +75,13 @@ void main() {
     });
 
     testWidgets('DownloadsScreen displays downloaded anime when downloadedAnimeProvider has items', (tester) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
       final downloadedItem = AnimeEntry(
         id: 10,
         mediaId: 999,
@@ -97,3 +111,4 @@ void main() {
     });
   });
 }
+

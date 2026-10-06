@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:seanime_app/core/constants/app_constants.dart';
 
 /// Represents a discovered Aniting server on the local network.
 class DiscoveredServer {
@@ -33,7 +34,7 @@ class DiscoveredServer {
 /// Service for discovering and advertising Aniting servers on the local network
 /// via lightweight UDP broadcast beacons (~120 bytes every 3 seconds).
 class LanDiscoveryService {
-  static const int _discoveryPort = 43212;
+  static const int _discoveryPort = 43312;
   static const String _magicHeader = 'ANITING_SRV';
   static const Duration _broadcastInterval = Duration(seconds: 3);
   static const Duration _serverTimeout = Duration(seconds: 10);
@@ -181,7 +182,7 @@ class LanDiscoveryService {
       final server = DiscoveredServer(
         name: json['n'] as String? ?? 'Aniting Server',
         ip: json['ip'] as String? ?? datagram.address.address,
-        port: json['p'] as int? ?? 43211,
+        port: json['p'] as int? ?? AppConstants.defaultPort,
         version: json['v'] as String? ?? '',
         lastSeen: DateTime.now(),
       );

@@ -7,6 +7,7 @@ import 'package:seanime_app/data/models/airing_schedule.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/widgets/calendar/calendar_desktop_view.dart';
 import 'package:seanime_app/presentation/widgets/calendar/calendar_mobile_view.dart';
+import 'package:seanime_app/presentation/widgets/desktop_title_bar.dart';
 
 class AiringCalendarScreen extends ConsumerStatefulWidget {
   const AiringCalendarScreen({super.key});
@@ -74,24 +75,26 @@ class _AiringCalendarScreenState extends ConsumerState<AiringCalendarScreen> {
     final canPop = Navigator.canPop(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.airingCalendar),
-        automaticallyImplyLeading: canPop,
-        titleSpacing: canPop ? 0 : 16,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded),
-            tooltip: l10n.refresh,
-            onPressed: _fetchSchedules,
-          ),
-          const SizedBox(width: 8),
-        ],
-        bottom: _isLoading
-            ? const PreferredSize(
-                preferredSize: Size.fromHeight(2),
-                child: LinearProgressIndicator(minHeight: 2),
-              )
-            : null,
+      appBar: DesktopSafeAppBar(
+        child: AppBar(
+          title: Text(l10n.airingCalendar),
+          automaticallyImplyLeading: canPop,
+          titleSpacing: canPop ? 0 : 16,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh_rounded),
+              tooltip: l10n.refresh,
+              onPressed: _fetchSchedules,
+            ),
+            const SizedBox(width: 8),
+          ],
+          bottom: _isLoading
+              ? const PreferredSize(
+                  preferredSize: Size.fromHeight(2),
+                  child: LinearProgressIndicator(minHeight: 2),
+                )
+              : null,
+        ),
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {

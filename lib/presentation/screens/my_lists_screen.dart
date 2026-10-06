@@ -5,7 +5,9 @@ import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
 import 'package:seanime_app/presentation/screens/manga_detail_screen.dart';
 import 'package:seanime_app/presentation/widgets/anime_card.dart';
+import 'package:seanime_app/presentation/widgets/desktop_title_bar.dart';
 import 'package:seanime_app/presentation/widgets/manga_card.dart';
+import 'package:seanime_app/presentation/widgets/my_lists/my_lists_desktop_layout.dart';
 
 class MyListsScreen extends ConsumerStatefulWidget {
   final int initialTabIndex;
@@ -25,31 +27,37 @@ class _MyListsScreenState extends ConsumerState<MyListsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDesktop = MediaQuery.of(context).size.width >= 720;
+    if (isDesktop) {
+      return MyListsDesktopLayout(initialTabIndex: widget.initialTabIndex);
+    }
+
     final l10n = ref.watch(translationsProvider);
     final theme = Theme.of(context);
-    final isDesktop = MediaQuery.of(context).size.width >= 720;
 
     return DefaultTabController(
       length: 2,
       initialIndex: widget.initialTabIndex,
       child: Scaffold(
-        appBar: AppBar(
-          leading: const BackButton(),
-          title: Text(
-            l10n.myLists,
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-          bottom: TabBar(
-            tabs: [
-              Tab(
-                icon: const Icon(Icons.movie_rounded),
-                text: l10n.anime,
-              ),
-              Tab(
-                icon: const Icon(Icons.menu_book_rounded),
-                text: l10n.manga,
-              ),
-            ],
+        appBar: DesktopSafeAppBar(
+          child: AppBar(
+            leading: const BackButton(),
+            title: Text(
+              l10n.myLists,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            bottom: TabBar(
+              tabs: [
+                Tab(
+                  icon: const Icon(Icons.movie_rounded),
+                  text: l10n.anime,
+                ),
+                Tab(
+                  icon: const Icon(Icons.menu_book_rounded),
+                  text: l10n.manga,
+                ),
+              ],
+            ),
           ),
         ),
         body: TabBarView(

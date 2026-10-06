@@ -76,7 +76,7 @@ class ServerManager {
         return true;
       } else {
         _state = ServerState.error;
-        _lastError = 'No se encontró el ejecutable seanime en backend/';
+        _lastError = 'No se encontró el ejecutable del servidor en backend/';
         return false;
       }
     }

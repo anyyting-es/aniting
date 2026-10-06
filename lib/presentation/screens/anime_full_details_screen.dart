@@ -8,6 +8,7 @@ import 'package:seanime_app/core/theme/theme_provider.dart';
 import 'package:seanime_app/data/models/anime_details.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
+import 'package:seanime_app/presentation/widgets/desktop_title_bar.dart';
 
 class AnimeFullDetailsScreen extends ConsumerStatefulWidget {
   final int mediaId;
@@ -106,14 +107,16 @@ class _AnimeFullDetailsScreenState extends ConsumerState<AnimeFullDetailsScreen>
           final meanScore = _details?.rawMedia?['meanScore'] as int?;
 
           return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          title,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-      ),
+            appBar: DesktopSafeAppBar(
+              child: AppBar(
+                title: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
       body: _isLoading && _details == null
           ? const Center(child: CircularProgressIndicator())
           : ListView(

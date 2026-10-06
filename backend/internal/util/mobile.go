@@ -53,7 +53,10 @@ func ResolvePhysicalPath(path string) string {
 	if !IsIOS() {
 		return path
 	}
-	dataDir := os.Getenv("SEANIME_DATA_DIR")
+	dataDir := os.Getenv("ANITING_DATA_DIR")
+	if dataDir == "" {
+		dataDir = os.Getenv("SEANIME_DATA_DIR")
+	}
 	if dataDir == "" {
 		homeDir, err := os.UserHomeDir()
 		if err == nil {
@@ -91,7 +94,10 @@ func ResolveVirtualPath(path string) string {
 	if !IsIOS() {
 		return path
 	}
-	dataDir := os.Getenv("SEANIME_DATA_DIR")
+	dataDir := os.Getenv("ANITING_DATA_DIR")
+	if dataDir == "" {
+		dataDir = os.Getenv("SEANIME_DATA_DIR")
+	}
 	if dataDir == "" {
 		homeDir, err := os.UserHomeDir()
 		if err == nil {

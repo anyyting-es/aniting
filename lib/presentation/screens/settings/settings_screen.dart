@@ -18,6 +18,7 @@ import 'package:seanime_app/presentation/screens/settings/subpages/theme_setting
 import 'package:seanime_app/presentation/screens/settings/widgets/pixel_settings_widgets.dart';
 import 'package:seanime_app/presentation/screens/welcome_screen.dart';
 import 'package:seanime_app/presentation/widgets/anilist_auth_sheet.dart';
+import 'package:seanime_app/presentation/widgets/desktop_title_bar.dart';
 
 enum SettingsCategory {
   theme,
@@ -325,11 +326,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 SizedBox(
                   width: sidebarWidth,
                   child: Scaffold(
-                    appBar: AppBar(
-                      titleSpacing: (ModalRoute.of(context)?.canPop ?? false) ? 0 : 16,
-                      title: Text(
-                        l10n.settingsTitle,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+                    appBar: DesktopSafeAppBar(
+                      child: AppBar(
+                        titleSpacing: (ModalRoute.of(context)?.canPop ?? false) ? 0 : 16,
+                        title: Text(
+                          l10n.settingsTitle,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
                       ),
                     ),
                     body: settingsListView,
@@ -395,11 +398,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
         // ─── MODO MÓVIL (PANTALLA ÚNICA CON NAVEGACIÓN PUSH) ─────────
         return Scaffold(
-          appBar: AppBar(
-            titleSpacing: (ModalRoute.of(context)?.canPop ?? false) ? 0 : 16,
-            title: Text(
-              l10n.settingsTitle,
-              style: const TextStyle(fontWeight: FontWeight.bold),
+          appBar: DesktopSafeAppBar(
+            child: AppBar(
+              titleSpacing: (ModalRoute.of(context)?.canPop ?? false) ? 0 : 16,
+              title: Text(
+                l10n.settingsTitle,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
           ),
           body: settingsListView,

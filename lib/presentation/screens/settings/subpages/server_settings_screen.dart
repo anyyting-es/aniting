@@ -344,7 +344,7 @@ class _ServerSettingsScreenState extends ConsumerState<ServerSettingsScreen> {
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
                   labelText: l10n.port,
-                  hintText: '43211',
+                  hintText: '${AppConstants.defaultPort}',
                   filled: true,
                   fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
                   border: OutlineInputBorder(

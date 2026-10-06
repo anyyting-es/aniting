@@ -36,7 +36,7 @@ class MpvPlayerService {
       _player,
       configuration: VideoControllerConfiguration(
         enableHardwareAcceleration: true,
-        hwdec: 'auto',
+        hwdec: Platform.isLinux ? 'vaapi,vaapi-copy,nvdec,nvdec-copy,auto-safe' : 'auto',
         width: viewportWidth,
         height: viewportHeight,
       ),
@@ -66,8 +66,9 @@ class MpvPlayerService {
         _safeSetProperty('hwdec', 'd3d11va,auto');
         _safeSetProperty('hwdec-codecs', 'all');
       } else {
-        // GNU/Linux: direct VA-API zero-copy
-        _safeSetProperty('hwdec', 'vaapi,auto');
+        // GNU/Linux: prioritize VA-API and NVDEC to prevent mpv from probing unsupported
+        // Vulkan (VK_KHR_video_decode_queue) / CUDA extensions which cause a ~1s freeze.
+        _safeSetProperty('hwdec', 'vaapi,vaapi-copy,nvdec,nvdec-copy,auto-safe');
         _safeSetProperty('hwdec-codecs', 'all');
       }
 
@@ -81,12 +82,17 @@ class MpvPlayerService {
       _safeSetProperty('tone-mapping', 'auto');
       _safeSetProperty('gamut-mapping-mode', 'auto');
       _safeSetProperty('hdr-compute-peak', 'no');
-      _safeSetProperty('video-sync', 'display-resample');
+      if (!Platform.isLinux) {
+        _safeSetProperty('video-sync', 'display-resample');
+      } else {
+        // Linux: display-resample with Flutter EGL texture sharing causes audio resampler stalls and frame drops
+        _safeSetProperty('video-sync', 'audio');
+      }
       _safeSetProperty('interpolation', 'no');
 
       // Demuxer caching: 32MB forward RAM buffer, 10MB rewind RAM buffer, spilling larger cache to SSD
       try {
-        final cacheDir = Directory('${Directory.systemTemp.path}/seanime/mpv_cache');
+        final cacheDir = Directory('${Directory.systemTemp.path}/aniting/mpv_cache');
         if (!cacheDir.existsSync()) {
           cacheDir.createSync(recursive: true);
         }
@@ -407,6 +413,8 @@ class MpvPlayerService {
   }
 
   Future<void> dispose() async {
-    await _player.dispose();
+    try {
+      await _player.dispose();
+    } catch (_) {}
   }
 }

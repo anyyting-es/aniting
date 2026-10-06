@@ -32,7 +32,16 @@ func NewDatabase(appDataDir, dbName string, logger *zerolog.Logger) (*Database, 
 	if os.Getenv("TEST_ENV") == "true" || appDataDir == "" {
 		sqlitePath = ":memory:"
 	} else {
-		sqlitePath = filepath.Join(appDataDir, dbName+".db")
+		targetPath := filepath.Join(appDataDir, dbName+".db")
+		if dbName == "aniting" {
+			oldPath := filepath.Join(appDataDir, "seanime.db")
+			if _, err := os.Stat(targetPath); os.IsNotExist(err) {
+				if _, errOld := os.Stat(oldPath); errOld == nil {
+					_ = os.Rename(oldPath, targetPath)
+				}
+			}
+		}
+		sqlitePath = targetPath
 	}
 
 	// Connect to the SQLite database with optimized settings

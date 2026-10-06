@@ -1076,6 +1076,8 @@ class EnglishTranslations implements AppTranslations {
   String get filterEpisodesHint =>
       'Filter episodes by number or title...';
   @override
+  String get filterByTitle => 'Filter by title...';
+  @override
   String get selectServerQuality => 'Select Server / Quality';
   @override
   String get quality => 'Quality:';

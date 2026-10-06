@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/server/server_manager.dart';
+import 'package:seanime_app/data/models/explore_carousel_config.dart';
+import 'package:seanime_app/data/services/explore_carousel_service.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/screens/search_screen.dart';
 import 'package:seanime_app/presentation/widgets/compact_search_bar.dart';
@@ -13,6 +15,13 @@ class MockServerNotifier extends ServerNotifier {
   @override
   ServerStateModel build() {
     return const ServerStateModel(state: ServerState.stopped);
+  }
+}
+
+class MockExploreCarouselNotifier extends ExploreCarouselNotifier {
+  @override
+  ExploreCarouselConfig build() {
+    return ExploreCarouselNotifier.defaultFallbackConfig;
   }
 }
 
@@ -138,10 +147,16 @@ void main() {
 
   group('Explore Screen Search & Toggle Integration Tests', () {
     testWidgets('starts with icon-only search, expands on tap, and collapses on back', (tester) async {
+      tester.view.physicalSize = const Size(1200, 1400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
             serverNotifierProvider.overrideWith(MockServerNotifier.new),
+            exploreCarouselNotifierProvider.overrideWith(MockExploreCarouselNotifier.new),
           ],
           child: const MaterialApp(
             home: SearchScreen(),

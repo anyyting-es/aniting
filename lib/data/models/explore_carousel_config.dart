@@ -4,6 +4,7 @@ class ExploreFeaturedItem {
   final String? horizontalBackground;
   final String? verticalBackground;
   final String? logo;
+  final String? description;
   final int? year;
   final String? format;
   final double? score;
@@ -15,6 +16,7 @@ class ExploreFeaturedItem {
     this.horizontalBackground,
     this.verticalBackground,
     this.logo,
+    this.description,
     this.year,
     this.format,
     this.score,
@@ -28,6 +30,7 @@ class ExploreFeaturedItem {
       horizontalBackground: json['horizontal_background'] as String? ?? json['horizontalBackground'] as String?,
       verticalBackground: json['vertical_background'] as String? ?? json['verticalBackground'] as String?,
       logo: json['logo'] as String?,
+      description: json['description'] as String?,
       year: json['year'] as int?,
       format: json['format'] as String?,
       score: (json['score'] as num?)?.toDouble(),
@@ -41,6 +44,7 @@ class ExploreFeaturedItem {
     if (horizontalBackground != null) 'horizontal_background': horizontalBackground,
     if (verticalBackground != null) 'vertical_background': verticalBackground,
     if (logo != null) 'logo': logo,
+    if (description != null) 'description': description,
     if (year != null) 'year': year,
     if (format != null) 'format': format,
     if (score != null) 'score': score,

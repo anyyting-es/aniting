@@ -257,8 +257,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     if (entries.isEmpty && !isLoading) return const SizedBox.shrink();
 
     final isDesktop = MediaQuery.of(context).size.width >= 720;
-    final cardWidth = isDesktop ? 145.0 : 125.0;
-    final carouselHeight = isDesktop ? 272.0 : 238.0;
+    final cardWidth = isDesktop ? 180.0 : 135.0;
+    final carouselHeight = isDesktop ? 320.0 : 252.0;
+    final carouselSpacing = isDesktop ? 14.0 : 10.0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -315,18 +316,17 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           const CuratedSectionRowSkeleton(isAnimated: true)
         else
           SizedBox(
-            height: carouselHeight,
+            height: carouselHeight + 16,
             child: ListView.separated(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            scrollDirection: Axis.horizontal,
-            cacheExtent: 150,
-            itemCount: entries.length,
-            separatorBuilder: (context, index) => const SizedBox(width: 10),
-            itemBuilder: (context, index) {
-              final entry = entries[index];
-              return SizedBox(
-                width: cardWidth,
-                child: AnimeCard(
+              clipBehavior: Clip.none,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              scrollDirection: Axis.horizontal,
+              cacheExtent: 350,
+              itemCount: entries.length,
+              separatorBuilder: (context, index) => SizedBox(width: carouselSpacing),
+              itemBuilder: (context, index) {
+                final entry = entries[index];
+                return AnimeCard(
                   entry: entry,
                   width: cardWidth,
                   onTap: () {
@@ -336,11 +336,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       initialEntry: entry,
                     );
                   },
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
-        ),
         const SizedBox(height: 12),
       ],
     );
@@ -358,8 +357,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     if (entries.isEmpty && !isLoading) return const SizedBox.shrink();
 
     final isDesktop = MediaQuery.of(context).size.width >= 720;
-    final cardWidth = isDesktop ? 145.0 : 125.0;
-    final carouselHeight = isDesktop ? 272.0 : 238.0;
+    final cardWidth = isDesktop ? 180.0 : 135.0;
+    final carouselHeight = isDesktop ? 320.0 : 252.0;
+    final carouselSpacing = isDesktop ? 14.0 : 10.0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -416,18 +416,17 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           const CuratedSectionRowSkeleton(isAnimated: true)
         else
           SizedBox(
-            height: carouselHeight,
+            height: carouselHeight + 16,
             child: ListView.separated(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            scrollDirection: Axis.horizontal,
-            cacheExtent: 150,
-            itemCount: entries.length,
-            separatorBuilder: (context, index) => const SizedBox(width: 10),
-            itemBuilder: (context, index) {
-              final entry = entries[index];
-              return SizedBox(
-                width: cardWidth,
-                child: MangaCard(
+              clipBehavior: Clip.none,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              scrollDirection: Axis.horizontal,
+              cacheExtent: 350,
+              itemCount: entries.length,
+              separatorBuilder: (context, index) => SizedBox(width: carouselSpacing),
+              itemBuilder: (context, index) {
+                final entry = entries[index];
+                return MangaCard(
                   entry: entry,
                   width: cardWidth,
                   onTap: () {
@@ -437,11 +436,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       initialEntry: entry,
                     );
                   },
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
-        ),
         const SizedBox(height: 12),
       ],
     );

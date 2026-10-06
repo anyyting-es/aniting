@@ -127,7 +127,7 @@ func (c *Client) initializeClient() error {
 	}
 
 	if settings.TorrentClientPort == 0 {
-		settings.TorrentClientPort = 43213
+		settings.TorrentClientPort = 43313
 	}
 	cfg.ListenPort = settings.TorrentClientPort
 	// Set the download directory

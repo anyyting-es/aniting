@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/theme/custom_route_transitions.dart';
 import 'package:seanime_app/presentation/screens/genre_detail_screen.dart';
+import 'package:seanime_app/presentation/widgets/desktop_title_bar.dart';
 
 class GenreItem {
   final String key;
@@ -208,9 +209,11 @@ class _GenresScreenState extends ConsumerState<GenresScreen> {
     final isDesktop = MediaQuery.of(context).size.width >= 720;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.genresTitle),
-        titleSpacing: 0,
+      appBar: DesktopSafeAppBar(
+        child: AppBar(
+          title: Text(l10n.genresTitle),
+          titleSpacing: 0,
+        ),
       ),
       body: Center(
         child: ConstrainedBox(

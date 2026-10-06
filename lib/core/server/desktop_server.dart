@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:seanime_app/core/constants/app_constants.dart';
 import 'package:seanime_app/core/storage/app_storage_paths.dart';
 
 class DesktopServer {
@@ -12,7 +13,9 @@ class DesktopServer {
 
   String? _findBinary(String? customPath) {
     final isWin = Platform.isWindows;
-    final binaryName = isWin ? 'seanime.exe' : 'seanime';
+    final binaryNames = isWin
+        ? ['aniting.exe', 'aniting-server.exe', 'seanime.exe']
+        : ['aniting', 'aniting-server', 'seanime'];
     final exeDir = Platform.resolvedExecutable.replaceAll(RegExp(r'[^/\\]+$'), '');
 
     final candidatePaths = [
@@ -20,16 +23,13 @@ class DesktopServer {
         customPath,
         if (isWin && !customPath.toLowerCase().endsWith('.exe')) '$customPath.exe',
       ],
-      './backend/$binaryName',
-      './backend/seanime',
-      '${Directory.current.path}/backend/$binaryName',
-      '${Directory.current.path}/backend/seanime',
-      '$exeDir$binaryName',
-      '${exeDir}backend/$binaryName',
-      '${exeDir}seanime',
-      '${exeDir}backend/seanime',
-      './$binaryName',
-      './seanime',
+      for (final bin in binaryNames) ...[
+        './backend/$bin',
+        '${Directory.current.path}/backend/$bin',
+        '$exeDir$bin',
+        '${exeDir}backend/$bin',
+        './$bin',
+      ],
     ];
 
     for (final path in candidatePaths) {
@@ -56,7 +56,7 @@ class DesktopServer {
 
   Future<bool> start({
     String? executablePath,
-    int port = 43211,
+    int port = AppConstants.defaultPort,
     String host = '127.0.0.1',
     String? dataDir,
   }) async {
@@ -95,11 +95,11 @@ class DesktopServer {
       _isRunning = true;
 
       _process!.stdout.transform(utf8.decoder).listen((data) {
-        debugPrint('[Seanime Server]: $data');
+        debugPrint('[Aniting Server]: $data');
       });
 
       _process!.stderr.transform(utf8.decoder).listen((data) {
-        debugPrint('[Seanime Server ERR]: $data');
+        debugPrint('[Aniting Server ERR]: $data');
       });
 
       _process!.exitCode.then((code) {

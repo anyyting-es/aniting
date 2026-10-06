@@ -544,6 +544,7 @@ abstract class AppTranslations {
   String get linkAnimeManually;
   String get reloadEpisodes;
   String get filterEpisodesHint;
+  String get filterByTitle;
   String get selectServerQuality;
   String get quality;
   String get server;

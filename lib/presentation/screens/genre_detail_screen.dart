@@ -8,6 +8,7 @@ import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
 import 'package:seanime_app/presentation/screens/manga_detail_screen.dart';
 import 'package:seanime_app/core/theme/smooth_scroll_controller.dart';
 import 'package:seanime_app/presentation/widgets/anime_card.dart';
+import 'package:seanime_app/presentation/widgets/desktop_title_bar.dart';
 import 'package:seanime_app/presentation/widgets/manga_card.dart';
 
 class GenreDetailScreen extends ConsumerStatefulWidget {
@@ -197,20 +198,22 @@ class _GenreDetailScreenState extends ConsumerState<GenreDetailScreen> {
     ];
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(title),
-        titleSpacing: 0,
-        actions: [
-          IconButton(
-            icon: Icon(
-              _selectedYear != null ? Icons.filter_alt_rounded : Icons.filter_alt_outlined,
-              color: _selectedYear != null ? theme.colorScheme.primary : null,
+      appBar: DesktopSafeAppBar(
+        child: AppBar(
+          title: Text(title),
+          titleSpacing: 0,
+          actions: [
+            IconButton(
+              icon: Icon(
+                _selectedYear != null ? Icons.filter_alt_rounded : Icons.filter_alt_outlined,
+                color: _selectedYear != null ? theme.colorScheme.primary : null,
+              ),
+              tooltip: l10n.filterByYear,
+              onPressed: _showYearFilterDialog,
             ),
-            tooltip: l10n.filterByYear,
-            onPressed: _showYearFilterDialog,
-          ),
-          const SizedBox(width: 8),
-        ],
+            const SizedBox(width: 8),
+          ],
+        ),
       ),
       body: Column(
         children: [

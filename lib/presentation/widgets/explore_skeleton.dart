@@ -291,17 +291,18 @@ class _CuratedSectionRowBody extends StatelessWidget {
     final color = theme.colorScheme.surfaceContainerHighest;
     final borderRadius = BorderRadius.circular(10);
     final isDesktop = MediaQuery.of(context).size.width >= 720;
-    final cardWidth = isDesktop ? 145.0 : 125.0;
-    final carouselHeight = isDesktop ? 272.0 : 238.0;
+    final cardWidth = isDesktop ? 180.0 : 135.0;
+    final carouselHeight = isDesktop ? 320.0 : 252.0;
+    final carouselSpacing = isDesktop ? 14.0 : 10.0;
 
     return SizedBox(
-      height: carouselHeight,
+      height: carouselHeight + 16,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         physics: const NeverScrollableScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         itemCount: 5,
-        separatorBuilder: (context, index) => const SizedBox(width: 12),
+        separatorBuilder: (context, index) => SizedBox(width: carouselSpacing),
         itemBuilder: (context, index) {
           return Container(
             width: cardWidth,

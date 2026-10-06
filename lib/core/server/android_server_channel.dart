@@ -1,13 +1,14 @@
 import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
+import 'package:seanime_app/core/constants/app_constants.dart';
 
 class AndroidServerChannel {
   static const MethodChannel _channel = MethodChannel('com.anyyting.aniting/server');
 
   static bool get isSupported => Platform.isAndroid;
 
-  Future<Map<String, dynamic>?> startServer({int port = 43211, String host = '127.0.0.1'}) async {
+  Future<Map<String, dynamic>?> startServer({int port = AppConstants.defaultPort, String host = '127.0.0.1'}) async {
     if (!isSupported) return null;
     try {
       final result = await _channel.invokeMethod<Map<dynamic, dynamic>>('startServer', {

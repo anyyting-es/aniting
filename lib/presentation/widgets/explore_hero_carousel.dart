@@ -5,15 +5,23 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
+import 'package:seanime_app/core/preferences/desktop_nav_style_provider.dart';
 import 'package:seanime_app/core/preferences/title_language_provider.dart';
+import 'package:seanime_app/data/models/anime_details.dart';
 import 'package:seanime_app/data/models/anime_entry.dart';
 import 'package:seanime_app/data/models/explore_carousel_config.dart';
 import 'package:seanime_app/data/models/manga_entry.dart';
 import 'package:seanime_app/data/services/explore_carousel_service.dart' show optimizeTmdbImageUrl;
+import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
 import 'package:seanime_app/presentation/screens/manga_detail_screen.dart';
 
 bool get _isInTest => !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST');
+
+final animeDetailsFamilyProvider = FutureProvider.family<AnimeDetails?, int>((ref, mediaId) async {
+  if (mediaId <= 0) return null;
+  return ref.watch(repositoryProvider).getAnimeDetails(mediaId).catchError((_) => null);
+});
 
 class ExploreCarouselItem {
   final int mediaId;
@@ -23,6 +31,7 @@ class ExploreCarouselItem {
   final String? horizontalBackground;
   final String? verticalBackground;
   final String? logoImage;
+  final String? description;
   final String? format;
   final double? score;
   final int? year;
@@ -37,6 +46,7 @@ class ExploreCarouselItem {
     this.horizontalBackground,
     this.verticalBackground,
     this.logoImage,
+    this.description,
     this.format,
     this.score,
     this.year,
@@ -54,6 +64,7 @@ class ExploreCarouselItem {
       horizontalBackground: item.horizontalBackground,
       verticalBackground: item.verticalBackground,
       logoImage: item.logo,
+      description: item.description,
       format: item.format,
       score: item.score,
       year: item.year,
@@ -83,6 +94,7 @@ class ExploreCarouselItem {
       title: anime.displayTitle(titleLang),
       bannerImage: anime.bannerImage,
       coverImage: anime.coverImage,
+      description: anime.description,
       format: anime.format,
       score: anime.score,
       year: year,
@@ -107,6 +119,7 @@ class ExploreCarouselItem {
       title: manga.displayTitle(titleLang),
       bannerImage: manga.bannerImage,
       coverImage: manga.coverImage,
+      description: manga.description,
       format: manga.format,
       score: manga.score,
       year: manga.year,
@@ -212,6 +225,8 @@ class _ExploreHeroCarouselState extends ConsumerState<ExploreHeroCarousel> {
     }
 
     final isDesktop = MediaQuery.of(context).size.width >= 720;
+    final desktopNavStyle = ref.watch(desktopNavStyleProvider);
+    final isSidebarMode = isDesktop && desktopNavStyle == DesktopNavStyle.sidebar;
     final screenHeight = MediaQuery.of(context).size.height;
     final topPadding = MediaQuery.of(context).padding.top;
     // Generous, expansive cinematic height:
@@ -295,6 +310,7 @@ class _ExploreHeroCarouselState extends ConsumerState<ExploreHeroCarousel> {
                                 theme: theme,
                                 l10n: l10n,
                                 isDesktop: isDesktop,
+                                isSidebarMode: isSidebarMode,
                               ),
                             ),
                           );
@@ -442,11 +458,12 @@ class _ExploreHeroCarouselState extends ConsumerState<ExploreHeroCarousel> {
   }
 }
 
-class _HeroBannerSlide extends StatelessWidget {
+class _HeroBannerSlide extends ConsumerWidget {
   final ExploreCarouselItem item;
   final ThemeData theme;
   final AppTranslations l10n;
   final bool isDesktop;
+  final bool isSidebarMode;
 
   const _HeroBannerSlide({
     super.key,
@@ -454,10 +471,25 @@ class _HeroBannerSlide extends StatelessWidget {
     required this.theme,
     required this.l10n,
     required this.isDesktop,
+    this.isSidebarMode = false,
   });
 
+  String _cleanHtml(String? html) {
+    if (html == null) return '';
+    return html
+        .replaceAll(RegExp(r'<br\s*/?>'), ' ')
+        .replaceAll(RegExp(r'</?i>'), '')
+        .replaceAll(RegExp(r'</?b>'), '')
+        .replaceAll(RegExp(r'</?p>'), ' ')
+        .replaceAll(RegExp(r'&quot;'), '"')
+        .replaceAll(RegExp(r'&amp;'), '&')
+        .replaceAll(RegExp(r'&#039;'), "'")
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final bgColor = theme.scaffoldBackgroundColor;
     final topPadding = MediaQuery.of(context).padding.top;
 
@@ -484,6 +516,13 @@ class _HeroBannerSlide extends StatelessWidget {
     final hasLogo = item.logoImage != null && item.logoImage!.isNotEmpty;
     // Generous bottom shadow height (smooth cubic feather into page background)
     final bottomShadowHeight = isDesktop ? 320.0 : 230.0;
+
+    String? rawDesc = item.description;
+    if ((rawDesc == null || rawDesc.isEmpty) && isSidebarMode && !_isInTest) {
+      final detailsAsync = ref.watch(animeDetailsFamilyProvider(item.mediaId));
+      rawDesc = detailsAsync.asData?.value?.description;
+    }
+    final description = _cleanHtml(rawDesc);
 
     return ClipRect(
       child: Material(
@@ -541,6 +580,7 @@ class _HeroBannerSlide extends StatelessWidget {
               ),
 
               // 2b. Desktop Horizontal Vignette Scrim (Left-to-Right contrast protection for logo & text, preserving art vibrance)
+              // In sidebar mode, seamlessly blends into the sidebar background color with progressive alpha stops
               if (isDesktop)
                 Positioned.fill(
                   child: IgnorePointer(
@@ -549,13 +589,24 @@ class _HeroBannerSlide extends StatelessWidget {
                         gradient: LinearGradient(
                           begin: Alignment.centerLeft,
                           end: Alignment.centerRight,
-                          stops: const [0.0, 0.30, 0.65, 1.0],
-                          colors: [
-                            Colors.black.withValues(alpha: 0.65),
-                            Colors.black.withValues(alpha: 0.30),
-                            Colors.black.withValues(alpha: 0.05),
-                            Colors.transparent,
-                          ],
+                          stops: isSidebarMode
+                              ? const [0.0, 0.22, 0.44, 0.68, 0.88, 1.0]
+                              : const [0.0, 0.30, 0.65, 1.0],
+                          colors: isSidebarMode
+                              ? [
+                                  bgColor,
+                                  bgColor.withValues(alpha: 0.94),
+                                  bgColor.withValues(alpha: 0.74),
+                                  bgColor.withValues(alpha: 0.38),
+                                  bgColor.withValues(alpha: 0.10),
+                                  Colors.transparent,
+                                ]
+                              : [
+                                  Colors.black.withValues(alpha: 0.65),
+                                  Colors.black.withValues(alpha: 0.30),
+                                  Colors.black.withValues(alpha: 0.05),
+                                  Colors.transparent,
+                                ],
                         ),
                       ),
                     ),
@@ -600,9 +651,9 @@ class _HeroBannerSlide extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Padding(
-                    padding: EdgeInsets.only(bottom: isDesktop ? 12 : 8),
+                    padding: EdgeInsets.only(bottom: isDesktop ? 10 : 8),
                     child: SizedBox(
-                      height: isDesktop ? 120 : 65,
+                      height: isDesktop ? (isSidebarMode ? 100 : 120) : 65,
                       child: Align(
                         alignment: Alignment.bottomLeft,
                         child: hasLogo
@@ -620,6 +671,35 @@ class _HeroBannerSlide extends StatelessWidget {
                       ),
                     ),
                   ),
+
+                  // Description under logo/title in desktop sidebar mode
+                  if (isSidebarMode && description.isNotEmpty) ...[
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: (MediaQuery.of(context).size.width * 0.45).clamp(380.0, 560.0),
+                      ),
+                      child: Text(
+                        description,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.90),
+                          fontSize: 13.5,
+                          height: 1.45,
+                          letterSpacing: -0.1,
+                          fontWeight: FontWeight.w400,
+                          shadows: const [
+                            Shadow(
+                              offset: Offset(0, 1),
+                              blurRadius: 4,
+                              color: Colors.black87,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     physics: const BouncingScrollPhysics(),

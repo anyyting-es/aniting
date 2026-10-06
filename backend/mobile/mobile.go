@@ -17,6 +17,8 @@ func StartServer(dataDir string, cacheDir string, port int) {
 			}
 		}()
 
+		_ = os.Setenv("ANITING_DATA_DIR", dataDir)
+		_ = os.Setenv("ANITING_WORKING_DIR", dataDir)
 		_ = os.Setenv("SEANIME_DATA_DIR", dataDir)
 		_ = os.Setenv("SEANIME_WORKING_DIR", dataDir)
 

@@ -336,3 +336,39 @@ class DesktopWindowFrame extends StatelessWidget {
     return frame;
   }
 }
+
+/// A preferred-size wrapper that adds top padding equivalent to [DesktopTitleBar.height]
+/// on desktop platforms (Windows, Linux, macOS) so that standard [AppBar] content
+/// (such as back buttons, titles, and actions) is not obstructed by the custom titlebar.
+class DesktopSafeAppBar extends StatelessWidget implements PreferredSizeWidget {
+  final PreferredSizeWidget child;
+  final Color? backgroundColor;
+
+  const DesktopSafeAppBar({
+    super.key,
+    required this.child,
+    this.backgroundColor,
+  });
+
+  @override
+  Size get preferredSize {
+    final extra = DesktopWindowFrame.isDesktopPlatform ? DesktopTitleBar.height : 0.0;
+    return Size.fromHeight(child.preferredSize.height + extra);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!DesktopWindowFrame.isDesktopPlatform) {
+      return child;
+    }
+    final theme = Theme.of(context);
+    final bgColor = backgroundColor ??
+        theme.appBarTheme.backgroundColor ??
+        theme.scaffoldBackgroundColor;
+    return Container(
+      color: bgColor,
+      padding: const EdgeInsets.only(top: DesktopTitleBar.height),
+      child: child,
+    );
+  }
+}

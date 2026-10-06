@@ -1,5 +1,6 @@
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:seanime_app/presentation/widgets/desktop_title_bar.dart';
 
 /// Scaffold envolvente para subpantallas de ajustes con soporte adaptativo y cabecera colapsable fluida
 class PixelSubpageScaffold extends StatelessWidget {
@@ -17,7 +18,8 @@ class PixelSubpageScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final topPadding = MediaQuery.paddingOf(context).top;
+    final extraDesktopTop = DesktopWindowFrame.isDesktopPlatform ? DesktopTitleBar.height : 0.0;
+    final topPadding = MediaQuery.paddingOf(context).top + extraDesktopTop;
 
     // En pantallas grandes (PC / Tablet): centrado compacto sin estiramiento exagerado
     if (isEmbedded) {
@@ -195,7 +197,9 @@ class PixelPageHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final topPadding = showBackButton ? MediaQuery.paddingOf(context).top : 0.0;
+    final extraDesktopTop = DesktopWindowFrame.isDesktopPlatform ? DesktopTitleBar.height : 0.0;
+    final topPadding = (showBackButton ? MediaQuery.paddingOf(context).top : 0.0) +
+        (showBackButton ? extraDesktopTop : 0.0);
 
     return Padding(
       padding: EdgeInsets.only(top: topPadding + 8, bottom: 16),

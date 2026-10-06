@@ -4,7 +4,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/data/models/extension_item.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
+import 'package:seanime_app/presentation/widgets/desktop_title_bar.dart';
 import 'package:seanime_app/presentation/widgets/extensions/extension_code_modal.dart';
+import 'package:seanime_app/presentation/widgets/extensions/extensions_desktop_layout.dart';
 import 'package:seanime_app/presentation/widgets/extensions/installed_tab_view.dart';
 import 'package:seanime_app/presentation/widgets/extensions/marketplace_tab_view.dart';
 import 'package:seanime_app/presentation/widgets/extensions/repo_config_dialog.dart';
@@ -291,16 +293,43 @@ class _ExtensionsMarketplaceScreenState extends ConsumerState<ExtensionsMarketpl
     final theme = Theme.of(context);
     final l10n = ref.watch(translationsProvider);
     final installedIds = _installedExtensions.map((e) => e.id.toLowerCase()).toSet();
+    final isDesktop = MediaQuery.of(context).size.width >= 720;
+
+    if (isDesktop) {
+      return ExtensionsDesktopLayout(
+        installedExtensions: _installedExtensions,
+        marketplaceExtensions: _marketplaceExtensions,
+        installedIds: installedIds,
+        installingExtensionId: _installingExtensionId,
+        isLoadingInstalled: _isLoadingInstalled,
+        isLoadingMarketplace: _isLoadingMarketplace,
+        isCheckingUpdates: _isCheckingUpdates,
+        installedError: _installedError,
+        marketplaceError: _marketplaceError,
+        currentRepoUrl: _currentRepoUrl,
+        onRetryInstalled: _loadInstalledExtensions,
+        onCheckForUpdates: _checkForUpdates,
+        onReloadAll: _reloadAllExtensions,
+        onToggle: _toggleExtension,
+        onUninstall: _uninstallExtension,
+        onUpdate: _updateExtension,
+        onShowCode: _showExtensionCodeModal,
+        onRefreshMarketplace: _loadMarketplaceExtensions,
+        onChangeRepo: _showChangeRepoDialog,
+        onInstall: _installExtension,
+      );
+    }
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        titleSpacing: 0,
-        title: Text(l10n.extensionsTitle),
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorSize: TabBarIndicatorSize.tab,
-          tabs: [
+      appBar: DesktopSafeAppBar(
+        child: AppBar(
+          titleSpacing: 0,
+          title: Text(l10n.extensionsTitle),
+          bottom: TabBar(
+            controller: _tabController,
+            indicatorSize: TabBarIndicatorSize.tab,
+            tabs: [
             Tab(
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -324,7 +353,8 @@ class _ExtensionsMarketplaceScreenState extends ConsumerState<ExtensionsMarketpl
           ],
         ),
       ),
-      body: TabBarView(
+    ),
+    body: TabBarView(
         controller: _tabController,
         physics: const ClampingScrollPhysics(),
         children: [

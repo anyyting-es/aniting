@@ -101,8 +101,17 @@ class ServerNotifier extends Notifier<ServerStateModel> {
     // 0. Si el usuario guardó un servidor remoto previamente, intentar conectar primero
     try {
       final prefs = await SharedPreferences.getInstance();
-      final savedHost = prefs.getString(AppConstants.keyServerHost);
-      final savedPort = prefs.getInt(AppConstants.keyServerPort);
+      final legacyPort = prefs.getInt('seanime_server_port');
+      if (legacyPort == 43211) {
+        await prefs.remove('seanime_server_port');
+      }
+      final legacyHost = prefs.getString('seanime_server_host');
+      if (legacyHost == '127.0.0.1' || legacyHost == 'localhost') {
+        await prefs.remove('seanime_server_host');
+      }
+
+      final savedHost = prefs.getString(AppConstants.keyServerHost) ?? prefs.getString('seanime_server_host');
+      final savedPort = prefs.getInt(AppConstants.keyServerPort) ?? prefs.getInt('seanime_server_port');
       final isSavedRemote = savedHost != null &&
           savedHost.isNotEmpty &&
           savedHost != '127.0.0.1' &&

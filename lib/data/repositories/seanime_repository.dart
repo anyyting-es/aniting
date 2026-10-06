@@ -24,6 +24,10 @@ import 'package:seanime_app/data/services/offline_library_service.dart';
 class SeanimeRepository {
   final ApiClient _apiClient;
   final Map<int, AniZipData> _aniZipCache = {};
+  final Map<int, AnimeDetails> _animeDetailsCache = {};
+  List<OnlinestreamProvider>? _onlinestreamProvidersCache;
+  final Map<String, List<OnlinestreamEpisode>> _onlinestreamEpisodesCache = {};
+  final Map<int, MangaEntry> _mangaDetailsCache = {};
   final Dio _externalDio = Dio(
     BaseOptions(
       connectTimeout: const Duration(seconds: 10),
@@ -38,6 +42,18 @@ class SeanimeRepository {
   static const String _kLocalWatchHistoryKey = 'pref_local_watch_history';
 
   SeanimeRepository(this._apiClient);
+
+  AnimeDetails? getCachedAnimeDetails(int mediaId) => _animeDetailsCache[mediaId];
+  AniZipData? getCachedAniZipData(int mediaId) =>
+      _aniZipCache[mediaId] ?? FeedCacheService.instance.getAniZipData(mediaId);
+  List<OnlinestreamProvider>? getCachedOnlinestreamProviders() => _onlinestreamProvidersCache;
+  List<OnlinestreamEpisode>? getCachedOnlinestreamEpisodes({
+    required int mediaId,
+    required String provider,
+    bool dubbed = false,
+  }) =>
+      _onlinestreamEpisodesCache['${mediaId}_${provider}_$dubbed'];
+  MangaEntry? getCachedMangaDetails(int mediaId) => _mangaDetailsCache[mediaId];
 
   Future<Map<int, int>> getLocalWatchHistory() async {
     try {
@@ -1161,6 +1177,7 @@ class SeanimeRepository {
           );
         }
 
+        _animeDetailsCache[mediaId] = details;
         return details;
       }
     } catch (e) {
@@ -2003,6 +2020,9 @@ class SeanimeRepository {
   // ================= Online Streaming =================
 
   Future<List<OnlinestreamProvider>> getOnlinestreamProviders() async {
+    if (_onlinestreamProvidersCache != null && _onlinestreamProvidersCache!.isNotEmpty) {
+      return _onlinestreamProvidersCache!;
+    }
     try {
       final response = await _apiClient.get(ApiEndpoints.listOnlinestreamProviders);
       if (response.statusCode == 200 && response.data != null) {
@@ -2014,10 +2034,12 @@ class SeanimeRepository {
           list = data;
         }
         if (list != null && list.isNotEmpty) {
-          return list
+          final res = list
               .whereType<Map<String, dynamic>>()
               .map(OnlinestreamProvider.fromJson)
               .toList();
+          _onlinestreamProvidersCache = res;
+          return res;
         }
       }
     } catch (e) {
@@ -2036,10 +2058,13 @@ class SeanimeRepository {
                 supportsDub: true,
               ))
           .toList();
+      if (onlinestreamExts.isNotEmpty) {
+        _onlinestreamProvidersCache = onlinestreamExts;
+      }
       return onlinestreamExts;
     } catch (_) {}
 
-    return [];
+    return _onlinestreamProvidersCache ?? [];
   }
 
   Future<bool> ensureOnlineStreamingEnabled() async {
@@ -2100,10 +2125,10 @@ class SeanimeRepository {
         final updatedSettings = Map<String, dynamic>.from(settings);
         updatedSettings['enabled'] = true;
         if (updatedSettings['torrentClientPort'] == null || updatedSettings['torrentClientPort'] == 0) {
-          updatedSettings['torrentClientPort'] = 43213;
+          updatedSettings['torrentClientPort'] = 43313;
         }
         if (updatedSettings['streamingServerPort'] == null || updatedSettings['streamingServerPort'] == 0) {
-          updatedSettings['streamingServerPort'] = 43214;
+          updatedSettings['streamingServerPort'] = 43314;
         }
         if (updatedSettings['streamingServerHost'] == null || (updatedSettings['streamingServerHost'] as String).isEmpty) {
           updatedSettings['streamingServerHost'] = '127.0.0.1';
@@ -2131,9 +2156,9 @@ class SeanimeRepository {
             'downloadDir': '',
             'addToLibrary': false,
             'torrentClientHost': '',
-            'torrentClientPort': 43213,
+            'torrentClientPort': 43313,
             'streamingServerHost': '127.0.0.1',
-            'streamingServerPort': 43214,
+            'streamingServerPort': 43314,
             'includeInLibrary': false,
             'streamUrlAddress': '',
             'slowSeeding': false,
@@ -2198,6 +2223,12 @@ class SeanimeRepository {
     required String provider,
     bool dubbed = false,
   }) async {
+    final cacheKey = '${mediaId}_${provider}_$dubbed';
+    if (_onlinestreamEpisodesCache.containsKey(cacheKey) &&
+        _onlinestreamEpisodesCache[cacheKey]!.isNotEmpty) {
+      return _onlinestreamEpisodesCache[cacheKey]!;
+    }
+
     Future<List<OnlinestreamEpisode>?> doFetch() async {
       final response = await _apiClient.post(
         ApiEndpoints.onlinestreamEpisodeList,
@@ -2229,7 +2260,10 @@ class SeanimeRepository {
 
     try {
       final res = await doFetch();
-      if (res != null) return res;
+      if (res != null) {
+        _onlinestreamEpisodesCache[cacheKey] = res;
+        return res;
+      }
     } catch (e) {
       debugPrint('Error fetching onlinestream episodes for $mediaId ($provider): $e');
       final isSettingsErr = e.toString().toLowerCase().contains('setting') ||
@@ -2242,7 +2276,10 @@ class SeanimeRepository {
         await ensureOnlineStreamingEnabled();
         try {
           final retryRes = await doFetch();
-          if (retryRes != null) return retryRes;
+          if (retryRes != null) {
+            _onlinestreamEpisodesCache[cacheKey] = retryRes;
+            return retryRes;
+          }
         } catch (retryErr) {
           debugPrint('Retry fetching onlinestream episodes failed: $retryErr');
         }
@@ -2398,6 +2435,7 @@ class SeanimeRepository {
   }
 
   Future<bool> emptyOnlinestreamCache(int mediaId) async {
+    _onlinestreamEpisodesCache.removeWhere((k, _) => k.startsWith('${mediaId}_'));
     try {
       final response = await _apiClient.delete(
         ApiEndpoints.onlinestreamCache,
@@ -3127,6 +3165,9 @@ class SeanimeRepository {
   }
 
   Future<MangaEntry?> getMangaDetails(int mediaId, {MangaEntry? initialEntry}) async {
+    if (_mangaDetailsCache.containsKey(mediaId)) {
+      return _mangaDetailsCache[mediaId]!;
+    }
     try {
       final results = await Future.wait([
         _apiClient.get('${ApiEndpoints.mangaEntry}/$mediaId').then<dynamic>((r) => r).catchError((_) => null),
@@ -3155,12 +3196,16 @@ class SeanimeRepository {
       if (entryData != null) {
         final entry = MangaEntry.fromJson(entryData);
         final raw = detailsData ?? entry.rawMedia;
-        return entry.copyWith(
+        final res = entry.copyWith(
           description: entry.description ?? (detailsData?['description'] as String?),
           rawMedia: raw,
         );
+        _mangaDetailsCache[mediaId] = res;
+        return res;
       } else if (detailsData != null) {
-        return MangaEntry.fromJson(detailsData).copyWith(rawMedia: detailsData);
+        final res = MangaEntry.fromJson(detailsData).copyWith(rawMedia: detailsData);
+        _mangaDetailsCache[mediaId] = res;
+        return res;
       }
     } catch (e) {
       debugPrint('Error fetching manga details: $e');
@@ -3252,6 +3297,7 @@ class SeanimeRepository {
   }
 
   Future<bool> emptyMangaCache(int mediaId) async {
+    _mangaDetailsCache.remove(mediaId);
     try {
       final response = await _apiClient.delete(
         ApiEndpoints.mangaCache,

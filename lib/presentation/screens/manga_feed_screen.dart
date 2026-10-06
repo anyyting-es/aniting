@@ -147,8 +147,8 @@ class _MangaFeedScreenState extends ConsumerState<MangaFeedScreen> {
     final hasAnyMangaContent = hasContinueReading || hasCompleted || hasReading || hasMangaRecs || hasDownloadedManga;
 
     final isDesktop = MediaQuery.of(context).size.width >= 720;
-    final mangaCardWidth = isDesktop ? 180.0 : 125.0;
-    final carouselHeight = isDesktop ? 320.0 : 238.0;
+    final mangaCardWidth = isDesktop ? 180.0 : 135.0;
+    final carouselHeight = isDesktop ? 320.0 : 252.0;
     final carouselSpacing = isDesktop ? 14.0 : 10.0;
     final topPadding = MediaQuery.of(context).padding.top;
 

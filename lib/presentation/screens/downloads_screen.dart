@@ -15,6 +15,7 @@ import 'package:seanime_app/presentation/screens/settings/widgets/pixel_settings
 import 'package:seanime_app/presentation/screens/settings/widgets/pixel_subpage_scaffold.dart';
 import 'package:seanime_app/core/storage/app_storage_paths.dart';
 import 'package:seanime_app/presentation/widgets/anime_card.dart';
+import 'package:seanime_app/presentation/widgets/downloads/downloads_desktop_layout.dart';
 import 'package:seanime_app/presentation/widgets/manga_card.dart';
 
 class DownloadsScreen extends ConsumerStatefulWidget {
@@ -205,6 +206,15 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDesktop = MediaQuery.of(context).size.width >= 720;
+    if (isDesktop && !widget.isEmbedded) {
+      return DownloadsDesktopLayout(
+        initialTabIndex: widget.initialTabIndex,
+        onDeleteAnime: _showDeleteAnimeDialog,
+        onDeleteManga: _showDeleteMangaDialog,
+      );
+    }
+
     final l10n = ref.watch(translationsProvider);
     final iconPack = ref.watch(iconPackProvider);
     final theme = Theme.of(context);

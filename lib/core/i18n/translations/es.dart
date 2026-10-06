@@ -1080,6 +1080,8 @@ class SpanishTranslations implements AppTranslations {
   String get filterEpisodesHint =>
       'Filtrar episodios por número o título...';
   @override
+  String get filterByTitle => 'Filtrar por título...';
+  @override
   String get selectServerQuality => 'Seleccionar Servidor / Calidad';
   @override
   String get quality => 'Calidad:';
