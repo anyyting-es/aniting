@@ -20,7 +20,7 @@ class DesktopCharactersTab extends ConsumerWidget {
     if (isLoading && characters.isEmpty) {
       return LayoutBuilder(
         builder: (context, constraints) {
-          final crossAxisCount = (constraints.maxWidth / 150).floor().clamp(2, 6);
+          final crossAxisCount = (constraints.maxWidth / 150).floor().clamp(2, 10);
           return GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -62,7 +62,7 @@ class DesktopCharactersTab extends ConsumerWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = (constraints.maxWidth / 150).floor().clamp(2, 6);
+        final crossAxisCount = (constraints.maxWidth / 150).floor().clamp(2, 10);
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),

@@ -49,6 +49,7 @@ dependencies:
   lucide_icons_flutter: ^3.1.20
   path_provider: ^2.1.2
   window_manager: ^0.5.2
+  g1455: ^0.1.4
 dev_dependencies:
   flutter_test:
     sdk: flutter

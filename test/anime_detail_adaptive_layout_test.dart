@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/api/api_client.dart';
 import 'package:seanime_app/core/preferences/layout_mode_provider.dart';
 import 'package:seanime_app/core/server/server_manager.dart';
@@ -15,6 +16,7 @@ import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
 import 'package:seanime_app/presentation/widgets/anime_detail/anime_detail_desktop_layout.dart';
 import 'package:seanime_app/presentation/widgets/anime_detail/anime_detail_mobile_layout.dart';
 import 'package:seanime_app/presentation/widgets/anime_detail/anime_detail_tv_layout.dart';
+import 'package:seanime_app/presentation/widgets/anime_detail/desktop/desktop_episodes_tab.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class FakeDetailRepo extends SeanimeRepository {
@@ -119,7 +121,7 @@ void main() {
   group('Adaptive AnimeDetail Layout Tests', () {
     testWidgets('Renders Desktop Layout on wide screen with dual columns, trailer button, and tabs',
         (WidgetTester tester) async {
-      tester.view.physicalSize = const Size(1280, 800);
+      tester.view.physicalSize = const Size(1440, 5500);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() {
         tester.view.resetPhysicalSize();
@@ -132,6 +134,7 @@ void main() {
             repositoryProvider.overrideWithValue(FakeDetailRepo()),
             serverNotifierProvider.overrideWith(() => MockServerNotifier()),
             layoutModeProvider.overrideWith(() => MockDesktopLayoutModeNotifier()),
+            translationsProvider.overrideWithValue(const EnglishTranslations()),
           ],
           child: const MaterialApp(
             home: AnimeDetailScreen(mediaId: 170000),
@@ -140,16 +143,14 @@ void main() {
       );
 
       await tester.pump(const Duration(milliseconds: 100));
+      await tester.pump(const Duration(milliseconds: 200));
 
       // Check Desktop layout is rendered
       expect(find.byType(AnimeDetailDesktopLayout), findsOneWidget);
 
-      // Check Left Column elements
-      expect(find.text('Format'), findsOneWidget);
-      expect(find.text('TV Show'), findsOneWidget);
-      expect(find.text('Status'), findsOneWidget);
-      expect(find.text('FINISHED'), findsOneWidget);
-      expect(find.text('Average score'), findsOneWidget);
+      // Check Desktop Header metadata badges
+      expect(find.text('TV'), findsOneWidget);
+      expect(find.text('Finished'), findsOneWidget);
       expect(find.text('85%'), findsOneWidget);
 
       // Check Right Column elements
@@ -159,29 +160,20 @@ void main() {
       expect(find.text('Ecchi'), findsOneWidget);
 
       // Check Action bar brand icons
-      expect(find.byTooltip('Ver en AniList'), findsOneWidget);
-      expect(find.byTooltip('Ver en MyAnimeList'), findsOneWidget);
+      expect(find.byTooltip('View on AniList'), findsOneWidget);
+      expect(find.byTooltip('View on MyAnimeList'), findsOneWidget);
 
-      // Check Desktop Tabs
-      expect(find.text('Episodes'), findsOneWidget);
-      expect(find.text('Characters'), findsOneWidget);
-      expect(find.text('Related'), findsOneWidget);
-      expect(find.text('More like this'), findsOneWidget);
+      // Check Desktop Sections (Episodes title removed per UI design)
+      const en = EnglishTranslations();
+      expect(find.byType(DesktopEpisodesTab), findsOneWidget);
+      expect(find.text(en.relations), findsOneWidget);
+      expect(find.text(en.recommendations), findsOneWidget);
+      expect(find.text(en.characters), findsOneWidget);
 
-      // Switch to Characters tab
-      await tester.tap(find.text('Characters'));
-      await tester.pump(const Duration(milliseconds: 100));
-      expect(find.text('Rudeus Greyrat'), findsOneWidget);
-
-      // Switch to Related tab
-      await tester.tap(find.text('Related'));
-      await tester.pump(const Duration(milliseconds: 100));
-      expect(find.text('Mushoku Tensei Season 2'), findsOneWidget);
-
-      // Switch to More like this tab
-      await tester.tap(find.text('More like this'));
-      await tester.pump(const Duration(milliseconds: 100));
-      expect(find.text('Frieren'), findsOneWidget);
+      // Verify sections content in vertical flow
+      expect(find.text('Mushoku Tensei Season 2', skipOffstage: false), findsOneWidget);
+      expect(find.text('Frieren', skipOffstage: false), findsOneWidget);
+      expect(find.text('Rudeus Greyrat', skipOffstage: false), findsOneWidget);
     });
 
     testWidgets('Renders TV Layout when LayoutMode.tv is active', (WidgetTester tester) async {
@@ -209,7 +201,7 @@ void main() {
 
       // Check TV layout is rendered
       expect(find.byType(AnimeDetailTvLayout), findsOneWidget);
-      expect(find.text('Empezar a ver'), findsOneWidget);
+      expect(find.text('Comenzar a ver'), findsOneWidget);
       expect(find.text('Detalles'), findsOneWidget);
     });
 

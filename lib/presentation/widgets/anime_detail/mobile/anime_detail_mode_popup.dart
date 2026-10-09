@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:g1455/g1455.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
 
-/// Compact Material Design Expressive popup for switching playback modes
-/// (Online Streaming, Torrent Swarm, Local Library) with a spring/bounce animation.
+/// Modal popup moderno con vidrio líquido de `g1455` (GlassCard) para cambiar modos de reproducción
+/// (Online Streaming, Torrent Swarm, Local Library) con animación de resorte.
 class AnimeDetailModePopup extends ConsumerWidget {
   final AnimeDetailTab currentTab;
   final bool isLocalMode;
@@ -67,132 +68,136 @@ class AnimeDetailModePopup extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ref.watch(translationsProvider);
     final theme = Theme.of(context);
-    final dialogBg = theme.colorScheme.surfaceContainerHigh;
     final isTorrent = !isLocalMode && currentTab == AnimeDetailTab.torrent;
     final isOnline = !isLocalMode && currentTab == AnimeDetailTab.online;
 
     return Center(
       child: Material(
         color: Colors.transparent,
-        child: Container(
-          width: 290,
-          margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-          decoration: BoxDecoration(
-            color: dialogBg,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+          child: GlassCard(
+            padding: EdgeInsets.zero,
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
-              width: 1.0,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.40),
-                blurRadius: 28,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Header
-              Padding(
-                padding: const EdgeInsets.fromLTRB(18, 16, 10, 10),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primaryContainer,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(
-                        Icons.swap_horiz_rounded,
-                        size: 18,
-                        color: theme.colorScheme.primary,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        l10n.playbackMode,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14.5,
-                          letterSpacing: -0.2,
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      visualDensity: VisualDensity.compact,
-                      icon: const Icon(Icons.close_rounded, size: 18),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ],
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: Container(
+                width: 310,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
+                    width: 0.8,
+                  ),
                 ),
-              ),
-
-              const Divider(height: 1, thickness: 0.8),
-
-              // Options
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    _buildModeTile(
-                      context: context,
-                      theme: theme,
-                      label: l10n.onlineStreaming,
-                      subtitle: l10n.communityServers,
-                      icon: Icons.public_rounded,
-                      color: theme.colorScheme.primary,
-                      isSelected: isOnline,
-                      onTap: () {
-                        HapticFeedback.lightImpact();
-                        Navigator.pop(context);
-                        if (isLocalMode) onToggleLocalMode();
-                        onTabChanged(AnimeDetailTab.online);
-                      },
-                    ),
-                    const SizedBox(height: 4),
-                    _buildModeTile(
-                      context: context,
-                      theme: theme,
-                      label: l10n.torrentStreaming,
-                      subtitle: l10n.torrentP2p,
-                      icon: Icons.cloud_download_rounded,
-                      color: theme.colorScheme.secondary,
-                      isSelected: isTorrent,
-                      onTap: () {
-                        HapticFeedback.lightImpact();
-                        Navigator.pop(context);
-                        if (isLocalMode) onToggleLocalMode();
-                        onTabChanged(AnimeDetailTab.torrent);
-                      },
-                    ),
-                    if (hasLocalFiles) ...[
-                      const SizedBox(height: 4),
-                      _buildModeTile(
-                        context: context,
-                        theme: theme,
-                        label: l10n.localLibrary,
-                        subtitle: l10n.downloadedLibrary,
-                        icon: Icons.folder_rounded,
-                        color: theme.colorScheme.tertiary,
-                        isSelected: isLocalMode,
-                        onTap: () {
-                          HapticFeedback.lightImpact();
-                          Navigator.pop(context);
-                          if (!isLocalMode) onToggleLocalMode();
-                        },
+                    // Header
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(18, 16, 10, 10),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(7),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.primaryContainer,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(
+                              Icons.swap_horiz_rounded,
+                              size: 19,
+                              color: theme.colorScheme.primary,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              l10n.playbackMode,
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                                letterSpacing: -0.2,
+                                color: theme.colorScheme.onSurface,
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            visualDensity: VisualDensity.compact,
+                            icon: const Icon(Icons.close_rounded, size: 19),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
+
+                    Divider(
+                      height: 1,
+                      thickness: 0.8,
+                      color: theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
+                    ),
+
+                    // Options
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                      child: Column(
+                        children: [
+                          _buildModeTile(
+                            context: context,
+                            theme: theme,
+                            label: l10n.onlineStreaming,
+                            subtitle: l10n.communityServers,
+                            icon: Icons.public_rounded,
+                            color: theme.colorScheme.primary,
+                            isSelected: isOnline,
+                            onTap: () {
+                              HapticFeedback.lightImpact();
+                              Navigator.pop(context);
+                              if (isLocalMode) onToggleLocalMode();
+                              onTabChanged(AnimeDetailTab.online);
+                            },
+                          ),
+                          const SizedBox(height: 6),
+                          _buildModeTile(
+                            context: context,
+                            theme: theme,
+                            label: l10n.torrentStreaming,
+                            subtitle: l10n.torrentP2p,
+                            icon: Icons.cloud_download_rounded,
+                            color: theme.colorScheme.secondary,
+                            isSelected: isTorrent,
+                            onTap: () {
+                              HapticFeedback.lightImpact();
+                              Navigator.pop(context);
+                              if (isLocalMode) onToggleLocalMode();
+                              onTabChanged(AnimeDetailTab.torrent);
+                            },
+                          ),
+                          if (hasLocalFiles) ...[
+                            const SizedBox(height: 6),
+                            _buildModeTile(
+                              context: context,
+                              theme: theme,
+                              label: l10n.localLibrary,
+                              subtitle: l10n.downloadedLibrary,
+                              icon: Icons.folder_rounded,
+                              color: theme.colorScheme.tertiary,
+                              isSelected: isLocalMode,
+                              onTap: () {
+                                HapticFeedback.lightImpact();
+                                Navigator.pop(context);
+                                if (!isLocalMode) onToggleLocalMode();
+                              },
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -229,7 +234,7 @@ class AnimeDetailModePopup extends ConsumerWidget {
                 ),
                 child: Icon(
                   icon,
-                  size: 16,
+                  size: 17,
                   color: isSelected ? Colors.white : theme.colorScheme.onSurfaceVariant,
                 ),
               ),
@@ -241,7 +246,7 @@ class AnimeDetailModePopup extends ConsumerWidget {
                     Text(
                       label,
                       style: TextStyle(
-                        fontSize: 13,
+                        fontSize: 14,
                         fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
                         color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurface,
                       ),
@@ -249,7 +254,7 @@ class AnimeDetailModePopup extends ConsumerWidget {
                     Text(
                       subtitle,
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: 11.5,
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
@@ -259,7 +264,7 @@ class AnimeDetailModePopup extends ConsumerWidget {
               if (isSelected)
                 Icon(
                   Icons.check_rounded,
-                  size: 18,
+                  size: 19,
                   color: theme.colorScheme.primary,
                 ),
             ],

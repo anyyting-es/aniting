@@ -15,7 +15,7 @@ import 'package:seanime_app/presentation/screens/genre_detail_screen.dart';
 import 'package:seanime_app/presentation/screens/genres_screen.dart';
 import 'package:seanime_app/presentation/screens/manga_detail_screen.dart';
 import 'package:seanime_app/presentation/widgets/anime_card.dart';
-import 'package:seanime_app/presentation/widgets/compact_search_bar.dart';
+import 'package:seanime_app/presentation/widgets/catalog_search/catalog_search_view.dart';
 import 'package:seanime_app/presentation/widgets/discover_filter_sheet.dart';
 import 'package:seanime_app/presentation/widgets/explore_hero_carousel.dart';
 import 'package:seanime_app/data/services/explore_carousel_service.dart';
@@ -148,6 +148,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         format: _filterState.format,
         status: _filterState.status,
         sort: _filterState.sort,
+        minScore: _filterState.minScore,
+        isAdult: _filterState.isAdult,
         page: pageToFetch,
         perPage: 24,
       );
@@ -176,6 +178,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         format: _filterState.format,
         status: _filterState.status,
         sort: _filterState.sort,
+        minScore: _filterState.minScore,
+        isAdult: _filterState.isAdult,
         page: pageToFetch,
         perPage: 24,
       );
@@ -445,138 +449,6 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     );
   }
 
-  Widget _buildActiveFilterChips(ThemeData theme, AppTranslations l10n, bool isSpanish) {
-    if (!_filterState.hasActiveFilters) return const SizedBox.shrink();
-
-    final chips = <Widget>[];
-
-    // Genres
-    for (final g in _filterState.selectedGenres) {
-      final match = kOfficialGenresData.firstWhere((item) => item['key'] == g, orElse: () => {'key': g, 'es': g, 'en': g});
-      final name = isSpanish ? match['es']! : match['en']!;
-      chips.add(
-        InputChip(
-          label: Text(name),
-          visualDensity: VisualDensity.compact,
-          onDeleted: () {
-            final next = Set<String>.from(_filterState.selectedGenres)..remove(g);
-            setState(() => _filterState = _filterState.copyWith(selectedGenres: next));
-            _fetchResults(reset: true);
-          },
-        ),
-      );
-    }
-
-    // Tags
-    for (final t in _filterState.selectedTags) {
-      final match = kPopularTagsData.firstWhere((item) => item['key'] == t, orElse: () => {'key': t, 'es': t, 'en': t});
-      final name = isSpanish ? match['es']! : match['en']!;
-      chips.add(
-        InputChip(
-          label: Text(name),
-          selectedColor: theme.colorScheme.tertiaryContainer,
-          visualDensity: VisualDensity.compact,
-          onDeleted: () {
-            final next = Set<String>.from(_filterState.selectedTags)..remove(t);
-            setState(() => _filterState = _filterState.copyWith(selectedTags: next));
-            _fetchResults(reset: true);
-          },
-        ),
-      );
-    }
-
-    // Year
-    if (_filterState.year != null) {
-      chips.add(
-        InputChip(
-          label: Text('${_filterState.year}'),
-          visualDensity: VisualDensity.compact,
-          onDeleted: () {
-            setState(() => _filterState = _filterState.copyWith(year: () => null));
-            _fetchResults(reset: true);
-          },
-        ),
-      );
-    }
-
-    // Season
-    if (_filterState.season != null) {
-      chips.add(
-        InputChip(
-          label: Text(l10n.formatSeason(_filterState.season)),
-          visualDensity: VisualDensity.compact,
-          onDeleted: () {
-            setState(() => _filterState = _filterState.copyWith(season: () => null));
-            _fetchResults(reset: true);
-          },
-        ),
-      );
-    }
-
-    // Format
-    if (_filterState.format != null) {
-      chips.add(
-        InputChip(
-          label: Text(_filterState.format!),
-          visualDensity: VisualDensity.compact,
-          onDeleted: () {
-            setState(() => _filterState = _filterState.copyWith(format: () => null));
-            _fetchResults(reset: true);
-          },
-        ),
-      );
-    }
-
-    // Status
-    if (_filterState.status != null) {
-      chips.add(
-        InputChip(
-          label: Text(l10n.formatStatus(_filterState.status)),
-          visualDensity: VisualDensity.compact,
-          onDeleted: () {
-            setState(() => _filterState = _filterState.copyWith(status: () => null));
-            _fetchResults(reset: true);
-          },
-        ),
-      );
-    }
-
-    // Sort
-    if (_filterState.sort != 'TRENDING_DESC') {
-      chips.add(
-        InputChip(
-          label: Text(_filterState.sort == 'SCORE_DESC'
-              ? l10n.sortScore
-              : _filterState.sort == 'POPULARITY_DESC'
-                  ? l10n.sortPopularity
-                  : l10n.sortStartDate),
-          visualDensity: VisualDensity.compact,
-          onDeleted: () {
-            setState(() => _filterState = _filterState.copyWith(sort: 'TRENDING_DESC'));
-            _fetchResults(reset: true);
-          },
-        ),
-      );
-    }
-
-    return Container(
-      height: 38,
-      margin: const EdgeInsets.only(bottom: 6),
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        children: [
-          ...chips.map((c) => Padding(padding: const EdgeInsets.only(right: 6), child: c)),
-          ActionChip(
-            label: Text(l10n.clearFilters, style: TextStyle(color: theme.colorScheme.error, fontSize: 12)),
-            avatar: Icon(AppIcons.close(), size: 14, color: theme.colorScheme.error),
-            visualDensity: VisualDensity.compact,
-            onPressed: _clearAllFilters,
-          ),
-        ],
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -585,10 +457,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final iconPack = ref.watch(iconPackProvider);
     final isSpanish = ref.watch(appLanguageProvider) == AppLanguage.es;
     final isAnime = _filterState.mediaType == 'ANIME';
-    final isDesktop = MediaQuery.of(context).size.width >= 720;
     final titleLang = ref.watch(titleLanguageProvider);
-    final animeEnabled = ref.watch(animeSectionEnabledProvider);
-    final mangaEnabled = ref.watch(mangaSectionEnabledProvider);
 
     // Trending & Featured providers for Explore Hero Carousel
     final featuredAnimeConfig = isAnime ? ref.watch(exploreCarouselNotifierProvider) : null;
@@ -605,421 +474,265 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final actionMangaAsync = !isAnime && !_showSearchBar ? ref.watch(curatedActionMangaProvider) : null;
     final comedyMangaAsync = !isAnime && !_showSearchBar ? ref.watch(curatedComedyMangaProvider) : null;
 
-    final topPadding = MediaQuery.of(context).padding.top;
-
-    return Scaffold(
-      body: PopScope(
-        canPop: !_showSearchBar,
+    if (_showSearchBar) {
+      return PopScope(
+        canPop: false,
         onPopInvokedWithResult: (didPop, result) {
-          if (!didPop && _showSearchBar) {
+          if (!didPop) {
             _exitSearch();
           }
         },
-        child: Stack(
-          children: [
-            RefreshIndicator(
-              onRefresh: () async {
-                if (_isSearchingOrFiltering) {
-                  await _fetchResults(reset: true);
-                } else {
-                  if (isAnime) {
-                    ref.invalidate(trendingAnimeProvider);
-                    ref.invalidate(curatedRomanceAnimeProvider);
-                    ref.invalidate(curatedActionAnimeProvider);
-                    ref.invalidate(curatedComedyAnimeProvider);
-                    ref.read(exploreCarouselNotifierProvider.notifier).refresh();
-                  } else {
-                    ref.invalidate(trendingMangaProvider);
-                    ref.invalidate(curatedRomanceMangaProvider);
-                    ref.invalidate(curatedActionMangaProvider);
-                    ref.invalidate(curatedComedyMangaProvider);
-                  }
-                }
+        child: Scaffold(
+          body: SafeArea(
+            bottom: false,
+            child: CatalogSearchView(
+              searchController: _searchController,
+              searchFocusNode: _searchFocusNode,
+              onSearchChanged: _onSearchChanged,
+              filterState: _filterState,
+              onFilterChanged: (newState) {
+                setState(() => _filterState = newState);
+                _fetchResults(reset: true);
               },
-              child: CustomScrollView(
-                  controller: _scrollController,
-                  slivers: [
-                    if (_showSearchBar) ...[
-                      // Active Search Bar with Back Button & Filter
-                      SliverToBoxAdapter(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Padding(
-                              padding: EdgeInsets.fromLTRB(16, isDesktop ? 40.0 : (topPadding + 6), 16, 6),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: CompactSearchBar(
-                                      controller: _searchController,
-                                      focusNode: _searchFocusNode,
-                                      hintText: isAnime ? '${l10n.search} anime...' : '${l10n.search} manga...',
-                                      isSearching: true,
-                                      onChanged: _onSearchChanged,
-                                      onSubmitted: (_) {
-                                        _debounce?.cancel();
-                                        _fetchResults(reset: true);
-                                      },
-                                      onBack: _exitSearch,
-                                      onClear: _exitSearch,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Badge(
-                                    isLabelVisible: _filterState.hasActiveFilters,
-                                    label: Text('${_filterState.activeFilterCount}'),
-                                    child: IconButton.filledTonal(
-                                      tooltip: l10n.filters,
-                                      icon: Icon(
-                                        _filterState.hasActiveFilters ? AppIcons.sliders(iconPack) : AppIcons.filter(iconPack),
-                                        color: _filterState.hasActiveFilters ? theme.colorScheme.primary : null,
-                                      ),
-                                      onPressed: _openFilterSheet,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                              child: Row(
-                                children: [
-                                  MediaTypeToggle(
-                                    selected: _filterState.mediaType,
-                                    onSelected: _setMediaType,
-                                    showAnime: animeEnabled,
-                                    showManga: mangaEnabled,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            // Active Filters Chips Row
-                            _buildActiveFilterChips(theme, l10n, isSpanish),
-                          ],
-                        ),
-                      ),
-
-                      // Content Slivers for Search Mode
-                      if (_isLoading)
-                        const SliverFillRemaining(
-                          hasScrollBody: false,
-                          child: Center(child: CircularProgressIndicator()),
-                        )
-                      else if (isAnime ? _animeResults.isEmpty : _mangaResults.isEmpty)
-                        SliverFillRemaining(
-                          hasScrollBody: false,
-                          child: Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(AppIcons.searchOff(iconPack), size: 56, color: theme.colorScheme.outline),
-                                const SizedBox(height: 12),
-                                Text(
-                                  l10n.noResultsFound,
-                                  style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
-                                ),
-                                const SizedBox(height: 16),
-                                OutlinedButton.icon(
-                                  icon: Icon(AppIcons.clearAll(iconPack), size: 18),
-                                  label: Text(l10n.clearFilters),
-                                  onPressed: _clearAllFilters,
-                                ),
-                              ],
-                            ),
-                          ),
-                        )
-                      else
-                        SliverPadding(
-                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 90),
-                          sliver: SliverGrid.builder(
-                            gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                              maxCrossAxisExtent: isDesktop ? 210 : 135,
-                              childAspectRatio: isDesktop ? 0.58 : 0.52,
-                              crossAxisSpacing: isDesktop ? 14 : 10,
-                              mainAxisSpacing: isDesktop ? 20 : 14,
-                            ),
-                            itemCount: (isAnime ? _animeResults.length : _mangaResults.length) +
-                                (_hasMore ? 1 : 0),
-                            itemBuilder: (context, index) {
-                              final totalItems = isAnime ? _animeResults.length : _mangaResults.length;
-
-                              if (index >= totalItems) {
-                                return const Center(
-                                  child: Padding(
-                                    padding: EdgeInsets.all(16),
-                                    child: CircularProgressIndicator(strokeWidth: 2.5),
-                                  ),
-                                );
-                              }
-
-                              if (isAnime) {
-                                final item = _animeResults[index];
-                                return AnimeCard(
-                                  entry: item,
-                                  onTap: () {
-                                    AnimeDetailScreen.navigate(
-                                      context,
-                                      mediaId: item.mediaId,
-                                      initialEntry: item,
-                                    );
-                                  },
-                                );
-                              } else {
-                                final item = _mangaResults[index];
-                                return MangaCard(
-                                  entry: item,
-                                  onTap: () {
-                                    MangaDetailScreen.navigate(
-                                      context,
-                                      mediaId: item.mediaId,
-                                      initialEntry: item,
-                                    );
-                                  },
-                                );
-                              }
-                            },
-                          ),
-                        ),
-                    ] else ...[
-                      // Discover & Curated Explore Mode Slivers
-                      if ((isAnime && (featuredAnimeConfig == null || featuredAnimeConfig.items.isEmpty) && (trendingAnimeAsync == null || trendingAnimeAsync.isLoading)) ||
-                          (!isAnime && (trendingMangaAsync == null || trendingMangaAsync.isLoading)))
-                        const SliverToBoxAdapter(
-                          child: ExploreSkeleton(),
-                        )
-                      else ...[
-                        // 1. Full-bleed Hero Carousel at the very top (Edge to Edge, extends behind status bar)
-                        if (isAnime)
-                          Builder(builder: (context) {
-                            final config = featuredAnimeConfig;
-                            final List<ExploreCarouselItem> carouselItems;
-                            if (config != null && config.items.isNotEmpty) {
-                              carouselItems = config.items
-                                  .map((e) => ExploreCarouselItem.fromFeatured(e, context))
-                                  .toList();
-                            } else if (trendingAnimeAsync != null && trendingAnimeAsync.asData != null) {
-                              final items = trendingAnimeAsync.asData!.value;
-                              if (items.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
-                              carouselItems = items
-                                  .take(6)
-                                  .map((e) => ExploreCarouselItem.fromAnime(e, context, titleLang))
-                                  .toList();
-                            } else {
-                              return const SliverToBoxAdapter(child: SizedBox.shrink());
-                            }
-                            return SliverToBoxAdapter(
-                              child: ExploreHeroCarousel(
-                                key: ValueKey('explore_hero_anime_v${config?.version ?? 0}_${carouselItems.length}'),
-                                items: carouselItems,
-                              ),
-                            );
-                          })
-                        else if (!isAnime)
-                          Builder(builder: (context) {
-                            final trendingItems = trendingMangaAsync?.asData?.value ?? [];
-                            final popularItems = ref.watch(popularMangaProvider).asData?.value ?? [];
-                            final items = trendingItems.isNotEmpty ? trendingItems : popularItems;
-                            if (items.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
-                            final carouselItems = items
-                                .take(6)
-                                .map((e) => ExploreCarouselItem.fromManga(e, context, titleLang))
-                                .toList();
-                            return SliverToBoxAdapter(
-                              child: ExploreHeroCarousel(
-                                key: ValueKey('explore_hero_manga_${carouselItems.length}'),
-                                items: carouselItems,
-                              ),
-                            );
-                          }),
-
-                      // 2. Header Bar positioned below Carousel (MediaTypeToggle & Action Icons)
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 6, 16, 8),
-                          child: Row(
-                            children: [
-                              // Non-wrapping Media Type Toggle (Anime / Manga)
-                              MediaTypeToggle(
-                                selected: _filterState.mediaType,
-                                onSelected: _setMediaType,
-                              ),
-                              const Spacer(),
-                              // Search Icon Button
-                              IconButton(
-                                tooltip: l10n.search,
-                                icon: Icon(AppIcons.search(iconPack)),
-                                onPressed: () {
-                                  setState(() => _isSearchExpanded = true);
-                                  _searchFocusNode.requestFocus();
-                                },
-                              ),
-                              // Filter Sheet Trigger Button
-                              Badge(
-                                isLabelVisible: _filterState.hasActiveFilters,
-                                label: Text('${_filterState.activeFilterCount}'),
-                                child: IconButton(
-                                  tooltip: l10n.filters,
-                                  icon: Icon(
-                                    _filterState.hasActiveFilters ? AppIcons.sliders(iconPack) : AppIcons.filter(iconPack),
-                                    color: _filterState.hasActiveFilters ? theme.colorScheme.primary : null,
-                                  ),
-                                  onPressed: _openFilterSheet,
-                                ),
-                              ),
-                              IconButton(
-                                tooltip: l10n.genresTitle,
-                                icon: Icon(AppIcons.category(iconPack), size: 20),
-                                visualDensity: VisualDensity.compact,
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    SlideRightToLeftPageRoute(child: const GenresScreen()),
-                                  );
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      // 3. Popular Genres Chips Row
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.only(top: 4, bottom: 12),
-                          child: SizedBox(
-                            height: 38,
-                            child: ListView.separated(
-                              scrollDirection: Axis.horizontal,
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
-                              itemCount: kAppGenres.length,
-                              separatorBuilder: (context, index) => const SizedBox(width: 8),
-                              itemBuilder: (context, i) {
-                                final g = kAppGenres[i];
-                                final displayName = isSpanish ? g.nameEs : g.nameEn;
-
-                                return ActionChip(
-                                  avatar: Icon(g.icon, size: 14, color: theme.colorScheme.primary),
-                                  label: Text(displayName),
-                                  visualDensity: VisualDensity.compact,
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      SlideRightToLeftPageRoute(
-                                        child: GenreDetailScreen(
-                                          genre: g.key,
-                                          displayGenreName: displayName,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                );
-                              },
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      const SliverToBoxAdapter(
-                        child: SizedBox(height: 6),
-                      ),
-
-                      if (isAnime) ...[
-                        SliverToBoxAdapter(
-                          child: _buildCuratedAnimeSection(
-                            title: isSpanish ? 'En tendencia ahora' : 'Trending Now',
-                            onSeeMoreTap: () {
-                              setState(() {
-                                _filterState = _filterState.copyWith(sort: 'TRENDING_DESC');
-                                _isSearchExpanded = true;
-                              });
-                              _fetchResults(reset: true);
-                            },
-                            entries: trendingAnimeAsync?.asData?.value ?? [], isLoading: trendingAnimeAsync?.isLoading ?? false, theme: theme,
-                            l10n: l10n,
-                          ),
-                        ),
-                        SliverToBoxAdapter(
-                          child: _buildCuratedAnimeSection(
-                            title: isSpanish ? 'Romance en tendencia' : 'Trending Romance',
-                            genreKey: 'Romance',
-                            entries: romanceAnimeAsync?.asData?.value ?? [], isLoading: romanceAnimeAsync?.isLoading ?? false, theme: theme,
-                            l10n: l10n,
-                          ),
-                        ),
-                        SliverToBoxAdapter(
-                          child: _buildCuratedAnimeSection(
-                            title: isSpanish ? 'Acción en tendencia' : 'Trending Action',
-                            genreKey: 'Action',
-                            entries: actionAnimeAsync?.asData?.value ?? [], isLoading: actionAnimeAsync?.isLoading ?? false, theme: theme,
-                            l10n: l10n,
-                          ),
-                        ),
-                        SliverToBoxAdapter(
-                          child: _buildCuratedAnimeSection(
-                            title: isSpanish ? 'Comedia en tendencia' : 'Trending Comedy',
-                            genreKey: 'Comedy',
-                            entries: comedyAnimeAsync?.asData?.value ?? [], isLoading: comedyAnimeAsync?.isLoading ?? false, theme: theme,
-                            l10n: l10n,
-                          ),
-                        ),
-                      ] else ...[
-                        SliverToBoxAdapter(
-                          child: _buildCuratedMangaSection(
-                            title: isSpanish ? 'En tendencia ahora' : 'Trending Now',
-                            onSeeMoreTap: () {
-                              setState(() {
-                                _filterState = _filterState.copyWith(sort: 'TRENDING_DESC');
-                                _isSearchExpanded = true;
-                              });
-                              _fetchResults(reset: true);
-                            },
-                            entries: trendingMangaAsync?.asData?.value ?? [], isLoading: trendingMangaAsync?.isLoading ?? false, theme: theme,
-                            l10n: l10n,
-                          ),
-                        ),
-                        SliverToBoxAdapter(
-                          child: _buildCuratedMangaSection(
-                            title: isSpanish ? 'Romance en tendencia' : 'Trending Romance',
-                            genreKey: 'Romance',
-                            entries: romanceMangaAsync?.asData?.value ?? [], isLoading: romanceMangaAsync?.isLoading ?? false, theme: theme,
-                            l10n: l10n,
-                          ),
-                        ),
-                        SliverToBoxAdapter(
-                          child: _buildCuratedMangaSection(
-                            title: isSpanish ? 'Acción en tendencia' : 'Trending Action',
-                            genreKey: 'Action',
-                            entries: actionMangaAsync?.asData?.value ?? [], isLoading: actionMangaAsync?.isLoading ?? false, theme: theme,
-                            l10n: l10n,
-                          ),
-                        ),
-                        SliverToBoxAdapter(
-                          child: _buildCuratedMangaSection(
-                            title: isSpanish ? 'Comedia en tendencia' : 'Trending Comedy',
-                            genreKey: 'Comedy',
-                            entries: comedyMangaAsync?.asData?.value ?? [], isLoading: comedyMangaAsync?.isLoading ?? false, theme: theme,
-                            l10n: l10n,
-                          ),
-                        ),
-                      ],
-
-                        const SliverToBoxAdapter(
-                          child: SizedBox(height: 90),
-                        ),
-                      ],
-                    ],
-                  ],
-                ),
-              ),
-            ValueListenableBuilder<bool>(
-              valueListenable: _isScrolledNotifier,
-              builder: (context, isScrolled, child) {
-                return TopStatusBarGlass(isVisible: isScrolled);
-              },
+              onResetFilters: _clearAllFilters,
+              onBack: _exitSearch,
+              onOpenFilterSheet: _openFilterSheet,
+              animeResults: _animeResults,
+              mangaResults: _mangaResults,
+              isLoading: _isLoading,
+              isLoadingMore: _isLoadingMore,
+              hasMore: _hasMore,
+              onLoadMore: _loadMore,
             ),
-          ],
+          ),
         ),
+      );
+    }
+
+    return Scaffold(
+      body: Stack(
+        children: [
+          RefreshIndicator(
+            onRefresh: () async {
+              if (isAnime) {
+                ref.invalidate(trendingAnimeProvider);
+                ref.invalidate(curatedRomanceAnimeProvider);
+                ref.invalidate(curatedActionAnimeProvider);
+                ref.invalidate(curatedComedyAnimeProvider);
+                ref.read(exploreCarouselNotifierProvider.notifier).refresh();
+              } else {
+                ref.invalidate(trendingMangaProvider);
+                ref.invalidate(curatedRomanceMangaProvider);
+                ref.invalidate(curatedActionMangaProvider);
+                ref.invalidate(curatedComedyMangaProvider);
+              }
+            },
+            child: CustomScrollView(
+              controller: _scrollController,
+              slivers: [
+                if ((isAnime && (featuredAnimeConfig == null || featuredAnimeConfig.items.isEmpty) && (trendingAnimeAsync == null || trendingAnimeAsync.isLoading)) ||
+                    (!isAnime && (trendingMangaAsync == null || trendingMangaAsync.isLoading)))
+                  const SliverToBoxAdapter(
+                    child: ExploreSkeleton(),
+                  )
+                else if (isAnime)
+                  Builder(builder: (context) {
+                    final config = featuredAnimeConfig;
+                    final List<ExploreCarouselItem> carouselItems;
+                    if (config != null && config.items.isNotEmpty) {
+                      carouselItems = config.items
+                          .map((e) => ExploreCarouselItem.fromFeatured(e, context))
+                          .toList();
+                    } else if (trendingAnimeAsync != null && trendingAnimeAsync.asData != null) {
+                      final items = trendingAnimeAsync.asData!.value;
+                      if (items.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+                      carouselItems = items
+                          .take(6)
+                          .map((e) => ExploreCarouselItem.fromAnime(e, context, titleLang))
+                          .toList();
+                    } else {
+                      return const SliverToBoxAdapter(child: SizedBox.shrink());
+                    }
+                    return SliverToBoxAdapter(
+                      child: ExploreHeroCarousel(
+                        key: ValueKey('explore_hero_anime_v${config?.version ?? 0}_${carouselItems.length}'),
+                        items: carouselItems,
+                      ),
+                    );
+                  })
+                else if (!isAnime)
+                  Builder(builder: (context) {
+                    final trendingItems = trendingMangaAsync?.asData?.value ?? [];
+                    final popularItems = ref.watch(popularMangaProvider).asData?.value ?? [];
+                    final items = trendingItems.isNotEmpty ? trendingItems : popularItems;
+                    if (items.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+                    final carouselItems = items
+                        .take(6)
+                        .map((e) => ExploreCarouselItem.fromManga(e, context, titleLang))
+                        .toList();
+                    return SliverToBoxAdapter(
+                      child: ExploreHeroCarousel(
+                        key: ValueKey('explore_hero_manga_${carouselItems.length}'),
+                        items: carouselItems,
+                      ),
+                    );
+                  }),
+
+                // 2. Header Bar positioned below Carousel (MediaTypeToggle & Action Icons)
+                SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 6, 16, 8),
+                      child: Row(
+                        children: [
+                          // Non-wrapping Media Type Toggle (Anime / Manga)
+                          MediaTypeToggle(
+                            selected: _filterState.mediaType,
+                            onSelected: _setMediaType,
+                          ),
+                          const Spacer(),
+                          // Search Icon Button
+                          IconButton(
+                            tooltip: l10n.search,
+                            icon: Icon(AppIcons.search(iconPack)),
+                            onPressed: () {
+                              setState(() {
+                                _isSearchExpanded = true;
+                                if (!_filterState.hasActiveFilters) {
+                                  _filterState = _filterState.copyWith(sort: 'SCORE_DESC');
+                                }
+                              });
+                              _searchFocusNode.requestFocus();
+                              if (_animeResults.isEmpty && _mangaResults.isEmpty && !_isLoading) {
+                                _fetchResults(reset: true);
+                              }
+                            },
+                          ),
+                          // Filter Sheet Trigger Button
+                          Badge(
+                            isLabelVisible: _filterState.hasActiveFilters,
+                            label: Text('${_filterState.activeFilterCount}'),
+                            child: IconButton(
+                              tooltip: l10n.filters,
+                              icon: Icon(
+                                _filterState.hasActiveFilters ? AppIcons.sliders(iconPack) : AppIcons.filter(iconPack),
+                                color: _filterState.hasActiveFilters ? theme.colorScheme.primary : null,
+                              ),
+                              onPressed: _openFilterSheet,
+                            ),
+                          ),
+                          IconButton(
+                            tooltip: l10n.genresTitle,
+                            icon: Icon(AppIcons.category(iconPack), size: 20),
+                            visualDensity: VisualDensity.compact,
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                SlideRightToLeftPageRoute(child: const GenresScreen()),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SliverToBoxAdapter(
+                    child: SizedBox(height: 6),
+                  ),
+
+                  if (isAnime) ...[
+                    SliverToBoxAdapter(
+                      child: _buildCuratedAnimeSection(
+                        title: isSpanish ? 'En tendencia ahora' : 'Trending Now',
+                        onSeeMoreTap: () {
+                          setState(() {
+                            _filterState = _filterState.copyWith(sort: 'TRENDING_DESC');
+                            _isSearchExpanded = true;
+                          });
+                          _fetchResults(reset: true);
+                        },
+                        entries: trendingAnimeAsync?.asData?.value ?? [], isLoading: trendingAnimeAsync?.isLoading ?? false, theme: theme,
+                        l10n: l10n,
+                      ),
+                    ),
+                    SliverToBoxAdapter(
+                      child: _buildCuratedAnimeSection(
+                        title: isSpanish ? 'Romance en tendencia' : 'Trending Romance',
+                        genreKey: 'Romance',
+                        entries: romanceAnimeAsync?.asData?.value ?? [], isLoading: romanceAnimeAsync?.isLoading ?? false, theme: theme,
+                        l10n: l10n,
+                      ),
+                    ),
+                    SliverToBoxAdapter(
+                      child: _buildCuratedAnimeSection(
+                        title: isSpanish ? 'Acción en tendencia' : 'Trending Action',
+                        genreKey: 'Action',
+                        entries: actionAnimeAsync?.asData?.value ?? [], isLoading: actionAnimeAsync?.isLoading ?? false, theme: theme,
+                        l10n: l10n,
+                      ),
+                    ),
+                    SliverToBoxAdapter(
+                      child: _buildCuratedAnimeSection(
+                        title: isSpanish ? 'Comedia en tendencia' : 'Trending Comedy',
+                        genreKey: 'Comedy',
+                        entries: comedyAnimeAsync?.asData?.value ?? [], isLoading: comedyAnimeAsync?.isLoading ?? false, theme: theme,
+                        l10n: l10n,
+                      ),
+                    ),
+                  ] else ...[
+                    SliverToBoxAdapter(
+                      child: _buildCuratedMangaSection(
+                        title: isSpanish ? 'En tendencia ahora' : 'Trending Now',
+                        onSeeMoreTap: () {
+                          setState(() {
+                            _filterState = _filterState.copyWith(sort: 'TRENDING_DESC');
+                            _isSearchExpanded = true;
+                          });
+                          _fetchResults(reset: true);
+                        },
+                        entries: trendingMangaAsync?.asData?.value ?? [], isLoading: trendingMangaAsync?.isLoading ?? false, theme: theme,
+                        l10n: l10n,
+                      ),
+                    ),
+                    SliverToBoxAdapter(
+                      child: _buildCuratedMangaSection(
+                        title: isSpanish ? 'Romance en tendencia' : 'Trending Romance',
+                        genreKey: 'Romance',
+                        entries: romanceMangaAsync?.asData?.value ?? [], isLoading: romanceMangaAsync?.isLoading ?? false, theme: theme,
+                        l10n: l10n,
+                      ),
+                    ),
+                    SliverToBoxAdapter(
+                      child: _buildCuratedMangaSection(
+                        title: isSpanish ? 'Acción en tendencia' : 'Trending Action',
+                        genreKey: 'Action',
+                        entries: actionMangaAsync?.asData?.value ?? [], isLoading: actionMangaAsync?.isLoading ?? false, theme: theme,
+                        l10n: l10n,
+                      ),
+                    ),
+                    SliverToBoxAdapter(
+                      child: _buildCuratedMangaSection(
+                        title: isSpanish ? 'Comedia en tendencia' : 'Trending Comedy',
+                        genreKey: 'Comedy',
+                        entries: comedyMangaAsync?.asData?.value ?? [], isLoading: comedyMangaAsync?.isLoading ?? false, theme: theme,
+                        l10n: l10n,
+                      ),
+                    ),
+                  ],
+
+                  const SliverToBoxAdapter(
+                    child: SizedBox(height: 90),
+                  ),
+                ],
+              ),
+          ),
+          ValueListenableBuilder<bool>(
+            valueListenable: _isScrolledNotifier,
+            builder: (context, isScrolled, child) {
+              return TopStatusBarGlass(isVisible: isScrolled);
+            },
+          ),
+        ],
       ),
     );
   }

@@ -62,9 +62,9 @@ seanime_app/
 │   │   ├── player/                   # Video playback service wrappers
 │   │   │   ├── exo_player_service.dart   # Android Media3 platform channel bridge
 │   │   │   └── mpv_player_service.dart   # media_kit / libmpv service with Plezy optimizations
-│   │   ├── preferences/              # PlayerEngineProvider, TitleLanguageProvider, EpisodeViewModeProvider, OnboardingProvider, DownloadPreferencesProvider, LayoutModeProvider, PlaybackProgressPreferencesProvider, AnimeFavoritesProvider, BannerBlurProvider, SubtitleStylePreferencesProvider, DesktopNavStyleProvider
+│   │   ├── preferences/              # PlayerEngineProvider, TitleLanguageProvider, EpisodeViewModeProvider, OnboardingProvider, DownloadPreferencesProvider, LayoutModeProvider, PlaybackProgressPreferencesProvider, AnimeFavoritesProvider, BannerBlurProvider, SubtitleStylePreferencesProvider, DesktopNavStyleProvider, glassEffectsEnabledProvider (GlassEffectsEnabledNotifier)
 │   │   ├── server/                   # ServerManager, AndroidServerChannel, DesktopServer
-│   │   ├── storage/                  # AppStoragePaths (Aniting/Downloads resolution for Android and Desktop)
+│   │   ├── storage/                  # AppStoragePaths (Documents/Anime/aniting/ resolution for Android and Desktop)
 │   │   └── theme/                    # AppTheme, ThemeProvider, AppPalette, AppThemeColors, AppScrollBehavior, smooth_scroll_controller (SmoothScrollController, SmoothTrackingScrollController, DynMouseScroll), custom_route_transitions (WebPageTransitionsBuilder, SmoothPageRoute)
 │   ├── data/
 │   │   ├── models/                   # Data models (AnimeEntry, MangaEntry, ExtensionItem, Torrent, ExploreCarouselConfig, etc.)
@@ -90,13 +90,14 @@ seanime_app/
 │           ├── anime_detail/         # Modular adaptive layouts for anime details
 │           │   ├── anime_detail_desktop_layout.dart # Desktop layout coordinator (~180 lines)
 │           │   ├── desktop/          # Modular desktop subcomponents
-│           │   │   ├── desktop_sidebar.dart            # Poster, format, status, score & metadata rows
-│           │   │   ├── desktop_header.dart             # Title, genres & expandable synopsis
+│           │   │   ├── desktop_sidebar.dart            # Clean vertical poster with smooth hover scale
+│           │   │   ├── desktop_header.dart             # Title, metadata row (Format, Status, Eps, Studio, Score), genres & synopsis
 │           │   │   ├── desktop_action_bar.dart         # Play pill, bookmark, share, trailer, links & source pills
 │           │   │   ├── desktop_hero_banner.dart        # Panoramic top banner with scroll-driven fade-to-black
 │           │   │   ├── desktop_tab_button.dart         # Desktop navigation tab button with clean white indicator
 │           │   │   ├── desktop_episodes_tab.dart       # Episodes coordinator (online/torrent, filters & views)
 │           │   │   ├── desktop_episode_models.dart     # DesktopEpisodeItemData model
+│           │   │   ├── desktop_episode_context_menu.dart # On-demand GlassCard context menu on secondary tap (Play, Watched toggle, Torrent download/delete)
 │           │   │   ├── desktop_episode_grid_card.dart  # 16:9 grid episode card with dimmed watched opacity
 │           │   │   ├── desktop_episode_list_card.dart  # 2-column list episode card with dimmed watched opacity
 │           │   │   ├── desktop_episode_pagination.dart # 20-episode pagination bar (next/prev & page chips)
@@ -141,6 +142,16 @@ seanime_app/
 │           │   └── my_lists_desktop_layout.dart # Modern desktop layout with titlebar clearance, search, pills & grid
 │           ├── downloads/            # Modular desktop layouts for offline downloads
 │           │   └── downloads_desktop_layout.dart # Modern desktop downloads layout with safe titlebar clearance, media toggle & multi-column grid
+│           ├── catalog_search/       # Modular catalog search & exploration widgets
+│           │   ├── catalog_search_view.dart     # Split-column desktop catalog coordinator & mobile view
+│           │   ├── catalog_filter_sidebar.dart  # Filter sidebar (search, media type, sort, genres, tags, format, season, year, score)
+│           │   └── catalog_filter_dropdown.dart # Liquid glass popover dropdown using g1455 GlassPopoverAnchor
+│           ├── edit_entry_modal.dart # Modern liquid glass slide-down edit entry dialog coordinator
+│           ├── edit_entry/           # Modular edit entry form sub-widgets
+│           │   ├── edit_entry_status_dropdown.dart # Liquid glass popover status selector with g1455 GlassPopoverAnchor
+│           │   ├── edit_entry_score_slider.dart    # Liquid glass 0.0-10.0 score slider with amber star badge & +/- 0.5 steps
+│           │   ├── edit_entry_stepper.dart         # Liquid glass progress & repeats steppers with progress bar & direct input
+│           │   └── edit_entry_date_picker.dart     # Liquid glass start & completion date pickers
 │           ├── floating_nav/         # Modular floating navigation dock & resume companion
 │           │   ├── floating_dock_pill.dart        # Solid M3 dock with expandable active pill & icon-only mode
 │           │   └── floating_resume_companion.dart # Solid M3 resume companion (cover poster, titles, bottom bar, play button)
@@ -252,9 +263,20 @@ seanime_app/
       - Rendered in Flutter with high-fidelity vector stroke outlining (`PaintingStyle.stroke`, `StrokeJoin.round`) rather than blurry shadow filters or opaque boxes, matching the visual quality of `.ass` subtitles and YouTube/Netflix player overlays.
     - **Cover Poster Cache Consistency (`anime_details.dart`, `anime_detail_mobile_layout.dart`, `anime_detail_desktop_layout.dart`)**:
       - Aligned image resolution precedence across models (`large` -> `extraLarge` -> `medium`), preserving `initialEntry.coverImage` to eliminate image reloading and flickering when transitioning from card to detail view.
-    - **Search Duplication Safeguards (`search_screen.dart`)**:
+    - **Search Duplication Safeguards & Two-Column Catalog Search (`search_screen.dart`, `widgets/catalog_search/`)**:
       - Debounce timer is strictly cancelled upon search submission (`onSubmitted`), preventing concurrent requests for page 1.
       - Applied `mediaId` set deduplication when appending pagination results.
+      - **Advanced Two-Column Catalog Search Overhaul (`CatalogSearchView`, `CatalogFilterSidebar`, `CatalogCard`, `CatalogFilterDropdown`)**:
+        - Replaced basic search slivers with a dedicated 2-column catalog view matching desktop reference design:
+          - Top breadcrumb button `[🧭 Discover series]` / `[🧭 Descubrir series]` to return to Explore smoothly with back animation.
+          - Large section header reflecting current query or sort (e.g., `Highest rated shows` / `Series mejor valoradas`).
+          - Left filter sidebar (~220px fixed width): Title search input, media type selector (Anime/Manga), sort selector (`Highest score`, `Trending`, `Popularity`, `Start Date`), genres dropdown, tags dropdown, formats dropdown, seasons dropdown, year dropdown (`Timeless`), statuses dropdown, minimum score dropdown (`All scores`, `80+`, `70+`, etc.), Adult (+18) switch toggle, and reset button.
+          - Right content grid: Modern cards with 3:4 aspect ratio, rounded corners, bottom-left episode count pill badge, bottom-right rating/star badge, title clamped to 2 lines, and season + year subtitle (e.g., `Fall 2023`).
+        - **Explore Mode Simplification**: Removed horizontal genres chip strip from `search_screen.dart` to declutter Explore view; full genres remain accessible through the header category icon button.
+    - **Default Downloads Storage Path (`AppStoragePaths`, `DownloadPreferencesNotifier`)**:
+      - Changed default base downloads directory to `Documents/Anime/aniting/` on both Desktop (`~/Documents/Anime/aniting/`) and Android (`/storage/emulated/0/Documents/Anime/aniting/`).
+      - Dedicated subfolders for media: `Documents/Anime/aniting/Anime` for anime downloads and `Documents/Anime/aniting/Manga` for manga downloads.
+      - Added automatic preference migration in `DownloadPreferencesNotifier` to safely upgrade legacy `Downloads/Aniting/Downloads` paths to the new documents location without affecting user config or database.
   - **Missed Sequels Full Uncapped List (`backend/internal/api/anilist/list.go`, `feed_screen.dart`)**:
     - Previously, the Go backend capped missed sequels at `len(idsSlice) > 10`. This hardcoded slice was removed and replaced with a batched query pipeline (50 IDs per GraphQL chunk via `SearchBaseAnimeByIdsDocument`), returning 100% of missed sequels for the user.
     - The UI displays the full collection count badge in the section header.
@@ -609,6 +631,26 @@ seanime_app/
   - Clear section headers (`theme.textTheme.titleSmall` with `colorScheme.primary`).
   - Items display concise titles and controls without unnecessary subtitle descriptions.
 - **Desktop Anime Detail Architecture (`AnimeDetailDesktopLayout`, `DesktopEpisodesTab`)**:
+  - **Sequential Full-Width Vertical Flow Architecture**:
+    - **Top Metadata Section**: Displays the anime poster and metadata at the top: Left column contains `DesktopSidebar` (clean cover poster with smooth hover scale); Right column contains `DesktopHeader` (season/year kicker, title, clean floating metadata row with format, live status dot, episode count, duration, studio, and score badge separated by subtle bullets `•` without rigid cube boxes, soft genre pills, and synopsis constrained to `maxWidth: 820` for comfortable reading).
+    - **Action Bar Across Content Width (`DesktopActionBar`)**: Located directly below the poster and header row across the full content width, featuring floating pill play button, circular bookmark, share, trailer, external AniList/MAL icons, and the Online/Torrent `GlassSegmentedControl` switch (Local toggle removed from the action bar since downloaded episodes natively display their `LOCAL` badge and stream from disk directly).
+    - **Full-Width Episodes Section (`DesktopEpisodesTab`)**: Positioned cleanly below the action bar without a redundant section title header. Episode cards are notably enlarged with wider 16:9 thumbnails (`crossAxisCount = clamp(2, 5)` in grid mode, 2-column layout in list mode with 240px thumbnails), providing comfortable, cinematic viewing.
+    - **Sequential Relations Section (`DesktopRelationsTab`)**: Positioned directly underneath the episodes section, showing relations with responsive card grid and poster covers.
+    - **Sequential Recommendations Section ("Te podría gustar", `DesktopRecommendationsTab`)**: Positioned directly underneath relations, displaying personalized and community recommendations.
+    - **Sequential Characters Section (`DesktopCharactersTab`)**: Positioned cleanly at the bottom, presenting character portraits, names, and roles.
+  - **Liquid Glass (`GlassCard`) Action Bar, Floating Navigation Dock & Modals**:
+    - `DesktopActionBar` buttons (`_HoverPlayButton`, `_HoverIconButton`, `_HoverBrandIcon`) utilize circular `GlassCard` and floating shapes with specular borders, responsive hover depth, and translucent theme tinting without heavy square boxes.
+    - `FloatingDockPill` and `FloatingResumeCompanion` in `MobileFloatingNav` (Android floating navigation dock) are wrapped with `DecoratedBox` elevation shadows, `ClipRRect`, native 18.0 sigma `BackdropFilter` Gaussian blur, and `GlassCard`, featuring specular borders (`alpha: 0.20` dark / `alpha: 0.45` light) and rich translucent theme tinting (`alpha: 0.35` dark / `0.48` light). This ensures posters and content scrolling underneath remain vividly blurred and unmistakable, with zero-cost fallback to solid `surfaceContainer` when glass effects are disabled in settings.
+    - `EditEntryModal`, `AnimeDetailModePopup`, and `AnimeDetailSourcePopup` utilize `GlassCard` with specular borders, soft shadow, and frosted backdrop blur. In light mode, modal dialogs and control fields (`EditEntryStatusDropdown`, `EditEntryScoreSlider`, `EditEntryStepper`, `EditEntryDatePicker`) feature crisp pure white surfaces with subtle shadows and clean borders, eliminating dull "plomo" grey tones and removing fluorescent glowing halos.
+  - **Desktop Header Typographic Hierarchy & Metadata Zoom (`DesktopHeader`, `AnimeDetailDesktopLayout`)**:
+    - Generous typography and balanced metadata hierarchy inspired by reference designs:
+      - **Main Title**: 32px bold (`FontWeight.w900`) commanding header presence.
+      - **Subtitle**: 16px medium (`FontWeight.w500`) secondary title (Romaji / English / Native).
+      - **Metadata Row 1 (15.5–16.5px)**: Format (`TV`, `Movie`), progress/episodes counter (`4/12` bold or `12 Eps`), interactive clean status pill (`[Watching]` / `[Viendo]` with pencil icon and no neon glow), vertical divider `|`, and airing season with calendar icon (`Jul 2026 - Summer`).
+      - **Metadata Row 2 (15px)**: Score with neutral heart outline (`♡ 8.4`, no yellow neon background/text), studio in bold, and plain text genres separated by whitespace without boxy cyan containers.
+  - **Downward-Opening Provider Menu & Streamlined Episode Toolbar (`DesktopEpisodesTab`)**:
+    - Provider selector popup explicitly opens **downwards** anchored below the trigger button (`offset.dy + size.height + 6`), adapting dynamically to light mode (crisp pure white, clean outline, subtle shadow) and dark mode (sleek `#1E2228` surface).
+    - Removed redundant "Episodes" counter header above episode cards per UI design, maximizing vertical breathing room.
   - **Source-Specific Episode Engine**:
     - **Torrent Mode (`AnimeDetailTab.torrent`)**: Always loads 100% of the official AniList / AniZip episode list (`aniZipEps`, `fallbackEps`, or `totalEpisodes`), ensuring complete fidelity with release schedules and metadata.
     - **Online Streaming Mode (`AnimeDetailTab.online`)**: Dynamically queries the selected extension/source provider (`getOnlinestreamEpisodes`). When changing providers in the dropdown or toggling between Subbed and Dubbed audio, `DesktopEpisodesTab` re-fetches and renders the exact episode list from the active provider with an inline loading state and empty fallback.
@@ -618,10 +660,10 @@ seanime_app/
     - Watched episodes are styled with subdued opacity (`0.45` rest, elevating to `0.75` on hover) via `AnimatedOpacity`, providing instant, non-intrusive visual distinction between watched and unwatched episodes.
   - **High-Performance 20-Episode Pagination**:
     - Limits rendering to a maximum of 20 episodes per page (`_episodesPerPage = 20`) across both Grid and 2-Column List modes.
-  - **Desktop Anime Detail Hover & Micro-interactions (`DesktopGridEpisodeCard`, `DesktopListEpisodeCard`, `DesktopCharactersTab`, `DesktopRelationsTab`, `DesktopRecommendationsTab`, `DesktopTabButton`)**:
+  - **Desktop Anime Detail Hover & Micro-interactions (`DesktopGridEpisodeCard`, `DesktopListEpisodeCard`, `DesktopCharactersTab`, `DesktopRelationsTab`, `DesktopRecommendationsTab`)**:
     - **Snappy Inner Image Hover**: Removed whole-card scaling and jarring shadow hops. Cards retain stable dimensions while only the inner thumbnail/poster image quickly scales (`1.0 -> 1.06`, 140ms `Curves.easeOutCubic` on enter, 100ms `Curves.easeInQuad` on exit), creating an ultra-responsive, crisp micro-interaction.
     - **Elimination of Hover Play Icon**: Removed the artificial floating play button overlay on episode thumbnails.
-    - **Clean Tab Headers & Minimalist Controls**: Replaced `InkWell` in `DesktopTabButton` with `GestureDetector` to eliminate rectangular hover shadow artifacts. Converted hardcoded dark boxes in `DesktopEpisodesTab` (EP counter, provider dropdown, grid/list view toggles, ascending/descending) and `DesktopActionBar` (Online/Torrent pill switch, local library toggle) into sleek typography labels, translucent theme-aware pills, and native compact icon buttons with subtle hover feedback.
+    - **Clean Tab Headers & Minimalist Controls**: Converted hardcoded dark boxes in `DesktopEpisodesTab` (EP counter, provider dropdown, grid/list view toggles, ascending/descending) and `DesktopActionBar` (Online/Torrent pill switch) into sleek typography labels, translucent theme-aware pills, and native compact icon buttons with subtle hover feedback.
   - **D-Pad Focus vs Mouse Hover Border Architecture (`AnimeCard`, `MangaCard`, `ContinueWatchingCard`, `ContinueReadingCard`, `FocusCard`)**:
     - Disentangled `_isHovered` from `_isFocused`. The thick 2px white outline frame is strictly reserved for D-Pad / keyboard navigation (`_isFocused`), ensuring that mouse cursor hovering does not produce jarring white border flashes across any card in the application.
 
@@ -879,16 +921,21 @@ Inspired by **Plezy** (`edde746/plezy`), the player focuses on high performance,
   - **Model Field Normalization (`AnimeEntry`, `AnimeDetails`)**:
     - `AnimeEntry.fromJson`: Uses `(val as num?)?.toInt()` for `progress`, `totalEpisodes`, `mediaId`, and `id` to prevent `TypeError` exceptions during dynamic JSON parsing, guaranteeing `id` maps to the canonical media ID rather than AniList list entry ID.
     - `AnimeDetails`: Added `progress`, `userStatus`, and `userScore` fields, parsed from `listData` in `AnimeDetails.fromJson`.
-- **AniList List Entry Edit Modal (`EditEntryModal`)**:
-  - **Purpose**: Allows users to view, edit, or delete the tracking state of an Anime or Manga entry directly on AniList from within `AnimeDetailScreen` and `MangaDetailScreen`.
-  - **Design & Layout**: Directly matches the Seanime web UI entry edit modal:
-    - **Header**: Centered media title in bold typography.
-    - **Row 1**: `Status` dropdown (Watching/Reading, Planning, Completed, Rewatching/Rereading, Paused, Dropped), `Score` stepper (0-10 or 0-100 scales), and `Progress` episode/chapter stepper.
-    - **Row 2**: `Start date` date picker button with calendar icon, `Completion date` date picker, and `Total rewatches` / `Total rereads` stepper.
-    - **Bottom Bar**: Context-aware error-tinted delete button (`Icons.delete_outline_rounded`) on the left to delete from list with confirmation; primary accent `Save` button on the right.
-    - **Dynamic Theming (No Hardcoded Colors)**: All surfaces, input field fills, borders, dropdown menus, text, icons, and buttons dynamically consume `Theme.of(context).colorScheme` (`surfaceContainer`, `surfaceContainerHighest`, `outlineVariant`, `onSurface`, `onSurfaceVariant`, `primary`, `error`) and `context.themeColors.borderRadius` ensuring seamless visual consistency across Dark, Light, OLED, Catppuccin, Nord, and all custom user palettes.
+- **AniList List Entry Edit Modal (`EditEntryModal` & `widgets/edit_entry/`)**:
+  - **Purpose**: Allows users to view, edit, or delete the tracking state of an Anime or Manga entry directly on AniList or local offline storage from `AnimeDetailScreen` and `MangaDetailScreen`.
+  - **Liquid Glass & Motion Overhaul**:
+    - **Top-to-Bottom Window Animation**: Opens via `showGeneralDialog` with an expressive 320ms top-to-bottom drop-in transition (`SlideTransition` from `Offset(0, -0.16)` to `Offset.zero` with `Curves.easeOutCubic`, paired with smooth fade and subtle scale).
+    - **Noticeable Frosted Glass Window**: Wrapped in `DecoratedBox` ambient drop shadow, `ClipRRect`, `BackdropFilter` (sigma 22.0), `GlassCard`, and translucent theme tinting with a delicate specular rim (`Colors.white.withValues(alpha: 0.22)`).
+    - **Window Header**: ANIME / MANGA glowing badge chip, prominent title in bold typography, and liquid glass circular close `[x]` button.
+    - **Modular Architecture (`lib/presentation/widgets/edit_entry/`)**:
+      - `EditEntryStatusDropdown`: Status selector built with `g1455` `GlassPopoverAnchor` and `GlassMenuController`, clipped to prevent scrollbar leakage, featuring live status color badges (green for Watching, blue for Planning, purple for Completed, orange for Dropped, etc.) and checkmark indicators.
+      - `EditEntryScoreSlider`: Replaces raw text inputs with a modern 0.0 to 10.0 liquid glass slider (0.1 precision), featuring an amber star badge, live score readout, and quick `[-]` / `[+]` 0.5 step buttons with haptic feedback.
+      - `EditEntryStepper`: Liquid glass stepper for Progress (with visual progress fill bar when `totalCount` is known, and tap-to-input direct number dialog) and Repeats. Flex-safe header prevents label overflow.
+      - `EditEntryDatePicker`: Frosted glass date pills with calendar icon, ISO formatted date string, and clear `[x]` button for Start and Completion dates.
+    - **Bottom Action Bar**: Responsive `Wrap` layout preventing horizontal overflow across any screen width; includes context-aware delete button on the left, and cancel & primary accent `Save changes` button on the right.
+    - **Dynamic Theming (No Hardcoded Colors)**: All surfaces, input field fills, borders, dropdown menus, text, icons, and buttons dynamically consume `Theme.of(context).colorScheme` and `context.themeColors.borderRadius`.
   - **Endpoints & Persistence**:
-    - `POST /api/v1/anilist/list-entry`: Updates status, score, progress, start date, and completion date for both anime and manga, triggering automatic backend collection refresh. Note: AniList GraphQL schema strictly requires `scoreRaw` to be an integer (defaults to `0` when unscored/empty; passing `null` causes AniList validation error 400 *"The score raw must be an integer"* and backend HTTP 500).
+    - `POST /api/v1/anilist/list-entry`: Updates status, score, progress, start date, and completion date for both anime and manga, triggering automatic backend collection refresh. AniList GraphQL schema strictly requires `scoreRaw` to be an integer (defaults to `0` when unscored).
     - `DELETE /api/v1/anilist/list-entry`: Removes the entry from AniList.
     - `POST /api/v1/library/anime-entry/update-repeat`: Updates repeat count for anime.
     - `GET /api/v1/library/anime-entry/{id}` & `GET /api/v1/manga/entry/{id}`: Retrieves existing `listData` (dates, repeat, score) on open.
@@ -899,6 +946,18 @@ Inspired by **Plezy** (`edde746/plezy`), the player focuses on high performance,
 - **Supported Provider Types**: `anime-torrent-provider`, `manga-provider`, `onlinestream-provider`, `custom-source`.
 - **Extension Source Code Viewer**: `Icons.code_rounded` button opens `ExtensionCodeModal` fetching JS payload via `GET /api/v1/extensions/payload/{id}`.
 - **Extension Updates**: Handled via `POST /api/v1/extensions/all` with `{"withUpdates": true}`.
+- **Spanish & Multi-Language Video Extractor Suite (`extensions/jkanime/`, `extensions/tioanime/`, `scripts/aniting_play.py`, `VIDEOS.md`)**:
+  - **Reverse-Engineered Video Extractors (Detailed in `VIDEOS.md`)**:
+    - **AnimeX (`https://animex.one`)**: Direct AniList GraphQL mapping -> `pp.animex.one` REST API -> `cdnx.aniwatchtv.site/uwu/<token>` proxy with static XOR cipher (`10b06cdc1ca48c9fb0b94af97cc040cf`) and automatic intro/outro chapter markers. Supports Sub & Dub in 1080p with `--demuxer-lavf-format=hls`.
+    - **Kawaii Animes Local DB (`~/.cache/aniting/kawaii.db`)**: Replicated SQLite catalog (36k+ eps, 104k+ player streams) with native support for **Subtitulado** (`lang=0`), **Audio Latino** (`lang=1`), and **Audio Castellano** (`lang=2`). Extracts **LuluStream / Epsilon** (`luluvdoo.com`) into master HLS 1080p via Dean Edwards unpacking with strict `--referrer` and `--user-agent` enforcement.
+    - **Anime Nexus Analysis (`https://anime.nexus`)**: Reverse-engineered catalog API (WinterCMS) and Turnstile / HMAC WireProof DRM challenge; documented resolution via Seanime's Goja ChromeDP bindings or authenticated user sessions.
+    - **Dean Edwards JS Unpacker (`_unpackJs`)**: Ported from Kawaii Animes `JsUnpacker` algorithm supporting base 36/62 radix dictionary word replacement (`eval(function(p,a,c,k,e,d)...)`). Unpacks obfuscated script blocks into clean master `.m3u8` playlists for **StreamWish** and **Vidhide** hosts.
+    - **JK Native Player Extractor**: Scrapes `/jkplayer/um` and `/jkplayer/umv` iframes, extracting ultra-fast direct `.m3u8` streams from `nika.playmudos.com` with zero ads and instant playback.
+    - **Mp4Upload & YourUpload Direct Scrapers**: Direct regex extraction of high-speed MP4 video sources with correct `Referer` headers and 302 redirect tracking.
+    - **VOE Multi-Stage Extractor**: Handles redirect delivery hops, decoding base64 / rot13 payloads.
+  - **Multi-Server Cascade Resilience**: Both JKAnime and TioAnime providers implement resilient multi-server fallback: if the requested server fails or is unavailable, the provider automatically falls back through priority hosts (JK -> StreamWish -> Vidhide -> Mp4upload -> YourUpload -> Voe) to ensure zero playback failures.
+  - **Local Deployment**: Extensions are synchronized across `extensions/` (repository), `~/.config/aniting/extensions/`, and `~/.config/Seanime/extensions/`.
+  - **Terminal Player Tool (`scripts/aniting_play.py` / `aniting-play`)**: CLI utility integrating AniList GraphQL API, real-time multi-server scrapers (AnimeX, Kawaii Animes with 3 languages, JKAnime, TioAnime), and direct `mpv` execution with custom HTTP headers and chapter markers for rapid testing and zero-overhead playback.
 
 ### 4.4. Theming, Media Center & Focus Navigation
 - **Decoupled Modern Web / Media Center Styling**:
@@ -1045,16 +1104,16 @@ Inspired by **Plezy** (`edde746/plezy`), the player focuses on high performance,
   - **Permanent Downloads Directory (`Aniting/Downloads/`)**: Dedicated, persistent user-accessible folder automatically created on disk:
     - Android: `/storage/emulated/0/Download/Aniting/Downloads/` (fallback to App Documents `/Aniting/Downloads/`).
     - Linux / Desktop: `~/Downloads/Aniting/Downloads/` (or platform standard download directory).
-    - Subfolders: `Manga/` and `Anime/`.
+    - Subfolders: `Anime/aniting/Manga/` and `Anime/aniting/Anime/`.
   - Configurable / overridable in Manga/Anime settings via `downloadPreferencesProvider` (`app_custom_downloads_path`).
 - **Manga Offline Metadata & Filesystem Structure**:
-  - `Aniting/Downloads/Manga/<mediaId>_<slug>/`:
+  - `Anime/aniting/Manga/<mediaId>_<slug>/`:
     - `metadata.json`: Serialized `MangaEntry` (title, descriptions, genres, score, status, total chapters, progress, offline flags).
     - `cover.jpg`: High-resolution local cover for 100% offline card display.
     - `banner.jpg`: Local banner image for detail screens.
     - `{provider}_{mediaId}_{chapterId}_{chapterNumber}/`: Downloaded chapter packages containing `registry.json` and page images (`1.jpg`, `2.jpg`, ...).
   - Also seamlessly recognizes direct Seanime backend chapter folders `{provider}_{mediaId}_{chapterId}_{chapterNumber}` in the root downloads directory.
-  - **Android Scoped Storage Compliance (`AppStoragePaths`)**: Uses `/storage/emulated/0/Download/Aniting/Downloads/` to avoid Android 10+ (API 29+) root permission errors (`errno = 13`), with automatic graceful fallback to app-internal documents directory (`getApplicationDocumentsDirectory()`) if external storage creation fails.
+  - **Android Scoped Storage & Documents Compliance (`AppStoragePaths`)**: Uses `/storage/emulated/0/Documents/Anime/aniting/` (or `/storage/emulated/0/Download/Anime/aniting/`), with automatic graceful fallback to app-internal documents directory (`getApplicationDocumentsDirectory()`) if external storage creation fails.
 - **Offline Services & Integration (`MangaOfflineService`)**:
   - `getDownloadedMangaList()`: Scans disk and converts downloaded folders into standard `MangaEntry` objects.
   - `getDownloadedChapters(mediaId)`: Resolves downloaded chapters and orders them numerically.
@@ -1158,7 +1217,7 @@ Inspired by **Plezy** (`edde746/plezy`), the player focuses on high performance,
       - `DownloadsScreen`: Empty state and header refresh buttons trigger `repo.scanLibrary()` and allow opening the native downloads folder via `AppStoragePaths.openDirectoryInFileManager`.
       - `LocalLibraryView`: Empty local files state includes a dedicated "Escanear Carpeta Local" button so users can immediately index newly downloaded media.
     - **Resilient Anime Library Scan & Empty Path Handling (`seanime_repository.dart`, `backend/handlers/scan.go`, `streaming_settings_screen.dart`)**:
-      - `scanLibrary({bool enhanced = true})` checks whether `library.libraryPath` is configured in backend settings; if empty, it auto-patches `library.libraryPath` to `AppStoragePaths.getAnimeDownloadsDirectory()` (`~/Downloads/Aniting/Downloads/Anime`) before requesting a scan.
+      - `scanLibrary({bool enhanced = true})` checks whether `library.libraryPath` is configured in backend settings; if empty, it auto-patches `library.libraryPath` to `AppStoragePaths.getAnimeDownloadsDirectory()` (`~/Documents/Anime/aniting/Anime`) before requesting a scan.
       - Dispatches `{ "enhanced": true, "enhanceWithOfflineDatabase": true }` to allow title-based AniList and offline matching for untracked local video files.
       - Backend Go scanner guards against empty paths to prevent walking the server working directory (`.`) and treats unmatched local media gracefully without HTTP 500 errors.
       - Backend `HandleGetActiveTorrentList` checks for `TorrentClientRepository == nil` to prevent panic crashes on fresh/unconfigured databases.
@@ -1177,6 +1236,12 @@ Inspired by **Plezy** (`edde746/plezy`), the player focuses on high performance,
     - No migration or automatic copying is performed from legacy `Seanime` folders. `Aniting` starts completely fresh in its own dedicated space, preventing legacy corrupted states, duplicate extension conflicts, or server settings collisions.
     - `DesktopServer` launches `seanime.exe` explicitly passing `--datadir "%APPDATA%\Aniting"`.
     - Go backend (`initAppDataDir`) defaults directly to `Aniting` and supports `ANITING_DATA_DIR`, `ANITING_SERVER_HOST`, and `ANITING_SERVER_PORT` environment variables with graceful fallback to `SEANIME_*`.
+  - **Android Absolute Path Generation & Root Path Sanitization (`SeanimeServerRuntime.kt`, `SeanimeServerService.kt`, `backend/config.go`)**:
+    - Pre-compiled `seanime.aar` on Android previously failed to expand `$ANITING_DATA_DIR`, resolving paths to root `/cache` and `/logs` where SELinux blocked access (`stat /cache: permission denied`).
+    - `SeanimeServerRuntime.generateDefaultConfig` writes fully resolved absolute paths (`$dataDirPath/cache`, `$dataDirPath/logs`, etc.) avoiding unexpanded environment variables.
+    - `SeanimeServerRuntime.patchConfigFile` automatically cleans legacy or corrupt `config.toml` files, replacing occurrences of `'/cache'`, `'/logs'`, and `$ANITING_DATA_DIR` / `$SEANIME_DATA_DIR` with the valid, writable app storage directory.
+    - `SeanimeServerService` pre-creates `cache`, `logs`, `assets`, and `extensions` folders before starting the Go runtime.
+    - Go backend's `expandEnvironmentValues` incorporates `expandPathWithDataDir` with a fallback mechanism that intercepts forbidden root paths (`/cache`, `/logs`, `/assets`, etc.) and safely anchors them to `dataDir`.
 
 ---
 
@@ -1496,5 +1561,19 @@ Inspired by **Plezy** (`edde746/plezy`), the player focuses on high performance,
   - Eliminado `PaintingBinding.instance.imageCache.clear()` que purgaba la memoria de miniaturas de episodios obligando a recodificarlas desde cero al volver a la pantalla de detalles.
   - Eliminado el retraso artificial de 100ms en escritorio dentro de `handleExit`, permitiendo un pop inmediato a 120 FPS.
 
-
+### 7.22. Simplificación de Temas (Claro / Oscuro / OLED) y Estandarización Liquid Glass con `g1455` (2026-10-09)
+- **Simplificación del Sistema de Temas (`theme_settings_screen.dart`, `welcome_step_theme.dart`)**:
+  - Depurado el selector de temas reduciendo las opciones a únicamente 3 modos fundamentales y limpios: **Modo Claro**, **Modo Oscuro** y **Modo OLED** (Negro puro `#000000`).
+  - Eliminadas las listas y pestañas abigarradas de paletas comunitarias redundantes, dejando una interfaz despejada y directa.
+  - Mantenido el selector horizontal de color de acento para personalizar bordes e indicadores de forma sutil y elegante sin alterar la sobriedad del fondo.
+- **Estandarización Canónica de Vidrio Líquido con `package:g1455` (`https://g1455.plugfox.dev/SKILL.md`)**:
+  - **Selector de Fuentes de Streaming Online (`desktop_episodes_tab.dart`)**:
+    - Reemplazado el modal flotante opaco por `GlassMenuAnchor` + `GlassMenuItem` + `GlassButton` nativo de `g1455`.
+    - Apertura descendente fluida morphing directamente desde el botón activador cuando hay espacio vertical disponible en pantalla.
+  - **Menú Contextual de Episodios en Escritorio (`desktop_episode_context_menu.dart`)**:
+    - Reestructurado el diálogo contextual para usar directamente `GlassCard` de `g1455` con animación spring pop (`Curves.easeOutBack`, escala 0.88 ➔ 1.0).
+    - Eliminado el envoltorio redundante de `BackdropFilter` y fondos sólidos opacos (`alpha: 0.94`), adaptando el contraste tanto para Modo Claro (texto `black87` con micro-hover `alpha: 0.07`) como Modo Oscuro (texto `white` con micro-hover `alpha: 0.12`).
+  - **Modal de Edición y Popovers (`edit_entry_modal.dart`, `edit_entry_status_dropdown.dart`)**:
+    - Eliminados `BackdropFilter` redundantes que causaban sobre-desenfoque y contenedores blancos opacos de alto alpha que ocultaban la refracción líquida.
+    - Los selectores de estado ahora aprovechan directamente la superficie `GlassSurface` provista por `GlassPopoverAnchor`.
 

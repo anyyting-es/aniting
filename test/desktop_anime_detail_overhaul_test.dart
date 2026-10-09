@@ -6,6 +6,7 @@ import 'package:seanime_app/data/models/anime_details.dart';
 import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
 import 'package:seanime_app/presentation/widgets/anime_detail/desktop/desktop_action_bar.dart';
 import 'package:seanime_app/presentation/widgets/anime_detail/desktop/desktop_characters_tab.dart';
+import 'package:seanime_app/presentation/widgets/anime_detail/desktop/desktop_header.dart';
 import 'package:seanime_app/presentation/widgets/anime_detail/desktop/desktop_recommendations_tab.dart';
 import 'package:seanime_app/presentation/widgets/anime_detail/desktop/desktop_relations_tab.dart';
 import 'package:seanime_app/presentation/widgets/anime_detail/desktop/desktop_sidebar.dart';
@@ -64,34 +65,56 @@ void main() {
       expect(details.trailer?['id'], 'abc123xyz');
     });
 
-    testWidgets('DesktopSidebar renders enlarged poster and no trailer button', (tester) async {
+    testWidgets('DesktopSidebar renders enlarged poster without bottom metadata list', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
             body: SingleChildScrollView(
               child: DesktopSidebar(
                 coverUrl: null,
-                format: 'TV',
-                status: 'FINISHED',
-                airedStr: '2026',
-                seasonYearStr: 'SPRING 2026',
-                score: 85,
-                studio: 'Madhouse',
               ),
             ),
           ),
         ),
       );
 
-      // Verify trailer button is NOT in the sidebar
+      // Verify trailer button and metadata list are NOT in the sidebar
       expect(find.text('Watch trailer'), findsNothing);
       expect(find.text('No trailer'), findsNothing);
+      expect(find.text('Format'), findsNothing);
+      expect(find.text('Studio'), findsNothing);
+    });
 
-      // Verify metadata items exist
-      expect(find.text('Format'), findsOneWidget);
-      expect(find.text('TV Show'), findsOneWidget);
-      expect(find.text('Studio'), findsOneWidget);
+    testWidgets('DesktopHeader renders title, genres, and metadata badges on the right', (tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: DesktopHeader(
+                seasonYearStr: 'SPRING 2026',
+                title: 'Test Anime',
+                genres: ['Action', 'Fantasy'],
+                description: 'Test Synopsis',
+                format: 'TV',
+                status: 'FINISHED',
+                score: 85,
+                studio: 'Madhouse',
+                totalEpisodes: 24,
+                duration: 24,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('SPRING 2026'), findsOneWidget);
+      expect(find.text('Test Anime'), findsOneWidget);
+      expect(find.text('TV'), findsOneWidget);
+      expect(find.text('Finalizado'), findsOneWidget);
       expect(find.text('Madhouse'), findsOneWidget);
+      expect(find.text('85%'), findsOneWidget);
+      expect(find.text('Action'), findsOneWidget);
+      expect(find.text('Fantasy'), findsOneWidget);
     });
 
     testWidgets('DesktopActionBar renders trailer button next to play and bookmark', (tester) async {
@@ -108,12 +131,10 @@ void main() {
                 trailerSite: 'youtube',
                 hasTrailer: true,
                 currentTab: AnimeDetailTab.online,
-                isLocalMode: false,
                 onlineEnabled: true,
                 torrentEnabled: true,
                 onPlayNext: () {},
                 onOpenEditEntryModal: (_) {},
-                onToggleLocalMode: () {},
                 onTabChanged: (_) {},
               ),
             ),
@@ -179,9 +200,11 @@ void main() {
       ];
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: DesktopRelationsTab(relations: relations),
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: DesktopRelationsTab(relations: relations),
+            ),
           ),
         ),
       );
@@ -205,9 +228,11 @@ void main() {
       ];
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: DesktopRecommendationsTab(recommendations: recommendations),
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: DesktopRecommendationsTab(recommendations: recommendations),
+            ),
           ),
         ),
       );

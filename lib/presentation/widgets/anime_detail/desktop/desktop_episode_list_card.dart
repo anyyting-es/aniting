@@ -71,7 +71,7 @@ class _DesktopListEpisodeCardState extends ConsumerState<DesktopListEpisodeCard>
               children: [
                 // Left 16:9 Thumbnail with Box Expansion on hover (No play icon)
                 SizedBox(
-                  width: 220,
+                  width: 240,
                   child: AspectRatio(
                     aspectRatio: 16 / 9,
                     child: AnimatedScale(
@@ -104,7 +104,7 @@ class _DesktopListEpisodeCardState extends ConsumerState<DesktopListEpisodeCard>
                                 ? CachedNetworkImage(
                                     imageUrl: widget.ep.image!,
                                     fit: BoxFit.cover,
-                                    memCacheWidth: 440,
+                                    memCacheWidth: 480,
                                     errorWidget: (_, _, _) => _buildPlaceholder(),
                                   )
                                 : _buildPlaceholder(),
@@ -213,7 +213,7 @@ class _DesktopListEpisodeCardState extends ConsumerState<DesktopListEpisodeCard>
                   ),
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 18),
 
                   // Right Title & Synopsis
                   Expanded(
@@ -226,7 +226,7 @@ class _DesktopListEpisodeCardState extends ConsumerState<DesktopListEpisodeCard>
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: 15,
                             fontWeight: FontWeight.bold,
                             color: _isHovered ? theme.colorScheme.primary : titleColor,
                           ),
@@ -239,7 +239,7 @@ class _DesktopListEpisodeCardState extends ConsumerState<DesktopListEpisodeCard>
                           maxLines: 3,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            fontSize: 12.5,
+                            fontSize: 13,
                             color: descColor,
                             height: 1.35,
                           ),

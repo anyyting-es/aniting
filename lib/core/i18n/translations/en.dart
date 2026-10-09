@@ -1263,6 +1263,8 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get formatTv => 'TV Series';
   @override
+  String get formatTvShort => 'TV Short';
+  @override
   String get formatMovie => 'Movie';
   @override
   String get formatOva => 'OVA';
@@ -1284,6 +1286,22 @@ class EnglishTranslations implements AppTranslations {
   String get allSeasons => 'All Seasons';
   @override
   String get activeFilters => 'Active Filters';
+  @override
+  String get discoverSeries => 'Discover series';
+  @override
+  String get highestRatedShows => 'Highest rated shows';
+  @override
+  String get allTags => 'All tags';
+  @override
+  String get allScores => 'All scores';
+  @override
+  String get timelessYear => 'Timeless';
+  @override
+  String get adultContent => 'Adult';
+  @override
+  String get titleSearchPlaceholder => 'Title';
+  @override
+  String get highestScore => 'Highest score';
 
   // Onboarding / Welcome screen
   @override
@@ -1425,7 +1443,7 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get mangaDownloadDir => 'Download Directory';
   @override
-  String get mangaDownloadDirDesc => 'Aniting/Downloads/Manga (Independent of working/cache directory)';
+  String get mangaDownloadDirDesc => 'Anime/aniting/Manga (Independent of working/cache directory)';
   @override
   String get loadingPath => 'Loading path...';
   @override
@@ -1490,6 +1508,33 @@ class EnglishTranslations implements AppTranslations {
         return seasonFall;
       default:
         return season;
+    }
+  }
+
+  @override
+  String formatFormat(String? format) {
+    if (format == null || format.isEmpty) return '';
+    switch (format.toUpperCase()) {
+      case 'TV':
+        return formatTv;
+      case 'TV_SHORT':
+        return formatTvShort;
+      case 'MOVIE':
+        return formatMovie;
+      case 'SPECIAL':
+        return formatSpecial;
+      case 'OVA':
+        return formatOva;
+      case 'ONA':
+        return formatOna;
+      case 'MANGA':
+        return formatManga;
+      case 'NOVEL':
+        return formatNovel;
+      case 'ONE_SHOT':
+        return formatOneShot;
+      default:
+        return format;
     }
   }
 
@@ -1707,7 +1752,7 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get noDownloadedMangaTitle => 'No downloaded manga';
   @override
-  String get noDownloadedMangaDesc => 'Chapters downloaded to read in the offline reader will be saved in Aniting/Downloads/Manga and appear here.';
+  String get noDownloadedMangaDesc => 'Chapters downloaded to read in the offline reader will be saved in Anime/aniting/Manga and appear here.';
   @override
   String get exploreManga => 'Explore Manga';
   @override
@@ -2077,5 +2122,55 @@ class EnglishTranslations implements AppTranslations {
   String get downloaded => 'Downloaded';
   @override
   String get viewAll => 'View all';
+
+  // Episode Context Menu
+  @override
+  String get playEpisode => 'Play Episode';
+  @override
+  String get markAsWatched => 'Mark as Watched';
+  @override
+  String get markAsUnwatched => 'Mark as Unwatched';
+  @override
+  String markedAsWatched(int ep) => 'Episode $ep marked as watched';
+  @override
+  String markedAsUnwatched(int ep) => 'Episode $ep marked as unwatched';
+  @override
+  String get downloadEpisode => 'Download Episode';
+
+  // Liquid Glass Effects Preference
+  @override
+  String get glassEffectSettingTitle => 'Liquid Glass Effects';
+  @override
+  String get glassEffectSettingSubtitle => 'Enable modern optical refraction and frosted glass styling across the app';
+  @override
+  String get glassTierFull => 'Full (Liquid Glass)';
+  @override
+  String get glassTierFullDesc => 'Dynamic backdrop refraction, specular rims, and fluid blur';
+  @override
+  String get glassTierCheap => 'Performance (Low)';
+  @override
+  String get glassTierCheapDesc => 'Lightweight translucent tint without sampling backdrops';
+  @override
+  String get glassTierOpaque => 'Disabled (Opaque)';
+  @override
+  String get glassTierOpaqueDesc => 'Solid high-contrast surface without transparency';
+
+  // Edit Entry Modal
+  @override
+  String get editEntryTitle => 'Edit Entry';
+  @override
+  String get startDate => 'Start date';
+  @override
+  String get completionDate => 'Completion date';
+  @override
+  String get selectDate => 'Select a date';
+  @override
+  String get totalRewatches => 'Total rewatches';
+  @override
+  String get totalRereads => 'Total rereads';
+  @override
+  String get noScore => 'No score';
+  @override
+  String get saveChanges => 'Save changes';
 }
 

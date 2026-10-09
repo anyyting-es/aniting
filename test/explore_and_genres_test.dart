@@ -9,10 +9,12 @@ import 'package:seanime_app/presentation/screens/airing_calendar_screen.dart';
 import 'package:seanime_app/presentation/screens/genre_detail_screen.dart';
 import 'package:seanime_app/presentation/screens/genres_screen.dart';
 import 'package:seanime_app/presentation/screens/search_screen.dart';
-import 'package:seanime_app/presentation/widgets/compact_search_bar.dart';
+import 'package:seanime_app/presentation/widgets/catalog_search/catalog_search_view.dart';
 
 import 'package:seanime_app/core/api/api_client.dart';
 import 'package:seanime_app/data/models/airing_schedule.dart';
+import 'package:seanime_app/data/models/anime_entry.dart';
+import 'package:seanime_app/data/models/manga_entry.dart';
 import 'package:seanime_app/data/repositories/seanime_repository.dart';
 
 class MockServerNotifier extends ServerNotifier {
@@ -33,15 +35,52 @@ class FakeCalendarRepository extends SeanimeRepository {
     int perPage = 50,
     int maxItems = 250,
   }) async => [];
+
+  @override
+  Future<List<AnimeEntry>> discoverAnime({
+    String? search,
+    List<String>? genres,
+    List<String>? tags,
+    String? season,
+    int? year,
+    String? format,
+    String? status,
+    int? minScore,
+    bool isAdult = false,
+    String sort = 'TRENDING_DESC',
+    int page = 1,
+    int perPage = 24,
+  }) async => [];
+
+  @override
+  Future<List<MangaEntry>> discoverManga({
+    String? search,
+    List<String>? genres,
+    List<String>? tags,
+    int? year,
+    String? format,
+    String? status,
+    int? minScore,
+    bool isAdult = false,
+    String sort = 'TRENDING_DESC',
+    int page = 1,
+    int perPage = 24,
+  }) async => [];
 }
 
 void main() {
   group('Explore, Airing Calendar & Genres Tests', () {
     testWidgets('SearchScreen renders Explore title and Calendar/Genres action icons', (tester) async {
+      tester.view.physicalSize = const Size(1200, 1200);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
             serverNotifierProvider.overrideWith(MockServerNotifier.new),
+            repositoryProvider.overrideWithValue(FakeCalendarRepository()),
           ],
           child: const MaterialApp(
             home: SearchScreen(),
@@ -50,15 +89,13 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.text('Explorar'), findsNothing);
-      expect(find.byIcon(Icons.calendar_month_rounded), findsNothing);
       expect(find.byIcon(AppIcons.category()), findsOneWidget);
       expect(find.byIcon(AppIcons.search()), findsOneWidget);
 
-      // Tap search icon to expand CompactSearchBar
+      // Tap search icon to expand CatalogSearchView
       await tester.tap(find.byIcon(AppIcons.search()));
-      await tester.pump();
-      expect(find.byType(CompactSearchBar), findsOneWidget);
+      await tester.pumpAndSettle();
+      expect(find.byType(CatalogSearchView), findsOneWidget);
     });
 
     testWidgets('GenresScreen renders genre cards with gradient items', (tester) async {

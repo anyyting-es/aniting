@@ -95,6 +95,11 @@ void main() {
       expect(fallbackDir.path, equals('$base/Manga/2002'));
       expect(await fallbackDir.exists(), isTrue);
     });
+
+    test('getDefaultDownloadsBasePath resolves to Documents/Anime/aniting', () async {
+      final defaultBasePath = await AppStoragePaths.getDefaultDownloadsBasePath();
+      expect(defaultBasePath, contains('Anime/aniting'));
+    });
   });
 
   group('MangaOfflineService Operations Tests', () {

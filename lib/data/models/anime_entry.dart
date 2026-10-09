@@ -26,6 +26,7 @@ class AnimeEntry {
   final int? nextAiringEpisodeNumber;
   final int? nextAiringEpisodeAiringAt;
   final int? year;
+  final String? season;
   final List<String> genres;
   final bool hasLocalFiles;
   final int mainFileCount;
@@ -57,6 +58,7 @@ class AnimeEntry {
     this.nextAiringEpisodeNumber,
     this.nextAiringEpisodeAiringAt,
     this.year,
+    this.season,
     this.hasLocalFiles = false,
     this.mainFileCount = 0,
   });
@@ -139,6 +141,7 @@ class AnimeEntry {
     int? nextAiringEpisodeNumber,
     int? nextAiringEpisodeAiringAt,
     int? year,
+    String? season,
     List<String>? genres,
     bool? hasLocalFiles,
     int? mainFileCount,
@@ -170,6 +173,7 @@ class AnimeEntry {
       nextAiringEpisodeNumber: nextAiringEpisodeNumber ?? this.nextAiringEpisodeNumber,
       nextAiringEpisodeAiringAt: nextAiringEpisodeAiringAt ?? this.nextAiringEpisodeAiringAt,
       year: year ?? this.year,
+      season: season ?? this.season,
       hasLocalFiles: hasLocalFiles ?? this.hasLocalFiles,
       mainFileCount: mainFileCount ?? this.mainFileCount,
     );
@@ -392,6 +396,7 @@ class AnimeEntry {
       nextAiringEpisodeNumber: nextAiringEp,
       nextAiringEpisodeAiringAt: nextAiringTime,
       year: parsedYear,
+      season: (media['season'] ?? json['season']) as String?,
       hasLocalFiles: hasLocal,
       mainFileCount: mainFiles,
     );

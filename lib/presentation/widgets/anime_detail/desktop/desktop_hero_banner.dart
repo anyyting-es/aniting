@@ -65,6 +65,23 @@ class DesktopHeroBanner extends ConsumerWidget {
               color: scaffoldBackgroundColor.withValues(alpha: 0.22),
             ),
 
+            // Left-to-right gradient: deeper opacity on left for text readability, clear on right
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                  colors: [
+                    scaffoldBackgroundColor.withValues(alpha: 0.92),
+                    scaffoldBackgroundColor.withValues(alpha: 0.75),
+                    scaffoldBackgroundColor.withValues(alpha: 0.30),
+                    Colors.transparent,
+                  ],
+                  stops: const [0.0, 0.35, 0.68, 1.0],
+                ),
+              ),
+            ),
+
             // Non-linear bottom gradient for deep cinematic contrast into theme background
             Container(
               decoration: BoxDecoration(

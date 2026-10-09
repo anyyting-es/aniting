@@ -221,6 +221,14 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  g1455:
+    dependency: "direct main"
+    description:
+      name: g1455
+      sha256: d47a970372527faa44d79f70b1ee9426e8ff48bded4d8069360c595683027df6
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.4"
   gap:
     dependency: "direct main"
     description:

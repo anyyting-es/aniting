@@ -91,6 +91,12 @@ class SeanimeServerService : Service() {
                 val dataDir = SeanimeServerRuntime.dataDir(applicationContext)
                 val cacheDir = File(dataDir, "cache")
                 if (!cacheDir.exists()) cacheDir.mkdirs()
+                val logsDir = File(dataDir, "logs")
+                if (!logsDir.exists()) logsDir.mkdirs()
+                val assetsDir = File(dataDir, "assets")
+                if (!assetsDir.exists()) assetsDir.mkdirs()
+                val extensionsDir = File(dataDir, "extensions")
+                if (!extensionsDir.exists()) extensionsDir.mkdirs()
 
                 Mobile.startServer(dataDir.absolutePath, cacheDir.absolutePath, port.toLong())
                 SeanimeServerRuntime.setRunning(applicationContext)

@@ -231,11 +231,13 @@ class AniZipData {
         return ep;
       }
     }
-    // Fallback: If no non-special episode found (e.g. movies where seasonNumber is 0 in TVDB),
+    // Fallback: If ALL episodes were classified as special (e.g. movies in TVDB Season 0),
     // check all episodes matching episodeNumber
-    for (final ep in episodes) {
-      if (ep.episodeNumber == episodeNumber) {
-        return ep;
+    if (episodes.every((e) => e.isSpecial)) {
+      for (final ep in episodes) {
+        if (ep.episodeNumber == episodeNumber) {
+          return ep;
+        }
       }
     }
     // Fallback 2: Single-episode movie where episodeNumber might be 1

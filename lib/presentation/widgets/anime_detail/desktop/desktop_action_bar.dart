@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:g1455/g1455.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:url_launcher/url_launcher_string.dart';
@@ -15,12 +16,10 @@ class DesktopActionBar extends ConsumerWidget {
   final String? trailerSite;
   final bool hasTrailer;
   final AnimeDetailTab currentTab;
-  final bool isLocalMode;
   final bool onlineEnabled;
   final bool torrentEnabled;
   final VoidCallback onPlayNext;
   final void Function(String title) onOpenEditEntryModal;
-  final VoidCallback onToggleLocalMode;
   final ValueChanged<AnimeDetailTab> onTabChanged;
   final VoidCallback? onDownload;
 
@@ -34,12 +33,10 @@ class DesktopActionBar extends ConsumerWidget {
     this.trailerSite,
     this.hasTrailer = false,
     required this.currentTab,
-    required this.isLocalMode,
     required this.onlineEnabled,
     required this.torrentEnabled,
     required this.onPlayNext,
     required this.onOpenEditEntryModal,
-    required this.onToggleLocalMode,
     required this.onTabChanged,
     this.onDownload,
   });
@@ -97,7 +94,7 @@ class DesktopActionBar extends ConsumerWidget {
 
     return Row(
       children: [
-        // Big Pill Play Button with Gentle Scaling
+        // Floating Pill Play Button with Gentle Scaling
         _HoverPlayButton(
           onTap: onPlayNext,
           icon: AppIcons.play(iconPack),
@@ -140,7 +137,7 @@ class DesktopActionBar extends ConsumerWidget {
           const SizedBox(width: 8),
         ],
 
-        // AniList External Link with Official Brand Icon (Clean, no borders)
+        // AniList External Link with Official Brand Icon (Clean circular, no boxes)
         _HoverBrandIcon(
           assetPath: 'assets/icons/AniList_logo.png',
           tooltip: l10n.viewOnAnilist,
@@ -148,7 +145,7 @@ class DesktopActionBar extends ConsumerWidget {
         ),
         const SizedBox(width: 8),
 
-        // MAL External Link with Official Brand Icon (Clean, no borders)
+        // MAL External Link with Official Brand Icon (Clean circular, no boxes)
         if (idMal != null) ...[
           _HoverBrandIcon(
             assetPath: 'assets/icons/MyAnimeList_Logo.png',
@@ -160,56 +157,56 @@ class DesktopActionBar extends ConsumerWidget {
 
         const Spacer(),
 
-        // Source Mode Toggle (Online / Torrent)
-        if (!isLocalMode && onlineEnabled && torrentEnabled) ...[
-          Container(
-            padding: const EdgeInsets.all(3),
-            decoration: BoxDecoration(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.06)
-                  : theme.colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.08)
-                    : theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _HoverSourcePill(
-                  label: 'Online',
-                  icon: AppIcons.globe(iconPack),
-                  isSelected: currentTab == AnimeDetailTab.online,
-                  onTap: () => onTabChanged(AnimeDetailTab.online),
+        // Source Mode Toggle (Online / Torrent) with GlassSegmentedControl
+        if (onlineEnabled && torrentEnabled) ...[
+          SizedBox(
+            width: 230,
+            child: GlassSegmentedControl(
+              selectedIndex: currentTab == AnimeDetailTab.online ? 0 : 1,
+              onSelected: (index) {
+                onTabChanged(index == 0 ? AnimeDetailTab.online : AnimeDetailTab.torrent);
+              },
+              trackColor: isDark
+                  ? Colors.white.withValues(alpha: 0.08)
+                  : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+              thumbColor: isDark
+                  ? theme.colorScheme.surfaceContainerHighest
+                  : Colors.white,
+              segments: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(AppIcons.globe(iconPack), size: 13),
+                      const SizedBox(width: 4),
+                      const Text(
+                        'Online',
+                        style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
                 ),
-                _HoverSourcePill(
-                  label: 'Torrent',
-                  icon: AppIcons.cloudDownload(iconPack),
-                  isSelected: currentTab == AnimeDetailTab.torrent,
-                  onTap: () => onTabChanged(AnimeDetailTab.torrent),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(AppIcons.cloudDownload(iconPack), size: 13),
+                      const SizedBox(width: 4),
+                      const Text(
+                        'Torrent',
+                        style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 8),
         ],
-
-        // Local library toggle
-        _HoverIconButton(
-          tooltip: isLocalMode ? l10n.exitLocalMode : l10n.localLibrary,
-          icon: isLocalMode ? AppIcons.folderFilled(iconPack) : AppIcons.folder(iconPack),
-          iconColor: isLocalMode
-              ? theme.colorScheme.primary
-              : (isDark ? Colors.white : theme.colorScheme.onSurfaceVariant),
-          backgroundColor: isLocalMode
-              ? theme.colorScheme.primaryContainer
-              : (isDark
-                  ? Colors.white.withValues(alpha: 0.05)
-                  : theme.colorScheme.surfaceContainerHighest),
-          onTap: onToggleLocalMode,
-        ),
       ],
     );
   }
@@ -244,26 +241,43 @@ class _HoverPlayButtonState extends State<_HoverPlayButton> {
         scale: _isHovered ? 1.025 : 1.0,
         duration: const Duration(milliseconds: 180),
         curve: Curves.easeOutCubic,
-        child: InkWell(
-          onTap: widget.onTap,
+        child: GlassCard(
           borderRadius: BorderRadius.circular(24),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 9),
-            decoration: BoxDecoration(
-              color: isDark ? Colors.white : theme.colorScheme.primary,
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: (isDark ? Colors.black : theme.colorScheme.primary).withValues(alpha: _isHovered ? 0.35 : 0.20),
-                  blurRadius: _isHovered ? 12 : 6,
-                  offset: Offset(0, _isHovered ? 3 : 1),
+          padding: EdgeInsets.zero,
+          child: InkWell(
+            onTap: widget.onTap,
+            borderRadius: BorderRadius.circular(24),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 9),
+              decoration: BoxDecoration(
+                color: isDark
+                    ? (_isHovered
+                        ? Colors.white.withValues(alpha: 0.95)
+                        : Colors.white.withValues(alpha: 0.85))
+                    : (_isHovered
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.primary.withValues(alpha: 0.9)),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.25)
+                      : theme.colorScheme.primary.withValues(alpha: 0.3),
+                  width: 0.8,
                 ),
-              ],
-            ),
-            child: Icon(
-              widget.icon,
-              color: isDark ? Colors.black : Colors.white,
-              size: 24,
+                boxShadow: [
+                  BoxShadow(
+                    color: (isDark ? Colors.black : theme.colorScheme.primary)
+                        .withValues(alpha: _isHovered ? 0.35 : 0.20),
+                    blurRadius: _isHovered ? 12 : 6,
+                    offset: Offset(0, _isHovered ? 3 : 1),
+                  ),
+                ],
+              ),
+              child: Icon(
+                widget.icon,
+                color: isDark ? Colors.black : Colors.white,
+                size: 24,
+              ),
             ),
           ),
         ),
@@ -275,15 +289,11 @@ class _HoverPlayButtonState extends State<_HoverPlayButton> {
 class _HoverIconButton extends StatefulWidget {
   final String tooltip;
   final IconData icon;
-  final Color? iconColor;
-  final Color? backgroundColor;
   final VoidCallback onTap;
 
   const _HoverIconButton({
     required this.tooltip,
     required this.icon,
-    this.iconColor,
-    this.backgroundColor,
     required this.onTap,
   });
 
@@ -306,7 +316,7 @@ class _HoverIconButtonState extends State<_HoverIconButton> {
         ? Colors.white.withValues(alpha: 0.12)
         : theme.colorScheme.surfaceContainerHigh;
 
-    final baseBg = widget.backgroundColor ?? defaultBaseBg;
+    final baseBg = defaultBaseBg;
     final hoverBg = _isHovered ? defaultHoverBg : baseBg;
 
     final defaultIconColor = isDark
@@ -323,33 +333,38 @@ class _HoverIconButtonState extends State<_HoverIconButton> {
           scale: _isHovered ? 1.025 : 1.0,
           duration: const Duration(milliseconds: 180),
           curve: Curves.easeOutCubic,
-          child: InkWell(
-            onTap: widget.onTap,
+          child: GlassCard(
             borderRadius: BorderRadius.circular(24),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              curve: Curves.easeOutCubic,
-              padding: const EdgeInsets.all(9),
-              decoration: BoxDecoration(
-                color: _isHovered ? hoverBg : baseBg,
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: _isHovered ? 0.18 : 0.08)
-                      : theme.colorScheme.outlineVariant.withValues(alpha: _isHovered ? 0.6 : 0.3),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: _isHovered ? 0.25 : 0.10),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
+            padding: EdgeInsets.zero,
+            child: InkWell(
+              onTap: widget.onTap,
+              borderRadius: BorderRadius.circular(24),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                curve: Curves.easeOutCubic,
+                padding: const EdgeInsets.all(9),
+                decoration: BoxDecoration(
+                  color: _isHovered ? hoverBg : baseBg,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: isDark
+                        ? Colors.white.withValues(alpha: _isHovered ? 0.22 : 0.08)
+                        : theme.colorScheme.outlineVariant.withValues(alpha: _isHovered ? 0.6 : 0.3),
+                    width: 0.8,
                   ),
-                ],
-              ),
-              child: Icon(
-                widget.icon,
-                color: widget.iconColor ?? defaultIconColor,
-                size: 20,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: _isHovered ? 0.25 : 0.10),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  widget.icon,
+                  color: defaultIconColor,
+                  size: 20,
+                ),
               ),
             ),
           ),
@@ -399,128 +414,43 @@ class _HoverBrandIconState extends State<_HoverBrandIcon> {
           scale: _isHovered ? 1.025 : 1.0,
           duration: const Duration(milliseconds: 180),
           curve: Curves.easeOutCubic,
-          child: InkWell(
-            onTap: widget.onTap,
-            borderRadius: BorderRadius.circular(10),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              curve: Curves.easeOutCubic,
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: _isHovered ? hoverBg : baseBg,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: _isHovered ? 0.18 : 0.08)
-                      : theme.colorScheme.outlineVariant.withValues(alpha: _isHovered ? 0.6 : 0.3),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: _isHovered ? 0.25 : 0.10),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
+          child: GlassCard(
+            borderRadius: BorderRadius.circular(24),
+            padding: EdgeInsets.zero,
+            child: InkWell(
+              onTap: widget.onTap,
+              borderRadius: BorderRadius.circular(24),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                curve: Curves.easeOutCubic,
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: _isHovered ? hoverBg : baseBg,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: isDark
+                        ? Colors.white.withValues(alpha: _isHovered ? 0.22 : 0.08)
+                        : theme.colorScheme.outlineVariant.withValues(alpha: _isHovered ? 0.6 : 0.3),
+                    width: 0.8,
                   ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(5),
-                child: Image.asset(
-                  widget.assetPath,
-                  width: 22,
-                  height: 22,
-                  fit: BoxFit.contain,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: _isHovered ? 0.25 : 0.10),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: ClipOval(
+                  child: Image.asset(
+                    widget.assetPath,
+                    width: 22,
+                    height: 22,
+                    fit: BoxFit.contain,
+                  ),
                 ),
               ),
             ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _HoverSourcePill extends StatefulWidget {
-  final String label;
-  final IconData icon;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _HoverSourcePill({
-    required this.label,
-    required this.icon,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  State<_HoverSourcePill> createState() => _HoverSourcePillState();
-}
-
-class _HoverSourcePillState extends State<_HoverSourcePill> {
-  bool _isHovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    final selectedBg = isDark
-        ? Colors.white.withValues(alpha: 0.16)
-        : theme.colorScheme.surface;
-    final hoverBg = isDark
-        ? Colors.white.withValues(alpha: 0.06)
-        : theme.colorScheme.surface.withValues(alpha: 0.5);
-
-    final selectedColor = isDark ? Colors.white : theme.colorScheme.primary;
-    final unselectedColor = isDark
-        ? (_isHovered ? Colors.white : Colors.white60)
-        : (_isHovered ? theme.colorScheme.onSurface : theme.colorScheme.onSurfaceVariant);
-
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: InkWell(
-        onTap: widget.onTap,
-        borderRadius: BorderRadius.circular(16),
-        hoverColor: Colors.transparent,
-        splashColor: Colors.transparent,
-        highlightColor: Colors.transparent,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-          decoration: BoxDecoration(
-            color: widget.isSelected
-                ? selectedBg
-                : (_isHovered ? hoverBg : Colors.transparent),
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: widget.isSelected && !isDark
-                ? [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.08),
-                      blurRadius: 4,
-                      offset: const Offset(0, 1),
-                    )
-                  ]
-                : null,
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                widget.icon,
-                size: 14,
-                color: widget.isSelected ? selectedColor : unselectedColor,
-              ),
-              const SizedBox(width: 5),
-              Text(
-                widget.label,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: widget.isSelected ? FontWeight.w700 : FontWeight.w500,
-                  color: widget.isSelected ? selectedColor : unselectedColor,
-                ),
-              ),
-            ],
           ),
         ),
       ),

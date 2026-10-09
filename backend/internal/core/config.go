@@ -9,6 +9,7 @@ import (
 	"seanime/internal/constants"
 	"seanime/internal/util"
 	"strconv"
+	"strings"
 
 	"github.com/rs/zerolog"
 	"github.com/spf13/viper"
@@ -243,7 +244,7 @@ func NewConfig(options *ConfigOptions, logger *zerolog.Logger) (*Config, error) 
 	}
 
 	// Expand the values, replacing environment variables
-	expandEnvironmentValues(cfg)
+	expandEnvironmentValues(cfg, dataDir)
 	cfg.Data.AppDataDir = dataDir
 	cfg.Data.WorkingDir = os.Getenv("SEANIME_WORKING_DIR")
 
@@ -253,7 +254,7 @@ func NewConfig(options *ConfigOptions, logger *zerolog.Logger) (*Config, error) 
 		_ = viper.WriteConfig()
 		_ = viper.ReadInConfig()
 		_ = viper.Unmarshal(cfg)
-		expandEnvironmentValues(cfg)
+		expandEnvironmentValues(cfg, dataDir)
 	}
 
 	// Check validity of the config
@@ -477,24 +478,60 @@ func updateVersion(cfg *Config, opts *ConfigOptions) error {
 	return viper.WriteConfig()
 }
 
-func expandEnvironmentValues(cfg *Config) {
+func expandEnvironmentValues(cfg *Config, dataDir string) {
 	defer func() {
 		if r := recover(); r != nil {
 			// Do nothing
 		}
 	}()
-	cfg.Web.AssetDir = filepath.FromSlash(os.ExpandEnv(cfg.Web.AssetDir))
-	cfg.Cache.Dir = filepath.FromSlash(os.ExpandEnv(cfg.Cache.Dir))
-	cfg.Cache.TranscodeDir = filepath.FromSlash(os.ExpandEnv(cfg.Cache.TranscodeDir))
-	cfg.Logs.Dir = filepath.FromSlash(os.ExpandEnv(cfg.Logs.Dir))
-	cfg.Manga.DownloadDir = filepath.FromSlash(os.ExpandEnv(cfg.Manga.DownloadDir))
-	cfg.Manga.LocalDir = filepath.FromSlash(os.ExpandEnv(cfg.Manga.LocalDir))
-	cfg.Offline.Dir = filepath.FromSlash(os.ExpandEnv(cfg.Offline.Dir))
-	cfg.Offline.AssetDir = filepath.FromSlash(os.ExpandEnv(cfg.Offline.AssetDir))
-	cfg.Extensions.Dir = filepath.FromSlash(os.ExpandEnv(cfg.Extensions.Dir))
-	cfg.Torrent.Dir = filepath.FromSlash(os.ExpandEnv(cfg.Torrent.Dir))
-	cfg.Server.Tls.CertPath = filepath.FromSlash(os.ExpandEnv(cfg.Server.Tls.CertPath))
-	cfg.Server.Tls.KeyPath = filepath.FromSlash(os.ExpandEnv(cfg.Server.Tls.KeyPath))
+
+	mapper := func(val string) string {
+		if val == "" {
+			return ""
+		}
+		expanded := os.Expand(val, func(key string) string {
+			switch key {
+			case "ANITING_DATA_DIR", "SEANIME_DATA_DIR":
+				return dataDir
+			case "ANITING_WORKING_DIR", "SEANIME_WORKING_DIR":
+				if wd := os.Getenv("SEANIME_WORKING_DIR"); wd != "" {
+					return wd
+				}
+				return dataDir
+			default:
+				return os.Getenv(key)
+			}
+		})
+		expanded = filepath.FromSlash(expanded)
+
+		// Sanitize unintended root paths on mobile or when dataDir is configured
+		if util.IsMobile() || dataDir != "" {
+			forbidden := []string{
+				"/cache", "/logs", "/assets", "/offline", "/manga", "/manga-local", "/extensions", "/torrent",
+			}
+			for _, f := range forbidden {
+				if expanded == f || strings.HasPrefix(expanded, f+"/") {
+					rel := strings.TrimPrefix(expanded, "/")
+					expanded = filepath.Join(dataDir, rel)
+					break
+				}
+			}
+		}
+		return expanded
+	}
+
+	cfg.Web.AssetDir = mapper(cfg.Web.AssetDir)
+	cfg.Cache.Dir = mapper(cfg.Cache.Dir)
+	cfg.Cache.TranscodeDir = mapper(cfg.Cache.TranscodeDir)
+	cfg.Logs.Dir = mapper(cfg.Logs.Dir)
+	cfg.Manga.DownloadDir = mapper(cfg.Manga.DownloadDir)
+	cfg.Manga.LocalDir = mapper(cfg.Manga.LocalDir)
+	cfg.Offline.Dir = mapper(cfg.Offline.Dir)
+	cfg.Offline.AssetDir = mapper(cfg.Offline.AssetDir)
+	cfg.Extensions.Dir = mapper(cfg.Extensions.Dir)
+	cfg.Torrent.Dir = mapper(cfg.Torrent.Dir)
+	cfg.Server.Tls.CertPath = mapper(cfg.Server.Tls.CertPath)
+	cfg.Server.Tls.KeyPath = mapper(cfg.Server.Tls.KeyPath)
 }
 
 // createConfigFile creates a default config file if it doesn't exist

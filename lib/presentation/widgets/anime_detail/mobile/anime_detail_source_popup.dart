@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:g1455/g1455.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/data/models/onlinestream_models.dart';
 import 'anime_detail_advanced_sheet.dart';
 
-/// Material Design Expressive compact pop-up for quickly selecting online streaming sources.
-/// Opens with a delightful spring/bounce animation.
-/// Contains ONLY the providers list, with an "Avanzado" button opening full advanced settings.
+/// Modal popup moderno con vidrio líquido de `g1455` (GlassCard) para seleccionar fuentes de streaming.
+/// Abre con animación suave de resorte y desenfoque de cristal líquido.
 class AnimeDetailSourcePopup extends ConsumerStatefulWidget {
   final List<OnlinestreamProvider> providers;
   final OnlinestreamProvider? selectedProvider;
@@ -111,242 +111,256 @@ class _AnimeDetailSourcePopupState extends ConsumerState<AnimeDetailSourcePopup>
     final theme = Theme.of(context);
     final l10n = ref.watch(translationsProvider);
 
-    final dialogBg = theme.colorScheme.surfaceContainerHigh;
-
     return Center(
       child: Material(
         color: Colors.transparent,
-        child: Container(
-          width: 310,
-          margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-          decoration: BoxDecoration(
-            color: dialogBg,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+          child: GlassCard(
+            padding: EdgeInsets.zero,
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
-              width: 1.0,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.40),
-                blurRadius: 28,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // 1. Header
-              Padding(
-                padding: const EdgeInsets.fromLTRB(18, 16, 10, 10),
-                child: Row(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: Container(
+                width: 320,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
+                    width: 0.8,
+                  ),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(
-                        Icons.public_rounded,
-                        size: 18,
-                        color: theme.colorScheme.primary,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                    // 1. Header
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(18, 16, 10, 10),
+                      child: Row(
                         children: [
-                          Text(
-                            l10n.onlineSources,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14.5,
-                              letterSpacing: -0.2,
+                          Container(
+                            padding: const EdgeInsets.all(7),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(
+                              Icons.public_rounded,
+                              size: 19,
+                              color: theme.colorScheme.primary,
                             ),
                           ),
-                          Text(
-                            l10n.availableSourcesCountLabel(widget.providers.length),
-                            style: TextStyle(
-                              color: theme.colorScheme.onSurfaceVariant,
-                              fontSize: 11,
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  l10n.onlineSources,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                    letterSpacing: -0.2,
+                                    color: theme.colorScheme.onSurface,
+                                  ),
+                                ),
+                                Text(
+                                  l10n.availableSourcesCountLabel(widget.providers.length),
+                                  style: TextStyle(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
                             ),
+                          ),
+                          IconButton(
+                            visualDensity: VisualDensity.compact,
+                            icon: const Icon(Icons.close_rounded, size: 19),
+                            onPressed: () => Navigator.pop(context),
                           ),
                         ],
                       ),
                     ),
-                    IconButton(
-                      visualDensity: VisualDensity.compact,
-                      icon: const Icon(Icons.close_rounded, size: 18),
-                      onPressed: () => Navigator.pop(context),
+
+                    Divider(
+                      height: 1,
+                      thickness: 0.8,
+                      color: theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
+                    ),
+
+                    // 2. Providers List
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxHeight: 250),
+                      child: widget.providers.isEmpty
+                          ? Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.extension_off_rounded,
+                                      size: 19, color: theme.colorScheme.outline),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      l10n.noOnlineExtensionsInstalled,
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: theme.colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : Scrollbar(
+                              thumbVisibility: true,
+                              child: ListView.builder(
+                                padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                                shrinkWrap: true,
+                                itemCount: widget.providers.length,
+                                itemBuilder: (context, index) {
+                                  final p = widget.providers[index];
+                                  final isSelected = _selectedProv?.id == p.id;
+
+                                  return Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 2),
+                                    child: Material(
+                                      color: isSelected
+                                          ? theme.colorScheme.primaryContainer.withValues(alpha: 0.35)
+                                          : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(14),
+                                      child: InkWell(
+                                        borderRadius: BorderRadius.circular(14),
+                                        onTap: () {
+                                          HapticFeedback.lightImpact();
+                                          setState(() => _selectedProv = p);
+                                          widget.onProviderChanged(p);
+                                          Navigator.pop(context);
+                                        },
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 10, vertical: 10),
+                                          child: Row(
+                                            children: [
+                                              Icon(
+                                                isSelected
+                                                    ? Icons.radio_button_checked_rounded
+                                                    : Icons.radio_button_off_rounded,
+                                                size: 18,
+                                                color: isSelected
+                                                    ? theme.colorScheme.primary
+                                                    : theme.colorScheme.onSurfaceVariant,
+                                              ),
+                                              const SizedBox(width: 10),
+                                              Expanded(
+                                                child: Text(
+                                                  p.name,
+                                                  style: TextStyle(
+                                                    fontSize: 14,
+                                                    fontWeight: isSelected
+                                                        ? FontWeight.bold
+                                                        : FontWeight.w500,
+                                                    color: isSelected
+                                                        ? theme.colorScheme.primary
+                                                        : theme.colorScheme.onSurface,
+                                                  ),
+                                                ),
+                                              ),
+                                              if (p.lang.isNotEmpty)
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(
+                                                      horizontal: 6, vertical: 2),
+                                                  decoration: BoxDecoration(
+                                                    color: theme.colorScheme.surfaceContainerHighest
+                                                        .withValues(alpha: 0.5),
+                                                    borderRadius: BorderRadius.circular(6),
+                                                  ),
+                                                  child: Text(
+                                                    p.lang.toUpperCase(),
+                                                    style: TextStyle(
+                                                      fontSize: 9.5,
+                                                      fontWeight: FontWeight.w600,
+                                                      color: theme.colorScheme.onSurfaceVariant,
+                                                    ),
+                                                  ),
+                                                ),
+                                              if (p.supportsDub) ...[
+                                                const SizedBox(width: 5),
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(
+                                                      horizontal: 5, vertical: 2),
+                                                  decoration: BoxDecoration(
+                                                    color: theme.colorScheme.surfaceContainerHighest
+                                                        .withValues(alpha: 0.5),
+                                                    borderRadius: BorderRadius.circular(6),
+                                                  ),
+                                                  child: Text(
+                                                    'DUB',
+                                                    style: TextStyle(
+                                                      fontSize: 9,
+                                                      fontWeight: FontWeight.bold,
+                                                      color: theme.colorScheme.primary,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                    ),
+
+                    Divider(
+                      height: 1,
+                      thickness: 0.8,
+                      color: theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
+                    ),
+
+                    // 3. Clean "Opciones avanzadas" button
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: _openAdvancedSheet,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.tune_rounded, size: 16, color: theme.colorScheme.primary),
+                              const SizedBox(width: 8),
+                              Flexible(
+                                child: Text(
+                                  l10n.advancedOptions,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: theme.colorScheme.primary,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Icon(Icons.chevron_right_rounded,
+                                  size: 17, color: theme.colorScheme.primary),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),
               ),
-
-              const Divider(height: 1, thickness: 0.8),
-
-              // 2. Providers List (ONLY providers, clean & fast)
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxHeight: 230),
-                child: widget.providers.isEmpty
-                    ? Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-                        child: Row(
-                          children: [
-                            Icon(Icons.extension_off_rounded,
-                                size: 18, color: theme.colorScheme.outline),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                l10n.noOnlineExtensionsInstalled,
-                                style: const TextStyle(fontSize: 12),
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-                        shrinkWrap: true,
-                        itemCount: widget.providers.length,
-                        itemBuilder: (context, index) {
-                          final p = widget.providers[index];
-                          final isSelected = _selectedProv?.id == p.id;
-
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 2),
-                            child: Material(
-                              color: isSelected
-                                  ? theme.colorScheme.primaryContainer.withValues(alpha: 0.35)
-                                  : Colors.transparent,
-                              borderRadius: BorderRadius.circular(14),
-                              child: InkWell(
-                                borderRadius: BorderRadius.circular(14),
-                                onTap: () {
-                                  HapticFeedback.lightImpact();
-                                  setState(() => _selectedProv = p);
-                                  widget.onProviderChanged(p);
-                                  Navigator.pop(context);
-                                },
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 10, vertical: 9),
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        isSelected
-                                            ? Icons.radio_button_checked_rounded
-                                            : Icons.radio_button_off_rounded,
-                                        size: 17,
-                                        color: isSelected
-                                            ? theme.colorScheme.primary
-                                            : theme.colorScheme.onSurfaceVariant,
-                                      ),
-                                      const SizedBox(width: 9),
-                                      Expanded(
-                                        child: Text(
-                                          p.name,
-                                          style: TextStyle(
-                                            fontSize: 13,
-                                            fontWeight: isSelected
-                                                ? FontWeight.bold
-                                                : FontWeight.w500,
-                                            color: isSelected
-                                                ? theme.colorScheme.primary
-                                                : theme.colorScheme.onSurface,
-                                          ),
-                                        ),
-                                      ),
-                                      if (p.lang.isNotEmpty)
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 6, vertical: 1.5),
-                                          decoration: BoxDecoration(
-                                            color: theme.colorScheme.surfaceContainerHighest,
-                                            borderRadius: BorderRadius.circular(6),
-                                          ),
-                                          child: Text(
-                                            p.lang.toUpperCase(),
-                                            style: TextStyle(
-                                              fontSize: 9,
-                                              fontWeight: FontWeight.w600,
-                                              color: theme.colorScheme.onSurfaceVariant,
-                                            ),
-                                          ),
-                                        ),
-                                      if (p.supportsDub) ...[
-                                        const SizedBox(width: 4),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 5, vertical: 1.5),
-                                          decoration: BoxDecoration(
-                                            color: theme.colorScheme.surfaceContainerHighest,
-                                            borderRadius: BorderRadius.circular(6),
-                                          ),
-                                          child: Text(
-                                            'DUB',
-                                            style: TextStyle(
-                                              fontSize: 8.5,
-                                              fontWeight: FontWeight.bold,
-                                              color: theme.colorScheme.primary,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-              ),
-
-              const Divider(height: 1, thickness: 0.8),
-
-              // 3. Clean "Opciones avanzadas" button
-              Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: _openAdvancedSheet,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 12),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.tune_rounded, size: 15, color: theme.colorScheme.primary),
-                        const SizedBox(width: 6),
-                        Flexible(
-                          child: Text(
-                            l10n.advancedOptions,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w600,
-                              color: theme.colorScheme.primary,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Icon(Icons.chevron_right_rounded,
-                            size: 16, color: theme.colorScheme.primary),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
     );
   }
 }
-

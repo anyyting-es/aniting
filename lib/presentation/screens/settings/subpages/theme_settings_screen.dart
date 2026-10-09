@@ -21,22 +21,6 @@ class ThemeSettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _ThemeSettingsScreenState extends ConsumerState<ThemeSettingsScreen> {
-  int _themeCategoryIndex = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    final currentPalette = ref.read(themeProvider).paletteId;
-    final initialMode = ref.read(themeProvider).themeMode;
-    if (currentPalette.startsWith('material_')) {
-      _themeCategoryIndex = 2;
-    } else if (initialMode == AppThemeMode.light) {
-      _themeCategoryIndex = 1;
-    } else {
-      _themeCategoryIndex = 0;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final themeSettings = ref.watch(themeProvider);
@@ -47,66 +31,74 @@ class _ThemeSettingsScreenState extends ConsumerState<ThemeSettingsScreen> {
     final l10n = ref.watch(translationsProvider);
     final theme = Theme.of(context);
 
-    final List<AppThemePalette> activePalettes;
-    if (_themeCategoryIndex == 0) {
-      activePalettes = AppPalettes.getDarkPresets();
-    } else if (_themeCategoryIndex == 1) {
-      activePalettes = AppPalettes.getLightPresets();
-    } else {
-      activePalettes = AppPalettes.getMaterialPresets(
-        isDark: themeSettings.themeMode != AppThemeMode.light,
-      );
-    }
+    final bool isOledSelected = themeSettings.isOled;
+    final bool isDarkSelected = !themeSettings.isOled && themeSettings.themeMode == AppThemeMode.dark;
+    final bool isLightSelected = !themeSettings.isOled && themeSettings.themeMode == AppThemeMode.light;
 
     return PixelSubpageScaffold(
       title: l10n.themeAndColors,
       isEmbedded: widget.isEmbedded,
       children: [
-        // ─── 1. MODE (Dark, Light, System) ────────────────────────
-        SettingsSectionHeader(title: l10n.mode),
+        // ─── 1. TEMA (Oscuro, Claro, OLED) ────────────────────────
+        SettingsSectionHeader(title: l10n.themeMode),
         const SizedBox(height: 10),
         Row(
           children: [
-            _buildVisualThemeModeCard(
+            _buildVisualThemeCard(
               label: l10n.themeDark,
+              isSelected: isDarkSelected,
               mode: AppThemeMode.dark,
-              isSelected: themeSettings.themeMode == AppThemeMode.dark,
+              isOled: false,
               iconPack: iconPack,
               colors: colors,
               theme: theme,
-              onTap: () {
-                themeNotifier.setThemeMode(AppThemeMode.dark);
-                setState(() => _themeCategoryIndex = 0);
+              onTap: () async {
+                await themeNotifier.setOled(false);
+                await themeNotifier.setThemeMode(AppThemeMode.dark);
+                await themeNotifier.setPaletteId(AppPalettes.catppuccinId, resetCustomAccent: false);
               },
             ),
             const SizedBox(width: 10),
-            _buildVisualThemeModeCard(
+            _buildVisualThemeCard(
               label: l10n.themeLight,
+              isSelected: isLightSelected,
               mode: AppThemeMode.light,
-              isSelected: themeSettings.themeMode == AppThemeMode.light,
+              isOled: false,
               iconPack: iconPack,
               colors: colors,
               theme: theme,
-              onTap: () {
-                themeNotifier.setThemeMode(AppThemeMode.light);
-                setState(() => _themeCategoryIndex = 1);
+              onTap: () async {
+                await themeNotifier.setOled(false);
+                await themeNotifier.setThemeMode(AppThemeMode.light);
+                await themeNotifier.setPaletteId(AppPalettes.catppuccinLatteId, resetCustomAccent: false);
               },
             ),
             const SizedBox(width: 10),
-            _buildVisualThemeModeCard(
-              label: l10n.themeSystem,
-              mode: AppThemeMode.system,
-              isSelected: themeSettings.themeMode == AppThemeMode.system,
+            _buildVisualThemeCard(
+              label: l10n.themeOled,
+              isSelected: isOledSelected,
+              mode: AppThemeMode.dark,
+              isOled: true,
               iconPack: iconPack,
               colors: colors,
               theme: theme,
-              onTap: () => themeNotifier.setThemeMode(AppThemeMode.system),
+              onTap: () async {
+                await themeNotifier.setThemeMode(AppThemeMode.dark);
+                await themeNotifier.setOled(true);
+                await themeNotifier.setPaletteId(AppPalettes.oledBlackId, resetCustomAccent: false);
+              },
             ),
           ],
         ),
         const SizedBox(height: 24),
 
-        // ─── 2. ICON PACK ─────────────────────────────────────────
+        // ─── 2. COLOR DE ACENTO ───────────────────────────────────
+        SettingsSectionHeader(title: l10n.accentColor),
+        const SizedBox(height: 10),
+        _buildAccentColorPicker(themeSettings, themeNotifier, iconPack, colors, l10n),
+        const SizedBox(height: 24),
+
+        // ─── 3. ICON PACK ─────────────────────────────────────────
         SettingsSectionHeader(title: l10n.iconPack),
         const SizedBox(height: 10),
         Row(
@@ -146,143 +138,11 @@ class _ThemeSettingsScreenState extends ConsumerState<ThemeSettingsScreen> {
         ),
         const SizedBox(height: 24),
 
-        // ─── 3. ACCENT COLOR ──────────────────────────────────────
-        SettingsSectionHeader(title: l10n.accentColor),
-        const SizedBox(height: 10),
-        _buildAccentColorPicker(themeSettings, themeNotifier, iconPack, colors, l10n),
-        const SizedBox(height: 24),
-
-        // ─── 4. COMMUNITY PALETTES ────────────────────────────────
-        SettingsSectionHeader(title: l10n.themePresets),
-        const SizedBox(height: 10),
-        Container(
-          padding: const EdgeInsets.all(3),
-          decoration: BoxDecoration(
-            color: colors.surfaceElevated.withValues(alpha: 0.35),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
-            children: [
-              _buildCategoryTab(
-                label: l10n.themeSectionDark,
-                isSelected: _themeCategoryIndex == 0,
-                theme: theme,
-                onTap: () => setState(() => _themeCategoryIndex = 0),
-              ),
-              const SizedBox(width: 4),
-              _buildCategoryTab(
-                label: l10n.themeSectionLight,
-                isSelected: _themeCategoryIndex == 1,
-                theme: theme,
-                onTap: () => setState(() => _themeCategoryIndex = 1),
-              ),
-              const SizedBox(width: 4),
-              _buildCategoryTab(
-                label: l10n.themeSectionMaterial,
-                isSelected: _themeCategoryIndex == 2,
-                theme: theme,
-                onTap: () => setState(() => _themeCategoryIndex = 2),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-
-        // Palettes List
-        ...activePalettes.map((pal) {
-          final isSelected = themeSettings.paletteId == pal.id &&
-              (pal.id == AppPalettes.oledBlackId ? themeSettings.isOled : !themeSettings.isOled);
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: InkWell(
-              onTap: () async {
-                if (pal.category == 'light' && themeSettings.themeMode == AppThemeMode.dark) {
-                  await themeNotifier.setThemeMode(AppThemeMode.light);
-                } else if (pal.category == 'dark' && themeSettings.themeMode == AppThemeMode.light) {
-                  await themeNotifier.setThemeMode(AppThemeMode.dark);
-                }
-                if (pal.id == AppPalettes.oledBlackId) {
-                  await themeNotifier.setOled(true);
-                  await themeNotifier.setPaletteId(pal.id);
-                } else {
-                  if (themeSettings.isOled) await themeNotifier.setOled(false);
-                  await themeNotifier.setPaletteId(pal.id);
-                }
-              },
-              borderRadius: BorderRadius.circular(12),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? colors.accent.withValues(alpha: 0.12)
-                      : colors.surfaceElevated.withValues(alpha: 0.40),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: isSelected ? colors.accent.withValues(alpha: 0.5) : colors.border.withValues(alpha: 0.5),
-                    width: 1,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    // Palette mini color swatches
-                    Container(
-                      width: 34,
-                      height: 34,
-                      decoration: BoxDecoration(
-                        color: pal.background,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: pal.border, width: 1.5),
-                      ),
-                      child: Center(
-                        child: Container(
-                          width: 12,
-                          height: 12,
-                          decoration: BoxDecoration(
-                            color: pal.accent,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        pal.localizedName(l10n),
-                        style: TextStyle(
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                          fontSize: 13.5,
-                          color: isSelected ? colors.accent : null,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    if (isSelected)
-                      Icon(AppIcons.check(iconPack), color: colors.accent, size: 20)
-                    else
-                      Icon(AppIcons.radioUnchecked(iconPack), color: colors.border.withValues(alpha: 0.4), size: 18),
-                  ],
-                ),
-              ),
-            ),
-          );
-        }),
-        const SizedBox(height: 20),
-
-        // ─── 5. OLED & TEMA DINÁMICO ──────────────────────────────
+        // ─── 4. TEMA DINÁMICO DE ANIME ────────────────────────────
         SettingsSectionHeader(title: l10n.appearanceAndDisplay),
         const SizedBox(height: 10),
         PixelSettingsGroupCard(
           children: [
-            PixelSwitchTile(
-              icon: AppIcons.tv(iconPack),
-              title: l10n.oledTrueBlackTitle,
-              subtitle: l10n.oledTrueBlackDesc,
-              value: themeSettings.isOled,
-              onChanged: (val) => themeNotifier.setOled(val),
-            ),
-            const Divider(height: 1, indent: 56),
             PixelSwitchTile(
               icon: AppIcons.sparkles(iconPack),
               title: l10n.animeDynamicTheme,
@@ -294,7 +154,7 @@ class _ThemeSettingsScreenState extends ConsumerState<ThemeSettingsScreen> {
         ),
         const SizedBox(height: 24),
 
-        // ─── 6. ESQUINAS Y BORDES DE LA APP ──────────────────────
+        // ─── 5. ESQUINAS Y BORDES DE LA APP ───────────────────────
         SettingsSectionHeader(title: l10n.cornerAndBorders),
         const SizedBox(height: 10),
         _ThemeSettingsRadiusSection(colors: colors),
@@ -302,10 +162,11 @@ class _ThemeSettingsScreenState extends ConsumerState<ThemeSettingsScreen> {
     );
   }
 
-  Widget _buildVisualThemeModeCard({
+  Widget _buildVisualThemeCard({
     required String label,
-    required AppThemeMode mode,
     required bool isSelected,
+    required AppThemeMode mode,
+    required bool isOled,
     required AppIconPack iconPack,
     required AppThemeColors colors,
     required ThemeData theme,
@@ -346,7 +207,7 @@ class _ThemeSettingsScreenState extends ConsumerState<ThemeSettingsScreen> {
                   ),
                 ),
                 clipBehavior: Clip.antiAlias,
-                child: _buildThemeModeGraphic(mode, iconPack, colors, isSelected),
+                child: _buildThemeGraphic(mode, isOled, iconPack, colors, isSelected),
               ),
               const SizedBox(height: 7),
               // Mode label + indicator
@@ -354,11 +215,11 @@ class _ThemeSettingsScreenState extends ConsumerState<ThemeSettingsScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
-                    mode == AppThemeMode.dark
-                        ? AppIcons.darkMode(iconPack)
-                        : mode == AppThemeMode.light
-                            ? AppIcons.lightMode(iconPack)
-                            : AppIcons.systemMode(iconPack),
+                    isOled
+                        ? AppIcons.tv(iconPack)
+                        : (mode == AppThemeMode.dark
+                            ? AppIcons.darkMode(iconPack)
+                            : AppIcons.lightMode(iconPack)),
                     size: 13,
                     color: isSelected ? colors.accent : theme.colorScheme.onSurfaceVariant,
                   ),
@@ -384,106 +245,32 @@ class _ThemeSettingsScreenState extends ConsumerState<ThemeSettingsScreen> {
     );
   }
 
-  Widget _buildThemeModeGraphic(
+  Widget _buildThemeGraphic(
     AppThemeMode mode,
+    bool isOled,
     AppIconPack iconPack,
     AppThemeColors colors,
     bool isSelected,
   ) {
-    if (mode == AppThemeMode.system) {
-      return Row(
-        children: [
-          // Left half: Light mode
-          Expanded(
-            child: Container(
-              color: const Color(0xFFF5F6FA),
-              padding: const EdgeInsets.all(4),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(width: 4, height: 4, decoration: const BoxDecoration(color: Color(0xFFCBD0DC), shape: BoxShape.circle)),
-                      const SizedBox(width: 2.5),
-                      Container(width: 12, height: 3, decoration: BoxDecoration(color: const Color(0xFFDFE2EC), borderRadius: BorderRadius.circular(2))),
-                    ],
-                  ),
-                  const Spacer(),
-                  Container(
-                    height: 16,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(3),
-                      border: Border.all(color: const Color(0xFFE2E5EE), width: 0.8),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: Row(
-                      children: [
-                        Container(width: 5, height: 5, decoration: BoxDecoration(color: colors.accent, shape: BoxShape.circle)),
-                        const SizedBox(width: 3),
-                        Expanded(
-                          child: Container(height: 2.5, decoration: BoxDecoration(color: const Color(0xFFCBD0DC), borderRadius: BorderRadius.circular(1))),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Spacer(),
-                ],
-              ),
-            ),
-          ),
-          // Vertical divider
-          Container(width: 1, color: const Color(0xFF4A4E69).withValues(alpha: 0.3)),
-          // Right half: Dark mode
-          Expanded(
-            child: Container(
-              color: const Color(0xFF141620),
-              padding: const EdgeInsets.all(4),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(width: 4, height: 4, decoration: const BoxDecoration(color: Color(0xFF3B4054), shape: BoxShape.circle)),
-                      const SizedBox(width: 2.5),
-                      Container(width: 12, height: 3, decoration: BoxDecoration(color: const Color(0xFF262A3B), borderRadius: BorderRadius.circular(2))),
-                    ],
-                  ),
-                  const Spacer(),
-                  Container(
-                    height: 16,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1E212E),
-                      borderRadius: BorderRadius.circular(3),
-                      border: Border.all(color: const Color(0xFF2E3347), width: 0.8),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: Row(
-                      children: [
-                        Container(width: 5, height: 5, decoration: BoxDecoration(color: colors.accent, shape: BoxShape.circle)),
-                        const SizedBox(width: 3),
-                        Expanded(
-                          child: Container(height: 2.5, decoration: BoxDecoration(color: const Color(0xFF3B4054), borderRadius: BorderRadius.circular(1))),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Spacer(),
-                ],
-              ),
-            ),
-          ),
-        ],
-      );
-    }
-
     final isDark = mode == AppThemeMode.dark;
-    final winBg = isDark ? const Color(0xFF13151F) : const Color(0xFFF6F7FB);
-    final cardBg = isDark ? const Color(0xFF1C1F2E) : Colors.white;
-    final dotColor = isDark ? const Color(0xFF3B4054) : const Color(0xFFCBD0DC);
-    final lineTitle = isDark ? const Color(0xFF262A3B) : const Color(0xFFDFE2EC);
-    final lineMuted = isDark ? const Color(0xFF2E3347) : const Color(0xFFE5E8F0);
-    final borderColor = isDark ? const Color(0xFF2E3347) : const Color(0xFFE2E5EE);
+    final winBg = isOled
+        ? Colors.black
+        : (isDark ? const Color(0xFF13151F) : const Color(0xFFF6F7FB));
+    final cardBg = isOled
+        ? const Color(0xFF0D0D11)
+        : (isDark ? const Color(0xFF1C1F2E) : Colors.white);
+    final dotColor = isOled
+        ? const Color(0xFF2E2E38)
+        : (isDark ? const Color(0xFF3B4054) : const Color(0xFFCBD0DC));
+    final lineTitle = isOled
+        ? const Color(0xFF22222B)
+        : (isDark ? const Color(0xFF262A3B) : const Color(0xFFDFE2EC));
+    final lineMuted = isOled
+        ? const Color(0xFF1E1E26)
+        : (isDark ? const Color(0xFF2E3347) : const Color(0xFFE5E8F0));
+    final borderColor = isOled
+        ? const Color(0xFF262630)
+        : (isDark ? const Color(0xFF2E3347) : const Color(0xFFE2E5EE));
 
     return Container(
       color: winBg,
@@ -504,7 +291,7 @@ class _ThemeSettingsScreenState extends ConsumerState<ThemeSettingsScreen> {
             child: Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
-                color: cardBg.withValues(alpha: 0.6),
+                color: cardBg.withValues(alpha: isOled ? 1.0 : 0.6),
                 borderRadius: BorderRadius.circular(4),
                 border: Border.all(color: borderColor, width: 0.8),
               ),
@@ -514,7 +301,9 @@ class _ThemeSettingsScreenState extends ConsumerState<ThemeSettingsScreen> {
                     width: 14,
                     height: double.infinity,
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF25293D) : const Color(0xFFECEFF6),
+                      color: isOled
+                          ? const Color(0xFF16161D)
+                          : (isDark ? const Color(0xFF25293D) : const Color(0xFFECEFF6)),
                       borderRadius: BorderRadius.circular(2.5),
                     ),
                   ),
@@ -555,46 +344,6 @@ class _ThemeSettingsScreenState extends ConsumerState<ThemeSettingsScreen> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildCategoryTab({
-    required String label,
-    required bool isSelected,
-    required ThemeData theme,
-    required VoidCallback onTap,
-  }) {
-    return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? theme.colorScheme.primary.withValues(alpha: 0.15)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: isSelected ? theme.colorScheme.primary.withValues(alpha: 0.4) : Colors.transparent,
-              width: 1,
-            ),
-          ),
-          child: Center(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ),
       ),
     );
   }

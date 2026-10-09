@@ -1,10 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:seanime_app/core/api/api_client.dart';
 import 'package:seanime_app/data/models/anizip_data.dart';
+import 'package:seanime_app/data/models/library_entry_details.dart';
 import 'package:seanime_app/data/models/onlinestream_models.dart';
+import 'package:seanime_app/data/repositories/seanime_repository.dart';
+import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
 import 'package:seanime_app/presentation/widgets/anime_detail/desktop/desktop_episodes_tab.dart';
+
+class FakeEpisodesRepo extends SeanimeRepository {
+  FakeEpisodesRepo() : super(ApiClient());
+
+  @override
+  Future<LibraryEntryDetails?> getAnimeLibraryEntry(int mediaId) async => null;
+}
 
 void main() {
   group('DesktopEpisodesTab Logic, Pagination & Dimmed Watched Tests', () {
@@ -27,6 +38,9 @@ void main() {
 
       await tester.pumpWidget(
         ProviderScope(
+          overrides: [
+            repositoryProvider.overrideWithValue(FakeEpisodesRepo()),
+          ],
           child: MaterialApp(
             home: Scaffold(
               body: DesktopEpisodesTab(
@@ -92,6 +106,9 @@ void main() {
 
       await tester.pumpWidget(
         ProviderScope(
+          overrides: [
+            repositoryProvider.overrideWithValue(FakeEpisodesRepo()),
+          ],
           child: MaterialApp(
             home: Scaffold(
               body: DesktopEpisodesTab(
@@ -153,6 +170,9 @@ void main() {
 
       await tester.pumpWidget(
         ProviderScope(
+          overrides: [
+            repositoryProvider.overrideWithValue(FakeEpisodesRepo()),
+          ],
           child: MaterialApp(
             home: Scaffold(
               body: DesktopEpisodesTab(
@@ -208,6 +228,9 @@ void main() {
 
       await tester.pumpWidget(
         ProviderScope(
+          overrides: [
+            repositoryProvider.overrideWithValue(FakeEpisodesRepo()),
+          ],
           child: MaterialApp(
             home: Scaffold(
               body: SingleChildScrollView(
@@ -295,6 +318,9 @@ void main() {
 
       await tester.pumpWidget(
         ProviderScope(
+          overrides: [
+            repositoryProvider.overrideWithValue(FakeEpisodesRepo()),
+          ],
           child: MaterialApp(
             home: Scaffold(
               body: DesktopEpisodesTab(

@@ -121,7 +121,7 @@ class MangaOfflineService {
     return null;
   }
 
-  /// Escanea Aniting/Downloads/Manga y retorna todas las obras con capítulos descargados
+  /// Escanea Anime/aniting/Manga y retorna todas las obras con capítulos descargados
   /// como objetos MangaEntry estándar para la UI.
   Future<List<MangaEntry>> getDownloadedMangaList({String? customBase}) async {
     final results = <MangaEntry>[];
@@ -182,7 +182,7 @@ class MangaOfflineService {
         }
       }
 
-      // 2. Escanear posibles capítulos de backend en la raíz de Aniting/Downloads/Manga
+      // 2. Escanear posibles capítulos de backend en la raíz de Anime/aniting/Manga
       final rootBackendChapters = <int, List<DownloadedChapterInfo>>{};
       for (final entity in entities) {
         if (entity is Directory) {

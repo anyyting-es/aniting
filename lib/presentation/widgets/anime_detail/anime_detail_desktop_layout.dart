@@ -23,14 +23,6 @@ import 'desktop/desktop_hero_banner.dart';
 import 'desktop/desktop_recommendations_tab.dart';
 import 'desktop/desktop_relations_tab.dart';
 import 'desktop/desktop_sidebar.dart';
-import 'desktop/desktop_tab_button.dart';
-
-enum DesktopDetailTab {
-  episodes,
-  characters,
-  related,
-  recommendations,
-}
 
 class AnimeDetailDesktopLayout extends ConsumerStatefulWidget {
   final int mediaId;
@@ -81,7 +73,6 @@ class AnimeDetailDesktopLayout extends ConsumerStatefulWidget {
 class _AnimeDetailDesktopLayoutState
     extends ConsumerState<AnimeDetailDesktopLayout> {
   static const String _prefLastProviderKey = 'last_selected_online_provider';
-  DesktopDetailTab _selectedTab = DesktopDetailTab.episodes;
   final ScrollController _scrollController = SmoothScrollController();
   final ValueNotifier<double> _scrollProgressNotifier = ValueNotifier<double>(0.0);
 
@@ -90,7 +81,7 @@ class _AnimeDetailDesktopLayoutState
   bool _isDubbed = false;
   List<OnlinestreamEpisode> _onlineEpisodes = [];
   bool _isLoadingOnlineEpisodes = false;
-  int? _loadingEpisodeNumber;
+  final int? _loadingEpisodeNumber = null;
 
   @override
   void initState() {
@@ -212,8 +203,6 @@ class _AnimeDetailDesktopLayoutState
       }
     }
   }
-
-
 
   void _playOnlineEpisode(int epNum, String epTitle) {
     if (_selectedProvider == null) return;
@@ -383,34 +372,43 @@ class _AnimeDetailDesktopLayoutState
         : (year != null ? '$year' : '');
 
     final raw = widget.details?.rawMedia ?? {};
+    final startDateMap = raw['startDate'] as Map?;
+    final startMonth = startDateMap?['month'] as int?;
+    final startYear = (startDateMap?['year'] as int?) ?? year;
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    final monthName = (startMonth != null && startMonth >= 1 && startMonth <= 12) ? months[startMonth - 1] : null;
+    final dateStr = (monthName != null && startYear != null) ? '$monthName $startYear' : (startYear != null ? '$startYear' : '');
+    final seasonStr = season != null ? l10n.formatSeason(season) : null;
+    final dateSeasonStr = (dateStr.isNotEmpty && seasonStr != null)
+        ? '$dateStr - $seasonStr'
+        : (dateStr.isNotEmpty ? dateStr : seasonYearStr);
+
+    final romaji = widget.details?.romajiTitle;
+    final english = widget.details?.englishTitle;
+    final native = widget.details?.nativeTitle;
+    final subtitle = (romaji != null && romaji.isNotEmpty && romaji != title)
+        ? romaji
+        : ((english != null && english.isNotEmpty && english != title)
+            ? english
+            : ((native != null && native.isNotEmpty && native != title) ? native : null));
+
+    final liveCollectionEntry = ref.watch(animeCollectionProvider).whenOrNull(
+          data: (entries) =>
+              entries.where((e) => e.mediaId == widget.mediaId).firstOrNull,
+        );
+
+    final userStatus = liveCollectionEntry?.status ?? widget.details?.userStatus;
+
     final trailer = raw['trailer'] as Map<String, dynamic>?;
     final trailerId = trailer?['id'] as String?;
     final trailerSite = trailer?['site'] as String?;
     final hasTrailer = trailerId != null && trailerId.isNotEmpty;
     final idMal = raw['idMal'] as int?;
 
-    final startDateMap = raw['startDate'] as Map<String, dynamic>?;
-    final endDateMap = raw['endDate'] as Map<String, dynamic>?;
-    String airedStr = '';
-    if (startDateMap != null && startDateMap['year'] != null) {
-      final sM = startDateMap['month'] ?? 1;
-      final sD = startDateMap['day'] ?? 1;
-      final sY = startDateMap['year'];
-      final startFormatted = '$sM/$sD/$sY';
-      if (endDateMap != null && endDateMap['year'] != null) {
-        final eM = endDateMap['month'] ?? 1;
-        final eD = endDateMap['day'] ?? 1;
-        final eY = endDateMap['year'];
-        airedStr = '$startFormatted - $eM/$eD/$eY';
-      } else {
-        airedStr = startFormatted;
-      }
-    }
+    final duration = raw['duration'] as int?;
+    final totalEpisodes = widget.details?.totalEpisodes ?? widget.initialEntry?.totalEpisodes;
+    final studio = widget.details?.studio ?? '';
 
-    final liveCollectionEntry = ref.watch(animeCollectionProvider).whenOrNull(
-          data: (entries) =>
-              entries.where((e) => e.mediaId == widget.mediaId).firstOrNull,
-        );
     final progress = liveCollectionEntry?.progress ??
         widget.details?.progress ??
         widget.initialEntry?.progress ??
@@ -432,7 +430,7 @@ class _AnimeDetailDesktopLayoutState
       backgroundColor: theme.scaffoldBackgroundColor,
       body: Stack(
         children: [
-          // ─── 1. Panoramic Top Hero Backdrop (clean, uncovered, with full blur fallback & deeper darkness) ───
+          // ─── 1. Panoramic Top Hero Backdrop ───
           ValueListenableBuilder<double>(
             valueListenable: _scrollProgressNotifier,
             builder: (context, scrollProgress, _) {
@@ -445,18 +443,15 @@ class _AnimeDetailDesktopLayoutState
             },
           ),
 
-          // ─── 2. Main Scrollable Container (Wider Max-Width: 1580px, Generous Side Margins) ───
-          Align(
-            alignment: Alignment.topCenter,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1580),
-              child: SingleChildScrollView(
-                controller: _scrollController,
-                padding: const EdgeInsets.fromLTRB(36, 0, 36, 48),
-                child: Column(
+          // ─── 2. Main Scrollable Container (Full width, minimal side margins) ───
+          Positioned.fill(
+            child: SingleChildScrollView(
+              controller: _scrollController,
+              padding: const EdgeInsets.fromLTRB(32, 0, 32, 64),
+              child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Back button (clean icon without heavy background)
+                    // Back button
                     Padding(
                       padding: const EdgeInsets.only(top: 42, bottom: 24),
                       child: IconButton(
@@ -484,202 +479,189 @@ class _AnimeDetailDesktopLayoutState
                       ),
                     ),
 
-                    // Two Columns
+                    // ─── Top Poster & Metadata Section ───
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Left Sidebar (Enlarged poster, trailer moved to action bar)
+                        // Left: Cover Poster Only (Clean, no bottom metadata pushing layout down)
                         DesktopSidebar(
                           coverUrl: coverUrl,
-                          format: format,
-                          status: status,
-                          airedStr: airedStr,
-                          seasonYearStr: seasonYearStr,
-                          score: score,
-                          studio: widget.details?.studio ?? '',
                         ),
 
                         const SizedBox(width: 32),
 
-                        // Right Column
+                        // Right: Title, Badges (Format, Status, Score, Studio) & Synopsis
                         Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              DesktopHeader(
-                                seasonYearStr: seasonYearStr,
-                                title: title,
-                                genres: widget.details?.genres ?? [],
-                                description: description,
-                              ),
-                              const SizedBox(height: 18),
-                              DesktopActionBar(
-                                mediaId: widget.mediaId,
-                                title: title,
-                                progress: progress,
-                                idMal: idMal,
-                                trailerId: trailerId,
-                                trailerSite: trailerSite,
-                                hasTrailer: hasTrailer,
-                                currentTab: widget.currentTab,
-                                isLocalMode: widget.isLocalMode,
-                                onlineEnabled: onlineEnabled,
-                                torrentEnabled: torrentEnabled,
-                                onPlayNext: () => _handlePlayNext(progress),
-                                onOpenEditEntryModal: widget.onOpenEditEntryModal,
-                                onToggleLocalMode: widget.onToggleLocalMode,
-                                onTabChanged: widget.onTabChanged,
-                                onDownload: () {
-                                  final totalEps = widget.details?.totalEpisodes ?? widget.initialEntry?.totalEpisodes;
-                                  final nextEp = (progress + 1).clamp(1, totalEps ?? (progress + 1));
-                                  final defaultEpTitle = l10n.episodeNumber(nextEp);
-                                  widget.onOpenTorrentSelector(
-                                    episodeNumber: nextEp,
-                                    episodeTitle: defaultEpTitle,
-                                  );
-                                },
-                              ),
-                              const SizedBox(height: 28),
-
-                              // Desktop Sub-Navigation Tab Bar
-                              SingleChildScrollView(
-                                scrollDirection: Axis.horizontal,
-                                child: Row(
-                                  children: [
-                                    DesktopTabButton(
-                                      label: l10n.episodes,
-                                      isSelected: _selectedTab == DesktopDetailTab.episodes,
-                                      onTap: () => setState(() => _selectedTab = DesktopDetailTab.episodes),
-                                    ),
-                                    const SizedBox(width: 24),
-                                    DesktopTabButton(
-                                      label: l10n.characters,
-                                      isSelected: _selectedTab == DesktopDetailTab.characters,
-                                      onTap: () => setState(() => _selectedTab = DesktopDetailTab.characters),
-                                    ),
-                                    const SizedBox(width: 24),
-                                    DesktopTabButton(
-                                      label: l10n.relations,
-                                      isSelected: _selectedTab == DesktopDetailTab.related,
-                                      onTap: () => setState(() => _selectedTab = DesktopDetailTab.related),
-                                    ),
-                                    const SizedBox(width: 24),
-                                    DesktopTabButton(
-                                      label: l10n.recommendations,
-                                      isSelected: _selectedTab == DesktopDetailTab.recommendations,
-                                      onTap: () => setState(() => _selectedTab = DesktopDetailTab.recommendations),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 20),
-
-                              // Active Tab Content with Smooth Slide-Up Transition & Pinned Top Alignment
-                              AnimatedSwitcher(
-                                duration: const Duration(milliseconds: 240),
-                                switchInCurve: Curves.easeOutCubic,
-                                switchOutCurve: Curves.easeInQuad,
-                                layoutBuilder: (currentChild, previousChildren) {
-                                  return Stack(
-                                    alignment: Alignment.topLeft,
-                                    children: [
-                                      ...previousChildren,
-                                      ?currentChild,
-                                    ],
-                                  );
-                                },
-                                transitionBuilder: (child, animation) {
-                                  final isIncoming = child.key == ValueKey(_selectedTab);
-                                  if (isIncoming) {
-                                    final slideAnimation = Tween<Offset>(
-                                      begin: const Offset(0, 0.035),
-                                      end: Offset.zero,
-                                    ).animate(CurvedAnimation(
-                                      parent: animation,
-                                      curve: Curves.easeOutCubic,
-                                    ));
-                                    return FadeTransition(
-                                      opacity: CurvedAnimation(
-                                        parent: animation,
-                                        curve: Curves.easeOut,
-                                      ),
-                                      child: SlideTransition(
-                                        position: slideAnimation,
-                                        child: child,
-                                      ),
-                                    );
-                                  } else {
-                                    return FadeTransition(
-                                      opacity: CurvedAnimation(
-                                        parent: animation,
-                                        curve: Curves.easeInQuad,
-                                      ),
-                                      child: child,
-                                    );
-                                  }
-                                },
-                                child: KeyedSubtree(
-                                  key: ValueKey(_selectedTab),
-                                  child: _selectedTab == DesktopDetailTab.episodes
-                                      ? DesktopEpisodesTab(
-                                          mediaId: widget.mediaId,
-                                          details: widget.details,
-                                          aniZipData: widget.aniZipData,
-                                          isLoadingAniZip: widget.isLoadingAniZip,
-                                          progress: progress,
-                                          isLocalMode: widget.isLocalMode,
-                                          currentTab: widget.currentTab,
-                                          providers: _providers,
-                                          selectedProvider: _selectedProvider,
-                                          isDubbed: _isDubbed,
-                                          onlineEpisodes: _onlineEpisodes,
-                                          isLoadingOnlineEpisodes: _isLoadingOnlineEpisodes,
-                                          loadingEpisodeNumber: _loadingEpisodeNumber,
-                                          fallbackCoverImage: coverUrl,
-                                          onProviderChanged: (p) {
-                                            if (p != null) {
-                                              setState(() => _selectedProvider = p);
-                                              SharedPreferences.getInstance().then(
-                                                  (prefs) => prefs.setString(_prefLastProviderKey, p.id));
-                                              _loadOnlineEpisodes();
-                                            }
-                                          },
-                                          onToggleDubbed: () {
-                                            setState(() => _isDubbed = !_isDubbed);
-                                            _loadOnlineEpisodes();
-                                          },
-                                          onEpisodeClicked: _onEpisodeClicked,
-                                          onToggleLocalMode: widget.onToggleLocalMode,
-                                          onTabChanged: widget.onTabChanged,
-                                        )
-                                      : _selectedTab == DesktopDetailTab.characters
-                                          ? DesktopCharactersTab(
-                                              characters: charactersEdges,
-                                              isLoading: widget.isLoading,
-                                            )
-                                          : _selectedTab == DesktopDetailTab.related
-                                              ? DesktopRelationsTab(
-                                                  relations: relationsEdges,
-                                                  isLoading: widget.isLoading,
-                                                )
-                                              : DesktopRecommendationsTab(
-                                                  recommendations: recommendationsEdges,
-                                                  isLoading: widget.isLoading,
-                                                ),
-                                ),
-                              ),
-                            ],
+                          child: DesktopHeader(
+                            seasonYearStr: seasonYearStr,
+                            dateSeasonStr: dateSeasonStr,
+                            title: title,
+                            subtitle: subtitle,
+                            genres: widget.details?.genres ?? [],
+                            description: description,
+                            format: format,
+                            status: status,
+                            userStatus: userStatus,
+                            progress: progress,
+                            score: score,
+                            studio: studio,
+                            totalEpisodes: totalEpisodes,
+                            duration: duration,
+                            onEditStatus: () => widget.onOpenEditEntryModal(title),
                           ),
                         ),
                       ],
                     ),
+
+                    const SizedBox(height: 24),
+
+                    // ─── Action Bar (Play, Edit, Share, Trailer, Links & Online/Torrent Toggle) ───
+                    DesktopActionBar(
+                      mediaId: widget.mediaId,
+                      title: title,
+                      progress: progress,
+                      idMal: idMal,
+                      trailerId: trailerId,
+                      trailerSite: trailerSite,
+                      hasTrailer: hasTrailer,
+                      currentTab: widget.currentTab,
+                      onlineEnabled: onlineEnabled,
+                      torrentEnabled: torrentEnabled,
+                      onPlayNext: () => _handlePlayNext(progress),
+                      onOpenEditEntryModal: widget.onOpenEditEntryModal,
+                      onTabChanged: widget.onTabChanged,
+                      onDownload: () {
+                        final totalEps = widget.details?.totalEpisodes ?? widget.initialEntry?.totalEpisodes;
+                        final nextEp = (progress + 1).clamp(1, totalEps ?? (progress + 1));
+                        final defaultEpTitle = l10n.episodeNumber(nextEp);
+                        widget.onOpenTorrentSelector(
+                          episodeNumber: nextEp,
+                          episodeTitle: defaultEpTitle,
+                        );
+                      },
+                    ),
+
+                    const SizedBox(height: 28),
+
+                    // ─── Episodes Section (Full Width, without redundant header title) ───
+                    DesktopEpisodesTab(
+                      mediaId: widget.mediaId,
+                      details: widget.details,
+                      aniZipData: widget.aniZipData,
+                      isLoadingAniZip: widget.isLoadingAniZip,
+                      progress: progress,
+                      isLocalMode: widget.isLocalMode,
+                      currentTab: widget.currentTab,
+                      providers: _providers,
+                      selectedProvider: _selectedProvider,
+                      isDubbed: _isDubbed,
+                      onlineEpisodes: _onlineEpisodes,
+                      isLoadingOnlineEpisodes: _isLoadingOnlineEpisodes,
+                      loadingEpisodeNumber: _loadingEpisodeNumber,
+                      fallbackCoverImage: coverUrl,
+                      onProviderChanged: (p) {
+                        if (p != null) {
+                          setState(() => _selectedProvider = p);
+                          SharedPreferences.getInstance().then(
+                              (prefs) => prefs.setString(_prefLastProviderKey, p.id));
+                          _loadOnlineEpisodes();
+                        }
+                      },
+                      onToggleDubbed: () {
+                        setState(() => _isDubbed = !_isDubbed);
+                        _loadOnlineEpisodes();
+                      },
+                      onEpisodeClicked: _onEpisodeClicked,
+                      onToggleLocalMode: widget.onToggleLocalMode,
+                      onTabChanged: widget.onTabChanged,
+                      onOpenTorrentSelector: widget.onOpenTorrentSelector,
+                    ),
+
+                    // ─── Relations Section (Full Width) ───
+                    if (relationsEdges.isNotEmpty || widget.isLoading) ...[
+                      const SizedBox(height: 48),
+                      _DesktopSectionHeader(
+                        title: l10n.relations,
+                        icon: Icons.account_tree_outlined,
+                      ),
+                      const SizedBox(height: 18),
+                      DesktopRelationsTab(
+                        relations: relationsEdges,
+                        isLoading: widget.isLoading,
+                      ),
+                    ],
+
+                    // ─── Recommendations Section ("Te podría gustar") (Full Width) ───
+                    if (recommendationsEdges.isNotEmpty || widget.isLoading) ...[
+                      const SizedBox(height: 48),
+                      _DesktopSectionHeader(
+                        title: l10n.recommendations,
+                        icon: Icons.auto_awesome_rounded,
+                      ),
+                      const SizedBox(height: 18),
+                      DesktopRecommendationsTab(
+                        recommendations: recommendationsEdges,
+                        isLoading: widget.isLoading,
+                      ),
+                    ],
+
+                    // ─── Characters Section (Full Width) ───
+                    if (charactersEdges.isNotEmpty || widget.isLoading) ...[
+                      const SizedBox(height: 48),
+                      _DesktopSectionHeader(
+                        title: l10n.characters,
+                        icon: Icons.people_outline_rounded,
+                      ),
+                      const SizedBox(height: 18),
+                      DesktopCharactersTab(
+                        characters: charactersEdges,
+                        isLoading: widget.isLoading,
+                      ),
+                    ],
                   ],
                 ),
               ),
             ),
+          ],
+        ),
+      );
+  }
+}
+
+class _DesktopSectionHeader extends StatelessWidget {
+  final String title;
+  final IconData? icon;
+
+  const _DesktopSectionHeader({
+    required this.title,
+    this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Row(
+      children: [
+        if (icon != null) ...[
+          Icon(
+            icon,
+            size: 20,
+            color: isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
           ),
+          const SizedBox(width: 8),
         ],
-      ),
+        Text(
+          title,
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+            letterSpacing: -0.3,
+            color: isDark ? Colors.white : theme.colorScheme.onSurface,
+          ),
+        ),
+      ],
     );
   }
 }

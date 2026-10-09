@@ -42,7 +42,14 @@ class DownloadPreferencesNotifier extends Notifier<DownloadPreferencesState> {
 
   Future<void> _init() async {
     final prefs = _cachedPrefs ?? await SharedPreferences.getInstance();
-    final saved = prefs.getString(_prefKey) ?? '';
+    var saved = prefs.getString(_prefKey) ?? '';
+    if (saved.isNotEmpty &&
+        (saved.contains('Downloads/Aniting/Downloads') ||
+            saved.contains(r'Downloads\Aniting\Downloads') ||
+            saved.contains('Download/Aniting/Downloads'))) {
+      await prefs.remove(_prefKey);
+      saved = '';
+    }
     final defaultPath = await AppStoragePaths.getDefaultDownloadsBasePath();
     final resolved = saved.isNotEmpty ? saved : defaultPath;
 

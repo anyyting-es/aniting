@@ -56,6 +56,8 @@ class DiscoverFilterState {
   final String? season; // 'WINTER', 'SPRING', 'SUMMER', 'FALL'
   final String? format;
   final String? status;
+  final int? minScore;
+  final bool isAdult;
   final String sort; // 'TRENDING_DESC', 'POPULARITY_DESC', 'SCORE_DESC', 'START_DATE_DESC'
 
   const DiscoverFilterState({
@@ -66,6 +68,8 @@ class DiscoverFilterState {
     this.season,
     this.format,
     this.status,
+    this.minScore,
+    this.isAdult = false,
     this.sort = 'TRENDING_DESC',
   });
 
@@ -76,6 +80,8 @@ class DiscoverFilterState {
       season != null ||
       format != null ||
       status != null ||
+      minScore != null ||
+      isAdult ||
       sort != 'TRENDING_DESC';
 
   int get activeFilterCount {
@@ -86,6 +92,8 @@ class DiscoverFilterState {
     if (season != null) count++;
     if (format != null) count++;
     if (status != null) count++;
+    if (minScore != null) count++;
+    if (isAdult) count++;
     if (sort != 'TRENDING_DESC') count++;
     return count;
   }
@@ -98,6 +106,8 @@ class DiscoverFilterState {
     String? Function()? season,
     String? Function()? format,
     String? Function()? status,
+    int? Function()? minScore,
+    bool? isAdult,
     String? sort,
   }) {
     return DiscoverFilterState(
@@ -108,6 +118,8 @@ class DiscoverFilterState {
       season: season != null ? season() : this.season,
       format: format != null ? format() : this.format,
       status: status != null ? status() : this.status,
+      minScore: minScore != null ? minScore() : this.minScore,
+      isAdult: isAdult ?? this.isAdult,
       sort: sort ?? this.sort,
     );
   }

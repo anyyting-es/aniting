@@ -7,59 +7,61 @@ import 'package:path_provider/path_provider.dart' as path_provider;
 ///
 /// Separa de manera estricta:
 /// 1. Working / Cache Directory (Caché temporal, chunks de streaming, sockets)
-/// 2. Downloads Directory (Descargas permanentes en Aniting/Downloads/Manga y Aniting/Downloads/Anime)
+/// 2. Downloads Directory (Descargas permanentes en Documents/Anime/aniting/Manga y Documents/Anime/aniting/Anime)
 class AppStoragePaths {
   AppStoragePaths._();
 
-  /// Nombre de la carpeta raíz de la aplicación para descargas
-  static const String appFolderName = 'Aniting';
-  static const String downloadsSubfolder = 'Downloads';
+  /// Estructura de carpetas para descargas: Documents/Anime/aniting
+  static const String animeRootFolder = 'Anime';
+  static const String appFolderName = 'aniting';
   static const String mangaSubfolder = 'Manga';
   static const String animeSubfolder = 'Anime';
 
   /// Obtiene la ruta predeterminada para el directorio de descargas base:
-  /// ej: /storage/emulated/0/Download/Aniting/Downloads (Android) o ~/Downloads/Aniting/Downloads (Desktop)
+  /// ej: /storage/emulated/0/Documents/Anime/aniting (Android) o ~/Documents/Anime/aniting (Desktop)
   static Future<String> getDefaultDownloadsBasePath() async {
     if (Platform.isAndroid) {
-      // En Android, preferimos la carpeta pública Download del sistema (tiene permisos en Android 10+)
+      // En Android, preferimos la carpeta pública Documents del sistema (o Download como fallback)
       const primaryExt = '/storage/emulated/0';
       final primaryDir = Directory(primaryExt);
       if (primaryDir.existsSync()) {
-        return '$primaryExt/Download/$appFolderName/$downloadsSubfolder';
+        final docsDir = Directory('$primaryExt/Documents');
+        if (docsDir.existsSync()) {
+          return '$primaryExt/Documents/$animeRootFolder/$appFolderName';
+        }
+        return '$primaryExt/Download/$animeRootFolder/$appFolderName';
       }
 
       try {
         final externalDir = await path_provider.getExternalStorageDirectory();
         if (externalDir != null) {
-          return '${externalDir.path}/$appFolderName/$downloadsSubfolder';
+          return '${externalDir.path}/Documents/$animeRootFolder/$appFolderName';
         }
       } catch (e) {
         debugPrint('Error getting Android external storage dir: $e');
       }
 
       final docs = await path_provider.getApplicationDocumentsDirectory();
-      return '${docs.path}/$appFolderName/$downloadsSubfolder';
+      return '${docs.path}/$animeRootFolder/$appFolderName';
     }
 
     // Desktop (Linux, Windows, macOS)
     try {
-      final downloadsDir = await path_provider.getDownloadsDirectory();
-      if (downloadsDir != null) {
-        return '${downloadsDir.path}/$appFolderName/$downloadsSubfolder';
-      }
+      final docsDir = await path_provider.getApplicationDocumentsDirectory();
+      return '${docsDir.path}/$animeRootFolder/$appFolderName';
     } catch (e) {
-      debugPrint('Error getting desktop downloads dir: $e');
+      debugPrint('Error getting desktop documents dir: $e');
     }
 
     // Fallback con variables de entorno HOME / USERPROFILE
     final home = Platform.environment['HOME'] ??
         Platform.environment['USERPROFILE'] ??
         Directory.current.path;
-    return '$home/Downloads/$appFolderName/$downloadsSubfolder';
+    return '$home/Documents/$animeRootFolder/$appFolderName';
   }
 
   /// Retorna y asegura la creación del directorio base de descargas:
-  /// `<base>/Aniting/Downloads`
+  /// `<base>/Anime/aniting`
   static Future<Directory> getDownloadsDirectory({String? customBase}) async {
     final basePath = customBase != null && customBase.trim().isNotEmpty
         ? customBase.trim()
@@ -74,7 +76,7 @@ class AppStoragePaths {
       // Fallback: si falla la creación (permisos), usar documentos internos de la app
       debugPrint('Error creating downloads dir at $basePath: $e');
       final docs = await path_provider.getApplicationDocumentsDirectory();
-      final fallback = Directory('${docs.path}/$appFolderName/$downloadsSubfolder');
+      final fallback = Directory('${docs.path}/$animeRootFolder/$appFolderName');
       if (!await fallback.exists()) {
         await fallback.create(recursive: true);
       }
@@ -83,7 +85,7 @@ class AppStoragePaths {
   }
 
   /// Retorna y asegura la creación del directorio de descargas de Manga:
-  /// `<base>/Aniting/Downloads/Manga`
+  /// `<base>/Anime/aniting/Manga`
   static Future<Directory> getMangaDownloadsDirectory({String? customBase}) async {
     final baseDir = await getDownloadsDirectory(customBase: customBase);
     final mangaDir = Directory('${baseDir.path}/$mangaSubfolder');
@@ -94,7 +96,7 @@ class AppStoragePaths {
   }
 
   /// Retorna y asegura la creación del directorio de descargas de Anime:
-  /// `<base>/Aniting/Downloads/Anime`
+  /// `<base>/Anime/aniting/Anime`
   static Future<Directory> getAnimeDownloadsDirectory({String? customBase}) async {
     final baseDir = await getDownloadsDirectory(customBase: customBase);
     final animeDir = Directory('${baseDir.path}/$animeSubfolder');

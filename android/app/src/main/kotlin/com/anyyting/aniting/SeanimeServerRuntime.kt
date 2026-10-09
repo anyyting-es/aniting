@@ -39,7 +39,9 @@ object SeanimeServerRuntime {
     private const val keyLastError = "lastError"
     private const val keyDataDir = "dataDir"
 
-    private val defaultConfig = """
+    fun generateDefaultConfig(context: Context): String {
+        val dataDirPath = dataDir(context).absolutePath
+        return """
 version = ''
 
 [server]
@@ -55,36 +57,37 @@ secureMode = 'lax'
 name = 'aniting'
 
 [web]
-assetDir = '${'$'}ANITING_DATA_DIR/assets'
+assetDir = '$dataDirPath/assets'
 
 [logs]
-dir = '${'$'}ANITING_DATA_DIR/logs'
+dir = '$dataDirPath/logs'
 
 [cache]
-dir = '${'$'}ANITING_DATA_DIR/cache'
-transcodeDir = '${'$'}ANITING_DATA_DIR/cache/transcode'
+dir = '$dataDirPath/cache'
+transcodeDir = '$dataDirPath/cache/transcode'
 
 [offline]
-dir = '${'$'}ANITING_DATA_DIR/offline'
-assetDir = '${'$'}ANITING_DATA_DIR/offline/assets'
+dir = '$dataDirPath/offline'
+assetDir = '$dataDirPath/offline/assets'
 
 [manga]
-downloadDir = '${'$'}ANITING_DATA_DIR/manga'
-localDir = '${'$'}ANITING_DATA_DIR/manga-local'
+downloadDir = '$dataDirPath/manga'
+localDir = '$dataDirPath/manga-local'
 
 [extensions]
-dir = '${'$'}ANITING_DATA_DIR/extensions'
+dir = '$dataDirPath/extensions'
 
 [experimental]
 builtintorrentclient = true
 """.trimIndent() + "\n"
+    }
 
     fun start(context: Context, port: Int = defaultPort, host: String = defaultHost): Map<String, Any?> {
         val appContext = context.applicationContext
         currentHost = host
         ensureConfigFile(appContext)
-        // Patch the config.toml to use the requested host binding
-        patchConfigHost(appContext, host)
+        // Patch the config.toml to use the requested host binding and sanitize any invalid paths
+        patchConfigFile(appContext, host)
         setState(appContext, "starting", null)
         prefs(appContext).edit()
             .putInt(keyPort, port)
@@ -109,16 +112,35 @@ builtintorrentclient = true
         return status(appContext)
     }
 
-    /** Patches the host = '...' line in config.toml to the requested host binding. */
-    private fun patchConfigHost(context: Context, host: String) {
+    /** Patches config.toml: updates host and sanitizes any invalid/unexpanded root paths (e.g. /cache, /logs) */
+    private fun patchConfigFile(context: Context, host: String) {
         val cfg = configFile(context)
         if (!cfg.exists()) return
         try {
             val content = cfg.readText()
-            val patched = content.replace(
+            val dataDirPath = dataDir(context).absolutePath
+            var patched = content.replace(
                 Regex("""host\s*=\s*'[^']*'"""),
                 "host = '$host'"
             )
+
+            // Replace any unresolved environment variables with the actual dataDir path
+            patched = patched
+                .replace("\$ANITING_DATA_DIR", dataDirPath)
+                .replace("\$SEANIME_DATA_DIR", dataDirPath)
+                .replace("\${ANITING_DATA_DIR}", dataDirPath)
+                .replace("\${SEANIME_DATA_DIR}", dataDirPath)
+
+            // Fix corrupted root paths from prior unexpanded environment variables
+            val rootPaths = listOf("cache", "logs", "assets", "offline", "manga", "manga-local", "extensions", "torrent")
+            for (p in rootPaths) {
+                patched = patched
+                    .replace(Regex("""=\s*'/$p'"""), "= '$dataDirPath/$p'")
+                    .replace(Regex("""=\s*"/$p""""), "= \"$dataDirPath/$p\"")
+                    .replace(Regex("""=\s*'/$p/"""), "= '$dataDirPath/$p/")
+                    .replace(Regex("""=\s*"/$p/"""), "= \"$dataDirPath/$p/")
+            }
+
             if (patched != content) {
                 cfg.writeText(patched)
             }
@@ -298,7 +320,7 @@ builtintorrentclient = true
         val file = configFile(context)
         if (!file.exists()) {
             file.parentFile?.mkdirs()
-            file.writeText(defaultConfig)
+            file.writeText(generateDefaultConfig(context))
         }
         return file
     }
@@ -320,7 +342,7 @@ builtintorrentclient = true
     }
 
     fun resetConfig(context: Context): Map<String, Any?> {
-        return writeConfig(context.applicationContext, defaultConfig)
+        return writeConfig(context.applicationContext, generateDefaultConfig(context.applicationContext))
     }
 
     private fun ensureNotificationChannel(context: Context) {

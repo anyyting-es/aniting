@@ -2,7 +2,10 @@ import 'dart:math' as math;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:g1455/g1455.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
+import 'package:seanime_app/core/preferences/glass_theme_provider.dart';
 import 'package:seanime_app/core/preferences/resume_bar_preferences_provider.dart';
 
 /// A solid Material Design 3 resume playback companion card.
@@ -17,7 +20,7 @@ import 'package:seanime_app/core/preferences/resume_bar_preferences_provider.dar
 /// - Full-width linear progress bar along the entire bottom edge.
 /// - Distinctive Material 3 play action button on the far right.
 /// - Seamless morphing between the expanded card and the compact 64x64 square.
-class FloatingResumeCompanion extends StatefulWidget {
+class FloatingResumeCompanion extends ConsumerStatefulWidget {
   final LastSessionItem session;
   final double tWidth; // 0.0 = compact 64px square, 1.0 = expanded full-width card
   final double width;
@@ -40,16 +43,17 @@ class FloatingResumeCompanion extends StatefulWidget {
   });
 
   @override
-  State<FloatingResumeCompanion> createState() => _FloatingResumeCompanionState();
+  ConsumerState<FloatingResumeCompanion> createState() => _FloatingResumeCompanionState();
 }
 
-class _FloatingResumeCompanionState extends State<FloatingResumeCompanion> {
+class _FloatingResumeCompanionState extends ConsumerState<FloatingResumeCompanion> {
   bool _isHovered = false;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final glassEnabled = ref.watch(glassEffectsEnabledProvider);
     final t = widget.tWidth.clamp(0.0, 1.0);
 
     // Text & right button opacity fade out quickly when contracting
@@ -114,19 +118,9 @@ class _FloatingResumeCompanionState extends State<FloatingResumeCompanion> {
           child: AnimatedScale(
             duration: const Duration(milliseconds: 140),
             scale: _isHovered ? 1.02 : 1.0,
-            child: Container(
-              width: math.max(0.0, widget.width),
-              height: math.max(0.0, widget.height),
+            child: DecoratedBox(
               decoration: BoxDecoration(
-                // Solid M3 surface container - 100% opaque, zero transparency
-                color: theme.colorScheme.surfaceContainer,
                 borderRadius: widget.borderRadius,
-                border: Border.all(
-                  color: theme.colorScheme.outlineVariant.withValues(
-                    alpha: isDark ? 0.25 : 0.15,
-                  ),
-                  width: 1.0,
-                ),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.08),
@@ -134,59 +128,82 @@ class _FloatingResumeCompanionState extends State<FloatingResumeCompanion> {
                     spreadRadius: 0,
                     offset: const Offset(0, 4),
                   ),
-                  BoxShadow(
-                    color: theme.colorScheme.primary.withValues(alpha: isDark ? 0.06 : 0.03),
-                    blurRadius: 6,
-                    offset: const Offset(0, 1),
-                  ),
+                  if (glassEnabled)
+                    BoxShadow(
+                      color: theme.colorScheme.primary.withValues(alpha: isDark ? 0.06 : 0.03),
+                      blurRadius: 6,
+                      offset: const Offset(0, 1),
+                    ),
                 ],
               ),
               child: ClipRRect(
                 borderRadius: widget.borderRadius,
-                child: Stack(
-                  children: [
-                    // Main content: either compact square or full card
-                    if (t < 0.1)
-                      // Compact 64x64 square layout
-                      _buildCompactSquare(
-                        theme: theme,
-                        coverUrl: coverUrl,
-                      )
-                    else
-                      // Expanded card layout
-                      _buildExpandedCard(
-                        theme: theme,
-                        coverUrl: coverUrl,
-                        mainTitle: mainTitle,
-                        subTitle: subTitle,
-                        contentOpacity: contentOpacity,
-                      ),
-
-                    // Full-width Bottom Progress Bar (spans entire card width)
-                    if (widget.session.progressRatio > 0.0)
-                      Positioned(
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        height: 3.0,
-                        child: LinearProgressIndicator(
-                          value: widget.session.progressRatio,
-                          backgroundColor: theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            theme.colorScheme.primary,
-                          ),
-                          minHeight: 3.0,
+                child: GlassCard(
+                  borderRadius: widget.borderRadius,
+                  padding: EdgeInsets.zero,
+                  child: Container(
+                      width: math.max(0.0, widget.width),
+                      height: math.max(0.0, widget.height),
+                      decoration: BoxDecoration(
+                        color: glassEnabled
+                            ? (isDark
+                                ? theme.colorScheme.surfaceContainer.withValues(alpha: 0.35)
+                                : theme.colorScheme.surfaceContainer.withValues(alpha: 0.48))
+                            : theme.colorScheme.surfaceContainer,
+                        borderRadius: widget.borderRadius,
+                        border: Border.all(
+                          color: isDark
+                              ? Colors.white.withValues(alpha: glassEnabled ? 0.20 : 0.12)
+                              : theme.colorScheme.outlineVariant.withValues(alpha: glassEnabled ? 0.45 : 0.25),
+                          width: 1.0,
                         ),
                       ),
-                  ],
+                      child: Stack(
+                        children: [
+                      // Main content: either compact square or full card
+                      if (t < 0.1)
+                        // Compact 64x64 square layout
+                        _buildCompactSquare(
+                          theme: theme,
+                          coverUrl: coverUrl,
+                        )
+                      else
+                        // Expanded card layout
+                        _buildExpandedCard(
+                          theme: theme,
+                          coverUrl: coverUrl,
+                          mainTitle: mainTitle,
+                          subTitle: subTitle,
+                          contentOpacity: contentOpacity,
+                        ),
+
+                      // Full-width Bottom Progress Bar (spans entire card width)
+                      if (widget.session.progressRatio > 0.0)
+                        Positioned(
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          height: 3.0,
+                          child: LinearProgressIndicator(
+                            value: widget.session.progressRatio,
+                            backgroundColor: theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              theme.colorScheme.primary,
+                            ),
+                            minHeight: 3.0,
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
             ),
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   /// Compact 64x64 companion square layout
   Widget _buildCompactSquare({

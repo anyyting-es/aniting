@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/preferences/banner_blur_provider.dart';
+import 'package:seanime_app/core/preferences/glass_theme_provider.dart';
 import 'package:seanime_app/core/preferences/desktop_nav_style_provider.dart';
 import 'package:seanime_app/core/preferences/desktop_scrollbar_provider.dart';
 import 'package:seanime_app/core/preferences/episode_view_mode_provider.dart';
@@ -539,11 +540,25 @@ class PersonalizacionSettingsScreen extends ConsumerWidget {
             ),
           ],
         ),
+
+        const SizedBox(height: 24),
+
+        // ─── EFECTOS DE VIDRIO LÍQUIDO (G1455) ─────────────────────
+        SettingsSectionHeader(title: l10n.glassEffectSettingTitle),
+        const SizedBox(height: 10),
+        PixelSwitchTile(
+          icon: Icons.auto_awesome_motion_rounded,
+          title: l10n.glassEffectSettingTitle,
+          subtitle: l10n.glassEffectSettingSubtitle,
+          value: ref.watch(glassEffectsEnabledProvider),
+          onChanged: (val) {
+            ref.read(glassEffectsEnabledProvider.notifier).setEnabled(val);
+          },
+        ),
       ],
     );
   }
 }
-
 // ─────────────────────────────────────────────────────────────────────────────
 // DIÁLOGOS FLOTANTES PARA SELECCIÓN DE IDIOMA Y FUENTE
 // ─────────────────────────────────────────────────────────────────────────────

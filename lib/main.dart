@@ -25,10 +25,15 @@ import 'package:seanime_app/presentation/widgets/desktop_title_bar.dart';
 import 'package:seanime_app/data/services/explore_carousel_service.dart';
 import 'package:seanime_app/data/services/feed_cache_service.dart';
 import 'package:seanime_app/data/services/offline_library_service.dart';
+import 'package:g1455/g1455.dart';
+import 'package:seanime_app/core/preferences/glass_theme_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await GlassHost.precache();
+  } catch (_) {}
   PaintingBinding.instance.imageCache.maximumSizeBytes = 50 << 20; // 50 MB
   PaintingBinding.instance.imageCache.maximumSize = 250;
 
@@ -94,6 +99,7 @@ void main() async {
     MangaSectionEnabledNotifier.setCachedPrefs(prefs);
     ExploreCarouselNotifier.setCachedPrefs(prefs);
     DesktopNavStyleNotifier.setCachedPrefs(prefs);
+    GlassEffectsEnabledNotifier.setCachedPrefs(prefs);
   } catch (_) {}
   runApp(
     const ProviderScope(
@@ -137,6 +143,7 @@ class _AnitingFlutterAppState extends ConsumerState<AnitingFlutterApp> with Widg
     final fontId = ref.watch(themeProvider.select((s) => s.fontId));
     final customAccent = ref.watch(themeProvider.select((s) => s.customAccent));
     final showScrollbar = ref.watch(desktopScrollbarProvider);
+    final glassEffectsEnabled = ref.watch(glassEffectsEnabledProvider);
 
     ThemeMode mode;
     switch (themeMode) {
@@ -222,7 +229,14 @@ class _AnitingFlutterAppState extends ConsumerState<AnitingFlutterApp> with Widg
                     systemOverlayStyle: overlayStyle,
                   ),
                 ),
-                child: DesktopWindowFrame(child: child ?? const SizedBox.shrink()),
+                child: GlassHost(
+                  richBackdrop: true,
+                  tier: GlassTierChoice(
+                    glassEffectsEnabled.toGlassTier(),
+                    GlassTierReason.pinnedByHost,
+                  ),
+                  child: DesktopWindowFrame(child: child ?? const SizedBox.shrink()),
+                ),
               ),
             );
           },

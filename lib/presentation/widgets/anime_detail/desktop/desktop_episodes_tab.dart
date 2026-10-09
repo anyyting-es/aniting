@@ -10,11 +10,12 @@ import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/providers/active_downloads_provider.dart';
 import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
 
+import 'package:g1455/g1455.dart';
+import 'desktop_episode_context_menu.dart';
 import 'desktop_episode_grid_card.dart';
 import 'desktop_episode_list_card.dart';
 import 'desktop_episode_models.dart';
 import 'desktop_episode_pagination.dart';
-import 'package:seanime_app/presentation/widgets/m3_expressive_select.dart';
 
 export 'desktop_episode_models.dart';
 
@@ -39,6 +40,11 @@ class DesktopEpisodesTab extends ConsumerStatefulWidget {
   final void Function(DesktopEpisodeItemData ep) onEpisodeClicked;
   final VoidCallback onToggleLocalMode;
   final ValueChanged<AnimeDetailTab> onTabChanged;
+  final Future<void> Function({
+    required int episodeNumber,
+    required String episodeTitle,
+    String? aniDBEpisode,
+  })? onOpenTorrentSelector;
 
   const DesktopEpisodesTab({
     super.key,
@@ -61,6 +67,7 @@ class DesktopEpisodesTab extends ConsumerStatefulWidget {
     required this.onEpisodeClicked,
     required this.onToggleLocalMode,
     required this.onTabChanged,
+    this.onOpenTorrentSelector,
   });
 
   @override
@@ -515,27 +522,23 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
         ? <DesktopEpisodeItemData>[]
         : items.sublist(startIndex, endIndex);
 
-    final headerCountText = totalPages > 1
-        ? '${items.length} ${l10n.episodes} • ${l10n.page} ${_currentPage + 1}/$totalPages'
-        : '${items.length} ${l10n.episodes}';
-
     final isDark = theme.brightness == Brightness.dark;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // ─── Header: [Episodes Count] on left, Provider & Toggles on right ───
+        // ─── Header: Provider & View Toggles (Episodes title removed per UI design) ───
         Row(
           children: [
-            Text(
-              headerCountText,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
-                letterSpacing: -0.2,
+            if (totalPages > 1)
+              Text(
+                '${l10n.page} ${_currentPage + 1}/$totalPages',
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w500,
+                  color: isDark ? Colors.white60 : Colors.black54,
+                ),
               ),
-            ),
 
             const Spacer(),
 
@@ -570,22 +573,58 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
                 style: IconButton.styleFrom(
                   visualDensity: VisualDensity.compact,
                   padding: const EdgeInsets.all(6),
+                  hoverColor: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05),
                 ),
                 tooltip: l10n.scanLocalFolder,
                 icon: const Icon(Icons.sync_rounded, size: 18),
                 onPressed: _scanAndRefreshLocal,
               ),
             ] else if (widget.currentTab == AnimeDetailTab.online && widget.providers.isNotEmpty) ...[
-              M3ExpressiveSelect<OnlinestreamProvider>(
-                value: widget.selectedProvider,
-                height: 32,
-                items: widget.providers
-                    .map((p) => M3SelectItem<OnlinestreamProvider>(
-                          value: p,
-                          label: p.name,
-                        ))
-                    .toList(),
-                onChanged: widget.onProviderChanged,
+              GlassMenuAnchor(
+                width: 220,
+                items: widget.providers.map((p) {
+                  final isCurrent = widget.selectedProvider?.id == p.id;
+                  return GlassMenuItem(
+                    label: p.name,
+                    icon: Icon(
+                      isCurrent ? Icons.check_circle_rounded : Icons.public_rounded,
+                      size: 18,
+                      color: isCurrent ? theme.colorScheme.primary : null,
+                    ),
+                    onPressed: () {
+                      widget.onProviderChanged(p);
+                    },
+                  );
+                }).toList(),
+                builder: (context, controller) {
+                  return GlassButton(
+                    onPressed: controller.open,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.public_rounded,
+                          size: 15,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          widget.selectedProvider?.name ?? l10n.source,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Icon(
+                          Icons.keyboard_arrow_down_rounded,
+                          size: 17,
+                          color: isDark ? Colors.white60 : Colors.black54,
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
               if (widget.selectedProvider?.supportsDub ?? false) ...[
                 const SizedBox(width: 4),
@@ -593,14 +632,14 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
                   style: IconButton.styleFrom(
                     visualDensity: VisualDensity.compact,
                     padding: const EdgeInsets.all(6),
-                    hoverColor: isDark ? Colors.white.withValues(alpha: 0.08) : theme.colorScheme.surfaceContainerHighest,
+                    hoverColor: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05),
                   ),
                   icon: Icon(
                     widget.isDubbed ? AppIcons.voice(iconPack) : AppIcons.subtitles(iconPack),
                     size: 18,
                     color: widget.isDubbed
                         ? (isDark ? Colors.white : theme.colorScheme.primary)
-                        : (isDark ? Colors.white60 : theme.colorScheme.onSurfaceVariant),
+                        : (isDark ? Colors.white60 : Colors.black54),
                   ),
                   tooltip: widget.isDubbed ? l10n.audioDubbed : l10n.audioSubtitled,
                   onPressed: widget.onToggleDubbed,
@@ -614,7 +653,7 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
               style: IconButton.styleFrom(
                 visualDensity: VisualDensity.compact,
                 padding: const EdgeInsets.all(6),
-                hoverColor: isDark ? Colors.white.withValues(alpha: 0.08) : theme.colorScheme.surfaceContainerHighest,
+                hoverColor: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05),
               ),
               onPressed: () => setState(() => _isGridView = !_isGridView),
               tooltip: _isGridView
@@ -623,7 +662,7 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
               icon: Icon(
                 _isGridView ? AppIcons.list(iconPack) : AppIcons.grid(iconPack),
                 size: 18,
-                color: isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
+                color: isDark ? Colors.white70 : Colors.black87,
               ),
             ),
             const SizedBox(width: 4),
@@ -633,7 +672,7 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
               style: IconButton.styleFrom(
                 visualDensity: VisualDensity.compact,
                 padding: const EdgeInsets.all(6),
-                hoverColor: isDark ? Colors.white.withValues(alpha: 0.08) : theme.colorScheme.surfaceContainerHighest,
+                hoverColor: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05),
               ),
               onPressed: () => setState(() {
                 _isSortAscending = !_isSortAscending;
@@ -645,7 +684,7 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
               icon: Icon(
                 AppIcons.swapVert(iconPack),
                 size: 18,
-                color: isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
+                color: isDark ? Colors.white70 : Colors.black87,
               ),
             ),
           ],
@@ -788,25 +827,33 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
         else if (_isGridView)
           LayoutBuilder(
             builder: (context, constraints) {
-              final crossAxisCount = (constraints.maxWidth / 210).floor().clamp(2, 5);
+              final crossAxisCount = (constraints.maxWidth / 320).floor().clamp(2, 5);
               return GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: pagedItems.length,
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: crossAxisCount,
-                  childAspectRatio: 1.25,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 20,
+                  childAspectRatio: 1.28,
+                  crossAxisSpacing: 20,
+                  mainAxisSpacing: 22,
                 ),
                 itemBuilder: (context, index) {
                   final ep = pagedItems[index];
-                  return DesktopGridEpisodeCard(
+                  return DesktopEpisodeContextMenu(
                     ep: ep,
-                    isLoading: widget.loadingEpisodeNumber == ep.number,
-                    formattedTitle: _formatEpisodeTitle(ep),
-                    fallbackCoverImage: widget.fallbackCoverImage,
-                    onTap: () => widget.onEpisodeClicked(ep),
+                    mediaId: widget.mediaId,
+                    details: widget.details,
+                    onEpisodeClicked: widget.onEpisodeClicked,
+                    onOpenTorrentSelector: widget.onOpenTorrentSelector,
+                    onRefreshLocal: _scanAndRefreshLocal,
+                    child: DesktopGridEpisodeCard(
+                      ep: ep,
+                      isLoading: widget.loadingEpisodeNumber == ep.number,
+                      formattedTitle: _formatEpisodeTitle(ep),
+                      fallbackCoverImage: widget.fallbackCoverImage,
+                      onTap: () => widget.onEpisodeClicked(ep),
+                    ),
                   );
                 },
               );
@@ -816,26 +863,34 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
         else
           LayoutBuilder(
             builder: (context, constraints) {
-              final isDual = constraints.maxWidth > 860;
-              final crossAxisCount = isDual ? 2 : 1;
+              final isWide = constraints.maxWidth > 1200;
+              final crossAxisCount = isWide ? 2 : 1;
               return GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: pagedItems.length,
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: crossAxisCount,
-                  mainAxisExtent: 136,
+                  mainAxisExtent: 154,
                   crossAxisSpacing: 24,
-                  mainAxisSpacing: 16,
+                  mainAxisSpacing: 18,
                 ),
                 itemBuilder: (context, index) {
                   final ep = pagedItems[index];
-                  return DesktopListEpisodeCard(
+                  return DesktopEpisodeContextMenu(
                     ep: ep,
-                    isLoading: widget.loadingEpisodeNumber == ep.number,
-                    formattedTitle: _formatEpisodeTitle(ep),
-                    fallbackCoverImage: widget.fallbackCoverImage,
-                    onTap: () => widget.onEpisodeClicked(ep),
+                    mediaId: widget.mediaId,
+                    details: widget.details,
+                    onEpisodeClicked: widget.onEpisodeClicked,
+                    onOpenTorrentSelector: widget.onOpenTorrentSelector,
+                    onRefreshLocal: _scanAndRefreshLocal,
+                    child: DesktopListEpisodeCard(
+                      ep: ep,
+                      isLoading: widget.loadingEpisodeNumber == ep.number,
+                      formattedTitle: _formatEpisodeTitle(ep),
+                      fallbackCoverImage: widget.fallbackCoverImage,
+                      onTap: () => widget.onEpisodeClicked(ep),
+                    ),
                   );
                 },
               );

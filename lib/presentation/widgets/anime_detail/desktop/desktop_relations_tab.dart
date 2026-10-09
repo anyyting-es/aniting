@@ -24,7 +24,7 @@ class DesktopRelationsTab extends ConsumerWidget {
     if (isLoading && relations.isEmpty) {
       return LayoutBuilder(
         builder: (context, constraints) {
-          final crossAxisCount = (constraints.maxWidth / 150).floor().clamp(2, 6);
+          final crossAxisCount = (constraints.maxWidth / 150).floor().clamp(2, 10);
           return GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -68,7 +68,7 @@ class DesktopRelationsTab extends ConsumerWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = (constraints.maxWidth / 150).floor().clamp(2, 6);
+        final crossAxisCount = (constraints.maxWidth / 150).floor().clamp(2, 10);
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),

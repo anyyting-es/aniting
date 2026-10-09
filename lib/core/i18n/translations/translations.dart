@@ -640,6 +640,7 @@ abstract class AppTranslations {
   String get curatedActionManga;
   String get curatedFantasyManga;
   String get formatTv;
+  String get formatTvShort;
   String get formatMovie;
   String get formatOva;
   String get formatOna;
@@ -651,6 +652,14 @@ abstract class AppTranslations {
   String get allStatuses;
   String get allSeasons;
   String get activeFilters;
+  String get discoverSeries;
+  String get highestRatedShows;
+  String get allTags;
+  String get allScores;
+  String get timelessYear;
+  String get adultContent;
+  String get titleSearchPlaceholder;
+  String get highestScore;
 
   // Onboarding / Welcome screen
   String get welcomeTitle;
@@ -735,6 +744,7 @@ abstract class AppTranslations {
   // Helper methods
   String formatStatus(String? status);
   String formatSeason(String? season);
+  String formatFormat(String? format);
   String formatRelationType(String? type);
   String formatWatchStatus(String? status, int progress, int? totalEpisodes, String fallbackFormat);
 
@@ -1015,5 +1025,33 @@ abstract class AppTranslations {
   String get downloading;
   String get downloaded;
   String get viewAll;
+
+  // Episode Context Menu
+  String get playEpisode;
+  String get markAsWatched;
+  String get markAsUnwatched;
+  String markedAsWatched(int ep);
+  String markedAsUnwatched(int ep);
+  String get downloadEpisode;
+
+  // Liquid Glass Effects Preference
+  String get glassEffectSettingTitle;
+  String get glassEffectSettingSubtitle;
+  String get glassTierFull;
+  String get glassTierFullDesc;
+  String get glassTierCheap;
+  String get glassTierCheapDesc;
+  String get glassTierOpaque;
+  String get glassTierOpaqueDesc;
+
+  // Edit Entry Modal
+  String get editEntryTitle;
+  String get startDate;
+  String get completionDate;
+  String get selectDate;
+  String get totalRewatches;
+  String get totalRereads;
+  String get noScore;
+  String get saveChanges;
 }
 

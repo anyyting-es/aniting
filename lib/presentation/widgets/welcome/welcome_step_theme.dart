@@ -16,17 +16,6 @@ class WelcomeStepTheme extends ConsumerStatefulWidget {
 }
 
 class _WelcomeStepThemeState extends ConsumerState<WelcomeStepTheme> {
-  int _themeCategoryIndex = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    final initialMode = ref.read(themeProvider).themeMode;
-    if (initialMode == AppThemeMode.light) {
-      _themeCategoryIndex = 1;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final themeSettings = ref.watch(themeProvider);
@@ -37,16 +26,9 @@ class _WelcomeStepThemeState extends ConsumerState<WelcomeStepTheme> {
     final theme = Theme.of(context);
     final colors = context.themeColors;
 
-    final List<AppThemePalette> activePalettes;
-    if (_themeCategoryIndex == 0) {
-      activePalettes = AppPalettes.getDarkPresets();
-    } else if (_themeCategoryIndex == 1) {
-      activePalettes = AppPalettes.getLightPresets();
-    } else {
-      activePalettes = AppPalettes.getMaterialPresets(
-        isDark: themeSettings.themeMode != AppThemeMode.light,
-      );
-    }
+    final bool isOledSelected = themeSettings.isOled;
+    final bool isDarkSelected = !themeSettings.isOled && themeSettings.themeMode == AppThemeMode.dark;
+    final bool isLightSelected = !themeSettings.isOled && themeSettings.themeMode == AppThemeMode.light;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -65,54 +47,72 @@ class _WelcomeStepThemeState extends ConsumerState<WelcomeStepTheme> {
           ),
           const SizedBox(height: 16),
 
-          // 1. THEME MODE (Dark, Light, System) WITH VISUAL GRAPHICS
+          // 1. THEME SELECTION (Dark, Light, OLED)
           Text(
-            l10n.mode,
+            l10n.themeMode,
             style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           Row(
             children: [
-              _buildVisualThemeModeCard(
+              _buildVisualThemeCard(
                 label: l10n.themeDark,
+                isSelected: isDarkSelected,
                 mode: AppThemeMode.dark,
-                isSelected: themeSettings.themeMode == AppThemeMode.dark,
+                isOled: false,
                 iconPack: iconPack,
                 colors: colors,
                 theme: theme,
-                onTap: () {
-                  themeNotifier.setThemeMode(AppThemeMode.dark);
-                  setState(() => _themeCategoryIndex = 0);
+                onTap: () async {
+                  await themeNotifier.setOled(false);
+                  await themeNotifier.setThemeMode(AppThemeMode.dark);
+                  await themeNotifier.setPaletteId(AppPalettes.catppuccinId, resetCustomAccent: false);
                 },
               ),
               const SizedBox(width: 10),
-              _buildVisualThemeModeCard(
+              _buildVisualThemeCard(
                 label: l10n.themeLight,
+                isSelected: isLightSelected,
                 mode: AppThemeMode.light,
-                isSelected: themeSettings.themeMode == AppThemeMode.light,
+                isOled: false,
                 iconPack: iconPack,
                 colors: colors,
                 theme: theme,
-                onTap: () {
-                  themeNotifier.setThemeMode(AppThemeMode.light);
-                  setState(() => _themeCategoryIndex = 1);
+                onTap: () async {
+                  await themeNotifier.setOled(false);
+                  await themeNotifier.setThemeMode(AppThemeMode.light);
+                  await themeNotifier.setPaletteId(AppPalettes.catppuccinLatteId, resetCustomAccent: false);
                 },
               ),
               const SizedBox(width: 10),
-              _buildVisualThemeModeCard(
-                label: l10n.themeSystem,
-                mode: AppThemeMode.system,
-                isSelected: themeSettings.themeMode == AppThemeMode.system,
+              _buildVisualThemeCard(
+                label: l10n.themeOled,
+                isSelected: isOledSelected,
+                mode: AppThemeMode.dark,
+                isOled: true,
                 iconPack: iconPack,
                 colors: colors,
                 theme: theme,
-                onTap: () => themeNotifier.setThemeMode(AppThemeMode.system),
+                onTap: () async {
+                  await themeNotifier.setThemeMode(AppThemeMode.dark);
+                  await themeNotifier.setOled(true);
+                  await themeNotifier.setPaletteId(AppPalettes.oledBlackId, resetCustomAccent: false);
+                },
               ),
             ],
           ),
           const SizedBox(height: 20),
 
-          // 2. ICON PACK SELECTOR
+          // 2. ACCENT COLOR SELECTOR
+          Text(
+            l10n.accentColor,
+            style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          _buildAccentColorPicker(themeSettings, themeNotifier, iconPack, colors, l10n),
+          const SizedBox(height: 20),
+
+          // 3. ICON PACK SELECTOR
           Text(
             l10n.iconPack,
             style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
@@ -153,138 +153,16 @@ class _WelcomeStepThemeState extends ConsumerState<WelcomeStepTheme> {
               ),
             ],
           ),
-          const SizedBox(height: 20),
-
-          // 3. ACCENT COLOR SELECTOR
-          Text(
-            l10n.accentColor,
-            style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          _buildAccentColorPicker(themeSettings, themeNotifier, iconPack, colors, l10n),
-          const SizedBox(height: 20),
-
-          // 4. COMMUNITY THEMES PALETTES
-          Text(
-            l10n.themePresets,
-            style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 10),
-          Container(
-            padding: const EdgeInsets.all(3),
-            decoration: BoxDecoration(
-              color: colors.surfaceElevated.withValues(alpha: 0.35),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                _buildCategoryTab(
-                  label: l10n.themeSectionDark,
-                  isSelected: _themeCategoryIndex == 0,
-                  theme: theme,
-                  onTap: () => setState(() => _themeCategoryIndex = 0),
-                ),
-                const SizedBox(width: 4),
-                _buildCategoryTab(
-                  label: l10n.themeSectionLight,
-                  isSelected: _themeCategoryIndex == 1,
-                  theme: theme,
-                  onTap: () => setState(() => _themeCategoryIndex = 1),
-                ),
-                const SizedBox(width: 4),
-                _buildCategoryTab(
-                  label: l10n.themeSectionMaterial,
-                  isSelected: _themeCategoryIndex == 2,
-                  theme: theme,
-                  onTap: () => setState(() => _themeCategoryIndex = 2),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // Palettes List
-          ...activePalettes.map((pal) {
-            final isSelected = themeSettings.paletteId == pal.id;
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: InkWell(
-                onTap: () async {
-                  if (pal.category == 'light' && themeSettings.themeMode == AppThemeMode.dark) {
-                    await themeNotifier.setThemeMode(AppThemeMode.light);
-                  } else if (pal.category == 'dark' && themeSettings.themeMode == AppThemeMode.light) {
-                    await themeNotifier.setThemeMode(AppThemeMode.dark);
-                  }
-                  await themeNotifier.setPaletteId(pal.id);
-                },
-                borderRadius: BorderRadius.circular(12),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? colors.accent.withValues(alpha: 0.12)
-                        : colors.surfaceElevated.withValues(alpha: 0.40),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: isSelected ? colors.accent.withValues(alpha: 0.5) : colors.border.withValues(alpha: 0.5),
-                      width: 1,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      // Palette mini color swatches
-                      Container(
-                        width: 34,
-                        height: 34,
-                        decoration: BoxDecoration(
-                          color: pal.background,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: pal.border, width: 1.5),
-                        ),
-                        child: Center(
-                          child: Container(
-                            width: 12,
-                            height: 12,
-                            decoration: BoxDecoration(
-                              color: pal.accent,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          pal.localizedName(l10n),
-                          style: TextStyle(
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                            fontSize: 13.5,
-                            color: isSelected ? colors.accent : null,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      if (isSelected)
-                        Icon(AppIcons.check(iconPack), color: colors.accent, size: 20)
-                      else
-                        Icon(AppIcons.radioUnchecked(iconPack), color: colors.border.withValues(alpha: 0.4), size: 18),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          }),
         ],
       ),
     );
   }
 
-  Widget _buildVisualThemeModeCard({
+  Widget _buildVisualThemeCard({
     required String label,
-    required AppThemeMode mode,
     required bool isSelected,
+    required AppThemeMode mode,
+    required bool isOled,
     required AppIconPack iconPack,
     required AppThemeColors colors,
     required ThemeData theme,
@@ -325,7 +203,7 @@ class _WelcomeStepThemeState extends ConsumerState<WelcomeStepTheme> {
                   ),
                 ),
                 clipBehavior: Clip.antiAlias,
-                child: _buildThemeModeGraphic(mode, iconPack, colors, isSelected),
+                child: _buildThemeGraphic(mode, isOled, iconPack, colors, isSelected),
               ),
               const SizedBox(height: 7),
               // Mode label + indicator
@@ -333,11 +211,11 @@ class _WelcomeStepThemeState extends ConsumerState<WelcomeStepTheme> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
-                    mode == AppThemeMode.dark
-                        ? AppIcons.darkMode(iconPack)
-                        : mode == AppThemeMode.light
-                            ? AppIcons.lightMode(iconPack)
-                            : AppIcons.systemMode(iconPack),
+                    isOled
+                        ? AppIcons.tv(iconPack)
+                        : (mode == AppThemeMode.dark
+                            ? AppIcons.darkMode(iconPack)
+                            : AppIcons.lightMode(iconPack)),
                     size: 13,
                     color: isSelected ? colors.accent : theme.colorScheme.onSurfaceVariant,
                   ),
@@ -363,108 +241,32 @@ class _WelcomeStepThemeState extends ConsumerState<WelcomeStepTheme> {
     );
   }
 
-  Widget _buildThemeModeGraphic(
+  Widget _buildThemeGraphic(
     AppThemeMode mode,
+    bool isOled,
     AppIconPack iconPack,
     AppThemeColors colors,
     bool isSelected,
   ) {
-    if (mode == AppThemeMode.system) {
-      return Row(
-        children: [
-          // Left half: Light mode
-          Expanded(
-            child: Container(
-              color: const Color(0xFFF5F6FA),
-              padding: const EdgeInsets.all(4),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(width: 4, height: 4, decoration: const BoxDecoration(color: Color(0xFFCBD0DC), shape: BoxShape.circle)),
-                      const SizedBox(width: 2.5),
-                      Container(width: 12, height: 3, decoration: BoxDecoration(color: const Color(0xFFDFE2EC), borderRadius: BorderRadius.circular(2))),
-                    ],
-                  ),
-                  const Spacer(),
-                  Container(
-                    height: 16,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(3),
-                      border: Border.all(color: const Color(0xFFE2E5EE), width: 0.8),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: Row(
-                      children: [
-                        Container(width: 5, height: 5, decoration: BoxDecoration(color: colors.accent, shape: BoxShape.circle)),
-                        const SizedBox(width: 3),
-                        Expanded(
-                          child: Container(height: 2.5, decoration: BoxDecoration(color: const Color(0xFFCBD0DC), borderRadius: BorderRadius.circular(1))),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Spacer(),
-                ],
-              ),
-            ),
-          ),
-          // Vertical divider
-          Container(width: 1, color: const Color(0xFF4A4E69).withValues(alpha: 0.3)),
-          // Right half: Dark mode
-          Expanded(
-            child: Container(
-              color: const Color(0xFF141620),
-              padding: const EdgeInsets.all(4),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(width: 4, height: 4, decoration: const BoxDecoration(color: Color(0xFF3B4054), shape: BoxShape.circle)),
-                      const SizedBox(width: 2.5),
-                      Container(width: 12, height: 3, decoration: BoxDecoration(color: const Color(0xFF262A3B), borderRadius: BorderRadius.circular(2))),
-                    ],
-                  ),
-                  const Spacer(),
-                  Container(
-                    height: 16,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1E212E),
-                      borderRadius: BorderRadius.circular(3),
-                      border: Border.all(color: const Color(0xFF2E3347), width: 0.8),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: Row(
-                      children: [
-                        Container(width: 5, height: 5, decoration: BoxDecoration(color: colors.accent, shape: BoxShape.circle)),
-                        const SizedBox(width: 3),
-                        Expanded(
-                          child: Container(height: 2.5, decoration: BoxDecoration(color: const Color(0xFF3B4054), borderRadius: BorderRadius.circular(1))),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Spacer(),
-                ],
-              ),
-            ),
-          ),
-        ],
-      );
-    }
-
-    final isDarkMode = mode == AppThemeMode.dark;
-    final bgColor = isDarkMode ? const Color(0xFF141620) : const Color(0xFFF5F6FA);
-    final headerColor = isDarkMode ? const Color(0xFF1B1E2B) : const Color(0xFFE9ECF4);
-    final cardBg = isDarkMode ? const Color(0xFF1F2333) : Colors.white;
-    final lineMuted = isDarkMode ? const Color(0xFF33384D) : const Color(0xFFCBD0DC);
-    final borderColor = isDarkMode ? const Color(0xFF2B2F42) : const Color(0xFFDFE2EC);
+    final isDark = mode == AppThemeMode.dark;
+    final winBg = isOled
+        ? Colors.black
+        : (isDark ? const Color(0xFF141620) : const Color(0xFFF5F6FA));
+    final headerColor = isOled
+        ? const Color(0xFF0A0A0E)
+        : (isDark ? const Color(0xFF1B1E2B) : const Color(0xFFE9ECF4));
+    final cardBg = isOled
+        ? const Color(0xFF101016)
+        : (isDark ? const Color(0xFF1F2333) : Colors.white);
+    final lineMuted = isOled
+        ? const Color(0xFF22222E)
+        : (isDark ? const Color(0xFF33384D) : const Color(0xFFCBD0DC));
+    final borderColor = isOled
+        ? const Color(0xFF1C1C26)
+        : (isDark ? const Color(0xFF2B2F42) : const Color(0xFFDFE2EC));
 
     return Container(
-      color: bgColor,
+      color: winBg,
       child: Column(
         children: [
           // Mini window header bar
@@ -494,7 +296,9 @@ class _WelcomeStepThemeState extends ConsumerState<WelcomeStepTheme> {
                   Container(
                     width: 10,
                     decoration: BoxDecoration(
-                      color: isDarkMode ? const Color(0xFF181B26) : const Color(0xFFE5E8F2),
+                      color: isOled
+                          ? const Color(0xFF0F0F14)
+                          : (isDark ? const Color(0xFF181B26) : const Color(0xFFE5E8F2)),
                       borderRadius: BorderRadius.circular(2.5),
                     ),
                   ),
@@ -536,46 +340,6 @@ class _WelcomeStepThemeState extends ConsumerState<WelcomeStepTheme> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildCategoryTab({
-    required String label,
-    required bool isSelected,
-    required ThemeData theme,
-    required VoidCallback onTap,
-  }) {
-    return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? theme.colorScheme.primary.withValues(alpha: 0.15)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: isSelected ? theme.colorScheme.primary.withValues(alpha: 0.4) : Colors.transparent,
-              width: 1,
-            ),
-          ),
-          child: Center(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ),
       ),
     );
   }

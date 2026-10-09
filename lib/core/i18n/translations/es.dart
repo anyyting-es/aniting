@@ -1269,6 +1269,8 @@ class SpanishTranslations implements AppTranslations {
   @override
   String get formatTv => 'Serie de TV';
   @override
+  String get formatTvShort => 'Corto TV';
+  @override
   String get formatMovie => 'Película';
   @override
   String get formatOva => 'OVA';
@@ -1290,6 +1292,22 @@ class SpanishTranslations implements AppTranslations {
   String get allSeasons => 'Todas las Temporadas';
   @override
   String get activeFilters => 'Filtros Activos';
+  @override
+  String get discoverSeries => 'Descubrir series';
+  @override
+  String get highestRatedShows => 'Series mejor valoradas';
+  @override
+  String get allTags => 'Todas las etiquetas';
+  @override
+  String get allScores => 'Todas las puntuaciones';
+  @override
+  String get timelessYear => 'Cualquier año';
+  @override
+  String get adultContent => 'Adultos (+18)';
+  @override
+  String get titleSearchPlaceholder => 'Título';
+  @override
+  String get highestScore => 'Mayor puntuación';
 
   // Onboarding / Welcome screen
   @override
@@ -1431,7 +1449,7 @@ class SpanishTranslations implements AppTranslations {
   @override
   String get mangaDownloadDir => 'Directorio de Descargas';
   @override
-  String get mangaDownloadDirDesc => 'Aniting/Downloads/Manga (Independiente del directorio de trabajo/caché)';
+  String get mangaDownloadDirDesc => 'Anime/aniting/Manga (Independiente del directorio de trabajo/caché)';
   @override
   String get loadingPath => 'Cargando ruta...';
   @override
@@ -1496,6 +1514,33 @@ class SpanishTranslations implements AppTranslations {
         return seasonFall;
       default:
         return season;
+    }
+  }
+
+  @override
+  String formatFormat(String? format) {
+    if (format == null || format.isEmpty) return '';
+    switch (format.toUpperCase()) {
+      case 'TV':
+        return formatTv;
+      case 'TV_SHORT':
+        return formatTvShort;
+      case 'MOVIE':
+        return formatMovie;
+      case 'SPECIAL':
+        return formatSpecial;
+      case 'OVA':
+        return formatOva;
+      case 'ONA':
+        return formatOna;
+      case 'MANGA':
+        return formatManga;
+      case 'NOVEL':
+        return formatNovel;
+      case 'ONE_SHOT':
+        return formatOneShot;
+      default:
+        return format;
     }
   }
 
@@ -1713,7 +1758,7 @@ class SpanishTranslations implements AppTranslations {
   @override
   String get noDownloadedMangaTitle => 'No hay manga descargado';
   @override
-  String get noDownloadedMangaDesc => 'Los capítulos descargados para leer en el lector offline se guardarán automáticamente en Aniting/Downloads/Manga y aparecerán aquí.';
+  String get noDownloadedMangaDesc => 'Los capítulos descargados para leer en el lector offline se guardarán automáticamente en Anime/aniting/Manga y aparecerán aquí.';
   @override
   String get exploreManga => 'Explorar Manga';
   @override
@@ -2083,5 +2128,55 @@ class SpanishTranslations implements AppTranslations {
   String get downloaded => 'Descargado';
   @override
   String get viewAll => 'Ver todo';
+
+  // Episode Context Menu
+  @override
+  String get playEpisode => 'Reproducir episodio';
+  @override
+  String get markAsWatched => 'Marcar como visto';
+  @override
+  String get markAsUnwatched => 'Marcar como no visto';
+  @override
+  String markedAsWatched(int ep) => 'Episodio $ep marcado como visto';
+  @override
+  String markedAsUnwatched(int ep) => 'Episodio $ep marcado como no visto';
+  @override
+  String get downloadEpisode => 'Descargar episodio';
+
+  // Liquid Glass Effects Preference
+  @override
+  String get glassEffectSettingTitle => 'Efectos de vidrio líquido (Glass)';
+  @override
+  String get glassEffectSettingSubtitle => 'Activa la refracción translúcida y efectos de cristal esmerilado en toda la app';
+  @override
+  String get glassTierFull => 'Completo (Vidrio Líquido)';
+  @override
+  String get glassTierFullDesc => 'Refracción dinámica de fondo, bordes especulares y desenfoque fluido';
+  @override
+  String get glassTierCheap => 'Rendimiento (Bajo)';
+  @override
+  String get glassTierCheapDesc => 'Tinte translúcido ligero sin muestreo de fondos';
+  @override
+  String get glassTierOpaque => 'Desactivado (Opaco)';
+  @override
+  String get glassTierOpaqueDesc => 'Superficie sólida de alto contraste sin transparencia';
+
+  // Edit Entry Modal
+  @override
+  String get editEntryTitle => 'Editar entrada';
+  @override
+  String get startDate => 'Fecha de inicio';
+  @override
+  String get completionDate => 'Fecha de finalización';
+  @override
+  String get selectDate => 'Seleccionar fecha';
+  @override
+  String get totalRewatches => 'Total de visualizaciones';
+  @override
+  String get totalRereads => 'Total de relecturas';
+  @override
+  String get noScore => 'Sin puntaje';
+  @override
+  String get saveChanges => 'Guardar cambios';
 }
 

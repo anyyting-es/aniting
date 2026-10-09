@@ -1,22 +1,15 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:g1455/g1455.dart';
+import 'package:seanime_app/core/preferences/glass_theme_provider.dart';
 import 'package:seanime_app/presentation/widgets/desktop_sidebar.dart';
 
-/// A solid Material Design 3 floating navigation dock with fluid animated pill expansion.
-///
-/// Features:
-/// - 100% solid background (zero transparency/blur) using `theme.colorScheme.surfaceContainer`.
-/// - Material 3 elevation shadow and crisp subtle outline.
-/// - Cohesive, well-proportioned layout with generous touch targets.
-/// - Prominent, larger icons (26.5dp), comfortable pill height (50dp), and larger typography (14.5sp).
-/// - Fluid animated pill expansion on tab selection:
-///   - When tapping a destination, the pill smoothly expands horizontally, pushing adjacent icons aside
-///     with organic, physics-based easing (`Curves.easeOutCubic`).
-///   - The previous active pill smoothly contracts back to a circular icon button.
-///   - When [labelProgress] == 0 (e.g. sharing row with resume companion), operates in icon-only mode.
-class FloatingDockPill extends StatefulWidget {
+/// A Material Design 3 floating navigation dock with fluid animated pill expansion
+/// and enhanced Liquid Glass frosted refraction.
+class FloatingDockPill extends ConsumerStatefulWidget {
   final int selectedIndex;
   final ValueChanged<int> onDestinationSelected;
   final List<DesktopSidebarItem> items;
@@ -80,10 +73,10 @@ class FloatingDockPill extends StatefulWidget {
   }
 
   @override
-  State<FloatingDockPill> createState() => _FloatingDockPillState();
+  ConsumerState<FloatingDockPill> createState() => _FloatingDockPillState();
 }
 
-class _FloatingDockPillState extends State<FloatingDockPill> {
+class _FloatingDockPillState extends ConsumerState<FloatingDockPill> {
   int? _hoveredIndex;
   int? _focusedIndex;
 
@@ -103,20 +96,11 @@ class _FloatingDockPillState extends State<FloatingDockPill> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final glassEnabled = ref.watch(glassEffectsEnabledProvider);
 
-    return Container(
-      width: widget.width,
-      height: widget.height,
+    return DecoratedBox(
       decoration: BoxDecoration(
-        // Solid M3 surface container - 100% opaque, zero transparency
-        color: theme.colorScheme.surfaceContainer,
         borderRadius: widget.borderRadius,
-        border: Border.all(
-          color: theme.colorScheme.outlineVariant.withValues(
-            alpha: isDark ? 0.25 : 0.15,
-          ),
-          width: 1.0,
-        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.08),
@@ -124,42 +108,65 @@ class _FloatingDockPillState extends State<FloatingDockPill> {
             spreadRadius: 0,
             offset: const Offset(0, 4),
           ),
-          BoxShadow(
-            color: theme.colorScheme.primary.withValues(alpha: isDark ? 0.06 : 0.03),
-            blurRadius: 6,
-            offset: const Offset(0, 1),
-          ),
+          if (glassEnabled)
+            BoxShadow(
+              color: theme.colorScheme.primary.withValues(alpha: isDark ? 0.08 : 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 1),
+            ),
         ],
       ),
       child: ClipRRect(
         borderRadius: widget.borderRadius,
-        child: Center(
-          widthFactor: widget.width == null ? 1.0 : null,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.center,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  for (int i = 0; i < widget.items.length; i++) ...[
-                    if (i > 0) const SizedBox(width: 8.0),
-                    _buildNavItem(
-                      index: i,
-                      item: widget.items[i],
-                      isSelected: widget.selectedIndex == (widget.items[i].targetIndex ?? i),
-                      theme: theme,
+        child: GlassCard(
+          borderRadius: widget.borderRadius,
+          padding: EdgeInsets.zero,
+          child: Container(
+              width: widget.width,
+              height: widget.height,
+              decoration: BoxDecoration(
+                color: glassEnabled
+                    ? (isDark
+                        ? theme.colorScheme.surfaceContainer.withValues(alpha: 0.35)
+                        : theme.colorScheme.surfaceContainer.withValues(alpha: 0.48))
+                    : theme.colorScheme.surfaceContainer,
+                borderRadius: widget.borderRadius,
+                border: Border.all(
+                  color: isDark
+                      ? Colors.white.withValues(alpha: glassEnabled ? 0.20 : 0.12)
+                      : theme.colorScheme.outlineVariant.withValues(alpha: glassEnabled ? 0.45 : 0.25),
+                  width: 1.0,
+                ),
+              ),
+              child: Center(
+                widthFactor: widget.width == null ? 1.0 : null,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.center,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        for (int i = 0; i < widget.items.length; i++) ...[
+                          if (i > 0) const SizedBox(width: 8.0),
+                          _buildNavItem(
+                            index: i,
+                            item: widget.items[i],
+                            isSelected: widget.selectedIndex == (widget.items[i].targetIndex ?? i),
+                            theme: theme,
+                          ),
+                        ],
+                      ],
                     ),
-                  ],
-                ],
+                  ),
+                ),
               ),
             ),
           ),
         ),
-      ),
-    );
+      );
   }
 
   Widget _buildNavItem({

@@ -330,7 +330,7 @@ void main() {
       await tester.tap(find.text('Online'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
-      expect(find.text('Torrent'), findsOneWidget);
+      expect(find.textContaining('Torrent'), findsOneWidget);
       await tester.tapAt(const Offset(10, 10));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));

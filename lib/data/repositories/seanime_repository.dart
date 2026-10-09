@@ -1387,7 +1387,7 @@ class SeanimeRepository {
 
   Future<bool> scanLibrary({bool enhanced = true}) async {
     try {
-      // Ensure server has a library path configured; default to Aniting/Downloads/Anime
+      // Ensure server has a library path configured; default to Anime/aniting/Anime
       final settings = await getServerSettings();
       final librarySettings = settings?['library'] as Map<String, dynamic>?;
       String? libraryPath = librarySettings?['libraryPath'] as String?;
@@ -1553,13 +1553,15 @@ class SeanimeRepository {
     int? year,
     String? format,
     String? status,
+    int? minScore,
+    bool isAdult = false,
     String sort = 'TRENDING_DESC',
     int page = 1,
     int perPage = 24,
   }) async {
     try {
       final queryParams = <String>['\$page: Int', '\$perPage: Int', '\$sort: [MediaSort]'];
-      final mediaArgs = <String>['type: ANIME', 'sort: \$sort', 'isAdult: false'];
+      final mediaArgs = <String>['type: ANIME', 'sort: \$sort', isAdult ? 'isAdult: true' : 'isAdult: false'];
       final variables = <String, dynamic>{
         'page': page,
         'perPage': perPage,
@@ -1605,6 +1607,11 @@ class SeanimeRepository {
         mediaArgs.add('status_in: \$status_in');
         variables['status_in'] = [status];
       }
+      if (minScore != null) {
+        queryParams.add('\$averageScore_greater: Int');
+        mediaArgs.add('averageScore_greater: \$averageScore_greater');
+        variables['averageScore_greater'] = minScore;
+      }
 
       final query = '''
         query (${queryParams.join(', ')}) {
@@ -1628,6 +1635,7 @@ class SeanimeRepository {
               episodes
               averageScore
               genres
+              season
               seasonYear
               description
               nextAiringEpisode {
@@ -1673,13 +1681,15 @@ class SeanimeRepository {
     int? year,
     String? format,
     String? status,
+    int? minScore,
+    bool isAdult = false,
     String sort = 'TRENDING_DESC',
     int page = 1,
     int perPage = 24,
   }) async {
     try {
       final queryParams = <String>['\$page: Int', '\$perPage: Int', '\$sort: [MediaSort]'];
-      final mediaArgs = <String>['type: MANGA', 'sort: \$sort', 'isAdult: false'];
+      final mediaArgs = <String>['type: MANGA', 'sort: \$sort', isAdult ? 'isAdult: true' : 'isAdult: false'];
       final variables = <String, dynamic>{
         'page': page,
         'perPage': perPage,
@@ -1719,6 +1729,11 @@ class SeanimeRepository {
         queryParams.add('\$status_in: [MediaStatus]');
         mediaArgs.add('status_in: \$status_in');
         variables['status_in'] = [status];
+      }
+      if (minScore != null) {
+        queryParams.add('\$averageScore_greater: Int');
+        mediaArgs.add('averageScore_greater: \$averageScore_greater');
+        variables['averageScore_greater'] = minScore;
       }
 
       final query = '''

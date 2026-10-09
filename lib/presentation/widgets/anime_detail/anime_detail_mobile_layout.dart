@@ -23,6 +23,7 @@ import 'package:seanime_app/presentation/widgets/online_stream_view.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import 'package:seanime_app/core/preferences/anime_favorites_provider.dart';
 
+import 'mobile/anime_detail_mode_popup.dart';
 import 'mobile/anime_detail_source_popup.dart';
 
 enum AnimeDetailTab { online, torrent }
@@ -323,37 +324,19 @@ class _AnimeDetailMobileLayoutState
         ? 'Local'
         : (isTorrent ? 'Torrent' : 'Online');
 
-    return Theme(
-      data: theme.copyWith(
-        popupMenuTheme: PopupMenuThemeData(
-          color: theme.colorScheme.surfaceContainerHigh,
-          surfaceTintColor: Colors.transparent,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: BorderSide(
-              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
-              width: 1.0,
-            ),
-          ),
-          elevation: 6,
-          shadowColor: Colors.black.withValues(alpha: 0.4),
-        ),
-      ),
-      child: PopupMenuButton<String>(
-        tooltip: ref.watch(translationsProvider).playbackMode,
-        position: PopupMenuPosition.under,
-        offset: const Offset(0, 6),
-        onSelected: (value) {
-          HapticFeedback.lightImpact();
-          if (value == 'online') {
-            if (widget.isLocalMode) widget.onToggleLocalMode();
-            widget.onTabChanged(AnimeDetailTab.online);
-          } else if (value == 'torrent') {
-            if (widget.isLocalMode) widget.onToggleLocalMode();
-            widget.onTabChanged(AnimeDetailTab.torrent);
-          } else if (value == 'local') {
-            if (!widget.isLocalMode) widget.onToggleLocalMode();
-          }
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () {
+          AnimeDetailModePopup.show(
+            context: context,
+            currentTab: effectiveTab,
+            isLocalMode: widget.isLocalMode,
+            hasLocalFiles: widget.hasLocalFiles,
+            onTabChanged: widget.onTabChanged,
+            onToggleLocalMode: widget.onToggleLocalMode,
+          );
         },
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
@@ -383,96 +366,6 @@ class _AnimeDetailMobileLayoutState
             ],
           ),
         ),
-        itemBuilder: (context) {
-          final isOnlineSelected = !widget.isLocalMode && effectiveTab == AnimeDetailTab.online;
-          final isTorrentSelected = !widget.isLocalMode && effectiveTab == AnimeDetailTab.torrent;
-          final isLocalSelected = widget.isLocalMode;
-
-          return [
-            PopupMenuItem<String>(
-              value: 'online',
-              height: 38,
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.public_rounded,
-                    size: 16,
-                    color: isOnlineSelected ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    'Online',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: isOnlineSelected ? FontWeight.bold : FontWeight.w500,
-                      color: isOnlineSelected ? theme.colorScheme.primary : theme.colorScheme.onSurface,
-                    ),
-                  ),
-                  if (isOnlineSelected) ...[
-                    const SizedBox(width: 14),
-                    Icon(Icons.check_rounded, size: 16, color: theme.colorScheme.primary),
-                  ],
-                ],
-              ),
-            ),
-            PopupMenuItem<String>(
-              value: 'torrent',
-              height: 38,
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.cloud_download_rounded,
-                    size: 16,
-                    color: isTorrentSelected ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    'Torrent',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: isTorrentSelected ? FontWeight.bold : FontWeight.w500,
-                      color: isTorrentSelected ? theme.colorScheme.primary : theme.colorScheme.onSurface,
-                    ),
-                  ),
-                  if (isTorrentSelected) ...[
-                    const SizedBox(width: 14),
-                    Icon(Icons.check_rounded, size: 16, color: theme.colorScheme.primary),
-                  ],
-                ],
-              ),
-            ),
-            if (widget.hasLocalFiles)
-              PopupMenuItem<String>(
-                value: 'local',
-                height: 38,
-                padding: const EdgeInsets.symmetric(horizontal: 14),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.folder_rounded,
-                      size: 16,
-                      color: isLocalSelected ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
-                    ),
-                    const SizedBox(width: 10),
-                    Text(
-                      'Local',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: isLocalSelected ? FontWeight.bold : FontWeight.w500,
-                        color: isLocalSelected ? theme.colorScheme.primary : theme.colorScheme.onSurface,
-                      ),
-                    ),
-                    if (isLocalSelected) ...[
-                      const SizedBox(width: 14),
-                      Icon(Icons.check_rounded, size: 16, color: theme.colorScheme.primary),
-                    ],
-                  ],
-                ),
-              ),
-          ];
-        },
       ),
     );
   }

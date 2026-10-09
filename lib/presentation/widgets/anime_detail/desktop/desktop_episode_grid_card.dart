@@ -193,17 +193,16 @@ class _DesktopGridEpisodeCardState extends State<DesktopGridEpisodeCard> {
               ),
             ),
             const SizedBox(height: 8),
-
-                // Title: "EP X. Title" (Theme-aware)
+            // Title: "EP X. Title" (Theme-aware)
                 Text(
                   widget.formattedTitle,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 12.5,
+                    fontSize: 13.5,
                     fontWeight: FontWeight.w700,
                     color: _isHovered ? theme.colorScheme.primary : titleColor,
-                    height: 1.25,
+                    height: 1.3,
                   ),
                 ),
               ],
