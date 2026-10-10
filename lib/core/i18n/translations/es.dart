@@ -2188,5 +2188,27 @@ class SpanishTranslations implements AppTranslations {
   String get noScore => 'Sin puntaje';
   @override
   String get saveChanges => 'Guardar cambios';
+
+  // TMDB / Series & Seasons
+  @override
+  String get seasons => 'Temporadas';
+  @override
+  String get specials => 'Especiales';
+  @override
+  String get selectSeason => 'Seleccionar temporada';
+  @override
+  String get seasonEpisodeCount => 'Episodios';
+  @override
+  String seasonEpisodesCount(int count) => '$count episodios';
+  @override
+  String get noEpisodesFound => 'No se encontraron episodios';
+  @override
+  String get tmdbSourceNotice => 'Metadatos proporcionados por The Movie Database (TMDB)';
+  @override
+  String get movieDetails => 'Detalles de la película';
+  @override
+  String get streamingComingSoon => 'Las fuentes de streaming para series estarán disponibles próximamente';
+  @override
+  String episodeRuntime(int minutes) => '${minutes} min';
 }
 

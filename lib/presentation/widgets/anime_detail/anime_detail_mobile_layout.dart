@@ -25,6 +25,7 @@ import 'package:seanime_app/core/preferences/anime_favorites_provider.dart';
 
 import 'mobile/anime_detail_mode_popup.dart';
 import 'mobile/anime_detail_source_popup.dart';
+import 'tmdb/tmdb_episodes_view.dart';
 
 enum AnimeDetailTab { online, torrent }
 
@@ -93,6 +94,10 @@ class _AnimeDetailMobileLayoutState
   bool _isDubbed = false;
   bool _isHeaderScrolled = false;
 
+  bool get isTmdb => widget.details?.isTmdb ?? widget.initialEntry?.isTmdb ?? false;
+  bool get isMovie =>
+      (widget.details?.format == 'MOVIE') || (widget.initialEntry?.format == 'MOVIE');
+
   @override
   void initState() {
     super.initState();
@@ -115,6 +120,7 @@ class _AnimeDetailMobileLayoutState
   }
 
   Future<void> _loadSavedProvider() async {
+    if (isTmdb) return;
     try {
       final repo = ref.read(repositoryProvider);
       final list = await repo.getOnlinestreamProviders();
@@ -680,54 +686,55 @@ class _AnimeDetailMobileLayoutState
                     onPressed: () => Navigator.pop(context),
                   ),
                   actions: [
-                    IconButton(
-                      tooltip: widget.isLocalMode
-                          ? l10n.exitLocalMode
-                          : l10n.enterLocalMode,
-                      icon: Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          Icon(
-                            widget.isLocalMode
-                                ? Icons.folder_rounded
-                                : Icons.folder_outlined,
-                            color: widget.isLocalMode
-                                ? theme.colorScheme.primary
-                                : ((isDark || !_isHeaderScrolled)
-                                    ? Colors.white
-                                    : theme.colorScheme.onSurface),
-                            size: 22,
-                            shadows: (isDark || !_isHeaderScrolled)
-                                ? const [
-                                    Shadow(
-                                      color: Colors.black54,
-                                      blurRadius: 4,
-                                      offset: Offset(0, 1),
+                    if (!isTmdb)
+                      IconButton(
+                        tooltip: widget.isLocalMode
+                            ? l10n.exitLocalMode
+                            : l10n.enterLocalMode,
+                        icon: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Icon(
+                              widget.isLocalMode
+                                  ? Icons.folder_rounded
+                                  : Icons.folder_outlined,
+                              color: widget.isLocalMode
+                                  ? theme.colorScheme.primary
+                                  : ((isDark || !_isHeaderScrolled)
+                                      ? Colors.white
+                                      : theme.colorScheme.onSurface),
+                              size: 22,
+                              shadows: (isDark || !_isHeaderScrolled)
+                                  ? const [
+                                      Shadow(
+                                        color: Colors.black54,
+                                        blurRadius: 4,
+                                        offset: Offset(0, 1),
+                                      ),
+                                    ]
+                                  : null,
+                            ),
+                            if (widget.hasLocalFiles && !widget.isLocalMode)
+                              Positioned(
+                                right: -1,
+                                top: -1,
+                                child: Container(
+                                  width: 8,
+                                  height: 8,
+                                  decoration: BoxDecoration(
+                                    color: theme.colorScheme.primary,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: Colors.black,
+                                      width: 1.5,
                                     ),
-                                  ]
-                                : null,
-                          ),
-                          if (widget.hasLocalFiles && !widget.isLocalMode)
-                            Positioned(
-                              right: -1,
-                              top: -1,
-                              child: Container(
-                                width: 8,
-                                height: 8,
-                                decoration: BoxDecoration(
-                                  color: theme.colorScheme.primary,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: Colors.black,
-                                    width: 1.5,
                                   ),
                                 ),
                               ),
-                            ),
-                        ],
+                          ],
+                        ),
+                        onPressed: widget.onToggleLocalMode,
                       ),
-                      onPressed: widget.onToggleLocalMode,
-                    ),
                     IconButton(
                       tooltip: l10n.animeDetails,
                       icon: Icon(
@@ -943,7 +950,23 @@ class _AnimeDetailMobileLayoutState
                                     padding: const EdgeInsets.symmetric(horizontal: 16),
                                     elevation: 0,
                                   ),
-                                  onPressed: () => _handlePlayNext(progress),
+                                  onPressed: isTmdb
+                                      ? () {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              content: Row(
+                                                children: [
+                                                  const Icon(Icons.info_outline_rounded,
+                                                      color: Colors.white, size: 18),
+                                                  const SizedBox(width: 8),
+                                                  Expanded(child: Text(l10n.streamingComingSoon)),
+                                                ],
+                                              ),
+                                              behavior: SnackBarBehavior.floating,
+                                            ),
+                                          );
+                                        }
+                                      : () => _handlePlayNext(progress),
                                   icon: const Icon(Icons.play_arrow_rounded, size: 22),
                                   label: Text(
                                     _formatPlayButtonLabel(progress, totalEps, l10n),
@@ -991,49 +1014,60 @@ class _AnimeDetailMobileLayoutState
                                 );
                               },
                             ),
-                            const SizedBox(width: 2),
-                            IconButton(
-                              tooltip: l10n.downloadWithTorrentClient,
-                              icon: const Icon(Icons.download_rounded, size: 22),
-                              onPressed: () {
-                                final nextEp = (progress + 1).clamp(1, totalEps ?? (progress + 1));
-                                final defaultEpTitle = l10n.episodeNumber(nextEp);
-                                widget.onOpenTorrentSelector(
-                                  episodeNumber: nextEp,
-                                  episodeTitle: defaultEpTitle,
-                                );
-                              },
-                            ),
-                            const SizedBox(width: 2),
-                            IconButton(
-                              tooltip: l10n.editInAnilist,
-                              icon: const Icon(Icons.edit_outlined, size: 22),
-                              onPressed: () => widget.onOpenEditEntryModal(title),
-                            ),
+                            if (!isTmdb) ...[
+                              const SizedBox(width: 2),
+                              IconButton(
+                                tooltip: l10n.downloadWithTorrentClient,
+                                icon: const Icon(Icons.download_rounded, size: 22),
+                                onPressed: () {
+                                  final nextEp = (progress + 1).clamp(1, totalEps ?? (progress + 1));
+                                  final defaultEpTitle = l10n.episodeNumber(nextEp);
+                                  widget.onOpenTorrentSelector(
+                                    episodeNumber: nextEp,
+                                    episodeTitle: defaultEpTitle,
+                                  );
+                                },
+                              ),
+                              const SizedBox(width: 2),
+                              IconButton(
+                                tooltip: l10n.editInAnilist,
+                                icon: const Icon(Icons.edit_outlined, size: 22),
+                                onPressed: () => widget.onOpenEditEntryModal(title),
+                              ),
+                            ],
                           ],
                         ),
 
-                        const SizedBox(height: 10),
+                        if (!isTmdb) ...[
+                          const SizedBox(height: 10),
 
-                        // Minimalist Dropdown Chips Row
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          physics: const BouncingScrollPhysics(),
-                          child: Row(
-                            children: [
-                              _buildModeDropdownChip(theme, effectiveTab),
-                              if (!widget.isLocalMode && effectiveTab == AnimeDetailTab.online) ...[
-                                const SizedBox(width: 8),
-                                _buildProviderDropdownChip(theme),
+                          // Minimalist Dropdown Chips Row
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            physics: const BouncingScrollPhysics(),
+                            child: Row(
+                              children: [
+                                _buildModeDropdownChip(theme, effectiveTab),
+                                if (!widget.isLocalMode && effectiveTab == AnimeDetailTab.online) ...[
+                                  const SizedBox(width: 8),
+                                  _buildProviderDropdownChip(theme),
+                                ],
                               ],
-                            ],
+                            ),
                           ),
-                        ),
+                        ],
 
                         const SizedBox(height: 18),
 
                         // Episodes Content (Clean, direct & without clunky middle tab bar)
-                        if (widget.isLocalMode)
+                        if (isTmdb)
+                          TmdbEpisodesView(
+                            tmdbId: widget.mediaId,
+                            isMovie: isMovie,
+                            fallbackCoverImage: coverUrl,
+                            isMobile: true,
+                          )
+                        else if (widget.isLocalMode)
                           LocalLibraryView(
                             mediaId: widget.mediaId,
                             animeDetails: widget.details,

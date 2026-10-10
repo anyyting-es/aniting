@@ -7,6 +7,7 @@ import 'package:seanime_app/core/theme/theme_provider.dart';
 import 'package:seanime_app/data/models/anime_details.dart';
 import 'package:seanime_app/data/models/anime_entry.dart';
 import 'package:seanime_app/data/models/anizip_data.dart';
+import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/screens/video_player_screen.dart';
 import 'package:seanime_app/presentation/widgets/anime_detail/anime_detail_desktop_layout.dart';
@@ -23,12 +24,14 @@ class AnimeDetailScreen extends ConsumerStatefulWidget {
   final int mediaId;
   final AnimeEntry? initialEntry;
   final bool initialLocalMode;
+  final bool? isTmdb;
 
   const AnimeDetailScreen({
     super.key,
     required this.mediaId,
     this.initialEntry,
     this.initialLocalMode = false,
+    this.isTmdb,
   });
 
   /// Opens the AnimeDetailScreen with a smooth, cinematic transition.
@@ -37,7 +40,9 @@ class AnimeDetailScreen extends ConsumerStatefulWidget {
     required int mediaId,
     AnimeEntry? initialEntry,
     bool initialLocalMode = false,
+    bool? isTmdb,
   }) {
+    final resolvedIsTmdb = isTmdb ?? (initialEntry?.isTmdb ?? false);
     return Navigator.push<T>(
       context,
       SmoothPageRoute(
@@ -45,6 +50,7 @@ class AnimeDetailScreen extends ConsumerStatefulWidget {
           mediaId: mediaId,
           initialEntry: initialEntry,
           initialLocalMode: initialLocalMode,
+          isTmdb: resolvedIsTmdb,
         ),
       ),
     );
@@ -65,6 +71,8 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen>
   bool _userManuallyChangedMode = false;
   AnimeDetailTab _currentTab = AnimeDetailTab.online;
 
+  bool get isTmdb => widget.isTmdb ?? (widget.initialEntry?.isTmdb ?? false);
+
   static const _prefModePrefix = 'pref_anime_detail_mode_';
   static const _prefGlobalLastMode = 'pref_anime_detail_last_mode';
 
@@ -76,73 +84,98 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen>
   @override
   void initState() {
     super.initState();
-    final initialHasLocal = widget.initialLocalMode ||
-        (widget.initialEntry?.hasLocalFiles ?? false) ||
-        ((widget.initialEntry?.mainFileCount ?? 0) > 0);
-    _hasLocalFiles = initialHasLocal;
-    if (widget.initialLocalMode || initialHasLocal) {
-      _isLocalMode = true;
-    }
-
-    // Fast checks: downloadedAnimeProvider, animeCollectionProvider, animeLibraryEntryProvider caches
-    if (!_hasLocalFiles) {
-      final downloadedAnime =
-          ref.read(downloadedAnimeProvider).asData?.value ?? [];
-      if (downloadedAnime.any((e) => e.mediaId == widget.mediaId)) {
-        _hasLocalFiles = true;
-        _isLocalMode = true;
-      }
-    }
-    if (!_hasLocalFiles) {
-      final collection = ref.read(animeCollectionProvider).asData?.value ?? [];
-      final collEntry =
-          collection.where((e) => e.mediaId == widget.mediaId).firstOrNull;
-      if (collEntry != null &&
-          (collEntry.hasLocalFiles || collEntry.mainFileCount > 0)) {
-        _hasLocalFiles = true;
-        _isLocalMode = true;
-      }
-    }
-    if (!_hasLocalFiles) {
-      final libEntryCache =
-          ref.read(animeLibraryEntryProvider(widget.mediaId)).asData?.value;
-      if (libEntryCache != null &&
-          (libEntryCache.hasLibraryData ||
-              libEntryCache.episodes.any((e) => e.isDownloaded))) {
-        _hasLocalFiles = true;
-        _isLocalMode = true;
-      }
-    }
-
-    // Pre-populate details and aniZip on frame 0 from repository in-memory cache or initialEntry
-    final repo = ref.read(repositoryProvider);
-    final cachedDetails = repo.getCachedAnimeDetails(widget.mediaId);
-    if (cachedDetails != null) {
-      _details = cachedDetails;
-      _isLoading = false;
-    } else if (widget.initialEntry != null) {
-      _details = AnimeDetails(
-        id: widget.mediaId,
-        title: widget.initialEntry!.title,
-        englishTitle: widget.initialEntry!.englishTitle,
-        romajiTitle: widget.initialEntry!.romajiTitle,
-        nativeTitle: widget.initialEntry!.nativeTitle,
-        coverImage: widget.initialEntry!.coverImage,
-        coverColor: widget.initialEntry!.coverColor,
-        bannerImage: widget.initialEntry!.bannerImage,
-        description: widget.initialEntry!.description,
-        totalEpisodes: widget.initialEntry!.totalEpisodes,
-        format: widget.initialEntry!.format,
-        score: widget.initialEntry!.score,
-        status: widget.initialEntry!.status,
-      );
-      _isLoading = true;
-    }
-
-    final cachedAniZip = repo.getCachedAniZipData(widget.mediaId);
-    if (cachedAniZip != null) {
-      _aniZipData = cachedAniZip;
+    if (isTmdb) {
+      _hasLocalFiles = false;
+      _isLocalMode = false;
       _isLoadingAniZip = false;
+      if (widget.initialEntry != null) {
+        _details = AnimeDetails(
+          id: widget.mediaId,
+          title: widget.initialEntry!.title,
+          englishTitle: widget.initialEntry!.englishTitle,
+          romajiTitle: widget.initialEntry!.romajiTitle,
+          nativeTitle: widget.initialEntry!.nativeTitle,
+          coverImage: widget.initialEntry!.coverImage,
+          coverColor: widget.initialEntry!.coverColor,
+          bannerImage: widget.initialEntry!.bannerImage,
+          description: widget.initialEntry!.description,
+          totalEpisodes: widget.initialEntry!.totalEpisodes,
+          format: widget.initialEntry!.format,
+          score: widget.initialEntry!.score,
+          status: widget.initialEntry!.status,
+          isTmdb: true,
+        );
+        _isLoading = false;
+      }
+    } else {
+      final initialHasLocal = widget.initialLocalMode ||
+          (widget.initialEntry?.hasLocalFiles ?? false) ||
+          ((widget.initialEntry?.mainFileCount ?? 0) > 0);
+      _hasLocalFiles = initialHasLocal;
+      if (widget.initialLocalMode || initialHasLocal) {
+        _isLocalMode = true;
+      }
+
+      // Fast checks: downloadedAnimeProvider, animeCollectionProvider, animeLibraryEntryProvider caches
+      if (!_hasLocalFiles) {
+        final downloadedAnime =
+            ref.read(downloadedAnimeProvider).asData?.value ?? [];
+        if (downloadedAnime.any((e) => e.mediaId == widget.mediaId)) {
+          _hasLocalFiles = true;
+          _isLocalMode = true;
+        }
+      }
+      if (!_hasLocalFiles) {
+        final collection = ref.read(animeCollectionProvider).asData?.value ?? [];
+        final collEntry =
+            collection.where((e) => e.mediaId == widget.mediaId).firstOrNull;
+        if (collEntry != null &&
+            (collEntry.hasLocalFiles || collEntry.mainFileCount > 0)) {
+          _hasLocalFiles = true;
+          _isLocalMode = true;
+        }
+      }
+      if (!_hasLocalFiles) {
+        final libEntryCache =
+            ref.read(animeLibraryEntryProvider(widget.mediaId)).asData?.value;
+        if (libEntryCache != null &&
+            (libEntryCache.hasLibraryData ||
+                libEntryCache.episodes.any((e) => e.isDownloaded))) {
+          _hasLocalFiles = true;
+          _isLocalMode = true;
+        }
+      }
+
+      // Pre-populate details and aniZip on frame 0 from repository in-memory cache or initialEntry
+      final repo = ref.read(repositoryProvider);
+      final cachedDetails = repo.getCachedAnimeDetails(widget.mediaId);
+      if (cachedDetails != null) {
+        _details = cachedDetails;
+        _isLoading = false;
+      } else if (widget.initialEntry != null) {
+        _details = AnimeDetails(
+          id: widget.mediaId,
+          title: widget.initialEntry!.title,
+          englishTitle: widget.initialEntry!.englishTitle,
+          romajiTitle: widget.initialEntry!.romajiTitle,
+          nativeTitle: widget.initialEntry!.nativeTitle,
+          coverImage: widget.initialEntry!.coverImage,
+          coverColor: widget.initialEntry!.coverColor,
+          bannerImage: widget.initialEntry!.bannerImage,
+          description: widget.initialEntry!.description,
+          totalEpisodes: widget.initialEntry!.totalEpisodes,
+          format: widget.initialEntry!.format,
+          score: widget.initialEntry!.score,
+          status: widget.initialEntry!.status,
+        );
+        _isLoading = true;
+      }
+
+      final cachedAniZip = repo.getCachedAniZipData(widget.mediaId);
+      if (cachedAniZip != null) {
+        _aniZipData = cachedAniZip;
+        _isLoadingAniZip = false;
+      }
     }
 
     _restoreSavedMode();
@@ -225,6 +258,28 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen>
   }
 
   Future<void> _loadDetails() async {
+    if (isTmdb) {
+      final isSpanish = ref.read(appLanguageProvider) == AppLanguage.es;
+      final lang = isSpanish ? 'es-ES' : 'en-US';
+      final isMovie = (widget.initialEntry?.format == 'MOVIE') || (_details?.format == 'MOVIE');
+      final tmdbService = ref.read(tmdbServiceProvider);
+      final showDetails = await tmdbService.getShowDetails(
+        widget.mediaId,
+        language: lang,
+        isMovie: isMovie,
+      );
+      if (mounted) {
+        setState(() {
+          if (showDetails != null) {
+            _details = showDetails.toAnimeDetails();
+          }
+          _isLoading = false;
+          _isLoadingAniZip = false;
+        });
+      }
+      return;
+    }
+
     _restoreSavedMode();
     final repo = ref.read(repositoryProvider);
 
@@ -300,6 +355,7 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen>
   }
 
   void _openEditEntryModal(String title) {
+    if (isTmdb) return;
     final liveEntry = ref.read(animeCollectionProvider).whenOrNull(
           data: (entries) => entries
               .where((e) => e.mediaId == widget.mediaId)

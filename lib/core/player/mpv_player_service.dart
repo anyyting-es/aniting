@@ -414,6 +414,9 @@ class MpvPlayerService {
 
   Future<void> dispose() async {
     try {
+      await _player.pause();
+    } catch (_) {}
+    try {
       await _player.dispose();
     } catch (_) {}
   }

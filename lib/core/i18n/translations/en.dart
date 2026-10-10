@@ -2182,5 +2182,27 @@ class EnglishTranslations implements AppTranslations {
   String get noScore => 'No score';
   @override
   String get saveChanges => 'Save changes';
+
+  // TMDB / Series & Seasons
+  @override
+  String get seasons => 'Seasons';
+  @override
+  String get specials => 'Specials';
+  @override
+  String get selectSeason => 'Select season';
+  @override
+  String get seasonEpisodeCount => 'Episodes';
+  @override
+  String seasonEpisodesCount(int count) => '$count episodes';
+  @override
+  String get noEpisodesFound => 'No episodes found';
+  @override
+  String get tmdbSourceNotice => 'Metadata provided by The Movie Database (TMDB)';
+  @override
+  String get movieDetails => 'Movie Details';
+  @override
+  String get streamingComingSoon => 'Streaming providers for series will be available soon';
+  @override
+  String episodeRuntime(int minutes) => '${minutes}m';
 }
 

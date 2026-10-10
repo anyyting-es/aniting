@@ -30,6 +30,7 @@ class AnimeEntry {
   final List<String> genres;
   final bool hasLocalFiles;
   final int mainFileCount;
+  final bool isTmdb;
 
   AnimeEntry({
     required this.id,
@@ -61,6 +62,7 @@ class AnimeEntry {
     this.season,
     this.hasLocalFiles = false,
     this.mainFileCount = 0,
+    this.isTmdb = false,
   });
 
   /// Effective timestamp in milliseconds for sorting (watch history > updatedAt > airDate > 0)
@@ -145,6 +147,7 @@ class AnimeEntry {
     List<String>? genres,
     bool? hasLocalFiles,
     int? mainFileCount,
+    bool? isTmdb,
   }) {
     return AnimeEntry(
       id: id ?? this.id,
@@ -176,6 +179,7 @@ class AnimeEntry {
       season: season ?? this.season,
       hasLocalFiles: hasLocalFiles ?? this.hasLocalFiles,
       mainFileCount: mainFileCount ?? this.mainFileCount,
+      isTmdb: isTmdb ?? this.isTmdb,
     );
   }
 
@@ -399,11 +403,15 @@ class AnimeEntry {
       season: (media['season'] ?? json['season']) as String?,
       hasLocalFiles: hasLocal,
       mainFileCount: mainFiles,
+      isTmdb: json['isTmdb'] == true,
     );
   }
 
   /// Returns the title according to the chosen title language preference
   String displayTitle([TitleLanguage language = TitleLanguage.romaji]) {
+    if (isTmdb && title.isNotEmpty && title != 'Sin título') {
+      return title;
+    }
     switch (language) {
       case TitleLanguage.english:
         if (englishTitle != null && englishTitle!.trim().isNotEmpty) return englishTitle!.trim();

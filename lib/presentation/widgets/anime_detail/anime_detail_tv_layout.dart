@@ -13,6 +13,7 @@ import 'package:seanime_app/presentation/widgets/anime_detail/anime_detail_mobil
 import 'package:seanime_app/presentation/widgets/anizip_episode_list.dart';
 import 'package:seanime_app/presentation/widgets/local_library_view.dart';
 import 'package:seanime_app/presentation/widgets/online_stream_view.dart';
+import 'package:seanime_app/presentation/widgets/anime_detail/tmdb/tmdb_episodes_view.dart';
 
 class AnimeDetailTvLayout extends ConsumerStatefulWidget {
   final int mediaId;
@@ -330,41 +331,47 @@ class _AnimeDetailTvLayoutState extends ConsumerState<AnimeDetailTvLayout> {
                   // Episodes rail / container
                   Expanded(
                     flex: 2,
-                    child: widget.isLocalMode
-                        ? LocalLibraryView(
-                            mediaId: widget.mediaId,
-                            animeDetails: widget.details,
-                            progress: progress,
-                            onSwitchToTorrent: () {
-                              widget.onToggleLocalMode();
-                              widget.onTabChanged(AnimeDetailTab.torrent);
-                            },
-                            onSwitchToOnline: () {
-                              widget.onToggleLocalMode();
-                              widget.onTabChanged(AnimeDetailTab.online);
-                            },
+                    child: (widget.details?.isTmdb == true || widget.initialEntry?.isTmdb == true)
+                        ? TmdbEpisodesView(
+                            tmdbId: widget.mediaId,
+                            isMovie: (widget.details?.format == 'MOVIE') || (widget.initialEntry?.format == 'MOVIE'),
+                            fallbackCoverImage: widget.details?.coverImage ?? widget.initialEntry?.coverImage ?? bannerUrl,
                           )
-                        : widget.currentTab == AnimeDetailTab.torrent
-                            ? AniZipEpisodeListView(
-                                aniZipData: widget.aniZipData ?? widget.details?.aniZipData,
-                                fallbackEpisodes: widget.details?.episodes ?? const [],
-                                animeDetails: widget.details,
-                                isLoading: widget.isLoading || widget.isLoadingAniZip,
-                                progress: progress,
-                                onRetry: widget.onRetryAniZip,
-                                onPlayEpisode: (ep) {
-                                  _playOrOpenTorrent(
-                                    ep.episodeNumber,
-                                    ep.displayTitle,
-                                    ep.episode,
-                                  );
-                                },
-                              )
-                            : OnlineStreamView(
+                        : widget.isLocalMode
+                            ? LocalLibraryView(
                                 mediaId: widget.mediaId,
                                 animeDetails: widget.details,
                                 progress: progress,
-                              ),
+                                onSwitchToTorrent: () {
+                                  widget.onToggleLocalMode();
+                                  widget.onTabChanged(AnimeDetailTab.torrent);
+                                },
+                                onSwitchToOnline: () {
+                                  widget.onToggleLocalMode();
+                                  widget.onTabChanged(AnimeDetailTab.online);
+                                },
+                              )
+                            : widget.currentTab == AnimeDetailTab.torrent
+                                ? AniZipEpisodeListView(
+                                    aniZipData: widget.aniZipData ?? widget.details?.aniZipData,
+                                    fallbackEpisodes: widget.details?.episodes ?? const [],
+                                    animeDetails: widget.details,
+                                    isLoading: widget.isLoading || widget.isLoadingAniZip,
+                                    progress: progress,
+                                    onRetry: widget.onRetryAniZip,
+                                    onPlayEpisode: (ep) {
+                                      _playOrOpenTorrent(
+                                        ep.episodeNumber,
+                                        ep.displayTitle,
+                                        ep.episode,
+                                      );
+                                    },
+                                  )
+                                : OnlineStreamView(
+                                    mediaId: widget.mediaId,
+                                    animeDetails: widget.details,
+                                    progress: progress,
+                                  ),
                   ),
                 ],
               ),

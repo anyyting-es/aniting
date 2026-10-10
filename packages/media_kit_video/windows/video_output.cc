@@ -137,9 +137,11 @@ VideoOutput::~VideoOutput() {
             promise.set_value();
           });
         });
+  } else {
+    promise.set_value();
   }
 
-  promise.get_future().wait();
+  promise.get_future().wait_for(std::chrono::milliseconds(100));
   texture_id_ = 0;
 
   thread_pool_ref_->Post([render_context = render_context_]() {

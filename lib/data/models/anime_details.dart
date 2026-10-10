@@ -53,6 +53,7 @@ class AnimeDetails {
   final List<AnimeEpisode> episodes;
   final AniZipData? aniZipData;
   final bool isAdult;
+  final bool isTmdb;
   final Map<String, dynamic>? rawMedia;
 
   AnimeDetails({
@@ -79,6 +80,7 @@ class AnimeDetails {
     this.episodes = const [],
     this.aniZipData,
     this.isAdult = false,
+    this.isTmdb = false,
     this.rawMedia,
   });
 
@@ -247,12 +249,19 @@ class AnimeDetails {
       seasonYear: (mediaMap['seasonYear'] ?? data['seasonYear']) as int?,
       episodes: episodes,
       isAdult: isAdult,
+      isTmdb: json['isTmdb'] == true ||
+          data['isTmdb'] == true ||
+          mediaMap['isTmdb'] == true ||
+          combinedRawMedia['isTmdb'] == true,
       rawMedia: combinedRawMedia,
     );
   }
 
   /// Returns the title according to the chosen title language preference
   String displayTitle([TitleLanguage language = TitleLanguage.romaji]) {
+    if (isTmdb && title.isNotEmpty && title != 'Sin título') {
+      return title;
+    }
     switch (language) {
       case TitleLanguage.english:
         if (englishTitle != null && englishTitle!.trim().isNotEmpty) return englishTitle!.trim();

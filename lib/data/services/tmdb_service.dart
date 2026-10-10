@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:seanime_app/data/models/anime_entry.dart';
+import 'package:seanime_app/data/models/tmdb_models.dart';
 
 class TmdbService {
   final Dio _dio;
@@ -140,7 +141,7 @@ class TmdbService {
       mediaId: id,
       title: title,
       englishTitle: title,
-      romajiTitle: originalTitle ?? title,
+      romajiTitle: title,
       nativeTitle: originalTitle,
       coverImage: posterPath != null ? '$imageBaseUrl$posterPath' : null,
       bannerImage: backdropPath != null ? '$backdropBaseUrl$backdropPath' : null,
@@ -152,6 +153,87 @@ class TmdbService {
       year: releaseYear,
       airDate: firstAirDate,
       genres: const [],
+      isTmdb: true,
     );
+  }
+
+  final Map<String, TmdbShowDetails> _detailsCache = {};
+  final Map<String, List<TmdbEpisode>> _seasonEpisodesCache = {};
+
+  /// Fetches complete series or movie details from TMDB
+  Future<TmdbShowDetails?> getShowDetails(
+    int id, {
+    String language = 'es-ES',
+    bool isMovie = false,
+  }) async {
+    final cacheKey = '$id-$language-$isMovie';
+    if (_detailsCache.containsKey(cacheKey)) {
+      return _detailsCache[cacheKey];
+    }
+    try {
+      final endpoint = isMovie ? '/movie/$id' : '/tv/$id';
+      final response = await _dio.get(
+        endpoint,
+        queryParameters: {
+          'api_key': apiKey,
+          'language': language,
+        },
+      );
+      final details = TmdbShowDetails.fromJson(
+        response.data as Map<String, dynamic>,
+        isMovie: isMovie,
+      );
+      _detailsCache[cacheKey] = details;
+      return details;
+    } catch (_) {
+      // If /tv/ failed with 404, fallback check /movie/
+      if (!isMovie) {
+        try {
+          final res = await _dio.get(
+            '/movie/$id',
+            queryParameters: {
+              'api_key': apiKey,
+              'language': language,
+            },
+          );
+          final details = TmdbShowDetails.fromJson(
+            res.data as Map<String, dynamic>,
+            isMovie: true,
+          );
+          _detailsCache[cacheKey] = details;
+          return details;
+        } catch (_) {}
+      }
+      return null;
+    }
+  }
+
+  /// Fetches the episodes of a specific season of a TV show
+  Future<List<TmdbEpisode>> getSeasonEpisodes(
+    int seriesId,
+    int seasonNumber, {
+    String language = 'es-ES',
+  }) async {
+    final cacheKey = '$seriesId-s$seasonNumber-$language';
+    if (_seasonEpisodesCache.containsKey(cacheKey)) {
+      return _seasonEpisodesCache[cacheKey]!;
+    }
+    try {
+      final response = await _dio.get(
+        '/tv/$seriesId/season/$seasonNumber',
+        queryParameters: {
+          'api_key': apiKey,
+          'language': language,
+        },
+      );
+      final rawList = response.data['episodes'] as List<dynamic>? ?? [];
+      final episodes = rawList
+          .map((e) => TmdbEpisode.fromJson(e as Map<String, dynamic>))
+          .toList();
+      _seasonEpisodesCache[cacheKey] = episodes;
+      return episodes;
+    } catch (_) {
+      return [];
+    }
   }
 }

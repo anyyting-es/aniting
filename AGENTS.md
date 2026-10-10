@@ -108,6 +108,10 @@ seanime_app/
 │           │   │   ├── anime_detail_mode_popup.dart    # Expressive spring-animated mode popup (Online/Torrent/Local)
 │           │   │   ├── anime_detail_source_popup.dart  # Expressive spring-animated online sources popup
 │           │   │   └── anime_detail_advanced_sheet.dart# Full modal sheet for advanced options (Sub/Dub, link, reload)
+│           │   ├── tmdb/             # Modular TMDB subcomponents
+│           │   │   ├── tmdb_season_selector.dart       # Horizontal season chip bar with episode count badges & specials handling
+│           │   │   ├── tmdb_episode_card.dart          # 16:9 episode thumbnail card with runtime, score badge, title, air date & synopsis (grid/list)
+│           │   │   └── tmdb_episodes_view.dart         # TMDB season & episode coordinator with sort/view toggles & TMDB notice
 │           │   ├── anime_detail_mobile_layout.dart  # Compact vertical mobile layout with inline Action Hub
 │           │   └── anime_detail_tv_layout.dart      # 10-foot remote / D-Pad focused TV layout
 │           ├── manga_detail/         # Modular adaptive layouts for manga details
@@ -216,6 +220,15 @@ seanime_app/
     - The advanced catalog search filter sidebar supports media switching between `Anime`, `Shows`, and `Manga`, with full TV/Movie format filtering.
     - Removed legacy "Discover series" button from the catalog view.
     - OLED / Dark mode contrast hardened in `catalog_filter_sidebar.dart` and `catalog_filter_dropdown.dart` with elevated surface tones and high-contrast borders.
+  - **TMDB Details & Season / Episode Architecture (`anime_detail_screen.dart`, `tmdb_models.dart`, `widgets/anime_detail/tmdb/`)**:
+    - **Isolated Media Pipeline**: When browsing a TMDB title (`isTmdb == true`), AniList tracking, AniZip calls, and local filesystem library mapping are disabled. Seanime extension scrapers and anime torrent searchers are isolated and prohibited from matching TMDB shows/movies.
+    - **Data Models (`tmdb_models.dart`)**: `TmdbShowDetails`, `TmdbSeason`, and `TmdbEpisode` model the TMDB hierarchy with JSON deserialization, high-resolution poster/backdrop/still image builders, and conversion to `AnimeDetails` for seamless layout reuse.
+    - **Service & Caching (`tmdb_service.dart`)**: Features memory caching for show details and individual season episodes (`_detailsCache`, `_seasonEpisodesCache`). Fetches TV details (`/tv/{id}`) or Movie details (`/movie/{id}`), and paginated season episodes (`/tv/{id}/season/{season_number}`).
+    - **Adaptive UI & Components (`widgets/anime_detail/tmdb/`)**:
+      - `TmdbSeasonSelector`: Horizontal chip selector supporting Season 1..N and Specials (Season 0) with episode count badges.
+      - `TmdbEpisodeCard`: 16:9 thumbnail display matching the exact AniList desktop cards styling (`EP X. Title`, subtle hover scale, score badge, duration badge, overview, grid and 2-column list layouts).
+      - `TmdbEpisodesView`: Coordinator managing season selection, reverse order sorting, and grid/list view toggles using unified AppIcons and layout tokens.
+    - **Desktop, Mobile & TV Layout Integration**: `DesktopActionBar`, `AnimeDetailDesktopLayout`, `AnimeDetailMobileLayout`, and `AnimeDetailTvLayout` conditionally render TMDB episode views and TMDB web share actions instead of anime extension controls. Prioritizes localized titles over Japanese raw titles for TMDB entries.
 - **Airing Calendar Responsive Overhaul (`airing_calendar_screen.dart`, `widgets/calendar/`)**:
   - **Full-Width Header with Animated Sliding Line Indicator (`calendar_day_tabs.dart`)**:
     - The date header spans 100% of the screen width, rendering the 7-day schedule with `M/d` on top (15.5px bold) and weekday below (`Hoy`/`Today`, `Lun`, `Mar`, etc. or `Próx. Lun`).
@@ -825,10 +838,11 @@ Inspired by **Plezy** (`edde746/plezy`), the player focuses on high performance,
     - **`PlayerWindowManager`**: Orchestrates fullscreen transitions, desktop native windowing, mobile orientation rotation stabilization (preventing intermediate landscape layout overflows), Android ExoPlayer surface layout synchronization (`setSurfaceBounds`), and clean exit sequences.
     - **`PlayerSourceController`**: Coordinates online stream source discovery, initial auto-streaming of first found sources without outside waiting, live in-player server/quality switching, seamless episode transitions, and background prefetching.
     - **`VideoPlayerScreen`**: Retained strictly as a clean coordinator wiring viewport controls, layouts (`PlayerDesktopLayout`, `PlayerMobileLayout`), and state notifiers.
-  - **Zero-Stutter Entry & Exit Pipeline (`VideoPlayerScreen.route`, `MpvPlayerService`, `PlayerWindowManager`)**:
-    - **Organic Route Transitions**: Replaced instantaneous zero-duration route switches with smooth, physical fade transitions (`transitionDuration: 180ms`, `reverseTransitionDuration: 150ms` using `Curves.easeOutCubic`), eliminating abrupt cutouts and dropped frames.
-    - **Post-Frame Engine Deferral (Elimination of Tap Event Freezes / "Espasmos")**: Heavy native playback engine instantiation (`libmpv` / ExoPlayer, OpenGL texture creation, EGL context setup) and source resolution are deferred to `WidgetsBinding.instance.addPostFrameCallback`. Frame 0 renders immediately with zero gesture-thread contention or button-click freezing.
-    - **Desktop Exit Streamlining (Elimination of Black Flash & Hangs)**: On desktop, the black curtain intended for mobile 90° orientation masking is bypassed (`!isDesktop && _isExiting`), progress saving runs asynchronously in the background (`unawaited(onSaveProgress())`), and playback pauses immediately before popping, producing a silky, 120 FPS exit back to the detail view.
+  - **Zero-Stutter Entry & Exit Pipeline (`VideoPlayerScreen.route`, `MpvPlayerService`, `PlayerWindowManager`, `video_output.cc`)**:
+    - **Instant Route Transitions (`Duration.zero`)**: Video playback enters and exits instantly with zero duration. Prevents animation frame drops, UI thread contention, and freezing while native Direct3D 11 swapchains and libmpv / MediaCodec instances are initializing.
+    - **Synchronous Engine Mounting**: Playback coordinator and services are initialized during `initState` so `PlayerViewport` receives a non-null video controller on frame 0, mounting the video widget immediately without late frame jumps.
+    - **Clean Surface Unmounting on Exit (`_isExiting`)**: When exit is triggered, `_isExiting` replaces the player body with `ColoredBox(color: Colors.black)`, immediately unmounting the hardware texture from Flutter's compositor and pausing playback before `Navigator.pop()` executes.
+    - **Non-Blocking Windows Texture Disposal (`video_output.cc`)**: In `media_kit_video` Windows plugin, `VideoOutput` destructor guards unregistration with `wait_for(std::chrono::milliseconds(100))` and handles null texture IDs, preventing UI thread deadlocks and microtirones upon player disposal.
     - **Linux Hybrid Hardware Decoding (`hwdec: auto-safe`)**: Set Linux hardware decoding to `auto-safe` instead of forcing `vaapi,auto`, preventing driver probe stalls on hybrid GPU setups (e.g. Intel UHD + NVIDIA RTX) without VA-API configured.
 - **MKV Chapters & Segments**:
   - **Cross-Engine Support (Desktop libmpv & Android ExoPlayer)**:

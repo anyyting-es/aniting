@@ -18,6 +18,8 @@ class DesktopActionBar extends ConsumerWidget {
   final AnimeDetailTab currentTab;
   final bool onlineEnabled;
   final bool torrentEnabled;
+  final bool isTmdb;
+  final bool isMovie;
   final VoidCallback onPlayNext;
   final void Function(String title) onOpenEditEntryModal;
   final ValueChanged<AnimeDetailTab> onTabChanged;
@@ -35,11 +37,22 @@ class DesktopActionBar extends ConsumerWidget {
     required this.currentTab,
     required this.onlineEnabled,
     required this.torrentEnabled,
+    this.isTmdb = false,
+    this.isMovie = false,
     required this.onPlayNext,
     required this.onOpenEditEntryModal,
     required this.onTabChanged,
     this.onDownload,
   });
+
+  Future<void> _launchTmdb(int mediaId) async {
+    try {
+      await launchUrlString(
+        'https://www.themoviedb.org/${isMovie ? "movie" : "tv"}/$mediaId',
+        mode: LaunchMode.externalApplication,
+      );
+    } catch (_) {}
+  }
 
   Future<void> _launchAnilist(int mediaId) async {
     try {
@@ -76,7 +89,10 @@ class DesktopActionBar extends ConsumerWidget {
   }
 
   void _shareAnime(BuildContext context, String title, AppTranslations l10n) {
-    Clipboard.setData(ClipboardData(text: 'https://anilist.co/anime/$mediaId'));
+    final shareUrl = isTmdb
+        ? 'https://www.themoviedb.org/${isMovie ? "movie" : "tv"}/$mediaId'
+        : 'https://anilist.co/anime/$mediaId';
+    Clipboard.setData(ClipboardData(text: shareUrl));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(l10n.linkCopiedFor(title)),
@@ -96,18 +112,36 @@ class DesktopActionBar extends ConsumerWidget {
       children: [
         // Floating Pill Play Button with Gentle Scaling
         _HoverPlayButton(
-          onTap: onPlayNext,
+          onTap: isTmdb
+              ? () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Row(
+                        children: [
+                          const Icon(Icons.info_outline_rounded,
+                              color: Colors.white, size: 18),
+                          const SizedBox(width: 8),
+                          Expanded(child: Text(l10n.streamingComingSoon)),
+                        ],
+                      ),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
+              : onPlayNext,
           icon: AppIcons.play(iconPack),
         ),
         const SizedBox(width: 10),
 
-        // Bookmark Button (AniList status modal) with Gentle Hover
-        _HoverIconButton(
-          tooltip: l10n.editInAnilist,
-          icon: AppIcons.bookmarkOutline(iconPack),
-          onTap: () => onOpenEditEntryModal(title),
-        ),
-        const SizedBox(width: 8),
+        // Bookmark Button (AniList status modal) with Gentle Hover (Anime only)
+        if (!isTmdb) ...[
+          _HoverIconButton(
+            tooltip: l10n.editInAnilist,
+            icon: AppIcons.bookmarkOutline(iconPack),
+            onTap: () => onOpenEditEntryModal(title),
+          ),
+          const SizedBox(width: 8),
+        ],
 
         // Share Button with Gentle Hover
         _HoverIconButton(
@@ -127,8 +161,8 @@ class DesktopActionBar extends ConsumerWidget {
           const SizedBox(width: 8),
         ],
 
-        // Download Button (Torrents modal)
-        if (onDownload != null) ...[
+        // Download Button (Torrents modal - Anime only)
+        if (!isTmdb && onDownload != null) ...[
           _HoverIconButton(
             tooltip: l10n.downloadWithTorrentClient,
             icon: Icons.download_rounded,
@@ -137,28 +171,38 @@ class DesktopActionBar extends ConsumerWidget {
           const SizedBox(width: 8),
         ],
 
-        // AniList External Link with Official Brand Icon (Clean circular, no boxes)
-        _HoverBrandIcon(
-          assetPath: 'assets/icons/AniList_logo.png',
-          tooltip: l10n.viewOnAnilist,
-          onTap: () => _launchAnilist(mediaId),
-        ),
-        const SizedBox(width: 8),
-
-        // MAL External Link with Official Brand Icon (Clean circular, no boxes)
-        if (idMal != null) ...[
-          _HoverBrandIcon(
-            assetPath: 'assets/icons/MyAnimeList_Logo.png',
-            tooltip: l10n.viewOnMal,
-            onTap: () => _launchMal(idMal!),
+        // External Link
+        if (isTmdb) ...[
+          _HoverIconButton(
+            tooltip: 'The Movie Database (TMDB)',
+            icon: Icons.open_in_new_rounded,
+            onTap: () => _launchTmdb(mediaId),
           ),
           const SizedBox(width: 8),
+        ] else ...[
+          // AniList External Link with Official Brand Icon
+          _HoverBrandIcon(
+            assetPath: 'assets/icons/AniList_logo.png',
+            tooltip: l10n.viewOnAnilist,
+            onTap: () => _launchAnilist(mediaId),
+          ),
+          const SizedBox(width: 8),
+
+          // MAL External Link with Official Brand Icon
+          if (idMal != null) ...[
+            _HoverBrandIcon(
+              assetPath: 'assets/icons/MyAnimeList_Logo.png',
+              tooltip: l10n.viewOnMal,
+              onTap: () => _launchMal(idMal!),
+            ),
+            const SizedBox(width: 8),
+          ],
         ],
 
         const Spacer(),
 
-        // Source Mode Toggle (Online / Torrent) with GlassSegmentedControl
-        if (onlineEnabled && torrentEnabled) ...[
+        // Source Mode Toggle (Online / Torrent) with GlassSegmentedControl (Anime only)
+        if (!isTmdb && onlineEnabled && torrentEnabled) ...[
           SizedBox(
             width: 230,
             child: GlassSegmentedControl(

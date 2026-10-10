@@ -1,4 +1,3 @@
-import 'dart:async' show unawaited;
 import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -164,27 +163,6 @@ class PlayerWindowManager {
     }
 
     if (isExiting) return;
-
-    if (isDesktop) {
-      isExiting = true;
-      try {
-        coordinator.pause();
-      } catch (_) {}
-
-      if (isFullscreen) {
-        try {
-          ref.read(desktopTitleBarVisibleProvider.notifier).setVisible(true);
-          defaultExitNativeFullscreen();
-        } catch (_) {}
-      }
-
-      unawaited(onSaveProgress());
-
-      if (context.mounted) {
-        Navigator.of(context).pop();
-      }
-      return;
-    }
 
     isExiting = true;
     onUpdateUi();

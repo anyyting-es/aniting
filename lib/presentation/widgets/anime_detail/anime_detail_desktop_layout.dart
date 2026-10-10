@@ -23,6 +23,7 @@ import 'desktop/desktop_hero_banner.dart';
 import 'desktop/desktop_recommendations_tab.dart';
 import 'desktop/desktop_relations_tab.dart';
 import 'desktop/desktop_sidebar.dart';
+import 'tmdb/tmdb_episodes_view.dart';
 
 class AnimeDetailDesktopLayout extends ConsumerStatefulWidget {
   final int mediaId;
@@ -88,23 +89,26 @@ class _AnimeDetailDesktopLayoutState
     super.initState();
     _scrollController.addListener(_onScroll);
 
-    final repo = ref.read(repositoryProvider);
-    final cachedProviders = repo.getCachedOnlinestreamProviders();
-    if (cachedProviders != null && cachedProviders.isNotEmpty) {
-      _providers = cachedProviders;
-      _selectedProvider = cachedProviders.first;
-      final cachedEps = repo.getCachedOnlinestreamEpisodes(
-        mediaId: widget.mediaId,
-        provider: _selectedProvider!.id,
-        dubbed: _isDubbed,
-      );
-      if (cachedEps != null && cachedEps.isNotEmpty) {
-        _onlineEpisodes = cachedEps;
-        _isLoadingOnlineEpisodes = false;
+    final isTmdb = widget.details?.isTmdb ?? widget.initialEntry?.isTmdb ?? false;
+    if (!isTmdb) {
+      final repo = ref.read(repositoryProvider);
+      final cachedProviders = repo.getCachedOnlinestreamProviders();
+      if (cachedProviders != null && cachedProviders.isNotEmpty) {
+        _providers = cachedProviders;
+        _selectedProvider = cachedProviders.first;
+        final cachedEps = repo.getCachedOnlinestreamEpisodes(
+          mediaId: widget.mediaId,
+          provider: _selectedProvider!.id,
+          dubbed: _isDubbed,
+        );
+        if (cachedEps != null && cachedEps.isNotEmpty) {
+          _onlineEpisodes = cachedEps;
+          _isLoadingOnlineEpisodes = false;
+        }
       }
-    }
 
-    _loadOnlineProviders();
+      _loadOnlineProviders();
+    }
   }
 
   void _onScroll() {
@@ -339,6 +343,8 @@ class _AnimeDetailDesktopLayoutState
     final streamingPrefs = ref.watch(streamingPreferencesProvider);
     final torrentEnabled = streamingPrefs.torrentStreamingEnabled;
     final onlineEnabled = streamingPrefs.onlineStreamingEnabled;
+    final isTmdb = widget.details?.isTmdb ?? widget.initialEntry?.isTmdb ?? false;
+    final isMovie = (widget.details?.format == 'MOVIE') || (widget.initialEntry?.format == 'MOVIE');
 
     final title = widget.details?.displayTitle(titleLang) ??
         widget.initialEntry?.displayTitle(titleLang) ??
@@ -527,6 +533,8 @@ class _AnimeDetailDesktopLayoutState
                       currentTab: widget.currentTab,
                       onlineEnabled: onlineEnabled,
                       torrentEnabled: torrentEnabled,
+                      isTmdb: isTmdb,
+                      isMovie: isMovie,
                       onPlayNext: () => _handlePlayNext(progress),
                       onOpenEditEntryModal: widget.onOpenEditEntryModal,
                       onTabChanged: widget.onTabChanged,
@@ -544,38 +552,46 @@ class _AnimeDetailDesktopLayoutState
                     const SizedBox(height: 28),
 
                     // ─── Episodes Section (Full Width, without redundant header title) ───
-                    DesktopEpisodesTab(
-                      mediaId: widget.mediaId,
-                      details: widget.details,
-                      aniZipData: widget.aniZipData,
-                      isLoadingAniZip: widget.isLoadingAniZip,
-                      progress: progress,
-                      isLocalMode: widget.isLocalMode,
-                      currentTab: widget.currentTab,
-                      providers: _providers,
-                      selectedProvider: _selectedProvider,
-                      isDubbed: _isDubbed,
-                      onlineEpisodes: _onlineEpisodes,
-                      isLoadingOnlineEpisodes: _isLoadingOnlineEpisodes,
-                      loadingEpisodeNumber: _loadingEpisodeNumber,
-                      fallbackCoverImage: coverUrl,
-                      onProviderChanged: (p) {
-                        if (p != null) {
-                          setState(() => _selectedProvider = p);
-                          SharedPreferences.getInstance().then(
-                              (prefs) => prefs.setString(_prefLastProviderKey, p.id));
+                    if (isTmdb)
+                      TmdbEpisodesView(
+                        tmdbId: widget.mediaId,
+                        isMovie: isMovie,
+                        fallbackCoverImage: coverUrl,
+                        isMobile: false,
+                      )
+                    else
+                      DesktopEpisodesTab(
+                        mediaId: widget.mediaId,
+                        details: widget.details,
+                        aniZipData: widget.aniZipData,
+                        isLoadingAniZip: widget.isLoadingAniZip,
+                        progress: progress,
+                        isLocalMode: widget.isLocalMode,
+                        currentTab: widget.currentTab,
+                        providers: _providers,
+                        selectedProvider: _selectedProvider,
+                        isDubbed: _isDubbed,
+                        onlineEpisodes: _onlineEpisodes,
+                        isLoadingOnlineEpisodes: _isLoadingOnlineEpisodes,
+                        loadingEpisodeNumber: _loadingEpisodeNumber,
+                        fallbackCoverImage: coverUrl,
+                        onProviderChanged: (p) {
+                          if (p != null) {
+                            setState(() => _selectedProvider = p);
+                            SharedPreferences.getInstance().then(
+                                (prefs) => prefs.setString(_prefLastProviderKey, p.id));
+                            _loadOnlineEpisodes();
+                          }
+                        },
+                        onToggleDubbed: () {
+                          setState(() => _isDubbed = !_isDubbed);
                           _loadOnlineEpisodes();
-                        }
-                      },
-                      onToggleDubbed: () {
-                        setState(() => _isDubbed = !_isDubbed);
-                        _loadOnlineEpisodes();
-                      },
-                      onEpisodeClicked: _onEpisodeClicked,
-                      onToggleLocalMode: widget.onToggleLocalMode,
-                      onTabChanged: widget.onTabChanged,
-                      onOpenTorrentSelector: widget.onOpenTorrentSelector,
-                    ),
+                        },
+                        onEpisodeClicked: _onEpisodeClicked,
+                        onToggleLocalMode: widget.onToggleLocalMode,
+                        onTabChanged: widget.onTabChanged,
+                        onOpenTorrentSelector: widget.onOpenTorrentSelector,
+                      ),
 
                     // ─── Relations Section (Full Width) ───
                     if (relationsEdges.isNotEmpty || widget.isLoading) ...[

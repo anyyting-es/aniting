@@ -1058,5 +1058,17 @@ abstract class AppTranslations {
   String get totalRereads;
   String get noScore;
   String get saveChanges;
+
+  // TMDB / Series & Seasons
+  String get seasons;
+  String get specials;
+  String get selectSeason;
+  String get seasonEpisodeCount;
+  String seasonEpisodesCount(int count);
+  String get noEpisodesFound;
+  String get tmdbSourceNotice;
+  String get movieDetails;
+  String get streamingComingSoon;
+  String episodeRuntime(int minutes);
 }
 
