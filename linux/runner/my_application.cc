@@ -95,7 +95,14 @@ static void my_application_activate(GApplication* application) {
   GtkWindow* window =
       GTK_WINDOW(gtk_application_window_new(GTK_APPLICATION(application)));
 
-  // Use custom client-side titlebar across desktop environments.
+  // Use custom client-side titlebar across desktop environments (GNOME, KDE Plasma, etc.).
+  // In Wayland compositors like KDE Plasma (KWin), calling gtk_window_set_decorated(FALSE)
+  // alone is often ignored because KWin falls back to Server-Side Decorations (SSD).
+  // Attaching a GtkHeaderBar explicitly informs KWin/Wayland via xdg-decoration to use
+  // Client-Side Decorations (CSD). Hiding it leaves the Flutter app as the sole custom titlebar.
+  GtkWidget* header_bar = gtk_header_bar_new();
+  gtk_widget_show(header_bar);
+  gtk_window_set_titlebar(window, header_bar);
   gtk_window_set_title(window, "Aniting");
   gtk_window_set_decorated(window, FALSE);
 

@@ -29,8 +29,19 @@ class CatalogFilterSidebar extends ConsumerWidget {
     final l10n = ref.watch(translationsProvider);
     final isSpanish = ref.watch(appLanguageProvider) == AppLanguage.es;
     final isAnime = filterState.mediaType == 'ANIME';
+    final isShows = filterState.mediaType == 'SHOWS';
     final animeEnabled = ref.watch(animeSectionEnabledProvider);
+    final showsEnabled = ref.watch(showsSectionEnabledProvider);
     final mangaEnabled = ref.watch(mangaSectionEnabledProvider);
+
+    String mediaTypeLabel = l10n.anime;
+    if (isShows) {
+      mediaTypeLabel = l10n.shows;
+    } else if (!isAnime) {
+      mediaTypeLabel = l10n.manga;
+    }
+
+    final activeMediaCount = (animeEnabled ? 1 : 0) + (showsEnabled ? 1 : 0) + (mangaEnabled ? 1 : 0);
 
     return Container(
       width: 320,
@@ -42,11 +53,17 @@ class CatalogFilterSidebar extends ConsumerWidget {
           Container(
             height: 48,
             decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+              color: theme.brightness == Brightness.dark
+                  ? (theme.colorScheme.surfaceContainerHighest.computeLuminance() < 0.05
+                      ? const Color(0xFF16161C)
+                      : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.65))
+                  : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
-                width: 0.8,
+                color: theme.brightness == Brightness.dark
+                    ? const Color(0xFF2E2E38)
+                    : theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+                width: 1.0,
               ),
             ),
             child: TextField(
@@ -91,26 +108,30 @@ class CatalogFilterSidebar extends ConsumerWidget {
 
           const SizedBox(height: 12),
 
-          // 2. Tipo de medio (Anime / Manga)
-          if (animeEnabled && mangaEnabled)
+          // 2. Tipo de medio (Anime / Shows / Manga)
+          if (activeMediaCount > 1)
             CatalogFilterDropdown<String>(
-              label: isAnime ? l10n.anime : l10n.manga,
+              label: mediaTypeLabel,
               selectedValue: filterState.mediaType,
               items: [
-                CatalogFilterDropdownItem(value: 'ANIME', label: l10n.anime),
-                CatalogFilterDropdownItem(value: 'MANGA', label: l10n.manga),
+                if (animeEnabled)
+                  CatalogFilterDropdownItem(value: 'ANIME', label: l10n.anime),
+                if (showsEnabled)
+                  CatalogFilterDropdownItem(value: 'SHOWS', label: l10n.shows),
+                if (mangaEnabled)
+                  CatalogFilterDropdownItem(value: 'MANGA', label: l10n.manga),
               ],
               onChanged: (val) {
                 onFilterChanged(
                   filterState.copyWith(
                     mediaType: val,
-                    season: () => val == 'MANGA' ? null : filterState.season,
+                    season: () => (val == 'MANGA' || val == 'SHOWS') ? null : filterState.season,
                   ),
                 );
               },
             ),
 
-          if (animeEnabled && mangaEnabled) const SizedBox(height: 12),
+          if (activeMediaCount > 1) const SizedBox(height: 12),
 
           // 3. Orden (Sort)
           CatalogFilterDropdown<String>(
@@ -202,6 +223,9 @@ class CatalogFilterSidebar extends ConsumerWidget {
                 CatalogFilterDropdownItem(value: 'SPECIAL', label: l10n.formatSpecial),
                 CatalogFilterDropdownItem(value: 'OVA', label: l10n.formatOva),
                 CatalogFilterDropdownItem(value: 'ONA', label: l10n.formatOna),
+              ] else if (isShows) ...[
+                CatalogFilterDropdownItem(value: 'TV', label: l10n.formatTv),
+                CatalogFilterDropdownItem(value: 'MOVIE', label: l10n.formatMovie),
               ] else ...[
                 CatalogFilterDropdownItem(value: 'MANGA', label: l10n.formatManga),
                 CatalogFilterDropdownItem(value: 'NOVEL', label: l10n.formatNovel),

@@ -39,6 +39,7 @@ class PersonalizacionSettingsScreen extends ConsumerWidget {
     final iconPack = ref.watch(iconPackProvider);
     
     final animeEnabled = ref.watch(animeSectionEnabledProvider);
+    final showsEnabled = ref.watch(showsSectionEnabledProvider);
     final mangaEnabled = ref.watch(mangaSectionEnabledProvider);
 
     return PixelSubpageScaffold(
@@ -378,7 +379,7 @@ class PersonalizacionSettingsScreen extends ConsumerWidget {
           subtitle: l10n.animeSectionDesc,
           value: animeEnabled,
           onChanged: (val) {
-            if (!val && !mangaEnabled) {
+            if (!val && !showsEnabled && !mangaEnabled) {
               final messenger = ScaffoldMessenger.of(context);
               messenger.clearSnackBars();
               messenger.showSnackBar(
@@ -394,12 +395,33 @@ class PersonalizacionSettingsScreen extends ConsumerWidget {
         ),
         const SizedBox(height: 10),
         PixelSwitchTile(
+          icon: Icons.movie_filter_rounded,
+          title: l10n.showsSection,
+          subtitle: l10n.showsSectionDesc,
+          value: showsEnabled,
+          onChanged: (val) {
+            if (!val && !animeEnabled && !mangaEnabled) {
+              final messenger = ScaffoldMessenger.of(context);
+              messenger.clearSnackBars();
+              messenger.showSnackBar(
+                SnackBar(
+                  content: Text(l10n.cannotDisableBothSections),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+              return;
+            }
+            ref.read(showsSectionEnabledProvider.notifier).setEnabled(val);
+          },
+        ),
+        const SizedBox(height: 10),
+        PixelSwitchTile(
           icon: AppIcons.manga(iconPack),
           title: l10n.mangaSection,
           subtitle: l10n.mangaSectionDesc,
           value: mangaEnabled,
           onChanged: (val) {
-            if (!val && !animeEnabled) {
+            if (!val && !animeEnabled && !showsEnabled) {
               final messenger = ScaffoldMessenger.of(context);
               messenger.clearSnackBars();
               messenger.showSnackBar(

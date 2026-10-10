@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
+import 'package:seanime_app/core/preferences/section_visibility_provider.dart';
 import 'package:seanime_app/data/models/anime_entry.dart';
 import 'package:seanime_app/data/models/manga_entry.dart';
 import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
@@ -76,8 +77,19 @@ class CatalogSearchView extends ConsumerWidget {
     final iconPack = ref.watch(iconPackProvider);
     final isDesktop = MediaQuery.of(context).size.width >= 720;
     final isAnime = filterState.mediaType == 'ANIME';
-    final totalItems = isAnime ? animeResults.length : mangaResults.length;
+    final isShows = filterState.mediaType == 'SHOWS';
+    final animeEnabled = ref.watch(animeSectionEnabledProvider);
+    final showsEnabled = ref.watch(showsSectionEnabledProvider);
+    final mangaEnabled = ref.watch(mangaSectionEnabledProvider);
+    final totalItems = (isAnime || isShows) ? animeResults.length : mangaResults.length;
     final headerTitle = _getHeaderTitle(l10n);
+
+    String searchHint = '${l10n.search} anime...';
+    if (isShows) {
+      searchHint = '${l10n.search} shows...';
+    } else if (!isAnime) {
+      searchHint = '${l10n.search} manga...';
+    }
 
     if (!isDesktop) {
       // Versión Mobile compacta
@@ -93,7 +105,7 @@ class CatalogSearchView extends ConsumerWidget {
                   child: CompactSearchBar(
                     controller: searchController,
                     focusNode: searchFocusNode,
-                    hintText: isAnime ? '${l10n.search} anime...' : '${l10n.search} manga...',
+                    hintText: searchHint,
                     isSearching: true,
                     onChanged: onSearchChanged,
                     onBack: onBack,
@@ -124,10 +136,13 @@ class CatalogSearchView extends ConsumerWidget {
               children: [
                 MediaTypeToggle(
                   selected: filterState.mediaType,
+                  showAnime: animeEnabled,
+                  showShows: showsEnabled,
+                  showManga: mangaEnabled,
                   onSelected: (val) {
                     onFilterChanged(filterState.copyWith(
                       mediaType: val,
-                      season: () => val == 'MANGA' ? null : filterState.season,
+                      season: () => (val == 'MANGA' || val == 'SHOWS') ? null : filterState.season,
                     ));
                   },
                 ),
@@ -162,44 +177,6 @@ class CatalogSearchView extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. Botón superior Discover Series (Pill con icono de brújula adaptado al tema)
-          InkWell(
-            onTap: onBack,
-            borderRadius: BorderRadius.circular(20),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
-                  width: 0.8,
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.explore_outlined,
-                    size: 15,
-                    color: theme.colorScheme.primary,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    l10n.discoverSeries,
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w600,
-                      color: theme.colorScheme.onSurface,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 14),
-
           // 2. Título de sección (ej. "Highest rated shows")
           Text(
             headerTitle,
@@ -318,7 +295,7 @@ class CatalogSearchView extends ConsumerWidget {
           );
         }
 
-        if (isAnime) {
+        if (isAnime || filterState.mediaType == 'SHOWS') {
           final anime = animeResults[index];
           return AnimeCard(
             entry: anime,

@@ -20,6 +20,9 @@ import 'package:seanime_app/data/services/manga_offline_service.dart';
 import 'package:seanime_app/data/services/offline_library_service.dart';
 import 'package:seanime_app/data/services/feed_cache_service.dart';
 import 'package:seanime_app/core/api/websocket_service.dart';
+import 'package:seanime_app/core/i18n/i18n_provider.dart';
+import 'package:seanime_app/core/preferences/tmdb_preferences_provider.dart';
+import 'package:seanime_app/data/services/tmdb_service.dart';
 
 final apiClientProvider = Provider<ApiClient>((ref) {
   return ApiClient();
@@ -870,5 +873,32 @@ final onlinestreamProvidersProvider =
     FutureProvider.autoDispose<List<OnlinestreamProvider>>((ref) async {
   final repo = ref.watch(repositoryProvider);
   return repo.getOnlinestreamProviders();
+});
+
+/// Instancia de servicio TMDB
+final tmdbServiceProvider = Provider<TmdbService>((ref) {
+  final apiKey = ref.watch(tmdbApiKeyProvider);
+  return TmdbService(apiKey: apiKey);
+});
+
+/// Series y películas TMDB en tendencia (Trending)
+final tmdbTrendingShowsProvider = FutureProvider<List<AnimeEntry>>((ref) async {
+  final service = ref.watch(tmdbServiceProvider);
+  final isSpanish = ref.watch(appLanguageProvider) == AppLanguage.es;
+  return service.getTrendingShows(language: isSpanish ? 'es-ES' : 'en-US');
+});
+
+/// Series TMDB populares
+final tmdbPopularShowsProvider = FutureProvider<List<AnimeEntry>>((ref) async {
+  final service = ref.watch(tmdbServiceProvider);
+  final isSpanish = ref.watch(appLanguageProvider) == AppLanguage.es;
+  return service.getPopularTvShows(language: isSpanish ? 'es-ES' : 'en-US');
+});
+
+/// Series TMDB mejor valoradas
+final tmdbTopRatedShowsProvider = FutureProvider<List<AnimeEntry>>((ref) async {
+  final service = ref.watch(tmdbServiceProvider);
+  final isSpanish = ref.watch(appLanguageProvider) == AppLanguage.es;
+  return service.getTopRatedTvShows(language: isSpanish ? 'es-ES' : 'en-US');
 });
 

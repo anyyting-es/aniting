@@ -2027,11 +2027,21 @@ class SpanishTranslations implements AppTranslations {
   @override
   String get animeSectionDesc => 'Mostrar pestaña de anime en la navegación';
   @override
+  String get showsSection => 'Sección de Series y Películas (TMDB)';
+  @override
+  String get showsSectionDesc => 'Mostrar pestaña de series y películas TMDB en la navegación';
+  @override
   String get mangaSection => 'Sección de Manga';
   @override
   String get mangaSectionDesc => 'Mostrar pestaña de manga en la navegación';
   @override
   String get cannotDisableBothSections => 'Debes mantener al menos una sección habilitada';
+  @override
+  String get shows => 'Shows / Series';
+  @override
+  String get exploreAnime => 'Anime (AniList)';
+  @override
+  String get exploreShows => 'Shows (TMDB)';
 
   // Subtitle Style Customization
   @override

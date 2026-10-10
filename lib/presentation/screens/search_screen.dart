@@ -58,7 +58,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   void initState() {
     super.initState();
     final animeEnabled = ref.read(animeSectionEnabledProvider);
-    _filterState = DiscoverFilterState(mediaType: animeEnabled ? 'ANIME' : 'MANGA');
+    final showsEnabled = ref.read(showsSectionEnabledProvider);
+    String defaultType = 'ANIME';
+    if (!animeEnabled) {
+      defaultType = showsEnabled ? 'SHOWS' : 'MANGA';
+    }
+    _filterState = DiscoverFilterState(mediaType: defaultType);
     _scrollController.addListener(_onScroll);
   }
 
@@ -166,6 +171,45 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             final unique = results.where((e) => !existingIds.contains(e.mediaId)).toList();
             _animeResults.addAll(unique);
             if (results.length < 24) _hasMore = false;
+          }
+        });
+      }
+    } else if (_filterState.mediaType == 'SHOWS') {
+      final tmdb = ref.read(tmdbServiceProvider);
+      final isSpanish = ref.read(appLanguageProvider) == AppLanguage.es;
+      final lang = isSpanish ? 'es-ES' : 'en-US';
+
+      final List<AnimeEntry> results;
+      if (query.isNotEmpty) {
+        results = await tmdb.searchShows(
+          query: query,
+          language: lang,
+          page: pageToFetch,
+        );
+      } else if (_filterState.sort == 'SCORE_DESC') {
+        results = await tmdb.getTopRatedTvShows(
+          language: lang,
+          page: pageToFetch,
+        );
+      } else {
+        results = await tmdb.getTrendingShows(
+          language: lang,
+          page: pageToFetch,
+        );
+      }
+
+      if (mounted && requestId == _searchRequestId) {
+        setState(() {
+          _isLoading = false;
+          _isLoadingMore = false;
+          _currentPage = pageToFetch + 1;
+          if (results.isEmpty) {
+            _hasMore = false;
+          } else {
+            final existingIds = _animeResults.map((e) => e.mediaId).toSet();
+            final unique = results.where((e) => !existingIds.contains(e.mediaId)).toList();
+            _animeResults.addAll(unique);
+            if (results.length < 20) _hasMore = false;
           }
         });
       }
@@ -457,12 +501,19 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final iconPack = ref.watch(iconPackProvider);
     final isSpanish = ref.watch(appLanguageProvider) == AppLanguage.es;
     final isAnime = _filterState.mediaType == 'ANIME';
+    final isShows = _filterState.mediaType == 'SHOWS';
+    final animeEnabled = ref.watch(animeSectionEnabledProvider);
+    final showsEnabled = ref.watch(showsSectionEnabledProvider);
+    final mangaEnabled = ref.watch(mangaSectionEnabledProvider);
     final titleLang = ref.watch(titleLanguageProvider);
 
     // Trending & Featured providers for Explore Hero Carousel
     final featuredAnimeConfig = isAnime ? ref.watch(exploreCarouselNotifierProvider) : null;
     final trendingAnimeAsync = isAnime ? ref.watch(trendingAnimeProvider) : null;
-    final trendingMangaAsync = !isAnime ? ref.watch(trendingMangaProvider) : null;
+    final trendingShowsAsync = isShows ? ref.watch(tmdbTrendingShowsProvider) : null;
+    final popularShowsAsync = isShows && !_showSearchBar ? ref.watch(tmdbPopularShowsProvider) : null;
+    final topRatedShowsAsync = isShows && !_showSearchBar ? ref.watch(tmdbTopRatedShowsProvider) : null;
+    final trendingMangaAsync = (!isAnime && !isShows) ? ref.watch(trendingMangaProvider) : null;
 
     // Curated providers for Anime
     final romanceAnimeAsync = isAnime && !_showSearchBar ? ref.watch(curatedRomanceAnimeProvider) : null;
@@ -470,9 +521,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final comedyAnimeAsync = isAnime && !_showSearchBar ? ref.watch(curatedComedyAnimeProvider) : null;
 
     // Curated providers for Manga
-    final romanceMangaAsync = !isAnime && !_showSearchBar ? ref.watch(curatedRomanceMangaProvider) : null;
-    final actionMangaAsync = !isAnime && !_showSearchBar ? ref.watch(curatedActionMangaProvider) : null;
-    final comedyMangaAsync = !isAnime && !_showSearchBar ? ref.watch(curatedComedyMangaProvider) : null;
+    final romanceMangaAsync = (!isAnime && !isShows) && !_showSearchBar ? ref.watch(curatedRomanceMangaProvider) : null;
+    final actionMangaAsync = (!isAnime && !isShows) && !_showSearchBar ? ref.watch(curatedActionMangaProvider) : null;
+    final comedyMangaAsync = (!isAnime && !isShows) && !_showSearchBar ? ref.watch(curatedComedyMangaProvider) : null;
 
     if (_showSearchBar) {
       return PopScope(
@@ -520,6 +571,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 ref.invalidate(curatedActionAnimeProvider);
                 ref.invalidate(curatedComedyAnimeProvider);
                 ref.read(exploreCarouselNotifierProvider.notifier).refresh();
+              } else if (isShows) {
+                ref.invalidate(tmdbTrendingShowsProvider);
+                ref.invalidate(tmdbPopularShowsProvider);
+                ref.invalidate(tmdbTopRatedShowsProvider);
               } else {
                 ref.invalidate(trendingMangaProvider);
                 ref.invalidate(curatedRomanceMangaProvider);
@@ -531,7 +586,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               controller: _scrollController,
               slivers: [
                 if ((isAnime && (featuredAnimeConfig == null || featuredAnimeConfig.items.isEmpty) && (trendingAnimeAsync == null || trendingAnimeAsync.isLoading)) ||
-                    (!isAnime && (trendingMangaAsync == null || trendingMangaAsync.isLoading)))
+                    (isShows && (trendingShowsAsync == null || trendingShowsAsync.isLoading)) ||
+                    (!isAnime && !isShows && (trendingMangaAsync == null || trendingMangaAsync.isLoading)))
                   const SliverToBoxAdapter(
                     child: ExploreSkeleton(),
                   )
@@ -560,7 +616,22 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       ),
                     );
                   })
-                else if (!isAnime)
+                else if (isShows)
+                  Builder(builder: (context) {
+                    final items = trendingShowsAsync?.asData?.value ?? [];
+                    if (items.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+                    final carouselItems = items
+                        .take(6)
+                        .map((e) => ExploreCarouselItem.fromAnime(e, context, titleLang))
+                        .toList();
+                    return SliverToBoxAdapter(
+                      child: ExploreHeroCarousel(
+                        key: ValueKey('explore_hero_shows_${carouselItems.length}'),
+                        items: carouselItems,
+                      ),
+                    );
+                  })
+                else if (!isAnime && !isShows)
                   Builder(builder: (context) {
                     final trendingItems = trendingMangaAsync?.asData?.value ?? [];
                     final popularItems = ref.watch(popularMangaProvider).asData?.value ?? [];
@@ -584,9 +655,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       padding: const EdgeInsets.fromLTRB(16, 6, 16, 8),
                       child: Row(
                         children: [
-                          // Non-wrapping Media Type Toggle (Anime / Manga)
+                          // Non-wrapping Media Type Toggle (Anime / Shows / Manga)
                           MediaTypeToggle(
                             selected: _filterState.mediaType,
+                            showAnime: animeEnabled,
+                            showShows: showsEnabled,
+                            showManga: mangaEnabled,
                             onSelected: _setMediaType,
                           ),
                           const Spacer(),
@@ -676,6 +750,55 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         title: isSpanish ? 'Comedia en tendencia' : 'Trending Comedy',
                         genreKey: 'Comedy',
                         entries: comedyAnimeAsync?.asData?.value ?? [], isLoading: comedyAnimeAsync?.isLoading ?? false, theme: theme,
+                        l10n: l10n,
+                      ),
+                    ),
+                  ] else if (isShows) ...[
+                    SliverToBoxAdapter(
+                      child: _buildCuratedAnimeSection(
+                        title: isSpanish ? 'Series y Películas en Tendencia (TMDB)' : 'Trending Shows & Movies (TMDB)',
+                        onSeeMoreTap: () {
+                          setState(() {
+                            _filterState = _filterState.copyWith(sort: 'TRENDING_DESC');
+                            _isSearchExpanded = true;
+                          });
+                          _fetchResults(reset: true);
+                        },
+                        entries: trendingShowsAsync?.asData?.value ?? [],
+                        isLoading: trendingShowsAsync?.isLoading ?? false,
+                        theme: theme,
+                        l10n: l10n,
+                      ),
+                    ),
+                    SliverToBoxAdapter(
+                      child: _buildCuratedAnimeSection(
+                        title: isSpanish ? 'Series Más Populares (TMDB)' : 'Popular TV Shows (TMDB)',
+                        onSeeMoreTap: () {
+                          setState(() {
+                            _filterState = _filterState.copyWith(sort: 'POPULARITY_DESC');
+                            _isSearchExpanded = true;
+                          });
+                          _fetchResults(reset: true);
+                        },
+                        entries: popularShowsAsync?.asData?.value ?? [],
+                        isLoading: popularShowsAsync?.isLoading ?? false,
+                        theme: theme,
+                        l10n: l10n,
+                      ),
+                    ),
+                    SliverToBoxAdapter(
+                      child: _buildCuratedAnimeSection(
+                        title: isSpanish ? 'Mejor Valoradas (TMDB)' : 'Top Rated Shows (TMDB)',
+                        onSeeMoreTap: () {
+                          setState(() {
+                            _filterState = _filterState.copyWith(sort: 'SCORE_DESC');
+                            _isSearchExpanded = true;
+                          });
+                          _fetchResults(reset: true);
+                        },
+                        entries: topRatedShowsAsync?.asData?.value ?? [],
+                        isLoading: topRatedShowsAsync?.isLoading ?? false,
+                        theme: theme,
                         l10n: l10n,
                       ),
                     ),

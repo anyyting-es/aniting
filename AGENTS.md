@@ -62,14 +62,14 @@ seanime_app/
 │   │   ├── player/                   # Video playback service wrappers
 │   │   │   ├── exo_player_service.dart   # Android Media3 platform channel bridge
 │   │   │   └── mpv_player_service.dart   # media_kit / libmpv service with Plezy optimizations
-│   │   ├── preferences/              # PlayerEngineProvider, TitleLanguageProvider, EpisodeViewModeProvider, OnboardingProvider, DownloadPreferencesProvider, LayoutModeProvider, PlaybackProgressPreferencesProvider, AnimeFavoritesProvider, BannerBlurProvider, SubtitleStylePreferencesProvider, DesktopNavStyleProvider, glassEffectsEnabledProvider (GlassEffectsEnabledNotifier)
+│   │   ├── preferences/              # PlayerEngineProvider, TitleLanguageProvider, EpisodeViewModeProvider, OnboardingProvider, DownloadPreferencesProvider, LayoutModeProvider, PlaybackProgressPreferencesProvider, AnimeFavoritesProvider, BannerBlurProvider, SubtitleStylePreferencesProvider, DesktopNavStyleProvider, glassEffectsEnabledProvider (GlassEffectsEnabledNotifier), section_visibility_provider (showsSectionEnabledProvider, animeSectionEnabledProvider, mangaSectionEnabledProvider), tmdb_preferences_provider (TmdbPreferencesNotifier)
 │   │   ├── server/                   # ServerManager, AndroidServerChannel, DesktopServer
 │   │   ├── storage/                  # AppStoragePaths (Documents/Anime/aniting/ resolution for Android and Desktop)
 │   │   └── theme/                    # AppTheme, ThemeProvider, AppPalette, AppThemeColors, AppScrollBehavior, smooth_scroll_controller (SmoothScrollController, SmoothTrackingScrollController, DynMouseScroll), custom_route_transitions (WebPageTransitionsBuilder, SmoothPageRoute)
 │   ├── data/
 │   │   ├── models/                   # Data models (AnimeEntry, MangaEntry, ExtensionItem, Torrent, ExploreCarouselConfig, etc.)
 │   │   ├── repositories/             # SeanimeRepository (API methods, marketplace fetching, cache)
-│   │   └── services/                 # MangaOfflineService, FeedCacheService (persistent SWR feed cache), OfflineLibraryService, ExploreCarouselService
+│   │   └── services/                 # MangaOfflineService, FeedCacheService (persistent SWR feed cache), OfflineLibraryService, ExploreCarouselService, TmdbService (TMDB provider for TV shows, trending, popular & search)
 │   └── presentation/
 │       ├── providers/                # Global UI and repository providers
 │       ├── screens/                  # Main application views
@@ -203,6 +203,19 @@ seanime_app/
     2. **Explorar (`search_screen.dart`)**: Comprehensive exploration hub with hero banner carousel, genre chips, non-wrapping media type toggle (Anime/Manga), filters (season, year, sort), genres hub.
     3. **Calendario (`airing_calendar_screen.dart`)**: Dedicated airing calendar page tracking upcoming broadcast schedules and episode countdowns.
     4. **Perfil (`library_screen.dart`)**: User profile stats, AniList account, collection lists.
+- **Hybrid Media Provider & TMDB Integration (`tmdb_service.dart`, `section_visibility_provider.dart`, `tmdb_preferences_provider.dart`)**:
+  - **Modular Provider Coexistence**: Users can independently enable or disable **Anime** (AniList), **Shows** (TMDB), or **Manga** from Personalization Settings (`showsSectionEnabledProvider`, `animeSectionEnabledProvider`, `mangaSectionEnabledProvider`). A guard ensures at least one media section remains enabled.
+  - **TMDB Service & Clean Model Mapping (`tmdb_service.dart`)**:
+    - Leverages The Movie Database API to query `trending/tv/week`, `tv/popular`, `tv/top_rated`, and `search/tv`.
+    - Maps TMDB records seamlessly into the universal `AnimeEntry` model (`mediaId: tmdbId`, localized titles, `w500` cover images, `w1280` backdrop banner images, scaled 0-100 score, `TV`/`MOVIE` format), allowing complete reuse of existing UI components ([AnimeCard](file:///home/anthony/Documents/projects/aniting/lib/presentation/widgets/anime_card.dart), [ExploreHeroCarousel](file:///home/anthony/Documents/projects/aniting/lib/presentation/widgets/explore_hero_carousel.dart)) without duplicate widget hierarchies.
+  - **Adaptive Main Navigation & Feed Mixing (`main_shell.dart`, `feed_screen.dart`)**:
+    - When Shows are enabled alongside Anime, the Home feed dynamically presents TMDB trending rows alongside user anime library content; if Anime is disabled, the Home section automatically refocuses entirely on Shows.
+    - If a section is toggled off in settings, all content, tabs, and API queries originating from that provider are cleanly hidden across the application.
+  - **Triple-Type Exploration & Catalog Search (`search_screen.dart`, `catalog_search_view.dart`, `media_type_toggle.dart`)**:
+    - The Explore hub features media tabs / toggle for Anime, Shows, and Manga with dedicated hero carousels and trending carousels.
+    - The advanced catalog search filter sidebar supports media switching between `Anime`, `Shows`, and `Manga`, with full TV/Movie format filtering.
+    - Removed legacy "Discover series" button from the catalog view.
+    - OLED / Dark mode contrast hardened in `catalog_filter_sidebar.dart` and `catalog_filter_dropdown.dart` with elevated surface tones and high-contrast borders.
 - **Airing Calendar Responsive Overhaul (`airing_calendar_screen.dart`, `widgets/calendar/`)**:
   - **Full-Width Header with Animated Sliding Line Indicator (`calendar_day_tabs.dart`)**:
     - The date header spans 100% of the screen width, rendering the 7-day schedule with `M/d` on top (15.5px bold) and weekday below (`Hoy`/`Today`, `Lun`, `Mar`, etc. or `Próx. Lun`).

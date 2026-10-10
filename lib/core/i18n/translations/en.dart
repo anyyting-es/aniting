@@ -2021,11 +2021,21 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get animeSectionDesc => 'Show anime tab in navigation';
   @override
+  String get showsSection => 'Shows & Movies Section (TMDB)';
+  @override
+  String get showsSectionDesc => 'Show TMDB shows and movies tab in navigation';
+  @override
   String get mangaSection => 'Manga Section';
   @override
   String get mangaSectionDesc => 'Show manga tab in navigation';
   @override
   String get cannotDisableBothSections => 'You must keep at least one section enabled';
+  @override
+  String get shows => 'Shows / Movies';
+  @override
+  String get exploreAnime => 'Anime (AniList)';
+  @override
+  String get exploreShows => 'Shows (TMDB)';
 
   // Subtitle Style Customization
   @override

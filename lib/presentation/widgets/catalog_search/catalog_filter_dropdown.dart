@@ -119,13 +119,19 @@ class _CatalogFilterDropdownState<T> extends State<CatalogFilterDropdown<T>> {
               height: 48,
               padding: const EdgeInsets.symmetric(horizontal: 14),
               decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+                color: theme.brightness == Brightness.dark
+                    ? (theme.colorScheme.surfaceContainerHighest.computeLuminance() < 0.05
+                        ? const Color(0xFF16161C)
+                        : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.65))
+                    : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: isSelectedFromDefault
-                      ? theme.colorScheme.primary.withValues(alpha: 0.6)
-                      : theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
-                  width: isSelectedFromDefault ? 1.2 : 0.8,
+                      ? theme.colorScheme.primary.withValues(alpha: 0.8)
+                      : (theme.brightness == Brightness.dark
+                          ? const Color(0xFF2E2E38)
+                          : theme.colorScheme.outlineVariant.withValues(alpha: 0.4)),
+                  width: isSelectedFromDefault ? 1.3 : 1.0,
                 ),
               ),
               child: Row(

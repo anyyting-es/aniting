@@ -200,6 +200,7 @@ class _DiscoverFilterSheetState extends ConsumerState<DiscoverFilterSheet> {
     final l10n = ref.watch(translationsProvider);
     final isSpanish = ref.watch(appLanguageProvider) == AppLanguage.es;
     final isAnime = _state.mediaType == 'ANIME';
+    final isShows = _state.mediaType == 'SHOWS';
 
     final sortOptions = [
       {'key': 'TRENDING_DESC', 'label': l10n.sortTrending, 'icon': Icons.local_fire_department_rounded},
@@ -221,6 +222,11 @@ class _DiscoverFilterSheetState extends ConsumerState<DiscoverFilterSheet> {
       {'key': 'OVA', 'label': l10n.formatOva},
       {'key': 'ONA', 'label': l10n.formatOna},
       {'key': 'SPECIAL', 'label': l10n.formatSpecial},
+    ];
+
+    final showsFormats = [
+      {'key': 'TV', 'label': l10n.formatTv},
+      {'key': 'MOVIE', 'label': l10n.formatMovie},
     ];
 
     final mangaFormats = [
@@ -457,7 +463,10 @@ class _DiscoverFilterSheetState extends ConsumerState<DiscoverFilterSheet> {
                           if (sel) setState(() => _state = _state.copyWith(format: () => null));
                         },
                       ),
-                      ...(isAnime ? animeFormats : mangaFormats).map((f) {
+                      ...(isAnime
+                              ? animeFormats
+                              : (isShows ? showsFormats : mangaFormats))
+                          .map((f) {
                         final isSelected = _state.format == f['key'];
                         return ChoiceChip(
                           label: Text(f['label'] as String),

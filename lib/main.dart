@@ -77,6 +77,9 @@ void main() async {
       title: 'Aniting',
     );
     windowManager.waitUntilReadyToShow(windowOptions, () async {
+      if (Platform.isLinux) {
+        await windowManager.setAsFrameless();
+      }
       await windowManager.show();
       await windowManager.focus();
     });

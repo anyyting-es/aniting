@@ -157,10 +157,13 @@ class _MainShellState extends ConsumerState<MainShell> {
     final avatarUrl = serverState.status?.avatarUrl;
 
     final animeEnabled = ref.watch(animeSectionEnabledProvider);
+    final showsEnabled = ref.watch(showsSectionEnabledProvider);
     final mangaEnabled = ref.watch(mangaSectionEnabledProvider);
 
+    final isHomeActive = animeEnabled || showsEnabled;
+
     final List<ShellSection> availableSections = [
-      if (animeEnabled) ShellSection.anime,
+      if (isHomeActive) ShellSection.anime,
       if (mangaEnabled) ShellSection.manga,
       ShellSection.explore,
       ShellSection.calendar,
@@ -195,10 +198,19 @@ class _MainShellState extends ConsumerState<MainShell> {
       final s = availableSections[i];
       switch (s) {
         case ShellSection.anime:
+          final String homeLabel;
+          if (animeEnabled && !showsEnabled) {
+            homeLabel = l10n.navHome;
+          } else if (!animeEnabled && showsEnabled) {
+            homeLabel = l10n.shows;
+          } else {
+            homeLabel = l10n.navHome;
+          }
+
           final item = DesktopSidebarItem(
-            icon: AppIcons.home(iconPack),
-            selectedIcon: AppIcons.home(iconPack),
-            label: l10n.navHome,
+            icon: (!animeEnabled && showsEnabled) ? Icons.movie_filter_rounded : AppIcons.home(iconPack),
+            selectedIcon: (!animeEnabled && showsEnabled) ? Icons.movie_filter_rounded : AppIcons.home(iconPack),
+            label: homeLabel,
             targetIndex: i,
           );
           sidebarItems.add(item);

@@ -972,9 +972,14 @@ abstract class AppTranslations {
   String get navigationSections;
   String get animeSection;
   String get animeSectionDesc;
+  String get showsSection;
+  String get showsSectionDesc;
   String get mangaSection;
   String get mangaSectionDesc;
   String get cannotDisableBothSections;
+  String get shows;
+  String get exploreAnime;
+  String get exploreShows;
 
   // Subtitle Style Customization
   String get subtitleStyle;

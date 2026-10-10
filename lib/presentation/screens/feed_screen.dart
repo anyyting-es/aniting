@@ -5,6 +5,7 @@ import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/preferences/continue_watching_sort_provider.dart';
 import 'package:seanime_app/core/preferences/title_language_provider.dart';
+import 'package:seanime_app/core/preferences/section_visibility_provider.dart';
 import 'package:seanime_app/core/server/server_manager.dart';
 import 'package:seanime_app/data/models/anime_entry.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
@@ -696,6 +697,44 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                         loading: () => const SliverToBoxAdapter(child: SizedBox.shrink()),
                         error: (error, stack) => const SliverToBoxAdapter(child: SizedBox.shrink()),
                       ),
+
+                      // ─── 5. Series y Películas TMDB (Integración Híbrida) ───
+                      if (ref.watch(showsSectionEnabledProvider))
+                        ref.watch(tmdbTrendingShowsProvider).when(
+                          data: (shows) {
+                            if (shows.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+                            return SliverToBoxAdapter(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _SectionHeader(title: l10n.exploreShows),
+                                  SizedBox(
+                                    height: carouselHeight + 16,
+                                    child: ListView.separated(
+                                      clipBehavior: Clip.none,
+                                      scrollDirection: Axis.horizontal,
+                                      cacheExtent: 350,
+                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                      itemCount: shows.length,
+                                      separatorBuilder: (context, index) => SizedBox(width: carouselSpacing),
+                                      itemBuilder: (context, index) {
+                                        final item = shows[index];
+                                        return AnimeCard(
+                                          entry: item,
+                                          width: animeCardWidth,
+                                          onTap: () => _openDetail(context, item),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                  const SizedBox(height: 20),
+                                ],
+                              ),
+                            );
+                          },
+                          loading: () => const SliverToBoxAdapter(child: SizedBox.shrink()),
+                          error: (error, stack) => const SliverToBoxAdapter(child: SizedBox.shrink()),
+                        ),
 
                       const SliverToBoxAdapter(
                         child: SizedBox(height: 90),
