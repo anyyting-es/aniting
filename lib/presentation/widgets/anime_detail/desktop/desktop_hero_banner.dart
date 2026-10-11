@@ -29,10 +29,11 @@ class DesktopHeroBanner extends ConsumerWidget {
       top: 0,
       left: 0,
       right: 0,
-      height: 480,
-      child: ClipRect(
-        child: Stack(
-          fit: StackFit.expand,
+      height: 640,
+      child: RepaintBoundary(
+        child: ClipRect(
+          child: Stack(
+            fit: StackFit.expand,
           children: [
             // Banner Image with Blur Fallback & Scroll-Driven Dissolve
             Opacity(
@@ -60,9 +61,9 @@ class DesktopHeroBanner extends ConsumerWidget {
                     ),
             ),
 
-            // Ambient darkening overlay in theme tone
+            // Ambient darkening overlay in theme tone (translucent for vivid fanart)
             Container(
-              color: scaffoldBackgroundColor.withValues(alpha: 0.22),
+              color: scaffoldBackgroundColor.withValues(alpha: 0.18),
             ),
 
             // Left-to-right gradient: deeper opacity on left for text readability, clear on right
@@ -72,12 +73,12 @@ class DesktopHeroBanner extends ConsumerWidget {
                   begin: Alignment.centerLeft,
                   end: Alignment.centerRight,
                   colors: [
-                    scaffoldBackgroundColor.withValues(alpha: 0.92),
-                    scaffoldBackgroundColor.withValues(alpha: 0.75),
-                    scaffoldBackgroundColor.withValues(alpha: 0.30),
+                    scaffoldBackgroundColor.withValues(alpha: 0.88),
+                    scaffoldBackgroundColor.withValues(alpha: 0.60),
+                    scaffoldBackgroundColor.withValues(alpha: 0.20),
                     Colors.transparent,
                   ],
-                  stops: const [0.0, 0.35, 0.68, 1.0],
+                  stops: const [0.0, 0.32, 0.65, 1.0],
                 ),
               ),
             ),
@@ -90,13 +91,13 @@ class DesktopHeroBanner extends ConsumerWidget {
                   end: Alignment.bottomCenter,
                   colors: [
                     Colors.transparent,
-                    scaffoldBackgroundColor.withValues(alpha: 0.35),
-                    scaffoldBackgroundColor.withValues(alpha: 0.75),
-                    scaffoldBackgroundColor.withValues(alpha: 0.95),
-                    scaffoldBackgroundColor,
+                    Colors.transparent,
+                    scaffoldBackgroundColor.withValues(alpha: 0.20),
+                    scaffoldBackgroundColor.withValues(alpha: 0.55),
+                    scaffoldBackgroundColor.withValues(alpha: 0.88),
                     scaffoldBackgroundColor,
                   ],
-                  stops: const [0.0, 0.30, 0.58, 0.80, 0.92, 1.0],
+                  stops: const [0.0, 0.40, 0.65, 0.82, 0.94, 1.0],
                 ),
               ),
             ),
@@ -108,6 +109,7 @@ class DesktopHeroBanner extends ConsumerWidget {
           ],
         ),
       ),
-    );
+    ),
+  );
   }
 }

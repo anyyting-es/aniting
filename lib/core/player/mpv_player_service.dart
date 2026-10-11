@@ -36,7 +36,7 @@ class MpvPlayerService {
       _player,
       configuration: VideoControllerConfiguration(
         enableHardwareAcceleration: true,
-        hwdec: Platform.isLinux ? 'vaapi,vaapi-copy,nvdec,nvdec-copy,auto-safe' : 'auto',
+        hwdec: Platform.isLinux ? 'auto-safe,auto' : 'auto',
         width: viewportWidth,
         height: viewportHeight,
       ),
@@ -66,9 +66,8 @@ class MpvPlayerService {
         _safeSetProperty('hwdec', 'd3d11va,auto');
         _safeSetProperty('hwdec-codecs', 'all');
       } else {
-        // GNU/Linux: prioritize VA-API and NVDEC to prevent mpv from probing unsupported
-        // Vulkan (VK_KHR_video_decode_queue) / CUDA extensions which cause a ~1s freeze.
-        _safeSetProperty('hwdec', 'vaapi,vaapi-copy,nvdec,nvdec-copy,auto-safe');
+        // GNU/Linux: use 'auto-safe,auto' to match Plezy and avoid stalls during driver probe.
+        _safeSetProperty('hwdec', 'auto-safe,auto');
         _safeSetProperty('hwdec-codecs', 'all');
       }
 
@@ -292,9 +291,9 @@ class MpvPlayerService {
       _safeSetProperty('demuxer-max-bytes', '67108864'); // 64 MB RAM cache
     } else {
       // ── LOCAL FILE PLAYBACK MODE (High Fidelity from SSD/Storage) ───────────
-      _safeSetProperty('demuxer-lavf-probesize', '5000000');
-      _safeSetProperty('demuxer-lavf-analyzeduration', '5');
-      _safeSetProperty('demuxer-lavf-buffersize', '32768');
+      _safeSetProperty('demuxer-lavf-probesize', '1048576'); // 1 MB
+      _safeSetProperty('demuxer-lavf-analyzeduration', '1.0');
+      _safeSetProperty('demuxer-lavf-buffersize', '131072');
       _safeSetProperty('stream-lavf-o', 'reconnect=1,reconnect_streamed=1,reconnect_delay_max=5');
       _safeSetProperty('network-timeout', '15');
       _safeSetProperty('tls-verify', 'yes');

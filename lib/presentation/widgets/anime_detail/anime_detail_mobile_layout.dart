@@ -23,8 +23,9 @@ import 'package:seanime_app/presentation/widgets/online_stream_view.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import 'package:seanime_app/core/preferences/anime_favorites_provider.dart';
 
-import 'mobile/anime_detail_mode_popup.dart';
-import 'mobile/anime_detail_source_popup.dart';
+import 'package:g1455/g1455.dart';
+import 'package:seanime_app/data/services/offline_library_service.dart';
+import 'mobile/anime_detail_advanced_sheet.dart';
 import 'tmdb/tmdb_episodes_view.dart';
 
 enum AnimeDetailTab { online, torrent }
@@ -267,31 +268,6 @@ class _AnimeDetailMobileLayoutState
     );
   }
 
-  void _openSourceSelector() {
-    AnimeDetailSourcePopup.show(
-      context: context,
-      providers: _providers,
-      selectedProvider: _selectedProvider,
-      isDubbed: _isDubbed,
-      onProviderChanged: (newProv) {
-        if (newProv != null) {
-          setState(() => _selectedProvider = newProv);
-          SharedPreferences.getInstance().then((prefs) {
-            prefs.setString(_prefLastProviderKey, newProv.id);
-          }).catchError((_) {});
-        }
-      },
-      onToggleDubbed: (isDub) {
-        setState(() => _isDubbed = isDub);
-      },
-      onOpenManualMapping: () {
-        _onlineStreamController.openManualMapping(context);
-      },
-      onRefreshCache: () {
-        _onlineStreamController.refresh();
-      },
-    );
-  }
 
   String _formatPlayButtonLabel(int progress, int? totalEpisodes, AppTranslations l10n) {
     if (progress > 0 && totalEpisodes != null && progress >= totalEpisodes) {
@@ -319,9 +295,52 @@ class _AnimeDetailMobileLayoutState
     }
   }
 
+  Future<void> _updateStatus(
+    BuildContext context,
+    String newStatus,
+    String title,
+    int progress,
+    int? totalEpisodes,
+  ) async {
+    final repo = ref.read(repositoryProvider);
+    final serverState = ref.read(serverNotifierProvider);
+    final isLoggedIn = serverState.status?.isLoggedIn ?? false;
+    final l10n = ref.read(translationsProvider);
+
+    if (isLoggedIn) {
+      await repo.editAnilistListEntry(
+        mediaId: widget.mediaId,
+        type: 'anime',
+        status: newStatus,
+        progress: progress,
+      );
+    }
+
+    await OfflineLibraryService.instance.saveAnimeEntryFromEdit(
+      mediaId: widget.mediaId,
+      title: title,
+      status: newStatus,
+      progress: progress,
+      totalCount: totalEpisodes,
+    );
+
+    if (context.mounted) {
+      ref.invalidate(animeCollectionProvider);
+      ref.invalidate(continueWatchingProvider);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.settingsSaved),
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
   Widget _buildModeDropdownChip(ThemeData theme, AnimeDetailTab effectiveTab) {
     final isTorrent = !widget.isLocalMode && effectiveTab == AnimeDetailTab.torrent;
     final isLocal = widget.isLocalMode;
+    final l10n = ref.read(translationsProvider);
 
     final IconData modeIcon = isLocal
         ? Icons.folder_rounded
@@ -330,109 +349,228 @@ class _AnimeDetailMobileLayoutState
         ? 'Local'
         : (isTorrent ? 'Torrent' : 'Online');
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: () {
-          AnimeDetailModePopup.show(
-            context: context,
-            currentTab: effectiveTab,
-            isLocalMode: widget.isLocalMode,
-            hasLocalFiles: widget.hasLocalFiles,
-            onTabChanged: widget.onTabChanged,
-            onToggleLocalMode: widget.onToggleLocalMode,
-          );
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
-              width: 1.0,
-            ),
+    return GlassMenuAnchor(
+      width: 220,
+      items: [
+        GlassMenuItem(
+          label: l10n.onlineStreaming,
+          icon: Icon(
+            Icons.public_rounded,
+            size: 18,
+            color: (!widget.isLocalMode && effectiveTab == AnimeDetailTab.online)
+                ? theme.colorScheme.primary
+                : null,
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(modeIcon, size: 15, color: theme.colorScheme.primary),
-              const SizedBox(width: 6),
-              Text(
-                modeLabel,
-                style: TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.onSurface,
+          onPressed: () {
+            HapticFeedback.lightImpact();
+            if (widget.isLocalMode) widget.onToggleLocalMode();
+            widget.onTabChanged(AnimeDetailTab.online);
+          },
+        ),
+        GlassMenuItem(
+          label: l10n.torrentStreaming,
+          icon: Icon(
+            Icons.cloud_download_rounded,
+            size: 18,
+            color: (!widget.isLocalMode && effectiveTab == AnimeDetailTab.torrent)
+                ? theme.colorScheme.primary
+                : null,
+          ),
+          onPressed: () {
+            HapticFeedback.lightImpact();
+            if (widget.isLocalMode) widget.onToggleLocalMode();
+            widget.onTabChanged(AnimeDetailTab.torrent);
+          },
+        ),
+        if (widget.hasLocalFiles)
+          GlassMenuItem(
+            label: l10n.localLibrary,
+            icon: Icon(
+              Icons.folder_rounded,
+              size: 18,
+              color: widget.isLocalMode ? theme.colorScheme.primary : null,
+            ),
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              if (!widget.isLocalMode) widget.onToggleLocalMode();
+            },
+          ),
+      ],
+      builder: (context, controller) {
+        final isDark = theme.brightness == Brightness.dark;
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(20),
+                onTap: controller.open,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.08)
+                        : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.16)
+                          : theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
+                      width: 0.8,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(modeIcon, size: 15, color: isDark ? Colors.white : theme.colorScheme.primary),
+                      const SizedBox(width: 6),
+                      Text(
+                        modeLabel,
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? Colors.white : theme.colorScheme.onSurface,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(
+                        Icons.arrow_drop_down_rounded,
+                        size: 18,
+                        color: isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              const SizedBox(width: 4),
-              Icon(Icons.arrow_drop_down_rounded, size: 18, color: theme.colorScheme.onSurfaceVariant),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
   Widget _buildProviderDropdownChip(ThemeData theme) {
     final providerName = _selectedProvider?.name ?? ref.watch(translationsProvider).source;
+    final l10n = ref.read(translationsProvider);
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: _openSourceSelector,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
-              width: 1.0,
+    return GlassMenuAnchor(
+      width: 230,
+      items: [
+        ..._providers.map((p) {
+          final isCurrent = _selectedProvider?.id == p.id;
+          return GlassMenuItem(
+            label: p.name,
+            icon: Icon(
+              isCurrent ? Icons.check_circle_rounded : Icons.public_rounded,
+              size: 18,
+              color: isCurrent ? theme.colorScheme.primary : null,
             ),
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              setState(() => _selectedProvider = p);
+              SharedPreferences.getInstance().then((prefs) {
+                prefs.setString(_prefLastProviderKey, p.id);
+              }).catchError((_) {});
+            },
+          );
+        }),
+        GlassMenuItem(
+          label: l10n.advancedOptions,
+          icon: Icon(
+            Icons.tune_rounded,
+            size: 18,
+            color: theme.colorScheme.primary,
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.tune_rounded, size: 14, color: theme.colorScheme.primary),
-              const SizedBox(width: 6),
-              Text(
-                providerName,
-                style: TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.onSurface,
-                ),
+          onPressed: () {
+            showGlassSheet(
+              context: context,
+              builder: (ctx) => AnimeDetailAdvancedSheet(
+                selectedProvider: _selectedProvider,
+                isDubbed: _isDubbed,
+                onToggleDubbed: (isDub) => setState(() => _isDubbed = isDub),
+                onOpenManualMapping: () => _onlineStreamController.openManualMapping(context),
+                onRefreshCache: () => _onlineStreamController.refresh(),
               ),
-              if (_isDubbed) ...[
-                const SizedBox(width: 4),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+            );
+          },
+        ),
+      ],
+      builder: (context, controller) {
+        final isDark = theme.brightness == Brightness.dark;
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(20),
+                onTap: controller.open,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    'DUB',
-                    style: TextStyle(
-                      fontSize: 8.5,
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.primary,
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.08)
+                        : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.16)
+                          : theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
+                      width: 0.8,
                     ),
                   ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.tune_rounded,
+                        size: 14,
+                        color: isDark ? Colors.white : theme.colorScheme.primary,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        providerName,
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? Colors.white : theme.colorScheme.onSurface,
+                        ),
+                      ),
+                      if (_isDubbed) ...[
+                        const SizedBox(width: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? Colors.white.withValues(alpha: 0.15)
+                                : theme.colorScheme.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            'DUB',
+                            style: TextStyle(
+                              fontSize: 8.5,
+                              fontWeight: FontWeight.bold,
+                              color: theme.colorScheme.primary,
+                            ),
+                          ),
+                        ),
+                      ],
+                      const SizedBox(width: 4),
+                      Icon(Icons.arrow_drop_down_rounded, size: 18, color: theme.colorScheme.onSurfaceVariant),
+                    ],
                 ),
-              ],
-              const SizedBox(width: 4),
-              Icon(Icons.arrow_drop_down_rounded, size: 18, color: theme.colorScheme.onSurfaceVariant),
-            ],
+              ),
+            ),
           ),
         ),
-      ),
-    );
-  }
+      );
+    },
+  );
+}
 
   @override
   Widget build(BuildContext context) {
@@ -469,14 +607,17 @@ class _AnimeDetailMobileLayoutState
         l10n.loading;
 
     final coverUrl = widget.initialEntry?.coverImage ?? widget.details?.coverImage;
+    final aniZipFanart = widget.aniZipData?.fanartUrl ?? widget.details?.aniZipData?.fanartUrl;
+    final hasAniZipFanart = !isTmdb && aniZipFanart != null && aniZipFanart.isNotEmpty;
     final hasRealBanner = (widget.details?.bannerImage != null &&
             widget.details!.bannerImage!.isNotEmpty) ||
         (widget.initialEntry?.bannerImage != null &&
             widget.initialEntry!.bannerImage!.isNotEmpty);
-    final bannerUrl =
-        widget.details?.bannerImage ?? widget.initialEntry?.bannerImage ?? coverUrl;
+    final bannerUrl = hasAniZipFanart
+        ? aniZipFanart
+        : (widget.details?.bannerImage ?? widget.initialEntry?.bannerImage ?? widget.aniZipData?.bannerUrl ?? coverUrl);
     final isBlurSetting = ref.watch(bannerBlurProvider);
-    final shouldBlur = (!hasRealBanner && coverUrl != null) || isBlurSetting;
+    final shouldBlur = (!hasAniZipFanart && !hasRealBanner && coverUrl != null) || isBlurSetting;
     final score = widget.details?.score ?? widget.initialEntry?.score;
     final format = widget.details?.format ?? widget.initialEntry?.format ?? 'TV';
     final episodes = widget.details?.totalEpisodes ?? widget.initialEntry?.totalEpisodes;
@@ -940,99 +1081,332 @@ class _AnimeDetailMobileLayoutState
                             Expanded(
                               child: SizedBox(
                                 height: 42,
-                                child: FilledButton.icon(
-                                  style: FilledButton.styleFrom(
-                                    backgroundColor: theme.colorScheme.primary,
-                                    foregroundColor: theme.colorScheme.onPrimary,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(22),
-                                    ),
-                                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                                    elevation: 0,
-                                  ),
-                                  onPressed: isTmdb
-                                      ? () {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(
-                                              content: Row(
-                                                children: [
-                                                  const Icon(Icons.info_outline_rounded,
-                                                      color: Colors.white, size: 18),
-                                                  const SizedBox(width: 8),
-                                                  Expanded(child: Text(l10n.streamingComingSoon)),
-                                                ],
-                                              ),
-                                              behavior: SnackBarBehavior.floating,
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(22),
+                                  child: BackdropFilter(
+                                    filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                                    child: Material(
+                                      color: Colors.transparent,
+                                      child: InkWell(
+                                        borderRadius: BorderRadius.circular(22),
+                                        onTap: isTmdb
+                                            ? () {
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  SnackBar(
+                                                    content: Row(
+                                                      children: [
+                                                        const Icon(Icons.info_outline_rounded,
+                                                            color: Colors.white, size: 18),
+                                                        const SizedBox(width: 8),
+                                                        Expanded(child: Text(l10n.streamingComingSoon)),
+                                                      ],
+                                                    ),
+                                                    behavior: SnackBarBehavior.floating,
+                                                  ),
+                                                );
+                                              }
+                                            : () => _handlePlayNext(progress),
+                                        child: Ink(
+                                          decoration: BoxDecoration(
+                                            color: isDark
+                                                ? Colors.white.withValues(alpha: 0.16)
+                                                : theme.colorScheme.primary.withValues(alpha: 0.16),
+                                            borderRadius: BorderRadius.circular(22),
+                                            border: Border.all(
+                                              color: isDark
+                                                  ? Colors.white.withValues(alpha: 0.28)
+                                                  : theme.colorScheme.primary.withValues(alpha: 0.30),
+                                              width: 0.9,
                                             ),
-                                          );
-                                        }
-                                      : () => _handlePlayNext(progress),
-                                  icon: const Icon(Icons.play_arrow_rounded, size: 22),
-                                  label: Text(
-                                    _formatPlayButtonLabel(progress, totalEps, l10n),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 13.5,
-                                      letterSpacing: -0.2,
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: (isDark ? Colors.black : theme.colorScheme.primary)
+                                                    .withValues(alpha: 0.12),
+                                                blurRadius: 10,
+                                                offset: const Offset(0, 2),
+                                              ),
+                                            ],
+                                          ),
+                                          child: Padding(
+                                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                                            child: Row(
+                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              children: [
+                                                Icon(
+                                                  Icons.play_arrow_rounded,
+                                                  size: 22,
+                                                  color: isDark ? Colors.white : theme.colorScheme.primary,
+                                                ),
+                                                const SizedBox(width: 8),
+                                                Flexible(
+                                                  child: Text(
+                                                    _formatPlayButtonLabel(progress, totalEps, l10n),
+                                                    maxLines: 1,
+                                                    overflow: TextOverflow.ellipsis,
+                                                    style: TextStyle(
+                                                      fontWeight: FontWeight.bold,
+                                                      fontSize: 13.5,
+                                                      letterSpacing: -0.2,
+                                                      color: isDark ? Colors.white : theme.colorScheme.primary,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ),
                               ),
                             ),
                             if (hasTrailer) ...[
-                              const SizedBox(width: 4),
-                              IconButton(
-                                tooltip: l10n.watchTrailer,
-                                icon: const Icon(Icons.smart_display_outlined, size: 22),
-                                onPressed: () => _launchTrailer(trailerId, trailerSite),
+                              const SizedBox(width: 6),
+                              ClipOval(
+                                child: BackdropFilter(
+                                  filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                                  child: Material(
+                                    color: Colors.transparent,
+                                    child: InkWell(
+                                      customBorder: const CircleBorder(),
+                                      onTap: () => _launchTrailer(trailerId, trailerSite),
+                                      child: Ink(
+                                        padding: const EdgeInsets.all(9),
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: isDark
+                                              ? Colors.white.withValues(alpha: 0.08)
+                                              : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+                                          border: Border.all(
+                                            color: isDark
+                                                ? Colors.white.withValues(alpha: 0.18)
+                                                : theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
+                                            width: 0.8,
+                                          ),
+                                        ),
+                                        child: Icon(
+                                          Icons.smart_display_outlined,
+                                          size: 20,
+                                          color: isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
                               ),
                             ],
-                            const SizedBox(width: 2),
-                            IconButton(
-                              tooltip: isFavorite ? l10n.inFavorites : l10n.addToFavorites,
-                              icon: Icon(
-                                isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                                size: 22,
-                                color: isFavorite ? Colors.redAccent : theme.colorScheme.onSurfaceVariant,
-                              ),
-                              onPressed: () {
-                                HapticFeedback.lightImpact();
-                                final nowFav = ref
-                                    .read(animeFavoritesProvider.notifier)
-                                    .toggleFavorite(widget.mediaId);
-                                ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      nowFav ? l10n.addedToFavorites : l10n.removedFromFavorites,
+                            const SizedBox(width: 6),
+                            ClipOval(
+                              child: BackdropFilter(
+                                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                                child: Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    customBorder: const CircleBorder(),
+                                    onTap: () {
+                                      HapticFeedback.lightImpact();
+                                      final nowFav = ref
+                                          .read(animeFavoritesProvider.notifier)
+                                          .toggleFavorite(widget.mediaId);
+                                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            nowFav ? l10n.addedToFavorites : l10n.removedFromFavorites,
+                                          ),
+                                          duration: const Duration(seconds: 2),
+                                          behavior: SnackBarBehavior.floating,
+                                        ),
+                                      );
+                                    },
+                                    child: Ink(
+                                      padding: const EdgeInsets.all(9),
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: isDark
+                                            ? Colors.white.withValues(alpha: 0.08)
+                                            : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+                                        border: Border.all(
+                                          color: isDark
+                                              ? Colors.white.withValues(alpha: 0.18)
+                                              : theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
+                                          width: 0.8,
+                                        ),
+                                      ),
+                                      child: Icon(
+                                        isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                                        size: 20,
+                                        color: isFavorite ? Colors.redAccent : (isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant),
+                                      ),
                                     ),
-                                    duration: const Duration(seconds: 2),
-                                    behavior: SnackBarBehavior.floating,
                                   ),
-                                );
-                              },
+                                ),
+                              ),
                             ),
                             if (!isTmdb) ...[
-                              const SizedBox(width: 2),
-                              IconButton(
-                                tooltip: l10n.downloadWithTorrentClient,
-                                icon: const Icon(Icons.download_rounded, size: 22),
-                                onPressed: () {
-                                  final nextEp = (progress + 1).clamp(1, totalEps ?? (progress + 1));
-                                  final defaultEpTitle = l10n.episodeNumber(nextEp);
-                                  widget.onOpenTorrentSelector(
-                                    episodeNumber: nextEp,
-                                    episodeTitle: defaultEpTitle,
+                              const SizedBox(width: 6),
+                              ClipOval(
+                                child: BackdropFilter(
+                                  filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                                  child: Material(
+                                    color: Colors.transparent,
+                                    child: InkWell(
+                                      customBorder: const CircleBorder(),
+                                      onTap: () {
+                                        final nextEp = (progress + 1).clamp(1, totalEps ?? (progress + 1));
+                                        final defaultEpTitle = l10n.episodeNumber(nextEp);
+                                        widget.onOpenTorrentSelector(
+                                          episodeNumber: nextEp,
+                                          episodeTitle: defaultEpTitle,
+                                        );
+                                      },
+                                      child: Ink(
+                                        padding: const EdgeInsets.all(9),
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: isDark
+                                              ? Colors.white.withValues(alpha: 0.08)
+                                              : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+                                          border: Border.all(
+                                            color: isDark
+                                                ? Colors.white.withValues(alpha: 0.18)
+                                                : theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
+                                            width: 0.8,
+                                          ),
+                                        ),
+                                        child: Icon(
+                                          Icons.download_rounded,
+                                          size: 20,
+                                          color: isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              GlassMenuAnchor(
+                                width: 210,
+                                items: [
+                                  GlassMenuItem(
+                                    label: l10n.statusWatching,
+                                    icon: const Icon(
+                                      Icons.play_circle_fill_rounded,
+                                      size: 18,
+                                      color: Color(0xFF10B981),
+                                    ),
+                                    onPressed: () => _updateStatus(
+                                      context,
+                                      'CURRENT',
+                                      title,
+                                      progress,
+                                      totalEps,
+                                    ),
+                                  ),
+                                  GlassMenuItem(
+                                    label: l10n.statusPlanning,
+                                    icon: const Icon(
+                                      Icons.bookmark_added_rounded,
+                                      size: 18,
+                                      color: Color(0xFF3B82F6),
+                                    ),
+                                    onPressed: () => _updateStatus(
+                                      context,
+                                      'PLANNING',
+                                      title,
+                                      progress,
+                                      totalEps,
+                                    ),
+                                  ),
+                                  GlassMenuItem(
+                                    label: l10n.statusCompleted,
+                                    icon: const Icon(
+                                      Icons.check_circle_rounded,
+                                      size: 18,
+                                      color: Color(0xFF8B5CF6),
+                                    ),
+                                    onPressed: () => _updateStatus(
+                                      context,
+                                      'COMPLETED',
+                                      title,
+                                      progress,
+                                      totalEps,
+                                    ),
+                                  ),
+                                  GlassMenuItem(
+                                    label: l10n.statusPaused,
+                                    icon: const Icon(
+                                      Icons.pause_circle_filled_rounded,
+                                      size: 18,
+                                      color: Color(0xFFF59E0B),
+                                    ),
+                                    onPressed: () => _updateStatus(
+                                      context,
+                                      'PAUSED',
+                                      title,
+                                      progress,
+                                      totalEps,
+                                    ),
+                                  ),
+                                  GlassMenuItem(
+                                    label: l10n.statusDropped,
+                                    icon: const Icon(
+                                      Icons.cancel_rounded,
+                                      size: 18,
+                                      color: Color(0xFFEF4444),
+                                    ),
+                                    onPressed: () => _updateStatus(
+                                      context,
+                                      'DROPPED',
+                                      title,
+                                      progress,
+                                      totalEps,
+                                    ),
+                                  ),
+                                  GlassMenuItem(
+                                    label: l10n.editDetails,
+                                    icon: const Icon(
+                                      Icons.edit_outlined,
+                                      size: 18,
+                                    ),
+                                    onPressed: () => widget.onOpenEditEntryModal(title),
+                                  ),
+                                ],
+                                builder: (context, controller) {
+                                  return ClipOval(
+                                    child: BackdropFilter(
+                                      filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                                      child: Material(
+                                        color: Colors.transparent,
+                                        child: InkWell(
+                                          customBorder: const CircleBorder(),
+                                          onTap: controller.open,
+                                          child: Ink(
+                                            padding: const EdgeInsets.all(9),
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              color: isDark
+                                                  ? Colors.white.withValues(alpha: 0.08)
+                                                  : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+                                              border: Border.all(
+                                                color: isDark
+                                                    ? Colors.white.withValues(alpha: 0.18)
+                                                    : theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
+                                                width: 0.8,
+                                              ),
+                                            ),
+                                            child: Icon(
+                                              Icons.edit_outlined,
+                                              size: 20,
+                                              color: isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
                                   );
                                 },
-                              ),
-                              const SizedBox(width: 2),
-                              IconButton(
-                                tooltip: l10n.editInAnilist,
-                                icon: const Icon(Icons.edit_outlined, size: 22),
-                                onPressed: () => widget.onOpenEditEntryModal(title),
                               ),
                             ],
                           ],
@@ -1057,7 +1431,7 @@ class _AnimeDetailMobileLayoutState
                           ),
                         ],
 
-                        const SizedBox(height: 18),
+                        const SizedBox(height: 10),
 
                         // Episodes Content (Clean, direct & without clunky middle tab bar)
                         if (isTmdb)

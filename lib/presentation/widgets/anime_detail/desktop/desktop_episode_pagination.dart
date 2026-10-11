@@ -24,176 +24,141 @@ class DesktopEpisodePagination extends ConsumerWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Container(
-      margin: const EdgeInsets.only(top: 24, bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF14171B) : theme.colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: isDark ? Colors.white.withValues(alpha: 0.08) : theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
-        ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // Previous button
-          InkWell(
-            onTap: currentPage > 0
-                ? () => onPageChanged(currentPage - 1)
-                : null,
-            borderRadius: BorderRadius.circular(8),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(
-                color: currentPage > 0
-                    ? (isDark ? Colors.white.withValues(alpha: 0.08) : theme.colorScheme.surfaceContainerHighest)
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: currentPage > 0
-                      ? (isDark ? Colors.white.withValues(alpha: 0.15) : theme.colorScheme.outlineVariant.withValues(alpha: 0.4))
-                      : (isDark ? Colors.white.withValues(alpha: 0.04) : Colors.transparent),
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.chevron_left_rounded,
-                    size: 18,
-                    color: currentPage > 0
-                        ? (isDark ? Colors.white : theme.colorScheme.onSurface)
-                        : (isDark ? Colors.white30 : theme.colorScheme.outline.withValues(alpha: 0.5)),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    l10n.previous,
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w600,
-                      color: currentPage > 0
-                          ? (isDark ? Colors.white : theme.colorScheme.onSurface)
-                          : (isDark ? Colors.white30 : theme.colorScheme.outline.withValues(alpha: 0.5)),
-                    ),
-                  ),
-                ],
-              ),
+    return Padding(
+      padding: const EdgeInsets.only(top: 24, bottom: 12),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: isDark ? 0.35 : 0.6),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: theme.colorScheme.outlineVariant.withValues(alpha: isDark ? 0.2 : 0.4),
             ),
           ),
-
-          // Page chips or indicator
-          Row(
+          child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // Previous button (Icon-only)
+              IconButton(
+                onPressed: currentPage > 0
+                    ? () => onPageChanged(currentPage - 1)
+                    : null,
+                icon: const Icon(Icons.chevron_left_rounded),
+                iconSize: 20,
+                tooltip: l10n.previous,
+                style: IconButton.styleFrom(
+                  minimumSize: const Size(36, 36),
+                  padding: EdgeInsets.zero,
+                  visualDensity: VisualDensity.compact,
+                  foregroundColor: theme.colorScheme.onSurface,
+                  disabledForegroundColor: theme.colorScheme.onSurface.withValues(alpha: 0.25),
+                  backgroundColor: currentPage > 0
+                      ? theme.colorScheme.surfaceContainerHighest.withValues(alpha: isDark ? 0.4 : 0.7)
+                      : Colors.transparent,
+                ),
+              ),
+
+              const SizedBox(width: 6),
+
+              // Page chips or indicator
               if (totalPages <= 7) ...[
                 for (int p = 0; p < totalPages; p++) ...[
-                  InkWell(
-                    onTap: () => onPageChanged(p),
-                    borderRadius: BorderRadius.circular(6),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      margin: const EdgeInsets.symmetric(horizontal: 2),
-                      decoration: BoxDecoration(
-                        color: currentPage == p
-                            ? (isDark ? Colors.white.withValues(alpha: 0.16) : theme.colorScheme.primaryContainer)
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 2),
+                    child: InkWell(
+                      onTap: () => onPageChanged(p),
+                      borderRadius: BorderRadius.circular(16),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 180),
+                        constraints: const BoxConstraints.tightFor(width: 34, height: 34),
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
                           color: currentPage == p
-                              ? (isDark ? Colors.white.withValues(alpha: 0.28) : theme.colorScheme.primary.withValues(alpha: 0.4))
+                              ? theme.colorScheme.primary
                               : Colors.transparent,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: currentPage == p
+                                ? Colors.transparent
+                                : theme.colorScheme.outlineVariant.withValues(alpha: isDark ? 0.15 : 0.3),
+                          ),
                         ),
-                      ),
-                      child: Text(
-                        '${p + 1}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: currentPage == p ? FontWeight.w700 : FontWeight.w500,
-                          color: currentPage == p
-                              ? (isDark ? Colors.white : theme.colorScheme.primary)
-                              : (isDark ? Colors.white60 : theme.colorScheme.onSurfaceVariant),
+                        child: Text(
+                          '${p + 1}',
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: currentPage == p ? FontWeight.w700 : FontWeight.w500,
+                            color: currentPage == p
+                                ? theme.colorScheme.onPrimary
+                                : theme.colorScheme.onSurfaceVariant,
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ],
               ] else ...[
-                Text(
-                  l10n.pageOf(currentPage + 1, totalPages),
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  child: Text(
+                    l10n.pageOf(currentPage + 1, totalPages),
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w600,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
               ],
-              const SizedBox(width: 10),
+
+              const SizedBox(width: 8),
+
+              // Subtle Episode Range Badge
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
-                  color: isDark ? Colors.white.withValues(alpha: 0.06) : theme.colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(6),
+                  color: theme.colorScheme.primary.withValues(alpha: isDark ? 0.12 : 0.08),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: theme.colorScheme.primary.withValues(alpha: isDark ? 0.25 : 0.2),
+                  ),
                 ),
                 child: Text(
                   'EP ${startIndex + 1} - $endIndex',
                   style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                    color: isDark ? Colors.white54 : theme.colorScheme.onSurfaceVariant,
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.3,
+                    color: theme.colorScheme.primary,
                   ),
+                ),
+              ),
+
+              const SizedBox(width: 6),
+
+              // Next button (Icon-only)
+              IconButton(
+                onPressed: currentPage < totalPages - 1
+                    ? () => onPageChanged(currentPage + 1)
+                    : null,
+                icon: const Icon(Icons.chevron_right_rounded),
+                iconSize: 20,
+                tooltip: l10n.next,
+                style: IconButton.styleFrom(
+                  minimumSize: const Size(36, 36),
+                  padding: EdgeInsets.zero,
+                  visualDensity: VisualDensity.compact,
+                  foregroundColor: theme.colorScheme.onSurface,
+                  disabledForegroundColor: theme.colorScheme.onSurface.withValues(alpha: 0.25),
+                  backgroundColor: currentPage < totalPages - 1
+                      ? theme.colorScheme.surfaceContainerHighest.withValues(alpha: isDark ? 0.4 : 0.7)
+                      : Colors.transparent,
                 ),
               ),
             ],
           ),
-
-          // Next button
-          InkWell(
-            onTap: currentPage < totalPages - 1
-                ? () => onPageChanged(currentPage + 1)
-                : null,
-            borderRadius: BorderRadius.circular(8),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(
-                color: currentPage < totalPages - 1
-                    ? (isDark ? Colors.white.withValues(alpha: 0.08) : theme.colorScheme.surfaceContainerHighest)
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: currentPage < totalPages - 1
-                      ? (isDark ? Colors.white.withValues(alpha: 0.15) : theme.colorScheme.outlineVariant.withValues(alpha: 0.4))
-                      : (isDark ? Colors.white.withValues(alpha: 0.04) : Colors.transparent),
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    l10n.next,
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w600,
-                      color: currentPage < totalPages - 1
-                          ? (isDark ? Colors.white : theme.colorScheme.onSurface)
-                          : (isDark ? Colors.white30 : theme.colorScheme.outline.withValues(alpha: 0.5)),
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Icon(
-                    Icons.chevron_right_rounded,
-                    size: 18,
-                    color: currentPage < totalPages - 1
-                        ? (isDark ? Colors.white : theme.colorScheme.onSurface)
-                        : (isDark ? Colors.white30 : theme.colorScheme.outline.withValues(alpha: 0.5)),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

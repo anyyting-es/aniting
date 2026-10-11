@@ -10,6 +10,7 @@ class DesktopListEpisodeCard extends ConsumerStatefulWidget {
   final String formattedTitle;
   final String? fallbackCoverImage;
   final VoidCallback onTap;
+  final Widget? trailingActions;
 
   const DesktopListEpisodeCard({
     super.key,
@@ -18,6 +19,7 @@ class DesktopListEpisodeCard extends ConsumerStatefulWidget {
     required this.formattedTitle,
     required this.fallbackCoverImage,
     required this.onTap,
+    this.trailingActions,
   });
 
   @override
@@ -109,40 +111,8 @@ class _DesktopListEpisodeCardState extends ConsumerState<DesktopListEpisodeCard>
                                   )
                                 : _buildPlaceholder(),
 
-                          // Local downloaded badge
-                          if (widget.ep.isDownloaded)
-                            Positioned(
-                              top: 6,
-                              right: 6,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withValues(alpha: 0.8),
-                                  borderRadius: BorderRadius.circular(5),
-                                  border: Border.all(
-                                    color: Colors.greenAccent.withValues(alpha: 0.6),
-                                    width: 0.8,
-                                  ),
-                                ),
-                                child: const Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.check_circle_rounded, color: Colors.greenAccent, size: 10),
-                                    SizedBox(width: 3.5),
-                                    Text(
-                                      'LOCAL',
-                                      style: TextStyle(
-                                        color: Colors.greenAccent,
-                                        fontSize: 9,
-                                        fontWeight: FontWeight.w800,
-                                        letterSpacing: 0.5,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            )
-                          else if (widget.ep.isDownloading)
+                          // Downloading progress badge
+                          if (widget.ep.isDownloading)
                             Positioned(
                               top: 6,
                               right: 6,
@@ -221,15 +191,33 @@ class _DesktopListEpisodeCardState extends ConsumerState<DesktopListEpisodeCard>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(
-                          widget.formattedTitle,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            color: _isHovered ? theme.colorScheme.primary : titleColor,
-                          ),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                widget.formattedTitle,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                  color: _isHovered ? theme.colorScheme.primary : titleColor,
+                                ),
+                              ),
+                            ),
+                            if (widget.ep.isDownloaded) ...[
+                              const SizedBox(width: 8),
+                              Icon(
+                                Icons.check_circle_rounded,
+                                size: 15,
+                                color: Colors.greenAccent.shade400,
+                              ),
+                            ],
+                            if (widget.trailingActions != null) ...[
+                              const SizedBox(width: 8),
+                              widget.trailingActions!,
+                            ],
+                          ],
                         ),
                         const SizedBox(height: 6),
                         Text(

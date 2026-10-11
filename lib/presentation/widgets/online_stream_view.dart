@@ -12,7 +12,10 @@ import 'package:seanime_app/presentation/providers/active_downloads_provider.dar
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/screens/extensions_marketplace_screen.dart';
 import 'package:seanime_app/presentation/screens/video_player_screen.dart';
+import 'package:flutter/services.dart';
+import 'package:g1455/g1455.dart';
 import 'package:seanime_app/presentation/widgets/episode_item_widget.dart';
+import 'package:seanime_app/presentation/widgets/anime_detail/mobile/anime_detail_manual_mapping_sheet.dart';
 
 class OnlineStreamViewController {
   _OnlineStreamViewState? _state;
@@ -67,6 +70,7 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
 
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
   bool _isSearchExpanded = false;
 
   static const int _listPageSize = 24;
@@ -109,6 +113,7 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
   @override
   void dispose() {
     _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
@@ -213,340 +218,18 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
   Future<void> _showManualMappingSheet(BuildContext context) async {
     if (_selectedProvider == null) return;
 
-    final repo = ref.read(repositoryProvider);
-    final theme = Theme.of(context);
-    final l10n = ref.read(translationsProvider);
-    final prov = _selectedProvider!;
-
-    final defaultQuery = widget.animeDetails?.romajiTitle ??
-        widget.animeDetails?.englishTitle ??
-        widget.animeDetails?.title ??
-        '';
-
-    final textController = TextEditingController(text: defaultQuery);
-    bool isSearching = false;
-    List<OnlinestreamSearchResult> searchResults = [];
-    String? searchError;
-    bool hasSearched = false;
-
-    await showModalBottomSheet(
+    showGlassSheet(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: theme.colorScheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      builder: (ctx) => AnimeDetailManualMappingSheet(
+        provider: _selectedProvider!,
+        mediaId: widget.mediaId,
+        animeDetails: widget.animeDetails,
+        isDubbed: _isDubbed,
+        currentMappedAnimeId: _currentMappedAnimeId,
+        onMappingSuccess: () {
+          if (mounted) _loadEpisodes();
+        },
       ),
-      builder: (sheetContext) {
-        return StatefulBuilder(
-          builder: (ctx, setModalState) {
-            Future<void> doSearch([String? customQuery]) async {
-              final query = (customQuery ?? textController.text).trim();
-              if (query.isEmpty) return;
-              if (customQuery != null) {
-                textController.text = customQuery;
-              }
-
-              setModalState(() {
-                isSearching = true;
-                searchError = null;
-                hasSearched = true;
-              });
-
-              try {
-                final results = await repo.searchOnlinestreamManual(
-                  provider: prov.id,
-                  query: query,
-                  dubbed: _isDubbed,
-                );
-                setModalState(() {
-                  searchResults = results;
-                  isSearching = false;
-                  if (results.isEmpty) {
-                    searchError = l10n.noAnimeFoundInProvider(prov.name, query);
-                  }
-                });
-              } catch (e) {
-                setModalState(() {
-                  searchError = '${l10n.error}: $e';
-                  isSearching = false;
-                });
-              }
-            }
-
-            return Padding(
-              padding: EdgeInsets.only(
-                left: 16,
-                right: 16,
-                top: 16,
-                bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
-              ),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxHeight: MediaQuery.of(ctx).size.height * 0.82,
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Sheet Header
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.primaryContainer,
-                            borderRadius: BorderRadius.circular((context.themeColors.borderRadius * 0.75).clamp(0.0, 14.0)),
-                          ),
-                          child: Icon(Icons.link_rounded, color: theme.colorScheme.primary, size: 20),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '${l10n.linkWith} ${prov.name}',
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                              ),
-                              Text(
-                                l10n.searchAndSelectInProvider,
-                                style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12),
-                              ),
-                            ],
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close_rounded),
-                          onPressed: () => Navigator.pop(sheetContext),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Existing mapping notice
-                    if (_currentMappedAnimeId != null) ...[
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.secondaryContainer.withValues(alpha: 0.5),
-                          borderRadius: BorderRadius.circular((context.themeColors.borderRadius * 0.75).clamp(0.0, 14.0)),
-                          border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.check_circle_rounded, size: 16, color: theme.colorScheme.primary),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                '${l10n.linkedTo} $_currentMappedAnimeId',
-                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            TextButton.icon(
-                              onPressed: () async {
-                                final messenger = ScaffoldMessenger.of(context);
-                                final ok = await repo.removeOnlinestreamMapping(
-                                  provider: prov.id,
-                                  mediaId: widget.mediaId,
-                                );
-                                if (sheetContext.mounted) Navigator.pop(sheetContext);
-                                if (ok && mounted) {
-                                  messenger.showSnackBar(
-                                    SnackBar(content: Text(l10n.linkRemoved)),
-                                  );
-                                  _loadEpisodes();
-                                }
-                              },
-                              icon: const Icon(Icons.link_off_rounded, size: 14),
-                              label: Text(l10n.unlink, style: const TextStyle(fontSize: 11)),
-                              style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                    ],
-
-                    // Search input & button
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: textController,
-                            autofocus: true,
-                            decoration: InputDecoration(
-                              hintText: l10n.searchAnimePlaceholder,
-                              prefixIcon: const Icon(Icons.search_rounded, size: 18),
-                              isDense: true,
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(context.themeColors.borderRadius)),
-                            ),
-                            onSubmitted: (_) => doSearch(),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        FilledButton.icon(
-                          onPressed: isSearching ? null : () => doSearch(),
-                          icon: isSearching
-                              ? const SizedBox(
-                                  width: 14,
-                                  height: 14,
-                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                                )
-                              : const Icon(Icons.search_rounded, size: 18),
-                          label: Text(l10n.search),
-                          style: FilledButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-
-                    // Title suggestion chips
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          if (widget.animeDetails?.romajiTitle != null)
-                            Padding(
-                              padding: const EdgeInsets.only(right: 6),
-                              child: ActionChip(
-                                label: Text(widget.animeDetails!.romajiTitle!, style: const TextStyle(fontSize: 11)),
-                                visualDensity: VisualDensity.compact,
-                                onPressed: () => doSearch(widget.animeDetails!.romajiTitle),
-                              ),
-                            ),
-                          if (widget.animeDetails?.englishTitle != null)
-                            Padding(
-                              padding: const EdgeInsets.only(right: 6),
-                              child: ActionChip(
-                                label: Text(widget.animeDetails!.englishTitle!, style: const TextStyle(fontSize: 11)),
-                                visualDensity: VisualDensity.compact,
-                                onPressed: () => doSearch(widget.animeDetails!.englishTitle),
-                              ),
-                            ),
-                          if (widget.animeDetails?.aniZipData?.titles['es'] != null)
-                            Padding(
-                              padding: const EdgeInsets.only(right: 6),
-                              child: ActionChip(
-                                label: Text('ES: ${widget.animeDetails!.aniZipData!.titles['es']}', style: const TextStyle(fontSize: 11)),
-                                visualDensity: VisualDensity.compact,
-                                onPressed: () => doSearch(widget.animeDetails!.aniZipData!.titles['es']),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                    const Divider(height: 18),
-
-                    // Results or Loading
-                    Expanded(
-                      child: isSearching
-                          ? Center(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const CircularProgressIndicator(),
-                                  const SizedBox(height: 12),
-                                  Text(l10n.searchingProviderCatalog, style: const TextStyle(fontSize: 12)),
-                                ],
-                              ),
-                            )
-                          : searchError != null
-                              ? Center(
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(16),
-                                    child: Text(
-                                      searchError!,
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        color: theme.colorScheme.onSurfaceVariant,
-                                      ),
-                                    ),
-                                  ),
-                                )
-                              : !hasSearched
-                                  ? Center(
-                                      child: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(Icons.search_rounded, size: 40, color: theme.colorScheme.outline),
-                                          const SizedBox(height: 8),
-                                          Text(
-                                            l10n.searchPromptMapping,
-                                            textAlign: TextAlign.center,
-                                            style: const TextStyle(fontSize: 12),
-                                          ),
-                                        ],
-                                      ),
-                                    )
-                                  : ListView.separated(
-                                      itemCount: searchResults.length,
-                                      separatorBuilder: (_, _) => const SizedBox(height: 6),
-                                      itemBuilder: (ctx, i) {
-                                        final res = searchResults[i];
-                                        final isCurrentlySelected = _currentMappedAnimeId == res.id;
-
-                                        return Container(
-                                          decoration: BoxDecoration(
-                                            color: isCurrentlySelected
-                                                ? theme.colorScheme.primaryContainer.withValues(alpha: 0.3)
-                                                : theme.colorScheme.surfaceContainerLow,
-                                            borderRadius: BorderRadius.circular(context.themeColors.borderRadius),
-                                            border: Border.all(
-                                              color: isCurrentlySelected
-                                                  ? theme.colorScheme.primary
-                                                  : theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
-                                            ),
-                                          ),
-                                          child: ListTile(
-                                            title: Text(
-                                              res.title,
-                                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                                            ),
-                                            subtitle: Text(
-                                              'ID: ${res.id}',
-                                              style: TextStyle(fontSize: 11, color: theme.colorScheme.onSurfaceVariant),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                            trailing: FilledButton.tonal(
-                                              onPressed: () async {
-                                                final messenger = ScaffoldMessenger.of(context);
-                                                final ok = await repo.setOnlinestreamManualMapping(
-                                                  provider: prov.id,
-                                                  mediaId: widget.mediaId,
-                                                  animeId: res.id,
-                                                );
-                                                if (sheetContext.mounted) Navigator.pop(sheetContext);
-                                                if (ok && mounted) {
-                                                  messenger.showSnackBar(
-                                                    SnackBar(
-                                                      content: Text('${l10n.animeLinkedSuccess} "${res.title}"'),
-                                                      behavior: SnackBarBehavior.floating,
-                                                    ),
-                                                  );
-                                                  _loadEpisodes();
-                                                }
-                                              },
-                                              child: Text(isCurrentlySelected ? l10n.linked : l10n.link, style: const TextStyle(fontSize: 12)),
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                    ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
     );
   }
 
@@ -859,37 +542,33 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
               // Search episodes input
               if (_episodes.isNotEmpty) ...[
                 const SizedBox(height: 8),
-                TextField(
+                GlassTextField.search(
                   controller: _searchController,
-                  style: const TextStyle(fontSize: 13),
-                  decoration: InputDecoration(
-                    hintText: l10n.filterEpisodesHint,
-                    isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(context.themeColors.borderRadius),
-                      borderSide: BorderSide(
-                        color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
-                      ),
-                    ),
-                    prefixIcon: const Icon(Icons.search, size: 18),
-                    suffixIcon: _searchQuery.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.clear, size: 16),
-                            onPressed: () {
-                              _searchController.clear();
-                              setState(() {
-                                _searchQuery = '';
-                                _currentListPage = 0;
-                              });
-                            },
-                          )
-                        : null,
-                  ),
+                  placeholder: l10n.filterEpisodesHint,
                   onChanged: (val) => setState(() {
                     _searchQuery = val;
                     _currentListPage = 0;
                   }),
+                  trailing: _searchQuery.isNotEmpty
+                      ? ClipOval(
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () {
+                                _searchController.clear();
+                                setState(() {
+                                  _searchQuery = '';
+                                  _currentListPage = 0;
+                                });
+                              },
+                              child: const Padding(
+                                padding: EdgeInsets.all(4),
+                                child: Icon(Icons.close_rounded, size: 16),
+                              ),
+                            ),
+                          ),
+                        )
+                      : null,
                 ),
               ],
             ],
@@ -904,24 +583,34 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
           Expanded(
             child: Row(
               children: [
-                Flexible(
-                  child: Text(
-                    '${l10n.episodes} (${_selectedProvider?.name ?? ''})',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                Text(
+                  l10n.episodes,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16.5,
                   ),
                 ),
                 if (!_isLoadingEpisodes) ...[
-                  const SizedBox(width: 6),
-                  Text(
-                    '• ${filtered.length} ${l10n.availableCount}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      color: theme.colorScheme.primary,
-                      fontWeight: FontWeight.w600,
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: theme.brightness == Brightness.dark
+                          ? Colors.white.withValues(alpha: 0.1)
+                          : theme.colorScheme.primaryContainer.withValues(alpha: 0.6),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '${filtered.length}',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.bold,
+                        color: theme.brightness == Brightness.dark
+                            ? Colors.white70
+                            : theme.colorScheme.primary,
+                      ),
                     ),
                   ),
                 ],
@@ -940,7 +629,20 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
               ),
               tooltip: l10n.search,
               onPressed: () {
-                setState(() => _isSearchExpanded = !_isSearchExpanded);
+                HapticFeedback.lightImpact();
+                setState(() {
+                  _isSearchExpanded = !_isSearchExpanded;
+                  if (_isSearchExpanded) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (mounted) _searchFocusNode.requestFocus();
+                    });
+                  } else {
+                    _searchFocusNode.unfocus();
+                    _searchController.clear();
+                    _searchQuery = '';
+                    _currentListPage = 0;
+                  }
+                });
               },
             ),
             const SizedBox(width: 2),
@@ -963,41 +665,49 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
         ],
       ),
 
-      if (widget.hideTopBar && _isSearchExpanded && _episodes.isNotEmpty) ...[
-        const SizedBox(height: 8),
-        TextField(
-          controller: _searchController,
-          style: const TextStyle(fontSize: 13),
-          decoration: InputDecoration(
-            hintText: l10n.filterEpisodesHint,
-            isDense: true,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(context.themeColors.borderRadius),
-              borderSide: BorderSide(
-                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
-              ),
-            ),
-            prefixIcon: const Icon(Icons.search, size: 18),
-            suffixIcon: _searchQuery.isNotEmpty
-                ? IconButton(
-                    icon: const Icon(Icons.clear, size: 16),
-                    onPressed: () {
-                      _searchController.clear();
-                      setState(() {
-                        _searchQuery = '';
-                        _currentListPage = 0;
-                      });
-                    },
-                  )
-                : null,
-          ),
-          onChanged: (val) => setState(() {
-            _searchQuery = val;
-            _currentListPage = 0;
-          }),
+      // Animated search bar with accordion push-down / slide-up
+      ClipRect(
+        child: AnimatedSize(
+          duration: const Duration(milliseconds: 280),
+          curve: Curves.fastOutSlowIn,
+          alignment: Alignment.topCenter,
+          child: (widget.hideTopBar && _isSearchExpanded && _episodes.isNotEmpty)
+              ? Padding(
+                  padding: const EdgeInsets.only(top: 8, bottom: 4),
+                  child: GlassTextField.search(
+                    controller: _searchController,
+                    focusNode: _searchFocusNode,
+                    placeholder: l10n.filterEpisodesHint,
+                    autofocus: false,
+                    onChanged: (val) => setState(() {
+                      _searchQuery = val;
+                      _currentListPage = 0;
+                    }),
+                    trailing: _searchQuery.isNotEmpty
+                        ? ClipOval(
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: () {
+                                  _searchController.clear();
+                                  setState(() {
+                                    _searchQuery = '';
+                                    _currentListPage = 0;
+                                  });
+                                },
+                                child: const Padding(
+                                  padding: EdgeInsets.all(4),
+                                  child: Icon(Icons.close_rounded, size: 16),
+                                ),
+                              ),
+                            ),
+                          )
+                        : null,
+                  ),
+                )
+              : const SizedBox.shrink(),
         ),
-      ],
+      ),
 
         const SizedBox(height: 4),
 

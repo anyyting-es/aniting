@@ -782,6 +782,7 @@ abstract class AppTranslations {
   String get closeModeSelector;
   String get closeSourceSelector;
   String get audioHeading;
+  String get dubbing;
   String get audioDubbedFull;
   String get exploreMarketplaceMore;
   String loadingEpisodesFrom(String provider);
@@ -873,6 +874,7 @@ abstract class AppTranslations {
   String get rewatch;
   String continueEpisodeNumbered(int number);
   String get startWatching;
+  String get watchEpisodeOne;
   String get startReading;
   String continueChapterNumbered(int number);
 
@@ -1038,6 +1040,7 @@ abstract class AppTranslations {
   String markedAsWatched(int ep);
   String markedAsUnwatched(int ep);
   String get downloadEpisode;
+  String get editDetails;
 
   // Liquid Glass Effects Preference
   String get glassEffectSettingTitle;
@@ -1070,5 +1073,6 @@ abstract class AppTranslations {
   String get movieDetails;
   String get streamingComingSoon;
   String episodeRuntime(int minutes);
+  String optionsCountLabel(int count);
 }
 

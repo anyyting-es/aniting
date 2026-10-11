@@ -1651,6 +1651,8 @@ class SpanishTranslations implements AppTranslations {
   @override
   String get audioHeading => 'AUDIO';
   @override
+  String get dubbing => 'Doblaje';
+  @override
   String get audioDubbedFull => 'Doblado (Dub)';
   @override
   String get exploreMarketplaceMore => 'Explorar más extensiones en la tienda';
@@ -1825,6 +1827,8 @@ class SpanishTranslations implements AppTranslations {
   String continueEpisodeNumbered(int number) => 'Continuar Ep. $number';
   @override
   String get startWatching => 'Comenzar a ver';
+  @override
+  String get watchEpisodeOne => 'Ver episodio 1';
   @override
   String get startReading => 'Empezar a leer';
   @override
@@ -2027,9 +2031,9 @@ class SpanishTranslations implements AppTranslations {
   @override
   String get animeSectionDesc => 'Mostrar pestaña de anime en la navegación';
   @override
-  String get showsSection => 'Sección de Series y Películas (TMDB)';
+  String get showsSection => 'Sección de Series (TMDB)';
   @override
-  String get showsSectionDesc => 'Mostrar pestaña de series y películas TMDB en la navegación';
+  String get showsSectionDesc => 'Mostrar pestaña de series TMDB en la navegación';
   @override
   String get mangaSection => 'Sección de Manga';
   @override
@@ -2037,7 +2041,7 @@ class SpanishTranslations implements AppTranslations {
   @override
   String get cannotDisableBothSections => 'Debes mantener al menos una sección habilitada';
   @override
-  String get shows => 'Shows / Series';
+  String get shows => 'Shows';
   @override
   String get exploreAnime => 'Anime (AniList)';
   @override
@@ -2152,6 +2156,8 @@ class SpanishTranslations implements AppTranslations {
   String markedAsUnwatched(int ep) => 'Episodio $ep marcado como no visto';
   @override
   String get downloadEpisode => 'Descargar episodio';
+  @override
+  String get editDetails => 'Editar detalles...';
 
   // Liquid Glass Effects Preference
   @override
@@ -2209,6 +2215,8 @@ class SpanishTranslations implements AppTranslations {
   @override
   String get streamingComingSoon => 'Las fuentes de streaming para series estarán disponibles próximamente';
   @override
-  String episodeRuntime(int minutes) => '${minutes} min';
+  String episodeRuntime(int minutes) => '$minutes min';
+  @override
+  String optionsCountLabel(int count) => '$count opciones';
 }
 

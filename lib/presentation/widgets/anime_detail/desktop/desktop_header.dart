@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
@@ -79,6 +80,7 @@ class _DesktopHeaderState extends ConsumerState<DesktopHeader> {
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.end,
       mainAxisSize: MainAxisSize.min,
       children: [
         // ─── 1. Main Anime Title (32px Bold) ───
@@ -167,55 +169,60 @@ class _DesktopHeaderState extends ConsumerState<DesktopHeader> {
                 ),
               ),
 
-            // Status Pill (with subtle edit pencil icon, no neon glow)
+            // Status Pill (with subtle edit pencil icon, iOS liquid glass pill)
             if (displayStatus != null)
-              Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: widget.onEditStatus,
-                  borderRadius: BorderRadius.circular(14),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? Colors.white.withValues(alpha: 0.08)
-                          : Colors.white,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: isDark
-                            ? Colors.white.withValues(alpha: 0.16)
-                            : Colors.black.withValues(alpha: 0.10),
-                        width: 0.8,
-                      ),
-                      boxShadow: isDark
-                          ? null
-                          : [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.04),
-                                blurRadius: 4,
-                                offset: const Offset(0, 1),
-                              ),
-                            ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.edit_outlined,
-                          size: 13.5,
-                          color: metaColor.withValues(alpha: 0.85),
-                        ),
-                        const SizedBox(width: 5),
-                        Text(
-                          displayStatus,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: metaColor,
-                            shadows: textShadows,
+              ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: widget.onEditStatus,
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? Colors.white.withValues(alpha: 0.10)
+                              : theme.colorScheme.primary.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: isDark
+                                ? Colors.white.withValues(alpha: 0.22)
+                                : theme.colorScheme.primary.withValues(alpha: 0.20),
+                            width: 0.8,
                           ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: (isDark ? Colors.black : theme.colorScheme.primary)
+                                  .withValues(alpha: 0.06),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
-                      ],
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.edit_outlined,
+                              size: 13.5,
+                              color: metaColor.withValues(alpha: 0.85),
+                            ),
+                            const SizedBox(width: 5),
+                            Text(
+                              displayStatus,
+                              style: TextStyle(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w700,
+                                color: metaColor,
+                                shadows: textShadows,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ),

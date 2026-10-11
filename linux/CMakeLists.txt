@@ -113,6 +113,12 @@ install(DIRECTORY "${NATIVE_ASSETS_DIR}"
    COMPONENT Runtime
    OPTIONAL)
 
+# Bundle seanime server on install/release if present
+set(BACKEND_BIN "${CMAKE_CURRENT_SOURCE_DIR}/../backend/seanime")
+if(EXISTS "${BACKEND_BIN}")
+  install(PROGRAMS "${BACKEND_BIN}" DESTINATION "${CMAKE_INSTALL_PREFIX}" COMPONENT Runtime)
+endif()
+
 # Fully re-copy the assets directory on each build to avoid having stale files
 # from a previous install.
 set(FLUTTER_ASSET_DIR_NAME "flutter_assets")

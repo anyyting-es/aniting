@@ -6,6 +6,7 @@ import 'package:seanime_app/data/models/tmdb_models.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 
 import 'tmdb_episode_card.dart';
+import 'tmdb_season_posters_view.dart';
 import 'tmdb_season_selector.dart';
 
 class TmdbEpisodesView extends ConsumerStatefulWidget {
@@ -34,6 +35,7 @@ class _TmdbEpisodesViewState extends ConsumerState<TmdbEpisodesView> {
   List<TmdbEpisode> _episodes = [];
   bool _isGridView = true;
   bool _isSortAscending = true;
+  bool _showSeasonPosters = false;
 
   @override
   void initState() {
@@ -181,23 +183,79 @@ class _TmdbEpisodesViewState extends ConsumerState<TmdbEpisodesView> {
 
     final iconPack = ref.watch(iconPackProvider);
 
+    final hasSeasons = !details.isMovie && details.seasons.isNotEmpty;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        // ─── Header Controls: Season Selector & View Mode Buttons ───
+        // ─── Block 1: Seasons (Clickable title toggles between name chips and posters) ───
+        if (hasSeasons) ...[
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () => setState(() => _showSeasonPosters = !_showSeasonPosters),
+              borderRadius: BorderRadius.circular(8),
+              hoverColor: isDark
+                  ? Colors.white.withValues(alpha: 0.08)
+                  : Colors.black.withValues(alpha: 0.05),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      l10n.seasons,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : theme.colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Icon(
+                      _showSeasonPosters
+                          ? Icons.view_headline_rounded
+                          : Icons.photo_library_outlined,
+                      size: 18,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          if (!_showSeasonPosters)
+            TmdbSeasonSelector(
+              seasons: details.seasons,
+              selectedSeasonNumber: _selectedSeasonNumber,
+              onSeasonSelected: _onSeasonSelected,
+              isMovie: details.isMovie,
+            )
+          else
+            TmdbSeasonPostersView(
+              seasons: details.seasons,
+              selectedSeasonNumber: _selectedSeasonNumber,
+              onSeasonSelected: _onSeasonSelected,
+              fallbackCoverUrl: details.posterUrl ?? widget.fallbackCoverImage,
+            ),
+          const SizedBox(height: 28),
+        ],
+
+        // ─── Block 2: Episodes (Header with title and controls) ───
         Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Expanded(
-              child: TmdbSeasonSelector(
-                seasons: details.seasons,
-                selectedSeasonNumber: _selectedSeasonNumber,
-                onSeasonSelected: _onSeasonSelected,
-                isMovie: details.isMovie,
+            Text(
+              l10n.episodes,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : theme.colorScheme.onSurface,
               ),
             ),
-            const SizedBox(width: 8),
+            const Spacer(),
 
             // Toggle Grid / List View
             IconButton(

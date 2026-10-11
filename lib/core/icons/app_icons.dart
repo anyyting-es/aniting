@@ -428,5 +428,8 @@ class AppIcons {
 
   static IconData voice([AppIconPack? pack]) =>
       _isLucide(pack) ? LucideIcons.mic : Icons.record_voice_over_rounded;
+
+  static IconData edit([AppIconPack? pack]) =>
+      _isLucide(pack) ? LucideIcons.pencil : Icons.edit_rounded;
 }
 

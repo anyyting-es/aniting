@@ -67,7 +67,7 @@ void main() {
       expect(find.text('Gogoanime'), findsOneWidget);
     });
 
-    testWidgets('DesktopEpisodeContextMenu opens GlassCard on secondary click', (tester) async {
+    testWidgets('DesktopEpisodeMenuButton renders GlassMenuAnchor for three-dots menu', (tester) async {
       final ep = DesktopEpisodeItemData(
         number: 1,
         title: 'Episode 1',
@@ -84,30 +84,20 @@ void main() {
           ],
           child: MaterialApp(
             home: Scaffold(
-              body: DesktopEpisodeContextMenu(
+              body: DesktopEpisodeMenuButton(
                 ep: ep,
                 mediaId: 101,
                 details: null,
                 onEpisodeClicked: (_) {},
-                child: const SizedBox(
-                  key: Key('episode-card'),
-                  width: 200,
-                  height: 120,
-                  child: Text('Card Content'),
-                ),
               ),
             ),
           ),
         ),
       );
 
-      // Perform secondary click (right-click)
-      await tester.tap(find.byKey(const Key('episode-card')), buttons: 2);
-      await tester.pumpAndSettle();
-
-      // GlassCard should be displayed in the general dialog
-      expect(find.byType(GlassCard), findsOneWidget);
-      expect(find.byIcon(Icons.play_arrow_rounded), findsOneWidget);
+      // GlassMenuAnchor should be present
+      expect(find.byType(GlassMenuAnchor), findsOneWidget);
+      expect(find.byIcon(Icons.more_horiz_rounded), findsOneWidget);
     });
 
     testWidgets('EditEntryStatusDropdown uses GlassPopoverAnchor without extra BackdropFilter', (tester) async {

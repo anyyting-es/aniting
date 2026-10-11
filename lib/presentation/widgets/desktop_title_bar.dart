@@ -9,7 +9,11 @@ class DesktopTitleBarVisibleNotifier extends Notifier<bool> {
   @override
   bool build() => true;
 
-  void setVisible(bool visible) => state = visible;
+  void setVisible(bool visible) {
+    if (state != visible) {
+      state = visible;
+    }
+  }
 }
 
 final desktopTitleBarVisibleProvider =
@@ -20,7 +24,11 @@ class DesktopTitleBarBrightnessNotifier extends Notifier<Brightness?> {
   @override
   Brightness? build() => null;
 
-  void setBrightness(Brightness? brightness) => state = brightness;
+  void setBrightness(Brightness? brightness) {
+    if (state != brightness) {
+      state = brightness;
+    }
+  }
 }
 
 final desktopTitleBarBrightnessOverrideProvider =

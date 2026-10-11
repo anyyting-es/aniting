@@ -8,15 +8,12 @@ import 'package:seanime_app/presentation/providers/active_downloads_provider.dar
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'desktop_episode_models.dart';
 
-/// Envoltura para tarjetas de episodios en desktop que añade un menú contextual
-/// de vidrio líquido `g1455` (GlassCard) bajo demanda al hacer clic derecho (secondary click).
-/// No monta instancias persistentes de OverlayPortal dentro de GridView para evitar colisiones
-/// de semántica y layouts.
-class DesktopEpisodeContextMenu extends ConsumerWidget {
+/// Menú de tres puntitos con Liquid Glass `g1455` (GlassMenuAnchor)
+/// que se desprende suavemente del botón con la animación fluida de iOS 26.
+class DesktopEpisodeMenuButton extends ConsumerWidget {
   final DesktopEpisodeItemData ep;
   final int mediaId;
   final AnimeDetails? details;
-  final Widget child;
   final ValueChanged<DesktopEpisodeItemData> onEpisodeClicked;
   final Future<void> Function({
     required int episodeNumber,
@@ -25,12 +22,11 @@ class DesktopEpisodeContextMenu extends ConsumerWidget {
   })? onOpenTorrentSelector;
   final VoidCallback? onRefreshLocal;
 
-  const DesktopEpisodeContextMenu({
+  const DesktopEpisodeMenuButton({
     super.key,
     required this.ep,
     required this.mediaId,
     required this.details,
-    required this.child,
     required this.onEpisodeClicked,
     this.onOpenTorrentSelector,
     this.onRefreshLocal,
@@ -108,205 +104,112 @@ class DesktopEpisodeContextMenu extends ConsumerWidget {
     }
   }
 
-  void _showContextMenu(
-    BuildContext context,
-    WidgetRef ref,
-    Offset position,
-  ) {
-    final l10n = ref.read(translationsProvider);
-    final mediaQuery = MediaQuery.of(context);
-    final screenSize = mediaQuery.size;
-
-    const menuWidth = 230.0;
-    final itemCount =
-        2 + (ep.isDownloaded || onOpenTorrentSelector != null ? 1 : 0);
-    final menuHeight = (itemCount * 44.0) + 16.0;
-
-    final left = (position.dx + menuWidth > screenSize.width - 16)
-        ? (screenSize.width - menuWidth - 16).clamp(16.0, screenSize.width)
-        : position.dx.clamp(16.0, screenSize.width - menuWidth - 16);
-
-    final top = (position.dy + menuHeight > screenSize.height - 16)
-        ? (screenSize.height - menuHeight - 16).clamp(16.0, screenSize.height)
-        : position.dy.clamp(16.0, screenSize.height - menuHeight - 16);
-
-    showGeneralDialog(
-      context: context,
-      barrierDismissible: true,
-      barrierLabel: 'Dismiss',
-      barrierColor: Colors.black.withValues(alpha: 0.12),
-      transitionDuration: const Duration(milliseconds: 220),
-      pageBuilder: (dialogCtx, anim1, anim2) {
-        return Stack(
-          children: [
-            Positioned(
-              left: left,
-              top: top,
-              child: Material(
-                color: Colors.transparent,
-                child: GlassCard(
-                  borderRadius: BorderRadius.circular(16),
-                  padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
-                  child: SizedBox(
-                    width: menuWidth,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _DesktopContextMenuItem(
-                          icon: Icons.play_arrow_rounded,
-                          label: l10n.playEpisode,
-                          onTap: () {
-                            Navigator.pop(dialogCtx);
-                            onEpisodeClicked(ep);
-                          },
-                        ),
-                        _DesktopContextMenuItem(
-                          icon: ep.isWatched
-                              ? Icons.remove_done_rounded
-                              : Icons.check_circle_outline_rounded,
-                          label: ep.isWatched
-                              ? l10n.markAsUnwatched
-                              : l10n.markAsWatched,
-                          onTap: () {
-                            Navigator.pop(dialogCtx);
-                            _toggleWatched(context, ref);
-                          },
-                        ),
-                        if (ep.isDownloaded)
-                          _DesktopContextMenuItem(
-                            icon: Icons.delete_outline_rounded,
-                            label: l10n.deleteDownload,
-                            isDestructive: true,
-                            onTap: () {
-                              Navigator.pop(dialogCtx);
-                              _deleteDownloaded(context, ref);
-                            },
-                          )
-                        else if (onOpenTorrentSelector != null)
-                          _DesktopContextMenuItem(
-                            icon: Icons.download_rounded,
-                            label: l10n.downloadEpisode,
-                            onTap: () {
-                              Navigator.pop(dialogCtx);
-                              onOpenTorrentSelector!(
-                                episodeNumber: ep.number,
-                                episodeTitle: ep.title,
-                                aniDBEpisode: ep.aniDBEpisode,
-                              );
-                            },
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-      transitionBuilder: (context, anim1, anim2, child) {
-        return FadeTransition(
-          opacity: CurvedAnimation(parent: anim1, curve: Curves.easeOut),
-          child: ScaleTransition(
-            alignment: Alignment.topLeft,
-            scale: Tween<double>(begin: 0.88, end: 1.0).animate(
-              CurvedAnimation(parent: anim1, curve: Curves.easeOutBack),
-            ),
-            child: child,
-          ),
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onSecondaryTapDown: (details) =>
-          _showContextMenu(context, ref, details.globalPosition),
-      child: child,
+    final l10n = ref.watch(translationsProvider);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    final items = <GlassMenuItem>[
+      GlassMenuItem(
+        label: l10n.playEpisode,
+        icon: const Icon(Icons.play_arrow_rounded, size: 18),
+        onPressed: () => onEpisodeClicked(ep),
+      ),
+      GlassMenuItem(
+        label: ep.isWatched ? l10n.markAsUnwatched : l10n.markAsWatched,
+        icon: Icon(
+          ep.isWatched
+              ? Icons.remove_done_rounded
+              : Icons.check_circle_outline_rounded,
+          size: 18,
+        ),
+        onPressed: () => _toggleWatched(context, ref),
+      ),
+      if (ep.isDownloaded)
+        GlassMenuItem(
+          label: l10n.deleteDownload,
+          isDestructive: true,
+          icon: const Icon(Icons.delete_outline_rounded, size: 18),
+          onPressed: () => _deleteDownloaded(context, ref),
+        )
+      else if (onOpenTorrentSelector != null)
+        GlassMenuItem(
+          label: l10n.downloadEpisode,
+          icon: const Icon(Icons.download_rounded, size: 18),
+          onPressed: () => onOpenTorrentSelector!(
+            episodeNumber: ep.number,
+            episodeTitle: ep.title,
+            aniDBEpisode: ep.aniDBEpisode,
+          ),
+        ),
+    ];
+
+    return GlassMenuAnchor(
+      width: 220,
+      items: items,
+      builder: (context, controller) {
+        return _EpisodeThreeDotsButton(
+          isOpen: controller.isOpen,
+          onTap: controller.open,
+          isDark: isDark,
+        );
+      },
     );
   }
 }
 
-class _DesktopContextMenuItem extends StatefulWidget {
-  final IconData icon;
-  final String label;
+class _EpisodeThreeDotsButton extends StatefulWidget {
+  final bool isOpen;
   final VoidCallback onTap;
-  final bool isDestructive;
+  final bool isDark;
 
-  const _DesktopContextMenuItem({
-    required this.icon,
-    required this.label,
+  const _EpisodeThreeDotsButton({
+    required this.isOpen,
     required this.onTap,
-    this.isDestructive = false,
+    required this.isDark,
   });
 
   @override
-  State<_DesktopContextMenuItem> createState() =>
-      _DesktopContextMenuItemState();
+  State<_EpisodeThreeDotsButton> createState() =>
+      _EpisodeThreeDotsButtonState();
 }
 
-class _DesktopContextMenuItemState extends State<_DesktopContextMenuItem> {
+class _EpisodeThreeDotsButtonState extends State<_EpisodeThreeDotsButton> {
   bool _isHovered = false;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final labelColor = DefaultTextStyle.of(context).style.color ??
-        (isDark ? Colors.white : Colors.black87);
-    final foregroundColor = widget.isDestructive
-        ? theme.colorScheme.error
-        : (_isHovered ? theme.colorScheme.primary : labelColor);
+    final isHoveredOrOpen = _isHovered || widget.isOpen;
 
     return MouseRegion(
+      cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: widget.onTap,
-        behavior: HitTestBehavior.opaque,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 120),
-          margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          decoration: BoxDecoration(
-            color: _isHovered
-                ? (widget.isDestructive
-                    ? theme.colorScheme.error.withValues(alpha: 0.12)
-                    : (isDark
-                        ? Colors.white.withValues(alpha: 0.12)
-                        : Colors.black.withValues(alpha: 0.07)))
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                widget.icon,
-                size: 18,
-                color: widget.isDestructive
-                    ? theme.colorScheme.error
-                    : (_isHovered
-                        ? theme.colorScheme.primary
-                        : (isDark ? Colors.white.withValues(alpha: 0.85) : Colors.black87)),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  widget.label,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: _isHovered ? FontWeight.w600 : FontWeight.w500,
-                    color: foregroundColor,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: widget.onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 140),
+            padding: const EdgeInsets.all(5),
+            decoration: BoxDecoration(
+              color: isHoveredOrOpen
+                  ? (widget.isDark
+                      ? Colors.white.withValues(alpha: 0.12)
+                      : Colors.black.withValues(alpha: 0.08))
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Icon(
+              Icons.more_horiz_rounded,
+              size: 19,
+              color: isHoveredOrOpen
+                  ? theme.colorScheme.primary
+                  : (widget.isDark ? Colors.white70 : Colors.black54),
+            ),
           ),
         ),
       ),

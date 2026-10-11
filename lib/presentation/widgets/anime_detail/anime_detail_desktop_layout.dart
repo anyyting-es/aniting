@@ -214,21 +214,24 @@ class _AnimeDetailDesktopLayoutState
     final mediaTitle = widget.details?.displayTitle(titleLang) ?? 'Anime';
     final providerName = _selectedProvider?.name ?? 'Online';
 
-    Navigator.of(context, rootNavigator: true).push(
-      VideoPlayerScreen.route(
-        mediaId: widget.mediaId,
-        videoUrl: '',
-        title: mediaTitle,
-        episodeTitle: epTitle,
-        episodeNumber: epNum,
-        videoSource: providerName,
-        onlineStreamProvider: _selectedProvider?.id,
-        onlineStreamDubbed: _isDubbed,
-        onlineStreamServer: null,
-        animeDetails: widget.details,
-        aniZipData: widget.aniZipData ?? widget.details?.aniZipData,
-      ),
-    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Navigator.of(context, rootNavigator: true).push(
+        VideoPlayerScreen.route(
+          mediaId: widget.mediaId,
+          videoUrl: '',
+          title: mediaTitle,
+          episodeTitle: epTitle,
+          episodeNumber: epNum,
+          videoSource: providerName,
+          onlineStreamProvider: _selectedProvider?.id,
+          onlineStreamDubbed: _isDubbed,
+          onlineStreamServer: null,
+          animeDetails: widget.details,
+          aniZipData: widget.aniZipData ?? widget.details?.aniZipData,
+        ),
+      );
+    });
   }
 
   void _onEpisodeClicked(DesktopEpisodeItemData ep) {
@@ -245,19 +248,22 @@ class _AnimeDetailDesktopLayoutState
           : null;
       final sourceDesc = fileName != null ? 'Local • $fileName' : l10n.localLibrary;
 
-      Navigator.of(context, rootNavigator: true).push(
-        VideoPlayerScreen.route(
-          mediaId: widget.mediaId,
-          videoUrl: streamUrl,
-          title: animeTitle,
-          episodeTitle: ep.title,
-          episodeNumber: ep.number,
-          videoSource: sourceDesc,
-          isLocalFile: true,
-          animeDetails: widget.details,
-          aniZipData: widget.aniZipData ?? widget.details?.aniZipData,
-        ),
-      );
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        Navigator.of(context, rootNavigator: true).push(
+          VideoPlayerScreen.route(
+            mediaId: widget.mediaId,
+            videoUrl: streamUrl,
+            title: animeTitle,
+            episodeTitle: ep.title,
+            episodeNumber: ep.number,
+            videoSource: sourceDesc,
+            isLocalFile: true,
+            animeDetails: widget.details,
+            aniZipData: widget.aniZipData ?? widget.details?.aniZipData,
+          ),
+        );
+      });
       return;
     }
 
@@ -293,19 +299,22 @@ class _AnimeDetailDesktopLayoutState
             : 'http://${serverManager.host}:${serverManager.port}/api/v1/mediastream?mediaId=${widget.mediaId}&episodeNumber=${localEp.episodeNumber}';
         final fileName = localEp.localFilePath?.split(RegExp(r'[/\\]')).last;
 
-        Navigator.of(context, rootNavigator: true).push(
-          VideoPlayerScreen.route(
-            mediaId: widget.mediaId,
-            videoUrl: streamUrl,
-            title: animeTitle,
-            episodeTitle: localEp.displayTitle.isNotEmpty ? localEp.displayTitle : l10n.episodeNumber(nextEp),
-            episodeNumber: nextEp,
-            videoSource: fileName != null ? 'Local • $fileName' : l10n.localLibrary,
-            isLocalFile: true,
-            animeDetails: widget.details,
-            aniZipData: widget.aniZipData ?? widget.details?.aniZipData,
-          ),
-        );
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          Navigator.of(context, rootNavigator: true).push(
+            VideoPlayerScreen.route(
+              mediaId: widget.mediaId,
+              videoUrl: streamUrl,
+              title: animeTitle,
+              episodeTitle: localEp.displayTitle.isNotEmpty ? localEp.displayTitle : l10n.episodeNumber(nextEp),
+              episodeNumber: nextEp,
+              videoSource: fileName != null ? 'Local • $fileName' : l10n.localLibrary,
+              isLocalFile: true,
+              animeDetails: widget.details,
+              aniZipData: widget.aniZipData ?? widget.details?.aniZipData,
+            ),
+          );
+        });
         return;
       }
     } catch (_) {}
@@ -357,14 +366,18 @@ class _AnimeDetailDesktopLayoutState
 
     final coverUrl =
         widget.initialEntry?.coverImage ?? widget.details?.coverImage;
+    final aniZipFanart = widget.aniZipData?.fanartUrl ?? widget.details?.aniZipData?.fanartUrl;
+    final hasAniZipFanart = !isTmdb && aniZipFanart != null && aniZipFanart.isNotEmpty;
     final hasRealBanner = (widget.details?.bannerImage != null &&
             widget.details!.bannerImage!.isNotEmpty) ||
         (widget.initialEntry?.bannerImage != null &&
             widget.initialEntry!.bannerImage!.isNotEmpty);
-    final bannerUrl = hasRealBanner
-        ? (widget.details?.bannerImage ?? widget.initialEntry?.bannerImage)
-        : coverUrl;
-    final isBlurredCover = !hasRealBanner && coverUrl != null;
+    final bannerUrl = hasAniZipFanart
+        ? aniZipFanart
+        : (hasRealBanner
+            ? (widget.details?.bannerImage ?? widget.initialEntry?.bannerImage)
+            : (widget.aniZipData?.bannerUrl ?? coverUrl));
+    final isBlurredCover = !hasAniZipFanart && !hasRealBanner && coverUrl != null;
 
     final score = widget.details?.score ?? widget.initialEntry?.score;
     final format = widget.details?.format ?? widget.initialEntry?.format ?? 'TV';
@@ -485,9 +498,12 @@ class _AnimeDetailDesktopLayoutState
                       ),
                     ),
 
-                    // ─── Top Poster & Metadata Section ───
+                    // Breathing space so top hero fanart/backdrop is widely visible
+                    const SizedBox(height: 72),
+
+                    // ─── Top Poster & Metadata Section (Anchored at bottom, rising upwards) ───
                     Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         // Left: Cover Poster Only (Clean, no bottom metadata pushing layout down)
                         DesktopSidebar(
@@ -534,7 +550,8 @@ class _AnimeDetailDesktopLayoutState
                       onlineEnabled: onlineEnabled,
                       torrentEnabled: torrentEnabled,
                       isTmdb: isTmdb,
-                      isMovie: isMovie,
+                      userStatus: userStatus,
+                      totalEpisodes: totalEpisodes,
                       onPlayNext: () => _handlePlayNext(progress),
                       onOpenEditEntryModal: widget.onOpenEditEntryModal,
                       onTabChanged: widget.onTabChanged,

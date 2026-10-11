@@ -1,5 +1,8 @@
 # Seanime App - Agents & Architecture Guide
 
+> **LIQUID GLASS EFFECTS RULE (g1455)**:
+> For liquid glass effects use this: Read https://g1455.plugfox.dev/SKILL.md and follow it.
+
 > **RELEASE CHANGELOG SIMPLICITY RULE (CRITICAL - MANDATORY)**:
 > Release changelogs must **ALWAYS be simple, clean, and concise**.
 > - **NEVER** include microscopic, tedious, or trivial implementation details that end users do not care about (e.g., do **NOT** write: *"Eliminado el brillo fosforescente del indicador deslizante"*, *"Pestañas de los 7 días visibles en frame 0"*, *"Ajustado padding a 4px"*, *"Cambiado color del dot"*).
@@ -92,27 +95,29 @@ seanime_app/
 │           │   ├── desktop/          # Modular desktop subcomponents
 │           │   │   ├── desktop_sidebar.dart            # Clean vertical poster with smooth hover scale
 │           │   │   ├── desktop_header.dart             # Title, metadata row (Format, Status, Eps, Studio, Score), genres & synopsis
-│           │   │   ├── desktop_action_bar.dart         # Play pill, bookmark, share, trailer, links & source pills
+│           │   │   ├── desktop_action_bar.dart         # Liquid Glass expanded play pill ('Ver episodio 1'/'Continuar Ep. X'), g1455 GlassMenuAnchor detachment on edit pencil for quick status changes, share, trailer, clean floating tracker icons & source pills
 │           │   │   ├── desktop_hero_banner.dart        # Panoramic top banner with scroll-driven fade-to-black
 │           │   │   ├── desktop_tab_button.dart         # Desktop navigation tab button with clean white indicator
-│           │   │   ├── desktop_episodes_tab.dart       # Episodes coordinator (online/torrent, filters & views)
+│           │   │   ├── desktop_episodes_tab.dart       # Episodes coordinator (online/torrent/local, memoized 0-lag episode lists, stable card reconciliation, filters, liquid glass capsules for dub/grid/sort controls & 30-ep pagination)
 │           │   │   ├── desktop_episode_models.dart     # DesktopEpisodeItemData model
-│           │   │   ├── desktop_episode_context_menu.dart # On-demand GlassCard context menu on secondary tap (Play, Watched toggle, Torrent download/delete)
-│           │   │   ├── desktop_episode_grid_card.dart  # 16:9 grid episode card with dimmed watched opacity
-│           │   │   ├── desktop_episode_list_card.dart  # 2-column list episode card with dimmed watched opacity
-│           │   │   ├── desktop_episode_pagination.dart # 20-episode pagination bar (next/prev & page chips)
+│           │   │   ├── desktop_episode_context_menu.dart # Three-dots (DesktopEpisodeMenuButton) with g1455 GlassMenuAnchor fluid detachment (Play, Watched toggle, Torrent download/delete)
+│           │   │   ├── desktop_episode_grid_card.dart  # 16:9 grid episode card with dimmed watched opacity, clean green download icon and three-dots menu button
+│           │   │   ├── desktop_episode_list_card.dart  # 2-column list episode card with dimmed watched opacity, clean green download icon and three-dots menu button
+│           │   │   ├── desktop_episode_pagination.dart # 30-episode centered theme-aware pill pagination with icon-only navigation
 │           │   │   ├── desktop_characters_tab.dart     # Character cards grid with gentle neutral hover
 │           │   │   ├── desktop_relations_tab.dart      # Relations grid with clean covers & below labels
 │           │   │   └── desktop_recommendations_tab.dart# Recommendations grid with clean covers & titles below
 │           │   ├── mobile/           # Modular mobile subcomponents
 │           │   │   ├── anime_detail_mode_popup.dart    # Expressive spring-animated mode popup (Online/Torrent/Local)
 │           │   │   ├── anime_detail_source_popup.dart  # Expressive spring-animated online sources popup
-│           │   │   └── anime_detail_advanced_sheet.dart# Full modal sheet for advanced options (Sub/Dub, link, reload)
+│           │   │   ├── anime_detail_advanced_sheet.dart# g1455 Liquid Glass modal sheet (showGlassSheet) with adaptive dubbing switch, manual link and cache reload actions
+│           │   │   └── anime_detail_manual_mapping_sheet.dart# g1455 Liquid Glass modal sheet (showGlassSheet) with GlassTextField.search and GlassButton for anime provider linking
 │           │   ├── tmdb/             # Modular TMDB subcomponents
 │           │   │   ├── tmdb_season_selector.dart       # Horizontal season chip bar with episode count badges & specials handling
-│           │   │   ├── tmdb_episode_card.dart          # 16:9 episode thumbnail card with runtime, score badge, title, air date & synopsis (grid/list)
-│           │   │   └── tmdb_episodes_view.dart         # TMDB season & episode coordinator with sort/view toggles & TMDB notice
-│           │   ├── anime_detail_mobile_layout.dart  # Compact vertical mobile layout with inline Action Hub
+│           │   │   ├── tmdb_season_posters_view.dart   # Horizontal season posters carousel with 2:3 covers & episode count badges
+│           │   │   ├── tmdb_episode_card.dart          # 16:9 episode thumbnail card with runtime, clean formatted title & synopsis (grid/list)
+│           │   │   └── tmdb_episodes_view.dart         # TMDB season & episode coordinator with separate Seasons/Episodes blocks and toggle
+│           │   ├── anime_detail_mobile_layout.dart  # Compact vertical mobile layout with iOS Liquid Glass play pill, mode & source chips, action buttons, and fluid GlassMenuAnchor for status edit
 │           │   └── anime_detail_tv_layout.dart      # 10-foot remote / D-Pad focused TV layout
 │           ├── manga_detail/         # Modular adaptive layouts for manga details
 │           │   ├── manga_detail_desktop_layout.dart # Desktop layout coordinator (~280 lines)
@@ -127,7 +132,7 @@ seanime_app/
 │           │   └── manga_detail_mobile_layout.dart  # Compact vertical mobile layout (~380 lines)
 │           ├── compact_search_bar.dart # Sleek, semi-transparent top search bar for feeds
 │           ├── top_status_bar_glass.dart # Ambient frosted top glass protection
-│           ├── media_type_toggle.dart # Non-wrapping pill toggle for Anime / Manga
+│           ├── media_type_toggle.dart # Non-wrapping iOS Liquid Glass segmented toggle for Anime / Shows / Manga with g1455 GlassSegmentedControl and bounded width
 │           ├── explore_hero_carousel.dart # Featured banner carousel with gradients & indicators
 │           ├── calendar/             # Modular adaptive widgets for airing calendar
 │           │   ├── calendar_day_tabs.dart     # Full-width day tabs header with animated sliding line indicator
@@ -166,9 +171,11 @@ seanime_app/
 │           │   └── extensions_desktop_layout.dart # Modern Seanime-style desktop layout for extensions (segmented pill, repo header, multi-column grid)
 │           ├── player/               # Modular video player UI components
 │           │   ├── layouts/          # Responsive desktop & mobile player layouts
+│           │   ├── controls/         # PlayerBottomBar, TimelineSlider, VolumeSlider & PlayerGestureOverlay (horizontal drag-seek with top-center pill & minimal floating vertical indicators)
 │           │   ├── panels/           # Player info panel, source card & next episode card
 │           │   │   ├── player_info_panel.dart    # YouTube-style info panel & side drawer
-│           │   │   ├── player_source_card.dart   # Interactive playback source card & modal switcher
+│           │   │   ├── player_source_card.dart   # iOS Liquid Glass (g1455 GlassCard) playback source pill
+│           │   │   ├── player_source_selector_sheet.dart # iOS Liquid Glass (showGlassSheet) server & provider selector
 │           │   │   └── next_episode_card.dart    # 16:9 next episode card
 │           │   ├── services/         # Playback coordinator, shader service, episode resolver, player progress manager, player window manager, player source controller
 │           │   │   ├── player_playback_coordinator.dart # Dual-engine orchestration (ExoPlayer + libmpv)
@@ -226,9 +233,14 @@ seanime_app/
     - **Service & Caching (`tmdb_service.dart`)**: Features memory caching for show details and individual season episodes (`_detailsCache`, `_seasonEpisodesCache`). Fetches TV details (`/tv/{id}`) or Movie details (`/movie/{id}`), and paginated season episodes (`/tv/{id}/season/{season_number}`).
     - **Adaptive UI & Components (`widgets/anime_detail/tmdb/`)**:
       - `TmdbSeasonSelector`: Horizontal chip selector supporting Season 1..N and Specials (Season 0) with episode count badges.
-      - `TmdbEpisodeCard`: 16:9 thumbnail display matching the exact AniList desktop cards styling (`EP X. Title`, subtle hover scale, score badge, duration badge, overview, grid and 2-column list layouts).
-      - `TmdbEpisodesView`: Coordinator managing season selection, reverse order sorting, and grid/list view toggles using unified AppIcons and layout tokens.
-    - **Desktop, Mobile & TV Layout Integration**: `DesktopActionBar`, `AnimeDetailDesktopLayout`, `AnimeDetailMobileLayout`, and `AnimeDetailTvLayout` conditionally render TMDB episode views and TMDB web share actions instead of anime extension controls. Prioritizes localized titles over Japanese raw titles for TMDB entries.
+      - `TmdbSeasonPostersView`: Dedicated horizontal season poster carousel with 2:3 cover thumbnails, active season highlight, and episode count badges.
+      - `TmdbEpisodeCard`: 16:9 thumbnail display matching the exact AniList desktop cards styling (`EP X. Title`, subtle hover scale, duration badge, overview, grid and 2-column list layouts). Score badges are cleanly omitted per user request.
+      - `TmdbEpisodesView`: Coordinator managing two distinct blocks: clickable **Seasons** heading (toggling between name chips and poster cards) and **Episodes** heading with grid/list and order sort toggles.
+    - **Desktop Hero Banner & AniZip Fanart Integration**:
+      - `DesktopHeroBanner`: Extended from 480px to 640px height with gentle cinematic gradients so background art extends far down and stays visible.
+      - `AniZipData`: Parsed `images` collection providing `fanartUrl`, `bannerUrl`, and `clearlogoUrl`.
+      - **Metadata Bottom Alignment**: In `AnimeDetailDesktopLayout`, the poster and metadata row is anchored at the bottom (`CrossAxisAlignment.end` and `MainAxisAlignment.end`), rising upwards from the base above the action bar, leaving the top hero fanart unobstructed.
+      - **AniList Episodes**: Features a clean "Episodios" section header with page indicator and controls matching the TMDB design.
 - **Airing Calendar Responsive Overhaul (`airing_calendar_screen.dart`, `widgets/calendar/`)**:
   - **Full-Width Header with Animated Sliding Line Indicator (`calendar_day_tabs.dart`)**:
     - The date header spans 100% of the screen width, rendering the 7-day schedule with `M/d` on top (15.5px bold) and weekday below (`Hoy`/`Today`, `Lun`, `Mar`, etc. or `Próx. Lun`).
@@ -1600,7 +1612,31 @@ Inspired by **Plezy** (`edde746/plezy`), the player focuses on high performance,
   - **Menú Contextual de Episodios en Escritorio (`desktop_episode_context_menu.dart`)**:
     - Reestructurado el diálogo contextual para usar directamente `GlassCard` de `g1455` con animación spring pop (`Curves.easeOutBack`, escala 0.88 ➔ 1.0).
     - Eliminado el envoltorio redundante de `BackdropFilter` y fondos sólidos opacos (`alpha: 0.94`), adaptando el contraste tanto para Modo Claro (texto `black87` con micro-hover `alpha: 0.07`) como Modo Oscuro (texto `white` con micro-hover `alpha: 0.12`).
-  - **Modal de Edición y Popovers (`edit_entry_modal.dart`, `edit_entry_status_dropdown.dart`)**:
-    - Eliminados `BackdropFilter` redundantes que causaban sobre-desenfoque y contenedores blancos opacos de alto alpha que ocultaban la refracción líquida.
-    - Los selectores de estado ahora aprovechan directamente la superficie `GlassSurface` provista por `GlassPopoverAnchor`.
+
+### 7.23. Empaquetado Automático del Servidor en Linux y Optimización de Transición del Reproductor (2026-10-10)
+- **Empaquetado Automático del Servidor Go en Linux (`linux/CMakeLists.txt`)**:
+  - Añadida regla de instalación de CMake (`install(PROGRAMS "${BACKEND_BIN}" DESTINATION "${CMAKE_INSTALL_PREFIX}")`) que empaqueta automáticamente el binario compilado `backend/seanime` dentro del bundle de release y debug cada vez que se ejecuta `flutter build linux` o `flutter run -d linux`.
+  - Garantiza que la aplicación siempre encuentre el servidor local al lado del ejecutable sin requerir pasos manuales de copia.
+- **Transición Fluida de Entrada y Salida del Reproductor (`video_player_screen.dart`, `player_window_manager.dart`, `player_playback_coordinator.dart`)**:
+  - Salida instantánea del reproductor (`Navigator.pop()` en frame 0) sin esperas sincrónicas por guardado de progreso o llamadas a la API.
+  - La sincronización de sesión, guardado de base de datos local y liberación de texturas de libmpv ahora ocurren en segundo plano de manera no bloqueante.
+  - Corrección de curvas en `AnimatedSwitcher` de la lista de episodios para evitar desbordes de opacidad y asegurar animaciones consistentes a 60/120 FPS.
+
+### 7.24. Optimización de Apertura y Desmontaje de Textura EGL / libmpv estilo Plezy (2026-10-10)
+- **Inicialización No-Bloqueante del Reproductor (`video_player_screen.dart`)**:
+  - La instanciación pesada de libmpv y la creación de contextos EGL se difieren al primer frame posterior (`WidgetsBinding.instance.addPostFrameCallback`), permitiendo que la navegación hacia la pantalla de video ocurra instantáneamente a 120 FPS sin trabar el hilo de UI de GTK.
+- **Desacoplamiento Limpio de Textura EGL al Salir (`player_viewport.dart`)**:
+  - Se añade `isExiting` a `PlayerViewport`. Al pulsar regresar, el widget `Video` se desmonta de inmediato en el frame 0, evitando que el compositor de Wayland/GTK compita con la textura GL mientras se ejecuta el pop.
+- **Alineación de Decodificación por Hardware con Plezy (`mpv_player_service.dart`)**:
+  - En Linux, se cambió `hwdec` a `auto-safe,auto` (en lugar de listas exhaustivas con fallback forzado que ejecutaban sondeos síncronos de controladores GPU híbridos).
+  - En archivos locales, se redujo `demuxer-lavf-probesize` a 1MB y `analyzeduration` a 1.0s, logrando inicio inmediato sin congelamiento de análisis en el hilo de reproducción.
+
+### 7.25. Eliminación de Micro-Lag en Navegación y Transición de Episodios (2026-10-10)
+- **Desacoplamiento de Clic de Entrada al Reproductor (`anime_detail_desktop_layout.dart`)**:
+  - Se diferió la llamada de `Navigator.push` en `_onEpisodeClicked`, `_handlePlayNext` y `_playOnlineEpisode` dentro de `WidgetsBinding.instance.addPostFrameCallback`. Esto garantiza que los efectos de hover/ripple y el microtask del puntero de GTK/Wayland concluyan su renderizado en 0ms antes de montar la nueva ruta, erradicando por completo el tirón al hacer clic.
+- **Transición Ligera y Sin Rebote en Modos de Episodios (`desktop_episodes_tab.dart`)**:
+  - Se sustituyó la escala con rebote elástico (`ScaleTransition` con `Curves.easeOutBack`) y el `Stack` superpuesto en `AnimatedSwitcher` por un `FadeTransition` liviano (150ms) y directo, aislando el árbol con `RepaintBoundary` para evitar re-layouts y re-renders costosos de tarjetas al alternar entre Online, Torrent o Cuadrícula/Lista.
+- **Aislamiento de Capa de Renderizado en Hero Banner (`desktop_hero_banner.dart`)**:
+  - Envoltura del fondo panorámico con filtros de desenfoque (`ImageFiltered`) en un `RepaintBoundary` dedicado para impedir que las operaciones de composición de la GPU afecten las transiciones de rutas.
+
 

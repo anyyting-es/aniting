@@ -87,21 +87,15 @@ class _AnimeDetailSourcePopupState extends ConsumerState<AnimeDetailSourcePopup>
   }
 
   void _openAdvancedSheet() {
-    final parentTheme = Theme.of(context);
     Navigator.pop(context);
-    showModalBottomSheet(
+    showGlassSheet(
       context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (ctx) => Theme(
-        data: parentTheme,
-        child: AnimeDetailAdvancedSheet(
-          selectedProvider: _selectedProv,
-          isDubbed: widget.isDubbed,
-          onToggleDubbed: widget.onToggleDubbed,
-          onOpenManualMapping: widget.onOpenManualMapping,
-          onRefreshCache: widget.onRefreshCache,
-        ),
+      builder: (ctx) => AnimeDetailAdvancedSheet(
+        selectedProvider: _selectedProv,
+        isDubbed: widget.isDubbed,
+        onToggleDubbed: widget.onToggleDubbed,
+        onOpenManualMapping: widget.onOpenManualMapping,
+        onRefreshCache: widget.onRefreshCache,
       ),
     );
   }

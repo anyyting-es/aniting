@@ -730,7 +730,14 @@ class PlayerPlaybackCoordinator {
     _cancelExoSubs();
     _cancelMpvSubs();
     exoService?.dispose();
-    mpvService?.dispose();
+    final mpv = mpvService;
+    if (mpv != null) {
+      Future.microtask(() async {
+        try {
+          await mpv.dispose();
+        } catch (_) {}
+      });
+    }
     exoService = null;
     mpvService = null;
   }

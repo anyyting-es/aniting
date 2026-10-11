@@ -55,6 +55,7 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
   String _searchQuery = '';
   bool _isSearchVisible = false;
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
   EpisodeViewMode _localViewMode = EpisodeViewMode.list;
 
   @override
@@ -70,6 +71,7 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
   @override
   void dispose() {
     _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
@@ -228,7 +230,12 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
                 onPressed: () {
                   setState(() {
                     _isSearchVisible = !_isSearchVisible;
-                    if (!_isSearchVisible) {
+                    if (_isSearchVisible) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (mounted) _searchFocusNode.requestFocus();
+                      });
+                    } else {
+                      _searchFocusNode.unfocus();
                       _searchQuery = '';
                       _searchController.clear();
                       _currentListPage = 0;
@@ -261,7 +268,8 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
             const SizedBox(height: 6),
             TextField(
               controller: _searchController,
-              autofocus: true,
+              focusNode: _searchFocusNode,
+              autofocus: false,
               decoration: InputDecoration(
                 hintText: l10n.searchEpisodePlaceholder,
                 prefixIcon: const Icon(Icons.search, size: 18),

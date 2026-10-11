@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:g1455/g1455.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/theme/app_theme_colors.dart';
@@ -542,40 +543,8 @@ class EpisodeListItem extends ConsumerWidget {
                           ),
                         ],
 
-                        // Local downloaded badge on thumbnail
-                        if (isDownloaded)
-                          Positioned(
-                            top: 6,
-                            right: 6,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
-                              decoration: BoxDecoration(
-                                color: Colors.black.withValues(alpha: 0.82),
-                                borderRadius: BorderRadius.circular(5),
-                                border: Border.all(
-                                  color: Colors.greenAccent.withValues(alpha: 0.7),
-                                  width: 0.8,
-                                ),
-                              ),
-                              child: const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.check_circle_rounded, color: Colors.greenAccent, size: 10),
-                                  SizedBox(width: 3.5),
-                                  Text(
-                                    'LOCAL',
-                                    style: TextStyle(
-                                      color: Colors.greenAccent,
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: 0.5,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          )
-                        else if (isDownloading)
+                        // Downloading progress badge
+                        if (isDownloading)
                           Positioned(
                             top: 6,
                             right: 6,
@@ -660,6 +629,76 @@ class EpisodeListItem extends ConsumerWidget {
                             ),
                           ),
                         ],
+                        const Spacer(),
+                        if (isDownloaded) ...[
+                          Icon(
+                            Icons.check_circle_rounded,
+                            size: 14,
+                            color: Colors.greenAccent.shade400,
+                          ),
+                          const SizedBox(width: 4),
+                        ],
+                        if (onPlay != null || onDownload != null || onDelete != null)
+                          GlassMenuAnchor(
+                            width: 210,
+                            items: [
+                              if (onPlay != null || onTap != null)
+                                GlassMenuItem(
+                                  label: l10n.playEpisode,
+                                  icon: const Icon(Icons.play_arrow_rounded, size: 18),
+                                  onPressed: onPlay ?? onTap,
+                                ),
+                              if (onDownload != null && !isDownloaded)
+                                GlassMenuItem(
+                                  label: l10n.downloadEpisode,
+                                  icon: const Icon(Icons.download_rounded, size: 18),
+                                  onPressed: onDownload,
+                                ),
+                              if (onDelete != null && isDownloaded)
+                                GlassMenuItem(
+                                  label: l10n.deleteDownload,
+                                  isDestructive: true,
+                                  icon: const Icon(Icons.delete_outline_rounded, size: 18),
+                                  onPressed: onDelete,
+                                ),
+                              GlassMenuItem(
+                                label: l10n.details,
+                                icon: const Icon(Icons.info_outline_rounded, size: 18),
+                                onPressed: () {
+                                  showEpisodeDetailModal(
+                                    context: context,
+                                    episodeNumber: episodeNumber,
+                                    title: title,
+                                    originalTitle: originalTitle,
+                                    synopsis: synopsis,
+                                    image: image,
+                                    fallbackImage: fallbackImage,
+                                    duration: duration,
+                                    airDate: airDate,
+                                    rating: rating,
+                                    badgeText: badgeText,
+                                    onPlay: onPlay ?? onTap,
+                                    onDownload: onDownload,
+                                    onDelete: onDelete,
+                                  );
+                                },
+                              ),
+                            ],
+                            builder: (context, controller) {
+                              return InkWell(
+                                onTap: controller.open,
+                                borderRadius: BorderRadius.circular(12),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(3.0),
+                                  child: Icon(
+                                    Icons.more_horiz_rounded,
+                                    size: 18,
+                                    color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.75),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
                       ],
                     ),
                     const SizedBox(height: 4),

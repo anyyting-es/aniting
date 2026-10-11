@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:g1455/g1455.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
+import 'package:seanime_app/core/icons/app_icons.dart';
 
 class MediaTypeToggle extends ConsumerWidget {
   final String selected;
@@ -23,110 +25,87 @@ class MediaTypeToggle extends ConsumerWidget {
     if (!showAnime && !showShows && !showManga) return const SizedBox.shrink();
 
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final l10n = ref.watch(translationsProvider);
+    final iconPack = ref.watch(iconPackProvider);
 
-    return Container(
-      height: 38,
-      padding: const EdgeInsets.all(3),
-      decoration: BoxDecoration(
-        color: theme.brightness == Brightness.dark
-            ? (theme.colorScheme.surfaceContainerHighest.computeLuminance() < 0.05
-                ? const Color(0xFF16161C)
-                : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.65))
-            : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: theme.brightness == Brightness.dark
-              ? const Color(0xFF2E2E38)
-              : theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
-          width: 1.0,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (showAnime)
-            _buildSegment(
-              context: context,
-              label: l10n.anime,
-              icon: Icons.play_circle_outline_rounded,
-              isSelected: selected == 'ANIME',
-              onTap: () => onSelected('ANIME'),
-            ),
-          if (showShows)
-            _buildSegment(
-              context: context,
-              label: l10n.shows,
-              icon: Icons.movie_filter_rounded,
-              isSelected: selected == 'SHOWS',
-              onTap: () => onSelected('SHOWS'),
-            ),
-          if (showManga)
-            _buildSegment(
-              context: context,
-              label: l10n.manga,
-              icon: Icons.menu_book_rounded,
-              isSelected: selected == 'MANGA',
-              onTap: () => onSelected('MANGA'),
-            ),
-        ],
-      ),
-    );
-  }
+    final types = <String>[
+      if (showAnime) 'ANIME',
+      if (showShows) 'SHOWS',
+      if (showManga) 'MANGA',
+    ];
 
-  Widget _buildSegment({
-    required BuildContext context,
-    required String label,
-    required IconData icon,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    final theme = Theme.of(context);
+    int selectedIndex = types.indexOf(selected);
+    if (selectedIndex < 0) selectedIndex = 0;
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 220),
-          curve: Curves.easeOutCubic,
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? theme.colorScheme.primaryContainer
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                icon,
-                size: 15,
-                color: isSelected
-                    ? theme.colorScheme.onPrimaryContainer
-                    : theme.colorScheme.onSurfaceVariant,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                softWrap: false,
-                maxLines: 1,
-                overflow: TextOverflow.visible,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                  color: isSelected
-                      ? theme.colorScheme.onPrimaryContainer
-                      : theme.colorScheme.onSurfaceVariant,
-                  letterSpacing: -0.2,
+    final double toggleWidth = types.length * 84.0;
+
+    return SizedBox(
+      width: toggleWidth,
+      child: GlassSegmentedControl(
+        selectedIndex: selectedIndex,
+        onSelected: (idx) {
+          if (idx >= 0 && idx < types.length) {
+            onSelected(types[idx]);
+          }
+        },
+        trackColor: isDark
+            ? Colors.white.withValues(alpha: 0.08)
+            : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        thumbColor: isDark
+            ? theme.colorScheme.surfaceContainerHighest
+            : Colors.white,
+        segments: types.map((type) {
+          final isCurrent = selected == type;
+          final IconData icon;
+          final String label;
+
+          switch (type) {
+            case 'SHOWS':
+              icon = Icons.movie_filter_rounded;
+              label = l10n.shows;
+              break;
+            case 'MANGA':
+              icon = Icons.menu_book_rounded;
+              label = l10n.manga;
+              break;
+            case 'ANIME':
+            default:
+              icon = AppIcons.play(iconPack);
+              label = l10n.anime;
+              break;
+          }
+
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  icon,
+                  size: 13.5,
+                  color: isCurrent
+                      ? (isDark ? Colors.white : Colors.black87)
+                      : (isDark ? Colors.white60 : Colors.black54),
                 ),
-              ),
-            ],
-          ),
-        ),
+                const SizedBox(width: 4),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: isCurrent ? FontWeight.bold : FontWeight.w600,
+                    color: isCurrent
+                        ? (isDark ? Colors.white : Colors.black87)
+                        : (isDark ? Colors.white60 : Colors.black54),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }).toList(),
       ),
     );
   }
 }
+

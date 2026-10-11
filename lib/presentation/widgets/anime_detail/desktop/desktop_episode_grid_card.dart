@@ -8,6 +8,7 @@ class DesktopGridEpisodeCard extends StatefulWidget {
   final String formattedTitle;
   final String? fallbackCoverImage;
   final VoidCallback onTap;
+  final Widget? trailingActions;
 
   const DesktopGridEpisodeCard({
     super.key,
@@ -16,6 +17,7 @@ class DesktopGridEpisodeCard extends StatefulWidget {
     required this.formattedTitle,
     required this.fallbackCoverImage,
     required this.onTap,
+    this.trailingActions,
   });
 
   @override
@@ -88,40 +90,8 @@ class _DesktopGridEpisodeCardState extends State<DesktopGridEpisodeCard> {
                               )
                             : _buildPlaceholder(),
 
-                        // Local downloaded badge
-                        if (widget.ep.isDownloaded)
-                          Positioned(
-                            top: 6,
-                            right: 6,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
-                              decoration: BoxDecoration(
-                                color: Colors.black.withValues(alpha: 0.8),
-                                borderRadius: BorderRadius.circular(5),
-                                border: Border.all(
-                                  color: Colors.greenAccent.withValues(alpha: 0.6),
-                                  width: 0.8,
-                                ),
-                              ),
-                              child: const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.check_circle_rounded, color: Colors.greenAccent, size: 10),
-                                  SizedBox(width: 3.5),
-                                  Text(
-                                    'LOCAL',
-                                    style: TextStyle(
-                                      color: Colors.greenAccent,
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: 0.5,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          )
-                        else if (widget.ep.isDownloading)
+                        // Downloading progress badge
+                        if (widget.ep.isDownloading)
                           Positioned(
                             top: 6,
                             right: 6,
@@ -193,18 +163,40 @@ class _DesktopGridEpisodeCardState extends State<DesktopGridEpisodeCard> {
               ),
             ),
             const SizedBox(height: 8),
-            // Title: "EP X. Title" (Theme-aware)
-                Text(
-                  widget.formattedTitle,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w700,
-                    color: _isHovered ? theme.colorScheme.primary : titleColor,
-                    height: 1.3,
+            // Title: "EP X. Title" with clean green download icon at far right
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    widget.formattedTitle,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w700,
+                      color: _isHovered ? theme.colorScheme.primary : titleColor,
+                      height: 1.3,
+                    ),
                   ),
                 ),
+                if (widget.ep.isDownloaded) ...[
+                  const SizedBox(width: 6),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 1.5),
+                    child: Icon(
+                      Icons.check_circle_rounded,
+                      size: 14,
+                      color: Colors.greenAccent.shade400,
+                    ),
+                  ),
+                ],
+                if (widget.trailingActions != null) ...[
+                  const SizedBox(width: 4),
+                  widget.trailingActions!,
+                ],
+              ],
+            ),
               ],
             ),
           ),

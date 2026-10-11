@@ -195,11 +195,34 @@ class AniZipEpisode {
   }
 }
 
+class AniZipImage {
+  final String coverType;
+  final String url;
+
+  AniZipImage({
+    required this.coverType,
+    required this.url,
+  });
+
+  factory AniZipImage.fromJson(Map<String, dynamic> json) {
+    return AniZipImage(
+      coverType: json['coverType'] as String? ?? json['cover_type'] as String? ?? '',
+      url: json['url'] as String? ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'coverType': coverType,
+    'url': url,
+  };
+}
+
 class AniZipData {
   final Map<String, String> titles;
   final int episodeCount;
   final int specialCount;
   final List<AniZipEpisode> episodes;
+  final List<AniZipImage> images;
   final AniZipMappings? mappings;
 
   AniZipData({
@@ -207,8 +230,36 @@ class AniZipData {
     this.episodeCount = 0,
     this.specialCount = 0,
     this.episodes = const [],
+    this.images = const [],
     this.mappings,
   });
+
+  String? get fanartUrl {
+    for (final img in images) {
+      if (img.coverType.toLowerCase() == 'fanart' && img.url.isNotEmpty) {
+        return img.url;
+      }
+    }
+    return null;
+  }
+
+  String? get bannerUrl {
+    for (final img in images) {
+      if (img.coverType.toLowerCase() == 'banner' && img.url.isNotEmpty) {
+        return img.url;
+      }
+    }
+    return null;
+  }
+
+  String? get clearlogoUrl {
+    for (final img in images) {
+      if (img.coverType.toLowerCase() == 'clearlogo' && img.url.isNotEmpty) {
+        return img.url;
+      }
+    }
+    return null;
+  }
 
   List<AniZipEpisode> get mainEpisodes {
     final mains = episodes.where((e) => !e.isSpecial).toList();
@@ -291,6 +342,16 @@ class AniZipData {
       return a.episode.compareTo(b.episode);
     });
 
+    final parsedImages = <AniZipImage>[];
+    final rawImages = json['images'];
+    if (rawImages is List) {
+      for (final item in rawImages) {
+        if (item is Map<String, dynamic>) {
+          parsedImages.add(AniZipImage.fromJson(item));
+        }
+      }
+    }
+
     AniZipMappings? mappings;
     if (json['mappings'] is Map<String, dynamic>) {
       mappings = AniZipMappings.fromJson(json['mappings'] as Map<String, dynamic>);
@@ -301,6 +362,7 @@ class AniZipData {
       episodeCount: json['episodeCount'] as int? ?? 0,
       specialCount: json['specialCount'] as int? ?? 0,
       episodes: parsedEpisodes,
+      images: parsedImages,
       mappings: mappings,
     );
   }

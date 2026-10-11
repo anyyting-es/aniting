@@ -27,6 +27,7 @@ class PlayerViewport extends ConsumerWidget {
   // Controls visibility & state
   final bool areControlsVisible;
   final bool isTransitioningOrientation;
+  final bool isExiting;
   final VoidCallback onToggleControls;
 
   // Playback control callbacks
@@ -89,6 +90,7 @@ class PlayerViewport extends ConsumerWidget {
     this.currentSubtitleText = '',
     required this.areControlsVisible,
     required this.isTransitioningOrientation,
+    this.isExiting = false,
     required this.onToggleControls,
     required this.onPlayOrPause,
     required this.onSeekRelative,
@@ -144,7 +146,7 @@ class PlayerViewport extends ConsumerWidget {
         children: [
           // 1. Video Viewport (Isolated on its own composited layer)
           Positioned.fill(
-            child: (isUsingExoPlayer || isLoadingNextEpisode)
+            child: (isUsingExoPlayer || isLoadingNextEpisode || isExiting)
                 ? const SizedBox.expand()
                 : (mpvPlayerService != null
                     ? SizedBox.expand(
@@ -180,18 +182,26 @@ class PlayerViewport extends ConsumerWidget {
 
           // 2. Gesture Detection Overlay
           RepaintBoundary(
-            child: PlayerGestureOverlay(
-              gesturesEnabled: ref.watch(playerGesturesProvider),
-              volumeBoostEnabled: ref.watch(volumeBoostProvider),
-              onToggleControls: onToggleControls,
-              onDoubleTapPlayPause: onPlayOrPause,
-              onSeekBackward: () => onSeekRelative(-10),
-              onSeekForward: () => onSeekRelative(10),
-              onToggleFullscreen: onToggleFullscreen,
-              volume: volume,
-              onVolumeChanged: onVolumeChanged,
-              brightness: brightness,
-              onBrightnessChanged: onBrightnessChanged,
+            child: ValueListenableBuilder<Duration>(
+              valueListenable: positionNotifier,
+              builder: (context, pos, _) {
+                return PlayerGestureOverlay(
+                  gesturesEnabled: ref.watch(playerGesturesProvider),
+                  volumeBoostEnabled: ref.watch(volumeBoostProvider),
+                  onToggleControls: onToggleControls,
+                  onDoubleTapPlayPause: onPlayOrPause,
+                  onSeekBackward: () => onSeekRelative(-10),
+                  onSeekForward: () => onSeekRelative(10),
+                  onToggleFullscreen: onToggleFullscreen,
+                  volume: volume,
+                  onVolumeChanged: onVolumeChanged,
+                  brightness: brightness,
+                  onBrightnessChanged: onBrightnessChanged,
+                  position: pos,
+                  duration: duration,
+                  onSeek: onSeekTo,
+                );
+              },
             ),
           ),
 

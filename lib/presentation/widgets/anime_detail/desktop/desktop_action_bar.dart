@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,6 +6,8 @@ import 'package:g1455/g1455.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:url_launcher/url_launcher_string.dart';
+import 'package:seanime_app/data/services/offline_library_service.dart';
+import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
 
 class DesktopActionBar extends ConsumerWidget {
@@ -20,6 +23,8 @@ class DesktopActionBar extends ConsumerWidget {
   final bool torrentEnabled;
   final bool isTmdb;
   final bool isMovie;
+  final String? userStatus;
+  final int? totalEpisodes;
   final VoidCallback onPlayNext;
   final void Function(String title) onOpenEditEntryModal;
   final ValueChanged<AnimeDetailTab> onTabChanged;
@@ -39,6 +44,8 @@ class DesktopActionBar extends ConsumerWidget {
     required this.torrentEnabled,
     this.isTmdb = false,
     this.isMovie = false,
+    this.userStatus,
+    this.totalEpisodes,
     required this.onPlayNext,
     required this.onOpenEditEntryModal,
     required this.onTabChanged,
@@ -101,6 +108,46 @@ class DesktopActionBar extends ConsumerWidget {
     );
   }
 
+  Future<void> _updateStatus(
+    BuildContext context,
+    WidgetRef ref,
+    String newStatus,
+  ) async {
+    final repo = ref.read(repositoryProvider);
+    final serverState = ref.read(serverNotifierProvider);
+    final isLoggedIn = serverState.status?.isLoggedIn ?? false;
+    final l10n = ref.read(translationsProvider);
+
+    if (isLoggedIn) {
+      await repo.editAnilistListEntry(
+        mediaId: mediaId,
+        type: 'anime',
+        status: newStatus,
+        progress: progress,
+      );
+    }
+
+    await OfflineLibraryService.instance.saveAnimeEntryFromEdit(
+      mediaId: mediaId,
+      title: title,
+      status: newStatus,
+      progress: progress,
+      totalCount: totalEpisodes,
+    );
+
+    if (context.mounted) {
+      ref.invalidate(animeCollectionProvider);
+      ref.invalidate(continueWatchingProvider);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.settingsSaved),
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
@@ -108,10 +155,22 @@ class DesktopActionBar extends ConsumerWidget {
     final iconPack = ref.watch(iconPackProvider);
     final l10n = ref.watch(translationsProvider);
 
+    // Dynamic Reactive Play Label
+    final String playLabel;
+    if (userStatus == 'COMPLETED') {
+      playLabel = l10n.rewatch;
+    } else if (progress > 0) {
+      final nextEp = (progress + 1).clamp(1, totalEpisodes ?? (progress + 1));
+      playLabel = l10n.continueEpisodeNumbered(nextEp);
+    } else {
+      playLabel = l10n.watchEpisodeOne;
+    }
+
     return Row(
       children: [
-        // Floating Pill Play Button with Gentle Scaling
+        // Expanded Reactive Floating Play Button
         _HoverPlayButton(
+          label: playLabel,
           onTap: isTmdb
               ? () {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -131,71 +190,131 @@ class DesktopActionBar extends ConsumerWidget {
               : onPlayNext,
           icon: AppIcons.play(iconPack),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: 14),
 
-        // Bookmark Button (AniList status modal) with Gentle Hover (Anime only)
+        // Edit Entry Pencil Button (GlassMenuAnchor with fluid detachment)
         if (!isTmdb) ...[
-          _HoverIconButton(
-            tooltip: l10n.editInAnilist,
-            icon: AppIcons.bookmarkOutline(iconPack),
-            onTap: () => onOpenEditEntryModal(title),
+          GlassMenuAnchor(
+            width: 210,
+            items: [
+              GlassMenuItem(
+                label: l10n.statusWatching,
+                icon: const Icon(
+                  Icons.play_circle_fill_rounded,
+                  size: 18,
+                  color: Color(0xFF10B981),
+                ),
+                onPressed: () => _updateStatus(context, ref, 'CURRENT'),
+              ),
+              GlassMenuItem(
+                label: l10n.statusPlanning,
+                icon: const Icon(
+                  Icons.bookmark_added_rounded,
+                  size: 18,
+                  color: Color(0xFF3B82F6),
+                ),
+                onPressed: () => _updateStatus(context, ref, 'PLANNING'),
+              ),
+              GlassMenuItem(
+                label: l10n.statusCompleted,
+                icon: const Icon(
+                  Icons.check_circle_rounded,
+                  size: 18,
+                  color: Color(0xFF8B5CF6),
+                ),
+                onPressed: () => _updateStatus(context, ref, 'COMPLETED'),
+              ),
+              GlassMenuItem(
+                label: l10n.statusPaused,
+                icon: const Icon(
+                  Icons.pause_circle_filled_rounded,
+                  size: 18,
+                  color: Color(0xFFF59E0B),
+                ),
+                onPressed: () => _updateStatus(context, ref, 'PAUSED'),
+              ),
+              GlassMenuItem(
+                label: l10n.statusDropped,
+                icon: const Icon(
+                  Icons.cancel_rounded,
+                  size: 18,
+                  color: Color(0xFFEF4444),
+                ),
+                onPressed: () => _updateStatus(context, ref, 'DROPPED'),
+              ),
+              GlassMenuItem(
+                label: l10n.editDetails,
+                icon: Icon(
+                  AppIcons.edit(iconPack),
+                  size: 18,
+                ),
+                onPressed: () => onOpenEditEntryModal(title),
+              ),
+            ],
+            builder: (context, controller) {
+              return _HoverFloatingIconButton(
+                tooltip: l10n.editInAnilist,
+                icon: AppIcons.edit(iconPack),
+                onTap: controller.open,
+              );
+            },
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 12),
         ],
 
-        // Share Button with Gentle Hover
-        _HoverIconButton(
+        // Share Button (Floating icon)
+        _HoverFloatingIconButton(
           tooltip: l10n.share,
           icon: AppIcons.share(iconPack),
           onTap: () => _shareAnime(context, title, l10n),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 12),
 
-        // Watch Trailer Button (Clean, next to play/actions)
+        // Watch Trailer Button (Floating icon)
         if (hasTrailer) ...[
-          _HoverIconButton(
+          _HoverFloatingIconButton(
             tooltip: l10n.watchTrailer,
             icon: AppIcons.video(iconPack),
             onTap: _launchTrailer,
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 12),
         ],
 
         // Download Button (Torrents modal - Anime only)
         if (!isTmdb && onDownload != null) ...[
-          _HoverIconButton(
+          _HoverFloatingIconButton(
             tooltip: l10n.downloadWithTorrentClient,
             icon: Icons.download_rounded,
             onTap: onDownload!,
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 12),
         ],
 
-        // External Link
+        // External Link (TMDB)
         if (isTmdb) ...[
-          _HoverIconButton(
+          _HoverFloatingIconButton(
             tooltip: 'The Movie Database (TMDB)',
             icon: Icons.open_in_new_rounded,
             onTap: () => _launchTmdb(mediaId),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 12),
         ] else ...[
-          // AniList External Link with Official Brand Icon
+          // AniList External Tracker Link (Rounded icon only, clean, floating, no background/borders)
           _HoverBrandIcon(
             assetPath: 'assets/icons/AniList_logo.png',
             tooltip: l10n.viewOnAnilist,
             onTap: () => _launchAnilist(mediaId),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 12),
 
-          // MAL External Link with Official Brand Icon
+          // MAL External Tracker Link (Rounded icon only, clean, floating, no background/borders)
           if (idMal != null) ...[
             _HoverBrandIcon(
               assetPath: 'assets/icons/MyAnimeList_Logo.png',
               tooltip: l10n.viewOnMal,
               onTap: () => _launchMal(idMal!),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 12),
           ],
         ],
 
@@ -257,10 +376,12 @@ class DesktopActionBar extends ConsumerWidget {
 }
 
 class _HoverPlayButton extends StatefulWidget {
+  final String label;
   final VoidCallback onTap;
   final IconData icon;
 
   const _HoverPlayButton({
+    required this.label,
     required this.onTap,
     this.icon = Icons.play_arrow_rounded,
   });
@@ -285,42 +406,67 @@ class _HoverPlayButtonState extends State<_HoverPlayButton> {
         scale: _isHovered ? 1.025 : 1.0,
         duration: const Duration(milliseconds: 180),
         curve: Curves.easeOutCubic,
-        child: GlassCard(
+        child: ClipRRect(
           borderRadius: BorderRadius.circular(24),
-          padding: EdgeInsets.zero,
-          child: InkWell(
-            onTap: widget.onTap,
-            borderRadius: BorderRadius.circular(24),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 9),
-              decoration: BoxDecoration(
-                color: isDark
-                    ? (_isHovered
-                        ? Colors.white.withValues(alpha: 0.95)
-                        : Colors.white.withValues(alpha: 0.85))
-                    : (_isHovered
-                        ? theme.colorScheme.primary
-                        : theme.colorScheme.primary.withValues(alpha: 0.9)),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: widget.onTap,
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.25)
-                      : theme.colorScheme.primary.withValues(alpha: 0.3),
-                  width: 0.8,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: (isDark ? Colors.black : theme.colorScheme.primary)
-                        .withValues(alpha: _isHovered ? 0.35 : 0.20),
-                    blurRadius: _isHovered ? 12 : 6,
-                    offset: Offset(0, _isHovered ? 3 : 1),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? (_isHovered
+                            ? Colors.white.withValues(alpha: 0.22)
+                            : Colors.white.withValues(alpha: 0.14))
+                        : (_isHovered
+                            ? theme.colorScheme.primary.withValues(alpha: 0.22)
+                            : theme.colorScheme.primary.withValues(alpha: 0.14)),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
+                      color: isDark
+                          ? (_isHovered
+                              ? Colors.white.withValues(alpha: 0.38)
+                              : Colors.white.withValues(alpha: 0.24))
+                          : (_isHovered
+                              ? theme.colorScheme.primary.withValues(alpha: 0.40)
+                              : theme.colorScheme.primary.withValues(alpha: 0.25)),
+                      width: 0.9,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: (isDark ? Colors.black : theme.colorScheme.primary)
+                            .withValues(alpha: _isHovered ? 0.22 : 0.10),
+                        blurRadius: _isHovered ? 16 : 8,
+                        offset: Offset(0, _isHovered ? 4 : 2),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              child: Icon(
-                widget.icon,
-                color: isDark ? Colors.black : Colors.white,
-                size: 24,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        widget.icon,
+                        color: isDark ? Colors.white : theme.colorScheme.primary,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        widget.label,
+                        style: TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.2,
+                          color: isDark ? Colors.white : theme.colorScheme.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
@@ -330,22 +476,22 @@ class _HoverPlayButtonState extends State<_HoverPlayButton> {
   }
 }
 
-class _HoverIconButton extends StatefulWidget {
+class _HoverFloatingIconButton extends StatefulWidget {
   final String tooltip;
   final IconData icon;
   final VoidCallback onTap;
 
-  const _HoverIconButton({
+  const _HoverFloatingIconButton({
     required this.tooltip,
     required this.icon,
     required this.onTap,
   });
 
   @override
-  State<_HoverIconButton> createState() => _HoverIconButtonState();
+  State<_HoverFloatingIconButton> createState() => _HoverFloatingIconButtonState();
 }
 
-class _HoverIconButtonState extends State<_HoverIconButton> {
+class _HoverFloatingIconButtonState extends State<_HoverFloatingIconButton> {
   bool _isHovered = false;
 
   @override
@@ -353,19 +499,9 @@ class _HoverIconButtonState extends State<_HoverIconButton> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    final defaultBaseBg = isDark
-        ? Colors.white.withValues(alpha: 0.06)
-        : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.85);
-    final defaultHoverBg = isDark
-        ? Colors.white.withValues(alpha: 0.12)
-        : theme.colorScheme.surfaceContainerHigh;
-
-    final baseBg = defaultBaseBg;
-    final hoverBg = _isHovered ? defaultHoverBg : baseBg;
-
     final defaultIconColor = isDark
-        ? (_isHovered ? Colors.white : Colors.white70)
-        : (_isHovered ? theme.colorScheme.onSurface : theme.colorScheme.onSurfaceVariant);
+        ? (_isHovered ? Colors.white : Colors.white.withValues(alpha: 0.85))
+        : (_isHovered ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant);
 
     return Tooltip(
       message: widget.tooltip,
@@ -374,40 +510,48 @@ class _HoverIconButtonState extends State<_HoverIconButton> {
         onEnter: (_) => setState(() => _isHovered = true),
         onExit: (_) => setState(() => _isHovered = false),
         child: AnimatedScale(
-          scale: _isHovered ? 1.025 : 1.0,
+          scale: _isHovered ? 1.08 : 1.0,
           duration: const Duration(milliseconds: 180),
           curve: Curves.easeOutCubic,
-          child: GlassCard(
-            borderRadius: BorderRadius.circular(24),
-            padding: EdgeInsets.zero,
-            child: InkWell(
-              onTap: widget.onTap,
-              borderRadius: BorderRadius.circular(24),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
-                curve: Curves.easeOutCubic,
-                padding: const EdgeInsets.all(9),
-                decoration: BoxDecoration(
-                  color: _isHovered ? hoverBg : baseBg,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: isDark
-                        ? Colors.white.withValues(alpha: _isHovered ? 0.22 : 0.08)
-                        : theme.colorScheme.outlineVariant.withValues(alpha: _isHovered ? 0.6 : 0.3),
-                    width: 0.8,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: _isHovered ? 0.25 : 0.10),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
+          child: ClipOval(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+              child: Material(
+                color: Colors.transparent,
+                shape: const CircleBorder(),
+                child: InkWell(
+                  onTap: widget.onTap,
+                  customBorder: const CircleBorder(),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    curve: Curves.easeOutCubic,
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: isDark
+                          ? (_isHovered
+                              ? Colors.white.withValues(alpha: 0.18)
+                              : Colors.white.withValues(alpha: 0.08))
+                          : (_isHovered
+                              ? theme.colorScheme.primary.withValues(alpha: 0.16)
+                              : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45)),
+                      border: Border.all(
+                        color: isDark
+                            ? (_isHovered
+                                ? Colors.white.withValues(alpha: 0.32)
+                                : Colors.white.withValues(alpha: 0.18))
+                            : (_isHovered
+                                ? theme.colorScheme.primary.withValues(alpha: 0.30)
+                                : theme.colorScheme.outlineVariant.withValues(alpha: 0.25)),
+                        width: 0.8,
+                      ),
                     ),
-                  ],
-                ),
-                child: Icon(
-                  widget.icon,
-                  color: defaultIconColor,
-                  size: 20,
+                    child: Icon(
+                      widget.icon,
+                      color: defaultIconColor,
+                      size: 20,
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -441,13 +585,6 @@ class _HoverBrandIconState extends State<_HoverBrandIcon> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    final baseBg = isDark
-        ? Colors.white.withValues(alpha: 0.06)
-        : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.85);
-    final hoverBg = isDark
-        ? Colors.white.withValues(alpha: 0.12)
-        : theme.colorScheme.surfaceContainerHigh;
-
     return Tooltip(
       message: widget.tooltip,
       child: MouseRegion(
@@ -455,35 +592,27 @@ class _HoverBrandIconState extends State<_HoverBrandIcon> {
         onEnter: (_) => setState(() => _isHovered = true),
         onExit: (_) => setState(() => _isHovered = false),
         child: AnimatedScale(
-          scale: _isHovered ? 1.025 : 1.0,
+          scale: _isHovered ? 1.12 : 1.0,
           duration: const Duration(milliseconds: 180),
           curve: Curves.easeOutCubic,
-          child: GlassCard(
-            borderRadius: BorderRadius.circular(24),
-            padding: EdgeInsets.zero,
+          child: Material(
+            color: Colors.transparent,
+            shape: const CircleBorder(),
+            clipBehavior: Clip.hardEdge,
             child: InkWell(
               onTap: widget.onTap,
-              borderRadius: BorderRadius.circular(24),
+              customBorder: const CircleBorder(),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 180),
                 curve: Curves.easeOutCubic,
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(7),
                 decoration: BoxDecoration(
-                  color: _isHovered ? hoverBg : baseBg,
                   shape: BoxShape.circle,
-                  border: Border.all(
-                    color: isDark
-                        ? Colors.white.withValues(alpha: _isHovered ? 0.22 : 0.08)
-                        : theme.colorScheme.outlineVariant.withValues(alpha: _isHovered ? 0.6 : 0.3),
-                    width: 0.8,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: _isHovered ? 0.25 : 0.10),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+                  color: _isHovered
+                      ? (isDark
+                          ? Colors.white.withValues(alpha: 0.12)
+                          : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5))
+                      : Colors.transparent,
                 ),
                 child: ClipOval(
                   child: Image.asset(
@@ -501,3 +630,4 @@ class _HoverBrandIconState extends State<_HoverBrandIcon> {
     );
   }
 }
+

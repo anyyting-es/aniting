@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:g1455/g1455.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/preferences/section_visibility_provider.dart';
@@ -116,15 +117,25 @@ class CatalogSearchView extends ConsumerWidget {
                 Badge(
                   isLabelVisible: filterState.hasActiveFilters,
                   label: Text('${filterState.activeFilterCount}'),
-                  child: IconButton.filledTonal(
-                    tooltip: l10n.filters,
-                    icon: Icon(
-                      filterState.hasActiveFilters
-                          ? AppIcons.sliders(iconPack)
-                          : AppIcons.filter(iconPack),
-                      color: filterState.hasActiveFilters ? theme.colorScheme.primary : null,
-                    ),
+                  child: GlassButton(
                     onPressed: onOpenFilterSheet,
+                    padding: EdgeInsets.zero,
+                    semanticLabel: l10n.filters,
+                    child: SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: Center(
+                        child: Icon(
+                          filterState.hasActiveFilters
+                              ? AppIcons.sliders(iconPack)
+                              : AppIcons.filter(iconPack),
+                          size: 18,
+                          color: filterState.hasActiveFilters
+                              ? theme.colorScheme.primary
+                              : null,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -286,7 +297,9 @@ class CatalogSearchView extends ConsumerWidget {
       itemCount: totalItems + (hasMore ? 1 : 0),
       itemBuilder: (context, index) {
         if (index >= totalItems) {
-          onLoadMore();
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            onLoadMore();
+          });
           return const Center(
             child: Padding(
               padding: EdgeInsets.all(16),

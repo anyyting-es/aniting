@@ -228,6 +228,8 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   String? _currentOnlineStreamServer;
   bool _isCurrentLocalFile = false;
 
+  bool _isPlayerDisposed = false;
+
   // Delegated getters to modular services
   bool get _isFullscreen => _windowManager.isFullscreen;
   bool get _isTransitioningOrientation => _windowManager.isTransitioningOrientation;
@@ -468,17 +470,21 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
         return ep?.image ?? _effectiveCoverImage;
       },
       onLocalWatchRecorded: () {
-        if (mounted) {
-          ref.invalidate(animeCollectionProvider);
-          ref.invalidate(continueWatchingProvider);
-          ref.invalidate(recommendationsProvider);
+        if (mounted && !_isPlayerDisposed) {
+          try {
+            ref.invalidate(animeCollectionProvider);
+            ref.invalidate(continueWatchingProvider);
+            ref.invalidate(recommendationsProvider);
+          } catch (_) {}
         }
       },
       onProgressSynced: () {
-        if (mounted) {
-          ref.invalidate(animeCollectionProvider);
-          ref.invalidate(continueWatchingProvider);
-          ref.invalidate(recommendationsProvider);
+        if (mounted && !_isPlayerDisposed) {
+          try {
+            ref.invalidate(animeCollectionProvider);
+            ref.invalidate(continueWatchingProvider);
+            ref.invalidate(recommendationsProvider);
+          } catch (_) {}
         }
       },
     );
@@ -502,7 +508,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       getStartPosition: () => widget.startPosition,
       getHasNextEpisode: () => _hasNextEpisode,
       onUpdateUi: () {
-        if (mounted) setState(() {});
+        if (mounted && !_isPlayerDisposed) setState(() {});
       },
       onSourceActivated: _onSourceActivated,
       onShowEpisodePicker: () {
@@ -516,36 +522,35 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       },
     );
 
-    _coordinator.init(
-      videoUrl: _currentVideoUrl,
-      title: widget.title,
-      episodeTitle: _currentEpisodeTitle,
-      headers: _currentHeaders,
-      mimeType: _currentMimeType,
-      startPosition: resolvedStartPosition,
-      externalSubtitles: _currentExternalSubtitles,
-      fitMode: _fitMode,
-      activeShaderPreset: _activeShaderPreset,
-      isOnlineStream: isOnline,
-      initialSurfaceTop: winInit.initialTop,
-      initialSurfaceHeight: winInit.initialHeight,
-    );
-
-    _progressManager.startTracking(initialPosition: resolvedStartPosition);
-    _initStatsService();
-    _startHideTimer();
-    _initBrightness();
-    _sourceController.schedulePrefetchNextEpisode();
-
-    if (_currentVideoUrl.isEmpty && _currentOnlineStreamProvider != null) {
-      _sourceController.resolveInitialSources();
-    } else if (_currentOnlineStreamProvider != null) {
-      _sourceController.fetchAvailableSourcesInBackground(currentVideoUrl: _currentVideoUrl);
-    }
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _focusNode.requestFocus();
+      if (!mounted || _isPlayerDisposed) return;
+      _focusNode.requestFocus();
+
+      _coordinator.init(
+        videoUrl: _currentVideoUrl,
+        title: widget.title,
+        episodeTitle: _currentEpisodeTitle,
+        headers: _currentHeaders,
+        mimeType: _currentMimeType,
+        startPosition: resolvedStartPosition,
+        externalSubtitles: _currentExternalSubtitles,
+        fitMode: _fitMode,
+        activeShaderPreset: _activeShaderPreset,
+        isOnlineStream: isOnline,
+        initialSurfaceTop: winInit.initialTop,
+        initialSurfaceHeight: winInit.initialHeight,
+      );
+
+      _progressManager.startTracking(initialPosition: resolvedStartPosition);
+      _initStatsService();
+      _startHideTimer();
+      _initBrightness();
+      _sourceController.schedulePrefetchNextEpisode();
+
+      if (_currentVideoUrl.isEmpty && _currentOnlineStreamProvider != null) {
+        _sourceController.resolveInitialSources();
+      } else if (_currentOnlineStreamProvider != null) {
+        _sourceController.fetchAvailableSourcesInBackground(currentVideoUrl: _currentVideoUrl);
       }
     });
   }
@@ -666,6 +671,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
 
   @override
   void dispose() {
+    _isPlayerDisposed = true;
     _sourceController.dispose();
     _progressManager.dispose();
 
@@ -1009,6 +1015,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       currentSubtitleText: _currentSubtitleText,
       areControlsVisible: _areControlsVisible,
       isTransitioningOrientation: _isTransitioningOrientation,
+      isExiting: _isExiting,
       onToggleControls: _toggleControls,
       onPlayOrPause: _playOrPause,
       onSeekRelative: _seekRelative,

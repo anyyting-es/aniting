@@ -49,9 +49,6 @@ class _TimelineSliderState extends State<TimelineSlider> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final primaryColor = theme.colorScheme.primary;
-
     final maxMs = widget.duration.inMilliseconds > 0 ? widget.duration.inMilliseconds.toDouble() : 1.0;
     final double currentMs;
     if (_isDragging) {
@@ -69,16 +66,16 @@ class _TimelineSliderState extends State<TimelineSlider> {
     return Stack(
       alignment: Alignment.center,
       children: [
-        // Base black background track for the entire playback bar
+        // Base dark slate/graphite background track (not pitch black)
         Positioned.fill(
           child: Align(
             alignment: Alignment.center,
             child: Container(
-              height: 6,
+              height: 5,
               margin: const EdgeInsets.symmetric(horizontal: 24),
               decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.75),
-                borderRadius: BorderRadius.circular(3),
+                color: const Color(0xFF3A3B43).withValues(alpha: 0.85),
+                borderRadius: BorderRadius.circular(2.5),
               ),
             ),
           ),
@@ -92,31 +89,33 @@ class _TimelineSliderState extends State<TimelineSlider> {
               child: FractionallySizedBox(
                 widthFactor: bufferFraction,
                 child: Container(
-                  height: 6,
+                  height: 5,
                   margin: const EdgeInsets.symmetric(horizontal: 24),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(3),
+                    color: Colors.white.withValues(alpha: 0.28),
+                    borderRadius: BorderRadius.circular(2.5),
                   ),
                 ),
               ),
             ),
           ),
 
-        // Interactive seek slider
+        // Interactive seek slider (clean white bar, zero thumb dot)
         SliderTheme(
           data: SliderTheme.of(context).copyWith(
-            activeTrackColor: primaryColor,
-            inactiveTrackColor: Colors.black.withValues(alpha: 0.6),
-            thumbColor: Colors.white,
-            overlayColor: primaryColor.withValues(alpha: 0.25),
-            trackHeight: 6,
+            activeTrackColor: Colors.white,
+            inactiveTrackColor: Colors.transparent,
+            thumbColor: Colors.transparent,
+            overlayColor: Colors.white.withValues(alpha: 0.12),
+            trackHeight: 5,
             thumbShape: const RoundSliderThumbShape(
-              enabledThumbRadius: 7,
-              elevation: 2,
-              pressedElevation: 4,
+              enabledThumbRadius: 0.0,
+              disabledThumbRadius: 0.0,
+              elevation: 0,
+              pressedElevation: 0,
             ),
-            overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
+            overlayShape: const RoundSliderOverlayShape(overlayRadius: 10),
+            trackShape: const RoundedRectSliderTrackShape(),
           ),
           child: Slider(
             min: 0.0,

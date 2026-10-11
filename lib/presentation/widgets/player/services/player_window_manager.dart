@@ -174,23 +174,30 @@ class PlayerWindowManager {
       } catch (_) {}
     }
 
-    await onSaveProgress();
-
-    try {
-      coordinator.pause();
-    } catch (_) {}
-
-    if (Platform.isAndroid || Platform.isIOS) {
-      await SystemChrome.setPreferredOrientations([
-        DeviceOrientation.portraitUp,
-      ]);
-      await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-      await Future.delayed(const Duration(milliseconds: 60));
-    }
-
+    // Instantly close the player route so the UI never stutters or waits for network/I/O
     if (context.mounted) {
       Navigator.of(context).pop();
     }
+
+    // Perform pause, session progress recording, and orientation restore asynchronously
+    Future.microtask(() async {
+      try {
+        await onSaveProgress();
+      } catch (_) {}
+
+      try {
+        coordinator.pause();
+      } catch (_) {}
+
+      if (Platform.isAndroid || Platform.isIOS) {
+        try {
+          await SystemChrome.setPreferredOrientations([
+            DeviceOrientation.portraitUp,
+          ]);
+          await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+        } catch (_) {}
+      }
+    });
   }
 
   /// Restores native window and orientation defaults on dispose.

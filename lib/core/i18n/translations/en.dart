@@ -1645,6 +1645,8 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get audioHeading => 'AUDIO';
   @override
+  String get dubbing => 'Dubbing';
+  @override
   String get audioDubbedFull => 'Dubbed (Dub)';
   @override
   String get exploreMarketplaceMore => 'Explore more extensions in store';
@@ -1819,6 +1821,8 @@ class EnglishTranslations implements AppTranslations {
   String continueEpisodeNumbered(int number) => 'Continue Ep. $number';
   @override
   String get startWatching => 'Start watching';
+  @override
+  String get watchEpisodeOne => 'Watch Episode 1';
   @override
   String get startReading => 'Start reading';
   @override
@@ -2021,9 +2025,9 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get animeSectionDesc => 'Show anime tab in navigation';
   @override
-  String get showsSection => 'Shows & Movies Section (TMDB)';
+  String get showsSection => 'Shows Section (TMDB)';
   @override
-  String get showsSectionDesc => 'Show TMDB shows and movies tab in navigation';
+  String get showsSectionDesc => 'Show TMDB shows tab in navigation';
   @override
   String get mangaSection => 'Manga Section';
   @override
@@ -2031,7 +2035,7 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get cannotDisableBothSections => 'You must keep at least one section enabled';
   @override
-  String get shows => 'Shows / Movies';
+  String get shows => 'Shows';
   @override
   String get exploreAnime => 'Anime (AniList)';
   @override
@@ -2146,6 +2150,8 @@ class EnglishTranslations implements AppTranslations {
   String markedAsUnwatched(int ep) => 'Episode $ep marked as unwatched';
   @override
   String get downloadEpisode => 'Download Episode';
+  @override
+  String get editDetails => 'Edit details...';
 
   // Liquid Glass Effects Preference
   @override
@@ -2204,5 +2210,7 @@ class EnglishTranslations implements AppTranslations {
   String get streamingComingSoon => 'Streaming providers for series will be available soon';
   @override
   String episodeRuntime(int minutes) => '${minutes}m';
+  @override
+  String optionsCountLabel(int count) => '$count options';
 }
 

@@ -121,39 +121,6 @@ class _TmdbEpisodeCardState extends ConsumerState<TmdbEpisodeCard> {
                       else
                         _buildPlaceholder(),
 
-                      // Top Right: Score / Rating Pill
-                      if (widget.episode.voteAverage != null && widget.episode.voteAverage! > 0)
-                        Positioned(
-                          top: 6,
-                          right: 6,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.75),
-                              borderRadius: BorderRadius.circular(5),
-                              border: Border.all(
-                                color: Colors.amber.withValues(alpha: 0.5),
-                                width: 0.8,
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.star_rounded, size: 11, color: Colors.amber),
-                                const SizedBox(width: 3),
-                                Text(
-                                  widget.episode.voteAverage!.toStringAsFixed(1),
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 9.5,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-
                       // Bottom Right: Duration Pill
                       if (widget.episode.runtime != null && widget.episode.runtime! > 0)
                         Positioned(
@@ -281,39 +248,6 @@ class _TmdbEpisodeCardState extends ConsumerState<TmdbEpisodeCard> {
                             )
                           else
                             _buildPlaceholder(),
-
-                          // Top Right Score Pill
-                          if (widget.episode.voteAverage != null && widget.episode.voteAverage! > 0)
-                            Positioned(
-                              top: 6,
-                              right: 6,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withValues(alpha: 0.75),
-                                  borderRadius: BorderRadius.circular(5),
-                                  border: Border.all(
-                                    color: Colors.amber.withValues(alpha: 0.5),
-                                    width: 0.8,
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(Icons.star_rounded, size: 11, color: Colors.amber),
-                                    const SizedBox(width: 3),
-                                    Text(
-                                      widget.episode.voteAverage!.toStringAsFixed(1),
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 9.5,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
 
                           // Bottom Right Duration Pill
                           if (widget.episode.runtime != null && widget.episode.runtime! > 0)

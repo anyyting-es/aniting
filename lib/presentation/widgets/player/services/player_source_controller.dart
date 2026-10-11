@@ -47,6 +47,13 @@ class PlayerSourceController {
   OnlinestreamVideoSource? activeSource;
   String? sourceResolutionError;
   bool isLoadingNextEpisode = false;
+  bool _isDisposed = false;
+
+  void _safeUpdateUi() {
+    if (!_isDisposed) {
+      onUpdateUi();
+    }
+  }
 
   Timer? _prefetchTimer;
 
@@ -86,7 +93,7 @@ class PlayerSourceController {
     sourceResolutionError = null;
     availableSources = [];
     activeSource = null;
-    onUpdateUi();
+    _safeUpdateUi();
 
     try {
       final sources = await repository.getOnlinestreamSource(
@@ -102,7 +109,7 @@ class PlayerSourceController {
         availableSources = [];
         activeSource = null;
         sourceResolutionError = l10n.noSourcesFoundForEpisode;
-        onUpdateUi();
+        _safeUpdateUi();
         return;
       }
 
@@ -148,12 +155,12 @@ class PlayerSourceController {
         isOnlineStream: true,
       );
 
-      onUpdateUi();
+      _safeUpdateUi();
       schedulePrefetchNextEpisode();
     } catch (e) {
       isResolvingSources = false;
       sourceResolutionError = 'Error: $e';
-      onUpdateUi();
+      _safeUpdateUi();
     }
   }
 
@@ -185,7 +192,7 @@ class PlayerSourceController {
 
       availableSources = sources;
       activeSource = matched;
-      onUpdateUi();
+      _safeUpdateUi();
     } catch (_) {}
   }
 
@@ -262,7 +269,7 @@ class PlayerSourceController {
         await resolveInitialSources();
       } finally {
         isLoadingNextEpisode = false;
-        onUpdateUi();
+        _safeUpdateUi();
       }
       return;
     }
@@ -318,7 +325,7 @@ class PlayerSourceController {
       onShowEpisodePicker();
     } finally {
       isLoadingNextEpisode = false;
-      onUpdateUi();
+      _safeUpdateUi();
     }
   }
 
@@ -349,8 +356,9 @@ class PlayerSourceController {
     });
   }
 
-  /// Disposes timers.
+  /// Disposes timers and stops UI callbacks.
   void dispose() {
+    _isDisposed = true;
     _prefetchTimer?.cancel();
   }
 }
