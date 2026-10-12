@@ -33,6 +33,7 @@ class PlayerProgressManager {
   final ValueGetter<String?>? getDescription;
   final ValueGetter<int?>? getYear;
   final ValueGetter<String?>? getFormat;
+  final bool isTmdb;
   final VoidCallback? onProgressSynced;
   final VoidCallback? onLocalWatchRecorded;
 
@@ -45,6 +46,7 @@ class PlayerProgressManager {
     this.playbackProgressNotifier,
     required this.mediaId,
     required this.title,
+    this.isTmdb = false,
     required this.getCoverImage,
     required this.getCharacterImage,
     required this.getEpisodeNumber,
@@ -125,6 +127,7 @@ class PlayerProgressManager {
         headers: getHeaders(),
         mimeType: getMimeType(),
         videoSource: getVideoSource(),
+        isTmdb: isTmdb,
         positionMs: pos.inMilliseconds,
         durationMs: dur.inMilliseconds,
         updatedAt: DateTime.now().millisecondsSinceEpoch,

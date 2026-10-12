@@ -119,6 +119,31 @@ class TmdbService {
     }
   }
 
+  /// Fetches recommendations for a specific show or movie
+  Future<List<AnimeEntry>> getRecommendations(
+    int id, {
+    String language = 'es-ES',
+    bool isMovie = false,
+  }) async {
+    try {
+      final endpoint = isMovie ? '/movie/$id/recommendations' : '/tv/$id/recommendations';
+      final response = await _dio.get(
+        endpoint,
+        queryParameters: {
+          'api_key': apiKey,
+          'language': language,
+        },
+      );
+      final results = response.data['results'] as List<dynamic>? ?? [];
+      final list = results
+          .where((item) => item['media_type'] == 'tv' || item['media_type'] == 'movie' || !item.containsKey('media_type'))
+          .map((item) => _mapTmdbToAnimeEntry(item, forceType: isMovie ? 'MOVIE' : 'TV'))
+          .toList();
+      if (list.isNotEmpty) return list;
+    } catch (_) {}
+    return getTrendingShows(language: language);
+  }
+
   /// Maps a TMDB json object to an AnimeEntry for UI consistency
   AnimeEntry _mapTmdbToAnimeEntry(Map<String, dynamic> json, {String? forceType}) {
     final isMovie = (forceType == 'MOVIE') || (json['media_type'] == 'movie') || json.containsKey('title');

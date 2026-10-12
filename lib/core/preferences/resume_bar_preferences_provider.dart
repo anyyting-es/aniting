@@ -22,6 +22,7 @@ class LastSessionItem {
   final Map<String, String>? headers;
   final String? mimeType;
   final String? videoSource;
+  final bool isTmdb;
   final int updatedAt;
 
   const LastSessionItem({
@@ -43,6 +44,7 @@ class LastSessionItem {
     this.headers,
     this.mimeType,
     this.videoSource,
+    this.isTmdb = false,
     required this.updatedAt,
   });
 
@@ -86,6 +88,7 @@ class LastSessionItem {
     Map<String, String>? headers,
     String? mimeType,
     String? videoSource,
+    bool? isTmdb,
     int? updatedAt,
   }) {
     return LastSessionItem(
@@ -107,6 +110,7 @@ class LastSessionItem {
       headers: headers ?? this.headers,
       mimeType: mimeType ?? this.mimeType,
       videoSource: videoSource ?? this.videoSource,
+      isTmdb: isTmdb ?? this.isTmdb,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
@@ -130,6 +134,7 @@ class LastSessionItem {
         'headers': headers,
         'mimeType': mimeType,
         'videoSource': videoSource,
+        'isTmdb': isTmdb,
         'updatedAt': updatedAt,
       };
 
@@ -153,6 +158,7 @@ class LastSessionItem {
       headers: (json['headers'] as Map?)?.map((k, v) => MapEntry(k.toString(), v.toString())),
       mimeType: json['mimeType']?.toString(),
       videoSource: json['videoSource']?.toString(),
+      isTmdb: json['isTmdb'] as bool? ?? false,
       updatedAt: json['updatedAt'] is int ? json['updatedAt'] : 0,
     );
   }

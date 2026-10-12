@@ -275,6 +275,7 @@ class AnimeEntry {
         nextAiringEpisodeNumber: nextAiringEp,
         nextAiringEpisodeAiringAt: nextAiringTime,
         year: parsedYear,
+        isTmdb: json['isTmdb'] == true || (base['isTmdb'] == true),
       );
     }
 
@@ -471,5 +472,6 @@ class AnimeEntry {
     'seasonYear': year,
     'hasLocalFiles': hasLocalFiles,
     'mainFileCount': mainFileCount,
+    'isTmdb': isTmdb,
   };
 }

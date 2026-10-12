@@ -286,6 +286,7 @@ class OfflineLibraryService {
     int? progress,
     int? totalCount,
     int? repeat,
+    bool isTmdb = false,
   }) async {
     if (mediaId <= 0) return;
     final now = DateTime.now().millisecondsSinceEpoch;
@@ -304,6 +305,7 @@ class OfflineLibraryService {
         progress: prog,
         totalEpisodes: tot,
         updatedAt: now,
+        isTmdb: isTmdb || existing.isTmdb,
       );
     } else {
       _animeEntries[mediaId] = AnimeEntry(
@@ -316,6 +318,7 @@ class OfflineLibraryService {
         score: score,
         updatedAt: now,
         lastWatchedTime: now,
+        isTmdb: isTmdb,
       );
     }
 

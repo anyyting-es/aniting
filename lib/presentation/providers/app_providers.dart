@@ -22,6 +22,8 @@ import 'package:seanime_app/data/services/feed_cache_service.dart';
 import 'package:seanime_app/core/api/websocket_service.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/preferences/tmdb_preferences_provider.dart';
+import 'package:seanime_app/core/preferences/section_visibility_provider.dart';
+import 'package:seanime_app/core/preferences/resume_bar_preferences_provider.dart';
 import 'package:seanime_app/data/services/tmdb_service.dart';
 
 final apiClientProvider = Provider<ApiClient>((ref) {
@@ -900,5 +902,68 @@ final tmdbTopRatedShowsProvider = FutureProvider<List<AnimeEntry>>((ref) async {
   final service = ref.watch(tmdbServiceProvider);
   final isSpanish = ref.watch(appLanguageProvider) == AppLanguage.es;
   return service.getTopRatedTvShows(language: isSpanish ? 'es-ES' : 'en-US');
+});
+
+/// Recomendaciones TMDB contextuales basadas en shows que el usuario esté viendo (o trending como fallback)
+final tmdbRecommendationsProvider = FutureProvider<List<AnimeEntry>>((ref) async {
+  final showsEnabled = ref.watch(showsSectionEnabledProvider);
+  if (!showsEnabled) return [];
+
+  final service = ref.watch(tmdbServiceProvider);
+  final isSpanish = ref.watch(appLanguageProvider) == AppLanguage.es;
+  final lang = isSpanish ? 'es-ES' : 'en-US';
+
+  // Buscar show de TMDB que el usuario esté viendo
+  final cw = ref.watch(continueWatchingProvider).asData?.value ?? [];
+  final collection = ref.watch(animeCollectionProvider).asData?.value ?? [];
+  final offline = OfflineLibraryService.instance.getAnimeCollection();
+  final lastSession = ref.watch(lastSessionProvider);
+
+  AnimeEntry? activeTmdbShow;
+  for (final e in cw) {
+    if (e.isTmdb) {
+      activeTmdbShow = e;
+      break;
+    }
+  }
+  if (activeTmdbShow == null) {
+    for (final e in collection) {
+      if (e.isTmdb && (e.status.toUpperCase() == 'CURRENT' || e.status.toUpperCase() == 'WATCHING' || e.progress > 0)) {
+        activeTmdbShow = e;
+        break;
+      }
+    }
+  }
+  if (activeTmdbShow == null) {
+    for (final e in offline) {
+      if (e.isTmdb && (e.status.toUpperCase() == 'CURRENT' || e.status.toUpperCase() == 'WATCHING' || e.progress > 0)) {
+        activeTmdbShow = e;
+        break;
+      }
+    }
+  }
+  if (activeTmdbShow == null && lastSession != null && lastSession.isTmdb) {
+    activeTmdbShow = AnimeEntry(
+      id: lastSession.mediaId,
+      mediaId: lastSession.mediaId,
+      title: lastSession.title,
+      progress: 0,
+      status: 'CURRENT',
+      isTmdb: true,
+      format: 'TV',
+    );
+  }
+
+  if (activeTmdbShow != null) {
+    final isMovie = activeTmdbShow.format?.toUpperCase() == 'MOVIE';
+    final recs = await service.getRecommendations(
+      activeTmdbShow.mediaId,
+      language: lang,
+      isMovie: isMovie,
+    );
+    if (recs.isNotEmpty) return recs;
+  }
+
+  return service.getTrendingShows(language: lang);
 });
 

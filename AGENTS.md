@@ -222,8 +222,10 @@ seanime_app/
   - **TMDB Service & Clean Model Mapping (`tmdb_service.dart`)**:
     - Leverages The Movie Database API to query `trending/tv/week`, `tv/popular`, `tv/top_rated`, and `search/tv`.
     - Maps TMDB records seamlessly into the universal `AnimeEntry` model (`mediaId: tmdbId`, localized titles, `w500` cover images, `w1280` backdrop banner images, scaled 0-100 score, `TV`/`MOVIE` format), allowing complete reuse of existing UI components ([AnimeCard](file:///home/anthony/Documents/projects/aniting/lib/presentation/widgets/anime_card.dart), [ExploreHeroCarousel](file:///home/anthony/Documents/projects/aniting/lib/presentation/widgets/explore_hero_carousel.dart)) without duplicate widget hierarchies.
-  - **Adaptive Main Navigation & Feed Mixing (`main_shell.dart`, `feed_screen.dart`)**:
-    - When Shows are enabled alongside Anime, the Home feed dynamically presents TMDB trending rows alongside user anime library content; if Anime is disabled, the Home section automatically refocuses entirely on Shows.
+  - **Adaptive Main Navigation & Feed Mixing (`main_shell.dart`, `feed_screen.dart`, `app_providers.dart`)**:
+    - Removed the standalone "Shows (TMDB)" carousel from the Home feed (`feed_screen.dart`).
+    - TMDB show recommendations are now dynamically interleaved into the user's primary "Te podría gustar" carousel (`_mixRecommendations`) alongside AniList recommendations, operating conditionally **only when the user is actively watching a show from TMDB** (present in `continueWatchingEntries`, `collectionAsync`, `OfflineLibraryService`, or `lastSessionProvider`).
+    - If the user is not actively watching any TMDB show, "Te podría gustar" stays 100% focused on AniList anime recommendations, keeping the feed clean.
     - If a section is toggled off in settings, all content, tabs, and API queries originating from that provider are cleanly hidden across the application.
   - **Triple-Type Exploration & Catalog Search (`search_screen.dart`, `catalog_search_view.dart`, `media_type_toggle.dart`)**:
     - The Explore hub features media tabs / toggle for Anime, Shows, and Manga with dedicated hero carousels and trending carousels.

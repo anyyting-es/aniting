@@ -446,6 +446,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       playbackProgressNotifier: ref.read(playbackProgressPreferencesProvider.notifier),
       mediaId: widget.mediaId,
       title: widget.title,
+      isTmdb: _animeDetails?.isTmdb ?? false,
       getCoverImage: () => _effectiveCoverImage,
       getCharacterImage: () => _effectiveCharacterImage,
       getEpisodeNumber: () => _currentEpisodeNumber,

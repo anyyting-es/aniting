@@ -118,7 +118,7 @@ class DesktopActionBar extends ConsumerWidget {
     final isLoggedIn = serverState.status?.isLoggedIn ?? false;
     final l10n = ref.read(translationsProvider);
 
-    if (isLoggedIn) {
+    if (isLoggedIn && !isTmdb) {
       await repo.editAnilistListEntry(
         mediaId: mediaId,
         type: 'anime',
@@ -133,6 +133,7 @@ class DesktopActionBar extends ConsumerWidget {
       status: newStatus,
       progress: progress,
       totalCount: totalEpisodes,
+      isTmdb: isTmdb,
     );
 
     if (context.mounted) {
@@ -193,55 +194,55 @@ class DesktopActionBar extends ConsumerWidget {
         const SizedBox(width: 14),
 
         // Edit Entry Pencil Button (GlassMenuAnchor with fluid detachment)
-        if (!isTmdb) ...[
-          GlassMenuAnchor(
-            width: 210,
-            items: [
-              GlassMenuItem(
-                label: l10n.statusWatching,
-                icon: const Icon(
-                  Icons.play_circle_fill_rounded,
-                  size: 18,
-                  color: Color(0xFF10B981),
-                ),
-                onPressed: () => _updateStatus(context, ref, 'CURRENT'),
+        GlassMenuAnchor(
+          width: 210,
+          items: [
+            GlassMenuItem(
+              label: l10n.statusWatching,
+              icon: const Icon(
+                Icons.play_circle_fill_rounded,
+                size: 18,
+                color: Color(0xFF10B981),
               ),
-              GlassMenuItem(
-                label: l10n.statusPlanning,
-                icon: const Icon(
-                  Icons.bookmark_added_rounded,
-                  size: 18,
-                  color: Color(0xFF3B82F6),
-                ),
-                onPressed: () => _updateStatus(context, ref, 'PLANNING'),
+              onPressed: () => _updateStatus(context, ref, 'CURRENT'),
+            ),
+            GlassMenuItem(
+              label: l10n.statusPlanning,
+              icon: const Icon(
+                Icons.bookmark_added_rounded,
+                size: 18,
+                color: Color(0xFF3B82F6),
               ),
-              GlassMenuItem(
-                label: l10n.statusCompleted,
-                icon: const Icon(
-                  Icons.check_circle_rounded,
-                  size: 18,
-                  color: Color(0xFF8B5CF6),
-                ),
-                onPressed: () => _updateStatus(context, ref, 'COMPLETED'),
+              onPressed: () => _updateStatus(context, ref, 'PLANNING'),
+            ),
+            GlassMenuItem(
+              label: l10n.statusCompleted,
+              icon: const Icon(
+                Icons.check_circle_rounded,
+                size: 18,
+                color: Color(0xFF8B5CF6),
               ),
-              GlassMenuItem(
-                label: l10n.statusPaused,
-                icon: const Icon(
-                  Icons.pause_circle_filled_rounded,
-                  size: 18,
-                  color: Color(0xFFF59E0B),
-                ),
-                onPressed: () => _updateStatus(context, ref, 'PAUSED'),
+              onPressed: () => _updateStatus(context, ref, 'COMPLETED'),
+            ),
+            GlassMenuItem(
+              label: l10n.statusPaused,
+              icon: const Icon(
+                Icons.pause_circle_filled_rounded,
+                size: 18,
+                color: Color(0xFFF59E0B),
               ),
-              GlassMenuItem(
-                label: l10n.statusDropped,
-                icon: const Icon(
-                  Icons.cancel_rounded,
-                  size: 18,
-                  color: Color(0xFFEF4444),
-                ),
-                onPressed: () => _updateStatus(context, ref, 'DROPPED'),
+              onPressed: () => _updateStatus(context, ref, 'PAUSED'),
+            ),
+            GlassMenuItem(
+              label: l10n.statusDropped,
+              icon: const Icon(
+                Icons.cancel_rounded,
+                size: 18,
+                color: Color(0xFFEF4444),
               ),
+              onPressed: () => _updateStatus(context, ref, 'DROPPED'),
+            ),
+            if (!isTmdb)
               GlassMenuItem(
                 label: l10n.editDetails,
                 icon: Icon(
@@ -250,17 +251,16 @@ class DesktopActionBar extends ConsumerWidget {
                 ),
                 onPressed: () => onOpenEditEntryModal(title),
               ),
-            ],
-            builder: (context, controller) {
-              return _HoverFloatingIconButton(
-                tooltip: l10n.editInAnilist,
-                icon: AppIcons.edit(iconPack),
-                onTap: controller.open,
-              );
-            },
-          ),
-          const SizedBox(width: 12),
-        ],
+          ],
+          builder: (context, controller) {
+            return _HoverFloatingIconButton(
+              tooltip: isTmdb ? l10n.editDetails : l10n.editInAnilist,
+              icon: AppIcons.edit(iconPack),
+              onTap: controller.open,
+            );
+          },
+        ),
+        const SizedBox(width: 12),
 
         // Share Button (Floating icon)
         _HoverFloatingIconButton(

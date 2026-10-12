@@ -6,6 +6,7 @@ import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/preferences/continue_watching_sort_provider.dart';
 import 'package:seanime_app/core/preferences/title_language_provider.dart';
 import 'package:seanime_app/core/preferences/section_visibility_provider.dart';
+import 'package:seanime_app/core/preferences/resume_bar_preferences_provider.dart';
 import 'package:seanime_app/core/server/server_manager.dart';
 import 'package:seanime_app/data/models/anime_entry.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
@@ -224,12 +225,41 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     return list;
   }
 
+  List<AnimeEntry> _mixRecommendations(List<AnimeEntry> anilistRecs, List<AnimeEntry> tmdbShows) {
+    if (tmdbShows.isEmpty) return anilistRecs;
+    if (anilistRecs.isEmpty) return tmdbShows;
+
+    final mixed = <AnimeEntry>[];
+    final seenMedia = <String>{};
+
+    final maxLen = anilistRecs.length > tmdbShows.length ? anilistRecs.length : tmdbShows.length;
+    for (int i = 0; i < maxLen; i++) {
+      if (i < anilistRecs.length) {
+        final a = anilistRecs[i];
+        final key = 'ani_${a.mediaId}';
+        if (seenMedia.add(key)) {
+          mixed.add(a);
+        }
+      }
+      if (i < tmdbShows.length) {
+        final t = tmdbShows[i];
+        final key = 'tmdb_${t.mediaId}';
+        if (seenMedia.add(key)) {
+          mixed.add(t);
+        }
+      }
+    }
+    return mixed;
+  }
+
   Future<void> _refresh() async {
     ref.invalidate(downloadedAnimeProvider);
     ref.invalidate(continueWatchingProvider);
     ref.invalidate(animeCollectionProvider);
     ref.invalidate(missedSequelsProvider);
     ref.invalidate(recommendationsProvider);
+    ref.invalidate(tmdbRecommendationsProvider);
+    ref.invalidate(tmdbTrendingShowsProvider);
   }
 
   @override
@@ -287,12 +317,28 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
 
     final showFeedSkeleton = !_hasCompletedInitialLoad;
 
+    final showsSectionEnabled = ref.watch(showsSectionEnabledProvider);
+    final allCollection = collectionAsync.value ?? [];
+    final offlineCollection = OfflineLibraryService.instance.getAnimeCollection();
+    final lastSession = ref.watch(lastSessionProvider);
+
+    final isWatchingTmdb = showsSectionEnabled && (
+      continueWatchingEntries.any((e) => e.isTmdb) ||
+      allCollection.any((e) => e.isTmdb && (e.status.toUpperCase() == 'CURRENT' || e.status.toUpperCase() == 'WATCHING' || e.progress > 0)) ||
+      offlineCollection.any((e) => e.isTmdb && (e.status.toUpperCase() == 'CURRENT' || e.status.toUpperCase() == 'WATCHING' || e.progress > 0)) ||
+      (lastSession?.isTmdb ?? false)
+    );
+
+    final tmdbRecsAsync = isWatchingTmdb ? ref.watch(tmdbRecommendationsProvider) : null;
+
     final hasContinueWatching = continueWatchingEntries.isNotEmpty;
     final hasWatching = (collectionAsync.value?.any((e) =>
         e.status.toUpperCase() == 'CURRENT' || e.status.toUpperCase() == 'WATCHING') ?? false) ||
         continueWatchingEntries.isNotEmpty;
     final hasMissedSequels = missedSequelsAsync.value?.isNotEmpty ?? false;
-    final hasRecommendations = recommendationsAsync.value?.isNotEmpty ?? false;
+    final hasAniListRecs = recommendationsAsync.value?.isNotEmpty ?? false;
+    final hasTmdbRecs = isWatchingTmdb && (tmdbRecsAsync?.value?.isNotEmpty ?? false);
+    final hasRecommendations = hasAniListRecs || hasTmdbRecs;
     final hasDownloadedAnime = downloadedAnimeAsync.value?.isNotEmpty ?? false;
     final hasAnyContent = hasContinueWatching || hasWatching || hasMissedSequels || hasRecommendations || hasDownloadedAnime;
 
@@ -662,10 +708,20 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                         error: (error, stack) => const SliverToBoxAdapter(child: SizedBox.shrink()),
                       ),
 
-                      // ─── 4. Te podría gustar (Recomendaciones del Usuario) ───
-                      recommendationsAsync.when(
-                        data: (recs) {
-                          if (recs.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+                      // ─── 4. Te podría gustar (Recomendaciones Mixtas AniList + TMDB si el usuario ve shows) ───
+                      Builder(
+                        builder: (context) {
+                          final aniRecs = recommendationsAsync.value ?? const <AnimeEntry>[];
+                          final tmdbRecs = (isWatchingTmdb && tmdbRecsAsync != null)
+                              ? (tmdbRecsAsync.value ?? const <AnimeEntry>[])
+                              : const <AnimeEntry>[];
+
+                          final mixedRecs = _mixRecommendations(aniRecs, tmdbRecs);
+
+                          if (mixedRecs.isEmpty) {
+                            return const SliverToBoxAdapter(child: SizedBox.shrink());
+                          }
+
                           return SliverToBoxAdapter(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -678,10 +734,10 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                                     scrollDirection: Axis.horizontal,
                                     cacheExtent: 350,
                                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                    itemCount: recs.length,
+                                    itemCount: mixedRecs.length,
                                     separatorBuilder: (context, index) => SizedBox(width: carouselSpacing),
                                     itemBuilder: (context, index) {
-                                      final item = recs[index];
+                                      final item = mixedRecs[index];
                                       return AnimeCard(
                                         entry: item,
                                         width: animeCardWidth,
@@ -695,47 +751,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                             ),
                           );
                         },
-                        loading: () => const SliverToBoxAdapter(child: SizedBox.shrink()),
-                        error: (error, stack) => const SliverToBoxAdapter(child: SizedBox.shrink()),
                       ),
-
-                      // ─── 5. Series y Películas TMDB (Integración Híbrida) ───
-                      if (ref.watch(showsSectionEnabledProvider))
-                        ref.watch(tmdbTrendingShowsProvider).when(
-                          data: (shows) {
-                            if (shows.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
-                            return SliverToBoxAdapter(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  _SectionHeader(title: l10n.exploreShows),
-                                  SizedBox(
-                                    height: carouselHeight + 16,
-                                    child: ListView.separated(
-                                      clipBehavior: Clip.none,
-                                      scrollDirection: Axis.horizontal,
-                                      cacheExtent: 350,
-                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                      itemCount: shows.length,
-                                      separatorBuilder: (context, index) => SizedBox(width: carouselSpacing),
-                                      itemBuilder: (context, index) {
-                                        final item = shows[index];
-                                        return AnimeCard(
-                                          entry: item,
-                                          width: animeCardWidth,
-                                          onTap: () => _openDetail(context, item),
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                  const SizedBox(height: 20),
-                                ],
-                              ),
-                            );
-                          },
-                          loading: () => const SliverToBoxAdapter(child: SizedBox.shrink()),
-                          error: (error, stack) => const SliverToBoxAdapter(child: SizedBox.shrink()),
-                        ),
 
                       const SliverToBoxAdapter(
                         child: SizedBox(height: 90),

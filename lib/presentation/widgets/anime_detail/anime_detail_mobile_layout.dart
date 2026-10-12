@@ -307,7 +307,7 @@ class _AnimeDetailMobileLayoutState
     final isLoggedIn = serverState.status?.isLoggedIn ?? false;
     final l10n = ref.read(translationsProvider);
 
-    if (isLoggedIn) {
+    if (isLoggedIn && !isTmdb) {
       await repo.editAnilistListEntry(
         mediaId: widget.mediaId,
         type: 'anime',
@@ -322,6 +322,7 @@ class _AnimeDetailMobileLayoutState
       status: newStatus,
       progress: progress,
       totalCount: totalEpisodes,
+      isTmdb: isTmdb,
     );
 
     if (context.mounted) {
@@ -1270,8 +1271,8 @@ class _AnimeDetailMobileLayoutState
                                               : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
                                           border: Border.all(
                                             color: isDark
-                                                ? Colors.white.withValues(alpha: 0.18)
-                                                : theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
+                                              ? Colors.white.withValues(alpha: 0.18)
+                                              : theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
                                             width: 0.8,
                                           ),
                                         ),
@@ -1285,85 +1286,87 @@ class _AnimeDetailMobileLayoutState
                                   ),
                                 ),
                               ),
-                              const SizedBox(width: 6),
-                              GlassMenuAnchor(
-                                width: 210,
-                                items: [
-                                  GlassMenuItem(
-                                    label: l10n.statusWatching,
-                                    icon: const Icon(
-                                      Icons.play_circle_fill_rounded,
-                                      size: 18,
-                                      color: Color(0xFF10B981),
-                                    ),
-                                    onPressed: () => _updateStatus(
-                                      context,
-                                      'CURRENT',
-                                      title,
-                                      progress,
-                                      totalEps,
-                                    ),
+                            ],
+                            const SizedBox(width: 6),
+                            GlassMenuAnchor(
+                              width: 210,
+                              items: [
+                                GlassMenuItem(
+                                  label: l10n.statusWatching,
+                                  icon: const Icon(
+                                    Icons.play_circle_fill_rounded,
+                                    size: 18,
+                                    color: Color(0xFF10B981),
                                   ),
-                                  GlassMenuItem(
-                                    label: l10n.statusPlanning,
-                                    icon: const Icon(
-                                      Icons.bookmark_added_rounded,
-                                      size: 18,
-                                      color: Color(0xFF3B82F6),
-                                    ),
-                                    onPressed: () => _updateStatus(
-                                      context,
-                                      'PLANNING',
-                                      title,
-                                      progress,
-                                      totalEps,
-                                    ),
+                                  onPressed: () => _updateStatus(
+                                    context,
+                                    'CURRENT',
+                                    title,
+                                    progress,
+                                    totalEps,
                                   ),
-                                  GlassMenuItem(
-                                    label: l10n.statusCompleted,
-                                    icon: const Icon(
-                                      Icons.check_circle_rounded,
-                                      size: 18,
-                                      color: Color(0xFF8B5CF6),
-                                    ),
-                                    onPressed: () => _updateStatus(
-                                      context,
-                                      'COMPLETED',
-                                      title,
-                                      progress,
-                                      totalEps,
-                                    ),
+                                ),
+                                GlassMenuItem(
+                                  label: l10n.statusPlanning,
+                                  icon: const Icon(
+                                    Icons.bookmark_added_rounded,
+                                    size: 18,
+                                    color: Color(0xFF3B82F6),
                                   ),
-                                  GlassMenuItem(
-                                    label: l10n.statusPaused,
-                                    icon: const Icon(
-                                      Icons.pause_circle_filled_rounded,
-                                      size: 18,
-                                      color: Color(0xFFF59E0B),
-                                    ),
-                                    onPressed: () => _updateStatus(
-                                      context,
-                                      'PAUSED',
-                                      title,
-                                      progress,
-                                      totalEps,
-                                    ),
+                                  onPressed: () => _updateStatus(
+                                    context,
+                                    'PLANNING',
+                                    title,
+                                    progress,
+                                    totalEps,
                                   ),
-                                  GlassMenuItem(
-                                    label: l10n.statusDropped,
-                                    icon: const Icon(
-                                      Icons.cancel_rounded,
-                                      size: 18,
-                                      color: Color(0xFFEF4444),
-                                    ),
-                                    onPressed: () => _updateStatus(
-                                      context,
-                                      'DROPPED',
-                                      title,
-                                      progress,
-                                      totalEps,
-                                    ),
+                                ),
+                                GlassMenuItem(
+                                  label: l10n.statusCompleted,
+                                  icon: const Icon(
+                                    Icons.check_circle_rounded,
+                                    size: 18,
+                                    color: Color(0xFF8B5CF6),
                                   ),
+                                  onPressed: () => _updateStatus(
+                                    context,
+                                    'COMPLETED',
+                                    title,
+                                    progress,
+                                    totalEps,
+                                  ),
+                                ),
+                                GlassMenuItem(
+                                  label: l10n.statusPaused,
+                                  icon: const Icon(
+                                    Icons.pause_circle_filled_rounded,
+                                    size: 18,
+                                    color: Color(0xFFF59E0B),
+                                  ),
+                                  onPressed: () => _updateStatus(
+                                    context,
+                                    'PAUSED',
+                                    title,
+                                    progress,
+                                    totalEps,
+                                  ),
+                                ),
+                                GlassMenuItem(
+                                  label: l10n.statusDropped,
+                                  icon: const Icon(
+                                    Icons.cancel_rounded,
+                                    size: 18,
+                                    color: Color(0xFFEF4444),
+                                  ),
+                                  onPressed: () => _updateStatus(
+                                    context,
+                                    'DROPPED',
+                                    title,
+                                    progress,
+                                    totalEps,
+                                  ),
+                                ),
+                                if (!isTmdb)
                                   GlassMenuItem(
                                     label: l10n.editDetails,
                                     icon: const Icon(
@@ -1372,43 +1375,42 @@ class _AnimeDetailMobileLayoutState
                                     ),
                                     onPressed: () => widget.onOpenEditEntryModal(title),
                                   ),
-                                ],
-                                builder: (context, controller) {
-                                  return ClipOval(
-                                    child: BackdropFilter(
-                                      filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                                      child: Material(
-                                        color: Colors.transparent,
-                                        child: InkWell(
-                                          customBorder: const CircleBorder(),
-                                          onTap: controller.open,
-                                          child: Ink(
-                                            padding: const EdgeInsets.all(9),
-                                            decoration: BoxDecoration(
-                                              shape: BoxShape.circle,
+                              ],
+                              builder: (context, controller) {
+                                return ClipOval(
+                                  child: BackdropFilter(
+                                    filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                                    child: Material(
+                                      color: Colors.transparent,
+                                      child: InkWell(
+                                        customBorder: const CircleBorder(),
+                                        onTap: controller.open,
+                                        child: Ink(
+                                          padding: const EdgeInsets.all(9),
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: isDark
+                                                ? Colors.white.withValues(alpha: 0.08)
+                                                : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+                                            border: Border.all(
                                               color: isDark
-                                                  ? Colors.white.withValues(alpha: 0.08)
-                                                  : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
-                                              border: Border.all(
-                                                color: isDark
-                                                    ? Colors.white.withValues(alpha: 0.18)
-                                                    : theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
-                                                width: 0.8,
-                                              ),
+                                                  ? Colors.white.withValues(alpha: 0.18)
+                                                  : theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
+                                              width: 0.8,
                                             ),
-                                            child: Icon(
-                                              Icons.edit_outlined,
-                                              size: 20,
-                                              color: isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
-                                            ),
+                                          ),
+                                          child: Icon(
+                                            Icons.edit_outlined,
+                                            size: 20,
+                                            color: isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
                                           ),
                                         ),
                                       ),
                                     ),
-                                  );
-                                },
-                              ),
-                            ],
+                                  ),
+                                );
+                              },
+                            ),
                           ],
                         ),
 
