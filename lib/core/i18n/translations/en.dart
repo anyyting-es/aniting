@@ -2119,7 +2119,7 @@ class EnglishTranslations implements AppTranslations {
   @override
   String etaLabel(String eta) => '$eta remaining';
   @override
-  String get downloadedAnimeSection => 'Downloaded Anime';
+  String get downloadedAnimeSection => 'Downloads & Local Library';
   @override
   String get downloadedMangaSection => 'Downloaded Manga';
   @override
@@ -2212,5 +2212,75 @@ class EnglishTranslations implements AppTranslations {
   String episodeRuntime(int minutes) => '${minutes}m';
   @override
   String optionsCountLabel(int count) => '$count options';
+
+  // Local Library Settings & Management
+  @override
+  String get localLibrarySettingsTitle => 'Local Library';
+  @override
+  String get localLibrarySettingsDesc => 'Manage disk folders, episode scanner, and manual matching';
+  @override
+  String get libraryFoldersSection => 'Library Folders';
+  @override
+  String get mainLibraryFolder => 'Main Folder';
+  @override
+  String get additionalLibraryFolders => 'Additional Folders';
+  @override
+  String get addLibraryFolder => 'Add Folder';
+  @override
+  String get removeFolder => 'Remove Folder';
+  @override
+  String get enterFolderPathHint => 'Enter absolute folder path (e.g. D:\\Anime)';
+  @override
+  String get folderPathLabel => 'Folder Path';
+  @override
+  String get saveFolder => 'Save Folder';
+  @override
+  String get folderAddedSuccess => 'Folder added successfully';
+  @override
+  String get folderRemovedSuccess => 'Folder removed';
+  @override
+  String get folderPathInvalid => 'The folder path is invalid or empty';
+  @override
+  String get libraryStatsSection => 'Library Statistics';
+  @override
+  String get matchedShowsCount => 'Matched Series';
+  @override
+  String get localEpisodesCount => 'Local Episodes';
+  @override
+  String get unmatchedFilesCount => 'Unmatched Files';
+  @override
+  String get scanLibrarySection => 'Library Scanner';
+  @override
+  String get scanLibraryNow => 'Scan Library';
+  @override
+  String get scanInProgressStatus => 'Scanning local media files...';
+  @override
+  String get scanSuccessNotice => 'Library scan completed successfully';
+  @override
+  String get enhancedScanOption => 'Enhanced scan (Offline DB + MAL)';
+  @override
+  String get enhancedScanOptionDesc => 'Identify anime not yet in your list using external databases';
+  @override
+  String get resolveUnmatchedTitle => 'Unmatched Files';
+  @override
+  String get resolveUnmatchedSubtitle => 'Files that could not be matched automatically to any anime';
+  @override
+  String get resolveUnmatchedAction => 'Resolve Unmatched';
+  @override
+  String get noUnmatchedFilesNotice => 'No unmatched files found. Everything is matched!';
+  @override
+  String get matchWithAnimeAction => 'Match with Anime';
+  @override
+  String get suggestionsDetected => 'Detected Suggestions';
+  @override
+  String get matchConfirmedSuccess => 'Files matched successfully';
+  @override
+  String get ignoreFilesConfirm => 'Ignore files';
+  @override
+  String get unmatchConfirm => 'Unmatch';
+  @override
+  String get noFoldersConfigured => 'No library folders configured yet';
+  @override
+  String filesInDirectory(int count) => '$count files';
 }
 

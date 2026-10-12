@@ -270,6 +270,15 @@ class FeedCacheService {
 
   // --- CLEAR CACHE METHODS ---
 
+  Future<void> clearCache(String key) async {
+    _animeListsCache.remove(key);
+    _mangaListsCache.remove(key);
+    try {
+      final prefs = _cachedPrefs ?? await SharedPreferences.getInstance();
+      await prefs.remove(key);
+    } catch (_) {}
+  }
+
   Future<void> clearUserCache() async {
     _animeListsCache.remove(kCacheContinueWatchingAnime);
     _animeListsCache.remove(kCacheAnimeCollection);

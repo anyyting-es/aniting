@@ -11,10 +11,14 @@ class ApiEndpoints {
   static const String libraryScan = '/library/scan';
   static const String libraryLocalFiles = '/library/local-files';
   static const String animeEntry = '/library/anime-entry';
+  static const String animeEntrySuggestions = '/library/anime-entry/suggestions';
+  static const String animeEntryManualMatch = '/library/anime-entry/manual-match';
   static const String animeUpdateProgress = '/library/anime-entry/update-progress';
   static const String animeUpdateRepeat = '/library/anime-entry/update-repeat';
   static const String animeCollection = '/anime/collection';
   static const String anilistListEntry = '/anilist/list-entry';
+  static const String directorySelector = '/directory-selector';
+  static const String unknownMedia = '/library/unknown-media';
 
   // Playback & Torrent
   static const String torrentstreamStart = '/torrentstream/start';

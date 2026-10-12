@@ -9,6 +9,7 @@ import 'package:seanime_app/presentation/screens/download_manager_screen.dart';
 import 'package:seanime_app/presentation/screens/downloads_screen.dart';
 import 'package:seanime_app/presentation/screens/extensions_marketplace_screen.dart';
 import 'package:seanime_app/presentation/screens/settings/subpages/about_settings_screen.dart';
+import 'package:seanime_app/presentation/screens/settings/subpages/local_library_settings_screen.dart';
 import 'package:seanime_app/presentation/screens/settings/subpages/manga_settings_screen.dart';
 import 'package:seanime_app/presentation/screens/settings/subpages/personalizacion_settings_screen.dart';
 import 'package:seanime_app/presentation/screens/settings/subpages/player_settings_screen.dart';
@@ -29,6 +30,7 @@ enum SettingsCategory {
   streaming,
   downloadManager,
   downloads,
+  localLibrary,
   server,
   about,
 }
@@ -72,6 +74,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         return const DownloadManagerScreen(isEmbedded: true);
       case SettingsCategory.downloads:
         return const DownloadsScreen(isEmbedded: true);
+      case SettingsCategory.localLibrary:
+        return const LocalLibrarySettingsScreen(isEmbedded: true);
       case SettingsCategory.server:
         return const ServerSettingsScreen(isEmbedded: true);
       case SettingsCategory.about:
@@ -108,6 +112,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           break;
         case SettingsCategory.downloads:
           page = const DownloadsScreen();
+          break;
+        case SettingsCategory.localLibrary:
+          page = const LocalLibrarySettingsScreen();
           break;
         case SettingsCategory.server:
           page = const ServerSettingsScreen();
@@ -280,6 +287,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             SettingsSectionHeader(title: l10n.system),
             const SizedBox(height: 4),
 
+            SettingsTile(
+              icon: Icons.folder_copy_outlined,
+              title: l10n.localLibrarySettingsTitle,
+              isSelected: isWideScreen && _selectedCategory == SettingsCategory.localLibrary,
+              onTap: () => _onSelectCategory(SettingsCategory.localLibrary, isWideScreen),
+            ),
             SettingsTile(
               icon: AppIcons.server(iconPack),
               title: l10n.serverAndNetwork,

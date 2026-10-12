@@ -191,7 +191,7 @@ func (h *Handler) HandleGetLibraryCollection(c echo.Context) error {
 
 		if len(missingMediaIds) > 0 {
 			_ = h.App.AnilistPlatformRef.Get().AddMediaToCollection(c.Request().Context(), missingMediaIds)
-			if updatedCol, err := h.App.GetAnimeCollection(false); err == nil && updatedCol != nil {
+			if updatedCol, err := h.App.GetAnimeCollection(true); err == nil && updatedCol != nil {
 				animeCollection = updatedCol
 			}
 		}

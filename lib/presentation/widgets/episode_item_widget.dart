@@ -82,15 +82,15 @@ void showEpisodeDetailModal({
                           borderRadius: BorderRadius.circular(modalRadius),
                           child: image != null && image.isNotEmpty
                               ? CachedNetworkImage(
-                                  memCacheWidth: 320, memCacheHeight: 180, maxWidthDiskCache: 480, maxHeightDiskCache: 270,
+                                  memCacheWidth: 320, maxWidthDiskCache: 480,
                                   imageUrl: image,
                                   fit: BoxFit.cover,
                                   errorWidget: (context, url, error) => fallbackImage != null
-                                      ? CachedNetworkImage(memCacheWidth: 320, memCacheHeight: 180, maxWidthDiskCache: 480, maxHeightDiskCache: 270, imageUrl: fallbackImage, fit: BoxFit.cover)
+                                      ? CachedNetworkImage(memCacheWidth: 320, maxWidthDiskCache: 480, imageUrl: fallbackImage, fit: BoxFit.cover)
                                       : Container(color: theme.colorScheme.surfaceContainerHighest),
                                 )
                               : fallbackImage != null
-                                  ? CachedNetworkImage(memCacheWidth: 320, memCacheHeight: 180, maxWidthDiskCache: 480, maxHeightDiskCache: 270, imageUrl: fallbackImage, fit: BoxFit.cover)
+                                  ? CachedNetworkImage(memCacheWidth: 320, maxWidthDiskCache: 480, imageUrl: fallbackImage, fit: BoxFit.cover)
                                   : Container(color: theme.colorScheme.surfaceContainerHighest),
                         ),
                         Container(
@@ -446,16 +446,16 @@ class EpisodeListItem extends ConsumerWidget {
                       children: [
                         if (image != null && image!.isNotEmpty)
                           CachedNetworkImage(
-                            memCacheWidth: 320, memCacheHeight: 180, maxWidthDiskCache: 480, maxHeightDiskCache: 270,
+                            memCacheWidth: 320, maxWidthDiskCache: 480,
                             imageUrl: image!,
                             fit: BoxFit.cover,
                             errorWidget: (context, url, error) => fallbackImage != null
-                                ? CachedNetworkImage(memCacheWidth: 320, memCacheHeight: 180, maxWidthDiskCache: 480, maxHeightDiskCache: 270, imageUrl: fallbackImage!, fit: BoxFit.cover)
+                                ? CachedNetworkImage(memCacheWidth: 320, maxWidthDiskCache: 480, imageUrl: fallbackImage!, fit: BoxFit.cover)
                                 : Container(color: theme.colorScheme.surfaceContainerHighest),
                           )
                         else if (fallbackImage != null)
                           CachedNetworkImage(
-                            memCacheWidth: 320, memCacheHeight: 180, maxWidthDiskCache: 480, maxHeightDiskCache: 270,
+                            memCacheWidth: 320, maxWidthDiskCache: 480,
                             imageUrl: fallbackImage!,
                             fit: BoxFit.cover,
                             errorWidget: (context, url, error) =>

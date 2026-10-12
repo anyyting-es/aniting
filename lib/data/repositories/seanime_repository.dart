@@ -18,6 +18,7 @@ import 'package:seanime_app/data/models/server_status.dart';
 import 'package:seanime_app/data/models/torrent_file_preview.dart';
 import 'package:seanime_app/data/models/torrent_models.dart';
 import 'package:seanime_app/core/storage/app_storage_paths.dart';
+import 'package:seanime_app/data/models/local_file_item.dart';
 import 'package:seanime_app/data/services/feed_cache_service.dart';
 import 'package:seanime_app/data/services/offline_library_service.dart';
 
@@ -434,21 +435,24 @@ class SeanimeRepository {
 
           final unknownGroups = root?['unknownGroups'] as List?;
           if (unknownGroups != null) {
+            final unknownMediaIds = <int>[];
             for (final g in unknownGroups) {
-              if (g is Map<String, dynamic> && g['entries'] is List) {
-                for (final entry in g['entries'] as List) {
-                  if (entry is Map<String, dynamic>) {
-                    final entryMap = Map<String, dynamic>.from(entry);
-                    if (entryMap['media'] is Map) {
-                      final m = entryMap['media'] as Map;
-                      entryMap['mediaId'] ??= m['id'];
-                    }
-                    final animeEntry = AnimeEntry.fromJson(entryMap);
-                    if (animeEntry.mediaId > 0 && !seenMediaIds.contains(animeEntry.mediaId)) {
-                      seenMediaIds.add(animeEntry.mediaId);
-                      list.add(animeEntry);
-                    }
-                  }
+              if (g is Map<String, dynamic>) {
+                final mId = (g['mediaId'] as num?)?.toInt() ?? 0;
+                if (mId > 0 && !seenMediaIds.contains(mId)) {
+                  unknownMediaIds.add(mId);
+                }
+              }
+            }
+            if (unknownMediaIds.isNotEmpty) {
+              addUnknownMedia(unknownMediaIds).ignore();
+              final fetched = await Future.wait(
+                unknownMediaIds.map((id) => getAnimeEntryAsAnimeEntry(id)),
+              );
+              for (final entry in fetched) {
+                if (entry != null && !seenMediaIds.contains(entry.mediaId)) {
+                  seenMediaIds.add(entry.mediaId);
+                  list.add(entry);
                 }
               }
             }
@@ -458,7 +462,32 @@ class SeanimeRepository {
         debugPrint('Error fetching library collection: $e');
       }
 
-      // 3. Merge entries from OfflineLibraryService
+      // 3. Merge matched media from getLocalFiles directly to guarantee local library visibility
+      try {
+        final localFiles = await getLocalFiles();
+        final missingLocalIds = localFiles
+            .where((f) => f.isMatched && !seenMediaIds.contains(f.mediaId))
+            .map((f) => f.mediaId)
+            .toSet()
+            .toList();
+
+        if (missingLocalIds.isNotEmpty) {
+          addUnknownMedia(missingLocalIds).ignore();
+          final fetched = await Future.wait(
+            missingLocalIds.map((id) => getAnimeEntryAsAnimeEntry(id)),
+          );
+          for (final entry in fetched) {
+            if (entry != null && !seenMediaIds.contains(entry.mediaId)) {
+              seenMediaIds.add(entry.mediaId);
+              list.add(entry);
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint('Error merging local files in getLibraryCollection: $e');
+      }
+
+      // 4. Merge entries from OfflineLibraryService
       final localAnime = OfflineLibraryService.instance.getAnimeCollection();
       for (final offEntry in localAnime) {
         if (!seenMediaIds.contains(offEntry.mediaId)) {
@@ -489,6 +518,46 @@ class SeanimeRepository {
 
   /// Fetches only anime entries that actually possess downloaded/local files in the local library
   Future<List<AnimeEntry>> getDownloadedAnime() async {
+    final list = <AnimeEntry>[];
+    final seenMediaIds = <int>{};
+
+    void checkAndAdd(dynamic entry, String? listStatus) {
+      if (entry is Map<String, dynamic>) {
+        final libData = entry['libraryData'] as Map<String, dynamic>?;
+        final nakamaLibData = entry['nakamaLibraryData'] as Map<String, dynamic>?;
+        final mainFiles = (libData?['mainFileCount'] as num?)?.toInt() ??
+            (nakamaLibData?['mainFileCount'] as num?)?.toInt() ??
+            0;
+        // Only include entries that actually have local files downloaded!
+        if (mainFiles > 0 || (libData != null && libData.isNotEmpty)) {
+          final entryMap = Map<String, dynamic>.from(entry);
+          if (listStatus != null && (entryMap['status'] == null || entryMap['status'] == '')) {
+            entryMap['status'] = listStatus;
+          }
+          if (entryMap['media'] is Map) {
+            final m = entryMap['media'] as Map;
+            entryMap['mediaId'] ??= m['id'];
+          }
+          entryMap['hasLocalFiles'] = true;
+          entryMap['mainFileCount'] = mainFiles;
+          final animeEntry = AnimeEntry.fromJson(entryMap);
+          if (animeEntry.mediaId > 0 && !seenMediaIds.contains(animeEntry.mediaId)) {
+            seenMediaIds.add(animeEntry.mediaId);
+            final off = OfflineLibraryService.instance.getAnimeEntry(animeEntry.mediaId);
+            if (off != null) {
+              list.add(animeEntry.copyWith(
+                status: (off.status.toUpperCase() == 'CURRENT' || off.status.toUpperCase() == 'WATCHING') ? 'CURRENT' : animeEntry.status,
+                progress: math.max(animeEntry.progress, off.progress),
+                episodeNumber: off.episodeNumber ?? animeEntry.episodeNumber,
+              ));
+            } else {
+              list.add(animeEntry);
+            }
+          }
+        }
+      }
+    }
+
     try {
       final response = await _apiClient.get(ApiEndpoints.libraryCollection);
       if (response.statusCode == 200 && response.data != null) {
@@ -498,45 +567,6 @@ class SeanimeRepository {
           root = data['data'] is Map<String, dynamic> ? data['data'] as Map<String, dynamic> : data;
         }
         final rawLists = (root?['lists'] ?? root?['MediaListCollection']?['lists']) as List?;
-        final list = <AnimeEntry>[];
-        final seenMediaIds = <int>{};
-
-        void checkAndAdd(dynamic entry, String? listStatus) {
-          if (entry is Map<String, dynamic>) {
-            final libData = entry['libraryData'] as Map<String, dynamic>?;
-            final nakamaLibData = entry['nakamaLibraryData'] as Map<String, dynamic>?;
-            final mainFiles = (libData?['mainFileCount'] as num?)?.toInt() ??
-                (nakamaLibData?['mainFileCount'] as num?)?.toInt() ??
-                0;
-            // Only include entries that actually have local files downloaded!
-            if (mainFiles > 0 || (libData != null && libData.isNotEmpty)) {
-              final entryMap = Map<String, dynamic>.from(entry);
-              if (listStatus != null && (entryMap['status'] == null || entryMap['status'] == '')) {
-                entryMap['status'] = listStatus;
-              }
-              if (entryMap['media'] is Map) {
-                final m = entryMap['media'] as Map;
-                entryMap['mediaId'] ??= m['id'];
-              }
-              entryMap['hasLocalFiles'] = true;
-              entryMap['mainFileCount'] = mainFiles;
-              final animeEntry = AnimeEntry.fromJson(entryMap);
-              if (animeEntry.mediaId > 0 && !seenMediaIds.contains(animeEntry.mediaId)) {
-                seenMediaIds.add(animeEntry.mediaId);
-                final off = OfflineLibraryService.instance.getAnimeEntry(animeEntry.mediaId);
-                if (off != null) {
-                  list.add(animeEntry.copyWith(
-                    status: (off.status.toUpperCase() == 'CURRENT' || off.status.toUpperCase() == 'WATCHING') ? 'CURRENT' : animeEntry.status,
-                    progress: math.max(animeEntry.progress, off.progress),
-                    episodeNumber: off.episodeNumber ?? animeEntry.episodeNumber,
-                  ));
-                } else {
-                  list.add(animeEntry);
-                }
-              }
-            }
-          }
-        }
 
         if (rawLists != null) {
           for (final l in rawLists) {
@@ -551,21 +581,59 @@ class SeanimeRepository {
 
         final unknownGroups = root?['unknownGroups'] as List?;
         if (unknownGroups != null) {
+          final unknownMediaIds = <int>[];
           for (final g in unknownGroups) {
-            if (g is Map<String, dynamic> && g['entries'] is List) {
-              for (final entry in g['entries'] as List) {
-                checkAndAdd(entry, null);
+            if (g is Map<String, dynamic>) {
+              final mId = (g['mediaId'] as num?)?.toInt() ?? 0;
+              if (mId > 0 && !seenMediaIds.contains(mId)) {
+                unknownMediaIds.add(mId);
+              }
+            }
+          }
+          if (unknownMediaIds.isNotEmpty) {
+            addUnknownMedia(unknownMediaIds).ignore();
+            final fetched = await Future.wait(
+              unknownMediaIds.map((id) => getAnimeEntryAsAnimeEntry(id)),
+            );
+            for (final entry in fetched) {
+              if (entry != null && !seenMediaIds.contains(entry.mediaId)) {
+                seenMediaIds.add(entry.mediaId);
+                list.add(entry);
               }
             }
           }
         }
-
-        return list;
       }
     } catch (e) {
-      debugPrint('Error fetching downloaded anime: $e');
+      debugPrint('Error fetching library collection in getDownloadedAnime: $e');
     }
-    return [];
+
+    // Secondary verification: check local files directly from database
+    try {
+      final localFiles = await getLocalFiles();
+      final missingMediaIds = localFiles
+          .where((f) => f.isMatched && !seenMediaIds.contains(f.mediaId))
+          .map((f) => f.mediaId)
+          .toSet()
+          .toList();
+
+      if (missingMediaIds.isNotEmpty) {
+        addUnknownMedia(missingMediaIds).ignore();
+        final fetched = await Future.wait(
+          missingMediaIds.map((id) => getAnimeEntryAsAnimeEntry(id)),
+        );
+        for (final entry in fetched) {
+          if (entry != null && !seenMediaIds.contains(entry.mediaId)) {
+            seenMediaIds.add(entry.mediaId);
+            list.add(entry);
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error verifying local files in getDownloadedAnime: $e');
+    }
+
+    return list;
   }
 
   Future<void> refreshAnilistCollection() async {
@@ -1422,6 +1490,143 @@ class SeanimeRepository {
       debugPrint('Error deleting local files: $e');
       return false;
     }
+  }
+
+  /// Retrieves all scanned local files indexed by the server
+  Future<List<LocalFileItem>> getLocalFiles() async {
+    try {
+      final response = await _apiClient.get(ApiEndpoints.libraryLocalFiles);
+      if (response.statusCode == 200 && response.data != null) {
+        final data = response.data;
+        final list = (data is Map ? data['data'] : data) as List?;
+        if (list != null) {
+          return list
+              .whereType<Map<String, dynamic>>()
+              .map((json) => LocalFileItem.fromJson(json))
+              .toList();
+        }
+      }
+    } catch (e) {
+      debugPrint('Error getting local files: $e');
+    }
+    return [];
+  }
+
+  /// Adds unknown media IDs to the user's AniList planning list
+  Future<bool> addUnknownMedia(List<int> mediaIds) async {
+    if (mediaIds.isEmpty) return true;
+    try {
+      final res = await _apiClient.post(
+        ApiEndpoints.unknownMedia,
+        data: {'mediaIds': mediaIds},
+      );
+      return res.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error adding unknown media: $e');
+      return false;
+    }
+  }
+
+  /// Fetches an anime entry from the local library (/library/anime-entry/{id}) and returns it as an AnimeEntry
+  Future<AnimeEntry?> getAnimeEntryAsAnimeEntry(int mediaId) async {
+    try {
+      final response = await _apiClient.get('${ApiEndpoints.animeEntry}/$mediaId');
+      if (response.statusCode == 200 && response.data != null) {
+        final data = response.data;
+        final root = data is Map<String, dynamic> && data['data'] is Map<String, dynamic>
+            ? data['data'] as Map<String, dynamic>
+            : (data is Map<String, dynamic> ? data : null);
+        if (root != null) {
+          final entry = AnimeEntry.fromJson(root);
+          if (entry.mediaId > 0) {
+            return entry.copyWith(hasLocalFiles: true);
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching anime entry as AnimeEntry $mediaId: $e');
+    }
+    return null;
+  }
+
+  /// Fetches anime suggestions from AniList for unmatched files in a specific directory
+  Future<List<AnimeEntry>> getAnimeSuggestions(String dir) async {
+    try {
+      final response = await _apiClient.post(
+        ApiEndpoints.animeEntrySuggestions,
+        data: {'dir': dir},
+      );
+      if (response.statusCode == 200 && response.data != null) {
+        final data = response.data;
+        final list = (data is Map ? data['data'] : data) as List?;
+        if (list != null) {
+          return list
+              .whereType<Map<String, dynamic>>()
+              .map((json) => AnimeEntry.fromJson(json))
+              .toList();
+        }
+      }
+    } catch (e) {
+      debugPrint('Error getting anime suggestions: $e');
+    }
+    return [];
+  }
+
+  /// Manually matches local files to a specific AniList Media ID
+  Future<bool> manualMatchLocalFiles(List<String> paths, int mediaId) async {
+    try {
+      final response = await _apiClient.post(
+        ApiEndpoints.animeEntryManualMatch,
+        data: {
+          'paths': paths,
+          'mediaId': mediaId,
+        },
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error manual matching local files: $e');
+      return false;
+    }
+  }
+
+  /// Updates local files with an action: 'match', 'unmatch', 'ignore', 'unignore', 'lock', 'unlock'
+  Future<bool> updateLocalFilesAction(List<String> paths, String action, {int? mediaId}) async {
+    try {
+      final data = <String, dynamic>{
+        'paths': paths,
+        'action': action,
+      };
+      if (mediaId != null) {
+        data['mediaId'] = mediaId;
+      }
+      final response = await _apiClient.patch(
+        ApiEndpoints.libraryLocalFiles,
+        data: data,
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error updating local files action: $e');
+      return false;
+    }
+  }
+
+  /// Queries directory suggestions and validates paths via backend directory selector
+  Future<Map<String, dynamic>?> getDirectorySuggestions(String input) async {
+    try {
+      final response = await _apiClient.post(
+        ApiEndpoints.directorySelector,
+        data: {'input': input},
+      );
+      if (response.statusCode == 200 && response.data != null) {
+        final data = response.data;
+        return (data is Map && data.containsKey('data'))
+            ? data['data'] as Map<String, dynamic>?
+            : data as Map<String, dynamic>?;
+      }
+    } catch (e) {
+      debugPrint('Error querying directory selector: $e');
+    }
+    return null;
   }
 
   // ================= Airing Schedule & Genre Discovery =================

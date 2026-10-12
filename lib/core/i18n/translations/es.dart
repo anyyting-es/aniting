@@ -2125,7 +2125,7 @@ class SpanishTranslations implements AppTranslations {
   @override
   String etaLabel(String eta) => 'Faltan $eta';
   @override
-  String get downloadedAnimeSection => 'Descargas de anime';
+  String get downloadedAnimeSection => 'Descargas y biblioteca local';
   @override
   String get downloadedMangaSection => 'Descargas de manga';
   @override
@@ -2218,5 +2218,75 @@ class SpanishTranslations implements AppTranslations {
   String episodeRuntime(int minutes) => '$minutes min';
   @override
   String optionsCountLabel(int count) => '$count opciones';
+
+  // Local Library Settings & Management
+  @override
+  String get localLibrarySettingsTitle => 'Biblioteca Local';
+  @override
+  String get localLibrarySettingsDesc => 'Gestiona las carpetas del disco, escaneo de episodios y emparejamiento manual';
+  @override
+  String get libraryFoldersSection => 'Carpetas de la biblioteca';
+  @override
+  String get mainLibraryFolder => 'Carpeta principal';
+  @override
+  String get additionalLibraryFolders => 'Carpetas adicionales';
+  @override
+  String get addLibraryFolder => 'Agregar carpeta';
+  @override
+  String get removeFolder => 'Eliminar carpeta';
+  @override
+  String get enterFolderPathHint => 'Introduce la ruta absoluta (ej. D:\\Anime)';
+  @override
+  String get folderPathLabel => 'Ruta de la carpeta';
+  @override
+  String get saveFolder => 'Guardar carpeta';
+  @override
+  String get folderAddedSuccess => 'Carpeta agregada con éxito';
+  @override
+  String get folderRemovedSuccess => 'Carpeta eliminada';
+  @override
+  String get folderPathInvalid => 'La ruta de la carpeta no es válida o está vacía';
+  @override
+  String get libraryStatsSection => 'Estadísticas de la biblioteca';
+  @override
+  String get matchedShowsCount => 'Series identificadas';
+  @override
+  String get localEpisodesCount => 'Episodios locales';
+  @override
+  String get unmatchedFilesCount => 'Sin emparejar';
+  @override
+  String get scanLibrarySection => 'Escáner de biblioteca';
+  @override
+  String get scanLibraryNow => 'Escanear biblioteca';
+  @override
+  String get scanInProgressStatus => 'Escaneando archivos locales...';
+  @override
+  String get scanSuccessNotice => 'Escaneo de biblioteca completado con éxito';
+  @override
+  String get enhancedScanOption => 'Escaneo profundo (Offline DB + MAL)';
+  @override
+  String get enhancedScanOptionDesc => 'Identifica animes que aún no tienes en tu lista usando bases de datos adicionales';
+  @override
+  String get resolveUnmatchedTitle => 'Archivos sin emparejar';
+  @override
+  String get resolveUnmatchedSubtitle => 'Archivos que no pudieron asociarse automáticamente a ningún anime';
+  @override
+  String get resolveUnmatchedAction => 'Resolver no emparejados';
+  @override
+  String get noUnmatchedFilesNotice => 'No hay archivos sin emparejar. ¡Todo está en orden!';
+  @override
+  String get matchWithAnimeAction => 'Emparejar con anime';
+  @override
+  String get suggestionsDetected => 'Sugerencias detectadas';
+  @override
+  String get matchConfirmedSuccess => 'Archivos emparejados exitosamente';
+  @override
+  String get ignoreFilesConfirm => 'Ignorar archivos';
+  @override
+  String get unmatchConfirm => 'Desemparejar';
+  @override
+  String get noFoldersConfigured => 'Aún no has configurado ninguna carpeta de biblioteca';
+  @override
+  String filesInDirectory(int count) => '$count archivos';
 }
 

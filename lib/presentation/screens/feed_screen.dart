@@ -225,6 +225,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
   }
 
   Future<void> _refresh() async {
+    ref.invalidate(downloadedAnimeProvider);
     ref.invalidate(continueWatchingProvider);
     ref.invalidate(animeCollectionProvider);
     ref.invalidate(missedSequelsProvider);

@@ -30,7 +30,7 @@ class FeedHeroBanner extends ConsumerWidget {
         children: [
           if (imageUrl != null)
             CachedNetworkImage(
-              memCacheWidth: 800, memCacheHeight: 400, maxWidthDiskCache: 1200, maxHeightDiskCache: 600,
+              memCacheWidth: 800, maxWidthDiskCache: 1200,
               imageUrl: imageUrl,
               fit: BoxFit.cover,
               errorWidget: (context, url, error) => const SizedBox.shrink(),

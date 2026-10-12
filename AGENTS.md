@@ -70,11 +70,11 @@ seanime_app/
 │   │   ├── storage/                  # AppStoragePaths (Documents/Anime/aniting/ resolution for Android and Desktop)
 │   │   └── theme/                    # AppTheme, ThemeProvider, AppPalette, AppThemeColors, AppScrollBehavior, smooth_scroll_controller (SmoothScrollController, SmoothTrackingScrollController, DynMouseScroll), custom_route_transitions (WebPageTransitionsBuilder, SmoothPageRoute)
 │   ├── data/
-│   │   ├── models/                   # Data models (AnimeEntry, MangaEntry, ExtensionItem, Torrent, ExploreCarouselConfig, etc.)
-│   │   ├── repositories/             # SeanimeRepository (API methods, marketplace fetching, cache)
+│   │   ├── models/                   # Data models (AnimeEntry, MangaEntry, ExtensionItem, Torrent, ExploreCarouselConfig, LocalFileItem, etc.)
+│   │   ├── repositories/             # SeanimeRepository (API methods, marketplace fetching, cache, local library)
 │   │   └── services/                 # MangaOfflineService, FeedCacheService (persistent SWR feed cache), OfflineLibraryService, ExploreCarouselService, TmdbService (TMDB provider for TV shows, trending, popular & search)
 │   └── presentation/
-│       ├── providers/                # Global UI and repository providers
+│       ├── providers/                # Global UI and repository providers (localLibraryProvider, etc.)
 │       ├── screens/                  # Main application views
 │       │   ├── main_shell.dart       # Shell with bottom dock / desktop sidebar
 │       │   ├── welcome_screen.dart   # Welcome & initial configuration wizard (5 steps)
@@ -86,7 +86,10 @@ seanime_app/
 │       │   ├── anime_full_details_screen.dart # Complete metadata, characters, relations, staff
 │       │   ├── manga_detail_screen.dart # Manga details, chapters, reader integration
 │       │   ├── manga_reader_screen.dart # Manga image reader viewer
-│       │   ├── settings_screen.dart  # App settings (theme, player engine, icon pack, server)
+│       │   ├── settings_screen.dart  # App settings (theme, player engine, icon pack, server, local library)
+│       │   ├── settings/             # Modular settings subpages and widgets
+│       │   │   ├── subpages/         # LocalLibrarySettingsScreen, ServerSettingsScreen, ThemeSettingsScreen, etc.
+│       │   │   └── widgets/          # Pixel settings widgets & local_library/ (stats, paths, scanner, match dialog)
 │       │   ├── extensions_marketplace_screen.dart # Extensions marketplace & installed list
 │       │   └── video_player_screen.dart # Main video player orchestration
 │       └── widgets/                  # Reusable UI components
@@ -266,6 +269,10 @@ seanime_app/
       - **Strict Episode Progress Isolation**: `getProgress(mediaId, episodeNumber)` and `ContinueWatchingCard` strictly match playback progress against the exact requested episode (`mediaProgress.episodeNumber == epNum`). When a user completes Episode 1 and AniList advances to Episode 2, Episode 2 starts at 0% with no phantom progress bar and opens at 00:00 rather than inheriting Episode 1's finished position.
       - **Future Episode & Completion Filtering**: Animes marked as `COMPLETED` or where `progress >= totalEpisodes` are excluded from Continue Watching. If the next episode has not yet aired (and is not present on disk), it is withheld from Continue Watching while remaining cleanly in "Viendo Actualmente" (Currently Watching) until release.
       - **Movie & Single-Episode Tracking**: In `OfflineLibraryService` and `SeanimeRepository`, movies (`totalEpisodes: 1`) and single-episode media are kept as `CURRENT` during playback rather than prematurely transitioning to `COMPLETED` on episode start (`epNum >= totalEpisodes`), ensuring they appear in both Continue Watching and Currently Watching with real-time playback progress until finished. Automatic self-healing re-promotes active unfinished media from `COMPLETED` to `CURRENT`.
+      - **Movie Thumbnail Resolution & Aspect Ratio Preservation (`continue_watching_card.dart`, `episode_item_widget.dart`, `next_episode_card.dart`)**:
+        - **16:9 Banner Prioritization for Movies**: Seanime's backend sets `episodeMetadata.image` to the vertical AniList poster (`opts.Media.GetCoverImageSafe()`) for movies and local library media lacking AniDB screencaps. `ContinueWatchingCard` detects movie formats and cover poster fallbacks, prioritizing AniList's widescreen `bannerImage` (native 16:9 cinematic backdrop) over vertical posters.
+        - **Zero Aspect Ratio Distortion**: Omitted `memCacheHeight` across `ContinueWatchingCard`, `episode_item_widget.dart`, and `next_episode_card.dart`. Flutter's `ResizeImage` decodes using width only (`memCacheWidth`), strictly preserving native image aspect ratios without horizontal stretching or pancake distortion before applying `BoxFit.cover`. Fallback poster images use `Alignment.topCenter` to frame titles and characters gracefully.
+        - **Clean Movie Titles**: Displays the movie title or localized `l10n.formatMovie` instead of hardcoded `EP 1` for single-installment films.
     - **AniZip Persistent Metadata Caching (`FeedCacheService`, `seanime_repository.dart`)**: AniZip metadata (16:9 real episode thumbnails, official localized titles, and air dates) is cached in RAM (`_aniZipMemoryCache`) and local storage (`saveAniZipRaw` / `getAniZipData`), eliminating repetitive API requests and ensuring instant 0ms episode loading.
     - **Server-First Multi-Device Synchronization & Offline Fallback (`app_providers.dart`, `feed_screen.dart`, `manga_feed_screen.dart`, `seanime_repository.dart`)**:
       - Whenever the server is online (`serverState.isOnline == true`, whether hosted locally or accessed remotely over LAN from phone/tablet), the server's database and library collections (`/api/v1/library/collection`, `/api/v1/continuity/watch-history`) are the single source of truth for `animeCollectionProvider`, `continueWatchingProvider`, `mangaCollectionProvider`, and `continueReadingMangaProvider`.
@@ -1638,5 +1645,38 @@ Inspired by **Plezy** (`edde746/plezy`), the player focuses on high performance,
   - Se sustituyó la escala con rebote elástico (`ScaleTransition` con `Curves.easeOutBack`) y el `Stack` superpuesto en `AnimatedSwitcher` por un `FadeTransition` liviano (150ms) y directo, aislando el árbol con `RepaintBoundary` para evitar re-layouts y re-renders costosos de tarjetas al alternar entre Online, Torrent o Cuadrícula/Lista.
 - **Aislamiento de Capa de Renderizado en Hero Banner (`desktop_hero_banner.dart`)**:
   - Envoltura del fondo panorámico con filtros de desenfoque (`ImageFiltered`) en un `RepaintBoundary` dedicado para impedir que las operaciones de composición de la GPU afecten las transiciones de rutas.
+
+### 7.26. Pantalla de Ajustes de Biblioteca Local y Emparejamiento Manual (2026-10-11)
+- **Nueva Subpágina de Biblioteca Local en Ajustes (`local_library_settings_screen.dart`, `settings_screen.dart`)**:
+  - Incorporada la categoría `SettingsCategory.localLibrary` en la sección "Sistema" de Ajustes, navegable tanto en móvil (push de pantalla completa) como en escritorio (vista dividida de panel dual).
+  - Estructurada con `PixelSubpageScaffold`, banner informativo tonal y arquitectura modular en `widgets/local_library/`.
+- **Gestión de Rutas y Carpetas del Disco (`local_library_paths_card.dart`, `seanime_repository.dart`)**:
+  - Visualización y edición de la ruta principal (`library.libraryPath`) y rutas secundarias / discos adicionales (`library.libraryPaths`).
+  - Diálogo interactivo para añadir carpetas con autocompletado y validación en tiempo real a través del endpoint `/api/v1/directory-selector`.
+- **Métricas y Estadísticas en Tiempo Real (`local_library_stats_card.dart`, `local_library_provider.dart`)**:
+  - Contadores visuales de series identificadas (`matchedShowsCount`), episodios totales locales (`localEpisodesCount`) e indicador de advertencia para archivos sin emparejar (`unmatchedFilesCount`).
+- **Escáner Integrado con Progreso WebSocket (`local_library_scanner_card.dart`)**:
+  - Opción de escaneo mejorado (*Enhanced Scan* con `anime-offline-database` y MyAnimeList).
+  - Barra de progreso porcentual y estado en vivo suscrito a eventos de WebSocket (`scan-progress`, `scan-status`).
+- **Resolución y Emparejamiento Manual de Shows No Coincidentes (`local_library_unmatched_section.dart`, `local_library_match_dialog.dart`)**:
+  - Agrupación automática de archivos huérfanos (`mediaId == 0`) por carpeta.
+  - Diálogo de emparejamiento manual estilo Seanime: consulta sugerencias automáticas de AniList (`/library/anime-entry/suggestions`) según el título detectado y ofrece buscador manual por texto.
+  - Al seleccionar la serie correcta, invoca `/library/anime-entry/manual-match` hidratando y bloqueando los archivos seleccionados para incorporarlos inmediatamente a la biblioteca.
+  - Opciones adicionales para ignorar o desemparejar archivos con un solo toque.
+- **Internacionalización Completa (i18n)**:
+  - 100% de los textos e indicaciones de la biblioteca local traducidos y registrados en `translations.dart`, `en.dart` y `es.dart`.
+
+### 7.27. Visibilidad Inmediata y Sincronización de Archivos Locales en Feed y Colección (2026-10-11)
+- **Invalidación Reactiva de Proveedores (`local_library_provider.dart`)**:
+  - Al completar un escaneo de biblioteca (vía WebSocket o REST) o al emparejar manualmente una carpeta, `LocalLibraryNotifier` invalida de forma inmediata `downloadedAnimeProvider`, `animeCollectionProvider`, `continueWatchingProvider` y `activeDownloadsProvider`, además de limpiar las claves en `FeedCacheService`.
+- **Detección Resiliente de Archivos Locales en Repositorio (`seanime_repository.dart`)**:
+  - Corrección en la deserialización de `unknownGroups` (estructura `[{"mediaId": int, "localFiles": [...]}]`) en `/library/collection`.
+  - Verificación cruzada secundaria directa con `getLocalFiles()`: cualquier show con archivos físicos emparejados en SQLite que no se encuentre en las listas de AniList es cargado concurrentemente mediante `/library/anime-entry/{id}` y registrado en AniList a través de `addUnknownMedia()`.
+  - En el backend (`anime_collection.go`), se cambió `GetAnimeCollection(false)` a `GetAnimeCollection(true)` para omitir la caché de plataforma simulada/AniList al auto-añadir shows descubiertos a "Planning".
+- **Visualización en Pantalla de Inicio y Descargas (`feed_screen.dart`, `downloads_screen.dart`)**:
+  - El carrusel de Inicio ahora se titula `"Descargas y biblioteca local"` (`l10n.downloadedAnimeSection`).
+  - Al escanear una carpeta de medios por primera vez, el Feed de Inicio detecta de inmediato los shows locales (`hasDownloadedAnime`), evitando la pantalla de estado vacío y renderizando el carrusel con sus tarjetas completas listas para reproducción con 1 toque.
+  - Pull-to-refresh en el feed ahora invalida también `downloadedAnimeProvider`.
+
 
 

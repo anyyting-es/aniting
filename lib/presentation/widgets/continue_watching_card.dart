@@ -53,7 +53,11 @@ class _ContinueWatchingCardState extends ConsumerState<ContinueWatchingCard> {
     final colors = context.themeColors;
     final titleLang = ref.watch(titleLanguageProvider);
     final appLang = ref.watch(appLanguageProvider);
+    final l10n = ref.watch(translationsProvider);
     final langCode = appLang.code;
+
+    final isMovie = widget.entry.format?.toUpperCase() == 'MOVIE' ||
+        (widget.entry.totalEpisodes == 1 && widget.entry.format?.toUpperCase() != 'TV');
 
     final epNum = widget.entry.episodeNumber ?? (widget.entry.progress + 1);
 
@@ -64,15 +68,42 @@ class _ContinueWatchingCardState extends ConsumerState<ContinueWatchingCard> {
     final aniZipData = aniZipAsync?.asData?.value;
     final aniZipEpisode = aniZipData?.getEpisode(epNum);
 
-    final String? resolvedThumbnail = (aniZipEpisode?.image != null &&
-            aniZipEpisode!.image!.trim().isNotEmpty)
-        ? aniZipEpisode.image!.trim()
-        : (widget.entry.episodeThumbnail != null &&
-                widget.entry.episodeThumbnail != widget.entry.bannerImage
-            ? widget.entry.episodeThumbnail
-            : null);
+    // Check if the server's episodeThumbnail is merely a fallback to the vertical cover poster
+    final bool isEpisodeThumbCoverPoster = widget.entry.episodeThumbnail != null &&
+        (widget.entry.episodeThumbnail == widget.entry.coverImage ||
+            (widget.entry.coverImage != null &&
+                widget.entry.coverImage!.isNotEmpty &&
+                widget.entry.episodeThumbnail!.contains(widget.entry.coverImage!)));
 
-    final imageUrl = resolvedThumbnail ?? widget.entry.bannerImage ?? widget.entry.coverImage;
+    String? imageUrl;
+    if (isMovie) {
+      // For movies, AniList's bannerImage is the native high-res 16:9 cinematic artwork.
+      // Seanime's episodeThumbnail for movies defaults to the vertical cover poster.
+      if (widget.entry.bannerImage != null && widget.entry.bannerImage!.trim().isNotEmpty) {
+        imageUrl = widget.entry.bannerImage!.trim();
+      } else if (aniZipEpisode?.image != null && aniZipEpisode!.image!.trim().isNotEmpty) {
+        imageUrl = aniZipEpisode.image!.trim();
+      } else if (widget.entry.episodeThumbnail != null && !isEpisodeThumbCoverPoster) {
+        imageUrl = widget.entry.episodeThumbnail;
+      } else {
+        imageUrl = widget.entry.coverImage;
+      }
+    } else {
+      // For series, prefer AniZip 16:9 episode screencap, then server episodeThumbnail, then bannerImage
+      if (aniZipEpisode?.image != null && aniZipEpisode!.image!.trim().isNotEmpty) {
+        imageUrl = aniZipEpisode.image!.trim();
+      } else if (widget.entry.episodeThumbnail != null &&
+          !isEpisodeThumbCoverPoster &&
+          widget.entry.episodeThumbnail != widget.entry.bannerImage) {
+        imageUrl = widget.entry.episodeThumbnail;
+      } else if (widget.entry.bannerImage != null && widget.entry.bannerImage!.trim().isNotEmpty) {
+        imageUrl = widget.entry.bannerImage!.trim();
+      } else {
+        imageUrl = widget.entry.coverImage;
+      }
+    }
+
+    final bool isCoverFallback = imageUrl != null && imageUrl == widget.entry.coverImage;
 
     final String resolvedEpTitle = (aniZipEpisode != null &&
             aniZipEpisode.displayTitleForLang(langCode).isNotEmpty &&
@@ -84,9 +115,14 @@ class _ContinueWatchingCardState extends ConsumerState<ContinueWatchingCard> {
             ? widget.entry.episodeTitle!
             : '');
 
-    final String titleLine = resolvedEpTitle.isNotEmpty
-        ? 'EP $epNum • $resolvedEpTitle'
-        : 'EP $epNum';
+    final String titleLine;
+    if (isMovie) {
+      titleLine = resolvedEpTitle.isNotEmpty ? resolvedEpTitle : l10n.formatMovie;
+    } else {
+      titleLine = resolvedEpTitle.isNotEmpty
+          ? 'EP $epNum • $resolvedEpTitle'
+          : 'EP $epNum';
+    }
 
     final animeTitle = widget.entry.displayTitle(titleLang);
     final String? episodeDuration = aniZipEpisode?.formattedDuration;
@@ -159,8 +195,8 @@ class _ContinueWatchingCardState extends ConsumerState<ContinueWatchingCard> {
                                 ? CachedNetworkImage(
                                     imageUrl: imageUrl,
                                     fit: BoxFit.cover,
+                                    alignment: isCoverFallback ? Alignment.topCenter : Alignment.center,
                                     memCacheWidth: isCompact ? 450 : 600,
-                                    memCacheHeight: isCompact ? 260 : 340,
                                     placeholder: (context, url) => Container(
                                       color: theme.colorScheme.surfaceContainerHighest,
                                     ),

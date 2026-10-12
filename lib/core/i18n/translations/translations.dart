@@ -1074,5 +1074,41 @@ abstract class AppTranslations {
   String get streamingComingSoon;
   String episodeRuntime(int minutes);
   String optionsCountLabel(int count);
+
+  // Local Library Settings & Management
+  String get localLibrarySettingsTitle;
+  String get localLibrarySettingsDesc;
+  String get libraryFoldersSection;
+  String get mainLibraryFolder;
+  String get additionalLibraryFolders;
+  String get addLibraryFolder;
+  String get removeFolder;
+  String get enterFolderPathHint;
+  String get folderPathLabel;
+  String get saveFolder;
+  String get folderAddedSuccess;
+  String get folderRemovedSuccess;
+  String get folderPathInvalid;
+  String get libraryStatsSection;
+  String get matchedShowsCount;
+  String get localEpisodesCount;
+  String get unmatchedFilesCount;
+  String get scanLibrarySection;
+  String get scanLibraryNow;
+  String get scanInProgressStatus;
+  String get scanSuccessNotice;
+  String get enhancedScanOption;
+  String get enhancedScanOptionDesc;
+  String get resolveUnmatchedTitle;
+  String get resolveUnmatchedSubtitle;
+  String get resolveUnmatchedAction;
+  String get noUnmatchedFilesNotice;
+  String get matchWithAnimeAction;
+  String get suggestionsDetected;
+  String get matchConfirmedSuccess;
+  String get ignoreFilesConfirm;
+  String get unmatchConfirm;
+  String get noFoldersConfigured;
+  String filesInDirectory(int count);
 }
 

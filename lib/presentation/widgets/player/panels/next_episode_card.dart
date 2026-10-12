@@ -91,7 +91,7 @@ class NextEpisodeCard extends ConsumerWidget {
                   height: imageHeight,
                   child: effectiveImage != null && effectiveImage.isNotEmpty
                       ? CachedNetworkImage(
-                          memCacheWidth: 300, memCacheHeight: 170, maxWidthDiskCache: 480, maxHeightDiskCache: 270,
+                          memCacheWidth: 300, maxWidthDiskCache: 480,
                           imageUrl: effectiveImage,
                           fit: BoxFit.cover,
                           placeholder: (ctx, url) => Container(
@@ -100,7 +100,7 @@ class NextEpisodeCard extends ConsumerWidget {
                           errorWidget: (ctx, url, err) => fallbackImageUrl != null &&
                                   fallbackImageUrl != effectiveImage
                               ? CachedNetworkImage(
-                                  memCacheWidth: 300, memCacheHeight: 170, maxWidthDiskCache: 480, maxHeightDiskCache: 270,
+                                  memCacheWidth: 300, maxWidthDiskCache: 480,
                                   imageUrl: fallbackImageUrl!,
                                   fit: BoxFit.cover,
                                   errorWidget: (c, u, e) => Container(
@@ -113,7 +113,7 @@ class NextEpisodeCard extends ConsumerWidget {
                         )
                       : (fallbackImageUrl != null && fallbackImageUrl!.isNotEmpty
                           ? CachedNetworkImage(
-                              memCacheWidth: 300, memCacheHeight: 170, maxWidthDiskCache: 480, maxHeightDiskCache: 270,
+                              memCacheWidth: 300, maxWidthDiskCache: 480,
                               imageUrl: fallbackImageUrl!,
                               fit: BoxFit.cover,
                               errorWidget: (c, u, e) => Container(
