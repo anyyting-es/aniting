@@ -437,14 +437,6 @@ class _HoverPlayButtonState extends State<_HoverPlayButton> {
                               : theme.colorScheme.primary.withValues(alpha: 0.25)),
                       width: 0.9,
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: (isDark ? Colors.black : theme.colorScheme.primary)
-                            .withValues(alpha: _isHovered ? 0.22 : 0.10),
-                        blurRadius: _isHovered ? 16 : 8,
-                        offset: Offset(0, _isHovered ? 4 : 2),
-                      ),
-                    ],
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,

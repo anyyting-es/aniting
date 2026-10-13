@@ -4,6 +4,7 @@ import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/data/models/tmdb_models.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
+import 'package:seanime_app/presentation/screens/video_player_screen.dart';
 
 import 'tmdb_episode_card.dart';
 import 'tmdb_season_posters_view.dart';
@@ -123,6 +124,24 @@ class _TmdbEpisodesViewState extends ConsumerState<TmdbEpisodesView> {
     _loadSeasonEpisodes(seasonNumber);
   }
 
+  void _playEpisode(BuildContext context, TmdbEpisode ep, String? localPath, String showTitle) {
+    if (localPath != null && localPath.isNotEmpty) {
+      Navigator.of(context).push(
+        VideoPlayerScreen.route(
+          title: showTitle,
+          episodeTitle: ep.name,
+          episodeNumber: ep.episodeNumber,
+          videoUrl: localPath,
+          mediaId: widget.tmdbId,
+          isLocalFile: true,
+        ),
+      );
+    } else {
+      final l10n = ref.read(translationsProvider);
+      _showComingSoonNotice(context, l10n);
+    }
+  }
+
   void _showComingSoonNotice(BuildContext context, dynamic l10n) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -184,6 +203,10 @@ class _TmdbEpisodesViewState extends ConsumerState<TmdbEpisodesView> {
     final iconPack = ref.watch(iconPackProvider);
 
     final hasSeasons = !details.isMovie && details.seasons.isNotEmpty;
+
+    final showsCollection = ref.watch(showsCollectionProvider).asData?.value;
+    final showEntry = showsCollection?.shows.firstWhereOrNull((s) => s.tmdbId == widget.tmdbId);
+    final seasonFiles = showEntry?.seasons[_selectedSeasonNumber] ?? (widget.isMovie ? (showEntry?.files ?? []) : []);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -345,11 +368,14 @@ class _TmdbEpisodesViewState extends ConsumerState<TmdbEpisodesView> {
                 ),
                 itemBuilder: (context, index) {
                   final ep = sortedEpisodes[index];
+                  final matchingLocalFile = seasonFiles.firstWhereOrNull((f) => f.episode == ep.episodeNumber);
                   return TmdbEpisodeCard(
                     episode: ep,
+                    tmdbId: widget.tmdbId,
                     fallbackImageUrl: details.backdropUrl ?? widget.fallbackCoverImage,
                     isGridView: true,
-                    onTap: () => _showComingSoonNotice(context, l10n),
+                    isLocalFile: matchingLocalFile != null,
+                    onTap: () => _playEpisode(context, ep, matchingLocalFile?.path, details.name),
                   );
                 },
               );
@@ -373,11 +399,14 @@ class _TmdbEpisodesViewState extends ConsumerState<TmdbEpisodesView> {
                 ),
                 itemBuilder: (context, index) {
                   final ep = sortedEpisodes[index];
+                  final matchingLocalFile = seasonFiles.firstWhereOrNull((f) => f.episode == ep.episodeNumber);
                   return TmdbEpisodeCard(
                     episode: ep,
+                    tmdbId: widget.tmdbId,
                     fallbackImageUrl: details.backdropUrl ?? widget.fallbackCoverImage,
                     isGridView: false,
-                    onTap: () => _showComingSoonNotice(context, l10n),
+                    isLocalFile: matchingLocalFile != null,
+                    onTap: () => _playEpisode(context, ep, matchingLocalFile?.path, details.name),
                   );
                 },
               );
@@ -385,5 +414,14 @@ class _TmdbEpisodesViewState extends ConsumerState<TmdbEpisodesView> {
           ),
       ],
     );
+  }
+}
+
+extension _FirstWhereOrNull<T> on Iterable<T> {
+  T? firstWhereOrNull(bool Function(T element) test) {
+    for (final element in this) {
+      if (test(element)) return element;
+    }
+    return null;
   }
 }

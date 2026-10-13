@@ -15,6 +15,7 @@ import 'package:seanime_app/data/models/anizip_data.dart';
 import 'package:seanime_app/data/models/manga_entry.dart';
 import 'package:seanime_app/data/models/onlinestream_models.dart';
 import 'package:seanime_app/data/models/server_status.dart';
+import 'package:seanime_app/data/models/show_local_file_item.dart';
 import 'package:seanime_app/data/repositories/seanime_repository.dart';
 import 'package:seanime_app/data/services/manga_offline_service.dart';
 import 'package:seanime_app/data/services/offline_library_service.dart';
@@ -965,5 +966,11 @@ final tmdbRecommendationsProvider = FutureProvider<List<AnimeEntry>>((ref) async
   }
 
   return service.getTrendingShows(language: lang);
+});
+
+/// Colección de series y películas locales emparejadas con TMDB
+final showsCollectionProvider = FutureProvider<ShowCollectionItem?>((ref) async {
+  final repo = ref.watch(repositoryProvider);
+  return repo.getShowsCollection();
 });
 

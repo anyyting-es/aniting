@@ -2,9 +2,11 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
+import 'package:seanime_app/core/preferences/playback_progress_preferences_provider.dart';
 import 'desktop_episode_models.dart';
 
 class DesktopListEpisodeCard extends ConsumerStatefulWidget {
+  final int? mediaId;
   final DesktopEpisodeItemData ep;
   final bool isLoading;
   final String formattedTitle;
@@ -14,6 +16,7 @@ class DesktopListEpisodeCard extends ConsumerStatefulWidget {
 
   const DesktopListEpisodeCard({
     super.key,
+    this.mediaId,
     required this.ep,
     required this.isLoading,
     required this.formattedTitle,
@@ -40,11 +43,25 @@ class _DesktopListEpisodeCardState extends ConsumerState<DesktopListEpisodeCard>
         : theme.colorScheme.onSurfaceVariant;
     final double cardOpacity = widget.ep.isWatched ? (_isHovered ? 0.75 : 0.45) : 1.0;
 
-    return MouseRegion(
-      cursor: widget.isLoading ? SystemMouseCursors.basic : SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: AnimatedOpacity(
+    final playbackMap = ref.watch(playbackProgressPreferencesProvider);
+    final epKey = '${widget.mediaId}_${widget.ep.number}';
+    final mediaProgress = widget.mediaId != null ? playbackMap[widget.mediaId.toString()] : null;
+    final localProgress = widget.mediaId != null
+        ? (playbackMap[epKey] ??
+            (mediaProgress != null && mediaProgress.episodeNumber == widget.ep.number ? mediaProgress : null))
+        : null;
+    final double? progressFraction = (localProgress != null &&
+            localProgress.durationMs > 0 &&
+            localProgress.positionMs > 0)
+        ? (localProgress.positionMs / localProgress.durationMs).clamp(0.0, 1.0)
+        : null;
+
+    return RepaintBoundary(
+      child: MouseRegion(
+        cursor: widget.isLoading ? SystemMouseCursors.basic : SystemMouseCursors.click,
+        onEnter: (_) => setState(() => _isHovered = true),
+        onExit: (_) => setState(() => _isHovered = false),
+        child: AnimatedOpacity(
         opacity: cardOpacity,
         duration: const Duration(milliseconds: 240),
         curve: Curves.easeInOut,
@@ -163,6 +180,20 @@ class _DesktopListEpisodeCardState extends ConsumerState<DesktopListEpisodeCard>
                               ),
                             ),
 
+                          // Video playback progress indicator at the bottom edge (matching Continue Watching)
+                          if (progressFraction != null && progressFraction > 0.01 && progressFraction < 0.98)
+                            Positioned(
+                              bottom: 0,
+                              left: 0,
+                              right: 0,
+                              child: LinearProgressIndicator(
+                                value: progressFraction,
+                                backgroundColor: Colors.black.withValues(alpha: 0.35),
+                                valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
+                                minHeight: 3.0,
+                              ),
+                            ),
+
                           if (widget.isLoading)
                             Container(
                               color: Colors.black45,
@@ -240,7 +271,8 @@ class _DesktopListEpisodeCardState extends ConsumerState<DesktopListEpisodeCard>
             ),
           ),
         ),
-      );
+      ),
+    );
   }
 
   Widget _buildPlaceholder() {

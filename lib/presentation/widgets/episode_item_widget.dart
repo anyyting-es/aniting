@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:g1455/g1455.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
+import 'package:seanime_app/core/preferences/playback_progress_preferences_provider.dart';
 import 'package:seanime_app/core/theme/app_theme_colors.dart';
 
 /// Shows the full details modal when an episode is long-pressed
@@ -355,6 +356,7 @@ void showEpisodeDetailModal({
 /// larger thumbnail without play icon inside, episode number with small duration on right,
 /// title below, and synopsis below. Long-press opens full details modal.
 class EpisodeListItem extends ConsumerWidget {
+  final int? mediaId;
   final int episodeNumber;
   final String title;
   final String? originalTitle;
@@ -378,6 +380,7 @@ class EpisodeListItem extends ConsumerWidget {
 
   const EpisodeListItem({
     super.key,
+    this.mediaId,
     required this.episodeNumber,
     required this.title,
     this.originalTitle,
@@ -406,8 +409,22 @@ class EpisodeListItem extends ConsumerWidget {
     final l10n = ref.watch(translationsProvider);
     final itemRadius = context.themeColors.borderRadius;
 
-    return Material(
-      color: Colors.transparent,
+    final playbackMap = ref.watch(playbackProgressPreferencesProvider);
+    final epKey = '${mediaId}_$episodeNumber';
+    final mediaProgress = mediaId != null ? playbackMap[mediaId.toString()] : null;
+    final localProgress = mediaId != null
+        ? (playbackMap[epKey] ??
+            (mediaProgress != null && mediaProgress.episodeNumber == episodeNumber ? mediaProgress : null))
+        : null;
+    final double? progressFraction = (localProgress != null &&
+            localProgress.durationMs > 0 &&
+            localProgress.positionMs > 0)
+        ? (localProgress.positionMs / localProgress.durationMs).clamp(0.0, 1.0)
+        : null;
+
+    return RepaintBoundary(
+      child: Material(
+        color: Colors.transparent,
       child: InkWell(
         borderRadius: BorderRadius.circular(itemRadius),
         onTap: isLoading ? null : (onTap ?? onPlay),
@@ -591,6 +608,20 @@ class EpisodeListItem extends ConsumerWidget {
                               ),
                             ),
                           ),
+
+                        // Video playback progress indicator at the bottom edge (matching Continue Watching)
+                        if (progressFraction != null && progressFraction > 0.01 && progressFraction < 0.98)
+                          Positioned(
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            child: LinearProgressIndicator(
+                              value: progressFraction,
+                              backgroundColor: Colors.black.withValues(alpha: 0.35),
+                              valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
+                              minHeight: 2.5,
+                            ),
+                          ),
                       ],
                     ),
                   ),
@@ -751,13 +782,15 @@ class EpisodeListItem extends ConsumerWidget {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 /// Compact grid item for grid view mode:
 /// No image, just episode number and title. Long-press opens full details.
-class EpisodeGridItem extends StatelessWidget {
+class EpisodeGridItem extends ConsumerWidget {
+  final int? mediaId;
   final int episodeNumber;
   final String title;
   final String? originalTitle;
@@ -781,6 +814,7 @@ class EpisodeGridItem extends StatelessWidget {
 
   const EpisodeGridItem({
     super.key,
+    this.mediaId,
     required this.episodeNumber,
     required this.title,
     this.originalTitle,
@@ -804,12 +838,26 @@ class EpisodeGridItem extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final gridRadius = context.themeColors.borderRadius;
 
-    return Material(
-      color: isWatched && !isPlaying
+    final playbackMap = ref.watch(playbackProgressPreferencesProvider);
+    final epKey = '${mediaId}_$episodeNumber';
+    final mediaProgress = mediaId != null ? playbackMap[mediaId.toString()] : null;
+    final localProgress = mediaId != null
+        ? (playbackMap[epKey] ??
+            (mediaProgress != null && mediaProgress.episodeNumber == episodeNumber ? mediaProgress : null))
+        : null;
+    final double? progressFraction = (localProgress != null &&
+            localProgress.durationMs > 0 &&
+            localProgress.positionMs > 0)
+        ? (localProgress.positionMs / localProgress.durationMs).clamp(0.0, 1.0)
+        : null;
+
+    return RepaintBoundary(
+      child: Material(
+        color: isWatched && !isPlaying
           ? theme.colorScheme.primary.withValues(alpha: 0.08)
           : isDownloaded
               ? Colors.green.withValues(alpha: 0.08)
@@ -837,7 +885,6 @@ class EpisodeGridItem extends StatelessWidget {
           );
         },
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(gridRadius),
             border: Border.all(
@@ -853,10 +900,17 @@ class EpisodeGridItem extends StatelessWidget {
               width: (isPlaying || isDownloading) ? 1.5 : 1.0,
             ),
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
+          clipBehavior: Clip.antiAlias,
+          child: Stack(
+            fit: StackFit.passthrough,
             children: [
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
               if (isLoading || isDownloading)
                 Column(
                   mainAxisSize: MainAxisSize.min,
@@ -954,6 +1008,23 @@ class EpisodeGridItem extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
+      if (progressFraction != null && progressFraction > 0.01 && progressFraction < 0.98)
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: LinearProgressIndicator(
+                    value: progressFraction,
+                    backgroundColor: Colors.black.withValues(alpha: 0.25),
+                    valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
+                    minHeight: 2.5,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+}
 }

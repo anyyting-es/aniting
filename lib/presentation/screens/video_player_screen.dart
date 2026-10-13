@@ -30,6 +30,7 @@ import 'package:seanime_app/presentation/widgets/player/services/player_source_c
 import 'package:seanime_app/presentation/widgets/player/services/player_window_manager.dart';
 import 'package:seanime_app/presentation/widgets/player/sheets/player_settings_launcher.dart';
 import 'package:seanime_app/core/preferences/subtitle_style_preferences_provider.dart';
+import 'package:seanime_app/core/player/mpris_service.dart';
 import 'package:seanime_app/presentation/widgets/player/viewport/player_viewport.dart';
 
 export 'package:seanime_app/presentation/widgets/player/models/player_types.dart'
@@ -354,11 +355,27 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
           setState(() => _canSkipCurrentChapter = canSkip);
         }
         _progressManager.syncAnimeProgressIfNeeded();
+        if (Platform.isLinux) {
+          MprisService.instance.updatePlaybackState(
+            isPlaying: _isPlaying,
+            position: pos,
+            duration: _duration,
+          );
+        }
       },
       onDuration: (dur) {
         if (_duration != dur && mounted) {
           setState(() => _duration = dur);
           _loadChapters();
+          if (Platform.isLinux) {
+            MprisService.instance.updateMetadata(
+              title: _currentEpisodeTitle ?? widget.episodeTitle ?? widget.title,
+              artist: widget.title,
+              album: widget.title,
+              artUrl: _effectiveCoverImage,
+              duration: dur,
+            );
+          }
         }
       },
       onBuffer: (buf) {
@@ -369,6 +386,13 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
         if (mounted) setState(() => _isPlaying = playing);
         if (!playing) {
           _progressManager.savePlaybackProgress();
+        }
+        if (Platform.isLinux) {
+          MprisService.instance.updatePlaybackState(
+            isPlaying: playing,
+            position: _position,
+            duration: _duration,
+          );
         }
       },
       onBuffering: (buffering) {
@@ -553,6 +577,43 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       } else if (_currentOnlineStreamProvider != null) {
         _sourceController.fetchAvailableSourcesInBackground(currentVideoUrl: _currentVideoUrl);
       }
+
+      if (Platform.isLinux) {
+        MprisService.instance.onPlay = () => _coordinator.play();
+        MprisService.instance.onPause = () => _coordinator.pause();
+        MprisService.instance.onPlayPause = () => _playOrPause();
+        MprisService.instance.onStop = () => _handleExit();
+        MprisService.instance.onSeek = (offset) => _seekTo(_position + offset);
+        MprisService.instance.onSetPosition = (pos) => _seekTo(pos);
+        MprisService.instance.onNext = () {
+          if (_hasNextEpisode && !_isLoadingNextEpisode) {
+            _sourceController.playEpisode(
+              targetEpNum: (_currentEpisodeNumber ?? 1) + 1,
+              onEpisodeTransitionStarted: _onEpisodeTransitionStarted,
+            );
+          }
+        };
+        MprisService.instance.onPrevious = () {
+          if (_hasPreviousEpisode && !_isLoadingNextEpisode) {
+            _sourceController.playEpisode(
+              targetEpNum: (_currentEpisodeNumber ?? 1) - 1,
+              onEpisodeTransitionStarted: _onEpisodeTransitionStarted,
+            );
+          }
+        };
+        MprisService.instance.updateMetadata(
+          title: _currentEpisodeTitle ?? widget.episodeTitle ?? widget.title,
+          artist: widget.title,
+          album: widget.title,
+          artUrl: _effectiveCoverImage,
+          duration: _duration,
+        );
+        MprisService.instance.updatePlaybackState(
+          isPlaying: _isPlaying,
+          position: _position,
+          duration: _duration,
+        );
+      }
     });
   }
 
@@ -658,6 +719,20 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       _seekFeedback = null;
     });
     _seekFeedbackTimer?.cancel();
+    if (Platform.isLinux) {
+      MprisService.instance.updateMetadata(
+        title: targetEpTitle.isNotEmpty ? targetEpTitle : widget.title,
+        artist: widget.title,
+        album: widget.title,
+        artUrl: _effectiveCoverImage,
+        duration: Duration.zero,
+      );
+      MprisService.instance.updatePlaybackState(
+        isPlaying: false,
+        position: Duration.zero,
+        duration: Duration.zero,
+      );
+    }
   }
 
   void _switchOnlineStreamProvider(String newProviderId) {
@@ -699,6 +774,10 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     } catch (_) {}
 
     _windowManager.dispose(onCustomDispose: widget.onDispose);
+
+    if (Platform.isLinux) {
+      MprisService.instance.reset();
+    }
 
     _focusNode.dispose();
     super.dispose();

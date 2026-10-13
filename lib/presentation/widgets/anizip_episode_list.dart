@@ -346,6 +346,7 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
                 final epDownloadProgress = downloadingEpisodes.getProgress(mediaId, ep.episodeNumber);
 
                 return EpisodeGridItem(
+                  mediaId: mediaId,
                   episodeNumber: ep.episodeNumber,
                   title: ep.displayTitleForLang(langCode),
                   originalTitle: ep.originalTitle,
@@ -404,6 +405,7 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
                         final epDownloadProgress = downloadingEpisodes.getProgress(mediaId, ep.episodeNumber);
 
                         return EpisodeListItem(
+                          mediaId: mediaId,
                           episodeNumber: ep.episodeNumber,
                           title: ep.displayTitleForLang(langCode),
                           originalTitle: ep.originalTitle,
@@ -533,6 +535,7 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
                 final epDownloadProgress = downloadingEpisodes.getProgress(mediaId, ep.episodeNumber);
 
                 return EpisodeGridItem(
+                  mediaId: mediaId,
                   episodeNumber: ep.episodeNumber,
                   title: ep.title,
                   synopsis: ep.description,
@@ -579,6 +582,7 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
                         final epDownloadProgress = downloadingEpisodes.getProgress(mediaId, ep.episodeNumber);
 
                         return EpisodeListItem(
+                          mediaId: mediaId,
                           episodeNumber: ep.episodeNumber,
                           title: ep.title,
                           synopsis: ep.description,

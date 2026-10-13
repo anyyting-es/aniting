@@ -41,9 +41,6 @@ class AnimeDetailMobileLayout extends ConsumerStatefulWidget {
   final bool hasLocalFiles;
   final AnimeDetailTab currentTab;
   final ScrollController scrollController;
-  final AnimationController bannerAnimController;
-  final Animation<double> bannerScaleAnimation;
-  final Animation<double> bannerTranslateAnimation;
 
   final VoidCallback onToggleLocalMode;
   final ValueChanged<AnimeDetailTab> onTabChanged;
@@ -68,9 +65,6 @@ class AnimeDetailMobileLayout extends ConsumerStatefulWidget {
     required this.hasLocalFiles,
     required this.currentTab,
     required this.scrollController,
-    required this.bannerAnimController,
-    required this.bannerScaleAnimation,
-    required this.bannerTranslateAnimation,
     required this.onToggleLocalMode,
     required this.onTabChanged,
     required this.onOpenEditEntryModal,
@@ -399,51 +393,45 @@ class _AnimeDetailMobileLayoutState
       ],
       builder: (context, controller) {
         final isDark = theme.brightness == Brightness.dark;
-        return ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
+        return Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(20),
+            onTap: controller.open,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              decoration: BoxDecoration(
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.08)
+                    : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
                 borderRadius: BorderRadius.circular(20),
-                onTap: controller.open,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                  decoration: BoxDecoration(
-                    color: isDark
-                        ? Colors.white.withValues(alpha: 0.08)
-                        : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: isDark
-                          ? Colors.white.withValues(alpha: 0.16)
-                          : theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
-                      width: 0.8,
+                border: Border.all(
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.16)
+                      : theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
+                  width: 0.8,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(modeIcon, size: 15, color: isDark ? Colors.white : theme.colorScheme.primary),
+                  const SizedBox(width: 6),
+                  Text(
+                    modeLabel,
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white : theme.colorScheme.onSurface,
                     ),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(modeIcon, size: 15, color: isDark ? Colors.white : theme.colorScheme.primary),
-                      const SizedBox(width: 6),
-                      Text(
-                        modeLabel,
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w600,
-                          color: isDark ? Colors.white : theme.colorScheme.onSurface,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Icon(
-                        Icons.arrow_drop_down_rounded,
-                        size: 18,
-                        color: isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ],
+                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.arrow_drop_down_rounded,
+                    size: 18,
+                    color: isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
                   ),
-                ),
+                ],
               ),
             ),
           ),
@@ -500,78 +488,72 @@ class _AnimeDetailMobileLayoutState
       ],
       builder: (context, controller) {
         final isDark = theme.brightness == Brightness.dark;
-        return ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
+        return Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(20),
+            onTap: controller.open,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              decoration: BoxDecoration(
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.08)
+                    : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
                 borderRadius: BorderRadius.circular(20),
-                onTap: controller.open,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                  decoration: BoxDecoration(
-                    color: isDark
-                        ? Colors.white.withValues(alpha: 0.08)
-                        : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: isDark
-                          ? Colors.white.withValues(alpha: 0.16)
-                          : theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
-                      width: 0.8,
+                border: Border.all(
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.16)
+                      : theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
+                  width: 0.8,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.tune_rounded,
+                    size: 14,
+                    color: isDark ? Colors.white : theme.colorScheme.primary,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    providerName,
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white : theme.colorScheme.onSurface,
                     ),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.tune_rounded,
-                        size: 14,
-                        color: isDark ? Colors.white : theme.colorScheme.primary,
+                  if (_isDubbed) ...[
+                    const SizedBox(width: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.15)
+                            : theme.colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(4),
                       ),
-                      const SizedBox(width: 6),
-                      Text(
-                        providerName,
+                      child: Text(
+                        'DUB',
                         style: TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w600,
-                          color: isDark ? Colors.white : theme.colorScheme.onSurface,
+                          fontSize: 8.5,
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.primary,
                         ),
                       ),
-                      if (_isDubbed) ...[
-                        const SizedBox(width: 4),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                          decoration: BoxDecoration(
-                            color: isDark
-                                ? Colors.white.withValues(alpha: 0.15)
-                                : theme.colorScheme.surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            'DUB',
-                            style: TextStyle(
-                              fontSize: 8.5,
-                              fontWeight: FontWeight.bold,
-                              color: theme.colorScheme.primary,
-                            ),
-                          ),
-                        ),
-                      ],
-                      const SizedBox(width: 4),
-                      Icon(Icons.arrow_drop_down_rounded, size: 18, color: theme.colorScheme.onSurfaceVariant),
-                    ],
-                ),
+                    ),
+                  ],
+                  const SizedBox(width: 4),
+                  Icon(Icons.arrow_drop_down_rounded, size: 18, color: theme.colorScheme.onSurfaceVariant),
+                ],
               ),
             ),
           ),
-        ),
-      );
-    },
-  );
-}
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -687,18 +669,13 @@ class _AnimeDetailMobileLayoutState
             child: ClipRect(
               child: RepaintBoundary(
                 child: AnimatedBuilder(
-                  animation: Listenable.merge(
-                      [widget.bannerAnimController, widget.scrollController]),
+                  animation: widget.scrollController,
                   builder: (context, _) {
                     final scrollOffset = widget.scrollController.hasClients
                         ? widget.scrollController.offset.clamp(0.0, double.infinity)
                         : 0.0;
-                    final ambientScale =
-                        1.0 + (widget.bannerScaleAnimation.value * 0.05);
-                    final ambientTranslateY = widget.bannerTranslateAnimation.value;
                     final parallaxTranslateY =
                         scrollOffset > 0 ? -scrollOffset * 0.35 : 0.0;
-                    final totalTranslateY = ambientTranslateY + parallaxTranslateY;
                     final scrollDarkening = (scrollOffset / 200.0).clamp(0.0, 1.0);
 
                     return Stack(
@@ -706,15 +683,12 @@ class _AnimeDetailMobileLayoutState
                       children: [
                         // Parallax Banner Image (strictly clipped to bounds to avoid blur bleed)
                         Transform.translate(
-                          offset: Offset(0, totalTranslateY),
-                          child: Transform.scale(
-                            scale: ambientScale,
-                            alignment: Alignment.topCenter,
-                            child: bannerUrl != null
+                          offset: Offset(0, parallaxTranslateY),
+                          child: bannerUrl != null
                                 ? (shouldBlur
                                     ? ClipRect(
                                         child: ImageFiltered(
-                                          imageFilter: ImageFilter.blur(sigmaX: 45, sigmaY: 45),
+                                          imageFilter: ImageFilter.blur(sigmaX: 25, sigmaY: 25),
                                           child: Transform.scale(
                                             scale: 1.25,
                                             child: CachedNetworkImage(
@@ -737,7 +711,6 @@ class _AnimeDetailMobileLayoutState
                                             Container(color: theme.colorScheme.surfaceContainer),
                                       ))
                                 : Container(color: theme.colorScheme.surfaceContainer),
-                          ),
                         ),
 
                         // Stationary Cinematic Multi-Stop Gradient into Theme Background
@@ -912,26 +885,31 @@ class _AnimeDetailMobileLayoutState
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             if (coverUrl != null)
-                              Container(
-                                width: 125,
-                                height: 185,
-                                decoration: BoxDecoration(
-                                  borderRadius:
-                                      BorderRadius.circular(colors.borderRadius),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.45),
-                                      blurRadius: 16,
-                                      offset: const Offset(0, 6),
+                              RepaintBoundary(
+                                child: Container(
+                                  width: 125,
+                                  height: 185,
+                                  decoration: BoxDecoration(
+                                    borderRadius:
+                                        BorderRadius.circular(colors.borderRadius),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(alpha: 0.45),
+                                        blurRadius: 16,
+                                        offset: const Offset(0, 6),
+                                      ),
+                                    ],
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius:
+                                        BorderRadius.circular(colors.borderRadius),
+                                    child: CachedNetworkImage(
+                                      imageUrl: coverUrl,
+                                      fit: BoxFit.cover,
+                                      memCacheWidth: 300,
+                                      memCacheHeight: 440,
                                     ),
-                                  ],
-                                ),
-                                clipBehavior: Clip.antiAlias,
-                                child: CachedNetworkImage(
-                                  imageUrl: coverUrl,
-                                  fit: BoxFit.cover,
-                                  memCacheWidth: 300,
-                                  memCacheHeight: 440,
+                                  ),
                                 ),
                               ),
                             const SizedBox(width: 14),
@@ -1077,82 +1055,76 @@ class _AnimeDetailMobileLayoutState
                         const SizedBox(height: 16),
 
                         // Primary Action: Continuar viendo / Comenzar ("Primerito") + Trailer, Fav & Edit
-                        Row(
-                          children: [
-                            Expanded(
-                              child: SizedBox(
-                                height: 42,
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(22),
-                                  child: BackdropFilter(
-                                    filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                                    child: Material(
-                                      color: Colors.transparent,
-                                      child: InkWell(
-                                        borderRadius: BorderRadius.circular(22),
-                                        onTap: isTmdb
-                                            ? () {
-                                                ScaffoldMessenger.of(context).showSnackBar(
-                                                  SnackBar(
-                                                    content: Row(
-                                                      children: [
-                                                        const Icon(Icons.info_outline_rounded,
-                                                            color: Colors.white, size: 18),
-                                                        const SizedBox(width: 8),
-                                                        Expanded(child: Text(l10n.streamingComingSoon)),
-                                                      ],
+                        RepaintBoundary(
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: SizedBox(
+                                  height: 42,
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(22),
+                                    child: BackdropFilter(
+                                      filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                                      child: Material(
+                                        color: Colors.transparent,
+                                        child: InkWell(
+                                          borderRadius: BorderRadius.circular(22),
+                                          onTap: isTmdb
+                                              ? () {
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    SnackBar(
+                                                      content: Row(
+                                                        children: [
+                                                          const Icon(Icons.info_outline_rounded,
+                                                              color: Colors.white, size: 18),
+                                                          const SizedBox(width: 8),
+                                                          Expanded(child: Text(l10n.streamingComingSoon)),
+                                                        ],
+                                                      ),
+                                                      behavior: SnackBarBehavior.floating,
                                                     ),
-                                                    behavior: SnackBarBehavior.floating,
-                                                  ),
-                                                );
-                                              }
-                                            : () => _handlePlayNext(progress),
-                                        child: Ink(
-                                          decoration: BoxDecoration(
-                                            color: isDark
-                                                ? Colors.white.withValues(alpha: 0.16)
-                                                : theme.colorScheme.primary.withValues(alpha: 0.16),
-                                            borderRadius: BorderRadius.circular(22),
-                                            border: Border.all(
+                                                  );
+                                                }
+                                              : () => _handlePlayNext(progress),
+                                          child: Ink(
+                                            decoration: BoxDecoration(
                                               color: isDark
-                                                  ? Colors.white.withValues(alpha: 0.28)
-                                                  : theme.colorScheme.primary.withValues(alpha: 0.30),
-                                              width: 0.9,
-                                            ),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: (isDark ? Colors.black : theme.colorScheme.primary)
-                                                    .withValues(alpha: 0.12),
-                                                blurRadius: 10,
-                                                offset: const Offset(0, 2),
+                                                  ? Colors.white.withValues(alpha: 0.16)
+                                                  : theme.colorScheme.primary.withValues(alpha: 0.16),
+                                              borderRadius: BorderRadius.circular(22),
+                                              border: Border.all(
+                                                color: isDark
+                                                    ? Colors.white.withValues(alpha: 0.28)
+                                                    : theme.colorScheme.primary.withValues(alpha: 0.30),
+                                                width: 0.9,
                                               ),
-                                            ],
-                                          ),
-                                          child: Padding(
-                                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                                            child: Row(
-                                              mainAxisAlignment: MainAxisAlignment.center,
-                                              children: [
-                                                Icon(
-                                                  Icons.play_arrow_rounded,
-                                                  size: 22,
-                                                  color: isDark ? Colors.white : theme.colorScheme.primary,
-                                                ),
-                                                const SizedBox(width: 8),
-                                                Flexible(
-                                                  child: Text(
-                                                    _formatPlayButtonLabel(progress, totalEps, l10n),
-                                                    maxLines: 1,
-                                                    overflow: TextOverflow.ellipsis,
-                                                    style: TextStyle(
-                                                      fontWeight: FontWeight.bold,
-                                                      fontSize: 13.5,
-                                                      letterSpacing: -0.2,
-                                                      color: isDark ? Colors.white : theme.colorScheme.primary,
+                                            ),
+                                            child: Padding(
+                                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                                              child: Row(
+                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                children: [
+                                                  Icon(
+                                                    Icons.play_arrow_rounded,
+                                                    size: 22,
+                                                    color: isDark ? Colors.white : theme.colorScheme.primary,
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  Flexible(
+                                                    child: Text(
+                                                      _formatPlayButtonLabel(progress, totalEps, l10n),
+                                                      maxLines: 1,
+                                                      overflow: TextOverflow.ellipsis,
+                                                      style: TextStyle(
+                                                        fontWeight: FontWeight.bold,
+                                                        fontSize: 13.5,
+                                                        letterSpacing: -0.2,
+                                                        color: isDark ? Colors.white : theme.colorScheme.primary,
+                                                      ),
                                                     ),
                                                   ),
-                                                ),
-                                              ],
+                                                ],
+                                              ),
                                             ),
                                           ),
                                         ),
@@ -1161,64 +1133,94 @@ class _AnimeDetailMobileLayoutState
                                   ),
                                 ),
                               ),
-                            ),
-                            if (hasTrailer) ...[
-                              const SizedBox(width: 6),
-                              ClipOval(
-                                child: BackdropFilter(
-                                  filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                                  child: Material(
-                                    color: Colors.transparent,
-                                    child: InkWell(
-                                      customBorder: const CircleBorder(),
-                                      onTap: () => _launchTrailer(trailerId, trailerSite),
-                                      child: Ink(
-                                        padding: const EdgeInsets.all(9),
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
+                              if (hasTrailer) ...[
+                                const SizedBox(width: 6),
+                                Material(
+                                  color: Colors.transparent,
+                                  shape: const CircleBorder(),
+                                  child: InkWell(
+                                    customBorder: const CircleBorder(),
+                                    onTap: () => _launchTrailer(trailerId, trailerSite),
+                                    child: Ink(
+                                      padding: const EdgeInsets.all(9),
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: isDark
+                                            ? Colors.white.withValues(alpha: 0.08)
+                                            : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+                                        border: Border.all(
                                           color: isDark
-                                              ? Colors.white.withValues(alpha: 0.08)
-                                              : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
-                                          border: Border.all(
-                                            color: isDark
-                                                ? Colors.white.withValues(alpha: 0.18)
-                                                : theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
-                                            width: 0.8,
-                                          ),
+                                              ? Colors.white.withValues(alpha: 0.18)
+                                              : theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
+                                          width: 0.8,
                                         ),
-                                        child: Icon(
-                                          Icons.smart_display_outlined,
-                                          size: 20,
-                                          color: isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
-                                        ),
+                                      ),
+                                      child: Icon(
+                                        Icons.smart_display_outlined,
+                                        size: 20,
+                                        color: isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
                                       ),
                                     ),
                                   ),
                                 ),
+                              ],
+                              const SizedBox(width: 6),
+                              Material(
+                                color: Colors.transparent,
+                                shape: const CircleBorder(),
+                                child: InkWell(
+                                  customBorder: const CircleBorder(),
+                                  onTap: () {
+                                    HapticFeedback.lightImpact();
+                                    final nowFav = ref
+                                        .read(animeFavoritesProvider.notifier)
+                                        .toggleFavorite(widget.mediaId);
+                                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          nowFav ? l10n.addedToFavorites : l10n.removedFromFavorites,
+                                        ),
+                                        duration: const Duration(seconds: 2),
+                                        behavior: SnackBarBehavior.floating,
+                                      ),
+                                    );
+                                  },
+                                  child: Ink(
+                                    padding: const EdgeInsets.all(9),
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: isDark
+                                          ? Colors.white.withValues(alpha: 0.08)
+                                          : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+                                      border: Border.all(
+                                        color: isDark
+                                            ? Colors.white.withValues(alpha: 0.18)
+                                            : theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
+                                        width: 0.8,
+                                      ),
+                                    ),
+                                    child: Icon(
+                                      isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                                      size: 20,
+                                      color: isFavorite ? Colors.redAccent : (isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant),
+                                    ),
+                                  ),
+                                ),
                               ),
-                            ],
-                            const SizedBox(width: 6),
-                            ClipOval(
-                              child: BackdropFilter(
-                                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                                child: Material(
+                              if (!isTmdb) ...[
+                                const SizedBox(width: 6),
+                                Material(
                                   color: Colors.transparent,
+                                  shape: const CircleBorder(),
                                   child: InkWell(
                                     customBorder: const CircleBorder(),
                                     onTap: () {
-                                      HapticFeedback.lightImpact();
-                                      final nowFav = ref
-                                          .read(animeFavoritesProvider.notifier)
-                                          .toggleFavorite(widget.mediaId);
-                                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            nowFav ? l10n.addedToFavorites : l10n.removedFromFavorites,
-                                          ),
-                                          duration: const Duration(seconds: 2),
-                                          behavior: SnackBarBehavior.floating,
-                                        ),
+                                      final nextEp = (progress + 1).clamp(1, totalEps ?? (progress + 1));
+                                      final defaultEpTitle = l10n.episodeNumber(nextEp);
+                                      widget.onOpenTorrentSelector(
+                                        episodeNumber: nextEp,
+                                        episodeTitle: defaultEpTitle,
                                       );
                                     },
                                     child: Ink(
@@ -1236,32 +1238,110 @@ class _AnimeDetailMobileLayoutState
                                         ),
                                       ),
                                       child: Icon(
-                                        isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                                        Icons.download_rounded,
                                         size: 20,
-                                        color: isFavorite ? Colors.redAccent : (isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant),
+                                        color: isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
                                       ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            ),
-                            if (!isTmdb) ...[
+                              ],
                               const SizedBox(width: 6),
-                              ClipOval(
-                                child: BackdropFilter(
-                                  filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                                  child: Material(
+                              GlassMenuAnchor(
+                                width: 210,
+                                items: [
+                                  GlassMenuItem(
+                                    label: l10n.statusWatching,
+                                    icon: const Icon(
+                                      Icons.play_circle_fill_rounded,
+                                      size: 18,
+                                      color: Color(0xFF10B981),
+                                    ),
+                                    onPressed: () => _updateStatus(
+                                      context,
+                                      'CURRENT',
+                                      title,
+                                      progress,
+                                      totalEps,
+                                    ),
+                                  ),
+                                  GlassMenuItem(
+                                    label: l10n.statusPlanning,
+                                    icon: const Icon(
+                                      Icons.bookmark_added_rounded,
+                                      size: 18,
+                                      color: Color(0xFF3B82F6),
+                                    ),
+                                    onPressed: () => _updateStatus(
+                                      context,
+                                      'PLANNING',
+                                      title,
+                                      progress,
+                                      totalEps,
+                                    ),
+                                  ),
+                                  GlassMenuItem(
+                                    label: l10n.statusCompleted,
+                                    icon: const Icon(
+                                      Icons.check_circle_rounded,
+                                      size: 18,
+                                      color: Color(0xFF8B5CF6),
+                                    ),
+                                    onPressed: () => _updateStatus(
+                                      context,
+                                      'COMPLETED',
+                                      title,
+                                      progress,
+                                      totalEps,
+                                    ),
+                                  ),
+                                  GlassMenuItem(
+                                    label: l10n.statusPaused,
+                                    icon: const Icon(
+                                      Icons.pause_circle_filled_rounded,
+                                      size: 18,
+                                      color: Color(0xFFF59E0B),
+                                    ),
+                                    onPressed: () => _updateStatus(
+                                      context,
+                                      'PAUSED',
+                                      title,
+                                      progress,
+                                      totalEps,
+                                    ),
+                                  ),
+                                  GlassMenuItem(
+                                    label: l10n.statusDropped,
+                                    icon: const Icon(
+                                      Icons.cancel_rounded,
+                                      size: 18,
+                                      color: Color(0xFFEF4444),
+                                    ),
+                                    onPressed: () => _updateStatus(
+                                      context,
+                                      'DROPPED',
+                                      title,
+                                      progress,
+                                      totalEps,
+                                    ),
+                                  ),
+                                  if (!isTmdb)
+                                    GlassMenuItem(
+                                      label: l10n.editDetails,
+                                      icon: const Icon(
+                                        Icons.edit_outlined,
+                                        size: 18,
+                                      ),
+                                      onPressed: () => widget.onOpenEditEntryModal(title),
+                                    ),
+                                ],
+                                builder: (context, controller) {
+                                  return Material(
                                     color: Colors.transparent,
+                                    shape: const CircleBorder(),
                                     child: InkWell(
                                       customBorder: const CircleBorder(),
-                                      onTap: () {
-                                        final nextEp = (progress + 1).clamp(1, totalEps ?? (progress + 1));
-                                        final defaultEpTitle = l10n.episodeNumber(nextEp);
-                                        widget.onOpenTorrentSelector(
-                                          episodeNumber: nextEp,
-                                          episodeTitle: defaultEpTitle,
-                                        );
-                                      },
+                                      onTap: controller.open,
                                       child: Ink(
                                         padding: const EdgeInsets.all(9),
                                         decoration: BoxDecoration(
@@ -1271,164 +1351,42 @@ class _AnimeDetailMobileLayoutState
                                               : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
                                           border: Border.all(
                                             color: isDark
-                                              ? Colors.white.withValues(alpha: 0.18)
-                                              : theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
+                                                ? Colors.white.withValues(alpha: 0.18)
+                                                : theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
                                             width: 0.8,
                                           ),
                                         ),
                                         child: Icon(
-                                          Icons.download_rounded,
+                                          Icons.edit_outlined,
                                           size: 20,
                                           color: isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
                                         ),
                                       ),
                                     ),
-                                  ),
-                                ),
+                                  );
+                                },
                               ),
                             ],
-                            const SizedBox(width: 6),
-                            GlassMenuAnchor(
-                              width: 210,
-                              items: [
-                                GlassMenuItem(
-                                  label: l10n.statusWatching,
-                                  icon: const Icon(
-                                    Icons.play_circle_fill_rounded,
-                                    size: 18,
-                                    color: Color(0xFF10B981),
-                                  ),
-                                  onPressed: () => _updateStatus(
-                                    context,
-                                    'CURRENT',
-                                    title,
-                                    progress,
-                                    totalEps,
-                                  ),
-                                ),
-                                GlassMenuItem(
-                                  label: l10n.statusPlanning,
-                                  icon: const Icon(
-                                    Icons.bookmark_added_rounded,
-                                    size: 18,
-                                    color: Color(0xFF3B82F6),
-                                  ),
-                                  onPressed: () => _updateStatus(
-                                    context,
-                                    'PLANNING',
-                                    title,
-                                    progress,
-                                    totalEps,
-                                  ),
-                                ),
-                                GlassMenuItem(
-                                  label: l10n.statusCompleted,
-                                  icon: const Icon(
-                                    Icons.check_circle_rounded,
-                                    size: 18,
-                                    color: Color(0xFF8B5CF6),
-                                  ),
-                                  onPressed: () => _updateStatus(
-                                    context,
-                                    'COMPLETED',
-                                    title,
-                                    progress,
-                                    totalEps,
-                                  ),
-                                ),
-                                GlassMenuItem(
-                                  label: l10n.statusPaused,
-                                  icon: const Icon(
-                                    Icons.pause_circle_filled_rounded,
-                                    size: 18,
-                                    color: Color(0xFFF59E0B),
-                                  ),
-                                  onPressed: () => _updateStatus(
-                                    context,
-                                    'PAUSED',
-                                    title,
-                                    progress,
-                                    totalEps,
-                                  ),
-                                ),
-                                GlassMenuItem(
-                                  label: l10n.statusDropped,
-                                  icon: const Icon(
-                                    Icons.cancel_rounded,
-                                    size: 18,
-                                    color: Color(0xFFEF4444),
-                                  ),
-                                  onPressed: () => _updateStatus(
-                                    context,
-                                    'DROPPED',
-                                    title,
-                                    progress,
-                                    totalEps,
-                                  ),
-                                ),
-                                if (!isTmdb)
-                                  GlassMenuItem(
-                                    label: l10n.editDetails,
-                                    icon: const Icon(
-                                      Icons.edit_outlined,
-                                      size: 18,
-                                    ),
-                                    onPressed: () => widget.onOpenEditEntryModal(title),
-                                  ),
-                              ],
-                              builder: (context, controller) {
-                                return ClipOval(
-                                  child: BackdropFilter(
-                                    filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                                    child: Material(
-                                      color: Colors.transparent,
-                                      child: InkWell(
-                                        customBorder: const CircleBorder(),
-                                        onTap: controller.open,
-                                        child: Ink(
-                                          padding: const EdgeInsets.all(9),
-                                          decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color: isDark
-                                                ? Colors.white.withValues(alpha: 0.08)
-                                                : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
-                                            border: Border.all(
-                                              color: isDark
-                                                  ? Colors.white.withValues(alpha: 0.18)
-                                                  : theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
-                                              width: 0.8,
-                                            ),
-                                          ),
-                                          child: Icon(
-                                            Icons.edit_outlined,
-                                            size: 20,
-                                            color: isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ],
+                          ),
                         ),
 
                         if (!isTmdb) ...[
                           const SizedBox(height: 10),
 
                           // Minimalist Dropdown Chips Row
-                          SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            physics: const BouncingScrollPhysics(),
-                            child: Row(
-                              children: [
-                                _buildModeDropdownChip(theme, effectiveTab),
-                                if (!widget.isLocalMode && effectiveTab == AnimeDetailTab.online) ...[
-                                  const SizedBox(width: 8),
-                                  _buildProviderDropdownChip(theme),
+                          RepaintBoundary(
+                            child: SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              physics: const BouncingScrollPhysics(),
+                              child: Row(
+                                children: [
+                                  _buildModeDropdownChip(theme, effectiveTab),
+                                  if (!widget.isLocalMode && effectiveTab == AnimeDetailTab.online) ...[
+                                    const SizedBox(width: 8),
+                                    _buildProviderDropdownChip(theme),
+                                  ],
                                 ],
-                              ],
+                              ),
                             ),
                           ),
                         ],

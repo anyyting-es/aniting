@@ -42,6 +42,11 @@ type ShelvedLocalFiles struct {
 	Value []byte `gorm:"column:value" json:"value"`
 }
 
+type ShowLocalFiles struct {
+	BaseModel
+	Value []byte `gorm:"column:value" json:"value"`
+}
+
 // +---------------------+
 // |       Settings      |
 // +---------------------+

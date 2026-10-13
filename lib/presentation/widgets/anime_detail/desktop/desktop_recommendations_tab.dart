@@ -144,11 +144,12 @@ class _DesktopRecommendationCardState extends State<_DesktopRecommendationCard> 
     final isDark = theme.brightness == Brightness.dark;
     final titleColor = isDark ? Colors.white : theme.colorScheme.onSurface;
 
-    return MouseRegion(
-      cursor: recId > 0 ? SystemMouseCursors.click : SystemMouseCursors.basic,
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: InkWell(
+    return RepaintBoundary(
+      child: MouseRegion(
+        cursor: recId > 0 ? SystemMouseCursors.click : SystemMouseCursors.basic,
+        onEnter: (_) => setState(() => _isHovered = true),
+        onExit: (_) => setState(() => _isHovered = false),
+        child: InkWell(
         onTap: recId > 0
             ? () {
                 final type = mediaRec['type'] as String?;
@@ -240,6 +241,7 @@ class _DesktopRecommendationCardState extends State<_DesktopRecommendationCard> 
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

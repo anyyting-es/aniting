@@ -47,3 +47,27 @@ func (db *Database) UpsertShelvedLocalFiles(lfs *models.ShelvedLocalFiles) (*mod
 	}
 	return lfs, nil
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+func (db *Database) UpsertShowLocalFiles(lfs *models.ShowLocalFiles) (*models.ShowLocalFiles, error) {
+	err := db.gormdb.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "id"}},
+		UpdateAll: true,
+	}).Create(lfs).Error
+
+	if err != nil {
+		return nil, err
+	}
+	return lfs, nil
+}
+
+func (db *Database) InsertShowLocalFiles(lfs *models.ShowLocalFiles) (*models.ShowLocalFiles, error) {
+	err := db.gormdb.Create(lfs).Error
+
+	if err != nil {
+		return nil, err
+	}
+	return lfs, nil
+}
+

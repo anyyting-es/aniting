@@ -56,43 +56,45 @@ class _DesktopSidebarPosterState extends State<_DesktopSidebarPoster> {
 
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.basic,
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: AnimatedScale(
-        scale: _isHovered ? 1.02 : 1.0,
-        duration: const Duration(milliseconds: 260),
-        curve: Curves.easeInOut,
-        child: AnimatedContainer(
+    return RepaintBoundary(
+      child: MouseRegion(
+        cursor: SystemMouseCursors.basic,
+        onEnter: (_) => setState(() => _isHovered = true),
+        onExit: (_) => setState(() => _isHovered = false),
+        child: AnimatedScale(
+          scale: _isHovered ? 1.02 : 1.0,
           duration: const Duration(milliseconds: 260),
           curve: Curves.easeInOut,
-          width: 250,
-          height: 360,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: _isHovered ? 0.18 : 0.08),
-              width: 1.0,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: _isHovered ? 0.65 : 0.45),
-                blurRadius: _isHovered ? 24 : 16,
-                offset: Offset(0, _isHovered ? 8 : 5),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 260),
+            curve: Curves.easeInOut,
+            width: 250,
+            height: 360,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: _isHovered ? 0.18 : 0.08),
+                width: 1.0,
               ),
-            ],
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: _isHovered ? 0.65 : 0.45),
+                  blurRadius: _isHovered ? 24 : 16,
+                  offset: Offset(0, _isHovered ? 8 : 5),
+                ),
+              ],
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: widget.coverUrl != null
+                ? CachedNetworkImage(
+                    imageUrl: widget.coverUrl!,
+                    fit: BoxFit.cover,
+                    memCacheWidth: 500,
+                    memCacheHeight: 720,
+                    errorWidget: (_, _, _) => Container(color: widget.fallbackColor),
+                  )
+                : Container(color: widget.fallbackColor),
           ),
-          clipBehavior: Clip.antiAlias,
-          child: widget.coverUrl != null
-              ? CachedNetworkImage(
-                  imageUrl: widget.coverUrl!,
-                  fit: BoxFit.cover,
-                  memCacheWidth: 500,
-                  memCacheHeight: 720,
-                  errorWidget: (_, _, _) => Container(color: widget.fallbackColor),
-                )
-              : Container(color: widget.fallbackColor),
         ),
       ),
     );

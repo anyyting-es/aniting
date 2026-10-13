@@ -16,7 +16,6 @@ import 'package:seanime_app/presentation/screens/video_player_screen.dart';
 import 'package:seanime_app/core/theme/smooth_scroll_controller.dart';
 
 import 'desktop/desktop_action_bar.dart';
-import 'desktop/desktop_characters_tab.dart';
 import 'desktop/desktop_episodes_tab.dart';
 import 'desktop/desktop_header.dart';
 import 'desktop/desktop_hero_banner.dart';
@@ -435,9 +434,6 @@ class _AnimeDetailDesktopLayoutState
 
     final description = _cleanHtml(widget.details?.description);
 
-    final charactersEdges = widget.details?.characters.isNotEmpty == true
-        ? widget.details!.characters
-        : ((raw['characters']?['edges'] as List?) ?? []);
     final relationsEdges = widget.details?.relations.isNotEmpty == true
         ? widget.details!.relations
         : ((raw['relations']?['edges'] as List?) ?? []);
@@ -634,20 +630,6 @@ class _AnimeDetailDesktopLayoutState
                       const SizedBox(height: 18),
                       DesktopRecommendationsTab(
                         recommendations: recommendationsEdges,
-                        isLoading: widget.isLoading,
-                      ),
-                    ],
-
-                    // ─── Characters Section (Full Width) ───
-                    if (charactersEdges.isNotEmpty || widget.isLoading) ...[
-                      const SizedBox(height: 48),
-                      _DesktopSectionHeader(
-                        title: l10n.characters,
-                        icon: Icons.people_outline_rounded,
-                      ),
-                      const SizedBox(height: 18),
-                      DesktopCharactersTab(
-                        characters: charactersEdges,
                         isLoading: widget.isLoading,
                       ),
                     ],

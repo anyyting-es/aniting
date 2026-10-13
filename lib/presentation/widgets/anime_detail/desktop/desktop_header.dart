@@ -193,14 +193,6 @@ class _DesktopHeaderState extends ConsumerState<DesktopHeader> {
                                 : theme.colorScheme.primary.withValues(alpha: 0.20),
                             width: 0.8,
                           ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: (isDark ? Colors.black : theme.colorScheme.primary)
-                                  .withValues(alpha: 0.06),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,

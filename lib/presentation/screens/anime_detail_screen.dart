@@ -60,8 +60,7 @@ class AnimeDetailScreen extends ConsumerStatefulWidget {
   ConsumerState<AnimeDetailScreen> createState() => _AnimeDetailScreenState();
 }
 
-class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen>
-    with SingleTickerProviderStateMixin {
+class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
   AnimeDetails? _details;
   AniZipData? _aniZipData;
   bool _isLoading = true;
@@ -76,9 +75,6 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen>
   static const _prefModePrefix = 'pref_anime_detail_mode_';
   static const _prefGlobalLastMode = 'pref_anime_detail_last_mode';
 
-  late final AnimationController _bannerAnimController;
-  late final Animation<double> _bannerScaleAnimation;
-  late final Animation<double> _bannerTranslateAnimation;
   final ScrollController _scrollController = ScrollController();
 
   @override
@@ -179,24 +175,6 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen>
     }
 
     _restoreSavedMode();
-
-    _bannerAnimController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 10),
-    )..repeat(reverse: true);
-
-    _bannerScaleAnimation = CurvedAnimation(
-      parent: _bannerAnimController,
-      curve: Curves.easeInOutSine,
-    );
-
-    _bannerTranslateAnimation = Tween<double>(begin: -8.0, end: 0.0).animate(
-      CurvedAnimation(
-        parent: _bannerAnimController,
-        curve: Curves.easeInOutSine,
-      ),
-    );
-
     _loadDetails();
   }
 
@@ -252,7 +230,6 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen>
 
   @override
   void dispose() {
-    _bannerAnimController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -401,19 +378,38 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen>
     required String episodeTitle,
     String? aniDBEpisode,
   }) async {
-    final launchInfo = await showModalBottomSheet<TorrentStreamLaunchInfo>(
-      context: context,
-      isScrollControlled: true,
-      useRootNavigator: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => TorrentSelectorSheet(
-        mediaId: widget.mediaId,
-        episodeNumber: episodeNumber,
-        episodeTitle: episodeTitle,
-        animeDetails: _details,
-        aniDBEpisode: aniDBEpisode,
-      ),
-    );
+    final isDesktop = MediaQuery.of(context).size.width >= 768;
+    final launchInfo = await (isDesktop
+        ? showDialog<TorrentStreamLaunchInfo>(
+            context: context,
+            useRootNavigator: true,
+            barrierColor: Colors.black.withValues(alpha: 0.8),
+            builder: (ctx) => Dialog(
+              backgroundColor: Colors.transparent,
+              insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+              child: TorrentSelectorSheet(
+                mediaId: widget.mediaId,
+                episodeNumber: episodeNumber,
+                episodeTitle: episodeTitle,
+                animeDetails: _details,
+                aniDBEpisode: aniDBEpisode,
+              ),
+            ),
+          )
+        : showModalBottomSheet<TorrentStreamLaunchInfo>(
+            context: context,
+            isScrollControlled: true,
+            useRootNavigator: true,
+            backgroundColor: Colors.transparent,
+            builder: (ctx) => TorrentSelectorSheet(
+              mediaId: widget.mediaId,
+              episodeNumber: episodeNumber,
+              episodeTitle: episodeTitle,
+              animeDetails: _details,
+              aniDBEpisode: aniDBEpisode,
+              isSheet: true,
+            ),
+          ));
 
     if (launchInfo != null && mounted) {
       Navigator.of(context, rootNavigator: true).push(
@@ -517,9 +513,6 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen>
                   hasLocalFiles: _hasLocalFiles,
                   currentTab: _currentTab,
                   scrollController: _scrollController,
-                  bannerAnimController: _bannerAnimController,
-                  bannerScaleAnimation: _bannerScaleAnimation,
-                  bannerTranslateAnimation: _bannerTranslateAnimation,
                   onToggleLocalMode: _toggleLocalMode,
                   onTabChanged: _changeTab,
                   onOpenEditEntryModal: _openEditEntryModal,

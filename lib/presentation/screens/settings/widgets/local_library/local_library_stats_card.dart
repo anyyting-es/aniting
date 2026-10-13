@@ -119,10 +119,69 @@ class LocalLibraryStatsCard extends ConsumerWidget {
                         ),
                       ],
                     ),
+              if (state.tvShowsCount > 0 || state.moviesCount > 0) ...[
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
+                  children: [
+                    _BreakdownChip(
+                      icon: Icons.animation_rounded,
+                      label: 'Anime: ${state.animeCount}',
+                      color: theme.colorScheme.primary,
+                    ),
+                    _BreakdownChip(
+                      icon: Icons.tv_rounded,
+                      label: 'TV: ${state.tvShowsCount}',
+                      color: const Color(0xFF6366F1),
+                    ),
+                    _BreakdownChip(
+                      icon: Icons.movie_creation_outlined,
+                      label: 'Movies: ${state.moviesCount}',
+                      color: const Color(0xFFEC4899),
+                    ),
+                  ],
+                ),
+              ],
             ],
           ),
         );
       },
+    );
+  }
+}
+
+class _BreakdownChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+
+  const _BreakdownChip({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: color),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color),
+          ),
+        ],
+      ),
     );
   }
 }

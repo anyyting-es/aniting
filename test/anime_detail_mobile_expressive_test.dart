@@ -13,6 +13,7 @@ import 'package:seanime_app/data/repositories/seanime_repository.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
 import 'package:seanime_app/presentation/widgets/anime_detail/mobile/anime_detail_source_popup.dart';
+import 'package:g1455/g1455.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class FakeMobileDetailRepo extends SeanimeRepository {
@@ -93,8 +94,9 @@ void main() {
             serverNotifierProvider.overrideWith(() => MockServerRunningNotifier()),
             layoutModeProvider.overrideWith(() => MockMobileLayoutModeNotifier()),
           ],
-          child: const MaterialApp(
-            home: AnimeDetailScreen(mediaId: 170000),
+          child: MaterialApp(
+            builder: (context, child) => GlassHost(child: child!),
+            home: const AnimeDetailScreen(mediaId: 170000),
           ),
         ),
       );

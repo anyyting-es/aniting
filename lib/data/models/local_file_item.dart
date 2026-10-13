@@ -49,17 +49,21 @@ class LocalFileItem {
       folderName = prevSep != -1 ? folderPath.substring(prevSep + 1) : folderPath;
     }
 
-    final parsedInfo = json['parsedInfo'] as Map<String, dynamic>?;
+    final rawParsedInfo = json['parsedInfo'];
+    final parsedInfo = rawParsedInfo is Map ? Map<String, dynamic>.from(rawParsedInfo) : null;
     final parsedTitle = parsedInfo?['title'] as String?;
-    final parsedEpisode = parsedInfo?['episode'] as String?;
-    final parsedSeason = parsedInfo?['season'] as String?;
+    final parsedEpisode = parsedInfo?['episode']?.toString();
+    final parsedSeason = parsedInfo?['season']?.toString();
+
+    final rawMediaId = json['mediaId'];
+    final mediaId = rawMediaId is num ? rawMediaId.toInt() : (int.tryParse('$rawMediaId') ?? 0);
 
     return LocalFileItem(
       path: path,
       name: name,
-      mediaId: json['mediaId'] as int? ?? 0,
-      locked: json['locked'] as bool? ?? false,
-      ignored: json['ignored'] as bool? ?? false,
+      mediaId: mediaId,
+      locked: json['locked'] == true,
+      ignored: json['ignored'] == true,
       parsedTitle: parsedTitle != null && parsedTitle.trim().isNotEmpty ? parsedTitle.trim() : null,
       parsedEpisode: parsedEpisode,
       parsedSeason: parsedSeason,
@@ -87,12 +91,14 @@ class UnmatchedFolderGroup {
   final String folderName;
   final String guessedTitle;
   final List<LocalFileItem> files;
+  final bool isTmdb;
 
   const UnmatchedFolderGroup({
     required this.folderPath,
     required this.folderName,
     required this.guessedTitle,
     required this.files,
+    this.isTmdb = false,
   });
 
   int get count => files.length;

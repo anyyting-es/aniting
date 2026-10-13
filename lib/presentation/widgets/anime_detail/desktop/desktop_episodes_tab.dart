@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
@@ -642,32 +641,26 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
             ),
             if (totalPages > 1) ...[
               const SizedBox(width: 12),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3.5),
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? Colors.white.withValues(alpha: 0.08)
-                          : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: isDark
-                            ? Colors.white.withValues(alpha: 0.16)
-                            : theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
-                        width: 0.8,
-                      ),
-                    ),
-                    child: Text(
-                      '${l10n.page} ${_currentPage + 1}/$totalPages',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3.5),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.08)
+                      : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.16)
+                        : theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
+                    width: 0.8,
+                  ),
+                ),
+                child: Text(
+                  '${l10n.page} ${_currentPage + 1}/$totalPages',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
               ),
@@ -677,63 +670,52 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
 
             // If Local mode, show local count pill and scan button
             if (widget.isLocalMode) ...[
-              ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                  child: Container(
-                    height: 32,
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.green.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+              Container(
+                height: 32,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: Colors.green.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.check_circle_rounded, size: 14, color: Colors.green),
+                    const SizedBox(width: 6),
+                    Text(
+                      '${items.length} ${l10n.localEpisodes}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green,
+                      ),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.check_circle_rounded, size: 14, color: Colors.green),
-                        const SizedBox(width: 6),
-                        Text(
-                          '${items.length} ${l10n.localEpisodes}',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.green,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  ],
                 ),
               ),
               const SizedBox(width: 6),
-              ClipOval(
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: isDark
-                          ? Colors.white.withValues(alpha: 0.08)
-                          : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
-                      border: Border.all(
-                        color: isDark
-                            ? Colors.white.withValues(alpha: 0.16)
-                            : theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
-                        width: 0.8,
-                      ),
-                    ),
-                    child: IconButton(
-                      style: IconButton.styleFrom(
-                        visualDensity: VisualDensity.compact,
-                        padding: const EdgeInsets.all(6),
-                      ),
-                      tooltip: l10n.scanLocalFolder,
-                      icon: const Icon(Icons.sync_rounded, size: 18),
-                      onPressed: _scanAndRefreshLocal,
-                    ),
+              Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.08)
+                      : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+                  border: Border.all(
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.16)
+                        : theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
+                    width: 0.8,
                   ),
+                ),
+                child: IconButton(
+                  style: IconButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.all(6),
+                  ),
+                  tooltip: l10n.scanLocalFolder,
+                  icon: const Icon(Icons.sync_rounded, size: 18),
+                  onPressed: _scanAndRefreshLocal,
                 ),
               ),
             ] else if (widget.currentTab == AnimeDetailTab.online && widget.providers.isNotEmpty) ...[
@@ -785,116 +767,101 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
               ),
               if (widget.selectedProvider?.supportsDub ?? false) ...[
                 const SizedBox(width: 6),
-                ClipOval(
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: isDark
-                            ? Colors.white.withValues(alpha: 0.08)
-                            : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
-                        border: Border.all(
-                          color: isDark
-                              ? Colors.white.withValues(alpha: 0.16)
-                              : theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
-                          width: 0.8,
-                        ),
-                      ),
-                      child: IconButton(
-                        style: IconButton.styleFrom(
-                          visualDensity: VisualDensity.compact,
-                          padding: const EdgeInsets.all(6),
-                        ),
-                        icon: Icon(
-                          widget.isDubbed ? AppIcons.voice(iconPack) : AppIcons.subtitles(iconPack),
-                          size: 17,
-                          color: widget.isDubbed
-                              ? (isDark ? Colors.white : theme.colorScheme.primary)
-                              : (isDark ? Colors.white70 : Colors.black87),
-                        ),
-                        tooltip: widget.isDubbed ? l10n.audioDubbed : l10n.audioSubtitled,
-                        onPressed: widget.onToggleDubbed,
-                      ),
+                Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.08)
+                        : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+                    border: Border.all(
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.16)
+                          : theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
+                      width: 0.8,
                     ),
+                  ),
+                  child: IconButton(
+                    style: IconButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.all(6),
+                    ),
+                    icon: Icon(
+                      widget.isDubbed ? AppIcons.voice(iconPack) : AppIcons.subtitles(iconPack),
+                      size: 17,
+                      color: widget.isDubbed
+                          ? (isDark ? Colors.white : theme.colorScheme.primary)
+                          : (isDark ? Colors.white70 : Colors.black87),
+                    ),
+                    tooltip: widget.isDubbed ? l10n.audioDubbed : l10n.audioSubtitled,
+                    onPressed: widget.onToggleDubbed,
                   ),
                 ),
               ],
               const SizedBox(width: 6),
             ],
 
-            // Toggle Grid / List View (iOS Liquid Glass Capsule)
-            ClipOval(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                child: Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: isDark
-                        ? Colors.white.withValues(alpha: 0.08)
-                        : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
-                    border: Border.all(
-                      color: isDark
-                          ? Colors.white.withValues(alpha: 0.16)
-                          : theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
-                      width: 0.8,
-                    ),
-                  ),
-                  child: IconButton(
-                    style: IconButton.styleFrom(
-                      visualDensity: VisualDensity.compact,
-                      padding: const EdgeInsets.all(6),
-                    ),
-                    onPressed: () => setState(() => _isGridView = !_isGridView),
-                    tooltip: _isGridView
-                        ? l10n.switchToList
-                        : l10n.switchToGrid,
-                    icon: Icon(
-                      _isGridView ? AppIcons.list(iconPack) : AppIcons.grid(iconPack),
-                      size: 17,
-                      color: isDark ? Colors.white70 : Colors.black87,
-                    ),
-                  ),
+            // Toggle Grid / List View
+            Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.08)
+                    : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+                border: Border.all(
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.16)
+                      : theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
+                  width: 0.8,
+                ),
+              ),
+              child: IconButton(
+                style: IconButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  padding: const EdgeInsets.all(6),
+                ),
+                onPressed: () => setState(() => _isGridView = !_isGridView),
+                tooltip: _isGridView
+                    ? l10n.switchToList
+                    : l10n.switchToGrid,
+                icon: Icon(
+                  _isGridView ? AppIcons.list(iconPack) : AppIcons.grid(iconPack),
+                  size: 17,
+                  color: isDark ? Colors.white70 : Colors.black87,
                 ),
               ),
             ),
             const SizedBox(width: 6),
 
-            // Toggle Sort Ascending / Descending (iOS Liquid Glass Capsule)
-            ClipOval(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                child: Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: isDark
-                        ? Colors.white.withValues(alpha: 0.08)
-                        : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
-                    border: Border.all(
-                      color: isDark
-                          ? Colors.white.withValues(alpha: 0.16)
-                          : theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
-                      width: 0.8,
-                    ),
-                  ),
-                  child: IconButton(
-                    style: IconButton.styleFrom(
-                      visualDensity: VisualDensity.compact,
-                      padding: const EdgeInsets.all(6),
-                    ),
-                    onPressed: () => setState(() {
-                      _isSortAscending = !_isSortAscending;
-                      _currentPage = 0;
-                    }),
-                    tooltip: _isSortAscending
-                        ? l10n.orderAsc
-                        : l10n.orderDesc,
-                    icon: Icon(
-                      AppIcons.swapVert(iconPack),
-                      size: 17,
-                      color: isDark ? Colors.white70 : Colors.black87,
-                    ),
-                  ),
+            // Toggle Sort Ascending / Descending
+            Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.08)
+                    : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+                border: Border.all(
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.16)
+                      : theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
+                  width: 0.8,
+                ),
+              ),
+              child: IconButton(
+                style: IconButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  padding: const EdgeInsets.all(6),
+                ),
+                onPressed: () => setState(() {
+                  _isSortAscending = !_isSortAscending;
+                  _currentPage = 0;
+                }),
+                tooltip: _isSortAscending
+                    ? l10n.orderAsc
+                    : l10n.orderDesc,
+                icon: Icon(
+                  AppIcons.swapVert(iconPack),
+                  size: 17,
+                  color: isDark ? Colors.white70 : Colors.black87,
                 ),
               ),
             ),
@@ -1074,6 +1041,7 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
                           final ep = pagedItems[index];
                           return DesktopGridEpisodeCard(
                             key: ValueKey('grid_ep_${ep.number}'),
+                            mediaId: widget.mediaId,
                             ep: ep,
                             isLoading: widget.loadingEpisodeNumber == ep.number,
                             formattedTitle: _formatEpisodeTitle(ep),
@@ -1113,6 +1081,7 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
                         final ep = pagedItems[index];
                         return DesktopListEpisodeCard(
                           key: ValueKey('list_ep_${ep.number}'),
+                          mediaId: widget.mediaId,
                           ep: ep,
                           isLoading: widget.loadingEpisodeNumber == ep.number,
                           formattedTitle: _formatEpisodeTitle(ep),

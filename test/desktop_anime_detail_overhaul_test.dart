@@ -144,8 +144,8 @@ void main() {
 
       // Check play icon
       expect(find.byIcon(AppIcons.play(AppIconPack.lucide)), findsOneWidget);
-      // Check bookmark icon
-      expect(find.byIcon(AppIcons.bookmarkOutline(AppIconPack.lucide)), findsOneWidget);
+      // Check edit icon
+      expect(find.byIcon(AppIcons.edit(AppIconPack.lucide)), findsOneWidget);
       // Check trailer icon in action bar
       expect(find.byIcon(AppIcons.video(AppIconPack.lucide)), findsOneWidget);
       // Check MAL and AniList brand icons

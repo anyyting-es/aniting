@@ -163,17 +163,17 @@ void main() {
       expect(find.byTooltip('View on AniList'), findsOneWidget);
       expect(find.byTooltip('View on MyAnimeList'), findsOneWidget);
 
-      // Check Desktop Sections (Episodes title removed per UI design)
+      // Check Desktop Sections (Episodes title removed per UI design, characters removed)
       const en = EnglishTranslations();
       expect(find.byType(DesktopEpisodesTab), findsOneWidget);
       expect(find.text(en.relations), findsOneWidget);
       expect(find.text(en.recommendations), findsOneWidget);
-      expect(find.text(en.characters), findsOneWidget);
+      expect(find.text(en.characters), findsNothing);
 
       // Verify sections content in vertical flow
       expect(find.text('Mushoku Tensei Season 2', skipOffstage: false), findsOneWidget);
       expect(find.text('Frieren', skipOffstage: false), findsOneWidget);
-      expect(find.text('Rudeus Greyrat', skipOffstage: false), findsOneWidget);
+      expect(find.text('Rudeus Greyrat', skipOffstage: false), findsNothing);
     });
 
     testWidgets('Renders TV Layout when LayoutMode.tv is active', (WidgetTester tester) async {

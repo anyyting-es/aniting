@@ -19,6 +19,7 @@ import 'package:seanime_app/data/models/torrent_file_preview.dart';
 import 'package:seanime_app/data/models/torrent_models.dart';
 import 'package:seanime_app/core/storage/app_storage_paths.dart';
 import 'package:seanime_app/data/models/local_file_item.dart';
+import 'package:seanime_app/data/models/show_local_file_item.dart';
 import 'package:seanime_app/data/services/feed_cache_service.dart';
 import 'package:seanime_app/data/services/offline_library_service.dart';
 
@@ -1455,11 +1456,14 @@ class SeanimeRepository {
 
   Future<bool> scanLibrary({bool enhanced = true}) async {
     try {
-      // Ensure server has a library path configured; default to Anime/aniting/Anime
       final settings = await getServerSettings();
       final librarySettings = settings?['library'] as Map<String, dynamic>?;
       String? libraryPath = librarySettings?['libraryPath'] as String?;
-      if (libraryPath == null || libraryPath.trim().isEmpty) {
+      final additionalPaths = librarySettings?['libraryPaths'] as List?;
+      final hasAnyPaths = (libraryPath != null && libraryPath.trim().isNotEmpty) ||
+          (additionalPaths != null && additionalPaths.isNotEmpty);
+
+      if (!hasAnyPaths) {
         final defaultDir = await AppStoragePaths.getAnimeDownloadsDirectory();
         await patchServerSetting('library.libraryPath', defaultDir.path);
       }
@@ -1470,12 +1474,50 @@ class SeanimeRepository {
           'enhanced': enhanced,
           'enhanceWithOfflineDatabase': true,
         },
+        options: Options(
+          receiveTimeout: const Duration(minutes: 5),
+          sendTimeout: const Duration(minutes: 2),
+        ),
       );
       return response.statusCode == 200;
     } catch (e) {
       debugPrint('Error triggering library scan: $e');
       return false;
     }
+  }
+
+  /// Performs a bulk action on an anime entry's local files ('unmatch' or 'toggle-lock')
+  Future<bool> bulkActionAnimeEntry(int mediaId, String action) async {
+    try {
+      final response = await _apiClient.patch(
+        '${ApiEndpoints.animeEntry}/bulk-action',
+        data: {
+          'mediaId': mediaId,
+          'action': action,
+        },
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error bulkActionAnimeEntry ($mediaId, $action): $e');
+      return false;
+    }
+  }
+
+  /// Retrieves raw library collection data including unmatchedGroups and unknownGroups
+  Future<Map<String, dynamic>?> getRawLibraryCollection() async {
+    try {
+      final response = await _apiClient.get(ApiEndpoints.libraryCollection);
+      if (response.statusCode == 200 && response.data != null) {
+        final data = response.data;
+        if (data is Map) {
+          final root = data['data'] is Map ? data['data'] as Map : data;
+          return Map<String, dynamic>.from(root);
+        }
+      }
+    } catch (e) {
+      debugPrint('Error getting raw library collection: $e');
+    }
+    return null;
   }
 
   /// Deletes local files by path from the server library database and disk.
@@ -1501,8 +1543,8 @@ class SeanimeRepository {
         final list = (data is Map ? data['data'] : data) as List?;
         if (list != null) {
           return list
-              .whereType<Map<String, dynamic>>()
-              .map((json) => LocalFileItem.fromJson(json))
+              .whereType<Map>()
+              .map((json) => LocalFileItem.fromJson(Map<String, dynamic>.from(json)))
               .toList();
         }
       }
@@ -1606,6 +1648,117 @@ class SeanimeRepository {
       return response.statusCode == 200;
     } catch (e) {
       debugPrint('Error updating local files action: $e');
+      return false;
+    }
+  }
+
+  /// Scans library directories for TV shows and movies using TMDB/Plex conventions
+  Future<ShowCollectionItem?> scanShows({Map<String, String>? folderTypes}) async {
+    try {
+      final payload = <String, dynamic>{};
+      if (folderTypes != null) {
+        payload['folderTypes'] = folderTypes;
+      }
+      final response = await _apiClient.post(
+        ApiEndpoints.showsScan,
+        data: payload,
+        options: Options(
+          receiveTimeout: const Duration(minutes: 5),
+          sendTimeout: const Duration(minutes: 2),
+        ),
+      );
+      if (response.statusCode == 200 && response.data != null) {
+        final data = response.data;
+        if (data is Map) {
+          final root = data['data'] is Map ? data['data'] as Map : data;
+          return ShowCollectionItem.fromJson(Map<String, dynamic>.from(root));
+        }
+      }
+    } catch (e) {
+      debugPrint('Error scanning shows: $e');
+    }
+    return null;
+  }
+
+  /// Retrieves the grouped shows and movies collection
+  Future<ShowCollectionItem?> getShowsCollection() async {
+    try {
+      final response = await _apiClient.get(ApiEndpoints.showsCollection);
+      if (response.statusCode == 200 && response.data != null) {
+        final data = response.data;
+        if (data is Map) {
+          final root = data['data'] is Map ? data['data'] as Map : data;
+          return ShowCollectionItem.fromJson(Map<String, dynamic>.from(root));
+        }
+      }
+    } catch (e) {
+      debugPrint('Error getting shows collection: $e');
+    }
+    return null;
+  }
+
+  /// Retrieves all scanned local files for shows and movies
+  Future<List<ShowLocalFileItem>> getShowsLocalFiles() async {
+    try {
+      final response = await _apiClient.get(ApiEndpoints.showsLocalFiles);
+      if (response.statusCode == 200 && response.data != null) {
+        final data = response.data;
+        final list = (data is Map ? data['data'] : data) as List?;
+        if (list != null) {
+          return list
+              .whereType<Map<String, dynamic>>()
+              .map((json) => ShowLocalFileItem.fromJson(json))
+              .toList();
+        }
+      }
+    } catch (e) {
+      debugPrint('Error getting shows local files: $e');
+    }
+    return [];
+  }
+
+  /// Matches local show files or folder to a specific TMDB show/movie
+  Future<bool> matchShow({
+    required List<String> paths,
+    required String folderPath,
+    required int tmdbId,
+    required String mediaType,
+    required String title,
+  }) async {
+    try {
+      final response = await _apiClient.post(
+        ApiEndpoints.showsMatch,
+        data: {
+          'paths': paths,
+          'folderPath': folderPath,
+          'tmdbId': tmdbId,
+          'mediaType': mediaType,
+          'title': title,
+        },
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error matching show: $e');
+      return false;
+    }
+  }
+
+  /// Unmatches local show files or folder from TMDB
+  Future<bool> unmatchShow({
+    List<String> paths = const [],
+    String folderPath = '',
+  }) async {
+    try {
+      final response = await _apiClient.post(
+        ApiEndpoints.showsUnmatch,
+        data: {
+          'paths': paths,
+          'folderPath': folderPath,
+        },
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error unmatching show: $e');
       return false;
     }
   }

@@ -255,6 +255,7 @@ class _LocalLibraryViewState extends ConsumerState<LocalLibraryView> {
                     : (aniZipEp?.displayTitleForLang(langCode) ?? ep.displayTitle);
 
                 return EpisodeGridItem(
+                  mediaId: widget.mediaId,
                   episodeNumber: ep.episodeNumber,
                   title: epTitle,
                   originalTitle: aniZipEp?.originalTitle,
@@ -308,6 +309,7 @@ class _LocalLibraryViewState extends ConsumerState<LocalLibraryView> {
                             : (aniZipEp?.displayTitleForLang(langCode) ?? ep.displayTitle);
 
                         return EpisodeListItem(
+                          mediaId: widget.mediaId,
                           episodeNumber: ep.episodeNumber,
                           title: epTitle,
                           originalTitle: aniZipEp?.originalTitle,

@@ -1110,5 +1110,53 @@ abstract class AppTranslations {
   String get unmatchConfirm;
   String get noFoldersConfigured;
   String filesInDirectory(int count);
+  String get folderTypeLabel;
+  String get folderTypeAnime;
+  String get folderTypeTv;
+  String get folderTypeMovie;
+  String get folderTypeMixed;
+  String get unmatchAction;
+  String get unmatchSuccess;
+  String get matchProviderAniList;
+  String get matchProviderTmdb;
+  String get localFileBadge;
+  String get playLocalEpisode;
+  String get unlinkFolderConfirmTitle;
+  String get unlinkFolderConfirmMessage;
+  String get unlinkMainFolderConfirmTitle;
+  String get unlinkMainFolderConfirmMessage;
+  String get unlinkFolderAction;
+  String get localShowsSectionTitle;
+  String get localShowsSectionSubtitle;
+  String get fixMatchAction;
+  String get unmatchShowConfirmTitle;
+  String unmatchShowConfirmMessage(String title);
+  String get unmatchShowSuccess;
+  String get searchLocalShowsHint;
+  String get noLocalShowsFound;
+  String get viewFilesAction;
+  String get hideFilesAction;
+  String get filterAnime;
+  String get filterTv;
+  String get filterMovie;
+
+  // Torrent Viewer
+  String get torrentViewerTitle;
+  String get episodeInfo;
+  String get episodeChanger;
+  String get previousEpisode;
+  String get searchFiltersAndOptions;
+  String get streamEpisodeAction;
+  String get torrentHealthExcellent;
+  String get torrentHealthGood;
+  String get torrentHealthMedium;
+  String get torrentHealthPoor;
+  String get torrentHealthDead;
+  String seedsCount(int count);
+  String leechersCount(int count);
+  String get singleEpisodeRelease;
+  String get batchReleaseLabel;
+  String get resolutionQuality;
+  String get torrentProviderLabel;
 }
 

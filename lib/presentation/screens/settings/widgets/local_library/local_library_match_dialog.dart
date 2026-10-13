@@ -29,6 +29,7 @@ class LocalLibraryMatchDialog extends ConsumerStatefulWidget {
 
 class _LocalLibraryMatchDialogState extends ConsumerState<LocalLibraryMatchDialog> {
   final TextEditingController _searchController = TextEditingController();
+  bool _isTmdbMode = false;
   List<AnimeEntry> _suggestions = [];
   List<AnimeEntry> _searchResults = [];
   bool _isLoadingSuggestions = true;
@@ -39,6 +40,10 @@ class _LocalLibraryMatchDialogState extends ConsumerState<LocalLibraryMatchDialo
   @override
   void initState() {
     super.initState();
+    final lower = widget.group.folderPath.toLowerCase();
+    if (lower.contains('serie') || lower.contains('show') || lower.contains('tv') || lower.contains('movie') || lower.contains('pelicula') || lower.contains('película')) {
+      _isTmdbMode = true;
+    }
     _loadSuggestions();
   }
 
@@ -50,18 +55,36 @@ class _LocalLibraryMatchDialogState extends ConsumerState<LocalLibraryMatchDialo
 
   Future<void> _loadSuggestions() async {
     setState(() => _isLoadingSuggestions = true);
-    final repo = ref.read(repositoryProvider);
-    try {
-      final list = await repo.getAnimeSuggestions(widget.group.folderPath);
-      if (mounted) {
-        setState(() {
-          _suggestions = list;
-          _isLoadingSuggestions = false;
-        });
+    if (_isTmdbMode) {
+      final tmdb = ref.read(tmdbServiceProvider);
+      final isSpanish = ref.read(appLanguageProvider) == AppLanguage.es;
+      final lang = isSpanish ? 'es-ES' : 'en-US';
+      try {
+        final list = await tmdb.searchShows(
+          query: widget.group.guessedTitle,
+          language: lang,
+        );
+        if (mounted) {
+          setState(() {
+            _suggestions = list;
+            _isLoadingSuggestions = false;
+          });
+        }
+      } catch (_) {
+        if (mounted) setState(() => _isLoadingSuggestions = false);
       }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isLoadingSuggestions = false);
+    } else {
+      final repo = ref.read(repositoryProvider);
+      try {
+        final list = await repo.getAnimeSuggestions(widget.group.folderPath);
+        if (mounted) {
+          setState(() {
+            _suggestions = list;
+            _isLoadingSuggestions = false;
+          });
+        }
+      } catch (e) {
+        if (mounted) setState(() => _isLoadingSuggestions = false);
       }
     }
   }
@@ -77,19 +100,44 @@ class _LocalLibraryMatchDialogState extends ConsumerState<LocalLibraryMatchDialo
     }
 
     setState(() => _isSearching = true);
-    final repo = ref.read(repositoryProvider);
     try {
-      final results = await repo.searchAnime(trimmed);
-      if (mounted) {
-        setState(() {
-          _searchResults = results;
-          _isSearching = false;
-        });
+      if (_isTmdbMode) {
+        final tmdb = ref.read(tmdbServiceProvider);
+        final isSpanish = ref.read(appLanguageProvider) == AppLanguage.es;
+        final lang = isSpanish ? 'es-ES' : 'en-US';
+        final results = await tmdb.searchShows(query: trimmed, language: lang);
+        if (mounted) {
+          setState(() {
+            _searchResults = results;
+            _isSearching = false;
+          });
+        }
+      } else {
+        final repo = ref.read(repositoryProvider);
+        final results = await repo.searchAnime(trimmed);
+        if (mounted) {
+          setState(() {
+            _searchResults = results;
+            _isSearching = false;
+          });
+        }
       }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isSearching = false);
-      }
+    } catch (_) {
+      if (mounted) setState(() => _isSearching = false);
+    }
+  }
+
+  void _switchProviderMode(bool tmdb) {
+    if (_isTmdbMode == tmdb) return;
+    setState(() {
+      _isTmdbMode = tmdb;
+      _selectedAnime = null;
+      _searchResults = [];
+    });
+    if (_searchController.text.trim().isNotEmpty) {
+      _onSearch(_searchController.text);
+    } else {
+      _loadSuggestions();
     }
   }
 
@@ -99,11 +147,13 @@ class _LocalLibraryMatchDialogState extends ConsumerState<LocalLibraryMatchDialo
     final l10n = ref.watch(translationsProvider);
     final displayList = _searchController.text.trim().isNotEmpty ? _searchResults : _suggestions;
 
+    final hasAnyMatched = widget.group.files.any((f) => f.isMatched);
+
     return Dialog(
       backgroundColor: theme.colorScheme.surfaceContainerHigh,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 540, maxHeight: 680),
+        constraints: const BoxConstraints(maxWidth: 540, maxHeight: 720),
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: Column(
@@ -126,7 +176,7 @@ class _LocalLibraryMatchDialogState extends ConsumerState<LocalLibraryMatchDialo
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          l10n.matchWithAnimeAction,
+                          _isTmdbMode ? l10n.matchProviderTmdb : l10n.matchWithAnimeAction,
                           style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 17),
                         ),
                         Text(
@@ -147,14 +197,37 @@ class _LocalLibraryMatchDialogState extends ConsumerState<LocalLibraryMatchDialo
                   ),
                 ],
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 12),
+
+              // Segmented Provider Selector
+              SegmentedButton<bool>(
+                segments: [
+                  ButtonSegment<bool>(
+                    value: false,
+                    label: Text(l10n.matchProviderAniList, style: const TextStyle(fontSize: 12.5)),
+                    icon: const Icon(Icons.animation_rounded, size: 16),
+                  ),
+                  ButtonSegment<bool>(
+                    value: true,
+                    label: Text(l10n.matchProviderTmdb, style: const TextStyle(fontSize: 12.5)),
+                    icon: const Icon(Icons.movie_filter_rounded, size: 16),
+                  ),
+                ],
+                selected: {_isTmdbMode},
+                onSelectionChanged: (newSelection) => _switchProviderMode(newSelection.first),
+                style: const ButtonStyle(
+                  visualDensity: VisualDensity.compact,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ),
+              const SizedBox(height: 12),
 
               // Search Bar
               TextField(
                 controller: _searchController,
                 onChanged: _onSearch,
                 decoration: InputDecoration(
-                  hintText: l10n.searchAnimePrompt,
+                  hintText: _isTmdbMode ? 'Buscar serie o película en TMDB...' : l10n.searchAnimePrompt,
                   prefixIcon: const Icon(Icons.search_rounded, size: 20),
                   suffixIcon: _searchController.text.isNotEmpty
                       ? IconButton(
@@ -174,7 +247,7 @@ class _LocalLibraryMatchDialogState extends ConsumerState<LocalLibraryMatchDialo
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
 
               // Subheader
               Text(
@@ -189,7 +262,7 @@ class _LocalLibraryMatchDialogState extends ConsumerState<LocalLibraryMatchDialo
               ),
               const SizedBox(height: 8),
 
-              // Anime Candidate List
+              // Candidate List
               Expanded(
                 child: _isLoadingSuggestions || _isSearching
                     ? const Center(child: CircularProgressIndicator())
@@ -274,7 +347,7 @@ class _LocalLibraryMatchDialogState extends ConsumerState<LocalLibraryMatchDialo
                                               [
                                                 if (anime.format != null) anime.format,
                                                 if (anime.year != null) '${anime.year}',
-                                                if (anime.totalEpisodes != null)
+                                                if (anime.totalEpisodes != null && anime.totalEpisodes! > 0)
                                                   '${anime.totalEpisodes} eps',
                                               ].join(' • '),
                                               style: TextStyle(
@@ -304,12 +377,34 @@ class _LocalLibraryMatchDialogState extends ConsumerState<LocalLibraryMatchDialo
                           ),
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
 
               // Bottom Actions
               Row(
-                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
+                  if (hasAnyMatched)
+                    TextButton.icon(
+                      icon: const Icon(Icons.link_off_rounded, size: 16),
+                      label: Text(l10n.unmatchAction),
+                      style: TextButton.styleFrom(foregroundColor: theme.colorScheme.error),
+                      onPressed: _isSubmitting
+                          ? null
+                          : () async {
+                              setState(() => _isSubmitting = true);
+                              final notifier = ref.read(localLibraryProvider.notifier);
+                              await notifier.unmatchShowGroup(widget.group);
+                              if (context.mounted) {
+                                Navigator.of(context).pop(true);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(l10n.unmatchSuccess),
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                              }
+                            },
+                    ),
+                  const Spacer(),
                   TextButton(
                     onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(false),
                     child: Text(MaterialLocalizations.of(context).cancelButtonLabel),
@@ -321,10 +416,21 @@ class _LocalLibraryMatchDialogState extends ConsumerState<LocalLibraryMatchDialo
                         : () async {
                             setState(() => _isSubmitting = true);
                             final notifier = ref.read(localLibraryProvider.notifier);
-                            final ok = await notifier.manualMatchGroup(
-                              widget.group,
-                              _selectedAnime!.id,
-                            );
+                            bool ok;
+                            if (_isTmdbMode) {
+                              final isMovie = _selectedAnime!.format?.toUpperCase() == 'MOVIE';
+                              ok = await notifier.matchShowGroup(
+                                group: widget.group,
+                                tmdbId: _selectedAnime!.id,
+                                mediaType: isMovie ? 'movie' : 'tv',
+                                title: _selectedAnime!.title,
+                              );
+                            } else {
+                              ok = await notifier.manualMatchGroup(
+                                widget.group,
+                                _selectedAnime!.id,
+                              );
+                            }
                             if (context.mounted) {
                               Navigator.of(context).pop(ok);
                               ScaffoldMessenger.of(context).showSnackBar(
@@ -345,7 +451,7 @@ class _LocalLibraryMatchDialogState extends ConsumerState<LocalLibraryMatchDialo
                             height: 18,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : Text(l10n.matchWithAnimeAction),
+                        : Text(_isTmdbMode ? 'Vincular TMDB' : l10n.matchWithAnimeAction),
                   ),
                 ],
               ),

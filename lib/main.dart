@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -27,6 +28,7 @@ import 'package:seanime_app/data/services/feed_cache_service.dart';
 import 'package:seanime_app/data/services/offline_library_service.dart';
 import 'package:g1455/g1455.dart';
 import 'package:seanime_app/core/preferences/glass_theme_provider.dart';
+import 'package:seanime_app/core/player/mpris_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
@@ -83,6 +85,9 @@ void main() async {
       await windowManager.show();
       await windowManager.focus();
     });
+  }
+  if (!kIsWeb && Platform.isLinux) {
+    unawaited(MprisService.instance.init());
   }
   try {
     final prefs = await SharedPreferences.getInstance();

@@ -615,6 +615,16 @@ func InitRoutes(app *core.App, e *echo.Echo) {
 	v1CustomSource.POST("/provider/list/anime", h.HandleCustomSourceListAnime)
 	v1CustomSource.POST("/provider/list/manga", h.HandleCustomSourceListManga)
 
+	//
+	// Shows & Movies (TMDB Hybrid)
+	//
+	v1Shows := v1.Group("/shows")
+	v1Shows.POST("/scan", h.HandleScanShows)
+	v1Shows.GET("/collection", h.HandleGetShowsCollection)
+	v1Shows.GET("/local-files", h.HandleGetShowsLocalFiles)
+	v1Shows.POST("/match", h.HandleMatchShow)
+	v1Shows.POST("/unmatch", h.HandleUnmatchShow)
+
 }
 
 func (h *Handler) JSON(c echo.Context, code int, i interface{}) error {

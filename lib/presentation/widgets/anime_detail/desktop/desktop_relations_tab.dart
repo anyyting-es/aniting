@@ -154,11 +154,12 @@ class _DesktopRelationCardState extends State<_DesktopRelationCard> {
     final isDark = theme.brightness == Brightness.dark;
     final titleColor = isDark ? Colors.white : theme.colorScheme.onSurface;
 
-    return MouseRegion(
-      cursor: relId > 0 ? SystemMouseCursors.click : SystemMouseCursors.basic,
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: InkWell(
+    return RepaintBoundary(
+      child: MouseRegion(
+        cursor: relId > 0 ? SystemMouseCursors.click : SystemMouseCursors.basic,
+        onEnter: (_) => setState(() => _isHovered = true),
+        onExit: (_) => setState(() => _isHovered = false),
+        child: InkWell(
         onTap: relId > 0
               ? () {
                   final type = node?['type'] as String?;
@@ -268,6 +269,7 @@ class _DesktopRelationCardState extends State<_DesktopRelationCard> {
             ],
           ),
         ),
-      );
+      ),
+    );
   }
 }

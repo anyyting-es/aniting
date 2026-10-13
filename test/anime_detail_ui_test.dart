@@ -13,6 +13,10 @@ import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
 import 'package:seanime_app/presentation/screens/anime_full_details_screen.dart';
 import 'package:seanime_app/presentation/widgets/anizip_episode_list.dart';
+import 'package:g1455/g1455.dart';
+import 'package:seanime_app/core/preferences/playback_progress_preferences_provider.dart';
+import 'package:seanime_app/presentation/widgets/anime_detail/desktop/desktop_episode_grid_card.dart';
+import 'package:seanime_app/presentation/widgets/anime_detail/desktop/desktop_episode_models.dart';
 import 'package:seanime_app/presentation/widgets/episode_item_widget.dart';
 
 class FakeDetailRepository extends SeanimeRepository {
@@ -36,6 +40,21 @@ class MockRunningServerNotifier extends ServerNotifier {
   ServerStateModel build() => ServerStateModel(
         state: ServerState.running,
       );
+}
+
+class _FakePlaybackProgressNotifier extends PlaybackProgressNotifier {
+  @override
+  Map<String, EpisodePlaybackProgress> build() {
+    return {
+      '101_1': const EpisodePlaybackProgress(
+        mediaId: 101,
+        episodeNumber: 1,
+        positionMs: 600000,
+        durationMs: 1440000,
+        updatedAt: 12345678,
+      ),
+    };
+  }
 }
 
 void main() {
@@ -122,12 +141,14 @@ void main() {
       bool tapped = false;
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: EpisodeGridItem(
-              episodeNumber: 8,
-              title: 'Gravekeeper',
-              onTap: () => tapped = true,
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: EpisodeGridItem(
+                episodeNumber: 8,
+                title: 'Gravekeeper',
+                onTap: () => tapped = true,
+              ),
             ),
           ),
         ),
@@ -140,6 +161,57 @@ void main() {
 
       await tester.tap(find.text('EP 8'));
       expect(tapped, isTrue);
+    });
+
+    testWidgets('EpisodeListItem and DesktopGridEpisodeCard render playback progress bar when in-progress',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            playbackProgressPreferencesProvider.overrideWith(() => _FakePlaybackProgressNotifier()),
+          ],
+          child: MaterialApp(
+            home: Scaffold(
+              body: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    // Episode 1 has 41% progress in fake provider -> progress bar should show
+                    EpisodeListItem(
+                      mediaId: 101,
+                      episodeNumber: 1,
+                      title: 'Episode 1 with Progress',
+                    ),
+                    // Episode 2 has NO progress -> progress bar should NOT show
+                    EpisodeListItem(
+                      mediaId: 101,
+                      episodeNumber: 2,
+                      title: 'Episode 2 without Progress',
+                    ),
+                    // Desktop card for Episode 1 -> progress bar should show
+                    DesktopGridEpisodeCard(
+                      mediaId: 101,
+                      ep: const DesktopEpisodeItemData(
+                        number: 1,
+                        title: 'Episode 1 Desktop',
+                        isWatched: false,
+                      ),
+                      isLoading: false,
+                      formattedTitle: 'EP 1. Desktop',
+                      fallbackCoverImage: null,
+                      onTap: () {},
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // There should be 2 LinearProgressIndicator widgets (one for EpisodeListItem 1, one for DesktopGridEpisodeCard 1)
+      expect(find.byType(LinearProgressIndicator), findsNWidgets(2));
     });
 
     testWidgets('AniZipEpisodeListView filters out unreleased future episodes',
@@ -297,6 +369,7 @@ void main() {
             serverNotifierProvider.overrideWith(() => MockRunningServerNotifier()),
           ],
           child: MaterialApp(
+            builder: (context, child) => GlassHost(child: child!),
             home: AnimeDetailScreen(
               mediaId: 154587,
               initialEntry: AnimeEntry(

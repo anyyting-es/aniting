@@ -35,31 +35,28 @@ class DesktopHeroBanner extends ConsumerWidget {
           child: Stack(
             fit: StackFit.expand,
           children: [
-            // Banner Image with Blur Fallback & Scroll-Driven Dissolve
-            Opacity(
-              opacity: (1.0 - scrollProgress * 0.95).clamp(0.0, 1.0),
-              child: shouldBlur
-                  ? ClipRect(
-                      child: ImageFiltered(
-                        imageFilter: ImageFilter.blur(sigmaX: 45, sigmaY: 45),
-                        child: Transform.scale(
-                          scale: 1.25,
-                          child: CachedNetworkImage(
-                            imageUrl: bannerUrl!,
-                            fit: BoxFit.cover,
-                            alignment: const Alignment(0, -0.2),
-                            errorWidget: (_, _, _) => const SizedBox.shrink(),
-                          ),
+            // Banner Image with Blur Fallback (scroll darkening handled by overlay below)
+            shouldBlur
+                ? ClipRect(
+                    child: ImageFiltered(
+                      imageFilter: ImageFilter.blur(sigmaX: 25, sigmaY: 25),
+                      child: Transform.scale(
+                        scale: 1.25,
+                        child: CachedNetworkImage(
+                          imageUrl: bannerUrl!,
+                          fit: BoxFit.cover,
+                          alignment: const Alignment(0, -0.2),
+                          errorWidget: (_, _, _) => const SizedBox.shrink(),
                         ),
                       ),
-                    )
-                  : CachedNetworkImage(
-                      imageUrl: bannerUrl!,
-                      fit: BoxFit.cover,
-                      alignment: const Alignment(0, -0.2),
-                      errorWidget: (_, _, _) => const SizedBox.shrink(),
                     ),
-            ),
+                  )
+                : CachedNetworkImage(
+                    imageUrl: bannerUrl!,
+                    fit: BoxFit.cover,
+                    alignment: const Alignment(0, -0.2),
+                    errorWidget: (_, _, _) => const SizedBox.shrink(),
+                  ),
 
             // Ambient darkening overlay in theme tone (translucent for vivid fanart)
             Container(

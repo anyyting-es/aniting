@@ -807,6 +807,7 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
               final epSynopsis = (ep.description != null && ep.description!.isNotEmpty) ? ep.description : aniZipEp?.synopsis;
 
               return EpisodeGridItem(
+                mediaId: widget.mediaId,
                 episodeNumber: ep.number,
                 title: ep.localizedDisplayTitle(l10n),
                 originalTitle: aniZipEp?.originalTitle,
@@ -859,6 +860,7 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
                       final epSynopsis = (ep.description != null && ep.description!.isNotEmpty) ? ep.description : aniZipEp?.synopsis;
 
                       return EpisodeListItem(
+                        mediaId: widget.mediaId,
                         episodeNumber: ep.number,
                         title: ep.localizedDisplayTitle(l10n),
                         originalTitle: aniZipEp?.originalTitle,

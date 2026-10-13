@@ -2288,5 +2288,99 @@ class SpanishTranslations implements AppTranslations {
   String get noFoldersConfigured => 'Aún no has configurado ninguna carpeta de biblioteca';
   @override
   String filesInDirectory(int count) => '$count archivos';
+  @override
+  String get folderTypeLabel => 'Tipo de contenido';
+  @override
+  String get folderTypeAnime => 'Anime (AniList)';
+  @override
+  String get folderTypeTv => 'Series TV (TMDB)';
+  @override
+  String get folderTypeMovie => 'Películas (TMDB)';
+  @override
+  String get folderTypeMixed => 'Mixto / Detección';
+  @override
+  String get unmatchAction => 'Desvincular';
+  @override
+  String get unmatchSuccess => 'Archivos desvinculados correctamente';
+  @override
+  String get matchProviderAniList => 'AniList (Anime)';
+  @override
+  String get matchProviderTmdb => 'TMDB (Series/Películas)';
+  @override
+  String get localFileBadge => 'Archivo local';
+  @override
+  String get playLocalEpisode => 'Reproducir archivo local';
+  @override
+  String get unlinkFolderConfirmTitle => 'Desvincular carpeta';
+  @override
+  String get unlinkFolderConfirmMessage => '¿Seguro que deseas desvincular esta carpeta de la biblioteca local?';
+  @override
+  String get unlinkMainFolderConfirmTitle => 'Desvincular carpeta principal';
+  @override
+  String get unlinkMainFolderConfirmMessage => '¿Seguro que deseas desvincular la carpeta principal? Podrás configurarla nuevamente en cualquier momento.';
+  @override
+  String get unlinkFolderAction => 'Desvincular';
+  @override
+  String get localShowsSectionTitle => 'Shows y contenido local';
+  @override
+  String get localShowsSectionSubtitle => 'Explora visualmente todo el anime, series TV y películas identificados en tu almacenamiento';
+  @override
+  String get fixMatchAction => 'Corregir match';
+  @override
+  String get unmatchShowConfirmTitle => 'Desvincular de la biblioteca';
+  @override
+  String unmatchShowConfirmMessage(String title) => '¿Seguro que deseas desvincular "$title"? Sus archivos quedarán sin emparejar para que puedas volver a vincularlos.';
+  @override
+  String get unmatchShowSuccess => 'Contenido desvinculado de la biblioteca local';
+  @override
+  String get searchLocalShowsHint => 'Buscar en contenido local...';
+  @override
+  String get noLocalShowsFound => 'No se encontró contenido local';
+  @override
+  String get viewFilesAction => 'Ver archivos';
+  @override
+  String get hideFilesAction => 'Ocultar archivos';
+  @override
+  String get filterAnime => 'Anime';
+  @override
+  String get filterTv => 'Series TV';
+  @override
+  String get filterMovie => 'Películas';
+
+  // Torrent Viewer
+  @override
+  String get torrentViewerTitle => 'Visor de Torrents';
+  @override
+  String get episodeInfo => 'Información del episodio';
+  @override
+  String get episodeChanger => 'Cambiar episodio';
+  @override
+  String get previousEpisode => 'Episodio anterior';
+  @override
+  String get searchFiltersAndOptions => 'Filtros y opciones';
+  @override
+  String get streamEpisodeAction => 'Reproducir';
+  @override
+  String get torrentHealthExcellent => 'Excelente velocidad';
+  @override
+  String get torrentHealthGood => 'Buena velocidad';
+  @override
+  String get torrentHealthMedium => 'Velocidad moderada';
+  @override
+  String get torrentHealthPoor => 'Baja velocidad';
+  @override
+  String get torrentHealthDead => 'Sin semillas activas';
+  @override
+  String seedsCount(int count) => '$count semillas';
+  @override
+  String leechersCount(int count) => '$count descargando';
+  @override
+  String get singleEpisodeRelease => 'Episodio individual';
+  @override
+  String get batchReleaseLabel => 'Serie completa (Batch)';
+  @override
+  String get resolutionQuality => 'Calidad y resolución';
+  @override
+  String get torrentProviderLabel => 'Proveedor de torrents';
 }
 

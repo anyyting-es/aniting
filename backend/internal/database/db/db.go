@@ -97,6 +97,7 @@ func migrateTables(db *gorm.DB) error {
 	err := db.AutoMigrate(
 		&models.LocalFiles{},
 		&models.ShelvedLocalFiles{},
+		&models.ShowLocalFiles{},
 		&models.Settings{},
 		&models.Account{},
 		&models.Mal{},

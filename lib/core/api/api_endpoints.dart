@@ -20,6 +20,13 @@ class ApiEndpoints {
   static const String directorySelector = '/directory-selector';
   static const String unknownMedia = '/library/unknown-media';
 
+  // Shows & Movies (TMDB Hybrid)
+  static const String showsScan = '/shows/scan';
+  static const String showsCollection = '/shows/collection';
+  static const String showsLocalFiles = '/shows/local-files';
+  static const String showsMatch = '/shows/match';
+  static const String showsUnmatch = '/shows/unmatch';
+
   // Playback & Torrent
   static const String torrentstreamStart = '/torrentstream/start';
   static const String torrentstreamStop = '/torrentstream/stop';
