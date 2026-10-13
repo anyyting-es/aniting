@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 	"seanime/internal/database/db_bridge"
+	"seanime/internal/library/anime"
 	"seanime/internal/library/scanner"
 	"seanime/internal/library/summary"
 
@@ -45,6 +46,9 @@ func (h *Handler) HandleScanLocalFiles(c echo.Context) error {
 	}
 
 	if strings.TrimSpace(libraryPath) == "" && len(additionalLibraryPaths) == 0 {
+		_, _ = db_bridge.InsertLocalFiles(h.App.Database, make([]*anime.LocalFile, 0))
+		_ = db_bridge.SaveShelvedLocalFiles(h.App.Database, make([]*anime.LocalFile, 0))
+		go h.App.RefreshAnimeCollection()
 		return h.RespondWithData(c, []interface{}{})
 	}
 

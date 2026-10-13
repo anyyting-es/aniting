@@ -9,6 +9,7 @@ class ApiEndpoints {
   // Library
   static const String libraryCollection = '/library/collection';
   static const String libraryScan = '/library/scan';
+  static const String libraryRemoveFolder = '/library/remove-folder';
   static const String libraryLocalFiles = '/library/local-files';
   static const String animeEntry = '/library/anime-entry';
   static const String animeEntrySuggestions = '/library/anime-entry/suggestions';

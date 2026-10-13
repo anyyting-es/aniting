@@ -1061,72 +1061,53 @@ class _AnimeDetailMobileLayoutState
                               Expanded(
                                 child: SizedBox(
                                   height: 42,
-                                  child: ClipRRect(
+                                  child: Material(
+                                    color: theme.colorScheme.primary,
                                     borderRadius: BorderRadius.circular(22),
-                                    child: BackdropFilter(
-                                      filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                                      child: Material(
-                                        color: Colors.transparent,
-                                        child: InkWell(
-                                          borderRadius: BorderRadius.circular(22),
-                                          onTap: isTmdb
-                                              ? () {
-                                                  ScaffoldMessenger.of(context).showSnackBar(
-                                                    SnackBar(
-                                                      content: Row(
-                                                        children: [
-                                                          const Icon(Icons.info_outline_rounded,
-                                                              color: Colors.white, size: 18),
-                                                          const SizedBox(width: 8),
-                                                          Expanded(child: Text(l10n.streamingComingSoon)),
-                                                        ],
-                                                      ),
-                                                      behavior: SnackBarBehavior.floating,
-                                                    ),
-                                                  );
-                                                }
-                                              : () => _handlePlayNext(progress),
-                                          child: Ink(
-                                            decoration: BoxDecoration(
-                                              color: isDark
-                                                  ? Colors.white.withValues(alpha: 0.16)
-                                                  : theme.colorScheme.primary.withValues(alpha: 0.16),
-                                              borderRadius: BorderRadius.circular(22),
-                                              border: Border.all(
-                                                color: isDark
-                                                    ? Colors.white.withValues(alpha: 0.28)
-                                                    : theme.colorScheme.primary.withValues(alpha: 0.30),
-                                                width: 0.9,
+                                    child: InkWell(
+                                      borderRadius: BorderRadius.circular(22),
+                                      onTap: isTmdb
+                                          ? () {
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(
+                                                  content: Row(
+                                                    children: [
+                                                      const Icon(Icons.info_outline_rounded,
+                                                          color: Colors.white, size: 18),
+                                                      const SizedBox(width: 8),
+                                                      Expanded(child: Text(l10n.streamingComingSoon)),
+                                                    ],
+                                                  ),
+                                                  behavior: SnackBarBehavior.floating,
+                                                ),
+                                              );
+                                            }
+                                          : () => _handlePlayNext(progress),
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              Icons.play_arrow_rounded,
+                                              size: 22,
+                                              color: theme.colorScheme.onPrimary,
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Flexible(
+                                              child: Text(
+                                                _formatPlayButtonLabel(progress, totalEps, l10n),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 13.5,
+                                                  letterSpacing: -0.2,
+                                                  color: theme.colorScheme.onPrimary,
+                                                ),
                                               ),
                                             ),
-                                            child: Padding(
-                                              padding: const EdgeInsets.symmetric(horizontal: 16),
-                                              child: Row(
-                                                mainAxisAlignment: MainAxisAlignment.center,
-                                                children: [
-                                                  Icon(
-                                                    Icons.play_arrow_rounded,
-                                                    size: 22,
-                                                    color: isDark ? Colors.white : theme.colorScheme.primary,
-                                                  ),
-                                                  const SizedBox(width: 8),
-                                                  Flexible(
-                                                    child: Text(
-                                                      _formatPlayButtonLabel(progress, totalEps, l10n),
-                                                      maxLines: 1,
-                                                      overflow: TextOverflow.ellipsis,
-                                                      style: TextStyle(
-                                                        fontWeight: FontWeight.bold,
-                                                        fontSize: 13.5,
-                                                        letterSpacing: -0.2,
-                                                        color: isDark ? Colors.white : theme.colorScheme.primary,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ),
+                                          ],
                                         ),
                                       ),
                                     ),
@@ -1134,27 +1115,15 @@ class _AnimeDetailMobileLayoutState
                                 ),
                               ),
                               if (hasTrailer) ...[
-                                const SizedBox(width: 6),
+                                const SizedBox(width: 4),
                                 Material(
                                   color: Colors.transparent,
                                   shape: const CircleBorder(),
                                   child: InkWell(
                                     customBorder: const CircleBorder(),
                                     onTap: () => _launchTrailer(trailerId, trailerSite),
-                                    child: Ink(
+                                    child: Padding(
                                       padding: const EdgeInsets.all(9),
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: isDark
-                                            ? Colors.white.withValues(alpha: 0.08)
-                                            : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
-                                        border: Border.all(
-                                          color: isDark
-                                              ? Colors.white.withValues(alpha: 0.18)
-                                              : theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
-                                          width: 0.8,
-                                        ),
-                                      ),
                                       child: Icon(
                                         Icons.smart_display_outlined,
                                         size: 20,
@@ -1164,7 +1133,7 @@ class _AnimeDetailMobileLayoutState
                                   ),
                                 ),
                               ],
-                              const SizedBox(width: 6),
+                              const SizedBox(width: 4),
                               Material(
                                 color: Colors.transparent,
                                 shape: const CircleBorder(),
@@ -1186,20 +1155,8 @@ class _AnimeDetailMobileLayoutState
                                       ),
                                     );
                                   },
-                                  child: Ink(
+                                  child: Padding(
                                     padding: const EdgeInsets.all(9),
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: isDark
-                                          ? Colors.white.withValues(alpha: 0.08)
-                                          : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
-                                      border: Border.all(
-                                        color: isDark
-                                            ? Colors.white.withValues(alpha: 0.18)
-                                            : theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
-                                        width: 0.8,
-                                      ),
-                                    ),
                                     child: Icon(
                                       isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
                                       size: 20,
@@ -1209,7 +1166,7 @@ class _AnimeDetailMobileLayoutState
                                 ),
                               ),
                               if (!isTmdb) ...[
-                                const SizedBox(width: 6),
+                                const SizedBox(width: 4),
                                 Material(
                                   color: Colors.transparent,
                                   shape: const CircleBorder(),
@@ -1223,20 +1180,8 @@ class _AnimeDetailMobileLayoutState
                                         episodeTitle: defaultEpTitle,
                                       );
                                     },
-                                    child: Ink(
+                                    child: Padding(
                                       padding: const EdgeInsets.all(9),
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: isDark
-                                            ? Colors.white.withValues(alpha: 0.08)
-                                            : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
-                                        border: Border.all(
-                                          color: isDark
-                                              ? Colors.white.withValues(alpha: 0.18)
-                                              : theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
-                                          width: 0.8,
-                                        ),
-                                      ),
                                       child: Icon(
                                         Icons.download_rounded,
                                         size: 20,
@@ -1246,7 +1191,7 @@ class _AnimeDetailMobileLayoutState
                                   ),
                                 ),
                               ],
-                              const SizedBox(width: 6),
+                              const SizedBox(width: 4),
                               GlassMenuAnchor(
                                 width: 210,
                                 items: [
@@ -1342,20 +1287,8 @@ class _AnimeDetailMobileLayoutState
                                     child: InkWell(
                                       customBorder: const CircleBorder(),
                                       onTap: controller.open,
-                                      child: Ink(
+                                      child: Padding(
                                         padding: const EdgeInsets.all(9),
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          color: isDark
-                                              ? Colors.white.withValues(alpha: 0.08)
-                                              : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
-                                          border: Border.all(
-                                            color: isDark
-                                                ? Colors.white.withValues(alpha: 0.18)
-                                                : theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
-                                            width: 0.8,
-                                          ),
-                                        ),
                                         child: Icon(
                                           Icons.edit_outlined,
                                           size: 20,

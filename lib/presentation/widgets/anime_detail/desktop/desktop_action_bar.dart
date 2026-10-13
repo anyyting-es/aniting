@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -396,7 +395,6 @@ class _HoverPlayButtonState extends State<_HoverPlayButton> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -406,59 +404,50 @@ class _HoverPlayButtonState extends State<_HoverPlayButton> {
         scale: _isHovered ? 1.025 : 1.0,
         duration: const Duration(milliseconds: 180),
         curve: Curves.easeOutCubic,
-        child: ClipRRect(
+        child: Material(
+          color: Colors.transparent,
           borderRadius: BorderRadius.circular(24),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: widget.onTap,
+          child: InkWell(
+            onTap: widget.onTap,
+            borderRadius: BorderRadius.circular(24),
+            splashColor: theme.colorScheme.onPrimary.withValues(alpha: 0.15),
+            highlightColor: theme.colorScheme.onPrimary.withValues(alpha: 0.08),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOutCubic,
+              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 10),
+              decoration: BoxDecoration(
+                color: _isHovered
+                    ? theme.colorScheme.primary.withValues(alpha: 0.90)
+                    : theme.colorScheme.primary,
                 borderRadius: BorderRadius.circular(24),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 180),
-                  padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: isDark
-                        ? (_isHovered
-                            ? Colors.white.withValues(alpha: 0.22)
-                            : Colors.white.withValues(alpha: 0.14))
-                        : (_isHovered
-                            ? theme.colorScheme.primary.withValues(alpha: 0.22)
-                            : theme.colorScheme.primary.withValues(alpha: 0.14)),
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(
-                      color: isDark
-                          ? (_isHovered
-                              ? Colors.white.withValues(alpha: 0.38)
-                              : Colors.white.withValues(alpha: 0.24))
-                          : (_isHovered
-                              ? theme.colorScheme.primary.withValues(alpha: 0.40)
-                              : theme.colorScheme.primary.withValues(alpha: 0.25)),
-                      width: 0.9,
+                boxShadow: [
+                  BoxShadow(
+                    color: theme.colorScheme.primary.withValues(alpha: _isHovered ? 0.35 : 0.20),
+                    blurRadius: _isHovered ? 10 : 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    widget.icon,
+                    color: theme.colorScheme.onPrimary,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    widget.label,
+                    style: TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.2,
+                      color: theme.colorScheme.onPrimary,
                     ),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        widget.icon,
-                        color: isDark ? Colors.white : theme.colorScheme.primary,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        widget.label,
-                        style: TextStyle(
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.2,
-                          color: isDark ? Colors.white : theme.colorScheme.primary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                ],
               ),
             ),
           ),
@@ -492,7 +481,7 @@ class _HoverFloatingIconButtonState extends State<_HoverFloatingIconButton> {
     final isDark = theme.brightness == Brightness.dark;
 
     final defaultIconColor = isDark
-        ? (_isHovered ? Colors.white : Colors.white.withValues(alpha: 0.85))
+        ? (_isHovered ? Colors.white : Colors.white70)
         : (_isHovered ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant);
 
     return Tooltip(
@@ -502,48 +491,32 @@ class _HoverFloatingIconButtonState extends State<_HoverFloatingIconButton> {
         onEnter: (_) => setState(() => _isHovered = true),
         onExit: (_) => setState(() => _isHovered = false),
         child: AnimatedScale(
-          scale: _isHovered ? 1.08 : 1.0,
+          scale: _isHovered ? 1.10 : 1.0,
           duration: const Duration(milliseconds: 180),
           curve: Curves.easeOutCubic,
-          child: ClipOval(
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-              child: Material(
-                color: Colors.transparent,
-                shape: const CircleBorder(),
-                child: InkWell(
-                  onTap: widget.onTap,
-                  customBorder: const CircleBorder(),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 180),
-                    curve: Curves.easeOutCubic,
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: isDark
-                          ? (_isHovered
-                              ? Colors.white.withValues(alpha: 0.18)
-                              : Colors.white.withValues(alpha: 0.08))
-                          : (_isHovered
-                              ? theme.colorScheme.primary.withValues(alpha: 0.16)
-                              : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45)),
-                      border: Border.all(
-                        color: isDark
-                            ? (_isHovered
-                                ? Colors.white.withValues(alpha: 0.32)
-                                : Colors.white.withValues(alpha: 0.18))
-                            : (_isHovered
-                                ? theme.colorScheme.primary.withValues(alpha: 0.30)
-                                : theme.colorScheme.outlineVariant.withValues(alpha: 0.25)),
-                        width: 0.8,
-                      ),
-                    ),
-                    child: Icon(
-                      widget.icon,
-                      color: defaultIconColor,
-                      size: 20,
-                    ),
-                  ),
+          child: Material(
+            color: Colors.transparent,
+            shape: const CircleBorder(),
+            clipBehavior: Clip.hardEdge,
+            child: InkWell(
+              onTap: widget.onTap,
+              customBorder: const CircleBorder(),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                curve: Curves.easeOutCubic,
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: _isHovered
+                      ? (isDark
+                          ? Colors.white.withValues(alpha: 0.12)
+                          : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5))
+                      : Colors.transparent,
+                ),
+                child: Icon(
+                  widget.icon,
+                  color: defaultIconColor,
+                  size: 20,
                 ),
               ),
             ),

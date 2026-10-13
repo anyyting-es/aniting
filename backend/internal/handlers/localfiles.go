@@ -4,10 +4,14 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"seanime/internal/database/db_bridge"
+	"seanime/internal/database/models"
 	"seanime/internal/library/anime"
 	"seanime/internal/library/filesystem"
+	"seanime/internal/library/shows"
 	"seanime/internal/library_explorer"
+	"strings"
 	"time"
 
 	"github.com/goccy/go-json"
@@ -418,3 +422,120 @@ func (h *Handler) HandleRemoveEmptyDirectories(c echo.Context) error {
 
 	return h.RespondWithData(c, true)
 }
+
+// HandleRemoveLibraryFolder unlinks or removes a library folder from settings and immediately purges its files from local library & shows database.
+//
+//	@summary removes a library folder and purges its indexed files
+//	@route /api/v1/library/remove-folder [POST]
+//	@returns bool
+func (h *Handler) HandleRemoveLibraryFolder(c echo.Context) error {
+	if err := h.guardStrictLocalOnlyAction(c); err != nil {
+		return err
+	}
+
+	type body struct {
+		Path   string `json:"path"`
+		IsMain bool   `json:"isMain"`
+	}
+
+	var b body
+	if err := c.Bind(&b); err != nil {
+		return h.RespondWithError(c, err)
+	}
+
+	targetPath := filepath.ToSlash(strings.TrimSpace(b.Path))
+	if targetPath == "" && !b.IsMain {
+		return h.RespondWithError(c, errors.New("empty path"))
+	}
+
+	// 1. Update settings
+	settings, err := h.App.Database.GetSettings()
+	if err != nil {
+		return h.RespondWithError(c, err)
+	}
+
+	if settings.Library != nil {
+		mainSlash := filepath.ToSlash(strings.TrimSpace(settings.Library.LibraryPath))
+		if b.IsMain || (targetPath != "" && mainSlash == targetPath) {
+			settings.Library.LibraryPath = ""
+		}
+		var newAdditionals []string
+		for _, p := range settings.Library.LibraryPaths {
+			pSlash := filepath.ToSlash(strings.TrimSpace(p))
+			if pSlash != "" && pSlash != targetPath {
+				newAdditionals = append(newAdditionals, p)
+			}
+		}
+		settings.Library.LibraryPaths = newAdditionals
+
+		settings.BaseModel = models.BaseModel{
+			ID:        1,
+			UpdatedAt: time.Now(),
+		}
+		if _, err := h.App.Database.UpsertSettings(settings); err == nil {
+			h.App.WSEventManager.SendEvent("settings", settings)
+		}
+	}
+
+	hasAnyPaths := false
+	if settings.Library != nil {
+		if strings.TrimSpace(settings.Library.LibraryPath) != "" || len(settings.Library.LibraryPaths) > 0 {
+			hasAnyPaths = true
+		}
+	}
+
+	// 2. Purge show local files
+	showFiles, showId, err := db_bridge.GetShowLocalFiles(h.App.Database)
+	if err == nil {
+		var filteredShows []*shows.ShowLocalFile
+		if hasAnyPaths && targetPath != "" {
+			for _, sf := range showFiles {
+				sfSlash := filepath.ToSlash(sf.Path)
+				if !strings.HasPrefix(sfSlash, targetPath+"/") && sfSlash != targetPath {
+					filteredShows = append(filteredShows, sf)
+				}
+			}
+		}
+		_, _ = db_bridge.SaveShowLocalFiles(h.App.Database, showId, filteredShows)
+	}
+
+	// 3. Purge anime local files
+	animeFiles, animeId, err := db_bridge.GetLocalFiles(h.App.Database)
+	if err == nil {
+		var filteredAnime []*anime.LocalFile
+		if hasAnyPaths && targetPath != "" {
+			for _, af := range animeFiles {
+				afSlash := filepath.ToSlash(af.Path)
+				if !strings.HasPrefix(afSlash, targetPath+"/") && afSlash != targetPath {
+					filteredAnime = append(filteredAnime, af)
+				}
+			}
+		}
+		_, _ = db_bridge.SaveLocalFiles(h.App.Database, animeId, filteredAnime)
+		if len(filteredAnime) == 0 {
+			_, _ = db_bridge.InsertLocalFiles(h.App.Database, make([]*anime.LocalFile, 0))
+		}
+	}
+
+	// 4. Purge shelved files
+	shelved, err := db_bridge.GetShelvedLocalFiles(h.App.Database)
+	if err == nil {
+		var filteredShelved []*anime.LocalFile
+		if hasAnyPaths && targetPath != "" {
+			for _, sh := range shelved {
+				shSlash := filepath.ToSlash(sh.Path)
+				if !strings.HasPrefix(shSlash, targetPath+"/") && shSlash != targetPath {
+					filteredShelved = append(filteredShelved, sh)
+				}
+			}
+		}
+		_ = db_bridge.SaveShelvedLocalFiles(h.App.Database, filteredShelved)
+	}
+
+	// 5. Clear caches and refresh collection
+	go h.App.RefreshAnimeCollection()
+	anime.ClearMissingEpisodesCache()
+
+	return h.RespondWithData(c, true)
+}
+

@@ -216,10 +216,23 @@ func (scn *Scanner) Scan(ctx context.Context) (lfs []*anime.LocalFile, err error
 	if (scn.SkipLockedFiles || scn.SkipIgnoredFiles) && scn.ExistingLocalFiles != nil {
 		// Retrieve skipped files from existing local files
 		for _, lf := range scn.ExistingLocalFiles {
+			normPath := lf.GetNormalizedPath()
+			// Skip files that do not belong to any active library path
+			belongsToLib := false
+			for _, lp := range libraryPaths {
+				if strings.HasPrefix(normPath, util.NormalizePath(lp)) {
+					belongsToLib = true
+					break
+				}
+			}
+			if !belongsToLib {
+				continue
+			}
+
 			if scn.SkipLockedFiles && lf.IsLocked() {
-				skippedLfs[lf.GetNormalizedPath()] = lf
+				skippedLfs[normPath] = lf
 			} else if scn.SkipIgnoredFiles && lf.IsIgnored() {
-				skippedLfs[lf.GetNormalizedPath()] = lf
+				skippedLfs[normPath] = lf
 			}
 		}
 	}

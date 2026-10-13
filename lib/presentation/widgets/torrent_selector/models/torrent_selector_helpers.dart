@@ -76,6 +76,32 @@ class TorrentHealthInfo {
   }
 }
 
+class ParsedTorrentTags {
+  final String? videoCodec;
+  final bool is10Bit;
+  final String? audioCodec;
+  final bool isDualAudio;
+  final bool isMultiSubs;
+  final int? episode;
+
+  const ParsedTorrentTags({
+    this.videoCodec,
+    this.is10Bit = false,
+    this.audioCodec,
+    this.isDualAudio = false,
+    this.isMultiSubs = false,
+    this.episode,
+  });
+}
+
+enum TorrentSortField {
+  none,
+  seeders,
+  size,
+  date,
+  resolution,
+}
+
 class TorrentNameParser {
   /// Extracts the release group name (e.g. "SubsPlease", "Erai-raws", "Judas")
   static String? extractReleaseGroup(TorrentItem item) {
@@ -90,6 +116,110 @@ class TorrentNameParser {
       }
     }
     return null;
+  }
+
+  /// Parses video, audio, and subtitle tags from torrent name
+  static ParsedTorrentTags parseTags(TorrentItem item) {
+    final name = item.name;
+    final lower = name.toLowerCase();
+
+    // 1. Video Codec
+    String? videoCodec;
+    if (RegExp(r'\b(?:h\.?264|x264|avc)\b', caseSensitive: false).hasMatch(name)) {
+      if (lower.contains('avc')) {
+        videoCodec = 'AVC';
+      } else {
+        videoCodec = 'H.264';
+      }
+    } else if (RegExp(r'\b(?:hevc|h\.?265|x265)\b', caseSensitive: false).hasMatch(name)) {
+      videoCodec = 'HEVC';
+    } else if (lower.contains('av1')) {
+      videoCodec = 'AV1';
+    }
+
+    // 2. 10bit
+    final is10Bit = RegExp(r'\b(?:10-?bit|hi10p)\b', caseSensitive: false).hasMatch(name);
+
+    // 3. Audio Codec
+    String? audioCodec;
+    if (RegExp(r'\baac(?:2\.0|\s*2\.0)?\b', caseSensitive: false).hasMatch(name)) {
+      audioCodec = 'AAC2.0';
+    } else if (lower.contains('aac')) {
+      audioCodec = 'AAC';
+    } else if (lower.contains('flac')) {
+      audioCodec = 'FLAC';
+    } else if (lower.contains('opus')) {
+      audioCodec = 'OPUS';
+    } else if (lower.contains('e-ac-3') || lower.contains('eac3')) {
+      audioCodec = 'E-AC-3';
+    } else if (lower.contains('ac3') || lower.contains('ac-3')) {
+      audioCodec = 'AC3';
+    }
+
+    // 4. Dual Audio / Dub
+    final isDualAudio = RegExp(
+      r'\b(?:dual[- ]audio|dual|original\s*\+\s*dub|multi[- ]audio|dubbed|dub)\b',
+      caseSensitive: false,
+    ).hasMatch(name);
+
+    // 5. Multi Subs
+    final isMultiSubs = RegExp(
+      r'\b(?:multi[- ]?subs?|softsubs?)\b',
+      caseSensitive: false,
+    ).hasMatch(name);
+
+    // 6. Episode number
+    int? ep = item.episodeNumber;
+    if (ep == null) {
+      final epMatch = RegExp(r'(?:[-_ ]|s\d{1,2}e)(\d{1,3})(?:v\d+)?\b', caseSensitive: false).firstMatch(name);
+      if (epMatch != null) {
+        ep = int.tryParse(epMatch.group(1) ?? '');
+      }
+    }
+
+    return ParsedTorrentTags(
+      videoCodec: videoCodec,
+      is10Bit: is10Bit,
+      audioCodec: audioCodec,
+      isDualAudio: isDualAudio,
+      isMultiSubs: isMultiSubs,
+      episode: ep,
+    );
+  }
+
+  /// Formats raw date or ISO string into human-friendly relative format
+  static String formatRelativeDate(String? rawDate) {
+    if (rawDate == null || rawDate.trim().isEmpty) return '';
+    final trimmed = rawDate.trim();
+    if (trimmed.contains('ago') || trimmed.contains('hace') || trimmed.contains('yesterday')) {
+      return trimmed;
+    }
+
+    final dt = DateTime.tryParse(trimmed);
+    if (dt == null) return trimmed;
+
+    final now = DateTime.now();
+    final diff = now.difference(dt);
+
+    if (diff.isNegative) return 'recently';
+    if (diff.inMinutes < 60) {
+      final m = diff.inMinutes <= 0 ? 1 : diff.inMinutes;
+      return '$m min ago';
+    } else if (diff.inHours < 24) {
+      return '${diff.inHours}h ago';
+    } else if (diff.inDays == 1) {
+      return 'yesterday';
+    } else if (diff.inDays < 30) {
+      return '${diff.inDays} days ago';
+    } else if (diff.inDays < 60) {
+      return 'about a month ago';
+    } else if (diff.inDays < 365) {
+      final months = (diff.inDays / 30).floor();
+      return 'about $months months ago';
+    } else {
+      final years = (diff.inDays / 365).floor();
+      return 'about $years year${years > 1 ? 's' : ''} ago';
+    }
   }
 
   /// Cleans redundant hashes (e.g. [9A1B2C3D]) and file extensions (.mkv, .mp4)
@@ -107,6 +237,54 @@ class TorrentNameParser {
 
     return clean.isNotEmpty ? clean : rawName;
   }
+}
+
+List<TorrentItem> sortTorrents(
+  List<TorrentItem> torrents,
+  TorrentSortField field,
+  bool ascending,
+) {
+  if (field == TorrentSortField.none) return torrents;
+  final list = List<TorrentItem>.from(torrents);
+
+  int resToScore(String? r) {
+    if (r == null) return 0;
+    final l = r.toLowerCase();
+    if (l.contains('2160') || l.contains('4k')) return 4;
+    if (l.contains('1080')) return 3;
+    if (l.contains('720')) return 2;
+    if (l.contains('480') || l.contains('540')) return 1;
+    return 0;
+  }
+
+  list.sort((a, b) {
+    int cmp = 0;
+    switch (field) {
+      case TorrentSortField.seeders:
+        cmp = a.seeders.compareTo(b.seeders);
+        break;
+      case TorrentSortField.size:
+        cmp = a.size.compareTo(b.size);
+        break;
+      case TorrentSortField.resolution:
+        cmp = resToScore(a.resolution).compareTo(resToScore(b.resolution));
+        break;
+      case TorrentSortField.date:
+        final da = DateTime.tryParse(a.date ?? '');
+        final db = DateTime.tryParse(b.date ?? '');
+        if (da != null && db != null) {
+          cmp = da.compareTo(db);
+        } else {
+          cmp = (a.date ?? '').compareTo(b.date ?? '');
+        }
+        break;
+      case TorrentSortField.none:
+        break;
+    }
+    return ascending ? cmp : -cmp;
+  });
+
+  return list;
 }
 
 bool isBatchTorrent(TorrentItem torrent) {

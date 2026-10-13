@@ -3,7 +3,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/data/models/anime_details.dart';
 import 'package:seanime_app/data/models/torrent_models.dart';
 
@@ -17,6 +16,8 @@ class TorrentSidebarInfoPanel extends ConsumerWidget {
   final String selectedQuality;
   final bool isSmartSearch;
   final bool showOnlyBatches;
+  final bool bestReleasesOnly;
+  final bool searchAcrossProviders;
   final TextEditingController searchController;
   final bool isLoadingTorrents;
   final ValueChanged<int?> onEpisodeChanged;
@@ -24,6 +25,8 @@ class TorrentSidebarInfoPanel extends ConsumerWidget {
   final ValueChanged<String> onQualityChanged;
   final ValueChanged<bool> onSmartSearchChanged;
   final ValueChanged<bool> onBatchToggleChanged;
+  final ValueChanged<bool> onBestReleasesChanged;
+  final ValueChanged<bool> onSearchAcrossProvidersChanged;
   final VoidCallback onRefresh;
 
   const TorrentSidebarInfoPanel({
@@ -37,6 +40,8 @@ class TorrentSidebarInfoPanel extends ConsumerWidget {
     required this.selectedQuality,
     required this.isSmartSearch,
     required this.showOnlyBatches,
+    this.bestReleasesOnly = false,
+    this.searchAcrossProviders = false,
     required this.searchController,
     required this.isLoadingTorrents,
     required this.onEpisodeChanged,
@@ -44,18 +49,18 @@ class TorrentSidebarInfoPanel extends ConsumerWidget {
     required this.onQualityChanged,
     required this.onSmartSearchChanged,
     required this.onBatchToggleChanged,
+    required this.onBestReleasesChanged,
+    required this.onSearchAcrossProvidersChanged,
     required this.onRefresh,
   });
 
   String? _resolveEpisodeThumbnail() {
     final epNum = currentEpisodeNumber;
     if (epNum != null && animeDetails != null) {
-      // 1. AniZip episode thumbnail
       final anizipEp = animeDetails!.aniZipData?.getEpisode(epNum);
       if (anizipEp?.image != null && anizipEp!.image!.isNotEmpty) {
         return anizipEp.image;
       }
-      // 2. AnimeEpisode image
       final ep = animeDetails!.episodes.cast<AnimeEpisode?>().firstWhere(
             (e) => e?.episodeNumber == epNum,
             orElse: () => null,
@@ -64,7 +69,6 @@ class TorrentSidebarInfoPanel extends ConsumerWidget {
         return ep.image;
       }
     }
-    // 3. Fallbacks: banner or cover image
     return animeDetails?.bannerImage ?? animeDetails?.coverImage;
   }
 
@@ -75,300 +79,133 @@ class TorrentSidebarInfoPanel extends ConsumerWidget {
     return animeDetails?.totalEpisodes ?? math.max(currentEpisodeNumber ?? 12, 12);
   }
 
+  String _resolveEpisodeDuration() {
+    final epNum = currentEpisodeNumber;
+    if (epNum != null && animeDetails?.aniZipData != null) {
+      final anizipEp = animeDetails!.aniZipData!.getEpisode(epNum);
+      if (anizipEp?.runtime != null && anizipEp!.runtime! > 0) {
+        return '${anizipEp.runtime}m';
+      }
+    }
+    return '24m';
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final l10n = ref.watch(translationsProvider);
-    final iconPack = ref.watch(iconPackProvider);
 
     final thumbnailUrl = _resolveEpisodeThumbnail();
     final totalEpisodes = _getTotalEpisodes();
     final currentEp = currentEpisodeNumber;
+    final displayAnimeTitle = animeDetails?.title ?? episodeTitle;
+    final romajiOrTitle = animeDetails?.romajiTitle ?? animeDetails?.title ?? '';
 
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF11141C) : theme.colorScheme.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(20),
+        color: isDark ? const Color(0xFF10131B) : theme.colorScheme.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDark ? Colors.white.withValues(alpha: 0.08) : theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+          color: isDark ? Colors.white.withValues(alpha: 0.07) : theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
         ),
       ),
       child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         children: [
-          // --- EPISODE THUMBNAIL & INFO CARD ---
+          // 1. Header: "Select a torrent to stream"
+          Text(
+            l10n.selectTorrentToStream,
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              fontSize: 15,
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          // 2. Clean 16:9 Episode Thumbnail
           ClipRRect(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(12),
             child: AspectRatio(
               aspectRatio: 16 / 9,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  if (thumbnailUrl != null)
-                    CachedNetworkImage(
+              child: thumbnailUrl != null
+                  ? CachedNetworkImage(
                       imageUrl: thumbnailUrl,
                       fit: BoxFit.cover,
                       memCacheWidth: 600,
-                      placeholder: (context, url) => Container(color: Colors.black26),
+                      placeholder: (context, url) => Container(
+                        color: isDark ? const Color(0xFF171A24) : theme.colorScheme.surfaceContainerHigh,
+                      ),
                       errorWidget: (context, url, error) => Container(
-                        color: theme.colorScheme.surfaceContainerHigh,
-                        child: Icon(Icons.movie_outlined, size: 36, color: theme.colorScheme.outline),
+                        color: isDark ? const Color(0xFF171A24) : theme.colorScheme.surfaceContainerHigh,
+                        child: Icon(Icons.movie_outlined, size: 32, color: theme.colorScheme.outline),
                       ),
                     )
-                  else
-                    Container(
-                      color: theme.colorScheme.surfaceContainerHigh,
-                      child: Icon(Icons.movie_outlined, size: 36, color: theme.colorScheme.outline),
+                  : Container(
+                      color: isDark ? const Color(0xFF171A24) : theme.colorScheme.surfaceContainerHigh,
+                      child: Icon(Icons.movie_outlined, size: 32, color: theme.colorScheme.outline),
                     ),
-
-                  // Gradient Protection
-                  Container(
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          Colors.black87,
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  // Episode Badge (Top Left)
-                  Positioned(
-                    top: 10,
-                    left: 10,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.75),
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: Colors.white24),
-                      ),
-                      child: Text(
-                        currentEp != null ? 'EP $currentEp' : 'BATCH',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  // Title on thumbnail bottom
-                  Positioned(
-                    bottom: 10,
-                    left: 10,
-                    right: 10,
-                    child: Text(
-                      currentEp != null
-                          ? (episodeTitle.isNotEmpty ? episodeTitle : l10n.episodeNumber(currentEp))
-                          : l10n.allBatches,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
             ),
           ),
 
           const SizedBox(height: 10),
 
-          // Anime Title
+          // 3. Anime / Episode Title
           Text(
-            animeDetails?.title ?? 'Anime',
-            maxLines: 1,
+            displayAnimeTitle,
+            maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              fontSize: 12.5,
-              fontWeight: FontWeight.w600,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-
-          const SizedBox(height: 16),
-          const Divider(height: 1),
-          const SizedBox(height: 14),
-
-          // --- EPISODE CHANGER ---
-          Text(
-            l10n.episodeChanger,
-            style: TextStyle(
-              fontSize: 12,
+              fontSize: 14,
               fontWeight: FontWeight.w700,
-              color: theme.colorScheme.primary,
-              letterSpacing: 0.3,
+              height: 1.25,
+              color: theme.colorScheme.onSurface,
             ),
           ),
-          const SizedBox(height: 8),
 
+          const SizedBox(height: 4),
+
+          // Subtitle row: "Episode X / Y" on left, "24m" on right
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Previous Button
-              IconButton(
-                tooltip: l10n.previousEpisode,
-                onPressed: (currentEp != null && currentEp > 1)
-                    ? () => onEpisodeChanged(currentEp - 1)
-                    : null,
-                icon: const Icon(Icons.chevron_left_rounded, size: 20),
-                style: IconButton.styleFrom(
-                  backgroundColor: theme.colorScheme.onSurface.withValues(alpha: 0.06),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  minimumSize: const Size(38, 38),
+              Text(
+                currentEp != null
+                    ? '${l10n.episode} $currentEp / $totalEpisodes'
+                    : l10n.batches,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
-              const SizedBox(width: 8),
-
-              // Episode Dropdown Pill
-              Expanded(
-                child: Container(
-                  height: 38,
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF1A1D27) : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
-                    ),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<int?>(
-                      value: currentEp,
-                      isExpanded: true,
-                      isDense: true,
-                      icon: const Icon(Icons.arrow_drop_down_rounded, size: 20),
-                      dropdownColor: isDark ? const Color(0xFF1E222E) : theme.colorScheme.surfaceContainerHigh,
-                      borderRadius: BorderRadius.circular(12),
-                      items: [
-                        DropdownMenuItem<int?>(
-                          value: null,
-                          child: Text(
-                            l10n.allBatches,
-                            style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                        ...List.generate(totalEpisodes, (i) {
-                          final ep = i + 1;
-                          return DropdownMenuItem<int?>(
-                            value: ep,
-                            child: Text(
-                              l10n.episodeNumber(ep),
-                              style: const TextStyle(fontSize: 12.5),
-                            ),
-                          );
-                        }),
-                      ],
-                      onChanged: onEpisodeChanged,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-
-              // Next Button
-              IconButton(
-                tooltip: l10n.nextEpisode,
-                onPressed: (currentEp != null && currentEp < totalEpisodes)
-                    ? () => onEpisodeChanged(currentEp + 1)
-                    : null,
-                icon: const Icon(Icons.chevron_right_rounded, size: 20),
-                style: IconButton.styleFrom(
-                  backgroundColor: theme.colorScheme.onSurface.withValues(alpha: 0.06),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  minimumSize: const Size(38, 38),
+              Text(
+                _resolveEpisodeDuration(),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
                 ),
               ),
             ],
           ),
 
-          const SizedBox(height: 18),
-
-          // --- RESOLUTION / QUALITY SELECTOR ---
-          Text(
-            l10n.resolutionQuality,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: theme.colorScheme.primary,
-              letterSpacing: 0.3,
-            ),
+          const SizedBox(height: 14),
+          Divider(
+            height: 1,
+            color: isDark ? Colors.white.withValues(alpha: 0.06) : theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
 
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: [
-              for (final q in const ['Todos', '1080p', '720p', '2160p / 4K', '480p']) ...[
-                Builder(
-                  builder: (context) {
-                    final isSelected = selectedQuality == q;
-                    return InkWell(
-                      borderRadius: BorderRadius.circular(8),
-                      onTap: () => onQualityChanged(q),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 150),
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? theme.colorScheme.primary
-                              : (isDark
-                                  ? const Color(0xFF1A1D27)
-                                  : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5)),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: isSelected
-                                ? theme.colorScheme.primary
-                                : theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
-                          ),
-                        ),
-                        child: Text(
-                          q == 'Todos' ? l10n.filterAll : q,
-                          style: TextStyle(
-                            fontSize: 11.5,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                            color: isSelected ? Colors.white : theme.colorScheme.onSurface,
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ],
-          ),
-
-          const SizedBox(height: 18),
-
-          // --- PROVIDER SELECTOR ---
-          Text(
-            l10n.torrentProviderLabel,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: theme.colorScheme.primary,
-              letterSpacing: 0.3,
-            ),
-          ),
-          const SizedBox(height: 8),
-
+          // 4. Provider Dropdown
           Container(
-            height: 38,
+            height: 36,
             padding: const EdgeInsets.symmetric(horizontal: 10),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1A1D27) : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-              borderRadius: BorderRadius.circular(10),
+              color: isDark ? const Color(0xFF171A24) : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+                color: isDark ? Colors.white.withValues(alpha: 0.08) : theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
               ),
             ),
             child: DropdownButtonHideUnderline(
@@ -380,19 +217,19 @@ class TorrentSidebarInfoPanel extends ConsumerWidget {
                   isLoadingProviders ? l10n.loadingProviders : l10n.onlineProvider,
                   style: const TextStyle(fontSize: 12),
                 ),
-                icon: const Icon(Icons.arrow_drop_down_rounded, size: 20),
+                icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 18),
                 dropdownColor: isDark ? const Color(0xFF1E222E) : theme.colorScheme.surfaceContainerHigh,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(10),
                 items: [
                   DropdownMenuItem<String>(
                     value: null,
-                    child: Text(l10n.allProviders, style: const TextStyle(fontSize: 12.5)),
+                    child: Text(l10n.allProviders, style: const TextStyle(fontSize: 12)),
                   ),
                   ...providers.map((p) => DropdownMenuItem<String>(
                         value: p.id,
                         child: Text(
                           p.name,
-                          style: const TextStyle(fontSize: 12.5),
+                          style: const TextStyle(fontSize: 12),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -403,146 +240,281 @@ class TorrentSidebarInfoPanel extends ConsumerWidget {
             ),
           ),
 
-          const SizedBox(height: 18),
+          const SizedBox(height: 10),
 
-          // --- SEARCH MODE (SMART VS SIMPLE) ---
+          // 5. Smart search Toggle
+          _buildToggleRow(
+            title: l10n.smartSearch,
+            tooltip: l10n.smartSearch,
+            value: isSmartSearch,
+            onChanged: onSmartSearchChanged,
+            theme: theme,
+          ),
+
+          const SizedBox(height: 6),
+
+          // 6. Search across providers Toggle
+          _buildToggleRow(
+            title: l10n.searchAcrossProviders,
+            tooltip: l10n.searchAcrossProviders,
+            value: searchAcrossProviders,
+            onChanged: onSearchAcrossProvidersChanged,
+            theme: theme,
+          ),
+
+          const SizedBox(height: 12),
+          Divider(
+            height: 1,
+            color: isDark ? Colors.white.withValues(alpha: 0.06) : theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+          ),
+          const SizedBox(height: 12),
+
+          // 7. Episode number with Stepper
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                isSmartSearch ? l10n.smartSearch : l10n.simpleSearch,
+                l10n.episodeNumberLabel,
                 style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: theme.colorScheme.primary,
-                  letterSpacing: 0.3,
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w500,
+                  color: theme.colorScheme.onSurface,
                 ),
               ),
-              const Spacer(),
-              IconButton(
-                tooltip: isSmartSearch ? l10n.simpleSearch : l10n.smartSearch,
-                onPressed: () => onSmartSearchChanged(!isSmartSearch),
-                icon: Icon(
-                  isSmartSearch ? Icons.auto_awesome_rounded : Icons.edit_note_rounded,
-                  size: 18,
-                  color: isSmartSearch ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
+              // Compact Stepper [ 8 ▲▼ ]
+              Container(
+                height: 32,
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF171A24) : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: isDark ? Colors.white.withValues(alpha: 0.08) : theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+                  ),
                 ),
-                style: IconButton.styleFrom(
-                  backgroundColor: isSmartSearch
-                      ? theme.colorScheme.primary.withValues(alpha: 0.15)
-                      : theme.colorScheme.onSurface.withValues(alpha: 0.06),
-                  padding: const EdgeInsets.all(6),
-                  minimumSize: const Size(32, 32),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      child: Text(
+                        currentEp != null ? '$currentEp' : '—',
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                      ),
+                    ),
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        InkWell(
+                          onTap: (currentEp != null && currentEp < totalEpisodes)
+                              ? () => onEpisodeChanged(currentEp + 1)
+                              : null,
+                          child: Icon(
+                            Icons.arrow_drop_up_rounded,
+                            size: 16,
+                            color: (currentEp != null && currentEp < totalEpisodes)
+                                ? theme.colorScheme.onSurface
+                                : theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        InkWell(
+                          onTap: (currentEp != null && currentEp > 1)
+                              ? () => onEpisodeChanged(currentEp - 1)
+                              : null,
+                          child: Icon(
+                            Icons.arrow_drop_down_rounded,
+                            size: 16,
+                            color: (currentEp != null && currentEp > 1)
+                                ? theme.colorScheme.onSurface
+                                : theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
 
-          if (!isSmartSearch) ...[
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    height: 38,
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF1A1D27) : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
-                      ),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    child: TextField(
-                      controller: searchController,
-                      style: const TextStyle(fontSize: 12.5),
-                      decoration: InputDecoration(
-                        hintText: l10n.searchQueryHint,
-                        hintStyle: const TextStyle(fontSize: 12),
-                        border: InputBorder.none,
-                        isDense: true,
-                        contentPadding: const EdgeInsets.symmetric(vertical: 9),
-                      ),
-                      onSubmitted: (_) => onRefresh(),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 6),
-                IconButton(
-                  onPressed: onRefresh,
-                  icon: const Icon(Icons.search_rounded, size: 18),
-                  style: IconButton.styleFrom(
-                    backgroundColor: theme.colorScheme.primary,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    minimumSize: const Size(38, 38),
-                  ),
-                ),
-              ],
-            ),
-          ],
+          const SizedBox(height: 10),
 
-          const SizedBox(height: 18),
-
-          // --- BATCH TOGGLE SWITCH ---
-          InkWell(
-            borderRadius: BorderRadius.circular(10),
-            onTap: () => onBatchToggleChanged(!showOnlyBatches),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              decoration: BoxDecoration(
-                color: showOnlyBatches
-                    ? Colors.purple.withValues(alpha: 0.15)
-                    : (isDark ? const Color(0xFF1A1D27) : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3)),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: showOnlyBatches
-                      ? Colors.purpleAccent.withValues(alpha: 0.4)
-                      : theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.folder_zip_rounded,
-                    size: 18,
-                    color: showOnlyBatches ? Colors.purpleAccent : theme.colorScheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      l10n.showOnlyBatches,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: showOnlyBatches ? FontWeight.bold : FontWeight.w500,
-                        color: showOnlyBatches ? Colors.purpleAccent : theme.colorScheme.onSurface,
-                      ),
-                    ),
-                  ),
-                  Switch.adaptive(
-                    value: showOnlyBatches,
-                    onChanged: onBatchToggleChanged,
-                    activeTrackColor: Colors.purpleAccent,
-                  ),
-                ],
-              ),
-            ),
+          // 8. Batches Toggle
+          _buildToggleRow(
+            title: l10n.batches,
+            tooltip: l10n.showOnlyBatches,
+            value: showOnlyBatches,
+            onChanged: onBatchToggleChanged,
+            theme: theme,
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 10),
 
-          // --- REFRESH BUTTON ---
-          FilledButton.tonalIcon(
-            onPressed: isLoadingTorrents ? null : onRefresh,
-            icon: Icon(AppIcons.refresh(iconPack), size: 16),
-            label: Text(l10n.refresh, style: const TextStyle(fontSize: 12.5)),
-            style: FilledButton.styleFrom(
-              visualDensity: VisualDensity.compact,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              padding: const EdgeInsets.symmetric(vertical: 10),
+          // 9. Resolution dropdown row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                l10n.resolution,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w500,
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+              Container(
+                height: 32,
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF171A24) : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: isDark ? Colors.white.withValues(alpha: 0.08) : theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: selectedQuality,
+                    isDense: true,
+                    icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 16),
+                    dropdownColor: isDark ? const Color(0xFF1E222E) : theme.colorScheme.surfaceContainerHigh,
+                    borderRadius: BorderRadius.circular(8),
+                    items: [
+                      DropdownMenuItem<String>(
+                        value: 'Todos',
+                        child: Text(l10n.filterAll, style: const TextStyle(fontSize: 12)),
+                      ),
+                      ...['1080p', '720p', '2160p / 4K', '480p'].map(
+                        (q) => DropdownMenuItem<String>(
+                          value: q,
+                          child: Text(q, style: const TextStyle(fontSize: 12)),
+                        ),
+                      ),
+                    ],
+                    onChanged: (val) {
+                      if (val != null) onQualityChanged(val);
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 10),
+
+          // 10. Best releases Toggle
+          _buildToggleRow(
+            title: l10n.bestReleases,
+            tooltip: l10n.bestReleases,
+            value: bestReleasesOnly,
+            onChanged: onBestReleasesChanged,
+            theme: theme,
+          ),
+
+          const SizedBox(height: 14),
+
+          // 11. Refine the title search bar
+          Container(
+            height: 36,
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF171A24) : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: isDark ? Colors.white.withValues(alpha: 0.08) : theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.search_rounded,
+                  size: 16,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextField(
+                    controller: searchController,
+                    style: const TextStyle(fontSize: 12),
+                    decoration: InputDecoration(
+                      hintText: romajiOrTitle.isNotEmpty
+                          ? '${l10n.refineTitleHint} ($romajiOrTitle)'
+                          : l10n.refineTitleHint,
+                      hintStyle: TextStyle(
+                        fontSize: 11.5,
+                        color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                      ),
+                      border: InputBorder.none,
+                      isDense: true,
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                    onSubmitted: (_) => onRefresh(),
+                  ),
+                ),
+                if (searchController.text.isNotEmpty)
+                  InkWell(
+                    onTap: () {
+                      searchController.clear();
+                      onRefresh();
+                    },
+                    child: Icon(
+                      Icons.close_rounded,
+                      size: 14,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+              ],
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildToggleRow({
+    required String title,
+    required String tooltip,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+    required ThemeData theme,
+  }) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w500,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(width: 4),
+            Tooltip(
+              message: tooltip,
+              child: Icon(
+                Icons.info_outline_rounded,
+                size: 13,
+                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+              ),
+            ),
+          ],
+        ),
+        Transform.scale(
+          scale: 0.75,
+          child: Switch.adaptive(
+            value: value,
+            onChanged: onChanged,
+            activeTrackColor: theme.colorScheme.primary,
+          ),
+        ),
+      ],
     );
   }
 }

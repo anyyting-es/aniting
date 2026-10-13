@@ -41,6 +41,8 @@ func (h *Handler) HandleScanShows(c echo.Context) error {
 	}
 
 	if len(allPaths) == 0 {
+		_, existingId, _ := db_bridge.GetShowLocalFiles(h.App.Database)
+		_, _ = db_bridge.SaveShowLocalFiles(h.App.Database, existingId, []*shows.ShowLocalFile{})
 		emptyCol := shows.NewShowCollection([]*shows.ShowLocalFile{})
 		return h.RespondWithData(c, emptyCol)
 	}

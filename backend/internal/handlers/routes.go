@@ -240,6 +240,7 @@ func InitRoutes(app *core.App, e *echo.Echo) {
 	v1Library := v1.Group("/library")
 
 	v1Library.POST("/scan", h.HandleScanLocalFiles)
+	v1Library.POST("/remove-folder", h.HandleRemoveLibraryFolder)
 
 	v1Library.DELETE("/empty-directories", h.HandleRemoveEmptyDirectories)
 

@@ -2382,5 +2382,29 @@ class SpanishTranslations implements AppTranslations {
   String get resolutionQuality => 'Calidad y resolución';
   @override
   String get torrentProviderLabel => 'Proveedor de torrents';
+  @override
+  String get selectTorrentToStream => 'Selecciona un torrent para reproducir';
+  @override
+  String get searchAcrossProviders => 'Buscar en todos los proveedores';
+  @override
+  String get episodeNumberLabel => 'Número de episodio';
+  @override
+  String get bestReleases => 'Mejores versiones';
+  @override
+  String get refineTitleHint => 'Afinar el título';
+  @override
+  String get sortSeeders => 'Seeders';
+  @override
+  String get sortSize => 'Tamaño';
+  @override
+  String get sortDate => 'Fecha';
+  @override
+  String get sortResolution => 'Resolución';
+  @override
+  String get multiSubs => 'Multi Subs';
+  @override
+  String get originalPlusDub => 'Original + Doblaje';
+  @override
+  String get batches => 'Batches';
 }
 

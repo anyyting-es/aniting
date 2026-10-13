@@ -2376,5 +2376,29 @@ class EnglishTranslations implements AppTranslations {
   String get resolutionQuality => 'Quality & Resolution';
   @override
   String get torrentProviderLabel => 'Torrent Provider';
+  @override
+  String get selectTorrentToStream => 'Select a torrent to stream';
+  @override
+  String get searchAcrossProviders => 'Search across providers';
+  @override
+  String get episodeNumberLabel => 'Episode number';
+  @override
+  String get bestReleases => 'Best releases';
+  @override
+  String get refineTitleHint => 'Refine the title';
+  @override
+  String get sortSeeders => 'Seeders';
+  @override
+  String get sortSize => 'Size';
+  @override
+  String get sortDate => 'Date';
+  @override
+  String get sortResolution => 'Resolution';
+  @override
+  String get multiSubs => 'Multi Subs';
+  @override
+  String get originalPlusDub => 'Original + Dub';
+  @override
+  String get batches => 'Batches';
 }
 

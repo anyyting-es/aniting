@@ -6,6 +6,27 @@
 > - **ALWAYS** summarize improvements at a high, user-facing level with clear, direct bullet points (e.g., *"Mejoras de UI y navegación en el calendario de emisión"*, *"Nueva pantalla y gestión de estado sin conexión"*, *"Optimizaciones en la caché de seguir viendo"*).
 > - Keep it punchy, professional, and easy to skim.
 
+## 7.36. Botones de Acción Sólidos y Flotantes en Detalles (2026-10-13)
+- **Fondo Sólido para Reproducción**:
+  - Botón principal de reproducción y continuar episodio actualizado con fondo sólido del tema para máxima claridad y contraste.
+- **Íconos de Acción Flotantes**:
+  - Botones de lápiz de edición, compartir, trailer, favoritos y descargas estilizados como íconos flotantes limpios sin fondos de cristal.
+
+---
+
+## 7.35. Rediseño Profesional del Selector de Torrents en Escritorio (2026-10-12)
+- **Nuevo Diseño de Tarjetas de Torrents**:
+  - Caja lateral distintiva con el grupo de lanzamiento y resolución en cian brillante.
+  - Insignias técnicas automáticas para códec de video (H.264, HEVC, AVC), 10-bit, códec de audio (AAC, FLAC), Dual Audio (Original + Doblaje) y subtítulos múltiples.
+  - Indicador numérico de semillas, tamaño de descarga y antigüedad relativa del torrent con acciones rápidas de descarga y reproductor externo.
+- **Panel Lateral de Control y Búsqueda**:
+  - Miniatura 16:9 limpia sin obstrucciones de texto, título con número de episodio y duración estimada.
+  - Selector de proveedor, alternador de búsqueda inteligente y opción para buscar a través de todos los proveedores simultáneamente.
+  - Stepper compacto numérico para cambiar de episodio con flechas arriba/abajo.
+  - Filtros directos para batches, resolución, mejores versiones y campo para afinar la búsqueda por título.
+- **Barra de Herramientas y Ordenación**:
+  - Contador de resultados y botones interactivos para ordenar por Semillas, Tamaño, Fecha o Resolución con indicador de dirección.
+
 ---
 
 ## 7.34. Gestión Avanzada de Biblioteca Local y Corrección de Archivos (2026-10-12)

@@ -1454,7 +1454,7 @@ class SeanimeRepository {
     }
   }
 
-  Future<bool> scanLibrary({bool enhanced = true}) async {
+  Future<bool> scanLibrary({bool enhanced = true, bool ensureDefaultIfEmpty = false}) async {
     try {
       final settings = await getServerSettings();
       final librarySettings = settings?['library'] as Map<String, dynamic>?;
@@ -1463,7 +1463,7 @@ class SeanimeRepository {
       final hasAnyPaths = (libraryPath != null && libraryPath.trim().isNotEmpty) ||
           (additionalPaths != null && additionalPaths.isNotEmpty);
 
-      if (!hasAnyPaths) {
+      if (!hasAnyPaths && ensureDefaultIfEmpty) {
         final defaultDir = await AppStoragePaths.getAnimeDownloadsDirectory();
         await patchServerSetting('library.libraryPath', defaultDir.path);
       }
@@ -1482,6 +1482,23 @@ class SeanimeRepository {
       return response.statusCode == 200;
     } catch (e) {
       debugPrint('Error triggering library scan: $e');
+      return false;
+    }
+  }
+
+  /// Removes a library folder from settings and immediately purges its files from local library & shows database.
+  Future<bool> removeLibraryFolder(String path, {bool isMain = false}) async {
+    try {
+      final response = await _apiClient.post(
+        ApiEndpoints.libraryRemoveFolder,
+        data: {
+          'path': path,
+          'isMain': isMain,
+        },
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error removing library folder: $e');
       return false;
     }
   }

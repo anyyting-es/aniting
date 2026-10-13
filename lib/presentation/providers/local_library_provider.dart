@@ -146,10 +146,14 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
   void _invalidateRelatedProviders() {
     FeedCacheService.instance.clearCache(FeedCacheService.kCacheAnimeCollection);
     FeedCacheService.instance.clearCache(FeedCacheService.kCacheContinueWatchingAnime);
+    FeedCacheService.instance.clearCache(FeedCacheService.kCacheTrendingAnime);
     ref.invalidate(downloadedAnimeProvider);
     ref.invalidate(animeCollectionProvider);
     ref.invalidate(continueWatchingProvider);
     ref.invalidate(activeDownloadsProvider);
+    ref.invalidate(showsCollectionProvider);
+    ref.invalidate(tmdbRecommendationsProvider);
+    ref.invalidate(tmdbTrendingShowsProvider);
   }
 
   void _listenToEvents() {
@@ -213,9 +217,64 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
       }
 
       // 3. Fetch local anime files, shows collection & raw library collection
-      final animeFiles = await _repository.getLocalFiles();
-      final showsCol = await _repository.getShowsCollection();
+      final rawAnimeFiles = await _repository.getLocalFiles();
+      final rawShowsCol = await _repository.getShowsCollection();
       final rawCol = await _repository.getRawLibraryCollection();
+
+      final allConfiguredPaths = <String>[
+        if (mainPath.isNotEmpty) mainPath.replaceAll('\\', '/').toLowerCase(),
+        ...additionalPaths.map((p) => p.replaceAll('\\', '/').toLowerCase()),
+      ];
+
+      // If no library paths configured at all, wipe any stale files from state and server
+      if (allConfiguredPaths.isEmpty) {
+        if (rawAnimeFiles.isNotEmpty || (rawShowsCol != null && rawShowsCol.shows.isNotEmpty)) {
+          _repository.scanShows().ignore();
+          _repository.scanLibrary().ignore();
+          _invalidateRelatedProviders();
+        }
+
+        state = state.copyWith(
+          isLoading: false,
+          mainPath: '',
+          additionalPaths: const [],
+          folderTypes: folderTypes,
+          localFiles: const [],
+          showsCollection: null,
+          unmatchedGroups: const [],
+          matchedShows: const [],
+          matchedShowsCount: 0,
+          animeCount: 0,
+          tvShowsCount: 0,
+          moviesCount: 0,
+          localEpisodesCount: 0,
+          unmatchedFilesCount: 0,
+        );
+        _invalidateRelatedProviders();
+        return;
+      }
+
+      bool isPathInConfigured(String p) {
+        if (p.isEmpty) return false;
+        final norm = p.replaceAll('\\', '/').toLowerCase();
+        return allConfiguredPaths.any((cp) => norm.startsWith(cp));
+      }
+
+      final animeFiles = rawAnimeFiles.where((f) => isPathInConfigured(f.path)).toList();
+      final showsCol = rawShowsCol != null
+          ? ShowCollectionItem(
+              shows: rawShowsCol.shows.where((s) => s.files.isEmpty || isPathInConfigured(s.files.first.path)).toList(),
+              unmatched: rawShowsCol.unmatched.where((u) => isPathInConfigured(u.path)).toList(),
+              totalFiles: rawShowsCol.shows
+                  .where((s) => s.files.isEmpty || isPathInConfigured(s.files.first.path))
+                  .fold<int>(0, (sum, s) => sum + s.files.length) + rawShowsCol.unmatched.where((u) => isPathInConfigured(u.path)).length,
+              matchedShowsCount: rawShowsCol.shows.where((s) => s.tmdbId > 0 && (s.files.isEmpty || isPathInConfigured(s.files.first.path))).length,
+              localEpisodesCount: rawShowsCol.shows
+                  .where((s) => s.files.isEmpty || isPathInConfigured(s.files.first.path))
+                  .fold<int>(0, (sum, s) => sum + s.files.length),
+              unmatchedFilesCount: rawShowsCol.unmatched.where((u) => isPathInConfigured(u.path)).length,
+            )
+          : null;
 
       // 4. Calculate statistics and unmatched groups
       final matchedMediaIds = <int>{};
@@ -238,7 +297,7 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
           for (final item in rawUnmatchedList) {
             if (item is Map) {
               final parsed = LocalFileItem.fromJson(Map<String, dynamic>.from(item));
-              if (parsed.isUnmatched && !unmatchedFiles.any((e) => e.path == parsed.path)) {
+              if (parsed.isUnmatched && isPathInConfigured(parsed.path) && !unmatchedFiles.any((e) => e.path == parsed.path)) {
                 unmatchedFiles.add(parsed);
               }
             }
@@ -251,7 +310,7 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
               for (final fItem in g['localFiles'] as List) {
                 if (fItem is Map) {
                   final parsed = LocalFileItem.fromJson(Map<String, dynamic>.from(fItem));
-                  if (parsed.isUnmatched && !unmatchedFiles.any((e) => e.path == parsed.path)) {
+                  if (parsed.isUnmatched && isPathInConfigured(parsed.path) && !unmatchedFiles.any((e) => e.path == parsed.path)) {
                     unmatchedFiles.add(parsed);
                   }
                 }
@@ -264,7 +323,7 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
       // Add unmatched from shows collection if any
       if (showsCol != null) {
         for (final sf in showsCol.unmatched) {
-          if (!unmatchedFiles.any((e) => e.path == sf.path)) {
+          if (isPathInConfigured(sf.path) && !unmatchedFiles.any((e) => e.path == sf.path)) {
             unmatchedFiles.add(LocalFileItem(
               path: sf.path,
               name: sf.name,
@@ -396,9 +455,7 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
         unmatchedFilesCount: unmatchedFiles.length,
       );
 
-      if (matchedMediaIds.isNotEmpty || (showsCol?.matchedShowsCount ?? 0) > 0) {
-        _invalidateRelatedProviders();
-      }
+      _invalidateRelatedProviders();
     } catch (e) {
       debugPrint('[LocalLibraryNotifier] Error loading data: $e');
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
@@ -431,7 +488,16 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
 
   Future<bool> setMainPath(String newPath, {String type = 'anime'}) async {
     final trimmed = newPath.trim();
-    final ok = await _repository.patchServerSetting('library.libraryPath', trimmed);
+    bool ok;
+    if (trimmed.isEmpty && state.mainPath.isNotEmpty) {
+      ok = await _repository.removeLibraryFolder(state.mainPath, isMain: true);
+      if (!ok) {
+        ok = await _repository.patchServerSetting('library.libraryPath', '');
+      }
+    } else {
+      ok = await _repository.patchServerSetting('library.libraryPath', trimmed);
+    }
+
     if (ok) {
       final nextTypes = Map<String, String>.from(state.folderTypes);
       if (trimmed.isNotEmpty) {
@@ -442,6 +508,10 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
       state = state.copyWith(folderTypes: nextTypes);
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_kFolderTypesPrefKey, jsonEncode(nextTypes));
+
+      await _repository.scanShows(folderTypes: nextTypes);
+      await _repository.scanLibrary();
+      _invalidateRelatedProviders();
       await loadLibraryData();
     }
     return ok;
@@ -463,12 +533,19 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
 
   Future<bool> removeAdditionalPath(String pathToRemove) async {
     final next = state.additionalPaths.where((p) => p != pathToRemove).toList();
-    final ok = await _repository.patchServerSetting('library.libraryPaths', next);
+    bool ok = await _repository.removeLibraryFolder(pathToRemove, isMain: false);
+    if (!ok) {
+      ok = await _repository.patchServerSetting('library.libraryPaths', next);
+    }
     if (ok) {
       final nextTypes = Map<String, String>.from(state.folderTypes)..remove(pathToRemove);
       state = state.copyWith(folderTypes: nextTypes);
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_kFolderTypesPrefKey, jsonEncode(nextTypes));
+
+      await _repository.scanShows(folderTypes: nextTypes);
+      await _repository.scanLibrary();
+      _invalidateRelatedProviders();
       await loadLibraryData();
     }
     return ok;

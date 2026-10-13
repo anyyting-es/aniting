@@ -1158,5 +1158,17 @@ abstract class AppTranslations {
   String get batchReleaseLabel;
   String get resolutionQuality;
   String get torrentProviderLabel;
+  String get selectTorrentToStream;
+  String get searchAcrossProviders;
+  String get episodeNumberLabel;
+  String get bestReleases;
+  String get refineTitleHint;
+  String get sortSeeders;
+  String get sortSize;
+  String get sortDate;
+  String get sortResolution;
+  String get multiSubs;
+  String get originalPlusDub;
+  String get batches;
 }
 

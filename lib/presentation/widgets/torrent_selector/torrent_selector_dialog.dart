@@ -43,28 +43,33 @@ class _TorrentSelectorDialogState extends ConsumerState<TorrentSelectorDialog> {
 
   bool _isSmartSearch = true;
   bool _showOnlyBatches = false;
+  bool _bestReleasesOnly = false;
+  bool _searchAcrossProviders = false;
+  TorrentSortField _sortField = TorrentSortField.seeders;
+  bool _sortAscending = false;
   String _selectedQuality = 'Todos';
   late final TextEditingController _searchController;
   late int? _currentEpisodeNumber;
 
   String? _startingTorrentName;
 
-  List<TorrentItem> get _filteredTorrents => filterTorrentsList(
-        _torrents,
-        quality: _selectedQuality,
-        showOnlyBatches: _showOnlyBatches,
-      );
+  List<TorrentItem> get _filteredTorrents {
+    var list = filterTorrentsList(
+      _torrents,
+      quality: _selectedQuality,
+      showOnlyBatches: _showOnlyBatches,
+    );
+    if (_bestReleasesOnly) {
+      list = list.where((t) => t.isBestRelease).toList();
+    }
+    return list;
+  }
 
   @override
   void initState() {
     super.initState();
     _currentEpisodeNumber = widget.episodeNumber;
-    final defaultTitle = widget.animeDetails?.romajiTitle ??
-        widget.animeDetails?.title ??
-        '';
-    _searchController = TextEditingController(
-      text: '$defaultTitle ${widget.episodeNumber}',
-    );
+    _searchController = TextEditingController();
     _loadProviders();
   }
 
@@ -77,15 +82,10 @@ class _TorrentSelectorDialogState extends ConsumerState<TorrentSelectorDialog> {
   void _onEpisodeChanged(int? newEp) {
     setState(() {
       _currentEpisodeNumber = newEp;
-      final defaultTitle = widget.animeDetails?.romajiTitle ??
-          widget.animeDetails?.title ??
-          '';
       if (newEp != null) {
         _showOnlyBatches = false;
-        _searchController.text = '$defaultTitle $newEp';
       } else {
         _showOnlyBatches = true;
-        _searchController.text = '$defaultTitle Batch';
       }
     });
     _searchTorrents();
@@ -125,11 +125,14 @@ class _TorrentSelectorDialogState extends ConsumerState<TorrentSelectorDialog> {
 
     final repo = ref.read(repositoryProvider);
     try {
+      final customQuery = _searchController.text.trim();
       final results = await repo.searchTorrents(
         mediaId: widget.mediaId,
         episodeNumber: _isSmartSearch && !_showOnlyBatches ? _currentEpisodeNumber : null,
-        provider: _selectedProviderId,
-        query: _isSmartSearch ? null : _searchController.text.trim(),
+        provider: _searchAcrossProviders ? null : _selectedProviderId,
+        query: customQuery.isNotEmpty
+            ? customQuery
+            : (_isSmartSearch ? null : widget.animeDetails?.title),
         type: _isSmartSearch ? 'smart' : 'simple',
         batch: _showOnlyBatches,
         animeDetails: widget.animeDetails,
@@ -401,6 +404,10 @@ class _TorrentSelectorDialogState extends ConsumerState<TorrentSelectorDialog> {
         selectedQuality: _selectedQuality,
         isSmartSearch: _isSmartSearch,
         showOnlyBatches: _showOnlyBatches,
+        bestReleasesOnly: _bestReleasesOnly,
+        searchAcrossProviders: _searchAcrossProviders,
+        sortField: _sortField,
+        sortAscending: _sortAscending,
         searchController: _searchController,
         startingTorrentName: _startingTorrentName,
         onEpisodeChanged: _onEpisodeChanged,
@@ -416,6 +423,22 @@ class _TorrentSelectorDialogState extends ConsumerState<TorrentSelectorDialog> {
         onBatchToggleChanged: (val) {
           setState(() => _showOnlyBatches = val);
           _searchTorrents();
+        },
+        onBestReleasesChanged: (val) {
+          setState(() => _bestReleasesOnly = val);
+        },
+        onSearchAcrossProvidersChanged: (val) {
+          setState(() => _searchAcrossProviders = val);
+          _searchTorrents();
+        },
+        onSortFieldChanged: (field) {
+          setState(() {
+            _sortField = field;
+            _sortAscending = false;
+          });
+        },
+        onToggleSortDirection: () {
+          setState(() => _sortAscending = !_sortAscending);
         },
         onRefresh: _searchTorrents,
         onTorrentTap: _handleTorrentTap,
