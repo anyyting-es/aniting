@@ -663,33 +663,6 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             child: CustomScrollView(
               controller: _scrollController,
               slivers: [
-                // 1. Header Bar (MediaTypeToggle & Action Icons) always rendered
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 6, 16, 8),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        // Non-wrapping Media Type Toggle (Anime / Shows / Manga)
-                        MediaTypeToggle(
-                          selected: _filterState.mediaType,
-                          showAnime: animeEnabled,
-                          showShows: showsEnabled,
-                          showManga: mangaEnabled,
-                          onSelected: _setMediaType,
-                        ),
-                        const Spacer(),
-                        // Action Buttons aligned to the right in iOS Liquid Glass capsule
-                        _buildGlassActionPill(
-                          theme: theme,
-                          iconPack: iconPack,
-                          l10n: l10n,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
                 if ((isAnime && (featuredAnimeConfig == null || featuredAnimeConfig.items.isEmpty) && (trendingAnimeAsync == null || trendingAnimeAsync.isLoading)) ||
                     (isShows && (trendingShowsAsync == null || trendingShowsAsync.isLoading)) ||
                     (!isAnime && !isShows && (trendingMangaAsync == null || trendingMangaAsync.isLoading)))
@@ -754,11 +727,36 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     );
                   }),
 
-
-
-                  const SliverToBoxAdapter(
-                    child: SizedBox(height: 6),
+                // Media Type Toggle (Anime / Shows / Manga) & Action Icons placed below the hero carousel
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        // Non-wrapping Media Type Toggle (Anime / Shows / Manga)
+                        MediaTypeToggle(
+                          selected: _filterState.mediaType,
+                          showAnime: animeEnabled,
+                          showShows: showsEnabled,
+                          showManga: mangaEnabled,
+                          onSelected: _setMediaType,
+                        ),
+                        const Spacer(),
+                        // Action Buttons aligned to the right in iOS Liquid Glass capsule
+                        _buildGlassActionPill(
+                          theme: theme,
+                          iconPack: iconPack,
+                          l10n: l10n,
+                        ),
+                      ],
+                    ),
                   ),
+                ),
+
+                const SliverToBoxAdapter(
+                  child: SizedBox(height: 6),
+                ),
 
                     SliverToBoxAdapter(
                     child: AnimatedSwitcher(
