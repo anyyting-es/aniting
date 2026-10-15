@@ -9,6 +9,7 @@ import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/screens/downloads_screen.dart';
 import 'package:seanime_app/presentation/screens/library_screen.dart';
 import 'package:seanime_app/presentation/screens/my_lists_screen.dart';
+import 'package:seanime_app/presentation/widgets/media_type_toggle.dart';
 
 class MockRunningServerNotifier extends ServerNotifier {
   @override
@@ -88,8 +89,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Mis Listas'), findsOneWidget);
+      expect(find.byType(MediaTypeToggle), findsOneWidget);
       expect(find.text('Anime'), findsWidgets);
-      expect(find.text('Manga'), findsWidgets);
 
       // Filter chips should be present
       expect(find.text('Viendo'), findsOneWidget);
@@ -113,8 +114,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Descargas'), findsOneWidget);
+      expect(find.byType(MediaTypeToggle), findsOneWidget);
       expect(find.text('Anime'), findsWidgets);
-      expect(find.text('Manga'), findsWidgets);
     });
   });
 }

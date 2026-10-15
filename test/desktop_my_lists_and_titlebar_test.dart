@@ -120,7 +120,7 @@ void main() {
       expect(find.text('2'), findsWidgets);
 
       // Switch to Manga via MediaTypeToggle
-      await tester.tap(find.text('Manga'));
+      await tester.tap(find.byType(MediaTypeToggle));
       await tester.pumpAndSettle();
 
       // Check Manga content appears
@@ -189,7 +189,7 @@ void main() {
       expect(find.text('Bleach TYBW'), findsOneWidget);
 
       // Switch to Manga
-      await tester.tap(find.text('Manga'));
+      await tester.tap(find.byType(MediaTypeToggle));
       await tester.pumpAndSettle();
 
       // Verify manga card is displayed

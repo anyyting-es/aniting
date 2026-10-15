@@ -120,7 +120,7 @@ void main() {
       );
 
       expect(find.byType(AppBar), findsNothing);
-      expect(find.byIcon(AppIcons.search(AppIconPack.lucide)), findsOneWidget);
+      expect(find.byIcon(AppIcons.search(AppIconPack.lucide), skipOffstage: false), findsOneWidget);
       expect(find.byType(TopStatusBarGlass), findsOneWidget);
     });
 

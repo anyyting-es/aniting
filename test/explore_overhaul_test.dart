@@ -50,13 +50,13 @@ void main() {
       await tester.pump();
 
       expect(find.text('Anime'), findsOneWidget);
-      expect(find.text('Manga'), findsOneWidget);
 
-      // Tap Manga
-      await tester.tap(find.text('Manga'));
+      // Tap MediaTypeToggle to cycle to next type (Manga)
+      await tester.tap(find.byType(MediaTypeToggle));
       await tester.pumpAndSettle();
 
       expect(selected, 'MANGA');
+      expect(find.text('Manga'), findsOneWidget);
     });
   });
 
