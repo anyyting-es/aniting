@@ -26,15 +26,43 @@ class _ExtensionsMarketplaceScreenState extends ConsumerState<ExtensionsMarketpl
     version: '1.0.0',
     author: 'Aniting',
     description:
-        'Proveedor único oficial: Transmisiones 1080p, Multi-Audio (Latino, Castellano, Japonés) y Multi-Subtítulos integrados.',
+        'Proveedor nativo oficial: Transmisiones 1080p HLS, Multi-Audio (Latino, Castellano, Japonés, Inglés) y Multi-Subtítulos integrados.',
     type: 'onlinestream-provider',
-    language: 'javascript',
+    language: 'dart',
     lang: 'multi',
     icon: 'https://raw.githubusercontent.com/anyyting-es/aniting-extensions/main/icons/icon.png',
-    manifestUri:
-        'https://raw.githubusercontent.com/anyyting-es/aniting-extensions/main/extensions/aniting-universal/manifest.json',
-    payloadUri:
-        'https://raw.githubusercontent.com/anyyting-es/aniting-extensions/main/extensions/aniting-universal/main.js',
+    manifestUri: '',
+    payloadUri: '',
+  );
+
+  static const ExtensionItem _defaultKawaiiExtension = ExtensionItem(
+    id: 'kawaii-animes',
+    name: 'Kawaii Animes',
+    version: '1.0.0',
+    author: 'Aniting / Kawaii',
+    description:
+        'Proveedor nativo oficial: Audio Latino, Audio Castellano y Subtitulado en español con servidores de alta velocidad.',
+    type: 'onlinestream-provider',
+    language: 'dart',
+    lang: 'es',
+    icon: 'https://raw.githubusercontent.com/anyyting-es/aniting-extensions/main/icons/icon.png',
+    manifestUri: '',
+    payloadUri: '',
+  );
+
+  static const ExtensionItem _defaultJkAnimeExtension = ExtensionItem(
+    id: 'jkanime',
+    name: 'JKAnime',
+    version: '1.0.0',
+    author: 'Aniting / JKAnime',
+    description:
+        'Proveedor nativo oficial: Catálogo completo de anime subtitulado al español con múltiples servidores (StreamWish, VOE).',
+    type: 'onlinestream-provider',
+    language: 'dart',
+    lang: 'es',
+    icon: 'https://raw.githubusercontent.com/anyyting-es/aniting-extensions/main/icons/icon.png',
+    manifestUri: '',
+    payloadUri: '',
   );
 
   static const ExtensionItem _defaultAnimeToshoExtension = ExtensionItem(
@@ -293,8 +321,8 @@ class _ExtensionsMarketplaceScreenState extends ConsumerState<ExtensionsMarketpl
       if (seenIds.contains(id)) continue;
 
       if (categoryIndex == 0) {
-        // Online: Strictly aniting-universal
-        if (id == 'aniting-universal') {
+        // Online: Native providers
+        if (id == 'aniting-universal' || id == 'kawaii-animes' || id == 'jkanime') {
           seenIds.add(id);
           result.add(ext);
         }
@@ -314,8 +342,10 @@ class _ExtensionsMarketplaceScreenState extends ConsumerState<ExtensionsMarketpl
     }
 
     // Default fallbacks to guarantee rich experience
-    if (categoryIndex == 0 && result.isEmpty) {
-      result.add(_defaultUniversalExtension);
+    if (categoryIndex == 0) {
+      if (!seenIds.contains('aniting-universal')) result.add(_defaultUniversalExtension);
+      if (!seenIds.contains('kawaii-animes')) result.add(_defaultKawaiiExtension);
+      if (!seenIds.contains('jkanime')) result.add(_defaultJkAnimeExtension);
     } else if (categoryIndex == 1 && result.isEmpty) {
       result.add(_defaultAnimeToshoExtension);
     } else if (categoryIndex == 2 && result.isEmpty) {
@@ -330,9 +360,21 @@ class _ExtensionsMarketplaceScreenState extends ConsumerState<ExtensionsMarketpl
     final theme = Theme.of(context);
     final l10n = ref.watch(translationsProvider);
 
-    final installedIds = _installedExtensions.map((e) => e.id.toLowerCase()).toSet();
+    final installedIds = {
+      ..._installedExtensions.map((e) => e.id.toLowerCase()),
+      'aniting-universal',
+      'kawaii-animes',
+      'jkanime',
+      'animetosho-new',
+      'mangadex',
+    };
     final installedMap = {
       for (final ext in _installedExtensions) ext.id.toLowerCase(): ext,
+      'aniting-universal': _defaultUniversalExtension,
+      'kawaii-animes': _defaultKawaiiExtension,
+      'jkanime': _defaultJkAnimeExtension,
+      'animetosho-new': _defaultAnimeToshoExtension,
+      'mangadex': _defaultMangaDexExtension,
     };
 
     final onlineExtensions = _getCategoryExtensions(0);

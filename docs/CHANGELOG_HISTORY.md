@@ -6,6 +6,20 @@
 > - **ALWAYS** summarize improvements at a high, user-facing level with clear, direct bullet points (e.g., *"Mejoras de UI y navegación en el calendario de emisión"*, *"Nueva pantalla y gestión de estado sin conexión"*, *"Optimizaciones en la caché de seguir viendo"*).
 > - Keep it punchy, professional, and easy to skim.
 
+## 7.46. Modularización de Fuentes Online Nativas y Selector en Reproductor (2026-10-15)
+- **Fuentes Nativas Modulares Separadas (`lib/data/sources/online/`)**:
+  - Implementación independiente en archivos dedicados para cada proveedor: `AnitingUniversal`, `KawaiiOnlineSource` (Latino, Castellano y Sub) y `JkAnimeOnlineSource` (StreamWish, VOE).
+  - Eliminación de dependencias de ejecutables externos JS para la resolución de transmisiones.
+- **Selector de Servidores y Fuentes en el Reproductor**:
+  - Restauración de pistas nativas de audio en el reproductor de video.
+  - Selección de fuentes y doblajes organizada en el selector inferior (`PlayerSourceSelectorSheet`) con badges de idioma (`LATINO`, `CASTELLANO`, `ENGLISH`, `SUB`) y cambio instantáneo preservando la posición.
+- **Gestión Visual de Extensiones**:
+  - Inclusión de los 3 proveedores nativos en la pestaña Online de extensiones, marcados como integrados y listos para usar sin descargas.
+- **Verificación Completa**:
+  - 100% de la suite de pruebas aprobada y 0 advertencias en `flutter analyze lib/`.
+
+---
+
 ## 7.45. Fuentes In-App Nativas y Unificación Multi-Audio / Multi-Subtítulos (2026-10-15)
 - **Fuentes Nativas en Dart (`lib/data/sources/`)**:
   - Migración a fuentes in-app nativas en Flutter (Online, Torrents, Manga y Series) con clientes directos de alto rendimiento.

@@ -115,8 +115,10 @@ void main() {
       expect(find.text('Cambiar Repositorio'), findsNothing);
       expect(find.text('Configuración de Repositorio'), findsNothing);
 
-      // Online category (default active): Strictly 'Aniting Universal'
+      // Online category (default active): Native online providers
       expect(find.text('Aniting Universal'), findsOneWidget);
+      expect(find.text('Kawaii Animes'), findsOneWidget);
+      expect(find.text('JKAnime'), findsOneWidget);
       expect(find.text('MangaDex'), findsNothing);
 
       // Switch to Torrents category

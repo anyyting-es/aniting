@@ -36,7 +36,8 @@ class UniversalExtensionCard extends ConsumerWidget {
     final l10n = ref.watch(translationsProvider);
     final iconPack = ref.watch(iconPackProvider);
     final ext = extension;
-    final isOfficial = ext.id == 'aniting-universal';
+    final isOfficial = ext.id == 'aniting-universal' || ext.id == 'kawaii-animes' || ext.id == 'jkanime';
+    final isNativeBuiltIn = isOfficial || ext.id == 'animetosho-new' || ext.id == 'mangadex';
 
     final Color statusColor = isInstalled
         ? (!ext.disabled ? theme.colorScheme.primary : theme.colorScheme.outline)
@@ -269,7 +270,7 @@ class UniversalExtensionCard extends ConsumerWidget {
 
               // Installed actions: View Code, Update, Uninstall
               if (isInstalled) ...[
-                if (onShowCode != null) ...[
+                if (onShowCode != null && ext.manifestUri.isNotEmpty) ...[
                   IconButton(
                     icon: Icon(AppIcons.code(iconPack), size: 18),
                     tooltip: l10n.viewSourceCode,
@@ -295,7 +296,7 @@ class UniversalExtensionCard extends ConsumerWidget {
                     label: Text(l10n.updateAvailable, style: const TextStyle(fontSize: 12)),
                   ),
                 ],
-                if (onUninstall != null) ...[
+                if (!isNativeBuiltIn && onUninstall != null) ...[
                   const SizedBox(width: 4),
                   IconButton(
                     icon: Icon(

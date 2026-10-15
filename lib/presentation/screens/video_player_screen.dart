@@ -946,70 +946,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     _coordinator.setRate(rate);
   }
 
-  List<UiTrack> _getEffectiveAudioTracks() {
-    if (!widget.isLocalFile && _sourceController.availableSources.length > 1) {
-      final activeSrc = _sourceController.activeSource;
-      final onlineTracks = <UiTrack>[];
-
-      for (int i = 0; i < _sourceController.availableSources.length; i++) {
-        final src = _sourceController.availableSources[i];
-        final isSelected = activeSrc != null &&
-            (activeSrc.url == src.url ||
-                (activeSrc.server == src.server && activeSrc.quality == src.quality));
-
-        String label = src.server;
-        String lang = '';
-        if (src.server.contains('[Latino]')) {
-          label = 'Español Latino (${src.server.split(' [')[0]})';
-          lang = 'es-419';
-        } else if (src.server.contains('[Castellano]')) {
-          label = 'Español Castellano (${src.server.split(' [')[0]})';
-          lang = 'es-es';
-        } else if (src.server.contains('[English Dub]')) {
-          label = 'English Dub (${src.server.split(' [')[0]})';
-          lang = 'en';
-        } else if (src.server.contains('[SUB]')) {
-          label = 'Japonés (Soft Subs) (${src.server.split(' [')[0]})';
-          lang = 'ja';
-        } else if (src.server.contains('[Sub]')) {
-          label = 'Japonés (Hard Sub) (${src.server.split(' [')[0]})';
-          lang = 'ja';
-        }
-
-        onlineTracks.add(UiTrack(
-          id: 'online_stream_$i',
-          index: i,
-          title: label,
-          language: lang,
-          selected: isSelected,
-        ));
-      }
-
-      if (onlineTracks.isNotEmpty) {
-        return onlineTracks;
-      }
-    }
-    return _audioTracks;
-  }
-
-  String? _getEffectiveSelectedAudioTrackId() {
-    final effectiveTracks = _getEffectiveAudioTracks();
-    final selected = effectiveTracks.where((t) => t.selected).firstOrNull;
-    return selected?.id ?? _selectedAudioTrackId;
-  }
-
   void _selectAudioTrack(UiTrack track) {
-    if (track.id.startsWith('online_stream_')) {
-      final idx = int.tryParse(track.id.replaceFirst('online_stream_', ''));
-      if (idx != null && idx >= 0 && idx < _sourceController.availableSources.length) {
-        final targetSource = _sourceController.availableSources[idx];
-        setState(() {
-          _selectedAudioTrackId = track.id;
-        });
-        _sourceController.selectSource(targetSource);
-        return;
-      }
-    }
     setState(() {
       _selectedAudioTrackId = track.id;
       _audioTracks = _audioTracks.map((t) => t.copyWith(selected: t.id == track.id)).toList();
@@ -1105,9 +1042,9 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       chapters: _chapters,
       currentPosition: _position,
       onChapterSelected: (chapter) => _seekTo(chapter.start),
-      audioTracks: _getEffectiveAudioTracks(),
+      audioTracks: _audioTracks,
       subtitleTracks: _subtitleTracks,
-      selectedAudioTrackId: _getEffectiveSelectedAudioTrackId(),
+      selectedAudioTrackId: _selectedAudioTrackId,
       selectedSubtitleTrackId: _selectedSubtitleTrackId,
       onAudioTrackSelected: _selectAudioTrack,
       onSubtitleTrackSelected: _selectSubtitleTrack,
