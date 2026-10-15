@@ -3,6 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/preferences/banner_blur_provider.dart';
@@ -26,7 +27,7 @@ import 'package:seanime_app/core/preferences/anime_favorites_provider.dart';
 import 'package:g1455/g1455.dart';
 import 'package:seanime_app/data/services/offline_library_service.dart';
 import 'mobile/anime_detail_advanced_sheet.dart';
-import 'tmdb/tmdb_episodes_view.dart';
+import 'package:seanime_app/presentation/widgets/episodes/episodes_view.dart';
 
 enum AnimeDetailTab { online, torrent }
 
@@ -52,11 +53,13 @@ class AnimeDetailMobileLayout extends ConsumerStatefulWidget {
     String? aniDBEpisode,
   }) onOpenTorrentSelector;
   final VoidCallback onOpenDetailsModal;
+  final Object? heroTag;
 
   const AnimeDetailMobileLayout({
     super.key,
     required this.mediaId,
     this.initialEntry,
+    this.heroTag,
     required this.details,
     required this.aniZipData,
     required this.isLoading,
@@ -90,8 +93,6 @@ class _AnimeDetailMobileLayoutState
   bool _isHeaderScrolled = false;
 
   bool get isTmdb => widget.details?.isTmdb ?? widget.initialEntry?.isTmdb ?? false;
-  bool get isMovie =>
-      (widget.details?.format == 'MOVIE') || (widget.initialEntry?.format == 'MOVIE');
 
   @override
   void initState() {
@@ -781,28 +782,35 @@ class _AnimeDetailMobileLayoutState
                     systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
                     systemNavigationBarDividerColor: Colors.transparent,
                   ),
-                  leading: IconButton(
-                    icon: Icon(
-                      Icons.arrow_back_rounded,
-                      color: (isDark || !_isHeaderScrolled)
-                          ? Colors.white
-                          : theme.colorScheme.onSurface,
-                      size: 22,
-                      shadows: (isDark || !_isHeaderScrolled)
-                          ? const [
-                              Shadow(
-                                color: Colors.black54,
-                                blurRadius: 4,
-                                offset: Offset(0, 1),
-                              ),
-                            ]
-                          : null,
+                  leading: Center(
+                    child: M3EIconButton(
+                      variant: M3EIconButtonVariant.standard,
+                      size: M3EIconButtonSize.sm,
+                      tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+                      icon: Icon(
+                        Icons.arrow_back_rounded,
+                        color: (isDark || !_isHeaderScrolled)
+                            ? Colors.white
+                            : theme.colorScheme.onSurface,
+                        size: 22,
+                        shadows: (isDark || !_isHeaderScrolled)
+                            ? const [
+                                Shadow(
+                                  color: Colors.black54,
+                                  blurRadius: 4,
+                                  offset: Offset(0, 1),
+                                ),
+                              ]
+                            : null,
+                      ),
+                      onPressed: () => Navigator.pop(context),
                     ),
-                    onPressed: () => Navigator.pop(context),
                   ),
                   actions: [
                     if (!isTmdb)
-                      IconButton(
+                      M3EIconButton(
+                        variant: M3EIconButtonVariant.standard,
+                        size: M3EIconButtonSize.sm,
                         tooltip: widget.isLocalMode
                             ? l10n.exitLocalMode
                             : l10n.enterLocalMode,
@@ -850,7 +858,9 @@ class _AnimeDetailMobileLayoutState
                         ),
                         onPressed: widget.onToggleLocalMode,
                       ),
-                    IconButton(
+                    M3EIconButton(
+                      variant: M3EIconButtonVariant.standard,
+                      size: M3EIconButtonSize.sm,
                       tooltip: l10n.animeDetails,
                       icon: Icon(
                         Icons.info_outline_rounded,
@@ -903,12 +913,38 @@ class _AnimeDetailMobileLayoutState
                                   child: ClipRRect(
                                     borderRadius:
                                         BorderRadius.circular(colors.borderRadius),
-                                    child: CachedNetworkImage(
-                                      imageUrl: coverUrl,
-                                      fit: BoxFit.cover,
-                                      memCacheWidth: 300,
-                                      memCacheHeight: 440,
-                                    ),
+                                    child: widget.heroTag != null
+                                        ? Hero(
+                                            tag: widget.heroTag!,
+                                            flightShuttleBuilder: (
+                                              flightContext,
+                                              animation,
+                                              flightDirection,
+                                              fromHeroContext,
+                                              toHeroContext,
+                                            ) {
+                                              final curved = CurvedAnimation(
+                                                parent: animation,
+                                                curve: Curves.easeInOutCubicEmphasized,
+                                              );
+                                              return FadeTransition(
+                                                opacity: Tween<double>(begin: 0.85, end: 1.0).animate(curved),
+                                                child: toHeroContext.widget,
+                                              );
+                                            },
+                                            child: CachedNetworkImage(
+                                              imageUrl: coverUrl,
+                                              fit: BoxFit.cover,
+                                              memCacheWidth: 300,
+                                              memCacheHeight: 440,
+                                            ),
+                                          )
+                                        : CachedNetworkImage(
+                                            imageUrl: coverUrl,
+                                            fit: BoxFit.cover,
+                                            memCacheWidth: 300,
+                                            memCacheHeight: 440,
+                                          ),
                                   ),
                                 ),
                               ),
@@ -1059,136 +1095,100 @@ class _AnimeDetailMobileLayoutState
                           child: Row(
                             children: [
                               Expanded(
-                                child: SizedBox(
-                                  height: 42,
-                                  child: Material(
-                                    color: theme.colorScheme.primary,
-                                    borderRadius: BorderRadius.circular(22),
-                                    child: InkWell(
-                                      borderRadius: BorderRadius.circular(22),
-                                      onTap: isTmdb
-                                          ? () {
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                SnackBar(
-                                                  content: Row(
-                                                    children: [
-                                                      const Icon(Icons.info_outline_rounded,
-                                                          color: Colors.white, size: 18),
-                                                      const SizedBox(width: 8),
-                                                      Expanded(child: Text(l10n.streamingComingSoon)),
-                                                    ],
-                                                  ),
-                                                  behavior: SnackBarBehavior.floating,
-                                                ),
-                                              );
-                                            }
-                                          : () => _handlePlayNext(progress),
-                                      child: Padding(
-                                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                                        child: Row(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            Icon(
-                                              Icons.play_arrow_rounded,
-                                              size: 22,
-                                              color: theme.colorScheme.onPrimary,
-                                            ),
-                                            const SizedBox(width: 8),
-                                            Flexible(
-                                              child: Text(
-                                                _formatPlayButtonLabel(progress, totalEps, l10n),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 13.5,
-                                                  letterSpacing: -0.2,
-                                                  color: theme.colorScheme.onPrimary,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
+                                child: M3EButton.icon(
+                                  style: M3EButtonStyle.filled,
+                                  size: M3EButtonSize.sm,
+                                  shape: M3EButtonShape.round,
+                                  icon: const Icon(Icons.play_arrow_rounded, size: 20),
+                                  label: Text(
+                                    _formatPlayButtonLabel(progress, totalEps, l10n),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13.5,
+                                      letterSpacing: -0.2,
                                     ),
                                   ),
+                                  onPressed: isTmdb
+                                      ? () {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              content: Row(
+                                                children: [
+                                                  const Icon(Icons.info_outline_rounded,
+                                                      color: Colors.white, size: 18),
+                                                  const SizedBox(width: 8),
+                                                  Expanded(child: Text(l10n.streamingComingSoon)),
+                                                ],
+                                              ),
+                                              behavior: SnackBarBehavior.floating,
+                                            ),
+                                          );
+                                        }
+                                      : () => _handlePlayNext(progress),
                                 ),
                               ),
                               if (hasTrailer) ...[
                                 const SizedBox(width: 4),
-                                Material(
-                                  color: Colors.transparent,
-                                  shape: const CircleBorder(),
-                                  child: InkWell(
-                                    customBorder: const CircleBorder(),
-                                    onTap: () => _launchTrailer(trailerId, trailerSite),
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(9),
-                                      child: Icon(
-                                        Icons.smart_display_outlined,
-                                        size: 20,
-                                        color: isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
-                                      ),
-                                    ),
+                                M3EIconButton(
+                                  variant: M3EIconButtonVariant.standard,
+                                  size: M3EIconButtonSize.xs,
+                                  tooltip: l10n.watchTrailer,
+                                  icon: Icon(
+                                    Icons.smart_display_outlined,
+                                    size: 20,
+                                    color: isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
                                   ),
+                                  onPressed: () => _launchTrailer(trailerId, trailerSite),
                                 ),
                               ],
                               const SizedBox(width: 4),
-                              Material(
-                                color: Colors.transparent,
-                                shape: const CircleBorder(),
-                                child: InkWell(
-                                  customBorder: const CircleBorder(),
-                                  onTap: () {
-                                    HapticFeedback.lightImpact();
-                                    final nowFav = ref
-                                        .read(animeFavoritesProvider.notifier)
-                                        .toggleFavorite(widget.mediaId);
-                                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          nowFav ? l10n.addedToFavorites : l10n.removedFromFavorites,
-                                        ),
-                                        duration: const Duration(seconds: 2),
-                                        behavior: SnackBarBehavior.floating,
-                                      ),
-                                    );
-                                  },
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(9),
-                                    child: Icon(
-                                      isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                                      size: 20,
-                                      color: isFavorite ? Colors.redAccent : (isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant),
-                                    ),
-                                  ),
+                              M3EIconButton(
+                                variant: M3EIconButtonVariant.standard,
+                                size: M3EIconButtonSize.xs,
+                                tooltip: isFavorite ? l10n.inFavorites : l10n.addToFavorites,
+                                icon: Icon(
+                                  isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                                  size: 20,
+                                  color: isFavorite ? Colors.redAccent : (isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant),
                                 ),
+                                onPressed: () {
+                                  HapticFeedback.lightImpact();
+                                  final nowFav = ref
+                                      .read(animeFavoritesProvider.notifier)
+                                      .toggleFavorite(widget.mediaId);
+                                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        nowFav ? l10n.addedToFavorites : l10n.removedFromFavorites,
+                                      ),
+                                      duration: const Duration(seconds: 2),
+                                      behavior: SnackBarBehavior.floating,
+                                    ),
+                                  );
+                                },
                               ),
                               if (!isTmdb) ...[
                                 const SizedBox(width: 4),
-                                Material(
-                                  color: Colors.transparent,
-                                  shape: const CircleBorder(),
-                                  child: InkWell(
-                                    customBorder: const CircleBorder(),
-                                    onTap: () {
-                                      final nextEp = (progress + 1).clamp(1, totalEps ?? (progress + 1));
-                                      final defaultEpTitle = l10n.episodeNumber(nextEp);
-                                      widget.onOpenTorrentSelector(
-                                        episodeNumber: nextEp,
-                                        episodeTitle: defaultEpTitle,
-                                      );
-                                    },
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(9),
-                                      child: Icon(
-                                        Icons.download_rounded,
-                                        size: 20,
-                                        color: isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
-                                      ),
-                                    ),
+                                M3EIconButton(
+                                  variant: M3EIconButtonVariant.standard,
+                                  size: M3EIconButtonSize.xs,
+                                  tooltip: l10n.downloadWithTorrentClient,
+                                  icon: Icon(
+                                    Icons.download_rounded,
+                                    size: 20,
+                                    color: isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
                                   ),
+                                  onPressed: () {
+                                    final nextEp = (progress + 1).clamp(1, totalEps ?? (progress + 1));
+                                    final defaultEpTitle = l10n.episodeNumber(nextEp);
+                                    widget.onOpenTorrentSelector(
+                                      episodeNumber: nextEp,
+                                      episodeTitle: defaultEpTitle,
+                                    );
+                                  },
                                 ),
                               ],
                               const SizedBox(width: 4),
@@ -1281,21 +1281,16 @@ class _AnimeDetailMobileLayoutState
                                     ),
                                 ],
                                 builder: (context, controller) {
-                                  return Material(
-                                    color: Colors.transparent,
-                                    shape: const CircleBorder(),
-                                    child: InkWell(
-                                      customBorder: const CircleBorder(),
-                                      onTap: controller.open,
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(9),
-                                        child: Icon(
-                                          Icons.edit_outlined,
-                                          size: 20,
-                                          color: isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
-                                        ),
-                                      ),
+                                  return M3EIconButton(
+                                    variant: M3EIconButtonVariant.standard,
+                                    size: M3EIconButtonSize.xs,
+                                    tooltip: isTmdb ? l10n.editDetails : l10n.editInAnilist,
+                                    icon: Icon(
+                                      Icons.edit_outlined,
+                                      size: 20,
+                                      color: isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
                                     ),
+                                    onPressed: controller.open,
                                   );
                                 },
                               ),
@@ -1328,11 +1323,11 @@ class _AnimeDetailMobileLayoutState
 
                         // Episodes Content (Clean, direct & without clunky middle tab bar)
                         if (isTmdb)
-                          TmdbEpisodesView(
-                            tmdbId: widget.mediaId,
-                            isMovie: isMovie,
-                            fallbackCoverImage: coverUrl,
-                            isMobile: true,
+                          EpisodesView(
+                            mediaId: widget.mediaId,
+                            isTmdb: true,
+                            animeDetails: widget.details,
+                            onOpenTorrentSelector: widget.onOpenTorrentSelector,
                           )
                         else if (widget.isLocalMode)
                           LocalLibraryView(

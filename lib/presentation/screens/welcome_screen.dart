@@ -38,27 +38,30 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   final Set<String> _installedExtensionIds = {};
 
   static const List<String> _esRecommendedIds = [
+    // Streaming
+    'aniting-universal',
+    'animeav1',
+    'jkanime',
     // Torrents
     'animetosho-new',
     'nekobt',
-    // Streaming
-    'animeav1',
-    'jkanime',
     // Manga
     'leercapitulo',
     'capibaratraductordev',
     'manhwaweb',
+    'mangadex',
   ];
 
   static const List<String> _enRecommendedIds = [
+    // Streaming
+    'aniting-universal',
+    'hianime',
+    'aq-animepahe-beta',
+    'animeav1',
     // Torrents
     'SubsPlease-Provider',
     'animetosho-new',
     'nekobt',
-    // Streaming
-    'hianime',
-    'aq-animepahe-beta',
-    'animeav1',
     // Manga
     'asurascans',
     'mangadex',
@@ -81,7 +84,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
     try {
       final repo = ref.read(repositoryProvider);
       final list = await repo.getMarketplaceExtensions(
-        'https://raw.githubusercontent.com/Bas1874/Seanime-Marketplace/refs/heads/main/Marketplace/Main.json',
+        'https://raw.githubusercontent.com/anyyting-es/aniting-extensions/main/marketplace.json',
       );
       final installed = await repo.getAllExtensions();
       if (mounted) {

@@ -65,7 +65,7 @@ void main() {
       addTearDown(container.dispose);
 
       final notifier = container.read(downloadHistoryProvider.notifier);
-      await Future.delayed(const Duration(milliseconds: 50));
+      await Future.delayed(const Duration(milliseconds: 250));
 
       final testItem = DownloadHistoryItem(
         id: 'test_1',

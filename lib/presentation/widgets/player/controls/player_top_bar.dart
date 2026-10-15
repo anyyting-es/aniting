@@ -177,33 +177,43 @@ class PlayerTopBar extends ConsumerWidget {
       left: false,
       right: false,
       child: Padding(
-        padding: EdgeInsets.only(
-          left: isFullscreen ? 16 : 8,
-          right: isFullscreen ? 16 : 8,
-          bottom: 4,
-          top: isDesktop && !isFullscreen ? 38 : 4,
+        padding: const EdgeInsets.only(
+          left: 16,
+          right: 16,
+          top: 12,
+          bottom: 2,
         ),
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            // Layer 1: Left and Right controls Row
-            Row(
-              children: [
-                // Back button
-                IconButton(
-                  style: IconButton.styleFrom(
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    padding: const EdgeInsets.all(2),
+        child: SizedBox(
+          height: 44.0,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // Layer 1: Left and Right controls Row
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Back button
+                  IconButton(
+                    style: IconButton.styleFrom(
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      padding: const EdgeInsets.all(2),
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 36,
+                      minHeight: 36,
+                    ),
+                    icon: Icon(
+                      AppIcons.arrowLeft(iconPack),
+                      color: Colors.white,
+                      size: backIconSize,
+                    ),
+                    tooltip: l10n.back,
+                    onPressed: onBack,
                   ),
-                  constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                  icon: Icon(AppIcons.arrowLeft(iconPack), color: Colors.white, size: backIconSize),
-                  tooltip: l10n.back,
-                  onPressed: onBack,
-                ),
 
                 // Title, Episode Title & Source Badge (only when showTitle is true)
                 if (showTitle) ...[
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -245,7 +255,10 @@ class PlayerTopBar extends ConsumerWidget {
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       padding: const EdgeInsets.all(2),
                     ),
-                    constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                    constraints: const BoxConstraints(
+                      minWidth: 36,
+                      minHeight: 36,
+                    ),
                     icon: Icon(
                       isSidePanelCollapsed
                           ? AppIcons.sidebarOutline(iconPack)
@@ -256,7 +269,7 @@ class PlayerTopBar extends ConsumerWidget {
                     tooltip: isSidePanelCollapsed ? l10n.showInfo : l10n.collapsePanel,
                     onPressed: onToggleSidePanel,
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 6),
                 ],
 
                 // Settings button (always pinned to the far right!)
@@ -265,8 +278,15 @@ class PlayerTopBar extends ConsumerWidget {
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     padding: const EdgeInsets.all(2),
                   ),
-                  constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                  icon: Icon(AppIcons.settings(iconPack), color: Colors.white, size: settingsIconSize),
+                  constraints: const BoxConstraints(
+                    minWidth: 36,
+                    minHeight: 36,
+                  ),
+                  icon: Icon(
+                    AppIcons.settings(iconPack),
+                    color: Colors.white,
+                    size: settingsIconSize,
+                  ),
                   tooltip: l10n.settingsTitle,
                   onPressed: onOpenSettings,
                 ),
@@ -285,6 +305,7 @@ class PlayerTopBar extends ConsumerWidget {
               ),
           ],
         ),
+      ),
       ),
     );
   }

@@ -100,6 +100,7 @@ class PlayerSourceController {
         mediaId: mediaId!,
         episodeNumber: epNum,
         provider: provider,
+        title: title,
         dubbed: getOnlineStreamDubbed() ?? false,
       );
 
@@ -177,6 +178,7 @@ class PlayerSourceController {
         mediaId: mediaId!,
         episodeNumber: epNum,
         provider: provider,
+        title: title,
         dubbed: getOnlineStreamDubbed() ?? false,
       );
 

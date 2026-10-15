@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class DesktopSidebar extends ConsumerWidget {
+  final int? mediaId;
   final String? coverUrl;
   final String? format;
   final String? status;
@@ -10,9 +11,11 @@ class DesktopSidebar extends ConsumerWidget {
   final String? seasonYearStr;
   final num? score;
   final String? studio;
+  final Object? heroTag;
 
   const DesktopSidebar({
     super.key,
+    this.mediaId,
     required this.coverUrl,
     this.format,
     this.status,
@@ -20,6 +23,7 @@ class DesktopSidebar extends ConsumerWidget {
     this.seasonYearStr,
     this.score,
     this.studio,
+    this.heroTag,
   });
 
   @override
@@ -30,7 +34,9 @@ class DesktopSidebar extends ConsumerWidget {
       width: 250,
       child: Center(
         child: _DesktopSidebarPoster(
+          mediaId: mediaId,
           coverUrl: coverUrl,
+          heroTag: heroTag,
           fallbackColor: theme.colorScheme.surfaceContainer,
         ),
       ),
@@ -39,12 +45,16 @@ class DesktopSidebar extends ConsumerWidget {
 }
 
 class _DesktopSidebarPoster extends StatefulWidget {
+  final int? mediaId;
   final String? coverUrl;
   final Color fallbackColor;
+  final Object? heroTag;
 
   const _DesktopSidebarPoster({
+    this.mediaId,
     required this.coverUrl,
     required this.fallbackColor,
+    this.heroTag,
   });
 
   @override
@@ -85,15 +95,44 @@ class _DesktopSidebarPosterState extends State<_DesktopSidebarPoster> {
               ],
             ),
             clipBehavior: Clip.antiAlias,
-            child: widget.coverUrl != null
-                ? CachedNetworkImage(
-                    imageUrl: widget.coverUrl!,
-                    fit: BoxFit.cover,
-                    memCacheWidth: 500,
-                    memCacheHeight: 720,
-                    errorWidget: (_, _, _) => Container(color: widget.fallbackColor),
+            child: widget.heroTag != null
+                ? Hero(
+                    tag: widget.heroTag!,
+                    flightShuttleBuilder: (
+                      flightContext,
+                      animation,
+                      flightDirection,
+                      fromHeroContext,
+                      toHeroContext,
+                    ) {
+                      final curved = CurvedAnimation(
+                        parent: animation,
+                        curve: Curves.easeInOutCubicEmphasized,
+                      );
+                      return FadeTransition(
+                        opacity: Tween<double>(begin: 0.85, end: 1.0).animate(curved),
+                        child: toHeroContext.widget,
+                      );
+                    },
+                    child: widget.coverUrl != null
+                        ? CachedNetworkImage(
+                            imageUrl: widget.coverUrl!,
+                            fit: BoxFit.cover,
+                            memCacheWidth: 500,
+                            memCacheHeight: 720,
+                            errorWidget: (_, _, _) => Container(color: widget.fallbackColor),
+                          )
+                        : Container(color: widget.fallbackColor),
                   )
-                : Container(color: widget.fallbackColor),
+                : (widget.coverUrl != null
+                    ? CachedNetworkImage(
+                        imageUrl: widget.coverUrl!,
+                        fit: BoxFit.cover,
+                        memCacheWidth: 500,
+                        memCacheHeight: 720,
+                        errorWidget: (_, _, _) => Container(color: widget.fallbackColor),
+                      )
+                    : Container(color: widget.fallbackColor)),
           ),
         ),
       ),

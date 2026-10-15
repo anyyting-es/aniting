@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:seanime_app/data/models/torrent_file_preview.dart';
 import 'package:seanime_app/data/models/torrent_models.dart';
@@ -172,11 +173,12 @@ void main() {
       TorrentBatchSelectionResult? result;
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: Builder(
-              builder: (context) {
-                return ElevatedButton(
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: Builder(
+                builder: (context) {
+                  return ElevatedButton(
                   onPressed: () async {
                     result = await showModalBottomSheet<TorrentBatchSelectionResult>(
                       context: context,
@@ -194,6 +196,7 @@ void main() {
             ),
           ),
         ),
+      ),
       );
 
       // Open sheet

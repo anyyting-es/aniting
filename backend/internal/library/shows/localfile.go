@@ -26,6 +26,13 @@ func NewShowLocalFile(path string, hintMediaType string) *ShowLocalFile {
 	info := ParseShowPath(path, hintMediaType)
 	dir := filepath.Dir(path)
 	folderName := filepath.Base(dir)
+	if seasonFolderRegex.MatchString(folderName) {
+		parent := filepath.Dir(dir)
+		if parent != "." && parent != "/" {
+			dir = parent
+			folderName = filepath.Base(parent)
+		}
+	}
 
 	mediaType := info.MediaType
 	if hintMediaType != "" {

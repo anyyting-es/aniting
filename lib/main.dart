@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
@@ -22,7 +23,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:seanime_app/core/theme/theme_provider.dart';
 import 'package:seanime_app/presentation/screens/main_shell.dart';
 import 'package:seanime_app/presentation/screens/welcome_screen.dart';
-import 'package:seanime_app/presentation/widgets/desktop_title_bar.dart';
 import 'package:seanime_app/data/services/explore_carousel_service.dart';
 import 'package:seanime_app/data/services/feed_cache_service.dart';
 import 'package:seanime_app/data/services/offline_library_service.dart';
@@ -75,13 +75,10 @@ void main() async {
       center: true,
       backgroundColor: Colors.transparent,
       skipTaskbar: false,
-      titleBarStyle: TitleBarStyle.hidden,
+      titleBarStyle: TitleBarStyle.normal,
       title: 'Aniting',
     );
     windowManager.waitUntilReadyToShow(windowOptions, () async {
-      if (Platform.isLinux) {
-        await windowManager.setAsFrameless();
-      }
       await windowManager.show();
       await windowManager.focus();
     });
@@ -237,13 +234,20 @@ class _AnitingFlutterAppState extends ConsumerState<AnitingFlutterApp> with Widg
                     systemOverlayStyle: overlayStyle,
                   ),
                 ),
-                child: GlassHost(
-                  richBackdrop: true,
-                  tier: GlassTierChoice(
-                    glassEffectsEnabled.toGlassTier(),
-                    GlassTierReason.pinnedByHost,
+                child: M3ETheme(
+                  data: isDark
+                      ? M3EThemeData.dark(seedColor: updatedTheme.colorScheme.primary)
+                      : M3EThemeData.light(seedColor: updatedTheme.colorScheme.primary),
+                  child: GlassHost(
+                    richBackdrop: true,
+                    finish: isDark ? GlassFinish.regularDark : GlassFinish.regularLight,
+                    backdrop: updatedTheme.scaffoldBackgroundColor,
+                    tier: GlassTierChoice(
+                      glassEffectsEnabled.toGlassTier(),
+                      GlassTierReason.pinnedByHost,
+                    ),
+                    child: child ?? const SizedBox.shrink(),
                   ),
-                  child: DesktopWindowFrame(child: child ?? const SizedBox.shrink()),
                 ),
               ),
             );

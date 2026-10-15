@@ -360,23 +360,7 @@ Future<List<AnimeEntry>> loadAnimeWithCacheAndSwr({
   final serverState = ref.watch(serverNotifierProvider);
 
   if (!serverState.isOnline) {
-    if (cached.isNotEmpty) return cached;
-    if (requireAuth) {
-      if (serverState.state == ServerState.starting) {
-        final completer = Completer<void>();
-        final sub = ref.listen<ServerStateModel>(serverNotifierProvider, (prev, next) {
-          if (next.state != ServerState.starting && !completer.isCompleted) {
-            completer.complete();
-          }
-        });
-        ref.onDispose(() => sub.close());
-        await completer.future;
-        final currentState = ref.read(serverNotifierProvider);
-        if (!currentState.isOnline) return [];
-      } else {
-        return [];
-      }
-    }
+    return cached;
   }
 
   final isLoggedIn = serverState.status?.isLoggedIn ?? false;
@@ -407,23 +391,7 @@ Future<List<MangaEntry>> loadMangaWithCacheAndSwr({
   final serverState = ref.watch(serverNotifierProvider);
 
   if (!serverState.isOnline) {
-    if (cached.isNotEmpty) return cached;
-    if (requireAuth) {
-      if (serverState.state == ServerState.starting) {
-        final completer = Completer<void>();
-        final sub = ref.listen<ServerStateModel>(serverNotifierProvider, (prev, next) {
-          if (next.state != ServerState.starting && !completer.isCompleted) {
-            completer.complete();
-          }
-        });
-        ref.onDispose(() => sub.close());
-        await completer.future;
-        final currentState = ref.read(serverNotifierProvider);
-        if (!currentState.isOnline) return [];
-      } else {
-        return [];
-      }
-    }
+    return cached;
   }
 
   final isLoggedIn = serverState.status?.isLoggedIn ?? false;

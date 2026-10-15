@@ -210,23 +210,20 @@ void main() {
         ProviderScope(
           child: MaterialApp(
             home: ExtensionsDesktopLayout(
-              installedExtensions: const [],
-              marketplaceExtensions: const [],
+              onlineExtensions: const [],
+              torrentExtensions: const [],
+              mangaExtensions: const [],
               installedIds: const {},
-              isLoadingInstalled: false,
-              isLoadingMarketplace: false,
+              installedMap: const {},
               isCheckingUpdates: false,
-              currentRepoUrl: 'https://raw.githubusercontent.com/seanime-extensions/index',
-              onRetryInstalled: () {},
               onCheckForUpdates: () {},
               onReloadAll: () {},
+              onInstall: (_) {},
               onToggle: (_, enabled) {},
               onUninstall: (_) {},
               onUpdate: (_) {},
               onShowCode: (_) {},
-              onRefreshMarketplace: ({forceRefresh = false}) async {},
-              onChangeRepo: () {},
-              onInstall: (_) {},
+              onRefresh: () {},
             ),
           ),
         ),
@@ -237,12 +234,13 @@ void main() {
       // Verify desktop layout rendered
       expect(find.byType(ExtensionsDesktopLayout), findsOneWidget);
 
-      // Verify segmented pill switcher exists
-      expect(find.byIcon(Icons.layers_outlined), findsOneWidget);
-      expect(find.byIcon(Icons.storefront_outlined), findsOneWidget);
+      // Verify segmented category pills exist
+      expect(find.byIcon(Icons.play_circle_filled_rounded), findsOneWidget);
+      expect(find.byIcon(Icons.cloud_download_rounded), findsOneWidget);
+      expect(find.byIcon(Icons.menu_book_rounded), findsOneWidget);
 
-      // Switch to Installed tab
-      await tester.tap(find.byIcon(Icons.layers_outlined));
+      // Switch to Torrents tab
+      await tester.tap(find.byIcon(Icons.cloud_download_rounded));
       await tester.pumpAndSettle();
     });
   });

@@ -1,47 +1,72 @@
 import 'package:flutter/material.dart';
 
+/// Modern Material 3 & Animeko Motion Schemes
+/// Specifications from M3 motion and Animeko NavigationMotionScheme:
+/// - Enter Duration: 400ms (Emphasized Decelerate)
+/// - Exit Duration: 200ms (Emphasized Accelerate)
+/// - Enter Easing: Cubic(0.05, 0.7, 0.1, 1.0) - Emphasized Decelerate
+/// - Exit Easing: Cubic(0.3, 0.0, 0.8, 0.15) - Emphasized Accelerate
+const Cubic kM3EmphasizedDecelerate = Cubic(0.05, 0.7, 0.1, 1.0);
+const Cubic kM3EmphasizedAccelerate = Cubic(0.3, 0.0, 0.8, 0.15);
+const Cubic kM3Emphasized = Cubic(0.2, 0.0, 0.0, 1.0);
+const Duration kM3EnterDuration = Duration(milliseconds: 400);
+const Duration kM3ExitDuration = Duration(milliseconds: 200);
+
 /// Modern deceleration curve for smooth, physical motion.
 /// Responsive initial velocity with soft, natural landing.
 const Cubic kWebDecelCurve = Cubic(0.16, 1.0, 0.3, 1.0);
 
-/// Builds an expressive, satisfying "Micro-Breath Fade" page transition
-/// (used across routes: Anime Detail, Manga Detail, Search, etc.):
-/// - Zero translation (no jarring sliding or screen shaking in X/Y).
-/// - Incoming route: organic fade-in (0.0 -> 1.0) with an imperceptible, satisfying
-///   micro-breath tactile heartbeat scale (0.985 -> 1.0).
-/// - Outgoing route on exit: silky-smooth, instant dissolve without any lag,
-///   stutter, or abrupt cuts at the end.
-/// - Underlying route: completely unencumbered by transforms or re-rasterization,
-///   guaranteeing a rock-solid 120 FPS pop animation.
+/// Builds an expressive, staggered Animeko/M3 desktop page transition:
+/// - Staggered cross-dissolve: outgoing page fades out quickly (200ms with EmphasizedAccelerate)
+///   while incoming page gracefully decelerates into view (400ms with EmphasizedDecelerate).
+/// - Clean, subtle breath scale (0.985 -> 1.0) to give physical weight without jarring translation.
+/// - Uncluttered background: avoids heavy re-rasterization or multi-axis transforms.
 Widget buildWebPageTransition({
   required Animation<double> animation,
   required Animation<double> secondaryAnimation,
   required Widget child,
 }) {
-  final curvedAnimation = CurvedAnimation(
+  // Staggered enter curve (Animeko NavigationMotionScheme: delayMillis = exitDuration, duration = enterDuration)
+  // Across the 400ms timeline, the first ~150-200ms is the outgoing fade, followed by confident deceleration
+  final curvedEnter = CurvedAnimation(
     parent: animation,
-    curve: Curves.easeOutCubic,
-    reverseCurve: Curves.easeOutCubic,
+    curve: kM3EmphasizedDecelerate,
+    reverseCurve: kM3EmphasizedAccelerate,
   );
 
   // Progressive, smooth fade on enter (0.0 -> 1.0) and exit (1.0 -> 0.0) with zero clipping or pops
   final fadeTransition = Tween<double>(
     begin: 0.0,
     end: 1.0,
-  ).animate(curvedAnimation);
+  ).animate(curvedEnter);
 
   // Micro-breath tactile heartbeat scale (0.985 -> 1.0) on enter,
   // softly dissolving back on exit with zero translation
   final scaleTransition = Tween<double>(
     begin: 0.985,
     end: 1.0,
-  ).animate(curvedAnimation);
+  ).animate(curvedEnter);
+
+  // Secondary animation (when a new route is pushed on top of this one)
+  final curvedSecondary = CurvedAnimation(
+    parent: secondaryAnimation,
+    curve: kM3EmphasizedAccelerate,
+    reverseCurve: kM3EmphasizedDecelerate,
+  );
+
+  final secondaryFade = Tween<double>(
+    begin: 1.0,
+    end: 0.0,
+  ).animate(curvedSecondary);
 
   return FadeTransition(
-    opacity: fadeTransition,
-    child: ScaleTransition(
-      scale: scaleTransition,
-      child: child,
+    opacity: secondaryFade,
+    child: FadeTransition(
+      opacity: fadeTransition,
+      child: ScaleTransition(
+        scale: scaleTransition,
+        child: child,
+      ),
     ),
   );
 }
@@ -122,7 +147,7 @@ class WebPageTransitionsBuilder extends PageTransitionsBuilder {
   }
 }
 
-/// Modern, snappy fade & vertical slide route (260ms enter / 220ms return motion).
+/// Modern, snappy Animeko/M3 staggered route (400ms enter / 200ms exit).
 class WebPageRoute<T> extends PageRouteBuilder<T> {
   final Widget child;
 
@@ -132,8 +157,8 @@ class WebPageRoute<T> extends PageRouteBuilder<T> {
     super.opaque,
   }) : super(
           pageBuilder: (context, animation, secondaryAnimation) => child,
-          transitionDuration: const Duration(milliseconds: 220),
-          reverseTransitionDuration: const Duration(milliseconds: 220),
+          transitionDuration: kM3EnterDuration,
+          reverseTransitionDuration: kM3ExitDuration,
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             return buildWebPageTransition(
               animation: animation,

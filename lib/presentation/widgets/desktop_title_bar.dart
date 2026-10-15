@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:window_manager/window_manager.dart';
 
 /// Global notifier to hide/show the desktop titlebar (e.g. during video fullscreen)
 class DesktopTitleBarVisibleNotifier extends Notifier<bool> {
@@ -35,277 +34,58 @@ final desktopTitleBarBrightnessOverrideProvider =
     NotifierProvider<DesktopTitleBarBrightnessNotifier, Brightness?>(
         DesktopTitleBarBrightnessNotifier.new);
 
-/// Modern, sleek Windows/Desktop title bar embedded directly inside the Flutter app.
-class DesktopTitleBar extends ConsumerStatefulWidget implements PreferredSizeWidget {
+class DesktopTitleBarWidgetNotifier extends Notifier<Widget?> {
+  @override
+  Widget? build() => null;
+
+  void setWidget(Widget? widget) {
+    if (state != widget) {
+      state = widget;
+    }
+  }
+}
+
+final desktopTitleBarLeadingProvider =
+    NotifierProvider<DesktopTitleBarWidgetNotifier, Widget?>(
+        DesktopTitleBarWidgetNotifier.new);
+
+final desktopTitleBarTrailingProvider =
+    NotifierProvider<DesktopTitleBarWidgetNotifier, Widget?>(
+        DesktopTitleBarWidgetNotifier.new);
+
+/// Pass-through placeholder for DesktopTitleBar (native system titlebar is used).
+class DesktopTitleBar extends StatelessWidget implements PreferredSizeWidget {
   const DesktopTitleBar({super.key});
 
-  static const double height = 34.0;
+  static const double height = 0.0;
 
   @override
-  Size get preferredSize => const Size.fromHeight(height);
+  Size get preferredSize => Size.zero;
 
   @override
-  ConsumerState<DesktopTitleBar> createState() => _DesktopTitleBarState();
+  Widget build(BuildContext context) => const SizedBox.shrink();
 }
 
-class _DesktopTitleBarState extends ConsumerState<DesktopTitleBar> with WindowListener {
-  bool _isMaximized = false;
-  bool _isFullScreen = false;
-
-  @override
-  void initState() {
-    super.initState();
-    windowManager.addListener(this);
-    _initWindowState();
-  }
-
-  @override
-  void dispose() {
-    windowManager.removeListener(this);
-    super.dispose();
-  }
-
-  Future<void> _initWindowState() async {
-    final max = await windowManager.isMaximized();
-    final fs = await windowManager.isFullScreen();
-    if (mounted) {
-      setState(() {
-        _isMaximized = max;
-        _isFullScreen = fs;
-      });
-    }
-  }
-
-  @override
-  void onWindowMaximize() {
-    if (mounted) setState(() => _isMaximized = true);
-  }
-
-  @override
-  void onWindowUnmaximize() {
-    if (mounted) setState(() => _isMaximized = false);
-  }
-
-  @override
-  void onWindowEnterFullScreen() {
-    if (mounted) setState(() => _isFullScreen = true);
-  }
-
-  @override
-  void onWindowLeaveFullScreen() {
-    if (mounted) setState(() => _isFullScreen = false);
-  }
-
-  void _toggleMaximize() async {
-    if (_isMaximized) {
-      await windowManager.unmaximize();
-    } else {
-      await windowManager.maximize();
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isExplicitlyVisible = ref.watch(desktopTitleBarVisibleProvider);
-    if (!isExplicitlyVisible || _isFullScreen) {
-      return const SizedBox.shrink();
-    }
-
-    final theme = Theme.of(context);
-    final brightnessOverride = ref.watch(desktopTitleBarBrightnessOverrideProvider);
-    final effectiveBrightness = brightnessOverride ?? theme.brightness;
-    final isDark = effectiveBrightness == Brightness.dark;
-    final fgColor = isDark ? Colors.white.withValues(alpha: 0.85) : Colors.black.withValues(alpha: 0.85);
-
-    return Container(
-      height: DesktopTitleBar.height,
-      color: Colors.transparent,
-      child: Row(
-        children: [
-          // Entire left & center area is a draggable space (double click maximizes/restores)
-          Expanded(
-            child: DragToMoveArea(
-              child: Container(
-                height: double.infinity,
-                color: Colors.transparent,
-              ),
-            ),
-          ),
-
-          // Windows Caption Buttons (Minimize, Maximize/Restore, Close)
-          _WindowCaptionButton(
-            icon: CustomPaint(
-              size: const Size(10, 10),
-              painter: _MinimizeIconPainter(fgColor),
-            ),
-            hoverColor: fgColor.withValues(alpha: 0.1),
-            onPressed: () => windowManager.minimize(),
-          ),
-          _WindowCaptionButton(
-            icon: CustomPaint(
-              size: const Size(10, 10),
-              painter: _isMaximized
-                  ? _RestoreIconPainter(fgColor)
-                  : _MaximizeIconPainter(fgColor),
-            ),
-            hoverColor: fgColor.withValues(alpha: 0.1),
-            onPressed: _toggleMaximize,
-          ),
-          _WindowCaptionButton(
-            icon: CustomPaint(
-              size: const Size(10, 10),
-              painter: _CloseIconPainter(fgColor),
-            ),
-            hoverColor: const Color(0xFFE81123),
-            hoverIconColor: Colors.white,
-            onPressed: () => windowManager.close(),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Caption button with hover state conforming to Windows 11 styling.
-class _WindowCaptionButton extends StatefulWidget {
+/// Clean interactive button for custom elements (pass-through when native title bar is used)
+class DesktopTitleBarAction extends StatelessWidget {
   final Widget icon;
-  final Color hoverColor;
-  final Color? hoverIconColor;
   final VoidCallback onPressed;
+  final String? tooltip;
+  final double width;
 
-  const _WindowCaptionButton({
+  const DesktopTitleBarAction({
+    super.key,
     required this.icon,
-    required this.hoverColor,
-    this.hoverIconColor,
     required this.onPressed,
+    this.tooltip,
+    this.width = 40,
   });
 
   @override
-  State<_WindowCaptionButton> createState() => _WindowCaptionButtonState();
+  Widget build(BuildContext context) => const SizedBox.shrink();
 }
 
-class _WindowCaptionButtonState extends State<_WindowCaptionButton> {
-  bool _isHovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: widget.onPressed,
-        child: Container(
-          width: 46,
-          height: DesktopTitleBar.height,
-          color: _isHovered ? widget.hoverColor : Colors.transparent,
-          alignment: Alignment.center,
-          child: (_isHovered && widget.hoverIconColor != null)
-              ? IconTheme(
-                  data: IconThemeData(color: widget.hoverIconColor),
-                  child: CustomPaint(
-                    size: const Size(10, 10),
-                    painter: _CloseIconPainter(widget.hoverIconColor!),
-                  ),
-                )
-              : widget.icon,
-        ),
-      ),
-    );
-  }
-}
-
-// ─── WINDOWS 11 VECTOR ICON PAINTERS ──────────────────────────────────────────
-
-class _MinimizeIconPainter extends CustomPainter {
-  final Color color;
-  _MinimizeIconPainter(this.color);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = 1.0
-      ..style = PaintingStyle.stroke;
-    canvas.drawLine(
-      Offset(0, size.height / 2),
-      Offset(size.width, size.height / 2),
-      paint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant _MinimizeIconPainter oldDelegate) => oldDelegate.color != color;
-}
-
-class _MaximizeIconPainter extends CustomPainter {
-  final Color color;
-  _MaximizeIconPainter(this.color);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = 1.0
-      ..style = PaintingStyle.stroke;
-    canvas.drawRect(Rect.fromLTWH(0.5, 0.5, size.width - 1.0, size.height - 1.0), paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant _MaximizeIconPainter oldDelegate) => oldDelegate.color != color;
-}
-
-class _RestoreIconPainter extends CustomPainter {
-  final Color color;
-  _RestoreIconPainter(this.color);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = 1.0
-      ..style = PaintingStyle.stroke;
-
-    // Back square
-    canvas.drawPath(
-      Path()
-        ..moveTo(2.5, 0.5)
-        ..lineTo(size.width - 0.5, 0.5)
-        ..lineTo(size.width - 0.5, size.height - 2.5)
-        ..lineTo(size.width - 2.5, size.height - 2.5)
-        ..lineTo(size.width - 2.5, 2.5)
-        ..lineTo(2.5, 2.5)
-        ..close(),
-      paint,
-    );
-
-    // Front square
-    canvas.drawRect(Rect.fromLTWH(0.5, 2.5, size.width - 3.0, size.height - 3.0), paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant _RestoreIconPainter oldDelegate) => oldDelegate.color != color;
-}
-
-class _CloseIconPainter extends CustomPainter {
-  final Color color;
-  _CloseIconPainter(this.color);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = 1.0
-      ..style = PaintingStyle.stroke;
-    canvas.drawLine(const Offset(0.5, 0.5), Offset(size.width - 0.5, size.height - 0.5), paint);
-    canvas.drawLine(Offset(size.width - 0.5, 0.5), Offset(0.5, size.height - 0.5), paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant _CloseIconPainter oldDelegate) => oldDelegate.color != color;
-}
-
-/// Helper wrapper that conditionally renders [DesktopTitleBar] above the application on desktop platforms.
+/// Wrapper that simply passes through [child] since native system title bar is used.
 class DesktopWindowFrame extends StatelessWidget {
   final Widget child;
   const DesktopWindowFrame({super.key, required this.child});
@@ -314,40 +94,10 @@ class DesktopWindowFrame extends StatelessWidget {
       !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
 
   @override
-  Widget build(BuildContext context) {
-    if (!isDesktopPlatform) {
-      return child;
-    }
-
-    final frame = Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          child,
-          const Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: DesktopTitleBar(),
-          ),
-        ],
-      ),
-    );
-
-    if (Platform.isLinux) {
-      return DragToResizeArea(
-        child: frame,
-      );
-    }
-
-    return frame;
-  }
+  Widget build(BuildContext context) => child;
 }
 
-/// A preferred-size wrapper that adds top padding equivalent to [DesktopTitleBar.height]
-/// on desktop platforms (Windows, Linux, macOS) so that standard [AppBar] content
-/// (such as back buttons, titles, and actions) is not obstructed by the custom titlebar.
+/// Preferred size pass-through wrapper for app bars.
 class DesktopSafeAppBar extends StatelessWidget implements PreferredSizeWidget {
   final PreferredSizeWidget child;
   final Color? backgroundColor;
@@ -359,24 +109,8 @@ class DesktopSafeAppBar extends StatelessWidget implements PreferredSizeWidget {
   });
 
   @override
-  Size get preferredSize {
-    final extra = DesktopWindowFrame.isDesktopPlatform ? DesktopTitleBar.height : 0.0;
-    return Size.fromHeight(child.preferredSize.height + extra);
-  }
+  Size get preferredSize => child.preferredSize;
 
   @override
-  Widget build(BuildContext context) {
-    if (!DesktopWindowFrame.isDesktopPlatform) {
-      return child;
-    }
-    final theme = Theme.of(context);
-    final bgColor = backgroundColor ??
-        theme.appBarTheme.backgroundColor ??
-        theme.scaffoldBackgroundColor;
-    return Container(
-      color: bgColor,
-      padding: const EdgeInsets.only(top: DesktopTitleBar.height),
-      child: child,
-    );
-  }
+  Widget build(BuildContext context) => child;
 }

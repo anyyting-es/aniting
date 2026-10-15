@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/server/server_manager.dart';
 import 'package:seanime_app/core/theme/theme_provider.dart';
 import 'package:seanime_app/data/models/anime_entry.dart';
@@ -119,7 +120,7 @@ void main() {
       );
 
       expect(find.byType(AppBar), findsNothing);
-      expect(find.byIcon(Icons.search_rounded), findsOneWidget);
+      expect(find.byIcon(AppIcons.search(AppIconPack.lucide)), findsOneWidget);
       expect(find.byType(TopStatusBarGlass), findsOneWidget);
     });
 

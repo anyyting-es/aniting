@@ -11,6 +11,7 @@ import (
 	"seanime/internal/library/filesystem"
 	"seanime/internal/library/shows"
 	"seanime/internal/library_explorer"
+	"seanime/internal/platforms/simulated_platform"
 	"strings"
 	"time"
 
@@ -443,7 +444,9 @@ func (h *Handler) HandleRemoveLibraryFolder(c echo.Context) error {
 		return h.RespondWithError(c, err)
 	}
 
-	targetPath := filepath.ToSlash(strings.TrimSpace(b.Path))
+	rawTarget := strings.TrimSpace(b.Path)
+	targetPath := filepath.ToSlash(filepath.Clean(rawTarget))
+	targetPath = strings.TrimSuffix(targetPath, "/")
 	if targetPath == "" && !b.IsMain {
 		return h.RespondWithError(c, errors.New("empty path"))
 	}
@@ -455,13 +458,18 @@ func (h *Handler) HandleRemoveLibraryFolder(c echo.Context) error {
 	}
 
 	if settings.Library != nil {
-		mainSlash := filepath.ToSlash(strings.TrimSpace(settings.Library.LibraryPath))
+		mainSlash := filepath.ToSlash(filepath.Clean(strings.TrimSpace(settings.Library.LibraryPath)))
+		mainSlash = strings.TrimSuffix(mainSlash, "/")
+		if targetPath == "" && b.IsMain {
+			targetPath = mainSlash
+		}
 		if b.IsMain || (targetPath != "" && mainSlash == targetPath) {
 			settings.Library.LibraryPath = ""
 		}
 		var newAdditionals []string
 		for _, p := range settings.Library.LibraryPaths {
-			pSlash := filepath.ToSlash(strings.TrimSpace(p))
+			pSlash := filepath.ToSlash(filepath.Clean(strings.TrimSpace(p)))
+			pSlash = strings.TrimSuffix(pSlash, "/")
 			if pSlash != "" && pSlash != targetPath {
 				newAdditionals = append(newAdditionals, p)
 			}
@@ -484,14 +492,21 @@ func (h *Handler) HandleRemoveLibraryFolder(c echo.Context) error {
 		}
 	}
 
+	pathBelongsToTarget := func(filePath string) bool {
+		if targetPath == "" {
+			return false
+		}
+		fClean := filepath.ToSlash(filepath.Clean(strings.TrimSpace(filePath)))
+		return fClean == targetPath || strings.HasPrefix(fClean, targetPath+"/")
+	}
+
 	// 2. Purge show local files
 	showFiles, showId, err := db_bridge.GetShowLocalFiles(h.App.Database)
 	if err == nil {
-		var filteredShows []*shows.ShowLocalFile
-		if hasAnyPaths && targetPath != "" {
+		filteredShows := make([]*shows.ShowLocalFile, 0)
+		if hasAnyPaths {
 			for _, sf := range showFiles {
-				sfSlash := filepath.ToSlash(sf.Path)
-				if !strings.HasPrefix(sfSlash, targetPath+"/") && sfSlash != targetPath {
+				if !pathBelongsToTarget(sf.Path) {
 					filteredShows = append(filteredShows, sf)
 				}
 			}
@@ -501,12 +516,11 @@ func (h *Handler) HandleRemoveLibraryFolder(c echo.Context) error {
 
 	// 3. Purge anime local files
 	animeFiles, animeId, err := db_bridge.GetLocalFiles(h.App.Database)
+	filteredAnime := make([]*anime.LocalFile, 0)
 	if err == nil {
-		var filteredAnime []*anime.LocalFile
-		if hasAnyPaths && targetPath != "" {
+		if hasAnyPaths {
 			for _, af := range animeFiles {
-				afSlash := filepath.ToSlash(af.Path)
-				if !strings.HasPrefix(afSlash, targetPath+"/") && afSlash != targetPath {
+				if !pathBelongsToTarget(af.Path) {
 					filteredAnime = append(filteredAnime, af)
 				}
 			}
@@ -520,11 +534,10 @@ func (h *Handler) HandleRemoveLibraryFolder(c echo.Context) error {
 	// 4. Purge shelved files
 	shelved, err := db_bridge.GetShelvedLocalFiles(h.App.Database)
 	if err == nil {
-		var filteredShelved []*anime.LocalFile
-		if hasAnyPaths && targetPath != "" {
+		filteredShelved := make([]*anime.LocalFile, 0)
+		if hasAnyPaths {
 			for _, sh := range shelved {
-				shSlash := filepath.ToSlash(sh.Path)
-				if !strings.HasPrefix(shSlash, targetPath+"/") && shSlash != targetPath {
+				if !pathBelongsToTarget(sh.Path) {
 					filteredShelved = append(filteredShelved, sh)
 				}
 			}
@@ -532,7 +545,34 @@ func (h *Handler) HandleRemoveLibraryFolder(c echo.Context) error {
 		_ = db_bridge.SaveShelvedLocalFiles(h.App.Database, filteredShelved)
 	}
 
-	// 5. Clear caches and refresh collection
+	// 5. Purge orphaned entries from simulated anime collection if unauthenticated
+	if sp, ok := h.App.AnilistPlatformRef.Get().(*simulated_platform.SimulatedPlatform); ok {
+		remainingMediaIds := make(map[int]bool)
+		for _, f := range filteredAnime {
+			if f.MediaId > 0 {
+				remainingMediaIds[f.MediaId] = true
+			}
+		}
+		if col, err := sp.GetAnimeCollection(c.Request().Context(), false); err == nil && col != nil && col.GetMediaListCollection() != nil {
+			wrapper := sp.GetAnimeCollectionWrapper()
+			var toDelete []int
+			for _, list := range col.GetMediaListCollection().GetLists() {
+				for _, entry := range list.GetEntries() {
+					if entry.GetMedia() != nil {
+						mId := entry.GetMedia().GetID()
+						if !remainingMediaIds[mId] {
+							toDelete = append(toDelete, mId)
+						}
+					}
+				}
+			}
+			for _, mId := range toDelete {
+				_ = wrapper.DeleteEntry(mId)
+			}
+		}
+	}
+
+	// 6. Clear caches and refresh collection
 	go h.App.RefreshAnimeCollection()
 	anime.ClearMissingEpisodesCache()
 

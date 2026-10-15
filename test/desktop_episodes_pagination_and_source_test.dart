@@ -266,11 +266,11 @@ void main() {
       expect(find.textContaining('EP 21.'), findsNothing);
 
       // Pagination indicators
-      expect(find.text('Siguiente'), findsOneWidget);
-      expect(find.text('Anterior'), findsOneWidget);
+      expect(find.byIcon(Icons.chevron_right_rounded), findsOneWidget);
+      expect(find.byIcon(Icons.chevron_left_rounded), findsOneWidget);
 
-      // Tap 'Siguiente'
-      await tester.tap(find.text('Siguiente'));
+      // Tap next icon
+      await tester.tap(find.byIcon(Icons.chevron_right_rounded));
       await tester.pumpAndSettle();
 
       // Now on page 2: Episodes 21 to 35 should be visible

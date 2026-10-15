@@ -120,11 +120,12 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     });
   }
 
-  void _openDetail(BuildContext context, AnimeEntry entry) {
+  void _openDetail(BuildContext context, AnimeEntry entry, [Object? heroTag]) {
     AnimeDetailScreen.navigate(
       context,
       mediaId: entry.mediaId,
       initialEntry: entry,
+      heroTag: heroTag,
     );
   }
 

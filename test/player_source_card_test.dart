@@ -7,6 +7,8 @@ import 'package:seanime_app/presentation/widgets/player/panels/player_source_car
 
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 
+import 'package:g1455/g1455.dart';
+
 class _MaterialIconPackNotifier extends IconPackNotifier {
   @override
   AppIconPack build() => AppIconPack.material;
@@ -19,6 +21,7 @@ Widget _buildWrapper({required Widget child, List<dynamic>? overrides}) {
       ...?overrides?.cast(),
     ],
     child: MaterialApp(
+      builder: (context, childWidget) => GlassHost(child: childWidget!),
       home: Scaffold(
         body: child,
       ),
@@ -117,7 +120,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Check modal contents
-    expect(find.text('Opciones de reproducción'), findsOneWidget);
+    expect(find.text('3 opciones'), findsOneWidget);
     expect(find.text('VIDSTREAMING'), findsOneWidget);
     expect(find.text('STREAMWISH'), findsOneWidget);
 

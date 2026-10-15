@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/data/models/local_file_item.dart';
+import 'package:seanime_app/data/models/tmdb_models.dart';
+import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/providers/local_library_provider.dart';
 import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
 import 'package:seanime_app/presentation/screens/settings/widgets/local_library/local_library_match_dialog.dart';
@@ -396,7 +398,22 @@ class _LocalMatchedShowCard extends ConsumerWidget {
                             fit: BoxFit.cover,
                             errorWidget: (ctx, err, stack) => Icon(typeIcon, color: typeColor, size: 24),
                           )
-                        : Icon(typeIcon, color: typeColor, size: 24),
+                        : item.isTmdb
+                            ? FutureBuilder<TmdbShowDetails?>(
+                                future: ref.read(tmdbServiceProvider).getShowDetails(item.id, isMovie: item.type == 'movie'),
+                                builder: (ctx, snapshot) {
+                                  final poster = snapshot.data?.posterUrl;
+                                  if (poster != null && poster.isNotEmpty) {
+                                    return CachedNetworkImage(
+                                      imageUrl: poster,
+                                      fit: BoxFit.cover,
+                                      errorWidget: (c, e, s) => Icon(typeIcon, color: typeColor, size: 24),
+                                    );
+                                  }
+                                  return Icon(typeIcon, color: typeColor, size: 24);
+                                },
+                              )
+                            : Icon(typeIcon, color: typeColor, size: 24),
                   ),
                 ),
                 const SizedBox(width: 12),

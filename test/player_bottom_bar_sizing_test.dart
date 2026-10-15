@@ -163,15 +163,15 @@ void main() {
         ),
       );
 
-      // Verify SliderTheme trackHeight is 6
+      // Verify SliderTheme trackHeight is 5
       final sliderThemeFinder = find.byType(SliderTheme);
       expect(sliderThemeFinder, findsOneWidget);
       final SliderTheme sliderTheme = tester.widget(sliderThemeFinder);
-      expect(sliderTheme.data.trackHeight, equals(6.0));
+      expect(sliderTheme.data.trackHeight, equals(5.0));
 
-      // Verify thumb radius is 7
+      // Verify thumb radius is 0 (sleek bar design)
       final thumbShape = sliderTheme.data.thumbShape as RoundSliderThumbShape;
-      expect(thumbShape.enabledThumbRadius, equals(7.0));
+      expect(thumbShape.enabledThumbRadius, equals(0.0));
     });
 
     testWidgets('PlayerTopBar icons have harmonized sizes and reduced padding', (tester) async {

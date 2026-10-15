@@ -9,8 +9,8 @@ import 'package:seanime_app/data/models/show_local_file_item.dart';
 import 'package:seanime_app/data/repositories/seanime_repository.dart';
 import 'package:seanime_app/data/services/feed_cache_service.dart';
 import 'package:seanime_app/presentation/providers/active_downloads_provider.dart';
+import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
-
 import 'package:seanime_app/data/models/anime_entry.dart';
 
 /// Item representando un show o anime emparejado localmente para exploración visual
@@ -129,6 +129,7 @@ class LocalLibraryState {
 class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
   StreamSubscription? _wsSubscription;
   static const String _kFolderTypesPrefKey = 'local_library_folder_types';
+  final Map<int, String> _tmdbCoverCache = {};
 
   SeanimeRepository get _repository => ref.read(repositoryProvider);
   WebSocketService get _webSocketService => ref.read(webSocketServiceProvider);
@@ -147,6 +148,8 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
     FeedCacheService.instance.clearCache(FeedCacheService.kCacheAnimeCollection);
     FeedCacheService.instance.clearCache(FeedCacheService.kCacheContinueWatchingAnime);
     FeedCacheService.instance.clearCache(FeedCacheService.kCacheTrendingAnime);
+    FeedCacheService.instance.clearCache(FeedCacheService.kCacheMissedSequels);
+    FeedCacheService.instance.clearCache(FeedCacheService.kCacheRecommendations);
     ref.invalidate(downloadedAnimeProvider);
     ref.invalidate(animeCollectionProvider);
     ref.invalidate(continueWatchingProvider);
@@ -260,7 +263,21 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
         return allConfiguredPaths.any((cp) => norm.startsWith(cp));
       }
 
-      final animeFiles = rawAnimeFiles.where((f) => isPathInConfigured(f.path)).toList();
+      bool isPathInAnime(String p) {
+        if (p.isEmpty) return false;
+        final norm = p.replaceAll('\\', '/').toLowerCase();
+        for (final entry in folderTypes.entries) {
+          final conf = entry.key.replaceAll('\\', '/').toLowerCase();
+          if (norm == conf || norm.startsWith('$conf/')) {
+            return entry.value == 'anime';
+          }
+        }
+        return true;
+      }
+
+      final animeFiles = rawAnimeFiles
+          .where((f) => isPathInConfigured(f.path) && isPathInAnime(f.path))
+          .toList();
       final showsCol = rawShowsCol != null
           ? ShowCollectionItem(
               shows: rawShowsCol.shows.where((s) => s.files.isEmpty || isPathInConfigured(s.files.first.path)).toList(),
@@ -356,12 +373,27 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
             lower.contains('movie') ||
             lower.contains('pelicula') ||
             lower.contains('película');
+        bool isTmdb = false;
+        final normPath = first.folderPath.replaceAll('\\', '/').toLowerCase();
+        for (final tEntry in folderTypes.entries) {
+          final conf = tEntry.key.replaceAll('\\', '/').toLowerCase();
+          if (normPath == conf || normPath.startsWith('$conf/')) {
+            if (tEntry.value == 'tv' || tEntry.value == 'movie') {
+              isTmdb = true;
+              break;
+            }
+          }
+        }
+        if (!isTmdb) {
+          isTmdb = isTmdbGuess;
+        }
+
         return UnmatchedFolderGroup(
           folderPath: first.folderPath,
           folderName: first.folderName,
           guessedTitle: guessed,
           files: groupFiles,
-          isTmdb: isTmdbGuess,
+          isTmdb: isTmdb,
         );
       }).toList();
 
@@ -422,7 +454,7 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
           matchedShows.add(LocalMatchedShowItem(
             id: s.tmdbId,
             title: s.title.isNotEmpty ? s.title : (firstFile?.parsedTitle ?? 'Show'),
-            coverImage: null,
+            coverImage: _tmdbCoverCache[s.tmdbId],
             type: s.mediaType == 'movie' ? 'movie' : 'tv',
             episodeCount: s.episodeCount > 0 ? s.episodeCount : s.files.length,
             seasonCount: s.seasonCount > 0 ? s.seasonCount : s.seasons.length,
@@ -510,7 +542,7 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
       await prefs.setString(_kFolderTypesPrefKey, jsonEncode(nextTypes));
 
       await _repository.scanShows(folderTypes: nextTypes);
-      await _repository.scanLibrary();
+      await _repository.scanLibrary(folderTypes: nextTypes);
       _invalidateRelatedProviders();
       await loadLibraryData();
     }
@@ -544,7 +576,7 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
       await prefs.setString(_kFolderTypesPrefKey, jsonEncode(nextTypes));
 
       await _repository.scanShows(folderTypes: nextTypes);
-      await _repository.scanLibrary();
+      await _repository.scanLibrary(folderTypes: nextTypes);
       _invalidateRelatedProviders();
       await loadLibraryData();
     }
@@ -560,8 +592,16 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
     );
 
     try {
-      final success = await _repository.scanLibrary(enhanced: state.enhancedScan);
-      await _repository.scanShows(folderTypes: state.folderTypes);
+      final success = await _repository.scanLibrary(
+        enhanced: state.enhancedScan,
+        folderTypes: state.folderTypes,
+      );
+      final showsCol = await _repository.scanShows(folderTypes: state.folderTypes);
+
+      if (showsCol != null && showsCol.unmatched.isNotEmpty) {
+        state = state.copyWith(scanStatus: 'Buscando coincidencias en TMDB...');
+        await _autoMatchTmdbUnmatched(showsCol);
+      }
 
       if (!success) {
         state = state.copyWith(isScanning: false, scanStatus: 'Error al iniciar escaneo');
@@ -569,7 +609,7 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
         _invalidateRelatedProviders();
       }
 
-      Future.delayed(const Duration(seconds: 2), () {
+      Future.delayed(const Duration(seconds: 1), () {
         _invalidateRelatedProviders();
         loadLibraryData();
       });
@@ -577,6 +617,97 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
     } catch (e) {
       state = state.copyWith(isScanning: false, scanStatus: e.toString());
       return false;
+    }
+  }
+
+  Future<void> _autoMatchTmdbUnmatched(ShowCollectionItem showsCol) async {
+    if (showsCol.unmatched.isEmpty) return;
+
+    final tmdb = ref.read(tmdbServiceProvider);
+    final isSpanish = ref.read(appLanguageProvider) == AppLanguage.es;
+    final lang = isSpanish ? 'es-ES' : 'en-US';
+
+    final folderMap = <String, List<ShowLocalFileItem>>{};
+    for (final f in showsCol.unmatched) {
+      final key = f.folderPath.isNotEmpty ? f.folderPath : f.folderName;
+      folderMap.putIfAbsent(key, () => []).add(f);
+    }
+
+    bool matchedAny = false;
+
+    for (final entry in folderMap.entries) {
+      final folderPath = entry.key;
+      final files = entry.value;
+      final first = files.first;
+
+      bool isTmdb = false;
+      String preferredType = 'tv';
+      final normFolder = folderPath.replaceAll('\\', '/').toLowerCase();
+
+      for (final typeEntry in state.folderTypes.entries) {
+        final normConfig = typeEntry.key.replaceAll('\\', '/').toLowerCase();
+        if (normFolder == normConfig || normFolder.startsWith('$normConfig/')) {
+          if (typeEntry.value == 'tv' || typeEntry.value == 'movie') {
+            isTmdb = true;
+            preferredType = typeEntry.value;
+            break;
+          }
+        }
+      }
+
+      if (!isTmdb) {
+        if (normFolder.contains('serie') || normFolder.contains('show') || normFolder.contains('tv')) {
+          isTmdb = true;
+          preferredType = 'tv';
+        } else if (normFolder.contains('movie') || normFolder.contains('pelicula') || normFolder.contains('película')) {
+          isTmdb = true;
+          preferredType = 'movie';
+        }
+      }
+
+      if (!isTmdb) continue;
+
+      final query = first.parsedTitle.trim().isNotEmpty
+          ? first.parsedTitle.trim()
+          : first.folderName.trim();
+
+      if (query.isEmpty) continue;
+
+      try {
+        final results = await tmdb.searchShows(query: query, language: lang);
+        if (results.isNotEmpty) {
+          AnimeEntry best = results.first;
+          for (final r in results) {
+            final isMovie = r.format?.toLowerCase() == 'movie';
+            if ((preferredType == 'movie' && isMovie) || (preferredType == 'tv' && !isMovie)) {
+              best = r;
+              break;
+            }
+          }
+
+          if (best.coverImage != null && best.coverImage!.isNotEmpty) {
+            _tmdbCoverCache[best.mediaId] = best.coverImage!;
+          }
+
+          final mediaType = (best.format?.toLowerCase() == 'movie') ? 'movie' : 'tv';
+          final ok = await _repository.matchShow(
+            paths: files.map((f) => f.path).toList(),
+            folderPath: folderPath,
+            tmdbId: best.mediaId,
+            mediaType: mediaType,
+            title: best.title,
+          );
+          if (ok) {
+            matchedAny = true;
+          }
+        }
+      } catch (e) {
+        debugPrint('[LocalLibraryNotifier] Auto-match TMDB error for $query: $e');
+      }
+    }
+
+    if (matchedAny) {
+      _invalidateRelatedProviders();
     }
   }
 

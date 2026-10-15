@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"path/filepath"
 	"strings"
 	"seanime/internal/database/db_bridge"
 	"seanime/internal/library/anime"
@@ -24,10 +25,11 @@ func (h *Handler) HandleScanLocalFiles(c echo.Context) error {
 	}
 
 	type body struct {
-		Enhanced                   bool `json:"enhanced"`
-		EnhanceWithOfflineDatabase bool `json:"enhanceWithOfflineDatabase"`
-		SkipLockedFiles            bool `json:"skipLockedFiles"`
-		SkipIgnoredFiles           bool `json:"skipIgnoredFiles"`
+		Enhanced                   bool              `json:"enhanced"`
+		EnhanceWithOfflineDatabase bool              `json:"enhanceWithOfflineDatabase"`
+		SkipLockedFiles            bool              `json:"skipLockedFiles"`
+		SkipIgnoredFiles           bool              `json:"skipIgnoredFiles"`
+		FolderTypes                map[string]string `json:"folderTypes"`
 	}
 
 	var b body
@@ -44,6 +46,34 @@ func (h *Handler) HandleScanLocalFiles(c echo.Context) error {
 	if err != nil {
 		return h.RespondWithError(c, err)
 	}
+
+	// Filter out directories that are marked as TV or Movies (TMDB)
+	isTmdbFolder := func(p string) bool {
+		if b.FolderTypes == nil || strings.TrimSpace(p) == "" {
+			return false
+		}
+		normP := filepath.ToSlash(filepath.Clean(p))
+		for folder, fType := range b.FolderTypes {
+			normF := filepath.ToSlash(filepath.Clean(folder))
+			if (normP == normF || strings.HasPrefix(normP, normF+"/")) && (fType == "tv" || fType == "movie") {
+				return true
+			}
+		}
+		return false
+	}
+
+	if isTmdbFolder(libraryPath) {
+		libraryPath = ""
+	}
+
+	var filteredAdditional []string
+	for _, p := range additionalLibraryPaths {
+		if isTmdbFolder(p) {
+			continue
+		}
+		filteredAdditional = append(filteredAdditional, p)
+	}
+	additionalLibraryPaths = filteredAdditional
 
 	if strings.TrimSpace(libraryPath) == "" && len(additionalLibraryPaths) == 0 {
 		_, _ = db_bridge.InsertLocalFiles(h.App.Database, make([]*anime.LocalFile, 0))

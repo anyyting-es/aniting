@@ -7,6 +7,7 @@ import 'package:seanime_app/data/models/explore_carousel_config.dart';
 import 'package:seanime_app/data/services/explore_carousel_service.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/screens/search_screen.dart';
+import 'package:seanime_app/presentation/widgets/catalog_search/catalog_search_view.dart';
 import 'package:seanime_app/presentation/widgets/compact_search_bar.dart';
 import 'package:seanime_app/presentation/widgets/explore_hero_carousel.dart';
 import 'package:seanime_app/presentation/widgets/media_type_toggle.dart';
@@ -176,15 +177,15 @@ void main() {
       await tester.tap(find.byIcon(searchIcon));
       await tester.pumpAndSettle();
 
-      // CompactSearchBar is now visible
-      expect(find.byType(CompactSearchBar), findsOneWidget);
+      // CatalogSearchView is now visible with back button
+      expect(find.byType(CatalogSearchView), findsOneWidget);
 
-      // Tap back button on the search bar
+      // Tap back button on the search view
       await tester.tap(find.byKey(const ValueKey('compact_search_back_btn')));
       await tester.pumpAndSettle();
 
       // Restored icon-only mode
-      expect(find.byType(CompactSearchBar), findsNothing);
+      expect(find.byType(CatalogSearchView), findsNothing);
       expect(find.byIcon(searchIcon), findsOneWidget);
     });
   });

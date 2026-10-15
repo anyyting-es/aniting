@@ -188,15 +188,28 @@ class CatalogSearchView extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 2. Título de sección (ej. "Highest rated shows")
-          Text(
-            headerTitle,
-            style: TextStyle(
-              fontSize: 26,
-              fontWeight: FontWeight.bold,
-              color: theme.colorScheme.onSurface,
-              letterSpacing: -0.4,
-            ),
+          // 2. Título de sección con botón Volver (ej. "← Highest rated shows")
+          Row(
+            children: [
+              IconButton(
+                key: const ValueKey('compact_search_back_btn'),
+                icon: const Icon(Icons.arrow_back_rounded),
+                tooltip: l10n.back,
+                onPressed: onBack,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  headerTitle,
+                  style: TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onSurface,
+                    letterSpacing: -0.4,
+                  ),
+                ),
+              ),
+            ],
           ),
 
           const SizedBox(height: 18),

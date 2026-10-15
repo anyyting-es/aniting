@@ -186,6 +186,7 @@ class PlayerEpisodeResolver {
         mediaId: mediaId,
         episodeNumber: targetEpNum,
         provider: onlineStreamProvider,
+        title: animeDetails?.romajiTitle ?? animeDetails?.title,
         dubbed: onlineStreamDubbed ?? false,
       );
 

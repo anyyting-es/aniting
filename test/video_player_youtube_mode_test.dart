@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/preferences/tv_mode_provider.dart';
 import 'package:seanime_app/presentation/widgets/player/controls/player_bottom_bar.dart';
 import 'package:seanime_app/presentation/widgets/player/controls/player_top_bar.dart';
@@ -15,16 +16,18 @@ void main() {
     testWidgets('NextEpisodeCard renders clean layout without center play icon, with titles and badges', (tester) async {
       bool tapped = false;
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: NextEpisodeCard(
-              episode: AnimeEpisode(
-                episodeNumber: 2,
-                title: 'Encounter with Spirits',
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: NextEpisodeCard(
+                episode: AnimeEpisode(
+                  episodeNumber: 2,
+                  title: 'Encounter with Spirits',
+                ),
+                animeTitle: 'Frieren: Beyond Journey\'s End',
+                synopsis: 'Frieren journeys north and encounters new wonders.',
+                onTap: () => tapped = true,
               ),
-              animeTitle: 'Frieren: Beyond Journey\'s End',
-              synopsis: 'Frieren journeys north and encounters new wonders.',
-              onTap: () => tapped = true,
             ),
           ),
         ),
@@ -108,7 +111,7 @@ void main() {
       expect(find.text('Next step on the northern road.'), findsOneWidget);
 
       // Rating has single star icon and clean number without duplicate star
-      expect(find.byIcon(Icons.star_rounded), findsOneWidget);
+      expect(find.byIcon(AppIcons.star(AppIconPack.lucide)), findsOneWidget);
       expect(find.text('8.8'), findsOneWidget);
       expect(find.text('8.8 ★'), findsNothing);
 
@@ -206,17 +209,17 @@ void main() {
         ),
       );
 
-      // Initially expanded: should show view_sidebar_rounded
-      expect(find.byIcon(Icons.view_sidebar_rounded), findsOneWidget);
-      expect(find.byIcon(Icons.view_sidebar_outlined), findsNothing);
+      // Initially expanded: should show sidebar
+      expect(find.byIcon(AppIcons.sidebar(AppIconPack.lucide)), findsOneWidget);
+      expect(find.byIcon(AppIcons.sidebarOutline(AppIconPack.lucide)), findsNothing);
 
       // Tap toggle
-      await tester.tap(find.byIcon(Icons.view_sidebar_rounded));
+      await tester.tap(find.byIcon(AppIcons.sidebar(AppIconPack.lucide)));
       await tester.pump();
 
       expect(toggleCalled, isTrue);
-      // Now collapsed: should show view_sidebar_outlined
-      expect(find.byIcon(Icons.view_sidebar_outlined), findsOneWidget);
+      // Now collapsed: should show sidebarOutline
+      expect(find.byIcon(AppIcons.sidebarOutline(AppIconPack.lucide)), findsOneWidget);
     });
 
     testWidgets('PlayerTopBar does not render sidebar toggle when onToggleSidePanel is null', (tester) async {
@@ -235,8 +238,8 @@ void main() {
         ),
       );
 
-      expect(find.byIcon(Icons.view_sidebar_rounded), findsNothing);
-      expect(find.byIcon(Icons.view_sidebar_outlined), findsNothing);
+      expect(find.byIcon(AppIcons.sidebar(AppIconPack.lucide)), findsNothing);
+      expect(find.byIcon(AppIcons.sidebarOutline(AppIconPack.lucide)), findsNothing);
     });
 
     testWidgets('PlayerBottomBar renders fullscreen toggle button on all platforms', (tester) async {
@@ -266,9 +269,9 @@ void main() {
         ),
       );
 
-      expect(find.byIcon(Icons.fullscreen_rounded), findsOneWidget);
+      expect(find.byIcon(AppIcons.fullscreen(AppIconPack.lucide)), findsOneWidget);
 
-      await tester.tap(find.byIcon(Icons.fullscreen_rounded));
+      await tester.tap(find.byIcon(AppIcons.fullscreen(AppIconPack.lucide)));
       await tester.pump();
 
       expect(fullscreenToggled, isTrue);
@@ -351,16 +354,16 @@ void main() {
       expect(find.text('• Intro'), findsOneWidget);
 
       // Compact controls row
-      expect(find.byIcon(Icons.pause_rounded), findsOneWidget);
-      expect(find.byIcon(Icons.skip_next_rounded), findsOneWidget);
-      expect(find.byIcon(Icons.fullscreen_rounded), findsOneWidget);
+      expect(find.byIcon(AppIcons.pause(AppIconPack.lucide)), findsOneWidget);
+      expect(find.byIcon(AppIcons.skipNext(AppIconPack.lucide)), findsOneWidget);
+      expect(find.byIcon(AppIcons.fullscreen(AppIconPack.lucide)), findsOneWidget);
 
       // Tap play/pause
-      await tester.tap(find.byIcon(Icons.pause_rounded));
+      await tester.tap(find.byIcon(AppIcons.pause(AppIconPack.lucide)));
       expect(playPauseCalled, isTrue);
 
       // Tap next episode
-      await tester.tap(find.byIcon(Icons.skip_next_rounded));
+      await tester.tap(find.byIcon(AppIcons.skipNext(AppIconPack.lucide)));
       expect(nextEpisodeCalled, isTrue);
     });
 

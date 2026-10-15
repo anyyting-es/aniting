@@ -3,60 +3,42 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/data/models/extension_item.dart';
-import 'package:seanime_app/presentation/widgets/extensions/installed_tab_view.dart';
-import 'package:seanime_app/presentation/widgets/extensions/marketplace_tab_view.dart';
+import 'package:seanime_app/presentation/widgets/extensions/extension_category_view.dart';
 
-/// Modern Seanime-style desktop layout for the Extensions Marketplace.
-///
-/// Features:
-/// - Safe 42dp desktop top clearance below the custom titlebar.
-/// - Centered segmented pill switcher ([Installed] / [Marketplace]) with live badges.
-/// - Sleek desktop header with repo source, action buttons, category filters, and search.
-/// - Responsive 3-to-4 column desktop card grid matching the Seanime desktop interface.
 class ExtensionsDesktopLayout extends ConsumerStatefulWidget {
-  final List<ExtensionItem> installedExtensions;
-  final List<ExtensionItem> marketplaceExtensions;
+  final List<ExtensionItem> onlineExtensions;
+  final List<ExtensionItem> torrentExtensions;
+  final List<ExtensionItem> mangaExtensions;
   final Set<String> installedIds;
+  final Map<String, ExtensionItem> installedMap;
   final String? installingExtensionId;
-  final bool isLoadingInstalled;
-  final bool isLoadingMarketplace;
   final bool isCheckingUpdates;
-  final String? installedError;
-  final String? marketplaceError;
-  final String currentRepoUrl;
-  final VoidCallback onRetryInstalled;
   final VoidCallback onCheckForUpdates;
   final VoidCallback onReloadAll;
-  final void Function(ExtensionItem, bool) onToggle;
-  final void Function(ExtensionItem) onUninstall;
-  final void Function(ExtensionItem) onUpdate;
-  final void Function(ExtensionItem) onShowCode;
-  final Future<void> Function({bool forceRefresh}) onRefreshMarketplace;
-  final VoidCallback onChangeRepo;
-  final void Function(ExtensionItem) onInstall;
+  final ValueChanged<ExtensionItem> onInstall;
+  final void Function(ExtensionItem ext, bool disable) onToggle;
+  final ValueChanged<ExtensionItem> onUninstall;
+  final ValueChanged<ExtensionItem> onUpdate;
+  final ValueChanged<ExtensionItem> onShowCode;
+  final VoidCallback onRefresh;
 
   const ExtensionsDesktopLayout({
     super.key,
-    required this.installedExtensions,
-    required this.marketplaceExtensions,
+    required this.onlineExtensions,
+    required this.torrentExtensions,
+    required this.mangaExtensions,
     required this.installedIds,
+    required this.installedMap,
     this.installingExtensionId,
-    required this.isLoadingInstalled,
-    required this.isLoadingMarketplace,
     required this.isCheckingUpdates,
-    this.installedError,
-    this.marketplaceError,
-    required this.currentRepoUrl,
-    required this.onRetryInstalled,
     required this.onCheckForUpdates,
     required this.onReloadAll,
+    required this.onInstall,
     required this.onToggle,
     required this.onUninstall,
     required this.onUpdate,
     required this.onShowCode,
-    required this.onRefreshMarketplace,
-    required this.onChangeRepo,
-    required this.onInstall,
+    required this.onRefresh,
   });
 
   @override
@@ -64,7 +46,7 @@ class ExtensionsDesktopLayout extends ConsumerStatefulWidget {
 }
 
 class _ExtensionsDesktopLayoutState extends ConsumerState<ExtensionsDesktopLayout> {
-  int _activeTab = 1; // 0 = Installed, 1 = Marketplace (default to Marketplace on desktop)
+  int _activeCategory = 0; // 0 = Online, 1 = Torrents, 2 = Manga
 
   @override
   Widget build(BuildContext context) {
@@ -74,20 +56,26 @@ class _ExtensionsDesktopLayoutState extends ConsumerState<ExtensionsDesktopLayou
     final iconPack = ref.watch(iconPackProvider);
     final canPop = Navigator.canPop(context);
 
+    final currentExtensions = switch (_activeCategory) {
+      0 => widget.onlineExtensions,
+      1 => widget.torrentExtensions,
+      2 => widget.mangaExtensions,
+      _ => widget.onlineExtensions,
+    };
+
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: Align(
         alignment: Alignment.topCenter,
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1600),
+          constraints: const BoxConstraints(maxWidth: 1400),
           child: Column(
             children: [
-              // ─── 1. TOP BAR: Back Navigation + Centered Segmented Pill ───
+              // ─── 1. Desktop Top Bar: Navigation + Category Switcher + Actions ───
               Padding(
-                padding: const EdgeInsets.fromLTRB(36, 42, 36, 12),
+                padding: const EdgeInsets.fromLTRB(32, 42, 32, 16),
                 child: Row(
                   children: [
-                    // Back button (if screen is pushed)
                     if (canPop) ...[
                       IconButton(
                         style: IconButton.styleFrom(
@@ -95,19 +83,16 @@ class _ExtensionsDesktopLayoutState extends ConsumerState<ExtensionsDesktopLayou
                           hoverColor: isDark
                               ? Colors.white.withValues(alpha: 0.12)
                               : theme.colorScheme.surfaceContainerHighest,
-                          highlightColor: isDark
-                              ? Colors.white.withValues(alpha: 0.18)
-                              : theme.colorScheme.surfaceContainerHigh,
                         ),
                         icon: Icon(
                           AppIcons.arrowLeft(iconPack),
                           color: isDark ? Colors.white : theme.colorScheme.onSurface,
-                          size: 22,
+                          size: 20,
                         ),
                         tooltip: MaterialLocalizations.of(context).backButtonTooltip,
                         onPressed: () => Navigator.pop(context),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 8),
                     ],
 
                     Text(
@@ -121,33 +106,37 @@ class _ExtensionsDesktopLayoutState extends ConsumerState<ExtensionsDesktopLayou
 
                     const Spacer(),
 
-                    // Centered Segmented Pill Switcher ([Installed] [Marketplace])
+                    // Centered Segmented Control ([Online] [Torrents] [Manga])
                     Container(
-                      height: 40,
+                      height: 42,
                       padding: const EdgeInsets.all(3),
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
-                        borderRadius: BorderRadius.circular(20),
+                        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+                        borderRadius: BorderRadius.circular(21),
                         border: Border.all(
-                          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+                          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
                           width: 1.0,
                         ),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          _buildSegmentPill(
-                            icon: Icons.layers_outlined,
-                            label: '${l10n.installed} (${widget.installedExtensions.length})',
-                            isSelected: _activeTab == 0,
-                            onTap: () => setState(() => _activeTab = 0),
+                          _buildCategoryPill(
+                            icon: Icons.play_circle_filled_rounded,
+                            label: l10n.onlineStreamingTab,
+                            index: 0,
                             theme: theme,
                           ),
-                          _buildSegmentPill(
-                            icon: Icons.storefront_outlined,
-                            label: l10n.marketplace,
-                            isSelected: _activeTab == 1,
-                            onTap: () => setState(() => _activeTab = 1),
+                          _buildCategoryPill(
+                            icon: Icons.cloud_download_rounded,
+                            label: l10n.animeTorrents,
+                            index: 1,
+                            theme: theme,
+                          ),
+                          _buildCategoryPill(
+                            icon: Icons.menu_book_rounded,
+                            label: l10n.manga,
+                            index: 2,
                             theme: theme,
                           ),
                         ],
@@ -156,45 +145,49 @@ class _ExtensionsDesktopLayoutState extends ConsumerState<ExtensionsDesktopLayou
 
                     const Spacer(),
 
-                    // Balancer spacer matching back button width
-                    if (canPop) const SizedBox(width: 48),
+                    // Action buttons: Check updates & Reload
+                    IconButton(
+                      icon: widget.isCheckingUpdates
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.system_update_alt_rounded, size: 20),
+                      tooltip: l10n.checkUpdates,
+                      onPressed: widget.isCheckingUpdates ? null : widget.onCheckForUpdates,
+                    ),
+                    const SizedBox(width: 4),
+                    IconButton(
+                      icon: const Icon(Icons.refresh_rounded, size: 20),
+                      tooltip: l10n.extensionsReloadSuccess,
+                      onPressed: widget.onReloadAll,
+                    ),
+
+                    if (canPop) const SizedBox(width: 40),
                   ],
                 ),
               ),
 
-              // ─── 2. CONTENT AREA ───
+              // ─── 2. Category Content View ───
               Expanded(
                 child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 240),
+                  duration: const Duration(milliseconds: 200),
                   child: KeyedSubtree(
-                    key: ValueKey(_activeTab),
-                    child: _activeTab == 0
-                        ? InstalledTabView(
-                            isLoading: widget.isLoadingInstalled,
-                            error: widget.installedError,
-                            installedExtensions: widget.installedExtensions,
-                            installingExtensionId: widget.installingExtensionId,
-                            isCheckingUpdates: widget.isCheckingUpdates,
-                            onRetry: widget.onRetryInstalled,
-                            onCheckForUpdates: widget.onCheckForUpdates,
-                            onReloadAll: widget.onReloadAll,
-                            onToggle: widget.onToggle,
-                            onUninstall: widget.onUninstall,
-                            onUpdate: widget.onUpdate,
-                            onShowCode: widget.onShowCode,
-                            onGoToMarketplace: () => setState(() => _activeTab = 1),
-                          )
-                        : MarketplaceTabView(
-                            isLoading: widget.isLoadingMarketplace,
-                            error: widget.marketplaceError,
-                            extensions: widget.marketplaceExtensions,
-                            installedIds: widget.installedIds,
-                            installingExtensionId: widget.installingExtensionId,
-                            currentRepoUrl: widget.currentRepoUrl,
-                            onRefresh: widget.onRefreshMarketplace,
-                            onChangeRepo: widget.onChangeRepo,
-                            onInstall: widget.onInstall,
-                          ),
+                    key: ValueKey(_activeCategory),
+                    child: ExtensionCategoryView(
+                      extensions: currentExtensions,
+                      installedIds: widget.installedIds,
+                      installedMap: widget.installedMap,
+                      installingExtensionId: widget.installingExtensionId,
+                      isUpdating: widget.isCheckingUpdates,
+                      onInstall: widget.onInstall,
+                      onToggle: widget.onToggle,
+                      onUninstall: widget.onUninstall,
+                      onUpdate: widget.onUpdate,
+                      onShowCode: widget.onShowCode,
+                      onRefresh: widget.onRefresh,
+                    ),
                   ),
                 ),
               ),
@@ -205,27 +198,26 @@ class _ExtensionsDesktopLayoutState extends ConsumerState<ExtensionsDesktopLayou
     );
   }
 
-  Widget _buildSegmentPill({
+  Widget _buildCategoryPill({
     required IconData icon,
     required String label,
-    required bool isSelected,
-    required VoidCallback onTap,
+    required int index,
     required ThemeData theme,
   }) {
+    final isSelected = _activeCategory == index;
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        onTap: () => setState(() => _activeCategory = index),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
           curve: Curves.easeOutCubic,
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
           decoration: BoxDecoration(
-            color: isSelected
-                ? theme.colorScheme.surface
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(16),
+            color: isSelected ? theme.colorScheme.surface : Colors.transparent,
+            borderRadius: BorderRadius.circular(18),
             boxShadow: isSelected
                 ? [
                     BoxShadow(
@@ -251,9 +243,9 @@ class _ExtensionsDesktopLayoutState extends ConsumerState<ExtensionsDesktopLayou
                 label,
                 style: TextStyle(
                   fontSize: 13,
-                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                   color: isSelected
-                      ? theme.colorScheme.primary
+                      ? theme.colorScheme.onSurface
                       : theme.colorScheme.onSurfaceVariant,
                 ),
               ),

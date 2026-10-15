@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:g1455/g1455.dart';
+import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import '../../../../data/models/onlinestream_models.dart';
 
@@ -67,21 +68,15 @@ class _AnimeDetailAdvancedSheetState extends ConsumerState<AnimeDetailAdvancedSh
                     ),
                   ),
                 ),
-                ClipOval(
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () => Navigator.pop(context),
-                      child: Padding(
-                        padding: const EdgeInsets.all(6),
-                        child: Icon(
-                          Icons.close_rounded,
-                          size: 20,
-                          color: secondaryTextColor,
-                        ),
-                      ),
-                    ),
+                M3EIconButton(
+                  variant: M3EIconButtonVariant.standard,
+                  size: M3EIconButtonSize.xs,
+                  icon: Icon(
+                    Icons.close_rounded,
+                    size: 18,
+                    color: secondaryTextColor,
                   ),
+                  onPressed: () => Navigator.pop(context),
                 ),
               ],
             ),
@@ -132,7 +127,7 @@ class _AnimeDetailAdvancedSheetState extends ConsumerState<AnimeDetailAdvancedSh
                       ],
                     ),
                   ),
-                  Switch.adaptive(
+                  M3ESwitch(
                     value: _dubbed,
                     onChanged: (val) {
                       HapticFeedback.lightImpact();

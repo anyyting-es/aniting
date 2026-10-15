@@ -40,8 +40,15 @@ class _LocalLibraryMatchDialogState extends ConsumerState<LocalLibraryMatchDialo
   @override
   void initState() {
     super.initState();
+    _isTmdbMode = widget.group.isTmdb;
     final lower = widget.group.folderPath.toLowerCase();
-    if (lower.contains('serie') || lower.contains('show') || lower.contains('tv') || lower.contains('movie') || lower.contains('pelicula') || lower.contains('película')) {
+    if (!_isTmdbMode &&
+        (lower.contains('serie') ||
+            lower.contains('show') ||
+            lower.contains('tv') ||
+            lower.contains('movie') ||
+            lower.contains('pelicula') ||
+            lower.contains('película'))) {
       _isTmdbMode = true;
     }
     _loadSuggestions();

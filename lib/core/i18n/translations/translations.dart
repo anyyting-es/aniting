@@ -495,6 +495,10 @@ abstract class AppTranslations {
   String get extensionsReloadFailed;
   String get allExtensionsUpToDateLong;
   String get availableUpdatesCount;
+  String get enabled;
+  String get notInstalled;
+  String get officialBadge;
+  String get checkUpdates;
   String get repoConfigTitle;
   String get repoUrlLabel;
   String get restoreDefaultRepo;

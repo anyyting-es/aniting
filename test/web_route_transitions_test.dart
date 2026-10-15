@@ -11,14 +11,24 @@ void main() {
       final smoothRoute = SmoothPageRoute<void>(child: const SizedBox());
       final slideRoute = SlideRightToLeftPageRoute<void>(child: const SizedBox());
 
-      expect(webRoute.transitionDuration, const Duration(milliseconds: 220));
+      expect(webRoute.transitionDuration, const Duration(milliseconds: 400));
       expect(webRoute.reverseTransitionDuration, const Duration(milliseconds: 200));
 
-      expect(smoothRoute.transitionDuration, const Duration(milliseconds: 220));
+      expect(smoothRoute.transitionDuration, const Duration(milliseconds: 400));
       expect(smoothRoute.reverseTransitionDuration, const Duration(milliseconds: 200));
 
-      expect(slideRoute.transitionDuration, const Duration(milliseconds: 220));
-      expect(slideRoute.reverseTransitionDuration, const Duration(milliseconds: 200));
+      expect(slideRoute.transitionDuration, const Duration(milliseconds: 280));
+      expect(slideRoute.reverseTransitionDuration, const Duration(milliseconds: 240));
+
+      expect(kM3EmphasizedDecelerate.a, 0.05);
+      expect(kM3EmphasizedDecelerate.b, 0.7);
+      expect(kM3EmphasizedDecelerate.c, 0.1);
+      expect(kM3EmphasizedDecelerate.d, 1.0);
+
+      expect(kM3EmphasizedAccelerate.a, 0.3);
+      expect(kM3EmphasizedAccelerate.b, 0.0);
+      expect(kM3EmphasizedAccelerate.c, 0.8);
+      expect(kM3EmphasizedAccelerate.d, 0.15);
 
       expect(kWebDecelCurve.a, 0.16);
       expect(kWebDecelCurve.b, 1.0);
@@ -56,9 +66,9 @@ void main() {
       await tester.tap(find.text('Open'));
       await tester.pump(); // Start transition
 
-      // During animation: verify ScaleTransition (respiración & return motion) and SlideTransition
+      // During animation: verify ScaleTransition (tactile breath) and FadeTransition
       expect(find.byType(ScaleTransition), findsWidgets);
-      expect(find.byType(SlideTransition), findsWidgets);
+      expect(find.byType(FadeTransition), findsWidgets);
 
       await tester.pumpAndSettle();
       expect(find.text('Target Screen'), findsOneWidget);
@@ -116,7 +126,7 @@ void main() {
 
       // Verify transitions are active
       expect(find.byType(ScaleTransition), findsWidgets);
-      expect(find.byType(SlideTransition), findsWidgets);
+      expect(find.byType(FadeTransition), findsWidgets);
 
       await tester.pumpAndSettle();
       expect(find.text('Material Target'), findsOneWidget);

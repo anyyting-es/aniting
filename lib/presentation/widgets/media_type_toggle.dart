@@ -38,7 +38,7 @@ class MediaTypeToggle extends ConsumerWidget {
     int selectedIndex = types.indexOf(selected);
     if (selectedIndex < 0) selectedIndex = 0;
 
-    final double toggleWidth = types.length * 84.0;
+    final double toggleWidth = types.length * 92.0;
 
     return SizedBox(
       width: toggleWidth,

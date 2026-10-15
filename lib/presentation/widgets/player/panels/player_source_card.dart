@@ -144,7 +144,15 @@ class PlayerSourceCard extends ConsumerWidget {
                                     isResolvingSources
                                         ? l10n.searchingSources
                                         : (isPlayingActive
-                                            ? activeSource!.server.toUpperCase()
+                                            ? () {
+                                                final srv = activeSource!.server;
+                                                if (srv.contains('[Latino]')) return '${srv.replaceAll(' [Latino]', '')} • LATINO';
+                                                if (srv.contains('[Castellano]')) return '${srv.replaceAll(' [Castellano]', '')} • CASTELLANO';
+                                                if (srv.contains('[English Dub]')) return '${srv.replaceAll(' [English Dub]', '')} • ENGLISH';
+                                                if (srv.contains('[SUB]')) return '${srv.replaceAll(' [SUB]', '')} • SUB (MULTI)';
+                                                if (srv.contains('[Sub]')) return '${srv.replaceAll(' [Sub]', '')} • SUB';
+                                                return srv.toUpperCase();
+                                              }()
                                             : (hasError
                                                 ? l10n.noSourcesFoundForEpisode
                                                 : l10n.playbackSources)),

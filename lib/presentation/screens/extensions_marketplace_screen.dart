@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/data/models/extension_item.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/widgets/desktop_title_bar.dart';
+import 'package:seanime_app/presentation/widgets/extensions/extension_category_view.dart';
 import 'package:seanime_app/presentation/widgets/extensions/extension_code_modal.dart';
 import 'package:seanime_app/presentation/widgets/extensions/extensions_desktop_layout.dart';
-import 'package:seanime_app/presentation/widgets/extensions/installed_tab_view.dart';
-import 'package:seanime_app/presentation/widgets/extensions/marketplace_tab_view.dart';
-import 'package:seanime_app/presentation/widgets/extensions/repo_config_dialog.dart';
 
 class ExtensionsMarketplaceScreen extends ConsumerStatefulWidget {
   const ExtensionsMarketplaceScreen({super.key});
@@ -20,20 +17,67 @@ class ExtensionsMarketplaceScreen extends ConsumerStatefulWidget {
 
 class _ExtensionsMarketplaceScreenState extends ConsumerState<ExtensionsMarketplaceScreen>
     with SingleTickerProviderStateMixin {
-  static const String _prefRepoKey = 'seanime_marketplace_repo_url';
   static const String defaultRepoUrl =
-      'https://raw.githubusercontent.com/Bas1874/Seanime-Marketplace/refs/heads/main/Marketplace/Main.json';
+      'https://raw.githubusercontent.com/anyyting-es/aniting-extensions/main/marketplace.json';
+
+  static const ExtensionItem _defaultUniversalExtension = ExtensionItem(
+    id: 'aniting-universal',
+    name: 'Aniting Universal',
+    version: '1.0.0',
+    author: 'Aniting',
+    description:
+        'Proveedor único oficial: Transmisiones 1080p, Multi-Audio (Latino, Castellano, Japonés) y Multi-Subtítulos integrados.',
+    type: 'onlinestream-provider',
+    language: 'javascript',
+    lang: 'multi',
+    icon: 'https://raw.githubusercontent.com/anyyting-es/aniting-extensions/main/icons/icon.png',
+    manifestUri:
+        'https://raw.githubusercontent.com/anyyting-es/aniting-extensions/main/extensions/aniting-universal/manifest.json',
+    payloadUri:
+        'https://raw.githubusercontent.com/anyyting-es/aniting-extensions/main/extensions/aniting-universal/main.js',
+  );
+
+  static const ExtensionItem _defaultAnimeToshoExtension = ExtensionItem(
+    id: 'animetosho-new',
+    name: 'AnimeTosho (NEW)',
+    version: '2.5.1',
+    author: 'Faddix, Island',
+    description:
+        'Proveedor de torrents oficial para Anime Tosho (búsquedas inteligentes, lotes y episodios individuales).',
+    type: 'anime-torrent-provider',
+    language: 'typescript',
+    lang: 'multi',
+    icon: 'https://raw.githubusercontent.com/faddix/seanime-animetosho-new/main/src/animetosho-new-logo.png',
+    manifestUri:
+        'https://raw.githubusercontent.com/faddix/seanime-animetosho-new/main/animetosho-new.json',
+    payloadUri:
+        'https://raw.githubusercontent.com/faddix/seanime-animetosho-new/main/animetosho-new.ts',
+  );
+
+  static const ExtensionItem _defaultMangaDexExtension = ExtensionItem(
+    id: 'mangadex',
+    name: 'MangaDex',
+    version: '1.0.0',
+    author: 'kiko',
+    description:
+        'Proveedor oficial de manga para leer mangas y cómics en múltiples idiomas desde MangaDex.',
+    type: 'manga-provider',
+    language: 'typescript',
+    lang: 'multi',
+    icon: 'https://raw.githubusercontent.com/5rahim/hibike/main/icons/mangadex.png',
+    manifestUri:
+        'https://raw.githubusercontent.com/HyperKiko/seanime-extensions/main/src/mangadex/mangadex.json',
+    payloadUri:
+        'https://raw.githubusercontent.com/HyperKiko/seanime-extensions/main/src/mangadex/mangadex.ts',
+  );
 
   late final TabController _tabController;
 
   List<ExtensionItem> _installedExtensions = [];
   bool _isLoadingInstalled = true;
-  String? _installedError;
 
   List<ExtensionItem> _marketplaceExtensions = [];
   bool _isLoadingMarketplace = true;
-  String? _marketplaceError;
-  String _currentRepoUrl = defaultRepoUrl;
 
   String? _installingExtensionId;
   bool _isCheckingUpdates = false;
@@ -41,9 +85,8 @@ class _ExtensionsMarketplaceScreenState extends ConsumerState<ExtensionsMarketpl
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this, initialIndex: 1);
-    _loadRepoUrlAndFetch();
-    _loadInstalledExtensions();
+    _tabController = TabController(length: 3, vsync: this);
+    _loadAll();
   }
 
   @override
@@ -52,23 +95,16 @@ class _ExtensionsMarketplaceScreenState extends ConsumerState<ExtensionsMarketpl
     super.dispose();
   }
 
-  Future<void> _loadRepoUrlAndFetch() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final savedUrl = prefs.getString(_prefRepoKey);
-      if (savedUrl != null && savedUrl.trim().isNotEmpty) {
-        _currentRepoUrl = savedUrl.trim();
-      }
-    } catch (_) {}
-    _loadMarketplaceExtensions();
+  Future<void> _loadAll() async {
+    await Future.wait([
+      _loadInstalledExtensions(),
+      _loadMarketplaceExtensions(),
+    ]);
   }
 
   Future<void> _loadInstalledExtensions() async {
     if (!mounted) return;
-    setState(() {
-      _isLoadingInstalled = true;
-      _installedError = null;
-    });
+    setState(() => _isLoadingInstalled = true);
 
     final repo = ref.read(repositoryProvider);
     try {
@@ -79,39 +115,26 @@ class _ExtensionsMarketplaceScreenState extends ConsumerState<ExtensionsMarketpl
           _isLoadingInstalled = false;
         });
       }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _installedError = 'Error: $e';
-          _isLoadingInstalled = false;
-        });
-      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoadingInstalled = false);
     }
   }
 
   Future<void> _loadMarketplaceExtensions({bool forceRefresh = false}) async {
     if (!mounted) return;
-    setState(() {
-      _isLoadingMarketplace = true;
-      _marketplaceError = null;
-    });
+    setState(() => _isLoadingMarketplace = true);
 
     final repo = ref.read(repositoryProvider);
     try {
-      final list = await repo.getMarketplaceExtensions(_currentRepoUrl, forceRefresh: forceRefresh);
+      final list = await repo.getMarketplaceExtensions(defaultRepoUrl, forceRefresh: forceRefresh);
       if (mounted) {
         setState(() {
           _marketplaceExtensions = list.where((ext) => ext.type.toLowerCase() != 'plugin').toList();
           _isLoadingMarketplace = false;
         });
       }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _marketplaceError = 'Error: $e';
-          _isLoadingMarketplace = false;
-        });
-      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoadingMarketplace = false);
     }
   }
 
@@ -131,11 +154,6 @@ class _ExtensionsMarketplaceScreenState extends ConsumerState<ExtensionsMarketpl
 
   Future<void> _installExtension(ExtensionItem ext) async {
     final l10n = ref.read(translationsProvider);
-
-    if (ext.type.toLowerCase() == 'plugin') {
-      _showFeedback(l10n.pluginExtensionsNotSupported);
-      return;
-    }
 
     if (ext.manifestUri.isEmpty) {
       _showFeedback(l10n.invalidManifestUrl, isError: true);
@@ -192,18 +210,15 @@ class _ExtensionsMarketplaceScreenState extends ConsumerState<ExtensionsMarketpl
     if (confirmed == true && mounted) {
       final repo = ref.read(repositoryProvider);
       final success = await repo.uninstallExtension(ext.id);
-      if (mounted) {
-        if (success) {
-          _showFeedback('${ext.name} ${l10n.extensionUninstalled}');
-          _loadInstalledExtensions();
-        }
+      if (mounted && success) {
+        _showFeedback('${ext.name} ${l10n.extensionUninstalled}');
+        _loadInstalledExtensions();
       }
     }
   }
 
   Future<void> _updateExtension(ExtensionItem ext) async {
     final l10n = ref.read(translationsProvider);
-
     if (ext.manifestUri.isEmpty) {
       _showFeedback(l10n.invalidManifestUrl, isError: true);
       return;
@@ -211,7 +226,6 @@ class _ExtensionsMarketplaceScreenState extends ConsumerState<ExtensionsMarketpl
 
     setState(() => _installingExtensionId = ext.id);
     final repo = ref.read(repositoryProvider);
-
     _showFeedback('${l10n.extensionUpdating} ${ext.name}...');
 
     final success = await repo.installExtension(ext.manifestUri);
@@ -234,7 +248,7 @@ class _ExtensionsMarketplaceScreenState extends ConsumerState<ExtensionsMarketpl
         success ? l10n.extensionsReloadSuccess : l10n.extensionsReloadFailed,
         isError: !success,
       );
-      _loadInstalledExtensions();
+      _loadAll();
     }
   }
 
@@ -250,7 +264,7 @@ class _ExtensionsMarketplaceScreenState extends ConsumerState<ExtensionsMarketpl
       final updatesCount = _installedExtensions.where((e) => e.hasUpdate).length;
       _showFeedback(
         updatesCount > 0
-            ? '$updatesCount ${l10n.availableUpdatesCount}!'
+            ? '$updatesCount ${l10n.availableUpdatesCount}'
             : l10n.allExtensionsUpToDateLong,
       );
     }
@@ -264,59 +278,103 @@ class _ExtensionsMarketplaceScreenState extends ConsumerState<ExtensionsMarketpl
     );
   }
 
-  void _showChangeRepoDialog() {
-    MarketplaceRepoConfigDialog.show(
-      context,
-      currentRepoUrl: _currentRepoUrl,
-      defaultRepoUrl: defaultRepoUrl,
-      onSaveRepoUrl: (newUrl) async {
-        setState(() => _currentRepoUrl = newUrl);
-        try {
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString(_prefRepoKey, newUrl);
-        } catch (_) {}
-        _loadMarketplaceExtensions();
-      },
-      onInstallManifest: (manifestUri) async {
-        final repo = ref.read(repositoryProvider);
-        final ok = await repo.installExtension(manifestUri);
-        if (ok && mounted) {
-          _loadInstalledExtensions();
+  List<ExtensionItem> _getCategoryExtensions(int categoryIndex) {
+    final seenIds = <String>{};
+    final result = <ExtensionItem>[];
+
+    // Priority to marketplace items, then installed items
+    final allCandidates = <ExtensionItem>[
+      ..._marketplaceExtensions,
+      ..._installedExtensions,
+    ];
+
+    for (final ext in allCandidates) {
+      final id = ext.id.toLowerCase();
+      if (seenIds.contains(id)) continue;
+
+      if (categoryIndex == 0) {
+        // Online: Strictly aniting-universal
+        if (id == 'aniting-universal') {
+          seenIds.add(id);
+          result.add(ext);
         }
-        return ok;
-      },
-    );
+      } else if (categoryIndex == 1) {
+        // Torrents
+        if (ext.type == 'anime-torrent-provider') {
+          seenIds.add(id);
+          result.add(ext);
+        }
+      } else if (categoryIndex == 2) {
+        // Manga
+        if (ext.type == 'manga-provider') {
+          seenIds.add(id);
+          result.add(ext);
+        }
+      }
+    }
+
+    // Default fallbacks to guarantee rich experience
+    if (categoryIndex == 0 && result.isEmpty) {
+      result.add(_defaultUniversalExtension);
+    } else if (categoryIndex == 1 && result.isEmpty) {
+      result.add(_defaultAnimeToshoExtension);
+    } else if (categoryIndex == 2 && result.isEmpty) {
+      result.add(_defaultMangaDexExtension);
+    }
+
+    return result;
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = ref.watch(translationsProvider);
+
     final installedIds = _installedExtensions.map((e) => e.id.toLowerCase()).toSet();
+    final installedMap = {
+      for (final ext in _installedExtensions) ext.id.toLowerCase(): ext,
+    };
+
+    final onlineExtensions = _getCategoryExtensions(0);
+    final torrentExtensions = _getCategoryExtensions(1);
+    final mangaExtensions = _getCategoryExtensions(2);
+
     final isDesktop = MediaQuery.of(context).size.width >= 720;
+    final isLoading = (_isLoadingInstalled || _isLoadingMarketplace) &&
+        _installedExtensions.isEmpty &&
+        _marketplaceExtensions.isEmpty;
+
+    if (isLoading) {
+      return Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        appBar: DesktopSafeAppBar(
+          child: AppBar(
+            title: Text(l10n.extensionsTitle),
+          ),
+        ),
+        body: const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
 
     if (isDesktop) {
       return ExtensionsDesktopLayout(
-        installedExtensions: _installedExtensions,
-        marketplaceExtensions: _marketplaceExtensions,
+        onlineExtensions: onlineExtensions,
+        torrentExtensions: torrentExtensions,
+        mangaExtensions: mangaExtensions,
         installedIds: installedIds,
+        installedMap: installedMap,
         installingExtensionId: _installingExtensionId,
-        isLoadingInstalled: _isLoadingInstalled,
-        isLoadingMarketplace: _isLoadingMarketplace,
         isCheckingUpdates: _isCheckingUpdates,
-        installedError: _installedError,
-        marketplaceError: _marketplaceError,
-        currentRepoUrl: _currentRepoUrl,
-        onRetryInstalled: _loadInstalledExtensions,
         onCheckForUpdates: _checkForUpdates,
         onReloadAll: _reloadAllExtensions,
+        onInstall: _installExtension,
         onToggle: _toggleExtension,
         onUninstall: _uninstallExtension,
         onUpdate: _updateExtension,
         onShowCode: _showExtensionCodeModal,
-        onRefreshMarketplace: _loadMarketplaceExtensions,
-        onChangeRepo: _showChangeRepoDialog,
-        onInstall: _installExtension,
+        onRefresh: _loadAll,
       );
     }
 
@@ -324,65 +382,87 @@ class _ExtensionsMarketplaceScreenState extends ConsumerState<ExtensionsMarketpl
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: DesktopSafeAppBar(
         child: AppBar(
-          titleSpacing: 0,
           title: Text(l10n.extensionsTitle),
+          actions: [
+            IconButton(
+              icon: _isCheckingUpdates
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.system_update_alt_rounded),
+              tooltip: l10n.checkUpdates,
+              onPressed: _isCheckingUpdates ? null : _checkForUpdates,
+            ),
+            IconButton(
+              icon: const Icon(Icons.refresh_rounded),
+              tooltip: l10n.extensionsReloadSuccess,
+              onPressed: _reloadAllExtensions,
+            ),
+          ],
           bottom: TabBar(
             controller: _tabController,
             indicatorSize: TabBarIndicatorSize.tab,
             tabs: [
-            Tab(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.layers_outlined, size: 18),
-                  const SizedBox(width: 8),
-                  Text('${l10n.installed} (${_installedExtensions.length})'),
-                ],
+              Tab(
+                icon: const Icon(Icons.play_circle_filled_rounded, size: 20),
+                text: l10n.onlineStreamingTab,
               ),
-            ),
-            Tab(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.storefront_outlined, size: 18),
-                  const SizedBox(width: 8),
-                  Text(l10n.marketplace),
-                ],
+              Tab(
+                icon: const Icon(Icons.cloud_download_rounded, size: 20),
+                text: l10n.animeTorrents,
               ),
-            ),
-          ],
+              Tab(
+                icon: const Icon(Icons.menu_book_rounded, size: 20),
+                text: l10n.manga,
+              ),
+            ],
+          ),
         ),
       ),
-    ),
-    body: TabBarView(
+      body: TabBarView(
         controller: _tabController,
         physics: const ClampingScrollPhysics(),
         children: [
-          InstalledTabView(
-            isLoading: _isLoadingInstalled,
-            error: _installedError,
-            installedExtensions: _installedExtensions,
+          ExtensionCategoryView(
+            extensions: onlineExtensions,
+            installedIds: installedIds,
+            installedMap: installedMap,
             installingExtensionId: _installingExtensionId,
-            isCheckingUpdates: _isCheckingUpdates,
-            onRetry: _loadInstalledExtensions,
-            onCheckForUpdates: _checkForUpdates,
-            onReloadAll: _reloadAllExtensions,
+            isUpdating: _isCheckingUpdates,
+            onInstall: _installExtension,
             onToggle: _toggleExtension,
             onUninstall: _uninstallExtension,
             onUpdate: _updateExtension,
             onShowCode: _showExtensionCodeModal,
-            onGoToMarketplace: () => _tabController.animateTo(1),
+            onRefresh: _loadAll,
           ),
-          MarketplaceTabView(
-            isLoading: _isLoadingMarketplace,
-            error: _marketplaceError,
-            extensions: _marketplaceExtensions,
+          ExtensionCategoryView(
+            extensions: torrentExtensions,
             installedIds: installedIds,
+            installedMap: installedMap,
             installingExtensionId: _installingExtensionId,
-            currentRepoUrl: _currentRepoUrl,
-            onRefresh: _loadMarketplaceExtensions,
-            onChangeRepo: _showChangeRepoDialog,
+            isUpdating: _isCheckingUpdates,
             onInstall: _installExtension,
+            onToggle: _toggleExtension,
+            onUninstall: _uninstallExtension,
+            onUpdate: _updateExtension,
+            onShowCode: _showExtensionCodeModal,
+            onRefresh: _loadAll,
+          ),
+          ExtensionCategoryView(
+            extensions: mangaExtensions,
+            installedIds: installedIds,
+            installedMap: installedMap,
+            installingExtensionId: _installingExtensionId,
+            isUpdating: _isCheckingUpdates,
+            onInstall: _installExtension,
+            onToggle: _toggleExtension,
+            onUninstall: _uninstallExtension,
+            onUpdate: _updateExtension,
+            onShowCode: _showExtensionCodeModal,
+            onRefresh: _loadAll,
           ),
         ],
       ),

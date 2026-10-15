@@ -13,7 +13,7 @@ import 'package:seanime_app/presentation/widgets/anime_detail/anime_detail_mobil
 import 'package:seanime_app/presentation/widgets/anizip_episode_list.dart';
 import 'package:seanime_app/presentation/widgets/local_library_view.dart';
 import 'package:seanime_app/presentation/widgets/online_stream_view.dart';
-import 'package:seanime_app/presentation/widgets/anime_detail/tmdb/tmdb_episodes_view.dart';
+import 'package:seanime_app/presentation/widgets/episodes/episodes_view.dart';
 
 class AnimeDetailTvLayout extends ConsumerStatefulWidget {
   final int mediaId;
@@ -332,10 +332,10 @@ class _AnimeDetailTvLayoutState extends ConsumerState<AnimeDetailTvLayout> {
                   Expanded(
                     flex: 2,
                     child: (widget.details?.isTmdb == true || widget.initialEntry?.isTmdb == true)
-                        ? TmdbEpisodesView(
-                            tmdbId: widget.mediaId,
-                            isMovie: (widget.details?.format == 'MOVIE') || (widget.initialEntry?.format == 'MOVIE'),
-                            fallbackCoverImage: widget.details?.coverImage ?? widget.initialEntry?.coverImage ?? bannerUrl,
+                        ? EpisodesView(
+                            mediaId: widget.mediaId,
+                            isTmdb: true,
+                            animeDetails: widget.details,
                           )
                         : widget.isLocalMode
                             ? LocalLibraryView(

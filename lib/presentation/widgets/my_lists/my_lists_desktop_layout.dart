@@ -142,12 +142,15 @@ class _MyListsDesktopLayoutState extends ConsumerState<MyListsDesktopLayout> {
                             },
                           ),
 
+                          const SizedBox(width: 12),
                           const Spacer(),
 
-                          // Quick Search Input
-                          SizedBox(
-                            width: 260,
-                            height: 38,
+                          // Quick Search Input (Responsive flexible width)
+                          Flexible(
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 260),
+                              child: SizedBox(
+                                height: 38,
                             child: TextField(
                               controller: _searchController,
                               style: const TextStyle(fontSize: 13),
@@ -193,6 +196,8 @@ class _MyListsDesktopLayoutState extends ConsumerState<MyListsDesktopLayout> {
                                 ),
                               ),
                             ),
+                          ),
+                          ),
                           ),
                           const SizedBox(width: 10),
 

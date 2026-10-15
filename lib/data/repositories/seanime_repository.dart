@@ -22,9 +22,11 @@ import 'package:seanime_app/data/models/local_file_item.dart';
 import 'package:seanime_app/data/models/show_local_file_item.dart';
 import 'package:seanime_app/data/services/feed_cache_service.dart';
 import 'package:seanime_app/data/services/offline_library_service.dart';
+import 'package:seanime_app/data/sources/sources.dart';
 
 class SeanimeRepository {
   final ApiClient _apiClient;
+  final AnitingOnlineSource _anitingOnlineSource = AnitingOnlineSource();
   final Map<int, AniZipData> _aniZipCache = {};
   final Map<int, AnimeDetails> _animeDetailsCache = {};
   List<OnlinestreamProvider>? _onlinestreamProvidersCache;
@@ -530,7 +532,7 @@ class SeanimeRepository {
             (nakamaLibData?['mainFileCount'] as num?)?.toInt() ??
             0;
         // Only include entries that actually have local files downloaded!
-        if (mainFiles > 0 || (libData != null && libData.isNotEmpty)) {
+        if (mainFiles > 0) {
           final entryMap = Map<String, dynamic>.from(entry);
           if (listStatus != null && (entryMap['status'] == null || entryMap['status'] == '')) {
             entryMap['status'] = listStatus;
@@ -1454,7 +1456,11 @@ class SeanimeRepository {
     }
   }
 
-  Future<bool> scanLibrary({bool enhanced = true, bool ensureDefaultIfEmpty = false}) async {
+  Future<bool> scanLibrary({
+    bool enhanced = true,
+    bool ensureDefaultIfEmpty = false,
+    Map<String, String>? folderTypes,
+  }) async {
     try {
       final settings = await getServerSettings();
       final librarySettings = settings?['library'] as Map<String, dynamic>?;
@@ -1468,12 +1474,17 @@ class SeanimeRepository {
         await patchServerSetting('library.libraryPath', defaultDir.path);
       }
 
+      final payload = <String, dynamic>{
+        'enhanced': enhanced,
+        'enhanceWithOfflineDatabase': true,
+      };
+      if (folderTypes != null) {
+        payload['folderTypes'] = folderTypes;
+      }
+
       final response = await _apiClient.post(
         ApiEndpoints.libraryScan,
-        data: {
-          'enhanced': enhanced,
-          'enhanceWithOfflineDatabase': true,
-        },
+        data: payload,
         options: Options(
           receiveTimeout: const Duration(minutes: 5),
           sendTimeout: const Duration(minutes: 2),
@@ -2410,7 +2421,26 @@ class SeanimeRepository {
   // ================= Online Streaming =================
 
   Future<List<OnlinestreamProvider>> getOnlinestreamProviders() async {
+    const defaultUniversalProvider = OnlinestreamProvider(
+      id: 'aniting-universal',
+      name: 'Aniting Universal',
+      lang: 'multi',
+      supportsDub: true,
+      episodeServers: [
+        'Auto',
+        'Server HD [SUB]',
+        'Server 1 [Latino]',
+        'Server 1 [Castellano]',
+        'Server 1 [Sub]',
+        'Server 2 [Latino]',
+        'Server 2 [Sub]',
+      ],
+    );
+
     if (_onlinestreamProvidersCache != null && _onlinestreamProvidersCache!.isNotEmpty) {
+      if (!_onlinestreamProvidersCache!.any((p) => p.id == 'aniting-universal')) {
+        _onlinestreamProvidersCache!.insert(0, defaultUniversalProvider);
+      }
       return _onlinestreamProvidersCache!;
     }
     try {
@@ -2428,6 +2458,9 @@ class SeanimeRepository {
               .whereType<Map<String, dynamic>>()
               .map(OnlinestreamProvider.fromJson)
               .toList();
+          if (!res.any((p) => p.id == 'aniting-universal')) {
+            res.insert(0, defaultUniversalProvider);
+          }
           _onlinestreamProvidersCache = res;
           return res;
         }
@@ -2436,25 +2469,8 @@ class SeanimeRepository {
       debugPrint('Error fetching onlinestream providers: $e');
     }
 
-    // Fallback to getAllExtensions
-    try {
-      final all = await getAllExtensions();
-      final onlinestreamExts = all
-          .where((e) => e.type == 'onlinestream-provider' && !e.disabled)
-          .map((e) => OnlinestreamProvider(
-                id: e.id,
-                name: e.name,
-                lang: e.lang,
-                supportsDub: true,
-              ))
-          .toList();
-      if (onlinestreamExts.isNotEmpty) {
-        _onlinestreamProvidersCache = onlinestreamExts;
-      }
-      return onlinestreamExts;
-    } catch (_) {}
-
-    return _onlinestreamProvidersCache ?? [];
+    _onlinestreamProvidersCache = [defaultUniversalProvider];
+    return _onlinestreamProvidersCache!;
   }
 
   Future<bool> ensureOnlineStreamingEnabled() async {
@@ -2619,6 +2635,19 @@ class SeanimeRepository {
       return _onlinestreamEpisodesCache[cacheKey]!;
     }
 
+    // 1. Direct native Dart resolution for aniting-universal
+    if (provider == 'aniting-universal' || provider.isEmpty) {
+      try {
+        final nativeEps = await _anitingOnlineSource.getEpisodes(mediaId);
+        if (nativeEps.isNotEmpty) {
+          _onlinestreamEpisodesCache[cacheKey] = nativeEps;
+          return nativeEps;
+        }
+      } catch (e) {
+        debugPrint('Error in native AnitingOnlineSource.getEpisodes: $e');
+      }
+    }
+
     Future<List<OnlinestreamEpisode>?> doFetch() async {
       final response = await _apiClient.post(
         ApiEndpoints.onlinestreamEpisodeList,
@@ -2675,6 +2704,16 @@ class SeanimeRepository {
         }
       }
     }
+
+    // Fallback to native Dart source if backend failed
+    try {
+      final fallbackEps = await _anitingOnlineSource.getEpisodes(mediaId);
+      if (fallbackEps.isNotEmpty) {
+        _onlinestreamEpisodesCache[cacheKey] = fallbackEps;
+        return fallbackEps;
+      }
+    } catch (_) {}
+
     return [];
   }
 
@@ -2682,9 +2721,26 @@ class SeanimeRepository {
     required int mediaId,
     required int episodeNumber,
     required String provider,
+    String? title,
     bool dubbed = false,
     bool refresh = false,
   }) async {
+    // 1. Direct native Dart resolution for aniting-universal (bypasses Seanime Goja)
+    if (provider == 'aniting-universal' || provider.isEmpty || provider == 'default') {
+      try {
+        final nativeSources = await _anitingOnlineSource.getSources(
+          mediaId: mediaId,
+          episodeNumber: episodeNumber,
+          title: title,
+        );
+        if (nativeSources.isNotEmpty) {
+          return nativeSources;
+        }
+      } catch (e) {
+        debugPrint('Error in native AnitingOnlineSource.getSources: $e');
+      }
+    }
+
     try {
       final response = await _apiClient.post(
         ApiEndpoints.onlinestreamEpisodeSource,
@@ -2706,7 +2762,7 @@ class SeanimeRepository {
               : data;
         }
         final sources = root?['videoSources'] as List?;
-        if (sources != null) {
+        if (sources != null && sources.isNotEmpty) {
           return sources
               .whereType<Map<String, dynamic>>()
               .map(OnlinestreamVideoSource.fromJson)
@@ -2716,6 +2772,18 @@ class SeanimeRepository {
     } catch (e) {
       debugPrint('Error fetching onlinestream sources: $e');
     }
+
+    // Fallback to native Dart source if Seanime returned empty or 500
+    try {
+      final fallbackSources = await _anitingOnlineSource.getSources(
+        mediaId: mediaId,
+        episodeNumber: episodeNumber,
+      );
+      if (fallbackSources.isNotEmpty) {
+        return fallbackSources;
+      }
+    } catch (_) {}
+
     return [];
   }
 

@@ -14,6 +14,7 @@ class AnimeCard extends ConsumerStatefulWidget {
   final VoidCallback? onTap;
   final double? width;
   final double? height;
+  final Object? heroTag;
 
   const AnimeCard({
     super.key,
@@ -21,6 +22,7 @@ class AnimeCard extends ConsumerStatefulWidget {
     this.onTap,
     this.width,
     this.height,
+    this.heroTag,
   });
 
   @override
@@ -52,6 +54,7 @@ class _AnimeCardState extends ConsumerState<AnimeCard> {
         context,
         mediaId: widget.entry.mediaId,
         initialEntry: widget.entry,
+        heroTag: widget.heroTag,
       );
     }
   }
@@ -130,18 +133,76 @@ class _AnimeCardState extends ConsumerState<AnimeCard> {
                         child: Stack(
                           fit: StackFit.expand,
                           children: [
-                            widget.entry.coverImage != null
-                                ? CachedNetworkImage(
-                                    imageUrl: widget.entry.coverImage!,
-                                    fit: BoxFit.cover,
-                                    memCacheWidth: isCompact ? 220 : 280,
-                                    memCacheHeight: isCompact ? 310 : 390,
-                                    maxWidthDiskCache: 350,
-                                    maxHeightDiskCache: 500,
-                                    placeholder: (context, url) => ColoredBox(
-                                      color: theme.colorScheme.surfaceContainerHighest,
-                                    ),
-                                    errorWidget: (context, url, error) => Container(
+                            if (widget.heroTag != null)
+                              Hero(
+                                tag: widget.heroTag!,
+                                flightShuttleBuilder: (
+                                  flightContext,
+                                  animation,
+                                  flightDirection,
+                                  fromHeroContext,
+                                  toHeroContext,
+                                ) {
+                                  final curved = CurvedAnimation(
+                                    parent: animation,
+                                    curve: Curves.easeInOutCubicEmphasized,
+                                  );
+                                  return FadeTransition(
+                                    opacity: Tween<double>(begin: 0.85, end: 1.0).animate(curved),
+                                    child: toHeroContext.widget,
+                                  );
+                                },
+                                child: widget.entry.coverImage != null
+                                    ? CachedNetworkImage(
+                                        imageUrl: widget.entry.coverImage!,
+                                        fit: BoxFit.cover,
+                                        memCacheWidth: isCompact ? 220 : 280,
+                                        memCacheHeight: isCompact ? 310 : 390,
+                                        maxWidthDiskCache: 350,
+                                        maxHeightDiskCache: 500,
+                                        placeholder: (context, url) => ColoredBox(
+                                          color: theme.colorScheme.surfaceContainerHighest,
+                                        ),
+                                        errorWidget: (context, url, error) => Container(
+                                          color: theme.colorScheme.surfaceContainerHighest,
+                                          child: Icon(
+                                            Icons.movie_rounded,
+                                            color: theme.colorScheme.outline,
+                                            size: isCompact ? 28 : 36,
+                                          ),
+                                        ),
+                                      )
+                                    : Container(
+                                        color: theme.colorScheme.surfaceContainerHighest,
+                                        child: Icon(
+                                          Icons.movie_rounded,
+                                          color: theme.colorScheme.outline,
+                                          size: isCompact ? 28 : 36,
+                                        ),
+                                      ),
+                              )
+                            else
+                              widget.entry.coverImage != null
+                                  ? CachedNetworkImage(
+                                      imageUrl: widget.entry.coverImage!,
+                                      fit: BoxFit.cover,
+                                      memCacheWidth: isCompact ? 220 : 280,
+                                      memCacheHeight: isCompact ? 310 : 390,
+                                      maxWidthDiskCache: 350,
+                                      maxHeightDiskCache: 500,
+                                      placeholder: (context, url) => ColoredBox(
+                                        color: theme.colorScheme.surfaceContainerHighest,
+                                      ),
+                                      errorWidget: (context, url, error) => Container(
+                                        color: theme.colorScheme.surfaceContainerHighest,
+                                        child: Icon(
+                                          Icons.movie_rounded,
+                                          color: theme.colorScheme.outline,
+                                          size: isCompact ? 28 : 36,
+                                        ),
+                                      ),
+                                    )
+                                  : Container(
                                       color: theme.colorScheme.surfaceContainerHighest,
                                       child: Icon(
                                         Icons.movie_rounded,
@@ -149,15 +210,6 @@ class _AnimeCardState extends ConsumerState<AnimeCard> {
                                         size: isCompact ? 28 : 36,
                                       ),
                                     ),
-                                  )
-                                : Container(
-                                    color: theme.colorScheme.surfaceContainerHighest,
-                                    child: Icon(
-                                      Icons.movie_rounded,
-                                      color: theme.colorScheme.outline,
-                                      size: isCompact ? 28 : 36,
-                                    ),
-                                  ),
 
                         // Subtle Top-right Score pill
                         if (showScores && widget.entry.score != null && widget.entry.score! > 0)

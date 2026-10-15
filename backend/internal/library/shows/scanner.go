@@ -30,8 +30,12 @@ func ScanShowDirectories(opts ScannerOptions) ([]*ShowLocalFile, error) {
 
 		hint := "tv"
 		if opts.FolderTypes != nil {
-			if t, ok := opts.FolderTypes[dirPath]; ok && t != "" {
-				hint = t
+			normDir := filepath.ToSlash(filepath.Clean(dirPath))
+			for fPath, fType := range opts.FolderTypes {
+				if filepath.ToSlash(filepath.Clean(fPath)) == normDir && fType != "" {
+					hint = fType
+					break
+				}
 			}
 		}
 

@@ -16,6 +16,7 @@ import (
 	"seanime/internal/util/result"
 	"slices"
 	"strconv"
+	"strings"
 
 	"github.com/labstack/echo/v4"
 	"github.com/samber/lo"
@@ -286,11 +287,23 @@ func (h *Handler) HandleFetchAnimeEntrySuggestions(c echo.Context) error {
 	}
 
 	// Filter out local files that are already matched
-	selectedLfs = lo.Filter(selectedLfs, func(item *anime.LocalFile, _ int) bool {
+	unmatchedLfs := lo.Filter(selectedLfs, func(item *anime.LocalFile, _ int) bool {
 		return item.MediaId == 0
 	})
 
-	title := selectedLfs[0].GetParsedTitle()
+	var title string
+	if len(unmatchedLfs) > 0 {
+		title = unmatchedLfs[0].GetParsedTitle()
+	} else if len(selectedLfs) > 0 {
+		title = selectedLfs[0].GetParsedTitle()
+	}
+	if strings.TrimSpace(title) == "" {
+		title = filepath.Base(b.Dir)
+	}
+	title = strings.TrimSpace(title)
+	if title == "" {
+		return h.RespondWithData(c, make([]*anilist.BaseAnime, 0))
+	}
 
 	h.App.Logger.Info().Str("title", title).Msg("handlers: Fetching anime suggestions")
 

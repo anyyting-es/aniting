@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:g1455/g1455.dart';
+import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:url_launcher/url_launcher_string.dart';
@@ -168,10 +169,21 @@ class DesktopActionBar extends ConsumerWidget {
 
     return Row(
       children: [
-        // Expanded Reactive Floating Play Button
-        _HoverPlayButton(
-          label: playLabel,
-          onTap: isTmdb
+        // Expanded Reactive Play Button with M3 Expressive motion & morphing
+        M3EButton.icon(
+          style: M3EButtonStyle.filled,
+          size: M3EButtonSize.sm,
+          shape: M3EButtonShape.round,
+          icon: Icon(AppIcons.play(iconPack), size: 18),
+          label: Text(
+            playLabel,
+            style: const TextStyle(
+              fontSize: 13.5,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.2,
+            ),
+          ),
+          onPressed: isTmdb
               ? () {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -188,9 +200,8 @@ class DesktopActionBar extends ConsumerWidget {
                   );
                 }
               : onPlayNext,
-          icon: AppIcons.play(iconPack),
         ),
-        const SizedBox(width: 14),
+        const SizedBox(width: 10),
 
         // Edit Entry Pencil Button (GlassMenuAnchor with fluid detachment)
         GlassMenuAnchor(
@@ -252,68 +263,102 @@ class DesktopActionBar extends ConsumerWidget {
               ),
           ],
           builder: (context, controller) {
-            return _HoverFloatingIconButton(
+            return M3EIconButton(
               tooltip: isTmdb ? l10n.editDetails : l10n.editInAnilist,
-              icon: AppIcons.edit(iconPack),
-              onTap: controller.open,
+              icon: Icon(AppIcons.edit(iconPack), size: 18),
+              variant: M3EIconButtonVariant.standard,
+              size: M3EIconButtonSize.sm,
+              onPressed: controller.open,
             );
           },
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 6),
 
-        // Share Button (Floating icon)
-        _HoverFloatingIconButton(
+        // Share Button (M3E Icon Button)
+        M3EIconButton(
           tooltip: l10n.share,
-          icon: AppIcons.share(iconPack),
-          onTap: () => _shareAnime(context, title, l10n),
+          icon: Icon(AppIcons.share(iconPack), size: 18),
+          variant: M3EIconButtonVariant.standard,
+          size: M3EIconButtonSize.sm,
+          onPressed: () => _shareAnime(context, title, l10n),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 6),
 
-        // Watch Trailer Button (Floating icon)
+        // Watch Trailer Button (M3E Icon Button)
         if (hasTrailer) ...[
-          _HoverFloatingIconButton(
+          M3EIconButton(
             tooltip: l10n.watchTrailer,
-            icon: AppIcons.video(iconPack),
-            onTap: _launchTrailer,
+            icon: Icon(AppIcons.video(iconPack), size: 18),
+            variant: M3EIconButtonVariant.standard,
+            size: M3EIconButtonSize.sm,
+            onPressed: _launchTrailer,
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 6),
         ],
 
         // Download Button (Torrents modal - Anime only)
         if (!isTmdb && onDownload != null) ...[
-          _HoverFloatingIconButton(
+          M3EIconButton(
             tooltip: l10n.downloadWithTorrentClient,
-            icon: Icons.download_rounded,
-            onTap: onDownload!,
+            icon: const Icon(Icons.download_rounded, size: 20),
+            variant: M3EIconButtonVariant.standard,
+            size: M3EIconButtonSize.sm,
+            onPressed: onDownload!,
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 6),
         ],
 
         // External Link (TMDB)
         if (isTmdb) ...[
-          _HoverFloatingIconButton(
-            tooltip: 'The Movie Database (TMDB)',
-            icon: Icons.open_in_new_rounded,
-            onTap: () => _launchTmdb(mediaId),
-          ),
-          const SizedBox(width: 12),
-        ] else ...[
-          // AniList External Tracker Link (Rounded icon only, clean, floating, no background/borders)
-          _HoverBrandIcon(
-            assetPath: 'assets/icons/AniList_logo.png',
-            tooltip: l10n.viewOnAnilist,
-            onTap: () => _launchAnilist(mediaId),
-          ),
-          const SizedBox(width: 12),
-
-          // MAL External Tracker Link (Rounded icon only, clean, floating, no background/borders)
-          if (idMal != null) ...[
-            _HoverBrandIcon(
-              assetPath: 'assets/icons/MyAnimeList_Logo.png',
-              tooltip: l10n.viewOnMal,
-              onTap: () => _launchMal(idMal!),
+          Tooltip(
+            message: 'The Movie Database (TMDB)',
+            child: M3EIconButton(
+              icon: const Icon(Icons.open_in_new_rounded, size: 18),
+              variant: M3EIconButtonVariant.standard,
+              size: M3EIconButtonSize.sm,
+              onPressed: () => _launchTmdb(mediaId),
             ),
-            const SizedBox(width: 12),
+          ),
+          const SizedBox(width: 6),
+        ] else ...[
+          // AniList External Tracker Link (M3E Icon Button)
+          Tooltip(
+            message: l10n.viewOnAnilist,
+            child: M3EIconButton(
+              icon: ClipOval(
+                child: Image.asset(
+                  'assets/icons/AniList_logo.png',
+                  width: 20,
+                  height: 20,
+                  fit: BoxFit.contain,
+                ),
+              ),
+              variant: M3EIconButtonVariant.standard,
+              size: M3EIconButtonSize.sm,
+              onPressed: () => _launchAnilist(mediaId),
+            ),
+          ),
+          const SizedBox(width: 6),
+
+          // MAL External Tracker Link (M3E Icon Button)
+          if (idMal != null) ...[
+            Tooltip(
+              message: l10n.viewOnMal,
+              child: M3EIconButton(
+                icon: ClipOval(
+                  child: Image.asset(
+                    'assets/icons/MyAnimeList_Logo.png',
+                    width: 20,
+                    height: 20,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+                variant: M3EIconButtonVariant.standard,
+                size: M3EIconButtonSize.sm,
+                onPressed: () => _launchMal(idMal!),
+              ),
+            ),
+            const SizedBox(width: 6),
           ],
         ],
 
@@ -370,228 +415,6 @@ class DesktopActionBar extends ConsumerWidget {
           ),
         ],
       ],
-    );
-  }
-}
-
-class _HoverPlayButton extends StatefulWidget {
-  final String label;
-  final VoidCallback onTap;
-  final IconData icon;
-
-  const _HoverPlayButton({
-    required this.label,
-    required this.onTap,
-    this.icon = Icons.play_arrow_rounded,
-  });
-
-  @override
-  State<_HoverPlayButton> createState() => _HoverPlayButtonState();
-}
-
-class _HoverPlayButtonState extends State<_HoverPlayButton> {
-  bool _isHovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: AnimatedScale(
-        scale: _isHovered ? 1.025 : 1.0,
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOutCubic,
-        child: Material(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(24),
-          child: InkWell(
-            onTap: widget.onTap,
-            borderRadius: BorderRadius.circular(24),
-            splashColor: theme.colorScheme.onPrimary.withValues(alpha: 0.15),
-            highlightColor: theme.colorScheme.onPrimary.withValues(alpha: 0.08),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              curve: Curves.easeOutCubic,
-              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 10),
-              decoration: BoxDecoration(
-                color: _isHovered
-                    ? theme.colorScheme.primary.withValues(alpha: 0.90)
-                    : theme.colorScheme.primary,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: theme.colorScheme.primary.withValues(alpha: _isHovered ? 0.35 : 0.20),
-                    blurRadius: _isHovered ? 10 : 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    widget.icon,
-                    color: theme.colorScheme.onPrimary,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    widget.label,
-                    style: TextStyle(
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.2,
-                      color: theme.colorScheme.onPrimary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _HoverFloatingIconButton extends StatefulWidget {
-  final String tooltip;
-  final IconData icon;
-  final VoidCallback onTap;
-
-  const _HoverFloatingIconButton({
-    required this.tooltip,
-    required this.icon,
-    required this.onTap,
-  });
-
-  @override
-  State<_HoverFloatingIconButton> createState() => _HoverFloatingIconButtonState();
-}
-
-class _HoverFloatingIconButtonState extends State<_HoverFloatingIconButton> {
-  bool _isHovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    final defaultIconColor = isDark
-        ? (_isHovered ? Colors.white : Colors.white70)
-        : (_isHovered ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant);
-
-    return Tooltip(
-      message: widget.tooltip,
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        onEnter: (_) => setState(() => _isHovered = true),
-        onExit: (_) => setState(() => _isHovered = false),
-        child: AnimatedScale(
-          scale: _isHovered ? 1.10 : 1.0,
-          duration: const Duration(milliseconds: 180),
-          curve: Curves.easeOutCubic,
-          child: Material(
-            color: Colors.transparent,
-            shape: const CircleBorder(),
-            clipBehavior: Clip.hardEdge,
-            child: InkWell(
-              onTap: widget.onTap,
-              customBorder: const CircleBorder(),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
-                curve: Curves.easeOutCubic,
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: _isHovered
-                      ? (isDark
-                          ? Colors.white.withValues(alpha: 0.12)
-                          : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5))
-                      : Colors.transparent,
-                ),
-                child: Icon(
-                  widget.icon,
-                  color: defaultIconColor,
-                  size: 20,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _HoverBrandIcon extends StatefulWidget {
-  final String assetPath;
-  final String tooltip;
-  final VoidCallback onTap;
-
-  const _HoverBrandIcon({
-    required this.assetPath,
-    required this.tooltip,
-    required this.onTap,
-  });
-
-  @override
-  State<_HoverBrandIcon> createState() => _HoverBrandIconState();
-}
-
-class _HoverBrandIconState extends State<_HoverBrandIcon> {
-  bool _isHovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    return Tooltip(
-      message: widget.tooltip,
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        onEnter: (_) => setState(() => _isHovered = true),
-        onExit: (_) => setState(() => _isHovered = false),
-        child: AnimatedScale(
-          scale: _isHovered ? 1.12 : 1.0,
-          duration: const Duration(milliseconds: 180),
-          curve: Curves.easeOutCubic,
-          child: Material(
-            color: Colors.transparent,
-            shape: const CircleBorder(),
-            clipBehavior: Clip.hardEdge,
-            child: InkWell(
-              onTap: widget.onTap,
-              customBorder: const CircleBorder(),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
-                curve: Curves.easeOutCubic,
-                padding: const EdgeInsets.all(7),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: _isHovered
-                      ? (isDark
-                          ? Colors.white.withValues(alpha: 0.12)
-                          : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5))
-                      : Colors.transparent,
-                ),
-                child: ClipOval(
-                  child: Image.asset(
-                    widget.assetPath,
-                    width: 22,
-                    height: 22,
-                    fit: BoxFit.contain,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

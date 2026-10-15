@@ -6,6 +6,95 @@
 > - **ALWAYS** summarize improvements at a high, user-facing level with clear, direct bullet points (e.g., *"Mejoras de UI y navegación en el calendario de emisión"*, *"Nueva pantalla y gestión de estado sin conexión"*, *"Optimizaciones en la caché de seguir viendo"*).
 > - Keep it punchy, professional, and easy to skim.
 
+## 7.45. Fuentes In-App Nativas y Unificación Multi-Audio / Multi-Subtítulos (2026-10-15)
+- **Fuentes Nativas en Dart (`lib/data/sources/`)**:
+  - Migración a fuentes in-app nativas en Flutter (Online, Torrents, Manga y Series) con clientes directos de alto rendimiento.
+  - Resolución inteligente en paralelo: enlaces 1080p en múltiples servidores con extracción en el Edge.
+- **Unificación Multi-Audio y Multi-Subtítulos en el Reproductor**:
+  - Integración completa de pistas de audio (Español Latino, Español Castellano, Inglés y Japonés original) visibles directamente en los ajustes del reproductor con cambio transparente preservando la posición.
+  - Selección de subtítulos suaves (soft subtitles en más de 15 idiomas) sin recarga de video.
+  - Insignias visuales de idioma y calidad en el selector de fuentes y servidores.
+- **Verificación Completa**:
+  - 100% de la suite de pruebas aprobada (250 de 250 pruebas) y 0 problemas en `flutter analyze lib/`.
+
+---
+
+## 7.44. Consolidación de Proveedor Único Universal y Nueva Experiencia de Extensiones (2026-10-15)
+- **Proveedor Único Oficial Aniting Universal**:
+  - Unificación completa de todas las fuentes de transmisión en línea bajo el proveedor oficial `aniting-universal`.
+  - Soporte integrado de transmisiones de alta calidad 1080p, selección multi-audio (Latino, Castellano, Japonés e Inglés) y multi-subtítulos sincronizados.
+  - Retiro y purga de scripts y extensiones obsoletas en el repositorio central.
+- **Rediseño Esencial de la Pantalla de Extensiones**:
+  - Interfaz simplificada y categorizada en tres secciones clave: Transmisión Online, Torrents y Manga.
+  - Eliminación de configuraciones complejas de URLs manuales y cuadros de diálogo redundantes.
+  - Tarjetas unificadas con control de activación, actualización y gestión simplificada con diseño Material 3 Expressive.
+- **Verificación Completa**:
+  - 100% de la suite de pruebas aprobada (246 de 246 pruebas) y 0 advertencias en el análisis estático.
+
+---
+
+## 7.43. Limpieza y Consolidación de la Arquitectura de Episodios (2026-10-14)
+- **Consolidación Universal de Episodios**:
+  - Migración completa de vistas de detalle en escritorio, móvil y TV a la arquitectura universal (`EpisodesView`), unificando la navegación de episodios para series y películas.
+  - Eliminación de archivos y widgets redundantes de TMDB (`tmdb_episodes_view.dart`, `tmdb_episode_card.dart`, `tmdb_season_selector.dart`, `tmdb_season_posters_view.dart`).
+- **Verificación y Calidad de Código**:
+  - 100% de pruebas aprobadas (246 de 246) y cero advertencias en el analizador estático de Flutter.
+
+---
+
+## 7.42. Estabilidad de Red, Resiliencia Offline y Refinamiento Responsivo (2026-10-14)
+- **Modo Desconectado y Manejo Robusto de Red**:
+  - Resiliencia completa en proveedores de datos (`loadAnimeWithCacheAndSwr`, `loadMangaWithCacheAndSwr`) devolviendo inmediatamente la biblioteca local o caché en memoria sin peticiones de red fantasma ni bloqueos cuando el servidor está detenido.
+- **Optimización de Layout en Mis Listas para Escritorio**:
+  - Adaptabilidad fluida del buscador superior mediante restricciones responsivas flexibles para prevenir desbordamientos visuales en resoluciones compactas de escritorio.
+- **Saneamiento y Cobertura Integral de Pruebas**:
+  - Cobertura y aprobación al 100% (246 de 246 pruebas pasando) sincronizando las expectativas del reproductor moderno, hojas de cristal líquido (`GlassHost`), selector de torrents por lotes y estados vacíos.
+
+---
+
+## 7.41. Arquitectura Unificada de Episodios y Restauración de Titlebar Nativo (2026-10-14)
+- **Nueva Arquitectura Universal de Episodios**:
+  - Modelo y controlador agnósticos de medios (`EpisodeItem`, `EpisodesNotifier`, `EpisodesView`) unificando la lógica de reproducción, progreso y visualización para Anime, Series de TV y Películas.
+  - Separación limpia de extensiones y proveedores: control automático para fuentes en línea y trackers de torrents según el tipo de catálogo (Anime vs TMDB).
+  - Componente canónico de episodios con soporte dual para vista en cuadrícula (16:9) y lista compacta, filtros de estado y paginación rápida.
+- **Barra de Título Nativa del Sistema en Escritorio**:
+  - Restauración de la barra de título nativa del sistema operativo en Linux/Wayland (GNOME/KDE), Windows y macOS con soporte completo de botones de control y snapping.
+  - Reversión de la barra de título personalizada para máxima compatibilidad con el entorno de escritorio.
+  - Restablecimiento de los controles superiores del reproductor en su altura estándar y espaciosa de 44px.
+
+---
+
+## 7.39. Adopción de Material 3 Expressive y Refinamiento de Vidrio Líquido (2026-10-14)
+- **Controles Expresivos Material 3**:
+  - Botones principales de reproducción, acciones flotantes y barra de herramientas con animaciones elásticas y respuesta háptica visual.
+  - Integración armónica de `M3EButton`, `M3EIconButton` y `M3ESwitch` preservando el diseño de cristal líquido existente.
+- **Sincronización Dinámica de Vidrio Líquido (`g1455`)**:
+  - Corrección en la reactividad de `GlassHost`: ahora propaga explícitamente el acabado óptico y el color de fondo para alternar de inmediato entre temas Claro, Oscuro y OLED.
+- **Tema Oscuro Más Profundo (Charcoal Black)**:
+  - Fondo del tema oscuro ajustado a un negro carbón profundo (`#0F0F14`) con superficies en `#14141B`, conservando el negro absoluto (`#000000`) exclusivo para OLED.
+
+---
+
+## 7.38. Depuración Limpia de Carpetas Locales y Corrección de Descargas (2026-10-13)
+- **Eliminación Total de Archivos al Desvincular Carpetas**:
+  - Al remover un directorio local, todos sus archivos y entradas asociadas se purgan de la base de datos y de la colección local simulada.
+- **Filtro Riguroso para Descargas**:
+  - La sección de descargas en el inicio ahora exige archivos locales válidos en el disco, evitando entradas fantasma sin contenido descargado.
+- **Limpieza Inmediata de Cachés**:
+  - Invalidación automática de las colecciones y sugerencias en memoria al desvincular directorios para mantener el feed sincronizado al instante.
+
+---
+
+## 7.37. Escáner Híbrido TMDB y Auto-Emparejamiento de Series (2026-10-13)
+- **Aislamiento Estricto de Carpetas TMDB vs AniList**:
+  - El escáner de anime ahora omite carpetas configuradas como Series TV o Películas para evitar consultas innecesarias y límites de peticiones (rate limiting) en AniList.
+- **Auto-Emparejamiento Inteligente con TMDB**:
+  - Al escanear carpetas de series o películas, el sistema busca automáticamente las coincidencias en TMDB y vincula las series con sus pósters y temporadas.
+- **Estabilidad en Sugerencias y Emparejamiento Manual**:
+  - Corrección de fallos inesperados en el servidor al consultar sugerencias de títulos en carpetas locales ya vinculadas o vacías.
+
+---
+
 ## 7.36. Botones de Acción Sólidos y Flotantes en Detalles (2026-10-13)
 - **Fondo Sólido para Reproducción**:
   - Botón principal de reproducción y continuar episodio actualizado con fondo sólido del tema para máxima claridad y contraste.

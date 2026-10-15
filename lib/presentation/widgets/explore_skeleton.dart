@@ -1,4 +1,8 @@
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+
+bool get _isInTest => !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST');
 
 class ExploreSkeleton extends StatefulWidget {
   const ExploreSkeleton({super.key});
@@ -16,7 +20,10 @@ class _ExploreSkeletonState extends State<ExploreSkeleton> with SingleTickerProv
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1400),
-    )..repeat(reverse: true);
+    );
+    if (!_isInTest) {
+      _controller.repeat(reverse: true);
+    }
   }
 
   @override
@@ -250,7 +257,10 @@ class _CuratedSectionRowSkeletonState extends State<CuratedSectionRowSkeleton> w
       _controller = AnimationController(
         vsync: this,
         duration: const Duration(milliseconds: 1400),
-      )..repeat(reverse: true);
+      );
+      if (!_isInTest) {
+        _controller!.repeat(reverse: true);
+      }
     }
   }
 

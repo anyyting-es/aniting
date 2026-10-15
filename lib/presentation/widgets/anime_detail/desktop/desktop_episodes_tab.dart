@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/data/models/anime_details.dart';
@@ -78,7 +79,7 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
   bool _isGridView = true;
   bool _isSortAscending = true;
   int _currentPage = 0;
-  static const int _episodesPerPage = 30;
+  static const int _episodesPerPage = 20;
 
   LibraryEntryDetails? _libraryEntry;
   bool _isLoadingLocal = false;
@@ -533,7 +534,10 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
             runSpacing: 10,
             alignment: WrapAlignment.center,
             children: [
-              FilledButton.icon(
+              M3EButton.icon(
+                style: M3EButtonStyle.filled,
+                size: M3EButtonSize.sm,
+                shape: M3EButtonShape.round,
                 onPressed: () {
                   widget.onToggleLocalMode();
                   widget.onTabChanged(AnimeDetailTab.online);
@@ -541,7 +545,10 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
                 icon: const Icon(Icons.public, size: 16),
                 label: Text(l10n.watchOnlineStream),
               ),
-              OutlinedButton.icon(
+              M3EButton.icon(
+                style: M3EButtonStyle.outlined,
+                size: M3EButtonSize.sm,
+                shape: M3EButtonShape.round,
                 onPressed: () {
                   widget.onToggleLocalMode();
                   widget.onTabChanged(AnimeDetailTab.torrent);
@@ -549,7 +556,10 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
                 icon: const Icon(Icons.cloud_download_rounded, size: 16),
                 label: Text(l10n.searchTorrents),
               ),
-              OutlinedButton.icon(
+              M3EButton.icon(
+                style: M3EButtonStyle.outlined,
+                size: M3EButtonSize.sm,
+                shape: M3EButtonShape.round,
                 onPressed: _scanAndRefreshLocal,
                 icon: const Icon(Icons.sync_rounded, size: 16),
                 label: Text(l10n.scanLocalFolder),
@@ -695,28 +705,12 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
                 ),
               ),
               const SizedBox(width: 6),
-              Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.08)
-                      : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
-                  border: Border.all(
-                    color: isDark
-                        ? Colors.white.withValues(alpha: 0.16)
-                        : theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
-                    width: 0.8,
-                  ),
-                ),
-                child: IconButton(
-                  style: IconButton.styleFrom(
-                    visualDensity: VisualDensity.compact,
-                    padding: const EdgeInsets.all(6),
-                  ),
-                  tooltip: l10n.scanLocalFolder,
-                  icon: const Icon(Icons.sync_rounded, size: 18),
-                  onPressed: _scanAndRefreshLocal,
-                ),
+              M3EIconButton(
+                variant: M3EIconButtonVariant.tonal,
+                size: M3EIconButtonSize.xs,
+                tooltip: l10n.scanLocalFolder,
+                icon: const Icon(Icons.sync_rounded, size: 17),
+                onPressed: _scanAndRefreshLocal,
               ),
             ] else if (widget.currentTab == AnimeDetailTab.online && widget.providers.isNotEmpty) ...[
               GlassMenuAnchor(
@@ -767,102 +761,54 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
               ),
               if (widget.selectedProvider?.supportsDub ?? false) ...[
                 const SizedBox(width: 6),
-                Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: isDark
-                        ? Colors.white.withValues(alpha: 0.08)
-                        : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
-                    border: Border.all(
-                      color: isDark
-                          ? Colors.white.withValues(alpha: 0.16)
-                          : theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
-                      width: 0.8,
-                    ),
+                M3EIconButton(
+                  variant: M3EIconButtonVariant.tonal,
+                  size: M3EIconButtonSize.xs,
+                  icon: Icon(
+                    widget.isDubbed ? AppIcons.voice(iconPack) : AppIcons.subtitles(iconPack),
+                    size: 16,
+                    color: widget.isDubbed
+                        ? (isDark ? Colors.white : theme.colorScheme.primary)
+                        : (isDark ? Colors.white70 : Colors.black87),
                   ),
-                  child: IconButton(
-                    style: IconButton.styleFrom(
-                      visualDensity: VisualDensity.compact,
-                      padding: const EdgeInsets.all(6),
-                    ),
-                    icon: Icon(
-                      widget.isDubbed ? AppIcons.voice(iconPack) : AppIcons.subtitles(iconPack),
-                      size: 17,
-                      color: widget.isDubbed
-                          ? (isDark ? Colors.white : theme.colorScheme.primary)
-                          : (isDark ? Colors.white70 : Colors.black87),
-                    ),
-                    tooltip: widget.isDubbed ? l10n.audioDubbed : l10n.audioSubtitled,
-                    onPressed: widget.onToggleDubbed,
-                  ),
+                  tooltip: widget.isDubbed ? l10n.audioDubbed : l10n.audioSubtitled,
+                  onPressed: widget.onToggleDubbed,
                 ),
               ],
               const SizedBox(width: 6),
             ],
 
-            // Toggle Grid / List View
-            Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.08)
-                    : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
-                border: Border.all(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.16)
-                      : theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
-                  width: 0.8,
-                ),
-              ),
-              child: IconButton(
-                style: IconButton.styleFrom(
-                  visualDensity: VisualDensity.compact,
-                  padding: const EdgeInsets.all(6),
-                ),
-                onPressed: () => setState(() => _isGridView = !_isGridView),
-                tooltip: _isGridView
-                    ? l10n.switchToList
-                    : l10n.switchToGrid,
-                icon: Icon(
-                  _isGridView ? AppIcons.list(iconPack) : AppIcons.grid(iconPack),
-                  size: 17,
-                  color: isDark ? Colors.white70 : Colors.black87,
-                ),
+            // Toggle Grid / List View (Material 3 Expressive)
+            M3EIconButton(
+              variant: M3EIconButtonVariant.tonal,
+              size: M3EIconButtonSize.xs,
+              onPressed: () => setState(() => _isGridView = !_isGridView),
+              tooltip: _isGridView
+                  ? l10n.switchToList
+                  : l10n.switchToGrid,
+              icon: Icon(
+                _isGridView ? AppIcons.list(iconPack) : AppIcons.grid(iconPack),
+                size: 16,
+                color: isDark ? Colors.white70 : Colors.black87,
               ),
             ),
             const SizedBox(width: 6),
 
-            // Toggle Sort Ascending / Descending
-            Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.08)
-                    : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
-                border: Border.all(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.16)
-                      : theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
-                  width: 0.8,
-                ),
-              ),
-              child: IconButton(
-                style: IconButton.styleFrom(
-                  visualDensity: VisualDensity.compact,
-                  padding: const EdgeInsets.all(6),
-                ),
-                onPressed: () => setState(() {
-                  _isSortAscending = !_isSortAscending;
-                  _currentPage = 0;
-                }),
-                tooltip: _isSortAscending
-                    ? l10n.orderAsc
-                    : l10n.orderDesc,
-                icon: Icon(
-                  AppIcons.swapVert(iconPack),
-                  size: 17,
-                  color: isDark ? Colors.white70 : Colors.black87,
-                ),
+            // Toggle Sort Ascending / Descending (Material 3 Expressive)
+            M3EIconButton(
+              variant: M3EIconButtonVariant.tonal,
+              size: M3EIconButtonSize.xs,
+              onPressed: () => setState(() {
+                _isSortAscending = !_isSortAscending;
+                _currentPage = 0;
+              }),
+              tooltip: _isSortAscending
+                  ? l10n.orderAsc
+                  : l10n.orderDesc,
+              icon: Icon(
+                AppIcons.swapVert(iconPack),
+                size: 16,
+                color: isDark ? Colors.white70 : Colors.black87,
               ),
             ),
           ],

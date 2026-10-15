@@ -972,6 +972,14 @@ class SpanishTranslations implements AppTranslations {
   @override
   String get availableUpdatesCount => 'actualización(es) disponibles!';
   @override
+  String get enabled => 'Activado';
+  @override
+  String get notInstalled => 'No instalado';
+  @override
+  String get officialBadge => 'Oficial';
+  @override
+  String get checkUpdates => 'Buscar actualizaciones';
+  @override
   String get repoConfigTitle => 'Configuración de Repositorio';
   @override
   String get repoUrlLabel => 'URL del Repositorio Marketplace (JSON)';

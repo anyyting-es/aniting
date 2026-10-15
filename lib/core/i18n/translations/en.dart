@@ -970,6 +970,14 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get availableUpdatesCount => 'available update(s) found!';
   @override
+  String get enabled => 'Enabled';
+  @override
+  String get notInstalled => 'Not installed';
+  @override
+  String get officialBadge => 'Official';
+  @override
+  String get checkUpdates => 'Check for updates';
+  @override
   String get repoConfigTitle => 'Repository Configuration';
   @override
   String get repoUrlLabel => 'Marketplace Repository URL (JSON)';

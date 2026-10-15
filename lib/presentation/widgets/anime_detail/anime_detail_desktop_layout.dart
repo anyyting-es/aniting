@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
@@ -22,7 +23,7 @@ import 'desktop/desktop_hero_banner.dart';
 import 'desktop/desktop_recommendations_tab.dart';
 import 'desktop/desktop_relations_tab.dart';
 import 'desktop/desktop_sidebar.dart';
-import 'tmdb/tmdb_episodes_view.dart';
+import 'package:seanime_app/presentation/widgets/episodes/episodes_view.dart';
 
 class AnimeDetailDesktopLayout extends ConsumerStatefulWidget {
   final int mediaId;
@@ -34,6 +35,7 @@ class AnimeDetailDesktopLayout extends ConsumerStatefulWidget {
   final bool isLocalMode;
   final bool hasLocalFiles;
   final AnimeDetailTab currentTab;
+  final Object? heroTag;
 
   final VoidCallback onToggleLocalMode;
   final ValueChanged<AnimeDetailTab> onTabChanged;
@@ -50,6 +52,7 @@ class AnimeDetailDesktopLayout extends ConsumerStatefulWidget {
     super.key,
     required this.mediaId,
     this.initialEntry,
+    this.heroTag,
     required this.details,
     required this.aniZipData,
     required this.isLoading,
@@ -352,7 +355,6 @@ class _AnimeDetailDesktopLayoutState
     final torrentEnabled = streamingPrefs.torrentStreamingEnabled;
     final onlineEnabled = streamingPrefs.onlineStreamingEnabled;
     final isTmdb = widget.details?.isTmdb ?? widget.initialEntry?.isTmdb ?? false;
-    final isMovie = (widget.details?.format == 'MOVIE') || (widget.initialEntry?.format == 'MOVIE');
 
     final title = widget.details?.displayTitle(titleLang) ??
         widget.initialEntry?.displayTitle(titleLang) ??
@@ -466,19 +468,16 @@ class _AnimeDetailDesktopLayoutState
               child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Back button
+                    // Back button (Material 3 Expressive)
                     Padding(
                       padding: const EdgeInsets.only(top: 42, bottom: 24),
-                      child: IconButton(
-                        style: IconButton.styleFrom(
-                          padding: const EdgeInsets.all(8),
-                          hoverColor: isDark ? Colors.white.withValues(alpha: 0.12) : theme.colorScheme.surfaceContainerHighest,
-                          highlightColor: isDark ? Colors.white.withValues(alpha: 0.18) : theme.colorScheme.surfaceContainerHigh,
-                        ),
+                      child: M3EIconButton(
+                        variant: M3EIconButtonVariant.standard,
+                        size: M3EIconButtonSize.sm,
                         icon: Icon(
                           AppIcons.arrowLeft(iconPack),
                           color: bannerUrl != null ? Colors.white : (isDark ? Colors.white : theme.colorScheme.onSurface),
-                          size: 22,
+                          size: 20,
                           shadows: bannerUrl != null
                               ? const [
                                   Shadow(
@@ -503,7 +502,9 @@ class _AnimeDetailDesktopLayoutState
                       children: [
                         // Left: Cover Poster Only (Clean, no bottom metadata pushing layout down)
                         DesktopSidebar(
+                          mediaId: widget.mediaId,
                           coverUrl: coverUrl,
+                          heroTag: widget.heroTag,
                         ),
 
                         const SizedBox(width: 32),
@@ -566,11 +567,11 @@ class _AnimeDetailDesktopLayoutState
 
                     // ─── Episodes Section (Full Width, without redundant header title) ───
                     if (isTmdb)
-                      TmdbEpisodesView(
-                        tmdbId: widget.mediaId,
-                        isMovie: isMovie,
-                        fallbackCoverImage: coverUrl,
-                        isMobile: false,
+                      EpisodesView(
+                        mediaId: widget.mediaId,
+                        isTmdb: true,
+                        animeDetails: widget.details,
+                        onOpenTorrentSelector: widget.onOpenTorrentSelector,
                       )
                     else
                       DesktopEpisodesTab(

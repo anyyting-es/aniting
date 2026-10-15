@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:seanime_app/core/preferences/layout_mode_provider.dart';
 import 'package:seanime_app/core/theme/custom_route_transitions.dart';
@@ -25,6 +26,7 @@ class AnimeDetailScreen extends ConsumerStatefulWidget {
   final AnimeEntry? initialEntry;
   final bool initialLocalMode;
   final bool? isTmdb;
+  final Object? heroTag;
 
   const AnimeDetailScreen({
     super.key,
@@ -32,6 +34,7 @@ class AnimeDetailScreen extends ConsumerStatefulWidget {
     this.initialEntry,
     this.initialLocalMode = false,
     this.isTmdb,
+    this.heroTag,
   });
 
   /// Opens the AnimeDetailScreen with a smooth, cinematic transition.
@@ -41,6 +44,7 @@ class AnimeDetailScreen extends ConsumerStatefulWidget {
     AnimeEntry? initialEntry,
     bool initialLocalMode = false,
     bool? isTmdb,
+    Object? heroTag,
   }) {
     final resolvedIsTmdb = isTmdb ?? (initialEntry?.isTmdb ?? false);
     return Navigator.push<T>(
@@ -51,6 +55,7 @@ class AnimeDetailScreen extends ConsumerStatefulWidget {
           initialEntry: initialEntry,
           initialLocalMode: initialLocalMode,
           isTmdb: resolvedIsTmdb,
+          heroTag: heroTag,
         ),
       ),
     );
@@ -457,13 +462,18 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
 
     return Theme(
       data: effectiveTheme,
-      child: Builder(
+      child: M3ETheme(
+        data: effectiveTheme.brightness == Brightness.dark
+            ? M3EThemeData.dark(seedColor: effectiveTheme.colorScheme.primary)
+            : M3EThemeData.light(seedColor: effectiveTheme.colorScheme.primary),
+        child: Builder(
         builder: (context) {
           switch (effectiveLayout) {
             case LayoutMode.desktop:
               return AnimeDetailDesktopLayout(
                 mediaId: widget.mediaId,
                 initialEntry: widget.initialEntry,
+                heroTag: widget.heroTag,
                 details: _details,
                 aniZipData: _aniZipData,
                 isLoading: _isLoading,
@@ -505,6 +515,7 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
                 body: AnimeDetailMobileLayout(
                   mediaId: widget.mediaId,
                   initialEntry: widget.initialEntry,
+                  heroTag: widget.heroTag,
                   details: _details,
                   aniZipData: _aniZipData,
                   isLoading: _isLoading,
@@ -523,6 +534,7 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
               );
           }
         },
+      ),
       ),
     );
   }

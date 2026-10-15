@@ -350,49 +350,102 @@ class PlayerSourceSelectorSheet extends ConsumerWidget {
                                   children: [
                                     // Server name and quality
                                     Expanded(
-                                      child: Row(
-                                        children: [
-                                          Text(
-                                            src.server.toUpperCase(),
-                                            style: TextStyle(
-                                              fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
-                                              fontSize: 14,
-                                              letterSpacing: 0.2,
-                                              color: isActive ? theme.colorScheme.primary : Colors.white,
-                                            ),
-                                          ),
-                                          if (hasQuality) ...[
-                                            const SizedBox(width: 8),
-                                            Text(
-                                              src.quality,
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: isActive
-                                                    ? theme.colorScheme.primary.withValues(alpha: 0.85)
-                                                    : Colors.white54,
-                                              ),
-                                            ),
-                                          ],
-                                          if (src.isHls) ...[
-                                            const SizedBox(width: 6),
-                                            Container(
-                                              padding: const EdgeInsets.symmetric(
-                                                  horizontal: 4.5, vertical: 1),
-                                              decoration: BoxDecoration(
-                                                color: Colors.white.withValues(alpha: 0.08),
-                                                borderRadius: BorderRadius.circular(4),
-                                              ),
-                                              child: const Text(
-                                                'HLS',
+                                      child: Builder(
+                                        builder: (context) {
+                                          String serverName = src.server;
+                                          String? audioBadge;
+                                          Color? badgeColor;
+
+                                          if (src.server.contains('[Latino]')) {
+                                            serverName = src.server.replaceAll(' [Latino]', '');
+                                            audioBadge = 'LATINO';
+                                            badgeColor = const Color(0xFF10B981);
+                                          } else if (src.server.contains('[Castellano]')) {
+                                            serverName = src.server.replaceAll(' [Castellano]', '');
+                                            audioBadge = 'CASTELLANO';
+                                            badgeColor = const Color(0xFFF59E0B);
+                                          } else if (src.server.contains('[English Dub]')) {
+                                            serverName = src.server.replaceAll(' [English Dub]', '');
+                                            audioBadge = 'ENGLISH';
+                                            badgeColor = const Color(0xFF3B82F6);
+                                          } else if (src.server.contains('[SUB]')) {
+                                            serverName = src.server.replaceAll(' [SUB]', '');
+                                            audioBadge = 'SUB (MULTI)';
+                                            badgeColor = theme.colorScheme.primary;
+                                          } else if (src.server.contains('[Sub]')) {
+                                            serverName = src.server.replaceAll(' [Sub]', '');
+                                            audioBadge = 'SUB';
+                                            badgeColor = theme.colorScheme.primary;
+                                          }
+
+                                          return Row(
+                                            children: [
+                                              Text(
+                                                serverName.toUpperCase(),
                                                 style: TextStyle(
-                                                  fontSize: 9,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors.white70,
+                                                  fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
+                                                  fontSize: 14,
+                                                  letterSpacing: 0.2,
+                                                  color: isActive ? theme.colorScheme.primary : Colors.white,
                                                 ),
                                               ),
-                                            ),
-                                          ],
-                                        ],
+                                              if (audioBadge != null) ...[
+                                                const SizedBox(width: 8),
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                                                  decoration: BoxDecoration(
+                                                    color: (badgeColor ?? theme.colorScheme.primary).withValues(alpha: 0.18),
+                                                    borderRadius: BorderRadius.circular(5),
+                                                    border: Border.all(
+                                                      color: (badgeColor ?? theme.colorScheme.primary).withValues(alpha: 0.4),
+                                                      width: 0.8,
+                                                    ),
+                                                  ),
+                                                  child: Text(
+                                                    audioBadge,
+                                                    style: TextStyle(
+                                                      fontSize: 10,
+                                                      fontWeight: FontWeight.bold,
+                                                      color: badgeColor ?? theme.colorScheme.primary,
+                                                      letterSpacing: 0.4,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                              if (hasQuality) ...[
+                                                const SizedBox(width: 8),
+                                                Text(
+                                                  src.quality,
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: isActive
+                                                        ? theme.colorScheme.primary.withValues(alpha: 0.85)
+                                                        : Colors.white54,
+                                                  ),
+                                                ),
+                                              ],
+                                              if (src.isHls) ...[
+                                                const SizedBox(width: 6),
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(
+                                                      horizontal: 4.5, vertical: 1),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.white.withValues(alpha: 0.08),
+                                                    borderRadius: BorderRadius.circular(4),
+                                                  ),
+                                                  child: const Text(
+                                                    'HLS',
+                                                    style: TextStyle(
+                                                      fontSize: 9,
+                                                      fontWeight: FontWeight.bold,
+                                                      color: Colors.white70,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ],
+                                          );
+                                        },
                                       ),
                                     ),
                                     // Checkmark for selected item

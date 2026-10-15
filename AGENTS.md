@@ -38,11 +38,17 @@
 6. **Automated Verification**:
    - Run `flutter analyze lib/` before finishing any task to guarantee 0 issues.
 
+7. **Material 3 Expressive (`material_3_expressive`)**:
+   - Prefer `material_3_expressive` widgets (`M3EButton`, `M3EIconButton`, `M3ESwitch`, etc.) for actionable UI controls to leverage spring-driven physics (`motor`), morphing shapes on press, and expressive state layers.
+   - Wrap UI trees with `M3ETheme` using `M3EThemeData.dark(seedColor: ...)` or `.light(...)` to seamlessly propagate dynamic color schemes.
+   - Harmoniously combine with `g1455` liquid glass containers (`GlassCard`, `GlassSegmentedControl`, `GlassMenuAnchor`).
+
 ---
 
 ## 2. Tech Stack & Key Libraries
 
 - **Framework**: Flutter (Dart 3.x) with Material Design 3.
+- **Design System & Motion**: Material 3 Expressive via `material_3_expressive` (spring motion via `motor`, shape morphing, buttons, switches) and liquid glass via `g1455`.
 - **State Management**: `flutter_riverpod` (Providers, Notifiers, StateNotifiers).
 - **Networking**: `dio` (REST API), `web_socket_channel` (real-time server events).
 - **Video Playback**:
@@ -111,9 +117,8 @@ Use this directory to quickly locate any screen, widget, provider, or subsystem:
 | **Desktop Layout** | [`anime_detail_desktop_layout.dart`](file:///home/anthony/Documents/Eris/aniting/lib/presentation/widgets/anime_detail/anime_detail_desktop_layout.dart) | Panoramic hero banner, clean bottom-aligned metadata, tabs |
 | **Mobile Layout** | [`anime_detail_mobile_layout.dart`](file:///home/anthony/Documents/Eris/aniting/lib/presentation/widgets/anime_detail/anime_detail_mobile_layout.dart) | Compact layout with 0 FPS idle scroll parallax |
 | **Desktop Episodes** | [`desktop_episodes_tab.dart`](file:///home/anthony/Documents/Eris/aniting/lib/presentation/widgets/anime_detail/desktop/desktop_episodes_tab.dart) | Episode coordinator, online/torrent/local filters, pagination |
-| **Episode Cards** | [`desktop_episode_grid_card.dart`](file:///home/anthony/Documents/Eris/aniting/lib/presentation/widgets/anime_detail/desktop/desktop_episode_grid_card.dart) / [`desktop_episode_list_card.dart`](file:///home/anthony/Documents/Eris/aniting/lib/presentation/widgets/anime_detail/desktop/desktop_episode_list_card.dart) | 16:9 cards with dimmed watched opacity and progress bar |
-| **TMDB Season View** | [`tmdb_episodes_view.dart`](file:///home/anthony/Documents/Eris/aniting/lib/presentation/widgets/anime_detail/tmdb/tmdb_episodes_view.dart) | TMDB seasons & episodes coordinator with local disk playback |
-| **TMDB Episode Card** | [`tmdb_episode_card.dart`](file:///home/anthony/Documents/Eris/aniting/lib/presentation/widgets/anime_detail/tmdb/tmdb_episode_card.dart) | 16:9 TMDB episode thumbnail with local file badge |
+| **Universal Episodes**| [`episodes_view.dart`](file:///home/anthony/Documents/Eris/aniting/lib/presentation/widgets/episodes/episodes_view.dart) | Universal episodes coordinator for Anime, TMDB Shows & Movies |
+| **Universal Card**     | [`episode_card.dart`](file:///home/anthony/Documents/Eris/aniting/lib/presentation/widgets/episodes/episode_card.dart) | Canonical 16:9 Grid and compact List episode card with continuity |
 
 ### 4.4. Torrent Subsystem & Visor de Torrents
 | Component | Path | Description |
@@ -142,7 +147,16 @@ Use this directory to quickly locate any screen, widget, provider, or subsystem:
 | **Manga Reader** | [`manga_reader_screen.dart`](file:///home/anthony/Documents/Eris/aniting/lib/presentation/screens/manga_reader_screen.dart) | High-performance image viewer (vertical webtoon / paginated) |
 | **Page Memory Keep** | [`manga_keep_alive_page.dart`](file:///home/anthony/Documents/Eris/aniting/lib/presentation/widgets/manga/manga_keep_alive_page.dart) | Preserves offscreen decoded pages without stuttering |
 
-### 4.6. Settings, Theming & UI Utilities
+### 4.6. Native In-App Sources Subsystem
+| Component | Path | Description |
+| :--- | :--- | :--- |
+| **Sources Barrel** | [`sources.dart`](file:///home/anthony/Documents/Eris/aniting/lib/data/sources/sources.dart) | Central exports for all native Dart providers (Online, Torrents, Manga, Shows) |
+| **Aniting Online** | [`aniting_online_source.dart`](file:///home/anthony/Documents/Eris/aniting/lib/data/sources/online/aniting_online_source.dart) | Direct Cloudflare API streaming client (1080p, multi-audio & multi-subs) |
+| **AnimeTosho Feed**| [`animetosho_torrent_source.dart`](file:///home/anthony/Documents/Eris/aniting/lib/data/sources/torrents/animetosho_torrent_source.dart) | Direct AnimeTosho JSON API search client for torrents and batch downloads |
+| **MangaDex Source**| [`mangadex_manga_source.dart`](file:///home/anthony/Documents/Eris/aniting/lib/data/sources/manga/mangadex_manga_source.dart) | Direct MangaDex API chapters & page images reader client |
+| **TMDB Shows**     | [`tmdb_shows_source.dart`](file:///home/anthony/Documents/Eris/aniting/lib/data/sources/shows/tmdb_shows_source.dart) | Direct TMDB client for TV series and movies catalog & seasons |
+
+### 4.7. Settings, Theming & UI Utilities
 | Component | Path | Description |
 | :--- | :--- | :--- |
 | **Settings Screen** | [`settings_screen.dart`](file:///home/anthony/Documents/Eris/aniting/lib/presentation/screens/settings_screen.dart) | Adaptive dual-panel settings (Appearance, Player, Library, etc.) |
