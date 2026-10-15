@@ -2717,10 +2717,27 @@ class SeanimeRepository {
         }
         final sources = root?['videoSources'] as List?;
         if (sources != null) {
-          return sources
+          final parsed = sources
               .whereType<Map<String, dynamic>>()
               .map(OnlinestreamVideoSource.fromJson)
               .toList();
+
+          // Deduplicate identical streams (same URL or same server + quality)
+          final seenUrls = <String>{};
+          final seenServerKeys = <String>{};
+          final unique = <OnlinestreamVideoSource>[];
+
+          for (final src in parsed) {
+            final serverKey = '${src.server.trim().toLowerCase()}_${src.quality.trim().toLowerCase()}';
+            if (src.url.isNotEmpty && seenUrls.contains(src.url)) continue;
+            if (seenServerKeys.contains(serverKey)) continue;
+
+            if (src.url.isNotEmpty) seenUrls.add(src.url);
+            seenServerKeys.add(serverKey);
+            unique.add(src);
+          }
+
+          return unique;
         }
       }
     } catch (e) {
