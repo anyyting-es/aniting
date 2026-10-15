@@ -210,20 +210,23 @@ void main() {
         ProviderScope(
           child: MaterialApp(
             home: ExtensionsDesktopLayout(
-              onlineExtensions: const [],
-              torrentExtensions: const [],
-              mangaExtensions: const [],
+              installedExtensions: const [],
+              marketplaceExtensions: const [],
               installedIds: const {},
-              installedMap: const {},
+              isLoadingInstalled: false,
+              isLoadingMarketplace: false,
               isCheckingUpdates: false,
+              currentRepoUrl: 'https://raw.githubusercontent.com/anyyting-es/aniting-extensions/main/marketplace.json',
+              onRetryInstalled: () {},
               onCheckForUpdates: () {},
               onReloadAll: () {},
-              onInstall: (_) {},
               onToggle: (_, enabled) {},
               onUninstall: (_) {},
               onUpdate: (_) {},
               onShowCode: (_) {},
-              onRefresh: () {},
+              onRefreshMarketplace: ({bool forceRefresh = false}) async {},
+              onChangeRepo: () {},
+              onInstall: (_) {},
             ),
           ),
         ),
@@ -234,13 +237,12 @@ void main() {
       // Verify desktop layout rendered
       expect(find.byType(ExtensionsDesktopLayout), findsOneWidget);
 
-      // Verify segmented category pills exist
-      expect(find.byIcon(Icons.play_circle_filled_rounded), findsOneWidget);
-      expect(find.byIcon(Icons.cloud_download_rounded), findsOneWidget);
-      expect(find.byIcon(Icons.menu_book_rounded), findsOneWidget);
+      // Verify segmented tab pills exist (Installed and Marketplace)
+      expect(find.byIcon(Icons.layers_outlined), findsOneWidget);
+      expect(find.byIcon(Icons.storefront_outlined), findsOneWidget);
 
-      // Switch to Torrents tab
-      await tester.tap(find.byIcon(Icons.cloud_download_rounded));
+      // Switch to Installed tab
+      await tester.tap(find.byIcon(Icons.layers_outlined));
       await tester.pumpAndSettle();
     });
   });

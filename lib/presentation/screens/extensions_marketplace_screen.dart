@@ -22,7 +22,7 @@ class _ExtensionsMarketplaceScreenState extends ConsumerState<ExtensionsMarketpl
     with SingleTickerProviderStateMixin {
   static const String _prefRepoKey = 'seanime_marketplace_repo_url';
   static const String defaultRepoUrl =
-      'https://raw.githubusercontent.com/Bas1874/Seanime-Marketplace/refs/heads/main/Marketplace/Main.json';
+      'https://raw.githubusercontent.com/anyyting-es/aniting-extensions/main/marketplace.json';
 
   late final TabController _tabController;
 
