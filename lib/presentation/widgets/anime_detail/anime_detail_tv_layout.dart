@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
+import 'package:seanime_app/core/preferences/playback_progress_preferences_provider.dart';
 import 'package:seanime_app/core/preferences/title_language_provider.dart';
 import 'package:seanime_app/data/models/anime_details.dart';
 import 'package:seanime_app/data/models/anime_entry.dart';
@@ -103,6 +104,15 @@ class _AnimeDetailTvLayoutState extends ConsumerState<AnimeDetailTvLayout> {
             : 'http://${serverManager.host}:${serverManager.port}/api/v1/mediastream?mediaId=${widget.mediaId}&episodeNumber=${localEp.episodeNumber}';
         final fileName = localEp.localFilePath?.split(RegExp(r'[/\\]')).last;
 
+        final savedProgress = ref.read(playbackProgressPreferencesProvider.notifier).getProgress(widget.mediaId, episodeNumber);
+        Duration? startPos;
+        if (savedProgress != null && savedProgress.positionMs > 0) {
+          final fraction = savedProgress.durationMs > 0 ? savedProgress.positionMs / savedProgress.durationMs : 0.0;
+          if (fraction < 0.95) {
+            startPos = Duration(milliseconds: savedProgress.positionMs);
+          }
+        }
+
         Navigator.of(context, rootNavigator: true).push(
           VideoPlayerScreen.route(
             mediaId: widget.mediaId,
@@ -115,6 +125,7 @@ class _AnimeDetailTvLayoutState extends ConsumerState<AnimeDetailTvLayout> {
             videoSource: fileName != null
                 ? 'Local • $fileName'
                 : l10n.localLibrary,
+            startPosition: startPos,
             isLocalFile: true,
             animeDetails: widget.details,
             aniZipData: widget.aniZipData ?? widget.details?.aniZipData,
@@ -271,6 +282,13 @@ class _AnimeDetailTvLayoutState extends ConsumerState<AnimeDetailTvLayout> {
                                         episodeTitle: localEp.displayTitle.isNotEmpty ? localEp.displayTitle : l10n.episodeNumber(nextEp),
                                         episodeNumber: nextEp,
                                         videoSource: fileName != null ? 'Local • $fileName' : l10n.localLibrary,
+                                        startPosition: () {
+                                          final p = ref.read(playbackProgressPreferencesProvider.notifier).getProgress(widget.mediaId, nextEp);
+                                          if (p != null && p.positionMs > 0 && (p.durationMs == 0 || p.positionMs / p.durationMs < 0.95)) {
+                                            return Duration(milliseconds: p.positionMs);
+                                          }
+                                          return null;
+                                        }(),
                                         isLocalFile: true,
                                         animeDetails: widget.details,
                                         aniZipData: widget.aniZipData ?? widget.details?.aniZipData,

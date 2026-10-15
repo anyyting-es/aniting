@@ -446,9 +446,10 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     final isOnline = !widget.isLocalFile &&
         (widget.onlineStreamProvider != null || _currentOnlineStreamProvider != null);
 
-    final resolvedStartPosition = widget.startPosition ?? () {
-      if (widget.mediaId != null && _currentEpisodeNumber != null) {
-        final progress = ref.read(playbackProgressPreferencesProvider.notifier).getProgress(widget.mediaId!, _currentEpisodeNumber!);
+    Duration? getSavedProgress([int? epNumber]) {
+      final ep = epNumber ?? _currentEpisodeNumber;
+      if (widget.mediaId != null && ep != null) {
+        final progress = ref.read(playbackProgressPreferencesProvider.notifier).getProgress(widget.mediaId!, ep);
         if (progress != null && progress.positionMs > 0) {
           final fraction = progress.durationMs > 0 ? progress.positionMs / progress.durationMs : 0.0;
           if (fraction < 0.95) {
@@ -457,7 +458,9 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
         }
       }
       return null;
-    }();
+    }
+
+    final resolvedStartPosition = widget.startPosition ?? getSavedProgress();
 
     ref.listenManual(subtitleStylePreferencesProvider, (_, next) {
       _coordinator.applySubtitleStyle(next);
@@ -530,7 +533,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       getOnlineStreamServer: () => _currentOnlineStreamServer,
       getIsLocalFile: () => _isCurrentLocalFile,
       getPosition: () => _position,
-      getStartPosition: () => widget.startPosition,
+      getStartPosition: () => widget.startPosition ?? getSavedProgress(),
       getHasNextEpisode: () => _hasNextEpisode,
       onUpdateUi: () {
         if (mounted && !_isPlayerDisposed) setState(() {});
@@ -741,6 +744,13 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       _currentOnlineStreamProvider = newProviderId;
       _currentVideoUrl = '';
       _currentVideoSource = newProviderId;
+    });
+    _sourceController.resolveInitialSources(preservePosition: true);
+  }
+
+  void _toggleOnlineStreamDubbed() {
+    setState(() {
+      _currentOnlineStreamDubbed = !(_currentOnlineStreamDubbed ?? false);
     });
     _sourceController.resolveInitialSources(preservePosition: true);
   }
@@ -1247,11 +1257,14 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                                         onEpisodeTransitionStarted: _onEpisodeTransitionStarted,
                                       )
                                     : null,
+                                sourceController: _sourceController,
                                 isResolvingSources: _isResolvingSources,
                                 availableSources: _availableSources,
                                 activeSource: _activeSource,
                                 sourceResolutionError: _sourceResolutionError,
                                 onlineStreamProvider: _currentOnlineStreamProvider,
+                                isDubbed: _currentOnlineStreamDubbed ?? false,
+                                onToggleDubbed: _toggleOnlineStreamDubbed,
                                 onReloadSources: () => _sourceController.resolveInitialSources(preservePosition: true),
                                 onSelectSource: _sourceController.selectSource,
                                 onSelectProvider: _switchOnlineStreamProvider,
@@ -1288,11 +1301,14 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                                         onEpisodeTransitionStarted: _onEpisodeTransitionStarted,
                                       )
                                     : null,
+                                sourceController: _sourceController,
                                 isResolvingSources: _isResolvingSources,
                                 availableSources: _availableSources,
                                 activeSource: _activeSource,
                                 sourceResolutionError: _sourceResolutionError,
                                 onlineStreamProvider: _currentOnlineStreamProvider,
+                                isDubbed: _currentOnlineStreamDubbed ?? false,
+                                onToggleDubbed: _toggleOnlineStreamDubbed,
                                 onReloadSources: () => _sourceController.resolveInitialSources(preservePosition: true),
                                 onSelectSource: _sourceController.selectSource,
                                 onSelectProvider: _switchOnlineStreamProvider,

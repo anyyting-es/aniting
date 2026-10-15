@@ -10,6 +10,8 @@ import 'package:seanime_app/presentation/widgets/player/models/player_types.dart
 import 'package:seanime_app/presentation/widgets/player/panels/next_episode_card.dart';
 import 'package:seanime_app/presentation/widgets/player/panels/player_source_card.dart';
 
+import 'package:seanime_app/presentation/widgets/player/services/player_source_controller.dart';
+
 /// Clean, modular information panel for YouTube-style watch page and desktop side drawer.
 /// Displays current episode details, synopsis, MKV chapters, and next/prev episode navigation.
 class PlayerInfoPanel extends ConsumerStatefulWidget {
@@ -27,11 +29,14 @@ class PlayerInfoPanel extends ConsumerStatefulWidget {
   final ValueChanged<Duration> onSeekToChapter;
   final VoidCallback? onPlayNextEpisode;
   final VoidCallback? onPlayPreviousEpisode;
+  final PlayerSourceController? sourceController;
   final bool isResolvingSources;
   final List<OnlinestreamVideoSource> availableSources;
   final OnlinestreamVideoSource? activeSource;
   final String? sourceResolutionError;
   final String? onlineStreamProvider;
+  final bool isDubbed;
+  final VoidCallback? onToggleDubbed;
   final VoidCallback? onReloadSources;
   final ValueChanged<OnlinestreamVideoSource>? onSelectSource;
   final ValueChanged<String>? onSelectProvider;
@@ -52,11 +57,14 @@ class PlayerInfoPanel extends ConsumerStatefulWidget {
     required this.onSeekToChapter,
     this.onPlayNextEpisode,
     this.onPlayPreviousEpisode,
+    this.sourceController,
     this.isResolvingSources = false,
     this.availableSources = const [],
     this.activeSource,
     this.sourceResolutionError,
     this.onlineStreamProvider,
+    this.isDubbed = false,
+    this.onToggleDubbed,
     this.onReloadSources,
     this.onSelectSource,
     this.onSelectProvider,
@@ -362,9 +370,11 @@ class _PlayerInfoPanelState extends ConsumerState<PlayerInfoPanel> {
                 if (widget.isResolvingSources ||
                     widget.availableSources.isNotEmpty ||
                     widget.onlineStreamProvider != null ||
-                    widget.sourceResolutionError != null) ...[
+                    widget.sourceResolutionError != null ||
+                    widget.sourceController != null) ...[
                   const SizedBox(height: 12),
                   PlayerSourceCard(
+                    controller: widget.sourceController,
                     isResolvingSources: widget.isResolvingSources,
                     availableSources: widget.availableSources,
                     activeSource: widget.activeSource,
@@ -372,6 +382,8 @@ class _PlayerInfoPanelState extends ConsumerState<PlayerInfoPanel> {
                     providerName: widget.onlineStreamProvider,
                     episodeNumber: currentEpNum,
                     animeTitle: widget.animeTitle,
+                    isDubbed: widget.isDubbed,
+                    onToggleDubbed: widget.onToggleDubbed,
                     onReloadSources: widget.onReloadSources,
                     onSelectSource: widget.onSelectSource,
                     onSelectProvider: widget.onSelectProvider,

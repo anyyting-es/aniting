@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/preferences/banner_blur_provider.dart';
 import 'package:seanime_app/core/preferences/episode_view_mode_provider.dart';
+import 'package:seanime_app/core/preferences/playback_progress_preferences_provider.dart';
 import 'package:seanime_app/core/preferences/streaming_preferences_provider.dart';
 import 'package:seanime_app/core/preferences/title_language_provider.dart';
 import 'package:seanime_app/core/theme/app_theme_colors.dart';
@@ -162,6 +163,15 @@ class _AnimeDetailMobileLayoutState
             : 'http://${serverManager.host}:${serverManager.port}/api/v1/mediastream?mediaId=${widget.mediaId}&episodeNumber=${localEp.episodeNumber}';
         final fileName = localEp.localFilePath?.split(RegExp(r'[/\\]')).last;
 
+        final savedProgress = ref.read(playbackProgressPreferencesProvider.notifier).getProgress(widget.mediaId, nextEp);
+        Duration? startPos;
+        if (savedProgress != null && savedProgress.positionMs > 0) {
+          final fraction = savedProgress.durationMs > 0 ? savedProgress.positionMs / savedProgress.durationMs : 0.0;
+          if (fraction < 0.95) {
+            startPos = Duration(milliseconds: savedProgress.positionMs);
+          }
+        }
+
         Navigator.of(context, rootNavigator: true).push(
           VideoPlayerScreen.route(
             mediaId: widget.mediaId,
@@ -174,6 +184,7 @@ class _AnimeDetailMobileLayoutState
             videoSource: fileName != null
                 ? 'Local • $fileName'
                 : l10n.localLibrary,
+            startPosition: startPos,
             isLocalFile: true,
             animeDetails: widget.details,
             aniZipData: widget.aniZipData ?? widget.details?.aniZipData,
@@ -194,6 +205,15 @@ class _AnimeDetailMobileLayoutState
       final animeTitle = widget.details?.displayTitle(titleLang) ?? 'Anime';
       final providerName = _selectedProvider?.name ?? 'Online';
 
+      final savedProgress = ref.read(playbackProgressPreferencesProvider.notifier).getProgress(widget.mediaId, nextEp);
+      Duration? startPos;
+      if (savedProgress != null && savedProgress.positionMs > 0) {
+        final fraction = savedProgress.durationMs > 0 ? savedProgress.positionMs / savedProgress.durationMs : 0.0;
+        if (fraction < 0.95) {
+          startPos = Duration(milliseconds: savedProgress.positionMs);
+        }
+      }
+
       Navigator.of(context, rootNavigator: true).push(
         VideoPlayerScreen.route(
           mediaId: widget.mediaId,
@@ -202,6 +222,7 @@ class _AnimeDetailMobileLayoutState
           episodeTitle: l10n.episodeNumber(nextEp),
           episodeNumber: nextEp,
           videoSource: providerName,
+          startPosition: startPos,
           animeDetails: widget.details,
           aniZipData: widget.aniZipData ?? widget.details?.aniZipData,
           onlineStreamProvider: _selectedProvider?.id,
@@ -235,6 +256,15 @@ class _AnimeDetailMobileLayoutState
             : 'http://${serverManager.host}:${serverManager.port}/api/v1/mediastream?mediaId=${widget.mediaId}&episodeNumber=${localEp.episodeNumber}';
         final fileName = localEp.localFilePath?.split(RegExp(r'[/\\]')).last;
 
+        final savedProgress = ref.read(playbackProgressPreferencesProvider.notifier).getProgress(widget.mediaId, episodeNumber);
+        Duration? startPos;
+        if (savedProgress != null && savedProgress.positionMs > 0) {
+          final fraction = savedProgress.durationMs > 0 ? savedProgress.positionMs / savedProgress.durationMs : 0.0;
+          if (fraction < 0.95) {
+            startPos = Duration(milliseconds: savedProgress.positionMs);
+          }
+        }
+
         Navigator.of(context, rootNavigator: true).push(
           VideoPlayerScreen.route(
             mediaId: widget.mediaId,
@@ -247,6 +277,7 @@ class _AnimeDetailMobileLayoutState
             videoSource: fileName != null
                 ? 'Local • $fileName'
                 : l10n.localLibrary,
+            startPosition: startPos,
             isLocalFile: true,
             animeDetails: widget.details,
             aniZipData: widget.aniZipData ?? widget.details?.aniZipData,

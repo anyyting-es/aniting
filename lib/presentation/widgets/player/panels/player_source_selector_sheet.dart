@@ -5,29 +5,36 @@ import 'package:g1455/g1455.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/data/models/onlinestream_models.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
+import 'package:seanime_app/presentation/widgets/player/services/player_source_controller.dart';
 
 /// Minimalist, clean streaming sources sheet with iOS Liquid Glass design (g1455).
 /// Features a single cohesive container for options without individual boxes,
 /// subtle checkmarks, and a clean "N options" header.
 class PlayerSourceSelectorSheet extends ConsumerWidget {
+  final PlayerSourceController? controller;
   final List<OnlinestreamVideoSource> availableSources;
   final OnlinestreamVideoSource? activeSource;
   final bool isResolvingSources;
   final String? sourceResolutionError;
   final String? providerName;
   final int? episodeNumber;
+  final bool isDubbed;
+  final VoidCallback? onToggleDubbed;
   final VoidCallback? onReloadSources;
   final ValueChanged<OnlinestreamVideoSource>? onSelectSource;
   final ValueChanged<String>? onSelectProvider;
 
   const PlayerSourceSelectorSheet({
     super.key,
+    this.controller,
     required this.availableSources,
     this.activeSource,
     required this.isResolvingSources,
     this.sourceResolutionError,
     this.providerName,
     this.episodeNumber,
+    this.isDubbed = false,
+    this.onToggleDubbed,
     this.onReloadSources,
     this.onSelectSource,
     this.onSelectProvider,
@@ -35,12 +42,15 @@ class PlayerSourceSelectorSheet extends ConsumerWidget {
 
   static Future<void> show({
     required BuildContext context,
+    PlayerSourceController? controller,
     required List<OnlinestreamVideoSource> availableSources,
     required OnlinestreamVideoSource? activeSource,
     required bool isResolvingSources,
     String? sourceResolutionError,
     String? providerName,
     int? episodeNumber,
+    bool isDubbed = false,
+    VoidCallback? onToggleDubbed,
     VoidCallback? onReloadSources,
     ValueChanged<OnlinestreamVideoSource>? onSelectSource,
     ValueChanged<String>? onSelectProvider,
@@ -50,12 +60,15 @@ class PlayerSourceSelectorSheet extends ConsumerWidget {
       finish: GlassFinish.regularDark,
       showGrabber: true,
       builder: (modalCtx) => PlayerSourceSelectorSheet(
+        controller: controller,
         availableSources: availableSources,
         activeSource: activeSource,
         isResolvingSources: isResolvingSources,
         sourceResolutionError: sourceResolutionError,
         providerName: providerName,
         episodeNumber: episodeNumber,
+        isDubbed: isDubbed,
+        onToggleDubbed: onToggleDubbed,
         onReloadSources: onReloadSources,
         onSelectSource: onSelectSource,
         onSelectProvider: onSelectProvider,
@@ -65,8 +78,23 @@ class PlayerSourceSelectorSheet extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    if (controller != null) {
+      return ListenableBuilder(
+        listenable: controller!,
+        builder: (ctx, _) => _buildContent(ctx, ref),
+      );
+    }
+    return _buildContent(context, ref);
+  }
+
+  Widget _buildContent(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final l10n = ref.watch(translationsProvider);
+
+    final currentIsResolving = controller?.isResolvingSources ?? isResolvingSources;
+    final currentSources = controller?.availableSources ?? availableSources;
+    final currentActiveSource = controller?.activeSource ?? activeSource;
+    final currentError = controller?.sourceResolutionError ?? sourceResolutionError;
 
     return Material(
       type: MaterialType.transparency,
@@ -83,7 +111,7 @@ class PlayerSourceSelectorSheet extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Top compact bar: Provider pills & action buttons
+                // Top compact bar: Provider pills, Sub/Dub toggle & action buttons
                 Row(
                   children: [
                     // Provider selector pills (if multiple exist)
@@ -114,7 +142,6 @@ class PlayerSourceSelectorSheet extends ConsumerWidget {
                                             onTap: () {
                                               HapticFeedback.lightImpact();
                                               if (!isSelected) {
-                                                Navigator.pop(context);
                                                 onSelectProvider?.call(p.id);
                                               }
                                             },
@@ -161,6 +188,56 @@ class PlayerSourceSelectorSheet extends ConsumerWidget {
                     else
                       const Spacer(),
 
+                    // Dubbed / Subbed toggle
+                    if (onToggleDubbed != null) ...[
+                      Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(16),
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            onToggleDubbed?.call();
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: isDubbed
+                                  ? theme.colorScheme.primary.withValues(alpha: 0.22)
+                                  : Colors.white.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: isDubbed
+                                    ? theme.colorScheme.primary.withValues(alpha: 0.85)
+                                    : Colors.white.withValues(alpha: 0.12),
+                                width: isDubbed ? 1.2 : 0.8,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  isDubbed ? Icons.record_voice_over_rounded : Icons.subtitles_rounded,
+                                  size: 14,
+                                  color: isDubbed ? theme.colorScheme.primary : Colors.white70,
+                                ),
+                                const SizedBox(width: 5),
+                                Text(
+                                  isDubbed ? l10n.dub.toUpperCase() : l10n.sub.toUpperCase(),
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: isDubbed ? theme.colorScheme.primary : Colors.white70,
+                                    letterSpacing: 0.4,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                    ],
+
                     // Reload & Close actions
                     if (onReloadSources != null)
                       IconButton(
@@ -171,7 +248,6 @@ class PlayerSourceSelectorSheet extends ConsumerWidget {
                         constraints: const BoxConstraints(),
                         onPressed: () {
                           HapticFeedback.lightImpact();
-                          Navigator.pop(context);
                           onReloadSources?.call();
                         },
                       ),
@@ -190,7 +266,7 @@ class PlayerSourceSelectorSheet extends ConsumerWidget {
                 const SizedBox(height: 12),
 
                 // Sources list / loading / empty state
-                if (isResolvingSources)
+                if (currentIsResolving && currentSources.isEmpty)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 28),
                     child: Center(
@@ -218,7 +294,7 @@ class PlayerSourceSelectorSheet extends ConsumerWidget {
                       ),
                     ),
                   )
-                else if (availableSources.isEmpty)
+                else if (currentSources.isEmpty)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 8),
                     child: Center(
@@ -232,7 +308,7 @@ class PlayerSourceSelectorSheet extends ConsumerWidget {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            sourceResolutionError ?? l10n.noSourcesFoundForEpisode,
+                            currentError ?? l10n.noSourcesFoundForEpisode,
                             textAlign: TextAlign.center,
                             style: const TextStyle(
                               fontSize: 13,
@@ -245,7 +321,6 @@ class PlayerSourceSelectorSheet extends ConsumerWidget {
                               borderRadius: BorderRadius.circular(14),
                               onTap: () {
                                 HapticFeedback.lightImpact();
-                                Navigator.pop(context);
                                 onReloadSources?.call();
                               },
                               child: Container(
@@ -285,17 +360,32 @@ class PlayerSourceSelectorSheet extends ConsumerWidget {
                     ),
                   )
                 else ...[
-                  // Small clean header: "N options"
+                  // Small clean header: "N options" + subtle active loading indicator
                   Padding(
                     padding: const EdgeInsets.only(left: 4, bottom: 8),
-                    child: Text(
-                      l10n.optionsCountLabel(availableSources.length),
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.3,
-                        color: Colors.white.withValues(alpha: 0.6),
-                      ),
+                    child: Row(
+                      children: [
+                        Text(
+                          l10n.optionsCountLabel(currentSources.length),
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.3,
+                            color: Colors.white.withValues(alpha: 0.6),
+                          ),
+                        ),
+                        if (currentIsResolving) ...[
+                          const SizedBox(width: 8),
+                          SizedBox(
+                            width: 12,
+                            height: 12,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 1.8,
+                              color: theme.colorScheme.primary,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
 
@@ -311,156 +401,197 @@ class PlayerSourceSelectorSheet extends ConsumerWidget {
                         ),
                       ),
                       clipBehavior: Clip.antiAlias,
-                      child: ListView.separated(
-                        shrinkWrap: true,
-                        physics: const BouncingScrollPhysics(),
-                        padding: EdgeInsets.zero,
-                        itemCount: availableSources.length,
-                        separatorBuilder: (_, _) => Divider(
-                          height: 1,
-                          thickness: 0.6,
-                          indent: 14,
-                          endIndent: 14,
-                          color: Colors.white.withValues(alpha: 0.07),
-                        ),
-                        itemBuilder: (context, idx) {
-                          final src = availableSources[idx];
-                          final isActive = activeSource != null &&
-                              (activeSource!.url == src.url ||
-                                  (activeSource!.server == src.server &&
-                                      activeSource!.quality == src.quality));
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (currentIsResolving)
+                            LinearProgressIndicator(
+                              minHeight: 2,
+                              backgroundColor: Colors.transparent,
+                              color: theme.colorScheme.primary,
+                            ),
+                          Flexible(
+                            child: ListView.separated(
+                              shrinkWrap: true,
+                              physics: const BouncingScrollPhysics(),
+                              padding: EdgeInsets.zero,
+                              itemCount: currentSources.length,
+                              separatorBuilder: (_, _) => Divider(
+                                height: 1,
+                                thickness: 0.6,
+                                indent: 14,
+                                endIndent: 14,
+                                color: Colors.white.withValues(alpha: 0.07),
+                              ),
+                              itemBuilder: (context, idx) {
+                                final src = currentSources[idx];
+                                final isActive = currentActiveSource != null &&
+                                    (currentActiveSource.url == src.url ||
+                                        (currentActiveSource.server == src.server &&
+                                            currentActiveSource.quality == src.quality));
 
-                          final hasQuality = src.quality.isNotEmpty && src.quality != 'auto';
+                                final hasQuality = src.quality.isNotEmpty && src.quality != 'auto';
 
-                          return Material(
-                            color: isActive
-                                ? theme.colorScheme.primary.withValues(alpha: 0.12)
-                                : Colors.transparent,
-                            child: InkWell(
-                              onTap: () {
-                                HapticFeedback.lightImpact();
-                                Navigator.pop(context);
-                                if (!isActive && onSelectSource != null) {
-                                  onSelectSource!(src);
-                                }
-                              },
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                child: Row(
-                                  children: [
-                                    // Server name and quality
-                                    Expanded(
-                                      child: Builder(
-                                        builder: (context) {
-                                          String serverName = src.server;
-                                          String? audioBadge;
-                                          Color? badgeColor;
+                                return Material(
+                                  color: isActive
+                                      ? theme.colorScheme.primary.withValues(alpha: 0.12)
+                                      : Colors.transparent,
+                                  child: InkWell(
+                                    onTap: () {
+                                      HapticFeedback.lightImpact();
+                                      if (!isActive && onSelectSource != null) {
+                                        onSelectSource!(src);
+                                      }
+                                    },
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                      child: Row(
+                                        children: [
+                                          // Server name and quality
+                                          Expanded(
+                                            child: Builder(
+                                              builder: (context) {
+                                                String serverName = src.server;
+                                                String? audioBadge;
+                                                Color? badgeColor;
 
-                                          if (src.server.contains('[Latino]')) {
-                                            serverName = src.server.replaceAll(' [Latino]', '');
-                                            audioBadge = 'LATINO';
-                                            badgeColor = const Color(0xFF10B981);
-                                          } else if (src.server.contains('[Castellano]')) {
-                                            serverName = src.server.replaceAll(' [Castellano]', '');
-                                            audioBadge = 'CASTELLANO';
-                                            badgeColor = const Color(0xFFF59E0B);
-                                          } else if (src.server.contains('[English Dub]')) {
-                                            serverName = src.server.replaceAll(' [English Dub]', '');
-                                            audioBadge = 'ENGLISH';
-                                            badgeColor = const Color(0xFF3B82F6);
-                                          } else if (src.server.contains('[SUB]')) {
-                                            serverName = src.server.replaceAll(' [SUB]', '');
-                                            audioBadge = 'SUB (MULTI)';
-                                            badgeColor = theme.colorScheme.primary;
-                                          } else if (src.server.contains('[Sub]')) {
-                                            serverName = src.server.replaceAll(' [Sub]', '');
-                                            audioBadge = 'SUB';
-                                            badgeColor = theme.colorScheme.primary;
-                                          }
+                                                if (src.server.contains('[Latino]') || src.server.contains('(Latino)')) {
+                                                  serverName = src.server
+                                                      .replaceAll(' [Latino]', '')
+                                                      .replaceAll('[Latino]', '')
+                                                      .replaceAll('(Latino)', '')
+                                                      .trim();
+                                                  audioBadge = 'LATINO';
+                                                  badgeColor = const Color(0xFF10B981);
+                                                } else if (src.server.contains('[Castellano]') || src.server.contains('(Castellano)')) {
+                                                  serverName = src.server
+                                                      .replaceAll(' [Castellano]', '')
+                                                      .replaceAll('[Castellano]', '')
+                                                      .replaceAll('(Castellano)', '')
+                                                      .trim();
+                                                  audioBadge = 'CASTELLANO';
+                                                  badgeColor = const Color(0xFFF59E0B);
+                                                } else if (src.server.contains('[English Dub]') || src.server.contains('(English Dub)')) {
+                                                  serverName = src.server
+                                                      .replaceAll(' [English Dub]', '')
+                                                      .replaceAll('[English Dub]', '')
+                                                      .replaceAll('(English Dub)', '')
+                                                      .trim();
+                                                  audioBadge = 'ENGLISH';
+                                                  badgeColor = const Color(0xFF3B82F6);
+                                                } else if (src.server.contains('[Dub]') || src.server.contains('[DUB]') || src.server.contains('(Dub)')) {
+                                                  serverName = src.server
+                                                      .replaceAll(' [Dub]', '')
+                                                      .replaceAll('[Dub]', '')
+                                                      .replaceAll('[DUB]', '')
+                                                      .replaceAll('(Dub)', '')
+                                                      .trim();
+                                                  audioBadge = 'DUB';
+                                                  badgeColor = const Color(0xFF10B981);
+                                                } else if (src.server.contains('[SUB]') || src.server.contains('[Sub (Multi)]')) {
+                                                  serverName = src.server
+                                                      .replaceAll(' [SUB]', '')
+                                                      .replaceAll('[SUB]', '')
+                                                      .replaceAll(' [Sub (Multi)]', '')
+                                                      .trim();
+                                                  audioBadge = 'SUB (MULTI)';
+                                                  badgeColor = theme.colorScheme.primary;
+                                                } else if (src.server.contains('[Sub]') || src.server.contains('(Sub)')) {
+                                                  serverName = src.server
+                                                      .replaceAll(' [Sub]', '')
+                                                      .replaceAll('[Sub]', '')
+                                                      .replaceAll('(Sub)', '')
+                                                      .trim();
+                                                  audioBadge = 'SUB';
+                                                  badgeColor = theme.colorScheme.primary;
+                                                }
 
-                                          return Row(
-                                            children: [
-                                              Text(
-                                                serverName.toUpperCase(),
-                                                style: TextStyle(
-                                                  fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
-                                                  fontSize: 14,
-                                                  letterSpacing: 0.2,
-                                                  color: isActive ? theme.colorScheme.primary : Colors.white,
-                                                ),
-                                              ),
-                                              if (audioBadge != null) ...[
-                                                const SizedBox(width: 8),
-                                                Container(
-                                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
-                                                  decoration: BoxDecoration(
-                                                    color: (badgeColor ?? theme.colorScheme.primary).withValues(alpha: 0.18),
-                                                    borderRadius: BorderRadius.circular(5),
-                                                    border: Border.all(
-                                                      color: (badgeColor ?? theme.colorScheme.primary).withValues(alpha: 0.4),
-                                                      width: 0.8,
+                                                return Row(
+                                                  children: [
+                                                    Text(
+                                                      serverName.toUpperCase(),
+                                                      style: TextStyle(
+                                                        fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
+                                                        fontSize: 14,
+                                                        letterSpacing: 0.2,
+                                                        color: isActive ? theme.colorScheme.primary : Colors.white,
+                                                      ),
                                                     ),
-                                                  ),
-                                                  child: Text(
-                                                    audioBadge,
-                                                    style: TextStyle(
-                                                      fontSize: 10,
-                                                      fontWeight: FontWeight.bold,
-                                                      color: badgeColor ?? theme.colorScheme.primary,
-                                                      letterSpacing: 0.4,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                              if (hasQuality) ...[
-                                                const SizedBox(width: 8),
-                                                Text(
-                                                  src.quality,
-                                                  style: TextStyle(
-                                                    fontSize: 12,
-                                                    color: isActive
-                                                        ? theme.colorScheme.primary.withValues(alpha: 0.85)
-                                                        : Colors.white54,
-                                                  ),
-                                                ),
-                                              ],
-                                              if (src.isHls) ...[
-                                                const SizedBox(width: 6),
-                                                Container(
-                                                  padding: const EdgeInsets.symmetric(
-                                                      horizontal: 4.5, vertical: 1),
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.white.withValues(alpha: 0.08),
-                                                    borderRadius: BorderRadius.circular(4),
-                                                  ),
-                                                  child: const Text(
-                                                    'HLS',
-                                                    style: TextStyle(
-                                                      fontSize: 9,
-                                                      fontWeight: FontWeight.bold,
-                                                      color: Colors.white70,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            ],
-                                          );
-                                        },
+                                                    if (audioBadge != null) ...[
+                                                      const SizedBox(width: 8),
+                                                      Container(
+                                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                                                        decoration: BoxDecoration(
+                                                          color: (badgeColor ?? theme.colorScheme.primary).withValues(alpha: 0.18),
+                                                          borderRadius: BorderRadius.circular(5),
+                                                          border: Border.all(
+                                                            color: (badgeColor ?? theme.colorScheme.primary).withValues(alpha: 0.4),
+                                                            width: 0.8,
+                                                          ),
+                                                        ),
+                                                        child: Text(
+                                                          audioBadge,
+                                                          style: TextStyle(
+                                                            fontSize: 10,
+                                                            fontWeight: FontWeight.bold,
+                                                            color: badgeColor ?? theme.colorScheme.primary,
+                                                            letterSpacing: 0.4,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                    if (hasQuality) ...[
+                                                      const SizedBox(width: 8),
+                                                      Text(
+                                                        src.quality,
+                                                        style: TextStyle(
+                                                          fontSize: 12,
+                                                          color: isActive
+                                                              ? theme.colorScheme.primary.withValues(alpha: 0.85)
+                                                              : Colors.white54,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                    if (src.isHls) ...[
+                                                      const SizedBox(width: 6),
+                                                      Container(
+                                                        padding: const EdgeInsets.symmetric(
+                                                            horizontal: 4.5, vertical: 1),
+                                                        decoration: BoxDecoration(
+                                                          color: Colors.white.withValues(alpha: 0.08),
+                                                          borderRadius: BorderRadius.circular(4),
+                                                        ),
+                                                        child: const Text(
+                                                          'HLS',
+                                                          style: TextStyle(
+                                                            fontSize: 9,
+                                                            fontWeight: FontWeight.bold,
+                                                            color: Colors.white70,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ],
+                                                );
+                                              },
+                                            ),
+                                          ),
+                                          // Checkmark for selected item
+                                          if (isActive)
+                                            Icon(
+                                              Icons.check_rounded,
+                                              size: 19,
+                                              color: theme.colorScheme.primary,
+                                            ),
+                                        ],
                                       ),
                                     ),
-                                    // Checkmark for selected item
-                                    if (isActive)
-                                      Icon(
-                                        Icons.check_rounded,
-                                        size: 19,
-                                        color: theme.colorScheme.primary,
-                                      ),
-                                  ],
-                                ),
-                              ),
+                                  ),
+                                );
+                              },
                             ),
-                          );
-                        },
+                          ),
+                        ],
                       ),
                     ),
                   ),

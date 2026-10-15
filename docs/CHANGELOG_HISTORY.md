@@ -6,6 +6,18 @@
 > - **ALWAYS** summarize improvements at a high, user-facing level with clear, direct bullet points (e.g., *"Mejoras de UI y navegación en el calendario de emisión"*, *"Nueva pantalla y gestión de estado sin conexión"*, *"Optimizaciones en la caché de seguir viendo"*).
 > - Keep it punchy, professional, and easy to skim.
 
+## 7.48. Optimización del Selector de Fuentes y Continuidad de Reproducción (2026-10-15)
+- **Selector Dinámico de Fuentes y Servidores en Vivo**:
+  - Cambio fluido de servidor/fuente dentro del modal sin cierres abruptos (`PlayerSourceSelectorSheet`), con actualización reactiva inmediata mediante `ListenableBuilder` e indicador de carga no invasivo.
+  - Botón de alternancia rápida entre Doblaje y Subtítulos (`[SUB]` / `[DUB]`) directamente en el selector de reproducción y tarjeta de fuentes.
+- **Continuidad y Reanudación Instantánea de Episodios**:
+  - Corrección integral de la posición de reanudación al entrar a cualquier episodio online o local, restaurando exactamente el minuto y segundo guardado en la biblioteca.
+  - Preservación perfecta del progreso al alternar servidores o cambiar de episodio dentro del reproductor.
+- **Verificación Completa**:
+  - 0 advertencias en `flutter analyze lib/`.
+
+---
+
 ## 7.47. Restauración del Ecosistema de Extensiones Goja (2026-10-15)
 - **Restauración de Extensiones Goja en Backend**:
   - Reactivación completa de la arquitectura de extensiones Goja en Seanime con ejecución de scripts TypeScript/JavaScript en el backend.

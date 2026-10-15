@@ -11,7 +11,7 @@ import 'package:seanime_app/presentation/widgets/player/services/player_playback
 
 /// Controller responsible for managing online video sources, in-player auto-streaming,
 /// live server/quality switching, episode transitions, and background prefetching.
-class PlayerSourceController {
+class PlayerSourceController extends ChangeNotifier {
   final SeanimeRepository repository;
   final ServerManager serverManager;
   final PlayerPlaybackCoordinator coordinator;
@@ -51,6 +51,7 @@ class PlayerSourceController {
 
   void _safeUpdateUi() {
     if (!_isDisposed) {
+      notifyListeners();
       onUpdateUi();
     }
   }
@@ -132,7 +133,11 @@ class PlayerSourceController {
       activeSource = chosenSource;
       sourceResolutionError = null;
 
-      final targetStartPos = preservePosition ? getPosition() : (getStartPosition() ?? Duration.zero);
+      final currentPos = getPosition();
+      final savedPos = getStartPosition();
+      final targetStartPos = preservePosition
+          ? (currentPos > Duration.zero ? currentPos : (savedPos ?? Duration.zero))
+          : (savedPos ?? Duration.zero);
 
       onSourceActivated(
         videoUrl: chosenSource.url,
@@ -306,13 +311,14 @@ class PlayerSourceController {
           externalSubtitles: resolved.externalSubtitles,
         );
 
+        final targetStartPos = getStartPosition() ?? Duration.zero;
         coordinator.open(
           videoUrl: resolved.videoUrl,
           title: title,
           episodeTitle: resolved.episodeTitle,
           headers: resolved.headers,
           mimeType: resolved.mimeType,
-          startPosition: Duration.zero,
+          startPosition: targetStartPos,
           externalSubtitles: resolved.externalSubtitles,
           isOnlineStream: !getIsLocalFile(),
         );
@@ -359,8 +365,10 @@ class PlayerSourceController {
   }
 
   /// Disposes timers and stops UI callbacks.
+  @override
   void dispose() {
     _isDisposed = true;
     _prefetchTimer?.cancel();
+    super.dispose();
   }
 }

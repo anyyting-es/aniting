@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/preferences/episode_view_mode_provider.dart';
+import 'package:seanime_app/core/preferences/playback_progress_preferences_provider.dart';
 import 'package:seanime_app/core/preferences/title_language_provider.dart';
 import 'package:seanime_app/core/theme/app_theme_colors.dart';
 import 'package:seanime_app/data/models/anime_details.dart';
@@ -249,6 +250,15 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
       final streamUrl = localEp.localFilePath != null && localEp.localFilePath!.isNotEmpty
           ? 'http://${serverManager.host}:${serverManager.port}/api/v1/mediastream/file?path=${Uri.encodeComponent(localEp.localFilePath!)}'
           : 'http://${serverManager.host}:${serverManager.port}/api/v1/mediastream?mediaId=${widget.mediaId}&episodeNumber=${localEp.episodeNumber}';
+      final savedProgress = ref.read(playbackProgressPreferencesProvider.notifier).getProgress(widget.mediaId, ep.number);
+      Duration? startPos;
+      if (savedProgress != null && savedProgress.positionMs > 0) {
+        final fraction = savedProgress.durationMs > 0 ? savedProgress.positionMs / savedProgress.durationMs : 0.0;
+        if (fraction < 0.95) {
+          startPos = Duration(milliseconds: savedProgress.positionMs);
+        }
+      }
+
       final fileName = localEp.localFilePath?.split(RegExp(r'[/\\]')).last;
 
       Navigator.of(context).push(
@@ -259,6 +269,7 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
           episodeTitle: localEp.displayTitle.isNotEmpty ? localEp.displayTitle : ep.localizedDisplayTitle(l10n),
           episodeNumber: ep.number,
           videoSource: fileName != null ? 'Local • $fileName' : l10n.localLibrary,
+          startPosition: startPos,
           isLocalFile: true,
           animeDetails: widget.animeDetails,
           aniZipData: widget.animeDetails?.aniZipData,
@@ -273,6 +284,15 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
     final providerName = _selectedProvider?.name ?? 'Online';
     final l10n = ref.read(translationsProvider);
 
+    final savedProgress = ref.read(playbackProgressPreferencesProvider.notifier).getProgress(widget.mediaId, ep.number);
+    Duration? startPos;
+    if (savedProgress != null && savedProgress.positionMs > 0) {
+      final fraction = savedProgress.durationMs > 0 ? savedProgress.positionMs / savedProgress.durationMs : 0.0;
+      if (fraction < 0.95) {
+        startPos = Duration(milliseconds: savedProgress.positionMs);
+      }
+    }
+
     Navigator.of(context).push(
       VideoPlayerScreen.route(
         mediaId: widget.mediaId,
@@ -281,6 +301,7 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
         episodeTitle: ep.localizedDisplayTitle(l10n),
         episodeNumber: ep.number,
         videoSource: providerName,
+        startPosition: startPos,
         animeDetails: widget.animeDetails,
         aniZipData: widget.animeDetails?.aniZipData,
         onlineStreamProvider: _selectedProvider?.id,
