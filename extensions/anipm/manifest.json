@@ -1,0 +1,12 @@
+{
+  "id": "anipm-onlinestream",
+  "name": "Ani.pm",
+  "version": "1.0.0",
+  "type": "onlinestream-provider",
+  "language": "typescript",
+  "lang": "multi",
+  "description": "Fast ad-free streaming provider with multi-subtitles and AniList direct mapping powered by ani.pm",
+  "author": "Aniting",
+  "website": "https://ani.pm",
+  "icon": "https://ani.pm/favicon-32x32.png"
+}

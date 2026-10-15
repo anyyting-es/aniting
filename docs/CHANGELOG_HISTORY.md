@@ -6,6 +6,17 @@
 > - **ALWAYS** summarize improvements at a high, user-facing level with clear, direct bullet points (e.g., *"Mejoras de UI y navegación en el calendario de emisión"*, *"Nueva pantalla y gestión de estado sin conexión"*, *"Optimizaciones en la caché de seguir viendo"*).
 > - Keep it punchy, professional, and easy to skim.
 
+## 7.47. Restauración del Ecosistema de Extensiones Goja (2026-10-15)
+- **Restauración de Extensiones Goja en Backend**:
+  - Reactivación completa de la arquitectura de extensiones Goja en Seanime con ejecución de scripts TypeScript/JavaScript en el backend.
+  - Reintegración de las extensiones del catálogo (`anipm`, `jkanime`, `tioanime`).
+- **Marketplace e Instalador Dinámico de Extensiones**:
+  - Restauración de la experiencia completa del Marketplace con soporte para múltiples repositorios comunitarios, inspección de código fuente y gestión de extensiones instaladas.
+- **Verificación Completa**:
+  - Suite de pruebas de extensiones aprobada al 100% y 0 advertencias en `flutter analyze lib/`.
+
+---
+
 ## 7.46. Modularización de Fuentes Online Nativas y Selector en Reproductor (2026-10-15)
 - **Fuentes Nativas Modulares Separadas (`lib/data/sources/online/`)**:
   - Implementación independiente en archivos dedicados para cada proveedor: `AnitingUniversal`, `KawaiiOnlineSource` (Latino, Castellano y Sub) y `JkAnimeOnlineSource` (StreamWish, VOE).

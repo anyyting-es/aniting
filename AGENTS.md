@@ -147,16 +147,7 @@ Use this directory to quickly locate any screen, widget, provider, or subsystem:
 | **Manga Reader** | [`manga_reader_screen.dart`](file:///home/anthony/Documents/Eris/aniting/lib/presentation/screens/manga_reader_screen.dart) | High-performance image viewer (vertical webtoon / paginated) |
 | **Page Memory Keep** | [`manga_keep_alive_page.dart`](file:///home/anthony/Documents/Eris/aniting/lib/presentation/widgets/manga/manga_keep_alive_page.dart) | Preserves offscreen decoded pages without stuttering |
 
-### 4.6. Native In-App Sources Subsystem
-| Component | Path | Description |
-| :--- | :--- | :--- |
-| **Sources Barrel** | [`sources.dart`](file:///home/anthony/Documents/Eris/aniting/lib/data/sources/sources.dart) | Central exports for all native Dart providers (Online, Torrents, Manga, Shows) |
-| **Aniting Online** | [`aniting_online_source.dart`](file:///home/anthony/Documents/Eris/aniting/lib/data/sources/online/aniting_online_source.dart) | Direct Cloudflare API streaming client (1080p, multi-audio & multi-subs) |
-| **AnimeTosho Feed**| [`animetosho_torrent_source.dart`](file:///home/anthony/Documents/Eris/aniting/lib/data/sources/torrents/animetosho_torrent_source.dart) | Direct AnimeTosho JSON API search client for torrents and batch downloads |
-| **MangaDex Source**| [`mangadex_manga_source.dart`](file:///home/anthony/Documents/Eris/aniting/lib/data/sources/manga/mangadex_manga_source.dart) | Direct MangaDex API chapters & page images reader client |
-| **TMDB Shows**     | [`tmdb_shows_source.dart`](file:///home/anthony/Documents/Eris/aniting/lib/data/sources/shows/tmdb_shows_source.dart) | Direct TMDB client for TV series and movies catalog & seasons |
-
-### 4.7. Settings, Theming & UI Utilities
+### 4.6. Settings, Theming & UI Utilities
 | Component | Path | Description |
 | :--- | :--- | :--- |
 | **Settings Screen** | [`settings_screen.dart`](file:///home/anthony/Documents/Eris/aniting/lib/presentation/screens/settings_screen.dart) | Adaptive dual-panel settings (Appearance, Player, Library, etc.) |

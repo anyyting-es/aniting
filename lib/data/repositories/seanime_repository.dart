@@ -22,13 +22,9 @@ import 'package:seanime_app/data/models/local_file_item.dart';
 import 'package:seanime_app/data/models/show_local_file_item.dart';
 import 'package:seanime_app/data/services/feed_cache_service.dart';
 import 'package:seanime_app/data/services/offline_library_service.dart';
-import 'package:seanime_app/data/sources/sources.dart';
 
 class SeanimeRepository {
   final ApiClient _apiClient;
-  final AnitingOnlineSource _anitingOnlineSource = AnitingOnlineSource();
-  final KawaiiOnlineSource _kawaiiOnlineSource = KawaiiOnlineSource();
-  final JkAnimeOnlineSource _jkanimeOnlineSource = JkAnimeOnlineSource();
   final Map<int, AniZipData> _aniZipCache = {};
   final Map<int, AnimeDetails> _animeDetailsCache = {};
   List<OnlinestreamProvider>? _onlinestreamProvidersCache;
@@ -2423,51 +2419,9 @@ class SeanimeRepository {
   // ================= Online Streaming =================
 
   Future<List<OnlinestreamProvider>> getOnlinestreamProviders() async {
-    const defaultProviders = [
-      OnlinestreamProvider(
-        id: 'aniting-universal',
-        name: 'Aniting HD (1080p Multi-Sub)',
-        lang: 'multi',
-        supportsDub: true,
-        episodeServers: [
-          'Auto',
-          'Server HD [SUB]',
-          'Server HD [English Dub]',
-        ],
-      ),
-      OnlinestreamProvider(
-        id: 'kawaii-animes',
-        name: 'Kawaii (Latino / Castellano)',
-        lang: 'es',
-        supportsDub: true,
-        episodeServers: [
-          'Auto',
-          'Server 1 [Latino]',
-          'Server 1 [Castellano]',
-          'Server 1 [Sub]',
-          'Server 2 [Latino]',
-          'Server 2 [Sub]',
-        ],
-      ),
-      OnlinestreamProvider(
-        id: 'jkanime',
-        name: 'JKAnime (Sub Español)',
-        lang: 'es',
-        supportsDub: false,
-        episodeServers: [
-          'Auto',
-          'StreamWish [Sub]',
-          'VOE [Sub]',
-        ],
-      ),
-    ];
-
     if (_onlinestreamProvidersCache != null && _onlinestreamProvidersCache!.isNotEmpty) {
       return _onlinestreamProvidersCache!;
     }
-
-    final res = List<OnlinestreamProvider>.from(defaultProviders);
-
     try {
       final response = await _apiClient.get(ApiEndpoints.listOnlinestreamProviders);
       if (response.statusCode == 200 && response.data != null) {
@@ -2479,20 +2433,37 @@ class SeanimeRepository {
           list = data;
         }
         if (list != null && list.isNotEmpty) {
-          for (final item in list.whereType<Map<String, dynamic>>()) {
-            final p = OnlinestreamProvider.fromJson(item);
-            if (!res.any((existing) => existing.id == p.id)) {
-              res.add(p);
-            }
-          }
+          final res = list
+              .whereType<Map<String, dynamic>>()
+              .map(OnlinestreamProvider.fromJson)
+              .toList();
+          _onlinestreamProvidersCache = res;
+          return res;
         }
       }
     } catch (e) {
       debugPrint('Error fetching onlinestream providers: $e');
     }
 
-    _onlinestreamProvidersCache = res;
-    return res;
+    // Fallback to getAllExtensions
+    try {
+      final all = await getAllExtensions();
+      final onlinestreamExts = all
+          .where((e) => e.type == 'onlinestream-provider' && !e.disabled)
+          .map((e) => OnlinestreamProvider(
+                id: e.id,
+                name: e.name,
+                lang: e.lang,
+                supportsDub: true,
+              ))
+          .toList();
+      if (onlinestreamExts.isNotEmpty) {
+        _onlinestreamProvidersCache = onlinestreamExts;
+      }
+      return onlinestreamExts;
+    } catch (_) {}
+
+    return _onlinestreamProvidersCache ?? [];
   }
 
   Future<bool> ensureOnlineStreamingEnabled() async {
@@ -2657,72 +2628,6 @@ class SeanimeRepository {
       return _onlinestreamEpisodesCache[cacheKey]!;
     }
 
-    // Resolve anime title if available
-    String? title = _animeDetailsCache[mediaId]?.romajiTitle ??
-        _animeDetailsCache[mediaId]?.englishTitle ??
-        _animeDetailsCache[mediaId]?.title;
-    if (title == null) {
-      try {
-        final details = await getAnimeDetails(mediaId);
-        title = details?.romajiTitle ?? details?.englishTitle ?? details?.title;
-      } catch (_) {}
-    }
-
-    // 1. Direct native Dart resolution for aniting-universal
-    if (provider == 'aniting-universal' || provider.isEmpty) {
-      try {
-        final nativeEps = await _anitingOnlineSource.getEpisodes(mediaId);
-        if (nativeEps.isNotEmpty) {
-          _onlinestreamEpisodesCache[cacheKey] = nativeEps;
-          return nativeEps;
-        }
-      } catch (e) {
-        debugPrint('Error in native AnitingOnlineSource.getEpisodes: $e');
-      }
-    }
-
-    // 2. Direct native Dart resolution for kawaii-animes
-    if (provider == 'kawaii-animes') {
-      try {
-        final nativeEps = await _kawaiiOnlineSource.getEpisodes(mediaId, title: title);
-        if (nativeEps.isNotEmpty) {
-          _onlinestreamEpisodesCache[cacheKey] = nativeEps;
-          return nativeEps;
-        }
-      } catch (e) {
-        debugPrint('Error in native KawaiiOnlineSource.getEpisodes: $e');
-      }
-      // Fallback to universal episode list if title matching returned empty
-      try {
-        final fallbackEps = await _anitingOnlineSource.getEpisodes(mediaId);
-        if (fallbackEps.isNotEmpty) {
-          _onlinestreamEpisodesCache[cacheKey] = fallbackEps;
-          return fallbackEps;
-        }
-      } catch (_) {}
-    }
-
-    // 3. Direct native Dart resolution for jkanime
-    if (provider == 'jkanime') {
-      try {
-        final nativeEps = await _jkanimeOnlineSource.getEpisodes(mediaId, title: title);
-        if (nativeEps.isNotEmpty) {
-          _onlinestreamEpisodesCache[cacheKey] = nativeEps;
-          return nativeEps;
-        }
-      } catch (e) {
-        debugPrint('Error in native JkAnimeOnlineSource.getEpisodes: $e');
-      }
-      // Fallback to universal episode list if title matching returned empty
-      try {
-        final fallbackEps = await _anitingOnlineSource.getEpisodes(mediaId);
-        if (fallbackEps.isNotEmpty) {
-          _onlinestreamEpisodesCache[cacheKey] = fallbackEps;
-          return fallbackEps;
-        }
-      } catch (_) {}
-    }
-
     Future<List<OnlinestreamEpisode>?> doFetch() async {
       final response = await _apiClient.post(
         ApiEndpoints.onlinestreamEpisodeList,
@@ -2779,16 +2684,6 @@ class SeanimeRepository {
         }
       }
     }
-
-    // Fallback to native Dart source if backend failed
-    try {
-      final fallbackEps = await _anitingOnlineSource.getEpisodes(mediaId);
-      if (fallbackEps.isNotEmpty) {
-        _onlinestreamEpisodesCache[cacheKey] = fallbackEps;
-        return fallbackEps;
-      }
-    } catch (_) {}
-
     return [];
   }
 
@@ -2800,59 +2695,6 @@ class SeanimeRepository {
     bool dubbed = false,
     bool refresh = false,
   }) async {
-    final resolvedTitle = title ??
-        _animeDetailsCache[mediaId]?.romajiTitle ??
-        _animeDetailsCache[mediaId]?.englishTitle ??
-        _animeDetailsCache[mediaId]?.title;
-
-    // 1. Direct native Dart resolution for aniting-universal (bypasses Seanime Goja)
-    if (provider == 'aniting-universal' || provider.isEmpty || provider == 'default') {
-      try {
-        final nativeSources = await _anitingOnlineSource.getSources(
-          mediaId: mediaId,
-          episodeNumber: episodeNumber,
-          title: resolvedTitle,
-        );
-        if (nativeSources.isNotEmpty) {
-          return nativeSources;
-        }
-      } catch (e) {
-        debugPrint('Error in native AnitingOnlineSource.getSources: $e');
-      }
-    }
-
-    // 2. Direct native Dart resolution for kawaii-animes
-    if (provider == 'kawaii-animes') {
-      try {
-        final nativeSources = await _kawaiiOnlineSource.getSources(
-          mediaId: mediaId,
-          episodeNumber: episodeNumber,
-          title: resolvedTitle,
-        );
-        if (nativeSources.isNotEmpty) {
-          return nativeSources;
-        }
-      } catch (e) {
-        debugPrint('Error in native KawaiiOnlineSource.getSources: $e');
-      }
-    }
-
-    // 3. Direct native Dart resolution for jkanime
-    if (provider == 'jkanime') {
-      try {
-        final nativeSources = await _jkanimeOnlineSource.getSources(
-          mediaId: mediaId,
-          episodeNumber: episodeNumber,
-          title: resolvedTitle,
-        );
-        if (nativeSources.isNotEmpty) {
-          return nativeSources;
-        }
-      } catch (e) {
-        debugPrint('Error in native JkAnimeOnlineSource.getSources: $e');
-      }
-    }
-
     try {
       final response = await _apiClient.post(
         ApiEndpoints.onlinestreamEpisodeSource,
@@ -2874,7 +2716,7 @@ class SeanimeRepository {
               : data;
         }
         final sources = root?['videoSources'] as List?;
-        if (sources != null && sources.isNotEmpty) {
+        if (sources != null) {
           return sources
               .whereType<Map<String, dynamic>>()
               .map(OnlinestreamVideoSource.fromJson)
@@ -2884,18 +2726,6 @@ class SeanimeRepository {
     } catch (e) {
       debugPrint('Error fetching onlinestream sources: $e');
     }
-
-    // Fallback to native Dart source if Seanime returned empty or 500
-    try {
-      final fallbackSources = await _anitingOnlineSource.getSources(
-        mediaId: mediaId,
-        episodeNumber: episodeNumber,
-      );
-      if (fallbackSources.isNotEmpty) {
-        return fallbackSources;
-      }
-    } catch (_) {}
-
     return [];
   }
 
