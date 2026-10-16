@@ -15,6 +15,7 @@ import 'package:seanime_app/presentation/screens/downloads_screen.dart';
 import 'package:seanime_app/presentation/widgets/anime_card.dart';
 import 'package:seanime_app/presentation/widgets/compact_search_bar.dart';
 import 'package:seanime_app/presentation/widgets/continue_watching_card.dart';
+import 'package:seanime_app/presentation/widgets/continue_watching_playback_launcher.dart';
 import 'package:seanime_app/core/theme/smooth_scroll_controller.dart';
 import 'package:seanime_app/presentation/widgets/feed_empty_state.dart';
 import 'package:seanime_app/presentation/widgets/top_status_bar_glass.dart';
@@ -594,7 +595,13 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                                           entry: item,
                                           width: continueCardWidth,
                                           height: continueCardHeight,
-                                          onTap: () => _openDetail(context, item),
+                                          onTap: () => ContinueWatchingPlaybackLauncher.launch(
+                                            context,
+                                            ref,
+                                            item,
+                                            onFallbackToDetail: () => _openDetail(context, item),
+                                          ),
+                                          onOpenDetails: () => _openDetail(context, item),
                                         );
                                       },
                                     ),

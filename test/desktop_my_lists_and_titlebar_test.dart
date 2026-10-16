@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:g1455/g1455.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/screens/my_lists_screen.dart';
 import 'package:seanime_app/presentation/widgets/desktop_title_bar.dart';
@@ -101,7 +102,7 @@ void main() {
             mangaCollectionProvider.overrideWith((ref) async => fakeManga),
           ],
           child: const MaterialApp(
-            home: MyListsScreen(),
+            home: GlassHost(child: MyListsScreen()),
           ),
         ),
       );
@@ -121,6 +122,8 @@ void main() {
 
       // Switch to Manga via MediaTypeToggle
       await tester.tap(find.byType(MediaTypeToggle));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Manga'));
       await tester.pumpAndSettle();
 
       // Check Manga content appears
@@ -171,9 +174,11 @@ void main() {
             downloadedMangaListProvider.overrideWith((ref) async => fakeManga),
           ],
           child: MaterialApp(
-            home: DownloadsDesktopLayout(
-              onDeleteAnime: (_) async {},
-              onDeleteManga: (_) async {},
+            home: GlassHost(
+              child: DownloadsDesktopLayout(
+                onDeleteAnime: (_) async {},
+                onDeleteManga: (_) async {},
+              ),
             ),
           ),
         ),
@@ -190,6 +195,8 @@ void main() {
 
       // Switch to Manga
       await tester.tap(find.byType(MediaTypeToggle));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Manga'));
       await tester.pumpAndSettle();
 
       // Verify manga card is displayed

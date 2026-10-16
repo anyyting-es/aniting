@@ -13,6 +13,7 @@ import 'package:seanime_app/core/i18n/i18n_provider.dart';
 class ContinueWatchingCard extends ConsumerStatefulWidget {
   final AnimeEntry entry;
   final VoidCallback onTap;
+  final VoidCallback? onOpenDetails;
   final double width;
   final double height;
 
@@ -20,6 +21,7 @@ class ContinueWatchingCard extends ConsumerStatefulWidget {
     super.key,
     required this.entry,
     required this.onTap,
+    this.onOpenDetails,
     this.width = 285,
     this.height = 168,
   });
@@ -31,8 +33,19 @@ class ContinueWatchingCard extends ConsumerStatefulWidget {
 class _ContinueWatchingCardState extends ConsumerState<ContinueWatchingCard> {
   bool _isHovered = false;
   bool _isFocused = false;
+  bool _isLaunching = false;
 
   bool get _isActive => _isHovered || _isFocused;
+
+  Future<void> _handleTap() async {
+    if (_isLaunching) return;
+    setState(() => _isLaunching = true);
+    try {
+      widget.onTap();
+    } finally {
+      if (mounted) setState(() => _isLaunching = false);
+    }
+  }
 
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
     if (event is KeyDownEvent) {
@@ -40,7 +53,7 @@ class _ContinueWatchingCardState extends ConsumerState<ContinueWatchingCard> {
           event.logicalKey == LogicalKeyboardKey.select ||
           event.logicalKey == LogicalKeyboardKey.numpadEnter ||
           event.logicalKey == LogicalKeyboardKey.gameButtonA) {
-        widget.onTap();
+        _handleTap();
         return KeyEventResult.handled;
       }
     }
@@ -151,7 +164,9 @@ class _ContinueWatchingCardState extends ConsumerState<ContinueWatchingCard> {
           cursor: SystemMouseCursors.click,
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
-            onTap: widget.onTap,
+            onTap: _handleTap,
+            onLongPress: widget.onOpenDetails,
+            onSecondaryTap: widget.onOpenDetails,
             child: SizedBox(
               width: widget.width,
               child: Column(
@@ -209,24 +224,67 @@ class _ContinueWatchingCardState extends ConsumerState<ContinueWatchingCard> {
                                     color: theme.colorScheme.surfaceContainerHighest,
                                     child: Icon(Icons.movie_rounded, color: theme.colorScheme.outline, size: isCompact ? 28 : 36),
                                   ),
-                          // Subtle video playback progress indicator at the bottom edge (only if watched locally)
-                          if (progressFraction != null && progressFraction > 0.01 && progressFraction < 0.98)
-                            Positioned(
-                              bottom: 0,
-                              left: 0,
-                              right: 0,
-                              child: LinearProgressIndicator(
-                                value: progressFraction,
-                                backgroundColor: Colors.black.withValues(alpha: 0.35),
-                                valueColor: AlwaysStoppedAnimation<Color>(colors.accent),
-                                minHeight: isCompact ? 2.5 : 3.0,
+                            // Expressive Play Badge on hover / focus
+                            if (_isActive && !_isLaunching)
+                              Center(
+                                child: Container(
+                                  width: isCompact ? 36 : 44,
+                                  height: isCompact ? 36 : 44,
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.65),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: Colors.white.withValues(alpha: 0.5),
+                                      width: 1.5,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(alpha: 0.35),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Icon(
+                                    Icons.play_arrow_rounded,
+                                    color: Colors.white,
+                                    size: isCompact ? 22 : 28,
+                                  ),
+                                ),
                               ),
-                            ),
-                        ],
+                            // Launching spinner overlay
+                            if (_isLaunching)
+                              Container(
+                                color: Colors.black.withValues(alpha: 0.55),
+                                child: const Center(
+                                  child: SizedBox(
+                                    width: 26,
+                                    height: 26,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2.5,
+                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            // Subtle video playback progress indicator at the bottom edge (only if watched locally)
+                            if (progressFraction != null && progressFraction > 0.01 && progressFraction < 0.98)
+                              Positioned(
+                                bottom: 0,
+                                left: 0,
+                                right: 0,
+                                child: LinearProgressIndicator(
+                                  value: progressFraction,
+                                  backgroundColor: Colors.black.withValues(alpha: 0.35),
+                                  valueColor: AlwaysStoppedAnimation<Color>(colors.accent),
+                                  minHeight: isCompact ? 2.5 : 3.0,
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
                 SizedBox(height: isCompact ? 6 : 8),
                   // 2. Info Below the Cover
                   Text(
@@ -249,15 +307,19 @@ class _ContinueWatchingCardState extends ConsumerState<ContinueWatchingCard> {
                   Row(
                     children: [
                       Expanded(
-                        child: Text(
-                          animeTitle,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: colors.textSecondary,
-                            fontSize: isCompact ? 10.5 : 11.5,
-                            fontWeight: FontWeight.w500,
-                            fontFamilyFallback: kJapaneseFontFallbacks,
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: widget.onOpenDetails ?? _handleTap,
+                          child: Text(
+                            animeTitle,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: colors.textSecondary,
+                              fontSize: isCompact ? 10.5 : 11.5,
+                              fontWeight: FontWeight.w500,
+                              fontFamilyFallback: kJapaneseFontFallbacks,
+                            ),
                           ),
                         ),
                       ),

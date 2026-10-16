@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:seanime_app/core/preferences/anime_playback_source_provider.dart';
 import 'package:seanime_app/core/preferences/playback_progress_preferences_provider.dart';
 import 'package:seanime_app/core/preferences/resume_bar_preferences_provider.dart';
 import 'package:seanime_app/data/repositories/seanime_repository.dart';
@@ -11,6 +12,7 @@ class PlayerProgressManager {
   final SeanimeRepository repository;
   final LastSessionNotifier lastSessionNotifier;
   final PlaybackProgressNotifier? playbackProgressNotifier;
+  final AnimePlaybackSourceNotifier? animePlaybackSourceNotifier;
   final int? mediaId;
   final String title;
   final ValueGetter<String?> getCoverImage;
@@ -22,6 +24,10 @@ class PlayerProgressManager {
   final ValueGetter<Map<String, String>?> getHeaders;
   final ValueGetter<String?> getMimeType;
   final ValueGetter<String?> getVideoSource;
+  final ValueGetter<String?>? getOnlineStreamProvider;
+  final ValueGetter<bool?>? getOnlineStreamDubbed;
+  final ValueGetter<String?>? getOnlineStreamServer;
+  final ValueGetter<bool>? getIsLocalFile;
   final ValueGetter<Duration> getPosition;
   final ValueGetter<Duration> getDuration;
   final ValueGetter<bool> getIsPlaying;
@@ -44,6 +50,7 @@ class PlayerProgressManager {
     required this.repository,
     required this.lastSessionNotifier,
     this.playbackProgressNotifier,
+    this.animePlaybackSourceNotifier,
     required this.mediaId,
     required this.title,
     this.isTmdb = false,
@@ -56,6 +63,10 @@ class PlayerProgressManager {
     required this.getHeaders,
     required this.getMimeType,
     required this.getVideoSource,
+    this.getOnlineStreamProvider,
+    this.getOnlineStreamDubbed,
+    this.getOnlineStreamServer,
+    this.getIsLocalFile,
     required this.getPosition,
     required this.getDuration,
     required this.getIsPlaying,
@@ -115,6 +126,14 @@ class PlayerProgressManager {
         duration: dur.inSeconds.toDouble(),
       );
 
+      final isLocal = getIsLocalFile?.call() ?? getVideoUrl().contains('/api/v1/mediastream');
+      final isTorrent = getVideoUrl().contains('torrentstream') ||
+          (getVideoSource()?.toLowerCase().contains('torrent') ?? false);
+      final sourceType = isLocal ? 'local' : (isTorrent ? 'torrent' : 'online');
+      final onlineProv = getOnlineStreamProvider?.call();
+      final onlineDub = getOnlineStreamDubbed?.call();
+      final onlineSrv = getOnlineStreamServer?.call();
+
       final sessionItem = LastSessionItem(
         mediaType: 'ANIME',
         mediaId: mediaId!,
@@ -128,6 +147,10 @@ class PlayerProgressManager {
         mimeType: getMimeType(),
         videoSource: getVideoSource(),
         isTmdb: isTmdb,
+        onlineStreamProvider: onlineProv,
+        onlineStreamDubbed: onlineDub,
+        onlineStreamServer: onlineSrv,
+        isLocalFile: isLocal,
         positionMs: pos.inMilliseconds,
         durationMs: dur.inMilliseconds,
         updatedAt: DateTime.now().millisecondsSinceEpoch,
@@ -135,6 +158,18 @@ class PlayerProgressManager {
 
       Future.microtask(() async {
         lastSessionNotifier.saveSession(sessionItem);
+        animePlaybackSourceNotifier?.saveSource(
+          mediaId: mediaId!,
+          sourceType: sourceType,
+          onlineStreamProvider: onlineProv,
+          onlineStreamDubbed: onlineDub,
+          onlineStreamServer: onlineSrv,
+          videoSource: getVideoSource(),
+          videoUrl: getVideoUrl(),
+          headers: getHeaders(),
+          mimeType: getMimeType(),
+          episodeNumber: epNum,
+        );
         playbackProgressNotifier?.saveProgress(
           mediaId: mediaId!,
           episodeNumber: epNum,

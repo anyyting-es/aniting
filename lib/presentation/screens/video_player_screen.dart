@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
+import 'package:seanime_app/core/preferences/anime_playback_source_provider.dart';
 import 'package:seanime_app/core/preferences/player_engine_provider.dart';
 import 'package:seanime_app/core/preferences/player_gesture_provider.dart';
 import 'package:seanime_app/core/preferences/playback_progress_preferences_provider.dart';
@@ -241,6 +242,37 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   String? get _sourceResolutionError => _sourceController.sourceResolutionError;
   bool get _isLoadingNextEpisode => _sourceController.isLoadingNextEpisode;
 
+  List<OnlinestreamEpisode>? _onlineEpisodes;
+
+  Future<void> _fetchOnlineEpisodes() async {
+    if (widget.mediaId == null || _currentOnlineStreamProvider == null) return;
+    final repo = ref.read(repositoryProvider);
+    final providerId = _currentOnlineStreamProvider!;
+    final dubbed = _currentOnlineStreamDubbed ?? false;
+
+    final cached = repo.getCachedOnlinestreamEpisodes(
+      mediaId: widget.mediaId!,
+      provider: providerId,
+      dubbed: dubbed,
+    );
+    if (cached != null && cached.isNotEmpty && mounted) {
+      setState(() => _onlineEpisodes = cached);
+    }
+
+    try {
+      final list = await repo.getOnlinestreamEpisodes(
+        mediaId: widget.mediaId!,
+        provider: providerId,
+        dubbed: dubbed,
+      );
+      if (mounted) {
+        setState(() => _onlineEpisodes = list);
+      }
+    } catch (e) {
+      debugPrint('[VideoPlayerScreen] Error loading online episodes: $e');
+    }
+  }
+
   bool get _isMovie =>
       _animeDetails?.format?.toUpperCase() == 'MOVIE' ||
       (_animeDetails?.totalEpisodes == 1 && (_animeDetails?.episodes.length ?? 0) <= 1);
@@ -251,16 +283,81 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     if (cur == null || cur < 1) return false;
     final nextNum = cur + 1;
 
+    // 1. Total episodes ceiling
     final total = _animeDetails?.totalEpisodes;
-    if (total != null && total > 0) return nextNum <= total;
+    if (total != null && total > 0 && nextNum > total) {
+      return false;
+    }
+
+    // 2. Unreleased series status
+    final status = _animeDetails?.status?.toUpperCase();
+    if (status == 'NOT_YET_RELEASED') {
+      return false;
+    }
+
+    // 3. Airing guard via AniList nextAiringEpisode
+    final rawMedia = _animeDetails?.rawMedia;
+    final nextAiring = rawMedia?['nextAiringEpisode'] as Map<String, dynamic>?;
+    final nextAiringEpNum = (nextAiring?['episode'] as num?)?.toInt();
+    if (nextAiringEpNum != null && nextAiringEpNum > 0) {
+      if (nextNum >= nextAiringEpNum) {
+        return false;
+      }
+    }
+
+    // 4. Airing guard via AniZip episode airDate & releasing stubs
+    final aniZip = _aniZipData ?? _animeDetails?.aniZipData;
+    final nextAniZipEp = aniZip?.getEpisode(nextNum);
+    if (nextAniZipEp != null) {
+      if (nextAniZipEp.airDate != null && nextAniZipEp.airDate!.isNotEmpty) {
+        final airDt = DateTime.tryParse(nextAniZipEp.airDate!);
+        if (airDt != null && airDt.isAfter(DateTime.now().add(const Duration(hours: 4)))) {
+          return false;
+        }
+      }
+      if (status == 'RELEASING') {
+        if ((nextAniZipEp.airDate == null || nextAniZipEp.airDate!.isEmpty) &&
+            (nextAniZipEp.image == null || nextAniZipEp.image!.isEmpty)) {
+          return false;
+        }
+      }
+    }
+
+    // 5. If streaming via an online provider, check the provider's loaded catalog
+    if (_currentOnlineStreamProvider != null) {
+      if (_onlineEpisodes != null) {
+        return _onlineEpisodes!.any((e) => e.number == nextNum);
+      }
+    }
+
+    // 6. If playing a local library file
+    if (_isCurrentLocalFile) {
+      final eps = _animeDetails?.episodes ?? [];
+      final hasLocal = eps.any((e) => e.episodeNumber == nextNum && e.isDownloaded);
+      if (hasLocal) return true;
+    }
+
+    // 7. General availability fallback (AniZip or episodes metadata)
+    if (nextAniZipEp != null) {
+      return true;
+    }
 
     final eps = _animeDetails?.episodes ?? [];
-    if (eps.any((e) => e.episodeNumber == nextNum)) return true;
+    if (eps.any((e) => e.episodeNumber == nextNum)) {
+      return true;
+    }
 
-    final aniZip = _aniZipData ?? _animeDetails?.aniZipData;
-    if (aniZip?.getEpisode(nextNum) != null) return true;
+    if (status == 'FINISHED' || status == 'COMPLETED') {
+      if (total != null && total > 0) {
+        return nextNum <= total;
+      }
+    }
 
-    return total == null || nextNum <= total;
+    if (aniZip != null && aniZip.episodeCount > 0 && nextNum > aniZip.episodeCount) {
+      return false;
+    }
+
+    return false;
   }
 
   bool get _hasPreviousEpisode => !_isMovie && (_currentEpisodeNumber ?? 1) > 1;
@@ -339,6 +436,9 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     _aniZipData = widget.initialAniZipData ?? widget.initialAnimeDetails?.aniZipData;
 
     _fetchAnimeDetails();
+    if (widget.mediaId != null && _currentOnlineStreamProvider != null) {
+      _fetchOnlineEpisodes();
+    }
 
     final preferredEngine = ref.read(playerEngineProvider);
     final useExo = Platform.isAndroid && preferredEngine == PlayerEngine.exoplayer;
@@ -471,6 +571,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       repository: ref.read(repositoryProvider),
       lastSessionNotifier: ref.read(lastSessionProvider.notifier),
       playbackProgressNotifier: ref.read(playbackProgressPreferencesProvider.notifier),
+      animePlaybackSourceNotifier: ref.read(animePlaybackSourceProvider.notifier),
       mediaId: widget.mediaId,
       title: widget.title,
       isTmdb: _animeDetails?.isTmdb ?? false,
@@ -482,6 +583,10 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       getHeaders: () => _currentHeaders,
       getMimeType: () => _currentMimeType,
       getVideoSource: () => _currentVideoSource,
+      getOnlineStreamProvider: () => _currentOnlineStreamProvider,
+      getOnlineStreamDubbed: () => _currentOnlineStreamDubbed,
+      getOnlineStreamServer: () => _currentOnlineStreamServer,
+      getIsLocalFile: () => _isCurrentLocalFile,
       getPosition: () => _position,
       getDuration: () => _duration,
       getIsPlaying: () => _isPlaying,
@@ -532,6 +637,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       getOnlineStreamDubbed: () => _currentOnlineStreamDubbed,
       getOnlineStreamServer: () => _currentOnlineStreamServer,
       getIsLocalFile: () => _isCurrentLocalFile,
+      getVideoUrl: () => _currentVideoUrl,
       getPosition: () => _position,
       getStartPosition: () => widget.startPosition ?? getSavedProgress(),
       getHasNextEpisode: () => _hasNextEpisode,
@@ -570,6 +676,24 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       );
 
       _progressManager.startTracking(initialPosition: resolvedStartPosition);
+      if (widget.mediaId != null) {
+        final isLocal = _isCurrentLocalFile || _currentVideoUrl.contains('/api/v1/mediastream');
+        final isTorrent = _currentVideoUrl.contains('torrentstream') ||
+            (_currentVideoSource?.toLowerCase().contains('torrent') ?? false);
+        final sourceType = isLocal ? 'local' : (isTorrent ? 'torrent' : 'online');
+        ref.read(animePlaybackSourceProvider.notifier).saveSource(
+          mediaId: widget.mediaId!,
+          sourceType: sourceType,
+          onlineStreamProvider: _currentOnlineStreamProvider,
+          onlineStreamDubbed: _currentOnlineStreamDubbed,
+          onlineStreamServer: _currentOnlineStreamServer,
+          videoSource: _currentVideoSource,
+          videoUrl: _currentVideoUrl,
+          headers: _currentHeaders,
+          mimeType: _currentMimeType,
+          episodeNumber: _currentEpisodeNumber,
+        );
+      }
       _initStatsService();
       _startHideTimer();
       _initBrightness();
@@ -744,14 +868,18 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       _currentOnlineStreamProvider = newProviderId;
       _currentVideoUrl = '';
       _currentVideoSource = newProviderId;
+      _onlineEpisodes = null;
     });
+    _fetchOnlineEpisodes();
     _sourceController.resolveInitialSources(preservePosition: true);
   }
 
   void _toggleOnlineStreamDubbed() {
     setState(() {
       _currentOnlineStreamDubbed = !(_currentOnlineStreamDubbed ?? false);
+      _onlineEpisodes = null;
     });
+    _fetchOnlineEpisodes();
     _sourceController.resolveInitialSources(preservePosition: true);
   }
 
@@ -1245,6 +1373,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                                 chapters: _chapters,
                                 activeChapter: _activeChapter,
                                 onSeekToChapter: _seekTo,
+                                hasNextEpisode: _hasNextEpisode,
                                 onPlayNextEpisode: (_hasNextEpisode && !_isLoadingNextEpisode)
                                     ? () => _sourceController.playEpisode(
                                         targetEpNum: (_currentEpisodeNumber ?? 1) + 1,
@@ -1289,6 +1418,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                                 chapters: _chapters,
                                 activeChapter: _activeChapter,
                                 onSeekToChapter: _seekTo,
+                                hasNextEpisode: _hasNextEpisode,
                                 onPlayNextEpisode: (_hasNextEpisode && !_isLoadingNextEpisode)
                                     ? () => _sourceController.playEpisode(
                                         targetEpNum: (_currentEpisodeNumber ?? 1) + 1,

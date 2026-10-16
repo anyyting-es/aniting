@@ -6,6 +6,22 @@
 > - **ALWAYS** summarize improvements at a high, user-facing level with clear, direct bullet points (e.g., *"Mejoras de UI y navegación en el calendario de emisión"*, *"Nueva pantalla y gestión de estado sin conexión"*, *"Optimizaciones en la caché de seguir viendo"*).
 > - Keep it punchy, professional, and easy to skim.
 
+## 7.49. Reproducción Directa desde Seguir Viendo y Control Inteligente de Siguiente Episodio (2026-10-15)
+- **Reproducción Directa al Tocar un Episodio en Seguir Viendo**:
+  - Al presionar una tarjeta en la sección de Seguir Viendo, se abre inmediatamente el reproductor en el episodio correspondiente sin pasos intermedios, restaurando la posición guardada de reproducción.
+  - Se conserva la misma fuente que se utilizó para ver el anime (archivos locales, proveedor online específico con su configuración de doblaje/servidor, o torrent).
+- **Persistencia Inteligente de Fuentes por Anime**:
+  - Nuevo servicio `AnimePlaybackSourcePreferences` que recuerda de forma persistente la fuente, proveedor y servidor utilizados para cada anime.
+  - Detección automática en cascada (Local > Torrent > Online > Proveedor predeterminado) para garantizar una reproducción sin fricciones.
+  - Indicador de carga fluido al pulsar la tarjeta y soporte para mantener presionado o hacer clic en el título para abrir la pantalla de detalles.
+- **Validación Precisa de Disponibilidad de "Siguiente Episodio"**:
+  - Corrección de la disponibilidad del botón y tarjeta de "Siguiente Episodio" en el reproductor de video para evitar mostrar episodios que aún no se han emitido en animes en emisión.
+  - Validación con el catálogo real del proveedor para transmisiones online (`OnlinestreamEpisode`) y consulta precisa contra AniList (`nextAiringEpisode`) y AniZip (`airDate` y stubs sin emitir) para torrents y biblioteca.
+- **Verificación Completa**:
+  - 0 advertencias en `flutter analyze lib/` y suite de pruebas aprobada al 100% (246/246 tests).
+
+---
+
 ## 7.48. Optimización del Selector de Fuentes y Continuidad de Reproducción (2026-10-15)
 - **Selector Dinámico de Fuentes y Servidores en Vivo**:
   - Cambio fluido de servidor/fuente dentro del modal sin cierres abruptos (`PlayerSourceSelectorSheet`), con actualización reactiva inmediata mediante `ListenableBuilder` e indicador de carga no invasivo.

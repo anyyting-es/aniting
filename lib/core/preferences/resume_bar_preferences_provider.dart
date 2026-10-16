@@ -23,6 +23,10 @@ class LastSessionItem {
   final String? mimeType;
   final String? videoSource;
   final bool isTmdb;
+  final String? onlineStreamProvider;
+  final bool? onlineStreamDubbed;
+  final String? onlineStreamServer;
+  final bool isLocalFile;
   final int updatedAt;
 
   const LastSessionItem({
@@ -45,6 +49,10 @@ class LastSessionItem {
     this.mimeType,
     this.videoSource,
     this.isTmdb = false,
+    this.onlineStreamProvider,
+    this.onlineStreamDubbed,
+    this.onlineStreamServer,
+    this.isLocalFile = false,
     required this.updatedAt,
   });
 
@@ -89,6 +97,10 @@ class LastSessionItem {
     String? mimeType,
     String? videoSource,
     bool? isTmdb,
+    String? onlineStreamProvider,
+    bool? onlineStreamDubbed,
+    String? onlineStreamServer,
+    bool? isLocalFile,
     int? updatedAt,
   }) {
     return LastSessionItem(
@@ -111,6 +123,10 @@ class LastSessionItem {
       mimeType: mimeType ?? this.mimeType,
       videoSource: videoSource ?? this.videoSource,
       isTmdb: isTmdb ?? this.isTmdb,
+      onlineStreamProvider: onlineStreamProvider ?? this.onlineStreamProvider,
+      onlineStreamDubbed: onlineStreamDubbed ?? this.onlineStreamDubbed,
+      onlineStreamServer: onlineStreamServer ?? this.onlineStreamServer,
+      isLocalFile: isLocalFile ?? this.isLocalFile,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
@@ -135,6 +151,10 @@ class LastSessionItem {
         'mimeType': mimeType,
         'videoSource': videoSource,
         'isTmdb': isTmdb,
+        'onlineStreamProvider': onlineStreamProvider,
+        'onlineStreamDubbed': onlineStreamDubbed,
+        'onlineStreamServer': onlineStreamServer,
+        'isLocalFile': isLocalFile,
         'updatedAt': updatedAt,
       };
 
@@ -159,6 +179,10 @@ class LastSessionItem {
       mimeType: json['mimeType']?.toString(),
       videoSource: json['videoSource']?.toString(),
       isTmdb: json['isTmdb'] as bool? ?? false,
+      onlineStreamProvider: json['onlineStreamProvider']?.toString(),
+      onlineStreamDubbed: json['onlineStreamDubbed'] as bool?,
+      onlineStreamServer: json['onlineStreamServer']?.toString(),
+      isLocalFile: json['isLocalFile'] as bool? ?? false,
       updatedAt: json['updatedAt'] is int ? json['updatedAt'] : 0,
     );
   }

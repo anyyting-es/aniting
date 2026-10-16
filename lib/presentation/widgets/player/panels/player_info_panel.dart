@@ -27,6 +27,7 @@ class PlayerInfoPanel extends ConsumerStatefulWidget {
   final List<PlayerChapter> chapters;
   final PlayerChapter? activeChapter;
   final ValueChanged<Duration> onSeekToChapter;
+  final bool hasNextEpisode;
   final VoidCallback? onPlayNextEpisode;
   final VoidCallback? onPlayPreviousEpisode;
   final PlayerSourceController? sourceController;
@@ -55,6 +56,7 @@ class PlayerInfoPanel extends ConsumerStatefulWidget {
     this.chapters = const [],
     this.activeChapter,
     required this.onSeekToChapter,
+    this.hasNextEpisode = true,
     this.onPlayNextEpisode,
     this.onPlayPreviousEpisode,
     this.sourceController,
@@ -167,7 +169,7 @@ class _PlayerInfoPanelState extends ConsumerState<PlayerInfoPanel> {
       nextEpTitle = l10n.episodeNumber(nextEpNum);
     }
 
-    if (!isMovie && nextEp == null && currentEpNum > 0) {
+    if (!isMovie && widget.hasNextEpisode && nextEp == null && currentEpNum > 0) {
       if (totalEps == null || nextEpNum <= totalEps) {
         if (nextAniZipEp != null || episodes.isEmpty) {
           final nextImg = nextAniZipEp?.image ??
@@ -533,7 +535,7 @@ class _PlayerInfoPanelState extends ConsumerState<PlayerInfoPanel> {
                 ],
 
                 // 6. Next Episode Item (Loose layout like anime details EpisodeListItem)
-                if (nextEp != null) ...[
+                if (widget.hasNextEpisode && nextEp != null) ...[
                   Row(
                     children: [
                       Icon(AppIcons.skipNext(iconPack), size: 18, color: theme.colorScheme.primary),

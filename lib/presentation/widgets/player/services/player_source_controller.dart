@@ -26,6 +26,7 @@ class PlayerSourceController extends ChangeNotifier {
   final ValueGetter<bool?> getOnlineStreamDubbed;
   final ValueGetter<String?> getOnlineStreamServer;
   final ValueGetter<bool> getIsLocalFile;
+  final ValueGetter<String>? getVideoUrl;
   final ValueGetter<Duration> getPosition;
   final ValueGetter<Duration?> getStartPosition;
   final ValueGetter<bool> getHasNextEpisode;
@@ -73,6 +74,7 @@ class PlayerSourceController extends ChangeNotifier {
     required this.getOnlineStreamDubbed,
     required this.getOnlineStreamServer,
     required this.getIsLocalFile,
+    this.getVideoUrl,
     required this.getPosition,
     required this.getStartPosition,
     required this.getHasNextEpisode,
@@ -292,7 +294,7 @@ class PlayerSourceController extends ChangeNotifier {
         mediaId: mediaId!,
         targetEpNum: targetEpNum,
         isCurrentLocalFile: getIsLocalFile(),
-        currentVideoUrl: '',
+        currentVideoUrl: getVideoUrl?.call() ?? coordinator.videoUrl ?? '',
         onlineStreamProvider: getOnlineStreamProvider(),
         onlineStreamDubbed: getOnlineStreamDubbed(),
         onlineStreamServer: getOnlineStreamServer(),

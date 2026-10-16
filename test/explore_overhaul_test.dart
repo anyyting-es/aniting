@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:g1455/g1455.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/server/server_manager.dart';
 import 'package:seanime_app/data/models/explore_carousel_config.dart';
@@ -34,14 +35,16 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           child: MaterialApp(
-            home: Scaffold(
-              body: StatefulBuilder(
-                builder: (context, setState) {
-                  return MediaTypeToggle(
-                    selected: selected,
-                    onSelected: (val) => setState(() => selected = val),
-                  );
-                },
+            home: GlassHost(
+              child: Scaffold(
+                body: StatefulBuilder(
+                  builder: (context, setState) {
+                    return MediaTypeToggle(
+                      selected: selected,
+                      onSelected: (val) => setState(() => selected = val),
+                    );
+                  },
+                ),
               ),
             ),
           ),
@@ -51,8 +54,12 @@ void main() {
 
       expect(find.text('Anime'), findsOneWidget);
 
-      // Tap MediaTypeToggle to cycle to next type (Manga)
+      // Tap MediaTypeToggle to open menu
       await tester.tap(find.byType(MediaTypeToggle));
+      await tester.pumpAndSettle();
+
+      // Tap Manga item in menu
+      await tester.tap(find.text('Manga'));
       await tester.pumpAndSettle();
 
       expect(selected, 'MANGA');

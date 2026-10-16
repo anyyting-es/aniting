@@ -9,6 +9,7 @@ import 'package:media_kit/media_kit.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
+import 'package:seanime_app/core/preferences/anime_playback_source_provider.dart';
 import 'package:seanime_app/core/preferences/desktop_nav_style_provider.dart';
 import 'package:seanime_app/core/preferences/desktop_scrollbar_provider.dart';
 import 'package:seanime_app/core/preferences/onboarding_provider.dart';
@@ -97,6 +98,7 @@ void main() async {
     ThemeNotifier.setCachedPrefs(prefs);
     IconPackNotifier.setCachedPrefs(prefs);
     PlaybackProgressNotifier.setCachedPrefs(prefs);
+    AnimePlaybackSourceNotifier.setCachedPrefs(prefs);
     LastSessionNotifier.setCachedPrefs(prefs);
     ResumeBarEnabledNotifier.setCachedPrefs(prefs);
     OnboardingNotifier.setCachedPrefs(prefs);

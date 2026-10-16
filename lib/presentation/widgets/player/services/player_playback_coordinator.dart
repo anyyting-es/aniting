@@ -17,6 +17,8 @@ class PlayerPlaybackCoordinator {
   MpvPlayerService? mpvService;
   SubtitleStylePrefs? currentSubtitleStyle;
 
+  String? get videoUrl => _videoUrl;
+
   final PlayerShaderService shaderService;
   final AppTranslations l10n;
 

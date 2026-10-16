@@ -219,6 +219,38 @@ class PlayerEpisodeResolver {
       }
     }
 
+    // 3. Try Torrent Stream source
+    final isTorrent = currentVideoUrl.contains('torrentstream') ||
+        (onlineStreamProvider == null && !isCurrentLocalFile);
+    if (isTorrent) {
+      try {
+        final success = await repository.startTorrentStream(
+          mediaId: mediaId,
+          episodeNumber: targetEpNum,
+          autoSelect: true,
+        );
+        if (success) {
+          final streamUrl =
+              'http://${serverManager.host}:${serverManager.port}/api/v1/torrentstream/stream/video.mkv';
+          final aniZipEp =
+              (aniZipData ?? animeDetails?.aniZipData)?.getEpisode(targetEpNum);
+          final epTitle = aniZipEp?.displayTitle.isNotEmpty == true
+              ? aniZipEp!.displayTitle
+              : (l10n != null
+                  ? l10n!.episodeNumber(targetEpNum)
+                  : 'Episode $targetEpNum');
+          return ResolvedEpisodeSource(
+            videoUrl: streamUrl,
+            episodeNumber: targetEpNum,
+            episodeTitle: epTitle,
+            videoSource: 'Torrent',
+          );
+        }
+      } catch (e) {
+        // Fall back to null if auto-select fails
+      }
+    }
+
     return null;
   }
 }

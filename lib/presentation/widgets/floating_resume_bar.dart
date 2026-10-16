@@ -107,6 +107,27 @@ class FloatingResumeBar extends ConsumerWidget {
             headers: session.headers,
             mimeType: session.mimeType,
             videoSource: session.videoSource,
+            onlineStreamProvider: session.onlineStreamProvider,
+            onlineStreamDubbed: session.onlineStreamDubbed,
+            onlineStreamServer: session.onlineStreamServer,
+            isLocalFile: session.isLocalFile,
+          ),
+        );
+      } else if (session.onlineStreamProvider != null && session.onlineStreamProvider!.isNotEmpty) {
+        Navigator.of(context).push(
+          VideoPlayerScreen.route(
+            mediaId: session.mediaId,
+            videoUrl: '',
+            title: session.title,
+            episodeTitle: session.episodeTitle,
+            episodeNumber: session.episodeNumber,
+            startPosition: session.positionMs != null
+                ? Duration(milliseconds: session.positionMs!)
+                : null,
+            videoSource: session.videoSource,
+            onlineStreamProvider: session.onlineStreamProvider,
+            onlineStreamDubbed: session.onlineStreamDubbed,
+            onlineStreamServer: session.onlineStreamServer,
           ),
         );
       } else {
