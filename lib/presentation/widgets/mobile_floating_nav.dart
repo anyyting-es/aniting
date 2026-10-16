@@ -109,21 +109,25 @@ class _MobileFloatingNavState extends ConsumerState<MobileFloatingNav>
 
           // If no active session or resume disabled, render simple standalone dock
           if (!hasResume) {
-            return Align(
-              alignment: Alignment.bottomCenter,
-              child: Padding(
-                padding: const EdgeInsets.only(
-                  left: 16.0,
-                  right: 16.0,
-                  bottom: _kBottomMargin,
-                ),
-                child: FloatingDockPill(
-                  selectedIndex: widget.selectedIndex,
-                  onDestinationSelected: widget.onDestinationSelected,
-                  items: widget.items,
-                  labelProgress: 1.0,
-                  height: _kDockHeight,
-                  borderRadius: BorderRadius.circular(34.0),
+            return SizedBox(
+              width: totalWidth,
+              height: _kDockHeight + _kBottomMargin,
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: Padding(
+                  padding: const EdgeInsets.only(
+                    left: 16.0,
+                    right: 16.0,
+                    bottom: _kBottomMargin,
+                  ),
+                  child: FloatingDockPill(
+                    selectedIndex: widget.selectedIndex,
+                    onDestinationSelected: widget.onDestinationSelected,
+                    items: widget.items,
+                    labelProgress: 1.0,
+                    height: _kDockHeight,
+                    borderRadius: BorderRadius.circular(34.0),
+                  ),
                 ),
               ),
             );

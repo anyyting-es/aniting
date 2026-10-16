@@ -13,6 +13,8 @@
   - El menú contextual de tres puntos ahora muestra correctamente la opción "Eliminar descarga" y limpia el archivo físico y el historial de descargas.
 - **Transición Fluida entre Modos (Online, Torrent, Local)**:
   - Eliminación del cambio abrupto ("pop pum") entre fuentes y modos tanto en móvil como en escritorio mediante transiciones animadas suaves con curvas naturales.
+- **Estabilidad de Layout en Navegación Flotante**:
+  - Restricción de altura en `MobileFloatingNav` al no haber sesión activa, corrigiendo la excepción de Scaffold con SnackBars flotantes fuera de pantalla.
 - **Verificación Completa**:
   - 0 incidencias en `flutter analyze lib/` y 253/253 tests aprobados.
 
