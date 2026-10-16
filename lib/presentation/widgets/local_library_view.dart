@@ -1,12 +1,14 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:g1455/g1455.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/preferences/episode_view_mode_provider.dart';
 import 'package:seanime_app/core/theme/app_theme_colors.dart';
 import 'package:seanime_app/data/models/anime_details.dart';
 import 'package:seanime_app/data/models/library_entry_details.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
+import 'package:seanime_app/presentation/providers/download_history_provider.dart';
 import 'package:seanime_app/presentation/screens/video_player_screen.dart';
 import 'package:seanime_app/presentation/widgets/episode_item_widget.dart';
 
@@ -107,22 +109,23 @@ class _LocalLibraryViewState extends ConsumerState<LocalLibraryView> {
 
   Future<void> _deleteLocalEpisode(LibraryEpisode ep) async {
     final l10n = ref.read(translationsProvider);
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showGlassDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l10n.deleteDownload),
-        content: Text(l10n.deleteEpisodeDownloadConfirm(ep.episodeNumber)),
-        actions: [
-          TextButton(
+      builder: (BuildContext ctx) => GlassAlert(
+        title: Text(l10n.deleteDownload, textAlign: TextAlign.center),
+        message: Text(
+          l10n.deleteEpisodeDownloadConfirm(ep.episodeNumber),
+          textAlign: TextAlign.center,
+        ),
+        actions: <GlassAlertAction>[
+          GlassAlertAction(
+            label: l10n.cancel,
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text(l10n.cancel),
           ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(ctx).colorScheme.error,
-            ),
+          GlassAlertAction(
+            label: l10n.delete,
+            isDestructive: true,
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text(l10n.delete),
           ),
         ],
       ),
@@ -139,6 +142,7 @@ class _LocalLibraryViewState extends ConsumerState<LocalLibraryView> {
           if (f.existsSync()) f.deleteSync();
         } catch (_) {}
       }
+      ref.read(downloadHistoryProvider.notifier).removeItem('${widget.mediaId}_${ep.episodeNumber}');
       await _scanAndRefresh();
       messenger.showSnackBar(
         SnackBar(
@@ -169,10 +173,35 @@ class _LocalLibraryViewState extends ConsumerState<LocalLibraryView> {
       );
     }
 
-    final downloadedEpisodes = _libraryEntry?.episodes
-            .where((e) => e.isDownloaded)
-            .toList() ??
-        [];
+    final downloadedEpisodes = [
+      ...(_libraryEntry?.episodes.where((e) => e.isDownloaded) ?? []),
+    ];
+    final existingNums = downloadedEpisodes.map((e) => e.episodeNumber).toSet();
+    final historyItems = ref.watch(downloadHistoryProvider);
+    for (final item in historyItems) {
+      if (item.mediaId == widget.mediaId && item.filePath != null && item.filePath!.isNotEmpty) {
+        int? epNum;
+        if (item.id.startsWith('${widget.mediaId}_')) {
+          epNum = int.tryParse(item.id.substring('${widget.mediaId}_'.length));
+        }
+        if (epNum != null && !existingNums.contains(epNum)) {
+          if (File(item.filePath!).existsSync()) {
+            existingNums.add(epNum);
+            downloadedEpisodes.add(
+              LibraryEpisode(
+                episodeNumber: epNum,
+                displayTitle: item.title,
+                episodeTitle: item.title,
+                localFilePath: item.filePath,
+                isDownloaded: true,
+                thumbnail: item.coverImage,
+              ),
+            );
+          }
+        }
+      }
+    }
+    downloadedEpisodes.sort((a, b) => a.episodeNumber.compareTo(b.episodeNumber));
 
     // Case 1: Anime is in library with downloaded files!
     if (downloadedEpisodes.isNotEmpty) {

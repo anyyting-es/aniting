@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:g1455/g1455.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
@@ -373,6 +374,10 @@ class EpisodeListItem extends ConsumerWidget {
   final bool isDownloading;
   final double? downloadProgress;
   final bool isDownloaded;
+  final bool isSelected;
+  final bool isSelectionMode;
+  final VoidCallback? onToggleSelection;
+  final VoidCallback? onLongPress;
   final VoidCallback? onTap;
   final VoidCallback? onPlay;
   final VoidCallback? onDownload;
@@ -397,6 +402,10 @@ class EpisodeListItem extends ConsumerWidget {
     this.isDownloading = false,
     this.downloadProgress,
     this.isDownloaded = false,
+    this.isSelected = false,
+    this.isSelectionMode = false,
+    this.onToggleSelection,
+    this.onLongPress,
     this.onTap,
     this.onPlay,
     this.onDownload,
@@ -406,6 +415,7 @@ class EpisodeListItem extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final l10n = ref.watch(translationsProvider);
     final iconPack = ref.watch(iconPackProvider);
     final itemRadius = context.themeColors.borderRadius;
@@ -423,35 +433,109 @@ class EpisodeListItem extends ConsumerWidget {
         ? (localProgress.positionMs / localProgress.durationMs).clamp(0.0, 1.0)
         : null;
 
+    final showCheckbox = isSelectionMode || isSelected;
+
     return RepaintBoundary(
-      child: Material(
-        color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(itemRadius),
-        onTap: isLoading ? null : (onTap ?? onPlay),
-        onLongPress: () {
-          showEpisodeDetailModal(
-            context: context,
-            episodeNumber: episodeNumber,
-            title: title,
-            originalTitle: originalTitle,
-            synopsis: synopsis,
-            image: image,
-            fallbackImage: fallbackImage,
-            duration: duration,
-            airDate: airDate,
-            rating: rating,
-            badgeText: badgeText,
-            onPlay: onPlay ?? onTap,
-            onDownload: onDownload,
-            onDelete: onDelete,
-          );
-        },
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+      child: AnimatedScale(
+        scale: isSelected ? 0.98 : 1.0,
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOutCubic,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
+          decoration: BoxDecoration(
+            color: isSelected
+                ? theme.colorScheme.primaryContainer.withValues(alpha: isDark ? 0.28 : 0.42)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(itemRadius),
+            border: isSelected
+                ? Border.all(
+                    color: theme.colorScheme.primary.withValues(alpha: 0.9),
+                    width: 1.6,
+                  )
+                : (isSelectionMode
+                    ? Border.all(
+                        color: theme.colorScheme.outlineVariant.withValues(alpha: 0.2),
+                        width: 0.8,
+                      )
+                    : null),
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(itemRadius),
+              onTap: (isLoading || isDownloading)
+                  ? null
+                  : (isSelectionMode
+                      ? () {
+                          HapticFeedback.selectionClick();
+                          onToggleSelection?.call();
+                        }
+                      : (onTap ?? onPlay)),
+              onLongPress: () {
+                HapticFeedback.mediumImpact();
+                if (onLongPress != null) {
+                  onLongPress!();
+                } else if (onToggleSelection != null) {
+                  onToggleSelection!();
+                } else {
+                  showEpisodeDetailModal(
+                    context: context,
+                    episodeNumber: episodeNumber,
+                    title: title,
+                    originalTitle: originalTitle,
+                    synopsis: synopsis,
+                    image: image,
+                    fallbackImage: fallbackImage,
+                    duration: duration,
+                    airDate: airDate,
+                    rating: rating,
+                    badgeText: badgeText,
+                    onPlay: onPlay ?? onTap,
+                    onDownload: onDownload,
+                    onDelete: onDelete,
+                  );
+                }
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Animated Selection Checkbox
+                    if (showCheckbox) ...[
+                      Padding(
+                        padding: const EdgeInsets.only(top: 14, right: 6),
+                        child: AnimatedScale(
+                          scale: isSelected ? 1.0 : 0.88,
+                          duration: const Duration(milliseconds: 200),
+                          curve: Curves.easeOutBack,
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            curve: Curves.easeOutCubic,
+                            width: 22,
+                            height: 22,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: isSelected ? theme.colorScheme.primary : Colors.transparent,
+                              border: Border.all(
+                                color: isSelected
+                                    ? theme.colorScheme.primary
+                                    : theme.colorScheme.outlineVariant,
+                                width: 1.8,
+                              ),
+                            ),
+                            child: isSelected
+                                ? const Icon(
+                                    Icons.check_rounded,
+                                    size: 15,
+                                    color: Colors.white,
+                                  )
+                                : null,
+                          ),
+                        ),
+                      ),
+                    ],
               // Larger, squarer 4:3 Thumbnail without play icon inside or on side
               SizedBox(
                 width: 132,
@@ -784,8 +868,10 @@ class EpisodeListItem extends ConsumerWidget {
         ),
       ),
     ),
-  );
-}
+  ),
+),
+);
+  }
 }
 
 /// Compact grid item for grid view mode:
@@ -808,6 +894,10 @@ class EpisodeGridItem extends ConsumerWidget {
   final bool isDownloading;
   final double? downloadProgress;
   final bool isDownloaded;
+  final bool isSelected;
+  final bool isSelectionMode;
+  final VoidCallback? onToggleSelection;
+  final VoidCallback? onLongPress;
   final VoidCallback? onTap;
   final VoidCallback? onPlay;
   final VoidCallback? onDownload;
@@ -832,6 +922,10 @@ class EpisodeGridItem extends ConsumerWidget {
     this.isDownloading = false,
     this.downloadProgress,
     this.isDownloaded = false,
+    this.isSelected = false,
+    this.isSelectionMode = false,
+    this.onToggleSelection,
+    this.onLongPress,
     this.onTap,
     this.onPlay,
     this.onDownload,
@@ -841,6 +935,7 @@ class EpisodeGridItem extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final iconPack = ref.watch(iconPackProvider);
     final gridRadius = context.themeColors.borderRadius;
 
@@ -857,56 +952,118 @@ class EpisodeGridItem extends ConsumerWidget {
         ? (localProgress.positionMs / localProgress.durationMs).clamp(0.0, 1.0)
         : null;
 
+    final baseColor = isWatched && !isPlaying
+        ? theme.colorScheme.primary.withValues(alpha: 0.08)
+        : isDownloaded
+            ? Colors.green.withValues(alpha: 0.08)
+            : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45);
+
     return RepaintBoundary(
-      child: Material(
-        color: isWatched && !isPlaying
-          ? theme.colorScheme.primary.withValues(alpha: 0.08)
-          : isDownloaded
-              ? Colors.green.withValues(alpha: 0.08)
-              : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
-      borderRadius: BorderRadius.circular(gridRadius),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(gridRadius),
-        onTap: (isLoading || isDownloading) ? null : onTap,
-        onLongPress: () {
-          showEpisodeDetailModal(
-            context: context,
-            episodeNumber: episodeNumber,
-            title: title,
-            originalTitle: originalTitle,
-            synopsis: synopsis,
-            image: image,
-            fallbackImage: fallbackImage,
-            duration: duration,
-            airDate: airDate,
-            rating: rating,
-            badgeText: badgeText,
-            onPlay: onPlay ?? onTap,
-            onDownload: onDownload,
-            onDelete: onDelete,
-          );
-        },
-        child: Container(
+      child: AnimatedScale(
+        scale: isSelected ? 0.96 : 1.0,
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOutCubic,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
           decoration: BoxDecoration(
+            color: isSelected
+                ? theme.colorScheme.primaryContainer.withValues(alpha: isDark ? 0.35 : 0.5)
+                : baseColor,
             borderRadius: BorderRadius.circular(gridRadius),
             border: Border.all(
-              color: isPlaying
+              color: isSelected
                   ? theme.colorScheme.primary
-                  : isDownloading
-                      ? theme.colorScheme.primary.withValues(alpha: 0.6)
-                      : isDownloaded
-                          ? Colors.greenAccent.withValues(alpha: 0.5)
-                          : isWatched
-                              ? theme.colorScheme.primary.withValues(alpha: 0.2)
-                              : theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
-              width: (isPlaying || isDownloading) ? 1.5 : 1.0,
+                  : (isPlaying
+                      ? theme.colorScheme.primary
+                      : isDownloading
+                          ? theme.colorScheme.primary.withValues(alpha: 0.6)
+                          : isDownloaded
+                              ? Colors.greenAccent.withValues(alpha: 0.5)
+                              : isWatched
+                                  ? theme.colorScheme.primary.withValues(alpha: 0.2)
+                                  : (isSelectionMode
+                                      ? theme.colorScheme.outlineVariant.withValues(alpha: 0.25)
+                                      : theme.colorScheme.outlineVariant.withValues(alpha: 0.3))),
+              width: isSelected ? 2.0 : ((isPlaying || isDownloading) ? 1.5 : 1.0),
             ),
           ),
           clipBehavior: Clip.antiAlias,
-          child: Stack(
-            fit: StackFit.passthrough,
-            children: [
-              Center(
+          child: Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(gridRadius),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(gridRadius),
+              onTap: (isLoading || isDownloading)
+                  ? null
+                  : (isSelectionMode
+                      ? () {
+                          HapticFeedback.selectionClick();
+                          onToggleSelection?.call();
+                        }
+                      : (onTap ?? onPlay)),
+              onLongPress: () {
+                HapticFeedback.mediumImpact();
+                if (onLongPress != null) {
+                  onLongPress!();
+                } else if (onToggleSelection != null) {
+                  onToggleSelection!();
+                } else {
+                  showEpisodeDetailModal(
+                    context: context,
+                    episodeNumber: episodeNumber,
+                    title: title,
+                    originalTitle: originalTitle,
+                    synopsis: synopsis,
+                    image: image,
+                    fallbackImage: fallbackImage,
+                    duration: duration,
+                    airDate: airDate,
+                    rating: rating,
+                    badgeText: badgeText,
+                    onPlay: onPlay ?? onTap,
+                    onDownload: onDownload,
+                    onDelete: onDelete,
+                  );
+                }
+              },
+              child: Stack(
+                fit: StackFit.passthrough,
+                children: [
+                  if (isSelectionMode || isSelected)
+                    Positioned(
+                      top: 6,
+                      right: 6,
+                      child: AnimatedScale(
+                        scale: isSelected ? 1.0 : 0.85,
+                        duration: const Duration(milliseconds: 200),
+                        curve: Curves.easeOutBack,
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          curve: Curves.easeOutCubic,
+                          width: 20,
+                          height: 20,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: isSelected ? theme.colorScheme.primary : Colors.transparent,
+                            border: Border.all(
+                              color: isSelected
+                                  ? theme.colorScheme.primary
+                                  : theme.colorScheme.outlineVariant,
+                              width: 1.8,
+                            ),
+                          ),
+                          child: isSelected
+                              ? const Icon(
+                                  Icons.check_rounded,
+                                  size: 13,
+                                  color: Colors.white,
+                                )
+                              : null,
+                        ),
+                      ),
+                    ),
+                  Center(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                   child: Column(
@@ -1027,6 +1184,7 @@ class EpisodeGridItem extends ConsumerWidget {
         ),
       ),
     ),
-  );
+  ),
+);
 }
 }

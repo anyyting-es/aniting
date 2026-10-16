@@ -366,6 +366,10 @@ abstract class AppTranslations {
   String get reloadSourcesTooltip;
   String get noSourcesFoundForEpisode;
   String get availableSourcesCount;
+  String get playingLocally;
+  String get playingLocallyDesc;
+  String get playingFromTorrent;
+  String get playingFromTorrentDesc;
   String get aspectRatio;
   String get screenFit;
   String get videoSource;
@@ -1174,5 +1178,41 @@ abstract class AppTranslations {
   String get multiSubs;
   String get originalPlusDub;
   String get batches;
+
+  // Online Stream Downloads
+  String get onlineDownloads;
+  String get downloadOnlineStream;
+  String get resolvingOnlineSources;
+  String get selectServerAndQuality;
+  String get startDownloadAction;
+  String get onlineDownloadStarted;
+  String get alreadyDownloading;
+  String get alreadyDownloaded;
+  String get cancelDownload;
+  String get subtitlesIncluded;
+  String get saveLocation;
+
+  // Episode Multi-Selection & Batch Actions
+  String selectedEpisodesCount(int count);
+  String get selectAll;
+  String get deselectAll;
+  String downloadCount(int count);
+  String deleteCount(int count);
+  String deleteSelectedEpisodesConfirm(int count);
+  String get markWatched;
+  String get markUnwatched;
+
+  // Online Stream Download Feedback
+  String get noSaveLocationConfigured;
+  String get downloadFailedProtected;
+  String get downloadFailedInvalid;
+  String get downloadFailedGeneric;
+  String downloadingEpisodesCount(int count);
+  String episodesQueuedForDownload(int count);
+  String get batchDownloadEpisodes;
+  String get selectPreferredSource;
+  String get sourceFallbackNotice;
+  String get noSourceAvailable;
+  String startDownloadCount(int count);
 }
 

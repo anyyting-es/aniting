@@ -303,6 +303,29 @@ class DownloadingEpisodesNotifier extends Notifier<DownloadingEpisodesState> {
     return state.getProgress(mediaId, episodeNumber);
   }
 
+  void updateProgress(
+    int mediaId,
+    int episodeNumber, {
+    double? progress,
+    String? speed,
+    String? status,
+  }) {
+    final key = '${mediaId}_$episodeNumber';
+    final existing = state.episodes[key];
+    final current = Map<String, EpisodeDownloadProgress>.from(state.episodes);
+    current[key] = (existing ??
+            EpisodeDownloadProgress(
+              mediaId: mediaId,
+              episodeNumber: episodeNumber,
+            ))
+        .copyWith(
+      progress: progress,
+      speed: speed,
+      status: status,
+    );
+    state = DownloadingEpisodesState(current);
+  }
+
   void syncWithTorrents(List<Map<String, dynamic>> activeTorrents) {
     if (state.episodes.isEmpty) return;
     final current = Map<String, EpisodeDownloadProgress>.from(state.episodes);

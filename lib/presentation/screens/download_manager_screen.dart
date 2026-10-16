@@ -6,9 +6,11 @@ import 'package:seanime_app/core/storage/app_storage_paths.dart';
 import 'package:seanime_app/data/models/torrent_models.dart';
 import 'package:seanime_app/presentation/providers/active_downloads_provider.dart';
 import 'package:seanime_app/presentation/providers/download_history_provider.dart';
+import 'package:seanime_app/presentation/providers/online_stream_download_provider.dart';
 import 'package:seanime_app/presentation/providers/torrent_stream_provider.dart';
 import 'package:seanime_app/presentation/screens/settings/widgets/pixel_settings_widgets.dart';
 import 'package:seanime_app/presentation/screens/settings/widgets/pixel_subpage_scaffold.dart';
+import 'package:seanime_app/presentation/widgets/downloads/online_stream_downloads_section.dart';
 
 class DownloadManagerScreen extends ConsumerWidget {
   final bool isEmbedded;
@@ -26,6 +28,7 @@ class DownloadManagerScreen extends ConsumerWidget {
 
     final streamStatus = ref.watch(torrentStreamStatusProvider);
     final activeState = ref.watch(activeDownloadsProvider);
+    final onlineStreamState = ref.watch(onlineStreamDownloadProvider);
     final historyItems = ref.watch(downloadHistoryProvider);
     final activeNotifier = ref.read(activeDownloadsProvider.notifier);
     final historyNotifier = ref.read(downloadHistoryProvider.notifier);
@@ -63,11 +66,15 @@ class DownloadManagerScreen extends ConsumerWidget {
 
     final hasClientTorrents = inProgressTorrents.isNotEmpty;
     final hasMangaQueue = activeState.mangaQueue.isNotEmpty;
-    final hasAnyActive = hasActiveTorrentStream || hasClientTorrents || hasMangaQueue;
+    final onlineTasks = onlineStreamState.visibleTasks;
+    final hasOnlineDownloads = onlineTasks.isNotEmpty;
+    final hasAnyActive =
+        hasActiveTorrentStream || hasClientTorrents || hasMangaQueue || hasOnlineDownloads;
 
     final activeCount = (hasActiveTorrentStream ? 1 : 0) +
         inProgressTorrents.length +
-        activeState.mangaQueue.length;
+        activeState.mangaQueue.length +
+        onlineTasks.length;
 
     return PixelSubpageScaffold(
       title: l10n.downloadManager,
@@ -165,7 +172,13 @@ class DownloadManagerScreen extends ConsumerWidget {
             ),
           ],
 
-          // 2.3 Manga Download Queue
+          // 2.3 Online Stream Downloads
+          if (hasOnlineDownloads) ...[
+            const OnlineStreamDownloadsSection(),
+            const SizedBox(height: 10),
+          ],
+
+          // 2.4 Manga Download Queue
           if (hasMangaQueue) ...[
             _buildMangaQueueHeader(context, l10n, iconPack, activeNotifier),
             const SizedBox(height: 6),

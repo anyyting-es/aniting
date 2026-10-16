@@ -86,3 +86,30 @@ This document records solutions to complex platform-specific bugs, hardware deco
 - **Symptom**: Player controls via `playerctl` stopped working when entering a second video after exiting the first.
 - **Root Cause**: Disposing the player called `client.close()`, disconnecting the DBus client from the session bus.
 - **Solution**: Designed `MprisService` as a persistent singleton that remains registered on the D-Bus session bus across the app lifecycle. `reset()` clears active metadata, track positions, and callbacks without unregistering the service interface or closing the D-Bus connection.
+
+---
+
+## 6. Online Stream Downloads (HLS) & Player Stability
+
+### 6.1. Downloaded Episode Was Unplayable (Encrypted HLS Written Raw)
+- **Symptom**: An online episode download reported "completed", but opening it prompted an ExoPlayer→libmpv fallback and nothing ever played. The file was hundreds of MB of high-entropy garbage (no `ftyp`/`moov`/TS sync bytes).
+- **Root Cause**: On Android/iOS there is no ffmpeg, so `OnlineStreamDownloader` used the pure-Dart HLS fallback. That path ignored `#EXT-X-KEY` (AES-128) and `#EXT-X-MAP` (fMP4/CMAF init segment), so the raw **encrypted** segment bytes were concatenated and saved as `.mp4`.
+- **Solution**: New `HlsDownloadEngine` (`lib/core/downloads/hls_download_engine.dart`) that parses `#EXT-X-KEY`, `#EXT-X-MAP` and `#EXT-X-BYTERANGE`, decrypts AES-128 (CBC + PKCS7, with `pointycastle`) and derives the IV from `IV=` or the media sequence. SAMPLE-AES/DRM is reported with a clear error instead of writing garbage.
+
+### 6.2. False "Completed" Downloads / Missing Feedback
+- **Solution**: After every download the output is validated (`_validateOutput` → `isValidMediaHeader`); a non-media file is deleted and the task is marked `failed` with a machine code (`protected` / `invalid` / `unknown`) that the dialog maps to localized text. `startDownload` now returns a `DownloadStartResult` so the UI distinguishes "already downloading" from "no save folder configured" (previously both showed the wrong "already downloading" message).
+
+### 6.3. `ref` Used Inside `dispose()` (Player)
+- **Symptom**: `Bad state: Using "ref" when a widget is about to or has been unmounted is unsafe` when leaving the player.
+- **Root Cause**: `_VideoPlayerScreenState.dispose()` called `ref.read(...)` to decide whether to pause the torrent stream.
+- **Solution**: The repository is captured in `initState`, and the torrent/preference flags are cached in fields during `build` (`ref.watch`), so `dispose()` never touches `ref`.
+
+### 6.4. Playback Card Showed "No Sources Found" for Local / Torrent Playback
+- **Symptom**: Playing a downloaded (local) episode or a torrent stream, the player card read "Playback options" and tapping it opened the online source sheet showing "No playback options found for this episode" (plus a reload button that errored).
+- **Root Cause**: `PlayerSourceCard` always rendered the online source selector because `_sourceController` is created for every playback session, regardless of whether the video comes from an online provider.
+- **Solution**: New `PlayerPlaybackOrigin` (`online` / `torrent` / `local`) computed by the player and threaded through `PlayerInfoPanel` → `PlayerSourceCard`. Only `online` renders the switchable selector; `local` shows "Playing locally" and `torrent` shows "Playing from torrent" as informational, non-interactive cards (no reload, no chevron, no DUB/SUB badge).
+
+### 6.5. Online Stream Downloads Missing from the Download Manager
+- **Symptom**: Starting an online episode download showed the "Download started" confirmation, but Settings → Downloads never listed it (no progress, no banner badge).
+- **Root Cause**: The download task state (`onlineStreamDownloadProvider`) was updated correctly, but the widget created to display it (`ActiveDownloadsTab`) was never referenced by any screen, so nothing rendered it. The download manager and banner counts only accounted for torrents and the manga queue.
+- **Solution**: New reusable `OnlineStreamDownloadsSection` (moved out of the orphan widget) embedded in `DownloadManagerScreen`'s active section, sharing the torrent flow: in-progress progress/speed, cancel, and a localized failure card for protected/invalid sources. Online tasks are also included in the active-download counts of `DownloadsScreen` and its desktop layout.

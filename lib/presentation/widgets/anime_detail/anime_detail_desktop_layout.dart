@@ -25,6 +25,7 @@ import 'desktop/desktop_recommendations_tab.dart';
 import 'desktop/desktop_relations_tab.dart';
 import 'desktop/desktop_sidebar.dart';
 import 'package:seanime_app/presentation/widgets/episodes/episodes_view.dart';
+import 'package:seanime_app/presentation/widgets/episodes/episode_batch_action_bar.dart';
 
 class AnimeDetailDesktopLayout extends ConsumerStatefulWidget {
   final int mediaId;
@@ -474,6 +475,15 @@ class _AnimeDetailDesktopLayoutState
         ? widget.details!.recommendations
         : ((raw['recommendations']?['edges'] as List?) ?? []);
 
+    final libraryEntryAsync = ref.watch(animeLibraryEntryProvider(widget.mediaId));
+    final downloadedMap = {
+      for (final ep in (libraryEntryAsync.asData?.value?.episodes ?? <LibraryEpisode>[]))
+        if (ep.isDownloaded) ep.episodeNumber: ep.localFilePath,
+    };
+    final allEpNumbers = (widget.aniZipData != null && widget.aniZipData!.episodes.isNotEmpty)
+        ? widget.aniZipData!.episodes.map((e) => e.episodeNumber).toList()
+        : List.generate(totalEpisodes ?? 0, (i) => i + 1);
+
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: Stack(
@@ -666,6 +676,26 @@ class _AnimeDetailDesktopLayoutState
                       ),
                     ],
                   ],
+                ),
+              ),
+            ),
+            // ─── 4. Floating Batch Action Bar ───
+            Positioned(
+              bottom: 24,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 640),
+                  child: EpisodeBatchActionBar(
+                    mediaId: widget.mediaId,
+                    details: widget.details,
+                    allEpisodeNumbers: allEpNumbers,
+                    downloadedMap: downloadedMap,
+                    isOnlineMode: widget.currentTab == AnimeDetailTab.online,
+                    onlineProvider: _selectedProvider,
+                    isDubbed: _isDubbed,
+                  ),
                 ),
               ),
             ),

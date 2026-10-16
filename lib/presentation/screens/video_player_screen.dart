@@ -15,6 +15,7 @@ import 'package:seanime_app/core/preferences/streaming_preferences_provider.dart
 import 'package:seanime_app/data/models/anime_details.dart';
 import 'package:seanime_app/data/models/anizip_data.dart';
 import 'package:seanime_app/data/models/onlinestream_models.dart';
+import 'package:seanime_app/data/repositories/seanime_repository.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/providers/torrent_stream_provider.dart';
 import 'package:seanime_app/presentation/widgets/anime_details_modal_sheet.dart';
@@ -180,6 +181,12 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
 
   late final TorrentStreamStatusNotifier _torrentStreamNotifier;
 
+  // Captured up-front so that dispose() never touches `ref` (which is unsafe
+  // once the widget is being unmounted).
+  late final SeanimeRepository _repository;
+  bool _hasActiveTorrentStream = false;
+  bool _pauseTorrentStreamOnExit = true;
+
   // Sync offsets in ms
   int _subtitleDelayMs = 0;
   int _audioDelayMs = 0;
@@ -241,6 +248,20 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   OnlinestreamVideoSource? get _activeSource => _sourceController.activeSource;
   String? get _sourceResolutionError => _sourceController.sourceResolutionError;
   bool get _isLoadingNextEpisode => _sourceController.isLoadingNextEpisode;
+
+  /// Where the current video comes from. Only online streams expose switchable
+  /// providers/servers, so the playback card renders differently for local files
+  /// and torrent streams.
+  PlayerPlaybackOrigin get _playbackOrigin {
+    if (_isCurrentLocalFile || _currentVideoUrl.contains('/api/v1/mediastream')) {
+      return PlayerPlaybackOrigin.local;
+    }
+    if (_currentVideoUrl.contains('torrentstream') ||
+        (_currentVideoSource?.toLowerCase().contains('torrent') ?? false)) {
+      return PlayerPlaybackOrigin.torrent;
+    }
+    return PlayerPlaybackOrigin.online;
+  }
 
   List<OnlinestreamEpisode>? _onlineEpisodes;
 
@@ -418,6 +439,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     super.initState();
 
     _torrentStreamNotifier = ref.read(torrentStreamStatusProvider.notifier);
+    _repository = ref.read(repositoryProvider);
     _isTorrentProgressVisible = ref.read(torrentProgressOverlayEnabledProvider);
 
     _currentVideoUrl = widget.videoUrl;
@@ -900,11 +922,9 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
 
     final isTorrent = _currentVideoUrl.contains('torrentstream') ||
         widget.videoUrl.contains('torrentstream') ||
-        ref.read(torrentStreamStatusProvider) != null;
-    final shouldPauseTorrent =
-        ref.read(streamingPreferencesProvider).pauseTorrentStreamOnExit;
-    if (isTorrent && shouldPauseTorrent) {
-      ref.read(repositoryProvider).pauseTorrentStream();
+        _hasActiveTorrentStream;
+    if (isTorrent && _pauseTorrentStreamOnExit) {
+      _repository.pauseTorrentStream();
     }
 
     try {
@@ -1302,6 +1322,11 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     final isDesktop = !Platform.isAndroid && !Platform.isIOS;
     final isFullscreen = _isFullscreen || _isTvActive;
 
+    // Keep dispose() safe: cache the values it needs while the widget is alive.
+    _hasActiveTorrentStream = ref.watch(torrentStreamStatusProvider) != null;
+    _pauseTorrentStreamOnExit =
+        ref.watch(streamingPreferencesProvider).pauseTorrentStreamOnExit;
+
     final mq = MediaQuery.of(context);
     final isPhysicalLandscape = mq.orientation == Orientation.landscape;
 
@@ -1387,6 +1412,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                                       )
                                     : null,
                                 sourceController: _sourceController,
+                                playbackOrigin: _playbackOrigin,
                                 isResolvingSources: _isResolvingSources,
                                 availableSources: _availableSources,
                                 activeSource: _activeSource,
@@ -1432,6 +1458,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                                       )
                                     : null,
                                 sourceController: _sourceController,
+                                playbackOrigin: _playbackOrigin,
                                 isResolvingSources: _isResolvingSources,
                                 availableSources: _availableSources,
                                 activeSource: _activeSource,

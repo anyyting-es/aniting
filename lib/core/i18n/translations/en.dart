@@ -708,6 +708,14 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get availableSourcesCount => 'available options';
   @override
+  String get playingLocally => 'Playing locally';
+  @override
+  String get playingLocallyDesc => 'From your local library';
+  @override
+  String get playingFromTorrent => 'Playing from torrent';
+  @override
+  String get playingFromTorrentDesc => 'Live P2P stream';
+  @override
   String get aspectRatio => 'Screen Fit';
   @override
   String get screenFit => 'Screen Fit';
@@ -2408,5 +2416,77 @@ class EnglishTranslations implements AppTranslations {
   String get originalPlusDub => 'Original + Dub';
   @override
   String get batches => 'Batches';
+
+  // Online Stream Downloads
+  @override
+  String get onlineDownloads => 'Online Downloads';
+  @override
+  String get downloadOnlineStream => 'Download Online Stream';
+  @override
+  String get resolvingOnlineSources => 'Resolving video sources...';
+  @override
+  String get selectServerAndQuality => 'Server & Quality';
+  @override
+  String get startDownloadAction => 'Download Episode';
+  @override
+  String get onlineDownloadStarted => 'Download started';
+  @override
+  String get alreadyDownloading => 'Already downloading';
+  @override
+  String get alreadyDownloaded => 'Already downloaded';
+  @override
+  String get cancelDownload => 'Cancel download';
+  @override
+  String get subtitlesIncluded => 'Subtitles included';
+  @override
+  String get saveLocation => 'Save location';
+
+  // Episode Multi-Selection & Batch Actions
+  @override
+  String selectedEpisodesCount(int count) => '$count selected';
+  @override
+  String get selectAll => 'Select all';
+  @override
+  String get deselectAll => 'Deselect all';
+  @override
+  String downloadCount(int count) => 'Download ($count)';
+  @override
+  String deleteCount(int count) => 'Delete ($count)';
+  @override
+  String deleteSelectedEpisodesConfirm(int count) =>
+      'Are you sure you want to delete $count downloaded ${count == 1 ? "episode" : "episodes"}?';
+  @override
+  String get markWatched => 'Mark watched';
+  @override
+  String get markUnwatched => 'Mark unwatched';
+
+  // Online Stream Download Feedback
+  @override
+  String get noSaveLocationConfigured =>
+      'No save folder configured. Set your library path in settings.';
+  @override
+  String get downloadFailedProtected =>
+      'This source is protected and cannot be downloaded.';
+  @override
+  String get downloadFailedInvalid =>
+      'Download failed: the file is not a playable video.';
+  @override
+  String get downloadFailedGeneric => 'Download failed.';
+  @override
+  String downloadingEpisodesCount(int count) => 'Downloading $count episodes…';
+  @override
+  String episodesQueuedForDownload(int count) =>
+      '$count episodes added to the download queue';
+  @override
+  String get batchDownloadEpisodes => 'Batch Episode Download';
+  @override
+  String get selectPreferredSource => 'Preferred Source';
+  @override
+  String get sourceFallbackNotice =>
+      'Episodes unavailable in the preferred source will automatically download from an alternative.';
+  @override
+  String get noSourceAvailable => 'No source';
+  @override
+  String startDownloadCount(int count) => 'Download $count episodes';
 }
 

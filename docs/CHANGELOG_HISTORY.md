@@ -5,6 +5,92 @@
 > - **NEVER** include microscopic, tedious, or trivial implementation details that end users do not care about (e.g., do **NOT** write: *"Eliminado el brillo fosforescente del indicador deslizante"*, *"Pestañas de los 7 días visibles en frame 0"*, *"Ajustado padding a 4px"*, *"Cambiado color del dot"*).
 > - **ALWAYS** summarize improvements at a high, user-facing level with clear, direct bullet points (e.g., *"Mejoras de UI y navegación en el calendario de emisión"*, *"Nueva pantalla y gestión de estado sin conexión"*, *"Optimizaciones en la caché de seguir viendo"*).
 > - Keep it punchy, professional, and easy to skim.
+## 7.60. Alertas Liquid Glass, Gestión de Descargas Online y Transiciones Suaves (2026-10-16)
+- **Alertas Nativas Liquid Glass (`g1455`)**:
+  - Implementación de diálogos de confirmación de eliminación con `GlassAlert` y `GlassAlertAction` en escritorio, móvil, biblioteca local y descargas por lote.
+- **Detección y Eliminación Completa de Descargas Online**:
+  - Los episodios descargados desde fuentes online ahora se detectan de forma unificada e inmediata tanto en vistas de Torrent, Online y Biblioteca Local.
+  - El menú contextual de tres puntos ahora muestra correctamente la opción "Eliminar descarga" y limpia el archivo físico y el historial de descargas.
+- **Transición Fluida entre Modos (Online, Torrent, Local)**:
+  - Eliminación del cambio abrupto ("pop pum") entre fuentes y modos tanto en móvil como en escritorio mediante transiciones animadas suaves con curvas naturales.
+- **Verificación Completa**:
+  - 0 incidencias en `flutter analyze lib/` y 253/253 tests aprobados.
+
+---
+
+## 7.59. Modal de Descarga por Lote y Fuentes Multicolores (2026-10-16)
+- **Modal de Descarga en Lote con Liquid Glass (`g1455`)**:
+  - Al seleccionar múltiples episodios, ahora se abre un modal interactivo con auténtico Liquid Glass que permite configurar las fuentes antes de encolar la descarga.
+  - El modal de descarga individual también se actualizó con escarchado translúcido, bordes de cristal y elevación sutil.
+- **Sistema de Fuentes con Colores Distintivos y Fallback Inteligente**:
+  - Lista superior de proveedores donde cada fuente cuenta con un color distintivo único y un contador de disponibilidad (`X/Total`).
+  - Al seleccionar una fuente preferida arriba, los episodios que dicha fuente disponga se le asignan automáticamente; los que no estén disponibles en esa fuente se asignan de forma inteligente a fuentes alternativas disponibles mostrando su color respectivo.
+  - Posibilidad de alternar manualmente la fuente de cualquier episodio específico mediante un chip interactivo con el color distintivo de cada fuente.
+- **Verificación Completa**:
+  - 0 incidencias en `flutter analyze lib/` y 253/253 tests aprobados.
+
+---
+
+## 7.58. Barra de Acciones en Lote Flotante y Estilo Liquid Glass (2026-10-16)
+- **Barra Flotante Fija en Pantalla**:
+  - Se corrigió el posicionamiento de la barra de acciones por lote (`EpisodeBatchActionBar`), elevándola al stack raíz superior para que flote fijada en la parte inferior de la pantalla sin quedar atrapada al final de la lista scrolleable.
+- **Acabado Liquid Glass Auténtico (`g1455`)**:
+  - Estilizado de la barra con refracción y escarchado dinámico reactivo al tema (`surfaceContainer` translúcido, borde cristalino y doble sombra difusa).
+  - Indicador de selección estilo pill badge y botones de acción rápida con respuesta háptica y transiciones elásticas.
+- **Soporte Unificado Móvil y Escritorio**:
+  - Integración en los diseños móvil y de escritorio con soporte de clic derecho y pulsación larga en las tarjetas de episodios (`DesktopGridEpisodeCard` y `DesktopListEpisodeCard`).
+- **Verificación Completa**:
+  - 0 incidencias en `flutter analyze lib/` y 253/253 tests aprobados.
+
+---
+
+## 7.57. Reproductor y Descargas Online: Estado Claro y Progreso Visible (2026-10-16)
+- **Reproductor Sin Falsos Errores**:
+  - Al reproducir un episodio descargado (local) o un torrent, la tarjeta de reproducción ahora indica "Reproduciendo en local" / "Reproduciendo desde torrent" en lugar de mostrar "Opciones de reproducción" y un aviso de "no hay fuentes".
+- **Descargas Online Visibles en el Gestor**:
+  - Las descargas desde fuentes online aparecen ahora en el Gestor de descargas con el mismo flujo que los torrents: progreso, velocidad y cancelación, además de un aviso claro si la fuente está protegida o el archivo no es válido.
+  - El contador de descargas activas de la pantalla de Descargas ya incluye las descargas online.
+- **Verificación Completa**:
+  - 0 incidencias en `flutter analyze lib/` y 253/253 tests aprobados.
+
+---
+
+## 7.56. Modo de Selección Múltiple y Acciones por Lote en Episodios (2026-10-16)
+- **Selección Múltiple con Pulsación Larga**:
+  - Al mantener presionado cualquier episodio (en vista de lista o cuadrícula), se activa el modo de selección múltiple con respuesta háptica y animaciones fluidas (`AnimatedScale` con curvas elásticas, bordes y fondo dinámicos).
+  - Tocar episodios una vez en modo de selección conmuta su selección de forma instantánea.
+- **Barra Flotante de Acciones en Lote (Liquid Glass)**:
+  - Nueva barra flotante animada con efecto liquid glass (`g1455`) que aparece suavemente desde la parte inferior sin saltos bruscos ni interrupciones del scroll.
+  - **Descargar selección**: Encola descargas en lote de los episodios seleccionados (tanto en fuentes online como torrents).
+  - **Eliminar descargas**: Permite borrar con confirmación los archivos descargados de los episodios seleccionados y sincroniza la biblioteca.
+  - **Marcar como visto / no visto**: Actualiza en lote el estado de visualización en la biblioteca.
+  - **Seleccionar todo y Deseleccionar**: Controles rápidos para gestionar toda la lista de un toque.
+- **Verificación Completa**:
+  - 0 incidencias en `flutter analyze lib/`.
+
+---
+
+## 7.55. Descargas Nativas para Fuentes de Streaming Online (2026-10-16)
+- **Motor Dual de Descargas Online (HLS y Directo)**:
+  - Implementación del sistema de descarga de episodios desde proveedores de streaming online (AnimePahe, Gogoanime, Zoro, etc.).
+  - Soporte de streams HLS (`.m3u8`) y archivos de video directo con descarga concurrente de segmentos, cálculo de velocidad en tiempo real y descarga de subtítulos externos asociados.
+  - Compatibilidad universal: Remuxing acelerado con FFmpeg en plataformas de escritorio y motor paralelo en Dart puro en Android.
+- **Diálogo y Hoja Modal Interactiva**:
+  - Nuevo selector con diseño Liquid Glass (`g1455`) y Material 3 Expressive para elegir resolución y servidor de descarga.
+  - Indicador de estado de descarga en tiempo real con barra de progreso, velocidad y opción de cancelación.
+- **Integración con Biblioteca Local y Gestor de Descargas**:
+  - Al completar la descarga, se activa el escaneo automático del servidor para indexar el episodio en la biblioteca local y se registra en el historial de descargas.
+  - Sección dedicada a "Descargas Online" en la pestaña de descargas activas y badges de progreso en tarjetas de episodios de móvil y escritorio.
+- **Acceso Directo desde la App**:
+  - Disponible desde las tarjetas de episodios en Streaming Online (móvil y escritorio) y desde la hoja de selección de fuentes dentro del reproductor de video.
+- **Correcciones**:
+  - Las descargas de fuentes cifradas ahora se descifran correctamente y se verifica que el archivo final sea reproducible; si la fuente está protegida o inválida, la descarga se marca como fallida sin dejar archivos corruptos.
+  - Mensajes de estado de descarga más claros (descarga ya en curso, sin carpeta de guardado, fuente protegida) y mayor estabilidad del reproductor al salir.
+- **Verificación Completa**:
+  - 0 incidencias en `flutter analyze lib/`.
+
+---
+
 ## 7.54. Depuración y Simplificación de Tarjetas de Torrents (2026-10-16)
 - **Diseño Más Limpio y Minimalista en Tarjetas**:
   - Eliminación de elementos redundantes en las tarjetas de la lista de torrents: icono pequeño de reproducción, botones de descarga o reproductor externo, indicador de visto y numeración redundante de episodio.

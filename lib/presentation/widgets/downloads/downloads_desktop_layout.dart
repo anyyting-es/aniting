@@ -9,6 +9,7 @@ import 'package:seanime_app/data/models/anime_entry.dart';
 import 'package:seanime_app/data/models/manga_entry.dart';
 import 'package:seanime_app/presentation/providers/active_downloads_provider.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
+import 'package:seanime_app/presentation/providers/online_stream_download_provider.dart';
 import 'package:seanime_app/presentation/providers/torrent_stream_provider.dart';
 import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
 import 'package:seanime_app/presentation/screens/download_manager_screen.dart';
@@ -67,12 +68,14 @@ class _DownloadsDesktopLayoutState extends ConsumerState<DownloadsDesktopLayout>
 
     final streamStatus = ref.watch(torrentStreamStatusProvider);
     final activeDownloads = ref.watch(activeDownloadsProvider);
+    final onlineDownloads = ref.watch(onlineStreamDownloadProvider);
     final downloadedAnimeAsync = ref.watch(downloadedAnimeProvider);
     final downloadedMangaAsync = ref.watch(downloadedMangaListProvider);
 
     final activeCount = (streamStatus != null && streamStatus.downloadProgress > 0 ? 1 : 0) +
         activeDownloads.activeTorrents.length +
-        activeDownloads.mangaQueue.length;
+        activeDownloads.mangaQueue.length +
+        onlineDownloads.visibleTasks.length;
 
     final isAnime = _selectedMediaType == 'ANIME';
 

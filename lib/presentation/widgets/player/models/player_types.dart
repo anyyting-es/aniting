@@ -269,3 +269,40 @@ class PlayerChapter {
     return l10n.skip;
   }
 }
+
+/// Origin of the currently playing video.
+///
+/// Only [online] playback exposes selectable providers/servers, so the playback
+/// source card must render differently for [local] and [torrent] playback
+/// instead of showing the online source selector (which would report "no
+/// sources found").
+enum PlayerPlaybackOrigin {
+  online,
+  torrent,
+  local;
+
+  /// Whether the playback source can be switched (only online streams can).
+  bool get isSwitchable => this == PlayerPlaybackOrigin.online;
+
+  String localizedTitle(AppTranslations l10n) {
+    switch (this) {
+      case PlayerPlaybackOrigin.local:
+        return l10n.playingLocally;
+      case PlayerPlaybackOrigin.torrent:
+        return l10n.playingFromTorrent;
+      case PlayerPlaybackOrigin.online:
+        return l10n.playbackSources;
+    }
+  }
+
+  String localizedSubtitle(AppTranslations l10n) {
+    switch (this) {
+      case PlayerPlaybackOrigin.local:
+        return l10n.playingLocallyDesc;
+      case PlayerPlaybackOrigin.torrent:
+        return l10n.playingFromTorrentDesc;
+      case PlayerPlaybackOrigin.online:
+        return l10n.tapToChangeProvider;
+    }
+  }
+}

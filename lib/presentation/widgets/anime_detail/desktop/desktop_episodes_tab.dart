@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
@@ -9,9 +10,11 @@ import 'package:seanime_app/data/models/onlinestream_models.dart';
 import 'package:seanime_app/data/models/library_entry_details.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/providers/active_downloads_provider.dart';
+import 'package:seanime_app/presentation/providers/download_history_provider.dart';
 import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
 
 import 'package:g1455/g1455.dart';
+import 'package:seanime_app/presentation/widgets/online_stream_download_dialog.dart';
 import 'desktop_episode_context_menu.dart';
 import 'desktop_episode_grid_card.dart';
 import 'desktop_episode_list_card.dart';
@@ -89,6 +92,7 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
   dynamic _lastLocalLibraryEntry;
   int? _lastLocalProgress;
   String? _lastLocalLang;
+  List<DownloadHistoryItem>? _lastLocalHistory;
 
   List<DesktopEpisodeItemData>? _cachedOnlineItems;
   List<OnlinestreamEpisode>? _lastOnlineEpisodes;
@@ -258,6 +262,18 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
       for (final ep in (_libraryEntry?.episodes ?? <LibraryEpisode>[]))
         if (ep.isDownloaded) ep.episodeNumber: ep.localFilePath,
     };
+    final historyItems = ref.watch(downloadHistoryProvider);
+    for (final item in historyItems) {
+      if (item.mediaId == widget.mediaId && item.filePath != null && item.filePath!.isNotEmpty) {
+        int? epNum;
+        if (item.id.startsWith('${widget.mediaId}_')) {
+          epNum = int.tryParse(item.id.substring('${widget.mediaId}_'.length));
+        }
+        if (epNum != null && File(item.filePath!).existsSync()) {
+          downloadedMap[epNum] = item.filePath!;
+        }
+      }
+    }
 
     final aniZipData = widget.aniZipData ?? widget.details?.aniZipData;
     final aniZipMainEps = aniZipData?.mainEpisodes ??
@@ -268,11 +284,40 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
       if (_cachedLocalItems != null &&
           _lastLocalLibraryEntry == _libraryEntry &&
           _lastLocalProgress == widget.progress &&
-          _lastLocalLang == langCode) {
+          _lastLocalLang == langCode &&
+          _lastLocalHistory == historyItems) {
         return _cachedLocalItems!;
       }
 
-      final downloadedEps = _libraryEntry?.episodes.where((e) => e.isDownloaded).toList() ?? [];
+      final downloadedEps = [
+        ...(_libraryEntry?.episodes.where((e) => e.isDownloaded) ?? []),
+      ];
+      final existingNums = downloadedEps.map((e) => e.episodeNumber).toSet();
+      for (final item in historyItems) {
+        if (item.mediaId == widget.mediaId && item.filePath != null && item.filePath!.isNotEmpty) {
+          int? epNum;
+          if (item.id.startsWith('${widget.mediaId}_')) {
+            epNum = int.tryParse(item.id.substring('${widget.mediaId}_'.length));
+          }
+          if (epNum != null && !existingNums.contains(epNum)) {
+            if (File(item.filePath!).existsSync()) {
+              existingNums.add(epNum);
+              downloadedEps.add(
+                LibraryEpisode(
+                  episodeNumber: epNum,
+                  displayTitle: item.title,
+                  episodeTitle: item.title,
+                  localFilePath: item.filePath,
+                  isDownloaded: true,
+                  thumbnail: item.coverImage,
+                ),
+              );
+            }
+          }
+        }
+      }
+      downloadedEps.sort((a, b) => a.episodeNumber.compareTo(b.episodeNumber));
+
       final List<DesktopEpisodeItemData> result = [];
       for (final ep in downloadedEps) {
         final aniZipEp = aniZipData?.episodes
@@ -307,6 +352,7 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
       _lastLocalLibraryEntry = _libraryEntry;
       _lastLocalProgress = widget.progress;
       _lastLocalLang = langCode;
+      _lastLocalHistory = historyItems;
       return result;
     }
 
@@ -818,9 +864,9 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
 
         // ─── Dynamic Episode Content (Animated Transition between View Modes & Sources) ───
         AnimatedSwitcher(
-          duration: const Duration(milliseconds: 150),
-          switchInCurve: Curves.easeOut,
-          switchOutCurve: Curves.easeIn,
+          duration: const Duration(milliseconds: 260),
+          switchInCurve: Curves.easeOutCubic,
+          switchOutCurve: Curves.easeInCubic,
           transitionBuilder: (child, animation) {
             return FadeTransition(
               opacity: animation,
@@ -828,7 +874,7 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
             );
           },
           child: RepaintBoundary(
-            key: ValueKey('episodes_view_${_isGridView ? "grid" : "list"}_${widget.isLocalMode}'),
+            key: ValueKey('episodes_view_${_isGridView ? "grid" : "list"}_${widget.isLocalMode ? "local" : widget.currentTab.name}'),
             child: Builder(
               builder: (context) {
                 // ─── Loading State for Online Mode ───
@@ -999,6 +1045,18 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
                               details: widget.details,
                               onEpisodeClicked: widget.onEpisodeClicked,
                               onOpenTorrentSelector: widget.onOpenTorrentSelector,
+                              onDownloadOnline: widget.currentTab == AnimeDetailTab.online
+                                  ? () => showOnlineStreamDownloadDialog(
+                                        context,
+                                        mediaId: widget.mediaId,
+                                        episodeNumber: ep.number,
+                                        animeTitle: widget.details?.title ?? '',
+                                        episodeTitle: ep.title,
+                                        thumbnail: ep.image,
+                                        provider: widget.selectedProvider,
+                                        isDubbed: widget.isDubbed,
+                                      )
+                                  : null,
                               onRefreshLocal: _scanAndRefreshLocal,
                             ),
                           );
@@ -1039,6 +1097,18 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
                             details: widget.details,
                             onEpisodeClicked: widget.onEpisodeClicked,
                             onOpenTorrentSelector: widget.onOpenTorrentSelector,
+                            onDownloadOnline: widget.currentTab == AnimeDetailTab.online
+                                ? () => showOnlineStreamDownloadDialog(
+                                      context,
+                                      mediaId: widget.mediaId,
+                                      episodeNumber: ep.number,
+                                      animeTitle: widget.details?.title ?? '',
+                                      episodeTitle: ep.title,
+                                      thumbnail: ep.image,
+                                      provider: widget.selectedProvider,
+                                      isDubbed: widget.isDubbed,
+                                    )
+                                : null,
                             onRefreshLocal: _scanAndRefreshLocal,
                           ),
                         );

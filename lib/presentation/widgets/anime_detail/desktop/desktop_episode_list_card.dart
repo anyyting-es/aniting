@@ -1,9 +1,11 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/preferences/playback_progress_preferences_provider.dart';
+import 'package:seanime_app/presentation/providers/episode_selection_provider.dart';
 import 'desktop_episode_models.dart';
 
 class DesktopListEpisodeCard extends ConsumerStatefulWidget {
@@ -45,6 +47,19 @@ class _DesktopListEpisodeCardState extends ConsumerState<DesktopListEpisodeCard>
         : theme.colorScheme.onSurfaceVariant;
     final double cardOpacity = widget.ep.isWatched ? (_isHovered ? 0.75 : 0.45) : 1.0;
 
+    final selection = widget.mediaId != null
+        ? ref.watch(episodeSelectionProvider(widget.mediaId!))
+        : null;
+    final isSelectionMode = selection?.isSelectionMode ?? false;
+    final isSelected = selection?.isSelected(widget.ep.number) ?? false;
+
+    void toggleSelection() {
+      if (widget.mediaId != null) {
+        HapticFeedback.selectionClick();
+        ref.read(episodeSelectionProvider(widget.mediaId!).notifier).toggle(widget.ep.number);
+      }
+    }
+
     final playbackMap = ref.watch(playbackProgressPreferencesProvider);
     final epKey = '${widget.mediaId}_${widget.ep.number}';
     final mediaProgress = widget.mediaId != null ? playbackMap[widget.mediaId.toString()] : null;
@@ -68,7 +83,11 @@ class _DesktopListEpisodeCardState extends ConsumerState<DesktopListEpisodeCard>
         duration: const Duration(milliseconds: 240),
         curve: Curves.easeInOut,
         child: InkWell(
-          onTap: widget.isLoading ? null : widget.onTap,
+          onTap: widget.isLoading
+              ? null
+              : (isSelectionMode ? toggleSelection : widget.onTap),
+          onLongPress: widget.isLoading ? null : toggleSelection,
+          onSecondaryTap: widget.isLoading ? null : toggleSelection,
           borderRadius: BorderRadius.circular(12),
           hoverColor: Colors.transparent,
           splashColor: Colors.transparent,
@@ -77,14 +96,19 @@ class _DesktopListEpisodeCardState extends ConsumerState<DesktopListEpisodeCard>
             duration: const Duration(milliseconds: 260),
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: _isHovered
-                  ? Colors.white.withValues(alpha: 0.04)
-                  : Colors.transparent,
+              color: isSelected
+                  ? theme.colorScheme.primaryContainer.withValues(alpha: isDark ? 0.28 : 0.42)
+                  : (_isHovered
+                      ? Colors.white.withValues(alpha: 0.04)
+                      : Colors.transparent),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: _isHovered
-                    ? Colors.white.withValues(alpha: 0.12)
-                    : Colors.transparent,
+                color: isSelected
+                    ? theme.colorScheme.primary.withValues(alpha: 0.85)
+                    : (_isHovered
+                        ? Colors.white.withValues(alpha: 0.12)
+                        : Colors.transparent),
+                width: isSelected ? 1.5 : 1.0,
               ),
             ),
             child: Row(
@@ -96,7 +120,7 @@ class _DesktopListEpisodeCardState extends ConsumerState<DesktopListEpisodeCard>
                   child: AspectRatio(
                     aspectRatio: 16 / 9,
                     child: AnimatedScale(
-                      scale: _isHovered ? 1.02 : 1.0,
+                      scale: isSelected ? 0.97 : (_isHovered ? 1.02 : 1.0),
                       duration: const Duration(milliseconds: 180),
                       curve: Curves.easeOutCubic,
                       child: AnimatedContainer(
@@ -105,14 +129,21 @@ class _DesktopListEpisodeCardState extends ConsumerState<DesktopListEpisodeCard>
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                            color: _isHovered
-                                ? Colors.white.withValues(alpha: 0.35)
-                                : Colors.white.withValues(alpha: 0.08),
+                            color: isSelected
+                                ? theme.colorScheme.primary
+                                : (_isHovered
+                                    ? Colors.white.withValues(alpha: 0.35)
+                                    : (isSelectionMode
+                                        ? theme.colorScheme.outlineVariant.withValues(alpha: 0.3)
+                                        : Colors.white.withValues(alpha: 0.08))),
+                            width: isSelected ? 2.0 : 1.0,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: _isHovered ? 0.35 : 0.25),
-                              blurRadius: _isHovered ? 10 : 6,
+                              color: isSelected
+                                  ? theme.colorScheme.primary.withValues(alpha: 0.3)
+                                  : Colors.black.withValues(alpha: _isHovered ? 0.35 : 0.25),
+                              blurRadius: isSelected ? 12 : (_isHovered ? 10 : 6),
                               offset: Offset(0, _isHovered ? 3 : 2),
                             ),
                           ],
@@ -129,6 +160,44 @@ class _DesktopListEpisodeCardState extends ConsumerState<DesktopListEpisodeCard>
                                     errorWidget: (_, _, _) => _buildPlaceholder(),
                                   )
                                 : _buildPlaceholder(),
+
+                            // Selection Checkbox
+                            if (isSelectionMode || isSelected)
+                              Positioned(
+                                top: 8,
+                                left: 8,
+                                child: AnimatedScale(
+                                  scale: (isSelectionMode || isSelected) ? 1.0 : 0.0,
+                                  duration: const Duration(milliseconds: 180),
+                                  curve: Curves.easeOutBack,
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 180),
+                                    width: 24,
+                                    height: 24,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: isSelected
+                                          ? theme.colorScheme.primary
+                                          : Colors.black.withValues(alpha: 0.55),
+                                      border: Border.all(
+                                        color: isSelected
+                                            ? theme.colorScheme.primary
+                                            : Colors.white.withValues(alpha: 0.7),
+                                        width: 2.0,
+                                      ),
+                                    ),
+                                    child: isSelected
+                                        ? const Center(
+                                            child: Icon(
+                                              Icons.check_rounded,
+                                              size: 15,
+                                              color: Colors.white,
+                                            ),
+                                          )
+                                        : null,
+                                  ),
+                                ),
+                              ),
 
                           // Downloading progress badge
                           if (widget.ep.isDownloading)

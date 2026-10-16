@@ -31,6 +31,7 @@ class PlayerInfoPanel extends ConsumerStatefulWidget {
   final VoidCallback? onPlayNextEpisode;
   final VoidCallback? onPlayPreviousEpisode;
   final PlayerSourceController? sourceController;
+  final PlayerPlaybackOrigin playbackOrigin;
   final bool isResolvingSources;
   final List<OnlinestreamVideoSource> availableSources;
   final OnlinestreamVideoSource? activeSource;
@@ -60,6 +61,7 @@ class PlayerInfoPanel extends ConsumerStatefulWidget {
     this.onPlayNextEpisode,
     this.onPlayPreviousEpisode,
     this.sourceController,
+    this.playbackOrigin = PlayerPlaybackOrigin.online,
     this.isResolvingSources = false,
     this.availableSources = const [],
     this.activeSource,
@@ -373,10 +375,12 @@ class _PlayerInfoPanelState extends ConsumerState<PlayerInfoPanel> {
                     widget.availableSources.isNotEmpty ||
                     widget.onlineStreamProvider != null ||
                     widget.sourceResolutionError != null ||
-                    widget.sourceController != null) ...[
+                    widget.sourceController != null ||
+                    widget.playbackOrigin != PlayerPlaybackOrigin.online) ...[
                   const SizedBox(height: 12),
                   PlayerSourceCard(
                     controller: widget.sourceController,
+                    playbackOrigin: widget.playbackOrigin,
                     isResolvingSources: widget.isResolvingSources,
                     availableSources: widget.availableSources,
                     activeSource: widget.activeSource,

@@ -1,11 +1,13 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:g1455/g1455.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/preferences/download_preferences_provider.dart';
 import 'package:seanime_app/presentation/providers/active_downloads_provider.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
+import 'package:seanime_app/presentation/providers/online_stream_download_provider.dart';
 import 'package:seanime_app/core/theme/custom_route_transitions.dart';
 import 'package:seanime_app/presentation/providers/torrent_stream_provider.dart';
 import 'package:seanime_app/presentation/screens/download_manager_screen.dart';
@@ -45,22 +47,23 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
 
   Future<void> _showDeleteAnimeDialog(dynamic item) async {
     final l10n = ref.read(translationsProvider);
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showGlassDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l10n.deleteDownload),
-        content: Text(l10n.deleteDownloadConfirm(item.title)),
-        actions: [
-          TextButton(
+      builder: (BuildContext ctx) => GlassAlert(
+        title: Text(l10n.deleteDownload, textAlign: TextAlign.center),
+        message: Text(
+          l10n.deleteDownloadConfirm(item.title),
+          textAlign: TextAlign.center,
+        ),
+        actions: <GlassAlertAction>[
+          GlassAlertAction(
+            label: l10n.cancel,
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text(l10n.cancel),
           ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(ctx).colorScheme.error,
-            ),
+          GlassAlertAction(
+            label: l10n.delete,
+            isDestructive: true,
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text(l10n.delete),
           ),
         ],
       ),
@@ -123,22 +126,23 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
 
   Future<void> _showDeleteMangaDialog(dynamic item) async {
     final l10n = ref.read(translationsProvider);
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showGlassDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l10n.deleteDownload),
-        content: Text(l10n.deleteDownloadConfirm(item.title)),
-        actions: [
-          TextButton(
+      builder: (BuildContext ctx) => GlassAlert(
+        title: Text(l10n.deleteDownload, textAlign: TextAlign.center),
+        message: Text(
+          l10n.deleteDownloadConfirm(item.title),
+          textAlign: TextAlign.center,
+        ),
+        actions: <GlassAlertAction>[
+          GlassAlertAction(
+            label: l10n.cancel,
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text(l10n.cancel),
           ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(ctx).colorScheme.error,
-            ),
+          GlassAlertAction(
+            label: l10n.delete,
+            isDestructive: true,
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text(l10n.delete),
           ),
         ],
       ),
@@ -222,12 +226,14 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
 
     final streamStatus = ref.watch(torrentStreamStatusProvider);
     final activeDownloads = ref.watch(activeDownloadsProvider);
+    final onlineDownloads = ref.watch(onlineStreamDownloadProvider);
     final downloadedAnimeAsync = ref.watch(downloadedAnimeProvider);
     final downloadedMangaAsync = ref.watch(downloadedMangaListProvider);
 
     final activeCount = (streamStatus != null && streamStatus.downloadProgress > 0 ? 1 : 0) +
         activeDownloads.activeTorrents.length +
-        activeDownloads.mangaQueue.length;
+        activeDownloads.mangaQueue.length +
+        onlineDownloads.visibleTasks.length;
     final animeCount = downloadedAnimeAsync.asData?.value.length ?? 0;
     final mangaCount = downloadedMangaAsync.asData?.value.length ?? 0;
 

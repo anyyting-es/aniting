@@ -7,6 +7,7 @@ import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/data/models/anime_details.dart';
 import 'package:seanime_app/presentation/providers/active_downloads_provider.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
+import 'package:seanime_app/presentation/providers/download_history_provider.dart';
 import 'desktop_episode_models.dart';
 
 /// Menú de tres puntitos con Liquid Glass `g1455` (GlassMenuAnchor)
@@ -21,6 +22,7 @@ class DesktopEpisodeMenuButton extends ConsumerWidget {
     required String episodeTitle,
     String? aniDBEpisode,
   })? onOpenTorrentSelector;
+  final VoidCallback? onDownloadOnline;
   final VoidCallback? onRefreshLocal;
 
   const DesktopEpisodeMenuButton({
@@ -30,6 +32,7 @@ class DesktopEpisodeMenuButton extends ConsumerWidget {
     required this.details,
     required this.onEpisodeClicked,
     this.onOpenTorrentSelector,
+    this.onDownloadOnline,
     this.onRefreshLocal,
   });
 
@@ -61,22 +64,23 @@ class DesktopEpisodeMenuButton extends ConsumerWidget {
 
   Future<void> _deleteDownloaded(BuildContext context, WidgetRef ref) async {
     final l10n = ref.read(translationsProvider);
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showGlassDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l10n.deleteDownload),
-        content: Text(l10n.deleteEpisodeDownloadConfirm(ep.number)),
-        actions: [
-          TextButton(
+      builder: (BuildContext ctx) => GlassAlert(
+        title: Text(l10n.deleteDownload, textAlign: TextAlign.center),
+        message: Text(
+          l10n.deleteEpisodeDownloadConfirm(ep.number),
+          textAlign: TextAlign.center,
+        ),
+        actions: <GlassAlertAction>[
+          GlassAlertAction(
+            label: l10n.cancel,
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text(l10n.cancel),
           ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(ctx).colorScheme.error,
-            ),
+          GlassAlertAction(
+            label: l10n.delete,
+            isDestructive: true,
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text(l10n.delete),
           ),
         ],
       ),
@@ -85,7 +89,16 @@ class DesktopEpisodeMenuButton extends ConsumerWidget {
     if (confirmed == true && context.mounted) {
       final repo = ref.read(repositoryProvider);
       final messenger = ScaffoldMessenger.of(context);
-      final path = ep.localFilePath;
+      var path = ep.localFilePath;
+      if (path == null || path.isEmpty) {
+        final history = ref.read(downloadHistoryProvider);
+        for (final item in history) {
+          if (item.mediaId == mediaId && (item.id == '${mediaId}_${ep.number}' || item.id == '${ep.number}')) {
+            path = item.filePath;
+            break;
+          }
+        }
+      }
       if (path != null && path.isNotEmpty) {
         await repo.deleteLocalFiles([path]);
         try {
@@ -93,8 +106,10 @@ class DesktopEpisodeMenuButton extends ConsumerWidget {
           if (f.existsSync()) f.deleteSync();
         } catch (_) {}
       }
+      ref.read(downloadHistoryProvider.notifier).removeItem('${mediaId}_${ep.number}');
       onRefreshLocal?.call();
       ref.invalidate(downloadedAnimeProvider);
+      ref.invalidate(animeLibraryEntryProvider(mediaId));
       ref.read(activeDownloadsProvider.notifier).refresh();
       messenger.showSnackBar(
         SnackBar(
@@ -134,6 +149,12 @@ class DesktopEpisodeMenuButton extends ConsumerWidget {
           isDestructive: true,
           icon: Icon(AppIcons.trash(iconPack), size: 18),
           onPressed: () => _deleteDownloaded(context, ref),
+        )
+      else if (onDownloadOnline != null)
+        GlassMenuItem(
+          label: l10n.downloadEpisode,
+          icon: Icon(AppIcons.download(iconPack), size: 18),
+          onPressed: onDownloadOnline!,
         )
       else if (onOpenTorrentSelector != null)
         GlassMenuItem(

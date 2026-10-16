@@ -5,6 +5,7 @@ import 'package:g1455/g1455.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/data/models/onlinestream_models.dart';
+import 'package:seanime_app/presentation/widgets/player/models/player_types.dart';
 import 'package:seanime_app/presentation/widgets/player/panels/player_source_selector_sheet.dart';
 import 'package:seanime_app/presentation/widgets/player/services/player_source_controller.dart';
 
@@ -14,6 +15,7 @@ import 'package:seanime_app/presentation/widgets/player/services/player_source_c
 /// the liquid glass source selector sheet to switch stream providers or servers.
 class PlayerSourceCard extends ConsumerWidget {
   final PlayerSourceController? controller;
+  final PlayerPlaybackOrigin playbackOrigin;
   final bool isResolvingSources;
   final List<OnlinestreamVideoSource> availableSources;
   final OnlinestreamVideoSource? activeSource;
@@ -30,6 +32,7 @@ class PlayerSourceCard extends ConsumerWidget {
   const PlayerSourceCard({
     super.key,
     this.controller,
+    this.playbackOrigin = PlayerPlaybackOrigin.online,
     required this.isResolvingSources,
     this.availableSources = const [],
     this.activeSource,
@@ -79,13 +82,22 @@ class PlayerSourceCard extends ConsumerWidget {
     final l10n = ref.watch(translationsProvider);
     final iconPack = ref.watch(iconPackProvider);
 
-    final currentIsResolving = controller?.isResolvingSources ?? isResolvingSources;
+    final isOnline = playbackOrigin.isSwitchable;
+    final currentIsResolving = isOnline && (controller?.isResolvingSources ?? isResolvingSources);
     final currentSources = controller?.availableSources ?? availableSources;
     final currentActiveSource = controller?.activeSource ?? activeSource;
     final currentError = controller?.sourceResolutionError ?? sourceResolutionError;
 
-    final hasError = currentError != null && currentError.isNotEmpty;
-    final isPlayingActive = currentActiveSource != null;
+    final hasError = isOnline && currentError != null && currentError.isNotEmpty;
+    final isPlayingActive = isOnline && currentActiveSource != null;
+
+    // Non-online playback (local file / torrent stream) has nothing to select,
+    // so it renders an informational, non-interactive card instead.
+    final statusIcon = !isOnline
+        ? (playbackOrigin == PlayerPlaybackOrigin.local
+            ? AppIcons.downloadOffline(iconPack)
+            : AppIcons.stream(iconPack))
+        : (hasError ? AppIcons.error(iconPack) : AppIcons.stream(iconPack));
 
     final borderColor = hasError
         ? theme.colorScheme.error.withValues(alpha: 0.5)
@@ -112,7 +124,7 @@ class PlayerSourceCard extends ConsumerWidget {
               color: Colors.transparent,
               child: InkWell(
                 borderRadius: BorderRadius.circular(16),
-                onTap: () => _showSourcesModal(context),
+                onTap: isOnline ? () => _showSourcesModal(context) : null,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   child: Row(
@@ -146,7 +158,7 @@ class PlayerSourceCard extends ConsumerWidget {
                                   ),
                                 )
                               : Icon(
-                                  hasError ? AppIcons.error(iconPack) : AppIcons.stream(iconPack),
+                                  statusIcon,
                                   size: 19,
                                   color: hasError
                                       ? theme.colorScheme.error
@@ -180,7 +192,9 @@ class PlayerSourceCard extends ConsumerWidget {
                                               }()
                                             : (hasError
                                                 ? l10n.noSourcesFoundForEpisode
-                                                : l10n.playbackSources)),
+                                                : (isOnline
+                                                    ? l10n.playbackSources
+                                                    : playbackOrigin.localizedTitle(l10n)))),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
@@ -214,7 +228,9 @@ class PlayerSourceCard extends ConsumerWidget {
                                     ),
                                   ),
                                 ],
-                                if (providerName != null && providerName!.isNotEmpty) ...[
+                                if (isOnline &&
+                                    providerName != null &&
+                                    providerName!.isNotEmpty) ...[
                                   const SizedBox(width: 6),
                                   Text(
                                     '• $providerName',
@@ -225,24 +241,26 @@ class PlayerSourceCard extends ConsumerWidget {
                                     ),
                                   ),
                                 ],
-                                const SizedBox(width: 6),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                                  decoration: BoxDecoration(
-                                    color: isDubbed
-                                        ? theme.colorScheme.primary.withValues(alpha: 0.16)
-                                        : Colors.white.withValues(alpha: 0.08),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: Text(
-                                    isDubbed ? l10n.dub.toUpperCase() : l10n.sub.toUpperCase(),
-                                    style: TextStyle(
-                                      fontSize: 9.5,
-                                      fontWeight: FontWeight.bold,
-                                      color: isDubbed ? theme.colorScheme.primary : Colors.white70,
+                                if (isOnline) ...[
+                                  const SizedBox(width: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                    decoration: BoxDecoration(
+                                      color: isDubbed
+                                          ? theme.colorScheme.primary.withValues(alpha: 0.16)
+                                          : Colors.white.withValues(alpha: 0.08),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      isDubbed ? l10n.dub.toUpperCase() : l10n.sub.toUpperCase(),
+                                      style: TextStyle(
+                                        fontSize: 9.5,
+                                        fontWeight: FontWeight.bold,
+                                        color: isDubbed ? theme.colorScheme.primary : Colors.white70,
+                                      ),
                                     ),
                                   ),
-                                ),
+                                ],
                               ],
                             ),
                             const SizedBox(height: 2),
@@ -251,9 +269,11 @@ class PlayerSourceCard extends ConsumerWidget {
                                   ? '${l10n.searchingSources} • ${l10n.tapToChangeProvider}'
                                   : (hasError
                                       ? '${l10n.noSourcesFoundForEpisode} • ${l10n.tapToChangeProvider}'
-                                      : (currentSources.isNotEmpty
-                                          ? '${currentSources.length} ${l10n.availableSourcesCount} • ${l10n.tapToChangeSource}'
-                                          : l10n.tapToChangeProvider)),
+                                      : (!isOnline
+                                          ? playbackOrigin.localizedSubtitle(l10n)
+                                          : (currentSources.isNotEmpty
+                                              ? '${currentSources.length} ${l10n.availableSourcesCount} • ${l10n.tapToChangeSource}'
+                                              : l10n.tapToChangeProvider))),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
@@ -268,7 +288,7 @@ class PlayerSourceCard extends ConsumerWidget {
                       ),
 
                       // Reload button
-                      if (onReloadSources != null)
+                      if (isOnline && onReloadSources != null)
                         IconButton(
                           icon: Icon(
                             AppIcons.refresh(iconPack),
@@ -286,12 +306,14 @@ class PlayerSourceCard extends ConsumerWidget {
                                   onReloadSources?.call();
                                 },
                         ),
-                      const SizedBox(width: 4),
-                      Icon(
-                        AppIcons.chevronRight(iconPack),
-                        size: 20,
-                        color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
-                      ),
+                      if (isOnline) ...[
+                        const SizedBox(width: 4),
+                        Icon(
+                          AppIcons.chevronRight(iconPack),
+                          size: 20,
+                          color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                        ),
+                      ],
                     ],
                   ),
                 ),

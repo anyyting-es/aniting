@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -12,12 +13,15 @@ import 'package:seanime_app/data/models/library_entry_details.dart';
 import 'package:seanime_app/data/models/onlinestream_models.dart';
 import 'package:seanime_app/presentation/providers/active_downloads_provider.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
+import 'package:seanime_app/presentation/providers/download_history_provider.dart';
 import 'package:seanime_app/presentation/screens/extensions_marketplace_screen.dart';
 import 'package:seanime_app/presentation/screens/video_player_screen.dart';
 import 'package:flutter/services.dart';
 import 'package:g1455/g1455.dart';
+import 'package:seanime_app/presentation/providers/episode_selection_provider.dart';
 import 'package:seanime_app/presentation/widgets/episode_item_widget.dart';
 import 'package:seanime_app/presentation/widgets/anime_detail/mobile/anime_detail_manual_mapping_sheet.dart';
+import 'package:seanime_app/presentation/widgets/online_stream_download_dialog.dart';
 
 class OnlineStreamViewController {
   _OnlineStreamViewState? _state;
@@ -312,6 +316,87 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
     );
   }
 
+  void _handleDownloadEpisode(OnlinestreamEpisode ep) {
+    final l10n = ref.read(translationsProvider);
+    if (widget.onDownloadEpisode != null) {
+      widget.onDownloadEpisode!(ep.number, ep.localizedDisplayTitle(l10n));
+      return;
+    }
+    final aniZipEp = widget.animeDetails?.aniZipData?.episodes
+        .where((e) => e.episodeNumber == ep.number)
+        .firstOrNull;
+    final epImg = (ep.image != null && ep.image!.isNotEmpty) ? ep.image : aniZipEp?.image;
+    final animeTitle = widget.animeDetails?.title ?? 'Anime';
+
+    showOnlineStreamDownloadDialog(
+      context,
+      mediaId: widget.mediaId,
+      episodeNumber: ep.number,
+      animeTitle: animeTitle,
+      episodeTitle: ep.localizedDisplayTitle(l10n),
+      thumbnail: epImg,
+      provider: _selectedProvider,
+      isDubbed: _isDubbed,
+    );
+  }
+
+  Future<void> _handleDeleteEpisode(int epNum, String? filePath) async {
+    final l10n = ref.read(translationsProvider);
+    final confirmed = await showGlassDialog<bool>(
+      context: context,
+      builder: (BuildContext ctx) => GlassAlert(
+        title: Text(l10n.deleteDownload, textAlign: TextAlign.center),
+        message: Text(
+          l10n.deleteEpisodeDownloadConfirm(epNum),
+          textAlign: TextAlign.center,
+        ),
+        actions: <GlassAlertAction>[
+          GlassAlertAction(
+            label: l10n.cancel,
+            onPressed: () => Navigator.pop(ctx, false),
+          ),
+          GlassAlertAction(
+            label: l10n.delete,
+            isDestructive: true,
+            onPressed: () => Navigator.pop(ctx, true),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      final repo = ref.read(repositoryProvider);
+      final messenger = ScaffoldMessenger.of(context);
+      var targetPath = filePath;
+      if (targetPath == null || targetPath.isEmpty) {
+        final history = ref.read(downloadHistoryProvider);
+        for (final item in history) {
+          if (item.mediaId == widget.mediaId && (item.id == '${widget.mediaId}_$epNum' || item.id == '$epNum')) {
+            targetPath = item.filePath;
+            break;
+          }
+        }
+      }
+      if (targetPath != null && targetPath.isNotEmpty) {
+        await repo.deleteLocalFiles([targetPath]);
+        try {
+          final f = File(targetPath);
+          if (f.existsSync()) f.deleteSync();
+        } catch (_) {}
+      }
+      ref.read(downloadHistoryProvider.notifier).removeItem('${widget.mediaId}_$epNum');
+      ref.invalidate(downloadedAnimeProvider);
+      ref.invalidate(animeLibraryEntryProvider(widget.mediaId));
+      ref.invalidate(animeCollectionProvider);
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(l10n.downloadDeleted),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
   List<OnlinestreamEpisode> _getFilteredEpisodes() {
     if (_searchQuery.trim().isEmpty) return _episodes;
     final q = _searchQuery.trim().toLowerCase();
@@ -333,6 +418,18 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
       for (final ep in (libraryEntryAsync.asData?.value?.episodes ?? <LibraryEpisode>[]))
         if (ep.isDownloaded) ep.episodeNumber: ep.localFilePath,
     };
+    final historyItems = ref.watch(downloadHistoryProvider);
+    for (final item in historyItems) {
+      if (item.mediaId == widget.mediaId && item.filePath != null && item.filePath!.isNotEmpty) {
+        int? epNum;
+        if (item.id.startsWith('${widget.mediaId}_')) {
+          epNum = int.tryParse(item.id.substring('${widget.mediaId}_'.length));
+        }
+        if (epNum != null && File(item.filePath!).existsSync()) {
+          downloadedMap[epNum] = item.filePath!;
+        }
+      }
+    }
 
     // 1. Loading providers
     if (_isLoadingProviders) {
@@ -403,6 +500,8 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
 
     final filtered = _getFilteredEpisodes();
     final fallbackImage = widget.animeDetails?.bannerImage ?? widget.animeDetails?.coverImage;
+    final selection = ref.watch(episodeSelectionProvider(widget.mediaId));
+    final selectionNotifier = ref.read(episodeSelectionProvider(widget.mediaId).notifier);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -846,10 +945,16 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
                 isDownloaded: downloadedMap.containsKey(ep.number),
                 isDownloading: downloadingEpisodes.contains('${widget.mediaId}_${ep.number}'),
                 downloadProgress: downloadingEpisodes.getProgress(widget.mediaId, ep.number),
-                onTap: isLoading ? null : () => _handleEpisodeTap(ep),
-                onDownload: widget.onDownloadEpisode != null
-                    ? () => widget.onDownloadEpisode!(ep.number, ep.localizedDisplayTitle(l10n))
-                    : null,
+                isSelected: selection.isSelected(ep.number),
+                isSelectionMode: selection.isSelectionMode,
+                onToggleSelection: () => selectionNotifier.toggle(ep.number),
+                onTap: isLoading
+                    ? null
+                    : (selection.isSelectionMode
+                        ? () => selectionNotifier.toggle(ep.number)
+                        : () => _handleEpisodeTap(ep)),
+                onDownload: () => _handleDownloadEpisode(ep),
+                onDelete: () => _handleDeleteEpisode(ep.number, downloadedMap[ep.number]),
               );
             },
           )
@@ -899,11 +1004,17 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
                         isDownloaded: downloadedMap.containsKey(ep.number),
                         isDownloading: downloadingEpisodes.contains('${widget.mediaId}_${ep.number}'),
                         downloadProgress: downloadingEpisodes.getProgress(widget.mediaId, ep.number),
-                        onTap: isLoading ? null : () => _handleEpisodeTap(ep),
+                        isSelected: selection.isSelected(ep.number),
+                        isSelectionMode: selection.isSelectionMode,
+                        onToggleSelection: () => selectionNotifier.toggle(ep.number),
+                        onTap: isLoading
+                            ? null
+                            : (selection.isSelectionMode
+                                ? () => selectionNotifier.toggle(ep.number)
+                                : () => _handleEpisodeTap(ep)),
                         onPlay: isLoading ? null : () => _handleEpisodeTap(ep),
-                        onDownload: widget.onDownloadEpisode != null
-                            ? () => widget.onDownloadEpisode!(ep.number, ep.localizedDisplayTitle(l10n))
-                            : null,
+                        onDownload: () => _handleDownloadEpisode(ep),
+                        onDelete: () => _handleDeleteEpisode(ep.number, downloadedMap[ep.number]),
                       );
                     },
                   ),
@@ -943,10 +1054,10 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
               );
             },
           ),
+          ],
         ],
-      ],
-    );
-  }
+      );
+    }
 
   Widget _buildLoadingSkeletons(ThemeData theme) {
     return Column(

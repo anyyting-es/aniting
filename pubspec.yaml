@@ -52,6 +52,9 @@ dependencies:
   g1455: ^0.1.4
   dbus: ^0.7.15
   material_3_expressive: ^1.1.6
+  # Pure-Dart crypto, used to decrypt AES-128 encrypted HLS segments offline
+  # (Android/iOS have no ffmpeg, so the pure-Dart HLS downloader must decrypt).
+  pointycastle: ^4.0.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

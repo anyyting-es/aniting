@@ -6,6 +6,7 @@ import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/data/models/onlinestream_models.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
+import 'package:seanime_app/presentation/widgets/online_stream_download_dialog.dart';
 import 'package:seanime_app/presentation/widgets/player/services/player_source_controller.dart';
 
 /// Minimalist, clean streaming sources sheet with iOS Liquid Glass design (g1455).
@@ -239,6 +240,40 @@ class PlayerSourceSelectorSheet extends ConsumerWidget {
                       ),
                       const SizedBox(width: 6),
                     ],
+
+                    // Download stream action
+                    IconButton(
+                      icon: Icon(AppIcons.download(iconPack), size: 19, color: Colors.white70),
+                      tooltip: l10n.downloadOnlineStream,
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.all(4),
+                      constraints: const BoxConstraints(),
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        Navigator.pop(context);
+                        final epNum = controller?.getEpisodeNumber() ?? episodeNumber ?? 1;
+                        final animeTitle = controller?.title ?? '';
+                        final epTitle = controller?.getEpisodeTitle() ?? '';
+                        final thumb = controller
+                            ?.getAnimeDetails()
+                            ?.aniZipData
+                            ?.episodes
+                            .where((e) => e.episodeNumber == epNum)
+                            .firstOrNull
+                            ?.image;
+                        showOnlineStreamDownloadDialog(
+                          context,
+                          mediaId: controller?.mediaId ?? 0,
+                          episodeNumber: epNum,
+                          animeTitle: animeTitle,
+                          episodeTitle: epTitle,
+                          thumbnail: thumb,
+                          preloadedSources: currentSources,
+                          isDubbed: isDubbed,
+                        );
+                      },
+                    ),
+                    const SizedBox(width: 4),
 
                     // Reload & Close actions
                     if (onReloadSources != null)
