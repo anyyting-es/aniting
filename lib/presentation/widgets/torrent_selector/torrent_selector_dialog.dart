@@ -5,6 +5,7 @@ import 'package:seanime_app/data/models/anime_details.dart';
 import 'package:seanime_app/data/models/torrent_models.dart';
 import 'package:seanime_app/presentation/providers/active_downloads_provider.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
+import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/presentation/widgets/torrent_batch_files_sheet.dart';
 import 'package:seanime_app/presentation/widgets/torrent_selector/desktop/torrent_selector_desktop_view.dart';
 import 'package:seanime_app/presentation/widgets/torrent_selector/mobile/torrent_selector_mobile_view.dart';
@@ -43,7 +44,6 @@ class _TorrentSelectorDialogState extends ConsumerState<TorrentSelectorDialog> {
 
   bool _isSmartSearch = true;
   bool _showOnlyBatches = false;
-  bool _bestReleasesOnly = false;
   bool _searchAcrossProviders = false;
   TorrentSortField _sortField = TorrentSortField.seeders;
   bool _sortAscending = false;
@@ -54,15 +54,11 @@ class _TorrentSelectorDialogState extends ConsumerState<TorrentSelectorDialog> {
   String? _startingTorrentName;
 
   List<TorrentItem> get _filteredTorrents {
-    var list = filterTorrentsList(
+    return filterTorrentsList(
       _torrents,
       quality: _selectedQuality,
       showOnlyBatches: _showOnlyBatches,
     );
-    if (_bestReleasesOnly) {
-      list = list.where((t) => t.isBestRelease).toList();
-    }
-    return list;
   }
 
   @override
@@ -197,7 +193,7 @@ class _TorrentSelectorDialogState extends ConsumerState<TorrentSelectorDialog> {
           SnackBar(
             content: Row(
               children: [
-                const Icon(Icons.error_rounded, color: Colors.white, size: 20),
+                Icon(AppIcons.error(ref.read(iconPackProvider)), color: Colors.white, size: 20),
                 const SizedBox(width: 8),
                 Expanded(child: Text(l10n.error)),
               ],
@@ -404,7 +400,6 @@ class _TorrentSelectorDialogState extends ConsumerState<TorrentSelectorDialog> {
         selectedQuality: _selectedQuality,
         isSmartSearch: _isSmartSearch,
         showOnlyBatches: _showOnlyBatches,
-        bestReleasesOnly: _bestReleasesOnly,
         searchAcrossProviders: _searchAcrossProviders,
         sortField: _sortField,
         sortAscending: _sortAscending,
@@ -423,9 +418,6 @@ class _TorrentSelectorDialogState extends ConsumerState<TorrentSelectorDialog> {
         onBatchToggleChanged: (val) {
           setState(() => _showOnlyBatches = val);
           _searchTorrents();
-        },
-        onBestReleasesChanged: (val) {
-          setState(() => _bestReleasesOnly = val);
         },
         onSearchAcrossProvidersChanged: (val) {
           setState(() => _searchAcrossProviders = val);
@@ -464,6 +456,9 @@ class _TorrentSelectorDialogState extends ConsumerState<TorrentSelectorDialog> {
       selectedQuality: _selectedQuality,
       isSmartSearch: _isSmartSearch,
       showOnlyBatches: _showOnlyBatches,
+      searchAcrossProviders: _searchAcrossProviders,
+      sortField: _sortField,
+      sortAscending: _sortAscending,
       searchController: _searchController,
       startingTorrentName: _startingTorrentName,
       onEpisodeChanged: _onEpisodeChanged,
@@ -480,6 +475,17 @@ class _TorrentSelectorDialogState extends ConsumerState<TorrentSelectorDialog> {
         setState(() => _showOnlyBatches = val);
         _searchTorrents();
       },
+      onSearchAcrossProvidersChanged: (val) {
+        setState(() => _searchAcrossProviders = val);
+        _searchTorrents();
+      },
+      onSortFieldChanged: (field) {
+        setState(() {
+          _sortField = field;
+          _sortAscending = false;
+        });
+      },
+      onToggleSortDirection: () => setState(() => _sortAscending = !_sortAscending),
       onRefresh: _searchTorrents,
       onTorrentTap: _handleTorrentTap,
       onDownloadTorrent: _onDownloadTorrentPressed,

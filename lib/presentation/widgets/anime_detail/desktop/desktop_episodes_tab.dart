@@ -484,7 +484,7 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
     return result;
   }
 
-  Widget _buildLocalEmptyState(ThemeData theme, AppTranslations l10n) {
+  Widget _buildLocalEmptyState(ThemeData theme, AppTranslations l10n, AppIconPack iconPack) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
@@ -504,8 +504,8 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
               color: Colors.amber.withValues(alpha: 0.15),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
-              Icons.folder_off_outlined,
+            child: Icon(
+              AppIcons.folderOff(iconPack),
               size: 40,
               color: Colors.amber,
             ),
@@ -542,7 +542,7 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
                   widget.onToggleLocalMode();
                   widget.onTabChanged(AnimeDetailTab.online);
                 },
-                icon: const Icon(Icons.public, size: 16),
+                icon: Icon(AppIcons.globe(iconPack), size: 16),
                 label: Text(l10n.watchOnlineStream),
               ),
               M3EButton.icon(
@@ -553,7 +553,7 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
                   widget.onToggleLocalMode();
                   widget.onTabChanged(AnimeDetailTab.torrent);
                 },
-                icon: const Icon(Icons.cloud_download_rounded, size: 16),
+                icon: Icon(AppIcons.cloudDownload(iconPack), size: 16),
                 label: Text(l10n.searchTorrents),
               ),
               M3EButton.icon(
@@ -561,7 +561,7 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
                 size: M3EButtonSize.sm,
                 shape: M3EButtonShape.round,
                 onPressed: _scanAndRefreshLocal,
-                icon: const Icon(Icons.sync_rounded, size: 16),
+                icon: Icon(AppIcons.refresh(iconPack), size: 16),
                 label: Text(l10n.scanLocalFolder),
               ),
             ],
@@ -604,7 +604,7 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
 
       final downloadedEps = _libraryEntry?.episodes.where((e) => e.isDownloaded).toList() ?? [];
       if (downloadedEps.isEmpty) {
-        return _buildLocalEmptyState(theme, l10n);
+        return _buildLocalEmptyState(theme, l10n, iconPack);
       }
     }
 
@@ -691,7 +691,7 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.check_circle_rounded, size: 14, color: Colors.green),
+                    Icon(AppIcons.checkCircleFilled(iconPack), size: 14, color: Colors.green),
                     const SizedBox(width: 6),
                     Text(
                       '${items.length} ${l10n.localEpisodes}',
@@ -709,7 +709,7 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
                 variant: M3EIconButtonVariant.tonal,
                 size: M3EIconButtonSize.xs,
                 tooltip: l10n.scanLocalFolder,
-                icon: const Icon(Icons.sync_rounded, size: 17),
+                icon: Icon(AppIcons.refresh(iconPack), size: 17),
                 onPressed: _scanAndRefreshLocal,
               ),
             ] else if (widget.currentTab == AnimeDetailTab.online && widget.providers.isNotEmpty) ...[
@@ -720,7 +720,7 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
                   return GlassMenuItem(
                     label: p.name,
                     icon: Icon(
-                      isCurrent ? Icons.check_circle_rounded : Icons.public_rounded,
+                      isCurrent ? AppIcons.checkCircleFilled(iconPack) : AppIcons.globe(iconPack),
                       size: 18,
                       color: isCurrent ? theme.colorScheme.primary : null,
                     ),
@@ -736,8 +736,8 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(
-                          Icons.public_rounded,
+                        Icon(
+                          AppIcons.globe(iconPack),
                           size: 15,
                         ),
                         const SizedBox(width: 6),
@@ -750,7 +750,7 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
                         ),
                         const SizedBox(width: 4),
                         Icon(
-                          Icons.keyboard_arrow_down_rounded,
+                          AppIcons.chevronDown(iconPack),
                           size: 17,
                           color: isDark ? Colors.white60 : Colors.black54,
                         ),
@@ -941,7 +941,7 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            Icons.video_collection_outlined,
+                            AppIcons.movie(iconPack),
                             size: 40,
                             color: isDark ? Colors.white.withValues(alpha: 0.3) : theme.colorScheme.outline,
                           ),

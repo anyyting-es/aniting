@@ -643,7 +643,7 @@ class _AnimeDetailDesktopLayoutState
                       const SizedBox(height: 48),
                       _DesktopSectionHeader(
                         title: l10n.relations,
-                        icon: Icons.account_tree_outlined,
+                        icon: AppIcons.relations(iconPack),
                       ),
                       const SizedBox(height: 18),
                       DesktopRelationsTab(
@@ -657,7 +657,7 @@ class _AnimeDetailDesktopLayoutState
                       const SizedBox(height: 48),
                       _DesktopSectionHeader(
                         title: l10n.recommendations,
-                        icon: Icons.auto_awesome_rounded,
+                        icon: AppIcons.sparkles(iconPack),
                       ),
                       const SizedBox(height: 18),
                       DesktopRecommendationsTab(

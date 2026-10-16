@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
+import 'package:seanime_app/core/icons/app_icons.dart';
 
 class DesktopCharactersTab extends ConsumerWidget {
   final List characters;
@@ -16,6 +17,7 @@ class DesktopCharactersTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ref.watch(translationsProvider);
+    final iconPack = ref.watch(iconPackProvider);
 
     if (isLoading && characters.isEmpty) {
       return LayoutBuilder(
@@ -44,7 +46,7 @@ class DesktopCharactersTab extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.person_off_outlined, color: Colors.white38, size: 32),
+              Icon(AppIcons.personOff(iconPack), color: Colors.white38, size: 32),
               const SizedBox(height: 10),
               Text(
                 l10n.noCharactersAvailable,

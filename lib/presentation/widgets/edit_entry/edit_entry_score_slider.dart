@@ -3,7 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:seanime_app/core/i18n/translations/translations.dart';
 
 /// Control deslizante para puntaje (Score) con estética Liquid Glass,
-/// badge dinámico de estrellas, precisión decimal (0.0 - 10.0) y botones rápidos de ajuste.
+/// badge dinámico que respeta los colores del tema de la app (sin colores amarillos estáticos),
+/// altura calibrada a 46px para alineación perfecta y entrada directa por diálogo.
 class EditEntryScoreSlider extends StatelessWidget {
   final double score; // 0.0 to 10.0
   final ValueChanged<double> onChanged;
@@ -25,6 +26,55 @@ class EditEntryScoreSlider extends StatelessWidget {
     onChanged(rounded);
   }
 
+  void _promptDirectScoreInput(BuildContext context) {
+    final controller = TextEditingController(
+      text: score > 0 ? (score % 1 == 0 ? score.toInt().toString() : score.toStringAsFixed(1)) : '',
+    );
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    showDialog<double>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          backgroundColor: isDark
+              ? theme.colorScheme.surfaceContainer
+              : theme.colorScheme.surfaceContainerHighest,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text(l10n.score, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          content: TextField(
+            controller: controller,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            autofocus: true,
+            decoration: InputDecoration(
+              hintText: '0 - 10',
+              suffixText: '/ 10',
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: Text(l10n.cancel),
+            ),
+            FilledButton(
+              onPressed: () {
+                final entered = double.tryParse(controller.text.trim()) ?? score;
+                final clamped = entered.clamp(0.0, 10.0);
+                Navigator.of(ctx).pop((clamped * 10).round() / 10.0);
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    ).then((entered) {
+      if (entered != null) {
+        onChanged(entered);
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -38,75 +88,85 @@ class EditEntryScoreSlider extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Header: Label left, Badge right
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.star_rounded,
-                    size: 17,
-                    color: hasScore ? const Color(0xFFFBBF24) : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
-                  ),
-                  const SizedBox(width: 5),
-                  Flexible(
+        // Header: Icon + Label left, Badge right (Height 22px for strict grid alignment)
+        SizedBox(
+          height: 22,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.star_rounded,
+                      size: 16,
+                      color: hasScore ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: 5),
+                    Flexible(
+                      child: Text(
+                        l10n.score,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: -0.1,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 6),
+              // Interactive Score Badge (Tap to enter direct decimal score)
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () => _promptDirectScoreInput(context),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: hasScore
+                          ? theme.colorScheme.primary.withValues(alpha: isDark ? 0.20 : 0.12)
+                          : (isDark
+                              ? theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4)
+                              : Colors.black.withValues(alpha: 0.05)),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: hasScore
+                            ? theme.colorScheme.primary.withValues(alpha: 0.35)
+                            : (isDark
+                                ? theme.colorScheme.outlineVariant.withValues(alpha: 0.25)
+                                : Colors.black.withValues(alpha: 0.08)),
+                        width: 0.9,
+                      ),
+                    ),
                     child: Text(
-                      l10n.score,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      hasScore ? '$scoreDisplay / 10' : scoreDisplay,
                       style: TextStyle(
-                        color: theme.colorScheme.onSurfaceVariant,
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: -0.1,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w700,
+                        color: hasScore
+                            ? theme.colorScheme.primary
+                            : theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 6),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: hasScore
-                    ? (isDark
-                        ? const Color(0xFFFBBF24).withValues(alpha: 0.18)
-                        : const Color(0xFFFBBF24).withValues(alpha: 0.14))
-                    : (isDark
-                        ? theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4)
-                        : Colors.black.withValues(alpha: 0.05)),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: hasScore
-                      ? const Color(0xFFFBBF24).withValues(alpha: 0.35)
-                      : (isDark
-                          ? theme.colorScheme.outlineVariant.withValues(alpha: 0.25)
-                          : Colors.black.withValues(alpha: 0.08)),
-                  width: 0.9,
                 ),
               ),
-              child: Text(
-                hasScore ? '$scoreDisplay / 10' : scoreDisplay,
-                style: TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w700,
-                  color: hasScore
-                      ? (isDark ? const Color(0xFFFDE68A) : const Color(0xFFB45309))
-                      : theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
-        const SizedBox(height: 7),
+        const SizedBox(height: 8),
 
-        // Slider Box
+        // Slider Box (strictly height 46px to match status and steppers)
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          height: 46,
+          padding: const EdgeInsets.symmetric(horizontal: 6),
           decoration: BoxDecoration(
             color: isDark
                 ? theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.30)
@@ -128,58 +188,53 @@ class EditEntryScoreSlider extends StatelessWidget {
                     ),
                   ],
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+          child: Row(
             children: [
-              Row(
-                children: [
-                  // Fast Step Down button [-]
-                  _buildQuickStepButton(
-                    theme: theme,
-                    icon: Icons.remove_rounded,
-                    onTap: score > 0.0 ? () => _adjustScore(-0.5) : null,
-                  ),
+              // Fast Step Down button [-]
+              _buildQuickStepButton(
+                theme: theme,
+                icon: Icons.remove_rounded,
+                onTap: score > 0.0 ? () => _adjustScore(-0.5) : null,
+              ),
 
-                  // Slider
-                  Expanded(
-                    child: SliderTheme(
-                      data: SliderTheme.of(context).copyWith(
-                        trackHeight: 5.5,
-                        activeTrackColor: const Color(0xFFFBBF24),
-                        inactiveTrackColor: isDark
-                            ? Colors.white.withValues(alpha: 0.12)
-                            : Colors.black.withValues(alpha: 0.08),
-                        thumbColor: const Color(0xFFF59E0B),
-                        overlayColor: const Color(0xFFFBBF24).withValues(alpha: 0.18),
-                        thumbShape: const RoundSliderThumbShape(
-                          enabledThumbRadius: 8.0,
-                          elevation: 3.0,
-                        ),
-                        overlayShape: const RoundSliderOverlayShape(overlayRadius: 18.0),
-                      ),
-                      child: Slider(
-                        value: score,
-                        min: 0.0,
-                        max: 10.0,
-                        divisions: 100,
-                        onChanged: (val) {
-                          final rounded = (val * 10).round() / 10.0;
-                          if (rounded != score) {
-                            HapticFeedback.selectionClick();
-                            onChanged(rounded);
-                          }
-                        },
-                      ),
+              // Slider with primary theme color
+              Expanded(
+                child: SliderTheme(
+                  data: SliderTheme.of(context).copyWith(
+                    trackHeight: 4.0,
+                    activeTrackColor: theme.colorScheme.primary,
+                    inactiveTrackColor: isDark
+                        ? Colors.white.withValues(alpha: 0.12)
+                        : Colors.black.withValues(alpha: 0.08),
+                    thumbColor: theme.colorScheme.primary,
+                    overlayColor: theme.colorScheme.primary.withValues(alpha: 0.16),
+                    thumbShape: const RoundSliderThumbShape(
+                      enabledThumbRadius: 7.0,
+                      elevation: 2.0,
                     ),
+                    overlayShape: const RoundSliderOverlayShape(overlayRadius: 14.0),
                   ),
+                  child: Slider(
+                    value: score,
+                    min: 0.0,
+                    max: 10.0,
+                    divisions: 100,
+                    onChanged: (val) {
+                      final rounded = (val * 10).round() / 10.0;
+                      if (rounded != score) {
+                        HapticFeedback.selectionClick();
+                        onChanged(rounded);
+                      }
+                    },
+                  ),
+                ),
+              ),
 
-                  // Fast Step Up button [+]
-                  _buildQuickStepButton(
-                    theme: theme,
-                    icon: Icons.add_rounded,
-                    onTap: score < 10.0 ? () => _adjustScore(0.5) : null,
-                  ),
-                ],
+              // Fast Step Up button [+]
+              _buildQuickStepButton(
+                theme: theme,
+                icon: Icons.add_rounded,
+                onTap: score < 10.0 ? () => _adjustScore(0.5) : null,
               ),
             ],
           ),
@@ -201,31 +256,17 @@ class EditEntryScoreSlider extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(10),
         onTap: onTap,
-        child: Container(
-          width: 30,
-          height: 30,
-          decoration: BoxDecoration(
-            color: isEnabled
-                ? (isDark
-                    ? Colors.white.withValues(alpha: 0.08)
-                    : Colors.black.withValues(alpha: 0.05))
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
+        child: SizedBox(
+          width: 32,
+          height: 36,
+          child: Center(
+            child: Icon(
+              icon,
+              size: 18,
               color: isEnabled
-                  ? (isDark
-                      ? Colors.white.withValues(alpha: 0.12)
-                      : Colors.black.withValues(alpha: 0.08))
-                  : Colors.transparent,
-              width: 0.8,
+                  ? (isDark ? Colors.white : theme.colorScheme.primary)
+                  : theme.colorScheme.onSurface.withValues(alpha: 0.20),
             ),
-          ),
-          child: Icon(
-            icon,
-            size: 17,
-            color: isEnabled
-                ? theme.colorScheme.onSurface
-                : theme.colorScheme.onSurface.withValues(alpha: 0.25),
           ),
         ),
       ),

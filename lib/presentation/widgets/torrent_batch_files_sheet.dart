@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
+import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/theme/app_theme_colors.dart';
 import 'package:seanime_app/data/models/torrent_file_preview.dart';
 import 'package:seanime_app/data/models/torrent_models.dart';
@@ -105,6 +106,7 @@ class _TorrentBatchFilesSheetState extends ConsumerState<TorrentBatchFilesSheet>
     final theme = Theme.of(context);
     final colors = context.themeColors;
     final l10n = ref.watch(translationsProvider);
+    final iconPack = ref.watch(iconPackProvider);
     final filtered = _filteredFiles;
 
     return DraggableScrollableSheet(
@@ -145,7 +147,7 @@ class _TorrentBatchFilesSheetState extends ConsumerState<TorrentBatchFilesSheet>
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(
-                        Icons.folder_zip_rounded,
+                        AppIcons.folderZip(iconPack),
                         color: theme.colorScheme.primary,
                         size: 22,
                       ),
@@ -195,7 +197,7 @@ class _TorrentBatchFilesSheetState extends ConsumerState<TorrentBatchFilesSheet>
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close_rounded),
+                      icon: Icon(AppIcons.close(iconPack)),
                       onPressed: () => Navigator.pop(context),
                     ),
                   ],
@@ -215,10 +217,10 @@ class _TorrentBatchFilesSheetState extends ConsumerState<TorrentBatchFilesSheet>
                       hintText: l10n.filterFilesOrEpisode,
                       isDense: true,
                       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      prefixIcon: const Icon(Icons.search_rounded, size: 18),
+                      prefixIcon: Icon(AppIcons.search(iconPack), size: 18),
                       suffixIcon: _searchQuery.isNotEmpty
                           ? IconButton(
-                              icon: const Icon(Icons.clear_rounded, size: 16),
+                              icon: Icon(AppIcons.close(iconPack), size: 16),
                               onPressed: () {
                                 _searchController.clear();
                                 setState(() => _searchQuery = '');
@@ -278,8 +280,8 @@ class _TorrentBatchFilesSheetState extends ConsumerState<TorrentBatchFilesSheet>
                                   children: [
                                     Icon(
                                       file.isVideo
-                                          ? Icons.video_file_outlined
-                                          : Icons.insert_drive_file_outlined,
+                                          ? AppIcons.movie(iconPack)
+                                          : AppIcons.fileText(iconPack),
                                       size: 22,
                                       color: isSelected
                                           ? theme.colorScheme.primary
@@ -324,12 +326,12 @@ class _TorrentBatchFilesSheetState extends ConsumerState<TorrentBatchFilesSheet>
                                                   child: Row(
                                                     mainAxisSize: MainAxisSize.min,
                                                     children: [
-                                                      Icon(Icons.star_rounded,
+                                                      Icon(AppIcons.star(iconPack),
                                                           size: 11, color: Colors.amber),
-                                                      SizedBox(width: 2),
+                                                      const SizedBox(width: 2),
                                                       Text(
                                                         l10n.currentEpisodeBadge,
-                                                        style: TextStyle(
+                                                        style: const TextStyle(
                                                           fontSize: 9,
                                                           fontWeight: FontWeight.bold,
                                                           color: Colors.amber,
@@ -402,7 +404,7 @@ class _TorrentBatchFilesSheetState extends ConsumerState<TorrentBatchFilesSheet>
                                   );
                                 }
                               : null,
-                          icon: const Icon(Icons.play_arrow_rounded),
+                          icon: Icon(AppIcons.play(iconPack)),
                           label: Text(
                             _selectedFile != null
                                 ? '${l10n.play} (${_selectedFile!.displayTitle.isNotEmpty ? _selectedFile!.displayTitle : 'Ep. ${_selectedFile!.episodeNumber > 0 ? _selectedFile!.episodeNumber : _selectedFile!.index + 1}'})'
@@ -421,7 +423,7 @@ class _TorrentBatchFilesSheetState extends ConsumerState<TorrentBatchFilesSheet>
                       const SizedBox(width: 8),
                       IconButton.filledTonal(
                         tooltip: l10n.downloadWithTorrentClient,
-                        icon: const Icon(Icons.download_rounded),
+                        icon: Icon(AppIcons.download(iconPack)),
                         onPressed: () {
                           Navigator.pop(
                             context,
@@ -441,7 +443,7 @@ class _TorrentBatchFilesSheetState extends ConsumerState<TorrentBatchFilesSheet>
                       const SizedBox(width: 8),
                       IconButton.filledTonal(
                         tooltip: l10n.openInExternalPlayer,
-                        icon: const Icon(Icons.open_in_new_rounded),
+                        icon: Icon(AppIcons.openInNew(iconPack)),
                         onPressed: _selectedFile != null
                             ? () {
                                 Navigator.pop(

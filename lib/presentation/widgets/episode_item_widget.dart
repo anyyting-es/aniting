@@ -139,7 +139,7 @@ void showEpisodeDetailModal({
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(Icons.access_time_rounded, size: 12, color: Colors.white70),
+                                  Icon(AppIcons.clock(iconPack), size: 12, color: Colors.white70),
                                   const SizedBox(width: 4),
                                   Text(
                                     duration,
@@ -196,7 +196,7 @@ void showEpisodeDetailModal({
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.calendar_today_rounded, size: 12, color: theme.colorScheme.primary),
+                              Icon(AppIcons.calendar(iconPack), size: 12, color: theme.colorScheme.primary),
                               const SizedBox(width: 5),
                               Text(
                                 airDate,
@@ -220,7 +220,7 @@ void showEpisodeDetailModal({
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.star_rounded, size: 14, color: theme.colorScheme.primary),
+                              Icon(AppIcons.star(iconPack), size: 14, color: theme.colorScheme.primary),
                               const SizedBox(width: 4),
                               Text(
                                 rating,
@@ -407,6 +407,7 @@ class EpisodeListItem extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final l10n = ref.watch(translationsProvider);
+    final iconPack = ref.watch(iconPackProvider);
     final itemRadius = context.themeColors.borderRadius;
 
     final playbackMap = ref.watch(playbackProgressPreferencesProvider);
@@ -527,7 +528,7 @@ class EpisodeListItem extends ConsumerWidget {
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(Icons.graphic_eq_rounded, size: 12, color: Colors.white),
+                                  Icon(AppIcons.sensors(iconPack), size: 12, color: Colors.white),
                                   const SizedBox(width: 3),
                                   Text(
                                     l10n.watching,
@@ -555,7 +556,7 @@ class EpisodeListItem extends ConsumerWidget {
                                 color: Colors.black.withValues(alpha: 0.7),
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              child: const Icon(Icons.check_rounded, size: 13, color: Colors.white70),
+                              child: Icon(AppIcons.check(iconPack), size: 13, color: Colors.white70),
                             ),
                           ),
                         ],
@@ -663,7 +664,7 @@ class EpisodeListItem extends ConsumerWidget {
                         const Spacer(),
                         if (isDownloaded) ...[
                           Icon(
-                            Icons.check_circle_rounded,
+                            AppIcons.checkCircle(iconPack),
                             size: 14,
                             color: Colors.greenAccent.shade400,
                           ),
@@ -676,25 +677,25 @@ class EpisodeListItem extends ConsumerWidget {
                               if (onPlay != null || onTap != null)
                                 GlassMenuItem(
                                   label: l10n.playEpisode,
-                                  icon: const Icon(Icons.play_arrow_rounded, size: 18),
+                                  icon: Icon(AppIcons.play(iconPack), size: 18),
                                   onPressed: onPlay ?? onTap,
                                 ),
                               if (onDownload != null && !isDownloaded)
                                 GlassMenuItem(
                                   label: l10n.downloadEpisode,
-                                  icon: const Icon(Icons.download_rounded, size: 18),
+                                  icon: Icon(AppIcons.download(iconPack), size: 18),
                                   onPressed: onDownload,
                                 ),
                               if (onDelete != null && isDownloaded)
                                 GlassMenuItem(
                                   label: l10n.deleteDownload,
                                   isDestructive: true,
-                                  icon: const Icon(Icons.delete_outline_rounded, size: 18),
+                                  icon: Icon(AppIcons.trash(iconPack), size: 18),
                                   onPressed: onDelete,
                                 ),
                               GlassMenuItem(
                                 label: l10n.details,
-                                icon: const Icon(Icons.info_outline_rounded, size: 18),
+                                icon: Icon(AppIcons.info(iconPack), size: 18),
                                 onPressed: () {
                                   showEpisodeDetailModal(
                                     context: context,
@@ -722,7 +723,7 @@ class EpisodeListItem extends ConsumerWidget {
                                 child: Padding(
                                   padding: const EdgeInsets.all(3.0),
                                   child: Icon(
-                                    Icons.more_horiz_rounded,
+                                    AppIcons.moreHoriz(iconPack),
                                     size: 18,
                                     color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.75),
                                   ),
@@ -840,6 +841,7 @@ class EpisodeGridItem extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final iconPack = ref.watch(iconPackProvider);
     final gridRadius = context.themeColors.borderRadius;
 
     final playbackMap = ref.watch(playbackProgressPreferencesProvider);
@@ -952,7 +954,7 @@ class EpisodeGridItem extends ConsumerWidget {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.check_circle_rounded, size: 12, color: Colors.greenAccent),
+                    Icon(AppIcons.checkCircle(iconPack), size: 12, color: Colors.greenAccent),
                     const SizedBox(width: 3),
                     Text(
                       'EP $episodeNumber',
@@ -968,7 +970,7 @@ class EpisodeGridItem extends ConsumerWidget {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.check_rounded, size: 14, color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
+                    Icon(AppIcons.check(iconPack), size: 14, color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
                     const SizedBox(width: 3),
                     Text(
                       'EP $episodeNumber',

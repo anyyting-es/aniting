@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:seanime_app/core/api/api_client.dart';
+import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/server/server_manager.dart';
 import 'package:seanime_app/data/models/anime_details.dart';
 import 'package:seanime_app/data/models/anime_entry.dart';
@@ -393,8 +394,8 @@ void main() {
       expect(scrollView.physics, isA<ClampingScrollPhysics>());
 
       // Check Local button in top bar and Info button
-      expect(find.byIcon(Icons.folder_outlined), findsOneWidget);
-      expect(find.byIcon(Icons.info_outline_rounded), findsOneWidget);
+      expect(find.byIcon(AppIcons.folder(AppIconPack.lucide)), findsWidgets);
+      expect(find.byIcon(AppIcons.info(AppIconPack.lucide)), findsOneWidget);
 
       // Check mode dropdown chip is present with Online
       expect(find.text('Online'), findsOneWidget);
@@ -409,11 +410,11 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
 
       // Tap the local button in top bar to switch to Local mode
-      await tester.tap(find.byIcon(Icons.folder_outlined));
+      await tester.tap(find.byIcon(AppIcons.folder(AppIconPack.lucide)).first);
       await tester.pump(const Duration(milliseconds: 100));
 
       // Check local folder icon is now filled (active in top bar and mode chip)
-      expect(find.byIcon(Icons.folder_rounded), findsWidgets);
+      expect(find.byIcon(AppIcons.folderFilled(AppIconPack.lucide)), findsWidgets);
 
       await tester.pump(const Duration(seconds: 1));
 

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:g1455/g1455.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
+import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/data/models/anime_details.dart';
 import 'package:seanime_app/presentation/providers/active_downloads_provider.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
@@ -107,21 +108,22 @@ class DesktopEpisodeMenuButton extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ref.watch(translationsProvider);
+    final iconPack = ref.watch(iconPackProvider);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
     final items = <GlassMenuItem>[
       GlassMenuItem(
         label: l10n.playEpisode,
-        icon: const Icon(Icons.play_arrow_rounded, size: 18),
+        icon: Icon(AppIcons.play(iconPack), size: 18),
         onPressed: () => onEpisodeClicked(ep),
       ),
       GlassMenuItem(
         label: ep.isWatched ? l10n.markAsUnwatched : l10n.markAsWatched,
         icon: Icon(
           ep.isWatched
-              ? Icons.remove_done_rounded
-              : Icons.check_circle_outline_rounded,
+              ? AppIcons.removeDone(iconPack)
+              : AppIcons.checkCircle(iconPack),
           size: 18,
         ),
         onPressed: () => _toggleWatched(context, ref),
@@ -130,13 +132,13 @@ class DesktopEpisodeMenuButton extends ConsumerWidget {
         GlassMenuItem(
           label: l10n.deleteDownload,
           isDestructive: true,
-          icon: const Icon(Icons.delete_outline_rounded, size: 18),
+          icon: Icon(AppIcons.trash(iconPack), size: 18),
           onPressed: () => _deleteDownloaded(context, ref),
         )
       else if (onOpenTorrentSelector != null)
         GlassMenuItem(
           label: l10n.downloadEpisode,
-          icon: const Icon(Icons.download_rounded, size: 18),
+          icon: Icon(AppIcons.download(iconPack), size: 18),
           onPressed: () => onOpenTorrentSelector!(
             episodeNumber: ep.number,
             episodeTitle: ep.title,
@@ -153,6 +155,7 @@ class DesktopEpisodeMenuButton extends ConsumerWidget {
           isOpen: controller.isOpen,
           onTap: controller.open,
           isDark: isDark,
+          icon: AppIcons.moreHoriz(iconPack),
         );
       },
     );
@@ -163,11 +166,13 @@ class _EpisodeThreeDotsButton extends StatefulWidget {
   final bool isOpen;
   final VoidCallback onTap;
   final bool isDark;
+  final IconData icon;
 
   const _EpisodeThreeDotsButton({
     required this.isOpen,
     required this.onTap,
     required this.isDark,
+    required this.icon,
   });
 
   @override
@@ -204,7 +209,7 @@ class _EpisodeThreeDotsButtonState extends State<_EpisodeThreeDotsButton> {
               borderRadius: BorderRadius.circular(16),
             ),
             child: Icon(
-              Icons.more_horiz_rounded,
+              widget.icon,
               size: 19,
               color: isHoveredOrOpen
                   ? theme.colorScheme.primary

@@ -307,7 +307,8 @@ class _PlayerGestureOverlayState extends ConsumerState<PlayerGestureOverlay> {
     final diffMs = _currentSeekPosition.inMilliseconds - _seekStartPosition.inMilliseconds;
     final diffSec = (diffMs / 1000).round();
     final isForward = diffSec >= 0;
-    final diffStr = isForward ? '+$diffSec s' : '$diffSec s';
+    final diffStr = '${isForward ? "+" : ""}${diffSec}s';
+    final pack = ref.read(iconPackProvider);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
@@ -330,7 +331,7 @@ class _PlayerGestureOverlayState extends ConsumerState<PlayerGestureOverlay> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            isForward ? Icons.fast_forward_rounded : Icons.fast_rewind_rounded,
+            isForward ? AppIcons.fastForward(pack) : AppIcons.fastRewind(pack),
             size: 16,
             color: Colors.white,
           ),

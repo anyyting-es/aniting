@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:g1455/g1455.dart';
+import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/data/models/onlinestream_models.dart';
 import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
 import 'package:seanime_app/presentation/widgets/anime_detail/desktop/desktop_episodes_tab.dart';
@@ -97,7 +98,7 @@ void main() {
 
       // GlassMenuAnchor should be present
       expect(find.byType(GlassMenuAnchor), findsOneWidget);
-      expect(find.byIcon(Icons.more_horiz_rounded), findsOneWidget);
+      expect(find.byIcon(AppIcons.moreHoriz(AppIconPack.lucide)), findsOneWidget);
     });
 
     testWidgets('EditEntryStatusDropdown uses GlassPopoverAnchor without extra BackdropFilter', (tester) async {

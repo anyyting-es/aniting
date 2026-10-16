@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:seanime_app/core/api/api_client.dart';
+import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/preferences/layout_mode_provider.dart';
 import 'package:seanime_app/core/server/server_manager.dart';
 import 'package:seanime_app/data/models/anime_details.dart';
@@ -105,9 +107,9 @@ void main() {
 
       // 1. Play button primerito (Comenzar a ver) + Actions (Favorite, Edit)
       expect(find.text('Comenzar a ver'), findsOneWidget);
-      expect(find.byIcon(Icons.play_arrow_rounded), findsOneWidget);
-      expect(find.byIcon(Icons.favorite_border_rounded), findsOneWidget);
-      expect(find.byIcon(Icons.edit_outlined), findsOneWidget);
+      expect(find.byIcon(AppIcons.play(AppIconPack.lucide)), findsOneWidget);
+      expect(find.widgetWithIcon(M3EIconButton, AppIcons.heartOutline(AppIconPack.lucide)), findsOneWidget);
+      expect(find.widgetWithIcon(M3EIconButton, AppIcons.edit(AppIconPack.lucide)), findsOneWidget);
 
       // 2. Dropdown Chips (Modo, Fuente)
       expect(find.text('Online'), findsOneWidget);
@@ -128,7 +130,7 @@ void main() {
       // 4. Verify no floating dock container or islands exist at the bottom
       expect(find.byType(Positioned), findsWidgets);
       // Mode switch squircle from old design should not exist
-      expect(find.byIcon(Icons.tune_rounded), findsOneWidget); // In the provider chip
+      expect(find.byIcon(AppIcons.sliders(AppIconPack.lucide)), findsOneWidget); // In the provider chip
     });
   });
 

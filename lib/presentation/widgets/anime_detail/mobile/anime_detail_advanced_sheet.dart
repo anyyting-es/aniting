@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:g1455/g1455.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
+import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import '../../../../data/models/onlinestream_models.dart';
 
@@ -39,6 +40,7 @@ class _AnimeDetailAdvancedSheetState extends ConsumerState<AnimeDetailAdvancedSh
   @override
   Widget build(BuildContext context) {
     final l10n = ref.watch(translationsProvider);
+    final iconPack = ref.watch(iconPackProvider);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -47,16 +49,18 @@ class _AnimeDetailAdvancedSheetState extends ConsumerState<AnimeDetailAdvancedSh
 
     return Material(
       type: MaterialType.transparency,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 6, 16, 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 6, 16, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
             // Title Row
             Row(
               children: [
-                Icon(Icons.tune_rounded, size: 20, color: primaryColor),
+                Icon(AppIcons.sliders(iconPack), size: 20, color: primaryColor),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
@@ -72,7 +76,7 @@ class _AnimeDetailAdvancedSheetState extends ConsumerState<AnimeDetailAdvancedSh
                   variant: M3EIconButtonVariant.standard,
                   size: M3EIconButtonSize.xs,
                   icon: Icon(
-                    Icons.close_rounded,
+                    AppIcons.close(iconPack),
                     size: 18,
                     color: secondaryTextColor,
                   ),
@@ -100,7 +104,7 @@ class _AnimeDetailAdvancedSheetState extends ConsumerState<AnimeDetailAdvancedSh
               child: Row(
                 children: [
                   Icon(
-                    _dubbed ? Icons.record_voice_over_rounded : Icons.subtitles_rounded,
+                    _dubbed ? AppIcons.voice(iconPack) : AppIcons.subtitles(iconPack),
                     size: 20,
                     color: _dubbed ? theme.colorScheme.primary : secondaryTextColor,
                   ),
@@ -155,7 +159,7 @@ class _AnimeDetailAdvancedSheetState extends ConsumerState<AnimeDetailAdvancedSh
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.link_rounded, size: 17),
+                          Icon(AppIcons.link(iconPack), size: 17),
                           const SizedBox(width: 6),
                           Text(
                             l10n.link,
@@ -179,7 +183,7 @@ class _AnimeDetailAdvancedSheetState extends ConsumerState<AnimeDetailAdvancedSh
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.refresh_rounded, size: 17),
+                          Icon(AppIcons.refresh(iconPack), size: 17),
                           const SizedBox(width: 6),
                           Text(
                             l10n.refresh,
@@ -194,6 +198,7 @@ class _AnimeDetailAdvancedSheetState extends ConsumerState<AnimeDetailAdvancedSh
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

@@ -3,6 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
+import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/data/models/anime_details.dart';
 import 'package:seanime_app/data/models/torrent_models.dart';
 
@@ -16,7 +17,6 @@ class TorrentSidebarInfoPanel extends ConsumerWidget {
   final String selectedQuality;
   final bool isSmartSearch;
   final bool showOnlyBatches;
-  final bool bestReleasesOnly;
   final bool searchAcrossProviders;
   final TextEditingController searchController;
   final bool isLoadingTorrents;
@@ -25,7 +25,6 @@ class TorrentSidebarInfoPanel extends ConsumerWidget {
   final ValueChanged<String> onQualityChanged;
   final ValueChanged<bool> onSmartSearchChanged;
   final ValueChanged<bool> onBatchToggleChanged;
-  final ValueChanged<bool> onBestReleasesChanged;
   final ValueChanged<bool> onSearchAcrossProvidersChanged;
   final VoidCallback onRefresh;
 
@@ -40,7 +39,6 @@ class TorrentSidebarInfoPanel extends ConsumerWidget {
     required this.selectedQuality,
     required this.isSmartSearch,
     required this.showOnlyBatches,
-    this.bestReleasesOnly = false,
     this.searchAcrossProviders = false,
     required this.searchController,
     required this.isLoadingTorrents,
@@ -49,7 +47,6 @@ class TorrentSidebarInfoPanel extends ConsumerWidget {
     required this.onQualityChanged,
     required this.onSmartSearchChanged,
     required this.onBatchToggleChanged,
-    required this.onBestReleasesChanged,
     required this.onSearchAcrossProvidersChanged,
     required this.onRefresh,
   });
@@ -95,6 +92,7 @@ class TorrentSidebarInfoPanel extends ConsumerWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final l10n = ref.watch(translationsProvider);
+    final iconPack = ref.watch(iconPackProvider);
 
     final thumbnailUrl = _resolveEpisodeThumbnail();
     final totalEpisodes = _getTotalEpisodes();
@@ -104,10 +102,10 @@ class TorrentSidebarInfoPanel extends ConsumerWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF10131B) : theme.colorScheme.surfaceContainerLowest,
+        color: (isDark ? const Color(0xFF10131E) : theme.colorScheme.surfaceContainerLowest).withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDark ? Colors.white.withValues(alpha: 0.07) : theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
+          color: isDark ? Colors.white.withValues(alpha: 0.07) : theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
         ),
       ),
       child: ListView(
@@ -139,12 +137,12 @@ class TorrentSidebarInfoPanel extends ConsumerWidget {
                       ),
                       errorWidget: (context, url, error) => Container(
                         color: isDark ? const Color(0xFF171A24) : theme.colorScheme.surfaceContainerHigh,
-                        child: Icon(Icons.movie_outlined, size: 32, color: theme.colorScheme.outline),
+                        child: Icon(AppIcons.movie(iconPack), size: 32, color: theme.colorScheme.outline),
                       ),
                     )
                   : Container(
                       color: isDark ? const Color(0xFF171A24) : theme.colorScheme.surfaceContainerHigh,
-                      child: Icon(Icons.movie_outlined, size: 32, color: theme.colorScheme.outline),
+                      child: Icon(AppIcons.movie(iconPack), size: 32, color: theme.colorScheme.outline),
                     ),
             ),
           ),
@@ -217,7 +215,7 @@ class TorrentSidebarInfoPanel extends ConsumerWidget {
                   isLoadingProviders ? l10n.loadingProviders : l10n.onlineProvider,
                   style: const TextStyle(fontSize: 12),
                 ),
-                icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 18),
+                icon: Icon(AppIcons.chevronDown(iconPack), size: 18),
                 dropdownColor: isDark ? const Color(0xFF1E222E) : theme.colorScheme.surfaceContainerHigh,
                 borderRadius: BorderRadius.circular(10),
                 items: [
@@ -249,6 +247,7 @@ class TorrentSidebarInfoPanel extends ConsumerWidget {
             value: isSmartSearch,
             onChanged: onSmartSearchChanged,
             theme: theme,
+            iconPack: iconPack,
           ),
 
           const SizedBox(height: 6),
@@ -260,6 +259,7 @@ class TorrentSidebarInfoPanel extends ConsumerWidget {
             value: searchAcrossProviders,
             onChanged: onSearchAcrossProvidersChanged,
             theme: theme,
+            iconPack: iconPack,
           ),
 
           const SizedBox(height: 12),
@@ -313,7 +313,7 @@ class TorrentSidebarInfoPanel extends ConsumerWidget {
                               ? () => onEpisodeChanged(currentEp + 1)
                               : null,
                           child: Icon(
-                            Icons.arrow_drop_up_rounded,
+                            AppIcons.arrowDropUp(iconPack),
                             size: 16,
                             color: (currentEp != null && currentEp < totalEpisodes)
                                 ? theme.colorScheme.onSurface
@@ -325,7 +325,7 @@ class TorrentSidebarInfoPanel extends ConsumerWidget {
                               ? () => onEpisodeChanged(currentEp - 1)
                               : null,
                           child: Icon(
-                            Icons.arrow_drop_down_rounded,
+                            AppIcons.arrowDropDown(iconPack),
                             size: 16,
                             color: (currentEp != null && currentEp > 1)
                                 ? theme.colorScheme.onSurface
@@ -349,6 +349,7 @@ class TorrentSidebarInfoPanel extends ConsumerWidget {
             value: showOnlyBatches,
             onChanged: onBatchToggleChanged,
             theme: theme,
+            iconPack: iconPack,
           ),
 
           const SizedBox(height: 10),
@@ -379,7 +380,7 @@ class TorrentSidebarInfoPanel extends ConsumerWidget {
                   child: DropdownButton<String>(
                     value: selectedQuality,
                     isDense: true,
-                    icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 16),
+                    icon: Icon(AppIcons.chevronDown(iconPack), size: 16),
                     dropdownColor: isDark ? const Color(0xFF1E222E) : theme.colorScheme.surfaceContainerHigh,
                     borderRadius: BorderRadius.circular(8),
                     items: [
@@ -403,16 +404,7 @@ class TorrentSidebarInfoPanel extends ConsumerWidget {
             ],
           ),
 
-          const SizedBox(height: 10),
 
-          // 10. Best releases Toggle
-          _buildToggleRow(
-            title: l10n.bestReleases,
-            tooltip: l10n.bestReleases,
-            value: bestReleasesOnly,
-            onChanged: onBestReleasesChanged,
-            theme: theme,
-          ),
 
           const SizedBox(height: 14),
 
@@ -430,7 +422,7 @@ class TorrentSidebarInfoPanel extends ConsumerWidget {
             child: Row(
               children: [
                 Icon(
-                  Icons.search_rounded,
+                  AppIcons.search(iconPack),
                   size: 16,
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -461,7 +453,7 @@ class TorrentSidebarInfoPanel extends ConsumerWidget {
                       onRefresh();
                     },
                     child: Icon(
-                      Icons.close_rounded,
+                      AppIcons.close(iconPack),
                       size: 14,
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -480,6 +472,7 @@ class TorrentSidebarInfoPanel extends ConsumerWidget {
     required bool value,
     required ValueChanged<bool> onChanged,
     required ThemeData theme,
+    required AppIconPack iconPack,
   }) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -499,7 +492,7 @@ class TorrentSidebarInfoPanel extends ConsumerWidget {
             Tooltip(
               message: tooltip,
               child: Icon(
-                Icons.info_outline_rounded,
+                AppIcons.info(iconPack),
                 size: 13,
                 color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
               ),

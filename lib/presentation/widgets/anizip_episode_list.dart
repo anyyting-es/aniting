@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
+import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/preferences/episode_view_mode_provider.dart';
 import 'package:seanime_app/core/theme/app_theme_colors.dart';
 import 'package:seanime_app/data/models/anime_details.dart';
@@ -158,6 +159,7 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
     final theme = Theme.of(context);
     final l10n = ref.watch(translationsProvider);
     final appLang = ref.watch(appLanguageProvider);
+    final iconPack = ref.watch(iconPackProvider);
     final langCode = appLang.code;
     final downloadingEpisodes = ref.watch(downloadingEpisodesProvider);
     final mediaId = widget.animeDetails?.id ?? 0;
@@ -202,7 +204,7 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
               // View mode toggle button (List vs Grid)
               IconButton(
                 icon: Icon(
-                  viewMode == EpisodeViewMode.grid ? Icons.view_list_rounded : Icons.grid_view_rounded,
+                  viewMode == EpisodeViewMode.grid ? AppIcons.list(iconPack) : AppIcons.grid(iconPack),
                   size: 20,
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -222,7 +224,7 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
               // Search toggle button
               IconButton(
                 icon: Icon(
-                  _isSearchVisible ? Icons.search_off_rounded : Icons.search_rounded,
+                  _isSearchVisible ? AppIcons.searchOff(iconPack) : AppIcons.search(iconPack),
                   size: 20,
                   color: _isSearchVisible ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
                 ),
@@ -247,7 +249,7 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
               // Sort order toggle button
               IconButton(
                 icon: Icon(
-                  _isAscending ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded,
+                  _isAscending ? AppIcons.arrowDown(iconPack) : AppIcons.arrowUp(iconPack),
                   size: 20,
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -272,10 +274,10 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
               autofocus: false,
               decoration: InputDecoration(
                 hintText: l10n.searchEpisodePlaceholder,
-                prefixIcon: const Icon(Icons.search, size: 18),
+                prefixIcon: Icon(AppIcons.search(iconPack), size: 18),
                 suffixIcon: _searchQuery.isNotEmpty
                     ? IconButton(
-                        icon: const Icon(Icons.clear, size: 18),
+                        icon: Icon(AppIcons.close(iconPack), size: 18),
                         onPressed: () {
                           setState(() {
                             _searchController.clear();
@@ -447,7 +449,7 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
                             onPressed: page > 0
                                 ? () => setState(() => _currentListPage = page - 1)
                                 : null,
-                            icon: const Icon(Icons.chevron_left_rounded, size: 18),
+                            icon: Icon(AppIcons.chevronLeft(iconPack), size: 18),
                             label: Text(l10n.previousPage),
                           ),
                           const SizedBox(width: 12),
@@ -464,7 +466,7 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
                             onPressed: page < totalPages - 1
                                 ? () => setState(() => _currentListPage = page + 1)
                                 : null,
-                            icon: const Icon(Icons.chevron_right_rounded, size: 18),
+                            icon: Icon(AppIcons.chevronRight(iconPack), size: 18),
                             label: Text('${l10n.nextPage} ($_listPageSize ep)'),
                           ),
                         ],
@@ -617,7 +619,7 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
                             onPressed: page > 0
                                 ? () => setState(() => _fallbackListPage = page - 1)
                                 : null,
-                            icon: const Icon(Icons.chevron_left_rounded, size: 18),
+                            icon: Icon(AppIcons.chevronLeft(iconPack), size: 18),
                             label: Text(l10n.previousPage),
                           ),
                           const SizedBox(width: 12),
@@ -634,7 +636,7 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
                             onPressed: page < totalPages - 1
                                 ? () => setState(() => _fallbackListPage = page + 1)
                                 : null,
-                            icon: const Icon(Icons.chevron_right_rounded, size: 18),
+                            icon: Icon(AppIcons.chevronRight(iconPack), size: 18),
                             label: Text('${l10n.nextPage} ($_listPageSize ep)'),
                           ),
                         ],
@@ -659,7 +661,7 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
       child: Column(
         children: [
           Icon(
-            Icons.video_library_outlined,
+            AppIcons.videoLibrary(iconPack),
             size: 40,
             color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
           ),
@@ -686,7 +688,7 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
             const SizedBox(height: 14),
             OutlinedButton.icon(
               onPressed: widget.onRetry,
-              icon: const Icon(Icons.refresh_rounded, size: 16),
+              icon: Icon(AppIcons.refresh(iconPack), size: 16),
               label: Text(l10n.retryAniZip),
               style: OutlinedButton.styleFrom(
                 visualDensity: VisualDensity.compact,

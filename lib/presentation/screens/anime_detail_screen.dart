@@ -16,6 +16,7 @@ import 'package:seanime_app/presentation/widgets/anime_detail/anime_detail_mobil
 import 'package:seanime_app/presentation/widgets/anime_detail/anime_detail_tv_layout.dart';
 import 'package:seanime_app/presentation/widgets/anime_details_modal_sheet.dart';
 import 'package:seanime_app/presentation/widgets/edit_entry_modal.dart';
+import 'package:g1455/g1455.dart';
 import 'package:seanime_app/presentation/widgets/torrent_selector_sheet.dart';
 
 export 'package:seanime_app/presentation/widgets/anime_detail/anime_detail_mobile_layout.dart'
@@ -388,7 +389,7 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
         ? showDialog<TorrentStreamLaunchInfo>(
             context: context,
             useRootNavigator: true,
-            barrierColor: Colors.black.withValues(alpha: 0.8),
+            barrierColor: Colors.black.withValues(alpha: 0.75),
             builder: (ctx) => Dialog(
               backgroundColor: Colors.transparent,
               insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
@@ -401,11 +402,12 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
               ),
             ),
           )
-        : showModalBottomSheet<TorrentStreamLaunchInfo>(
+        : showGlassSheet<TorrentStreamLaunchInfo>(
             context: context,
-            isScrollControlled: true,
-            useRootNavigator: true,
-            backgroundColor: Colors.transparent,
+            showGrabber: true,
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.90,
+            ),
             builder: (ctx) => TorrentSelectorSheet(
               mediaId: widget.mediaId,
               episodeNumber: episodeNumber,

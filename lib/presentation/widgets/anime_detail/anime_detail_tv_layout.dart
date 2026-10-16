@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
+import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/preferences/playback_progress_preferences_provider.dart';
 import 'package:seanime_app/core/preferences/title_language_provider.dart';
 import 'package:seanime_app/data/models/anime_details.dart';
@@ -147,6 +148,7 @@ class _AnimeDetailTvLayoutState extends ConsumerState<AnimeDetailTvLayout> {
     final theme = Theme.of(context);
     final l10n = ref.watch(translationsProvider);
     final titleLang = ref.watch(titleLanguageProvider);
+    final iconPack = ref.watch(iconPackProvider);
 
     final title = widget.details?.displayTitle(titleLang) ??
         widget.initialEntry?.displayTitle(titleLang) ??
@@ -206,7 +208,7 @@ class _AnimeDetailTvLayoutState extends ConsumerState<AnimeDetailTvLayout> {
                 children: [
                   // Back button
                   IconButton(
-                    icon: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 28),
+                    icon: Icon(AppIcons.arrowLeft(iconPack), color: Colors.white, size: 28),
                     onPressed: () => Navigator.pop(context),
                   ),
                   const Spacer(),
@@ -316,7 +318,7 @@ class _AnimeDetailTvLayoutState extends ConsumerState<AnimeDetailTvLayout> {
                                       : BorderSide.none,
                                 ),
                               ),
-                              icon: const Icon(Icons.play_arrow_rounded, size: 28),
+                              icon: Icon(AppIcons.play(iconPack), size: 28),
                               label: Text(
                                 progress > 0
                                     ? l10n.continueEpisodeNumbered(progress + 1)
@@ -336,7 +338,7 @@ class _AnimeDetailTvLayoutState extends ConsumerState<AnimeDetailTvLayout> {
                           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         ),
-                        icon: const Icon(Icons.info_outline_rounded, size: 24),
+                        icon: Icon(AppIcons.info(iconPack), size: 24),
                         label: Text(
                           l10n.details,
                           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),

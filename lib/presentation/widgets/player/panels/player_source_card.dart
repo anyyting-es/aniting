@@ -146,7 +146,7 @@ class PlayerSourceCard extends ConsumerWidget {
                                   ),
                                 )
                               : Icon(
-                                  hasError ? Icons.warning_amber_rounded : Icons.stream_rounded,
+                                  hasError ? AppIcons.error(iconPack) : AppIcons.stream(iconPack),
                                   size: 19,
                                   color: hasError
                                       ? theme.colorScheme.error
@@ -288,7 +288,7 @@ class PlayerSourceCard extends ConsumerWidget {
                         ),
                       const SizedBox(width: 4),
                       Icon(
-                        Icons.chevron_right_rounded,
+                        AppIcons.chevronRight(iconPack),
                         size: 20,
                         color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
                       ),

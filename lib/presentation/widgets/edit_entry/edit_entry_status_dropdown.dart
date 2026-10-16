@@ -107,16 +107,29 @@ class _EditEntryStatusDropdownState extends State<EditEntryStatusDropdown> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          widget.l10n.status,
-          style: TextStyle(
-            color: theme.colorScheme.onSurfaceVariant,
-            fontSize: 12.5,
-            fontWeight: FontWeight.w600,
-            letterSpacing: -0.1,
+        SizedBox(
+          height: 22,
+          child: Row(
+            children: [
+              Icon(
+                Icons.bookmark_border_rounded,
+                size: 16,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 5),
+              Text(
+                widget.l10n.status,
+                style: TextStyle(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: -0.1,
+                ),
+              ),
+            ],
           ),
         ),
-        const SizedBox(height: 7),
+        const SizedBox(height: 8),
         GlassPopoverAnchor(
           controller: _menuController,
           width: 260,

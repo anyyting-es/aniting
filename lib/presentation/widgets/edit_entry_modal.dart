@@ -537,12 +537,11 @@ class _EditEntryModalState extends ConsumerState<EditEntryModal> {
 
                         const SizedBox(height: 18),
 
-                        // Form Section 1: Status & Score Slider
+                        // Form Section 1: Status & Progress (Primary watch controls)
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Expanded(
-                              flex: 5,
                               child: EditEntryStatusDropdown(
                                 status: _status,
                                 isAnime: _isAnime,
@@ -562,41 +561,14 @@ class _EditEntryModalState extends ConsumerState<EditEntryModal> {
                             ),
                             const SizedBox(width: 14),
                             Expanded(
-                              flex: 6,
-                              child: EditEntryScoreSlider(
-                                score: _score,
-                                l10n: l10n,
-                                borderRadius: fieldRadius,
-                                onChanged: (newScore) => setState(() => _score = newScore),
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        // Form Section 2: Progress Stepper & Repeats Stepper
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
                               child: EditEntryStepper(
                                 label: l10n.progress,
                                 value: _progress,
                                 totalCount: widget.totalCount,
                                 icon: _isAnime ? Icons.play_arrow_rounded : Icons.menu_book_rounded,
                                 borderRadius: fieldRadius,
+                                l10n: l10n,
                                 onChanged: (newProgress) => setState(() => _progress = newProgress),
-                              ),
-                            ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: EditEntryStepper(
-                                label: _isAnime ? l10n.totalRewatches : l10n.totalRereads,
-                                value: _repeat,
-                                icon: Icons.repeat_rounded,
-                                borderRadius: fieldRadius,
-                                onChanged: (newRepeat) => setState(() => _repeat = newRepeat),
                               ),
                             ),
                           ],
@@ -604,7 +576,7 @@ class _EditEntryModalState extends ConsumerState<EditEntryModal> {
 
                         const SizedBox(height: 16),
 
-                        // Form Section 3: Start Date & Completion Date
+                        // Form Section 2: Start Date & Completion Date
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -632,15 +604,40 @@ class _EditEntryModalState extends ConsumerState<EditEntryModal> {
                           ],
                         ),
 
+                        const SizedBox(height: 16),
+
+                        // Form Section 3: Total Rewatches & Score Slider (Secondary metrics, Score at the end)
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: EditEntryStepper(
+                                label: _isAnime ? l10n.totalRewatches : l10n.totalRereads,
+                                value: _repeat,
+                                icon: Icons.repeat_rounded,
+                                borderRadius: fieldRadius,
+                                l10n: l10n,
+                                onChanged: (newRepeat) => setState(() => _repeat = newRepeat),
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: EditEntryScoreSlider(
+                                score: _score,
+                                l10n: l10n,
+                                borderRadius: fieldRadius,
+                                onChanged: (newScore) => setState(() => _score = newScore),
+                              ),
+                            ),
+                          ],
+                        ),
+
                         const SizedBox(height: 24),
 
                         // Bottom Action Bar: Delete (Left) & Cancel / Save (Right)
-                        Wrap(
-                          alignment: WrapAlignment.spaceBetween,
-                          runAlignment: WrapAlignment.center,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          spacing: 12,
-                          runSpacing: 12,
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             // Delete Button
                             if (widget.isEntryInList)
@@ -703,7 +700,8 @@ class _EditEntryModalState extends ConsumerState<EditEntryModal> {
                                 TextButton(
                                   onPressed: (_isSaving || _isDeleting) ? null : () => Navigator.of(context).pop(),
                                   style: TextButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                    minimumSize: const Size(0, 42),
                                   ),
                                   child: Text(
                                     l10n.cancel,
@@ -720,7 +718,8 @@ class _EditEntryModalState extends ConsumerState<EditEntryModal> {
                                   style: FilledButton.styleFrom(
                                     backgroundColor: colorScheme.primary,
                                     foregroundColor: colorScheme.onPrimary,
-                                    padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+                                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
+                                    minimumSize: const Size(0, 42),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: fieldRadius,
                                     ),

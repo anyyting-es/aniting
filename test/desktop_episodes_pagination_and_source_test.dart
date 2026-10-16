@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:seanime_app/core/api/api_client.dart';
+import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/data/models/anizip_data.dart';
 import 'package:seanime_app/data/models/library_entry_details.dart';
 import 'package:seanime_app/data/models/onlinestream_models.dart';
@@ -266,11 +267,11 @@ void main() {
       expect(find.textContaining('EP 21.'), findsNothing);
 
       // Pagination indicators
-      expect(find.byIcon(Icons.chevron_right_rounded), findsOneWidget);
-      expect(find.byIcon(Icons.chevron_left_rounded), findsOneWidget);
+      expect(find.byIcon(AppIcons.chevronRight(AppIconPack.lucide)), findsOneWidget);
+      expect(find.byIcon(AppIcons.chevronLeft(AppIconPack.lucide)), findsOneWidget);
 
       // Tap next icon
-      await tester.tap(find.byIcon(Icons.chevron_right_rounded));
+      await tester.tap(find.byIcon(AppIcons.chevronRight(AppIconPack.lucide)));
       await tester.pumpAndSettle();
 
       // Now on page 2: Episodes 21 to 35 should be visible

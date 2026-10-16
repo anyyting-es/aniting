@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
+import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/data/models/anime_entry.dart';
 import 'package:seanime_app/data/models/manga_entry.dart';
 import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
@@ -20,6 +21,7 @@ class DesktopRecommendationsTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ref.watch(translationsProvider);
+    final iconPack = ref.watch(iconPackProvider);
 
     if (isLoading && recommendations.isEmpty) {
       return LayoutBuilder(
@@ -50,7 +52,7 @@ class DesktopRecommendationsTab extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.auto_awesome_outlined, color: isDark ? Colors.white38 : theme.colorScheme.outline, size: 32),
+              Icon(AppIcons.sparkles(iconPack), color: isDark ? Colors.white38 : theme.colorScheme.outline, size: 32),
               const SizedBox(height: 10),
               Text(
                 l10n.noRecommendationsAvailable,

@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
+import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/preferences/banner_blur_provider.dart';
 import 'package:seanime_app/core/preferences/episode_view_mode_provider.dart';
 import 'package:seanime_app/core/preferences/playback_progress_preferences_provider.dart';
@@ -364,14 +365,14 @@ class _AnimeDetailMobileLayoutState
     }
   }
 
-  Widget _buildModeDropdownChip(ThemeData theme, AnimeDetailTab effectiveTab) {
+  Widget _buildModeDropdownChip(ThemeData theme, AnimeDetailTab effectiveTab, AppIconPack iconPack) {
     final isTorrent = !widget.isLocalMode && effectiveTab == AnimeDetailTab.torrent;
     final isLocal = widget.isLocalMode;
     final l10n = ref.read(translationsProvider);
 
     final IconData modeIcon = isLocal
-        ? Icons.folder_rounded
-        : (isTorrent ? Icons.cloud_download_rounded : Icons.public_rounded);
+        ? AppIcons.folderFilled(iconPack)
+        : (isTorrent ? AppIcons.cloudDownload(iconPack) : AppIcons.globe(iconPack));
     final String modeLabel = isLocal
         ? 'Local'
         : (isTorrent ? 'Torrent' : 'Online');
@@ -382,7 +383,7 @@ class _AnimeDetailMobileLayoutState
         GlassMenuItem(
           label: l10n.onlineStreaming,
           icon: Icon(
-            Icons.public_rounded,
+            AppIcons.globe(iconPack),
             size: 18,
             color: (!widget.isLocalMode && effectiveTab == AnimeDetailTab.online)
                 ? theme.colorScheme.primary
@@ -397,7 +398,7 @@ class _AnimeDetailMobileLayoutState
         GlassMenuItem(
           label: l10n.torrentStreaming,
           icon: Icon(
-            Icons.cloud_download_rounded,
+            AppIcons.cloudDownload(iconPack),
             size: 18,
             color: (!widget.isLocalMode && effectiveTab == AnimeDetailTab.torrent)
                 ? theme.colorScheme.primary
@@ -413,7 +414,7 @@ class _AnimeDetailMobileLayoutState
           GlassMenuItem(
             label: l10n.localLibrary,
             icon: Icon(
-              Icons.folder_rounded,
+              AppIcons.folderFilled(iconPack),
               size: 18,
               color: widget.isLocalMode ? theme.colorScheme.primary : null,
             ),
@@ -459,7 +460,7 @@ class _AnimeDetailMobileLayoutState
                   ),
                   const SizedBox(width: 4),
                   Icon(
-                    Icons.arrow_drop_down_rounded,
+                    AppIcons.arrowDropDown(iconPack),
                     size: 18,
                     color: isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
                   ),
@@ -472,7 +473,7 @@ class _AnimeDetailMobileLayoutState
     );
   }
 
-  Widget _buildProviderDropdownChip(ThemeData theme) {
+  Widget _buildProviderDropdownChip(ThemeData theme, AppIconPack iconPack) {
     final providerName = _selectedProvider?.name ?? ref.watch(translationsProvider).source;
     final l10n = ref.read(translationsProvider);
 
@@ -484,7 +485,7 @@ class _AnimeDetailMobileLayoutState
           return GlassMenuItem(
             label: p.name,
             icon: Icon(
-              isCurrent ? Icons.check_circle_rounded : Icons.public_rounded,
+              isCurrent ? AppIcons.checkCircleFilled(iconPack) : AppIcons.globe(iconPack),
               size: 18,
               color: isCurrent ? theme.colorScheme.primary : null,
             ),
@@ -500,7 +501,7 @@ class _AnimeDetailMobileLayoutState
         GlassMenuItem(
           label: l10n.advancedOptions,
           icon: Icon(
-            Icons.tune_rounded,
+            AppIcons.sliders(iconPack),
             size: 18,
             color: theme.colorScheme.primary,
           ),
@@ -543,7 +544,7 @@ class _AnimeDetailMobileLayoutState
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                    Icons.tune_rounded,
+                    AppIcons.sliders(iconPack),
                     size: 14,
                     color: isDark ? Colors.white : theme.colorScheme.primary,
                   ),
@@ -577,7 +578,7 @@ class _AnimeDetailMobileLayoutState
                     ),
                   ],
                   const SizedBox(width: 4),
-                  Icon(Icons.arrow_drop_down_rounded, size: 18, color: theme.colorScheme.onSurfaceVariant),
+                  Icon(AppIcons.arrowDropDown(iconPack), size: 18, color: theme.colorScheme.onSurfaceVariant),
                 ],
               ),
             ),
@@ -592,6 +593,7 @@ class _AnimeDetailMobileLayoutState
     final theme = Theme.of(context);
     final colors = context.themeColors;
     final l10n = ref.watch(translationsProvider);
+    final iconPack = ref.watch(iconPackProvider);
     final isDark = theme.brightness == Brightness.dark;
     final titleColor = isDark ? Colors.white : theme.colorScheme.onSurface;
     final subtitleColor = isDark
@@ -819,7 +821,7 @@ class _AnimeDetailMobileLayoutState
                       size: M3EIconButtonSize.sm,
                       tooltip: MaterialLocalizations.of(context).backButtonTooltip,
                       icon: Icon(
-                        Icons.arrow_back_rounded,
+                        AppIcons.arrowLeft(iconPack),
                         color: (isDark || !_isHeaderScrolled)
                             ? Colors.white
                             : theme.colorScheme.onSurface,
@@ -850,8 +852,8 @@ class _AnimeDetailMobileLayoutState
                           children: [
                             Icon(
                               widget.isLocalMode
-                                  ? Icons.folder_rounded
-                                  : Icons.folder_outlined,
+                                  ? AppIcons.folderFilled(iconPack)
+                                  : AppIcons.folder(iconPack),
                               color: widget.isLocalMode
                                   ? theme.colorScheme.primary
                                   : ((isDark || !_isHeaderScrolled)
@@ -894,7 +896,7 @@ class _AnimeDetailMobileLayoutState
                       size: M3EIconButtonSize.sm,
                       tooltip: l10n.animeDetails,
                       icon: Icon(
-                        Icons.info_outline_rounded,
+                        AppIcons.info(iconPack),
                         color: (isDark || !_isHeaderScrolled)
                             ? Colors.white
                             : theme.colorScheme.onSurface,
@@ -1015,7 +1017,7 @@ class _AnimeDetailMobileLayoutState
                                       Row(
                                         children: [
                                           Icon(
-                                            Icons.calendar_month_rounded,
+                                            AppIcons.calendar(iconPack),
                                             size: 14,
                                             color: subtitleColor,
                                           ),
@@ -1040,7 +1042,7 @@ class _AnimeDetailMobileLayoutState
                                     Row(
                                       children: [
                                         Icon(
-                                          Icons.favorite_rounded,
+                                          AppIcons.heart(iconPack),
                                           size: 14,
                                           color: isDark
                                               ? Colors.white.withValues(alpha: 0.85)
@@ -1130,7 +1132,7 @@ class _AnimeDetailMobileLayoutState
                                   style: M3EButtonStyle.filled,
                                   size: M3EButtonSize.sm,
                                   shape: M3EButtonShape.round,
-                                  icon: const Icon(Icons.play_arrow_rounded, size: 20),
+                                  icon: Icon(AppIcons.play(iconPack), size: 20),
                                   label: Text(
                                     _formatPlayButtonLabel(progress, totalEps, l10n),
                                     maxLines: 1,
@@ -1147,7 +1149,7 @@ class _AnimeDetailMobileLayoutState
                                             SnackBar(
                                               content: Row(
                                                 children: [
-                                                  const Icon(Icons.info_outline_rounded,
+                                                  Icon(AppIcons.info(iconPack),
                                                       color: Colors.white, size: 18),
                                                   const SizedBox(width: 8),
                                                   Expanded(child: Text(l10n.streamingComingSoon)),
@@ -1167,7 +1169,7 @@ class _AnimeDetailMobileLayoutState
                                   size: M3EIconButtonSize.xs,
                                   tooltip: l10n.watchTrailer,
                                   icon: Icon(
-                                    Icons.smart_display_outlined,
+                                    AppIcons.video(iconPack),
                                     size: 20,
                                     color: isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
                                   ),
@@ -1180,7 +1182,7 @@ class _AnimeDetailMobileLayoutState
                                 size: M3EIconButtonSize.xs,
                                 tooltip: isFavorite ? l10n.inFavorites : l10n.addToFavorites,
                                 icon: Icon(
-                                  isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                                  isFavorite ? AppIcons.heart(iconPack) : AppIcons.heartOutline(iconPack),
                                   size: 20,
                                   color: isFavorite ? Colors.redAccent : (isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant),
                                 ),
@@ -1208,7 +1210,7 @@ class _AnimeDetailMobileLayoutState
                                   size: M3EIconButtonSize.xs,
                                   tooltip: l10n.downloadWithTorrentClient,
                                   icon: Icon(
-                                    Icons.download_rounded,
+                                    AppIcons.download(iconPack),
                                     size: 20,
                                     color: isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
                                   ),
@@ -1228,10 +1230,10 @@ class _AnimeDetailMobileLayoutState
                                 items: [
                                   GlassMenuItem(
                                     label: l10n.statusWatching,
-                                    icon: const Icon(
-                                      Icons.play_circle_fill_rounded,
+                                    icon: Icon(
+                                      AppIcons.playCircleFilled(iconPack),
                                       size: 18,
-                                      color: Color(0xFF10B981),
+                                      color: const Color(0xFF10B981),
                                     ),
                                     onPressed: () => _updateStatus(
                                       context,
@@ -1243,10 +1245,10 @@ class _AnimeDetailMobileLayoutState
                                   ),
                                   GlassMenuItem(
                                     label: l10n.statusPlanning,
-                                    icon: const Icon(
-                                      Icons.bookmark_added_rounded,
+                                    icon: Icon(
+                                      AppIcons.bookmarkAdded(iconPack),
                                       size: 18,
-                                      color: Color(0xFF3B82F6),
+                                      color: const Color(0xFF3B82F6),
                                     ),
                                     onPressed: () => _updateStatus(
                                       context,
@@ -1258,10 +1260,10 @@ class _AnimeDetailMobileLayoutState
                                   ),
                                   GlassMenuItem(
                                     label: l10n.statusCompleted,
-                                    icon: const Icon(
-                                      Icons.check_circle_rounded,
+                                    icon: Icon(
+                                      AppIcons.checkCircleFilled(iconPack),
                                       size: 18,
-                                      color: Color(0xFF8B5CF6),
+                                      color: const Color(0xFF8B5CF6),
                                     ),
                                     onPressed: () => _updateStatus(
                                       context,
@@ -1273,10 +1275,10 @@ class _AnimeDetailMobileLayoutState
                                   ),
                                   GlassMenuItem(
                                     label: l10n.statusPaused,
-                                    icon: const Icon(
-                                      Icons.pause_circle_filled_rounded,
+                                    icon: Icon(
+                                      AppIcons.pauseCircleFilled(iconPack),
                                       size: 18,
-                                      color: Color(0xFFF59E0B),
+                                      color: const Color(0xFFF59E0B),
                                     ),
                                     onPressed: () => _updateStatus(
                                       context,
@@ -1288,10 +1290,10 @@ class _AnimeDetailMobileLayoutState
                                   ),
                                   GlassMenuItem(
                                     label: l10n.statusDropped,
-                                    icon: const Icon(
-                                      Icons.cancel_rounded,
+                                    icon: Icon(
+                                      AppIcons.cancel(iconPack),
                                       size: 18,
-                                      color: Color(0xFFEF4444),
+                                      color: const Color(0xFFEF4444),
                                     ),
                                     onPressed: () => _updateStatus(
                                       context,
@@ -1304,8 +1306,8 @@ class _AnimeDetailMobileLayoutState
                                   if (!isTmdb)
                                     GlassMenuItem(
                                       label: l10n.editDetails,
-                                      icon: const Icon(
-                                        Icons.edit_outlined,
+                                      icon: Icon(
+                                        AppIcons.edit(iconPack),
                                         size: 18,
                                       ),
                                       onPressed: () => widget.onOpenEditEntryModal(title),
@@ -1317,7 +1319,7 @@ class _AnimeDetailMobileLayoutState
                                     size: M3EIconButtonSize.xs,
                                     tooltip: isTmdb ? l10n.editDetails : l10n.editInAnilist,
                                     icon: Icon(
-                                      Icons.edit_outlined,
+                                      AppIcons.edit(iconPack),
                                       size: 20,
                                       color: isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
                                     ),
@@ -1339,10 +1341,10 @@ class _AnimeDetailMobileLayoutState
                               physics: const BouncingScrollPhysics(),
                               child: Row(
                                 children: [
-                                  _buildModeDropdownChip(theme, effectiveTab),
+                                  _buildModeDropdownChip(theme, effectiveTab, iconPack),
                                   if (!widget.isLocalMode && effectiveTab == AnimeDetailTab.online) ...[
                                     const SizedBox(width: 8),
-                                    _buildProviderDropdownChip(theme),
+                                    _buildProviderDropdownChip(theme, iconPack),
                                   ],
                                 ],
                               ),

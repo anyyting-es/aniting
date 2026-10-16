@@ -144,7 +144,7 @@ class _EpisodeCardState extends ConsumerState<EpisodeCard> {
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      _buildThumbnailImage(imageUrl, theme),
+                      _buildThumbnailImage(imageUrl, theme, iconPack),
                       if (widget.isLoading)
                         Container(
                           color: Colors.black.withValues(alpha: 0.65),
@@ -261,7 +261,7 @@ class _EpisodeCardState extends ConsumerState<EpisodeCard> {
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
-                        _buildThumbnailImage(imageUrl, theme),
+                        _buildThumbnailImage(imageUrl, theme, iconPack),
                         if (progressFraction != null && progressFraction > 0)
                           _buildProgressBar(theme, progressFraction),
                         if (widget.episode.isDownloaded)
@@ -323,7 +323,7 @@ class _EpisodeCardState extends ConsumerState<EpisodeCard> {
     );
   }
 
-  Widget _buildThumbnailImage(String? imageUrl, ThemeData theme) {
+  Widget _buildThumbnailImage(String? imageUrl, ThemeData theme, AppIconPack iconPack) {
     if (imageUrl != null && imageUrl.isNotEmpty) {
       return CachedNetworkImage(
         imageUrl: imageUrl,
@@ -333,13 +333,13 @@ class _EpisodeCardState extends ConsumerState<EpisodeCard> {
         placeholder: (_, _) => Container(color: theme.colorScheme.surfaceContainerHighest),
         errorWidget: (_, _, _) => Container(
           color: theme.colorScheme.surfaceContainerHighest,
-          child: Icon(Icons.movie_rounded, color: theme.colorScheme.outline),
+          child: Icon(AppIcons.movie(iconPack), color: theme.colorScheme.outline),
         ),
       );
     }
     return Container(
       color: theme.colorScheme.surfaceContainerHighest,
-      child: Icon(Icons.movie_rounded, color: theme.colorScheme.outline),
+      child: Icon(AppIcons.movie(iconPack), color: theme.colorScheme.outline),
     );
   }
 

@@ -431,5 +431,83 @@ class AppIcons {
 
   static IconData edit([AppIconPack? pack]) =>
       _isLucide(pack) ? LucideIcons.pencil : Icons.edit_rounded;
+
+  static IconData link([AppIconPack? pack]) =>
+      _isLucide(pack) ? LucideIcons.link : Icons.link_rounded;
+
+  static IconData linkOff([AppIconPack? pack]) =>
+      _isLucide(pack) ? LucideIcons.unlink : Icons.link_off_rounded;
+
+  static IconData heartOutline([AppIconPack? pack]) =>
+      _isLucide(pack) ? LucideIcons.heart : Icons.favorite_border_rounded;
+
+  static IconData checkCircleFilled([AppIconPack? pack]) =>
+      _isLucide(pack) ? LucideIcons.checkCircle2 : Icons.check_circle_rounded;
+
+  static IconData moreHoriz([AppIconPack? pack]) =>
+      _isLucide(pack) ? LucideIcons.moreHorizontal : Icons.more_horiz_rounded;
+
+  static IconData removeDone([AppIconPack? pack]) =>
+      _isLucide(pack) ? LucideIcons.checkCheck : Icons.remove_done_rounded;
+
+  static IconData highQuality([AppIconPack? pack]) =>
+      _isLucide(pack) ? LucideIcons.sparkles : Icons.high_quality_rounded;
+
+  static IconData sensors([AppIconPack? pack]) =>
+      _isLucide(pack) ? LucideIcons.radio : Icons.sensors_rounded;
+
+  static IconData chatBubble([AppIconPack? pack]) =>
+      _isLucide(pack) ? LucideIcons.messageSquare : Icons.chat_bubble_outline_rounded;
+
+  static IconData mic([AppIconPack? pack]) =>
+      _isLucide(pack) ? LucideIcons.mic : Icons.mic_none_rounded;
+
+  static IconData playCircleFilled([AppIconPack? pack]) =>
+      _isLucide(pack) ? LucideIcons.playCircle : Icons.play_circle_fill_rounded;
+
+  static IconData pauseCircleFilled([AppIconPack? pack]) =>
+      _isLucide(pack) ? LucideIcons.pauseCircle : Icons.pause_circle_filled_rounded;
+
+  static IconData cancel([AppIconPack? pack]) =>
+      _isLucide(pack) ? LucideIcons.xCircle : Icons.cancel_rounded;
+
+  static IconData bookmarkAdded([AppIconPack? pack]) =>
+      _isLucide(pack) ? LucideIcons.bookmarkCheck : Icons.bookmark_added_rounded;
+
+  static IconData extensionOff([AppIconPack? pack]) =>
+      _isLucide(pack) ? LucideIcons.puzzle : Icons.extension_off_rounded;
+
+  static IconData swapHoriz([AppIconPack? pack]) =>
+      _isLucide(pack) ? LucideIcons.arrowLeftRight : Icons.swap_horiz_rounded;
+
+  static IconData filterAltOff([AppIconPack? pack]) =>
+      _isLucide(pack) ? LucideIcons.filterX : Icons.filter_alt_off_rounded;
+
+  static IconData personOff([AppIconPack? pack]) =>
+      _isLucide(pack) ? LucideIcons.userX : Icons.person_off_outlined;
+
+  static IconData relations([AppIconPack? pack]) =>
+      _isLucide(pack) ? LucideIcons.gitFork : Icons.hub_outlined;
+
+  static IconData store([AppIconPack? pack]) =>
+      _isLucide(pack) ? LucideIcons.store : Icons.store_mall_directory_rounded;
+
+  static IconData cleaningServices([AppIconPack? pack]) =>
+      _isLucide(pack) ? LucideIcons.sparkles : Icons.cleaning_services_rounded;
+
+  static IconData folderOff([AppIconPack? pack]) =>
+      _isLucide(pack) ? LucideIcons.folderX : Icons.folder_off_outlined;
+
+  static IconData unfoldMore([AppIconPack? pack]) =>
+      _isLucide(pack) ? LucideIcons.chevronsUpDown : Icons.unfold_more_rounded;
+
+  static IconData arrowDropDown([AppIconPack? pack]) =>
+      _isLucide(pack) ? LucideIcons.chevronDown : Icons.arrow_drop_down_rounded;
+
+  static IconData arrowDropUp([AppIconPack? pack]) =>
+      _isLucide(pack) ? LucideIcons.chevronUp : Icons.arrow_drop_up_rounded;
+
+  static IconData storage([AppIconPack? pack]) =>
+      _isLucide(pack) ? LucideIcons.hardDrive : Icons.storage_rounded;
 }
 

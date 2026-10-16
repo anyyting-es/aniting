@@ -68,6 +68,7 @@ class _EpisodesViewState extends ConsumerState<EpisodesView> {
   @override
   Widget build(BuildContext context) {
     final l10n = ref.watch(translationsProvider);
+    final iconPack = ref.watch(iconPackProvider);
     final theme = Theme.of(context);
     final args = EpisodesArgs(mediaId: widget.mediaId, isTmdb: widget.isTmdb);
     final state = ref.watch(episodesControllerProvider(args));
@@ -114,7 +115,7 @@ class _EpisodesViewState extends ConsumerState<EpisodesView> {
         // ─── Pagination ───
         if (state.totalPages > 1) ...[
           const SizedBox(height: 20),
-          _buildPaginationBar(context, theme, state, controller),
+          _buildPaginationBar(context, theme, state, controller, iconPack),
         ],
       ],
     );
@@ -299,12 +300,13 @@ class _EpisodesViewState extends ConsumerState<EpisodesView> {
     ThemeData theme,
     EpisodesState state,
     EpisodesNotifier controller,
+    AppIconPack iconPack,
   ) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         IconButton(
-          icon: const Icon(Icons.chevron_left_rounded),
+          icon: Icon(AppIcons.chevronLeft(iconPack)),
           onPressed: state.currentPage > 0
               ? () => controller.setPage(state.currentPage - 1)
               : null,
@@ -320,7 +322,7 @@ class _EpisodesViewState extends ConsumerState<EpisodesView> {
         ),
         const SizedBox(width: 8),
         IconButton(
-          icon: const Icon(Icons.chevron_right_rounded),
+          icon: Icon(AppIcons.chevronRight(iconPack)),
           onPressed: state.currentPage < state.totalPages - 1
               ? () => controller.setPage(state.currentPage + 1)
               : null,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/preferences/episode_view_mode_provider.dart';
 import 'package:seanime_app/core/preferences/playback_progress_preferences_provider.dart';
@@ -325,6 +326,7 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = ref.watch(translationsProvider);
+    final iconPack = ref.watch(iconPackProvider);
     final downloadingEpisodes = ref.watch(downloadingEpisodesProvider);
     final libraryEntryAsync = ref.watch(animeLibraryEntryProvider(widget.mediaId));
     final downloadedMap = {
@@ -363,7 +365,7 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Icon(
-              Icons.extension_off_rounded,
+              AppIcons.extensionOff(iconPack),
               size: 46,
               color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
             ),
@@ -391,7 +393,7 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
                   ),
                 ).then((_) => _loadProviders());
               },
-              icon: const Icon(Icons.store_mall_directory_rounded, size: 18),
+              icon: Icon(AppIcons.store(iconPack), size: 18),
               label: Text(l10n.openExtensionsMarketplace),
             ),
           ],
@@ -432,13 +434,13 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
                         child: DropdownButton<OnlinestreamProvider>(
                           value: _selectedProvider,
                           isExpanded: true,
-                          icon: const Icon(Icons.arrow_drop_down, size: 20),
+                          icon: Icon(AppIcons.arrowDropDown(iconPack), size: 20),
                           items: _providers.map((p) {
                             return DropdownMenuItem<OnlinestreamProvider>(
                               value: p,
                               child: Row(
                                 children: [
-                                  const Icon(Icons.public, size: 16),
+                                  Icon(AppIcons.globe(iconPack), size: 16),
                                   const SizedBox(width: 8),
                                   Expanded(
                                     child: Text(
@@ -490,7 +492,7 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
                     const SizedBox(width: 4),
                     IconButton(
                       icon: Icon(
-                        _isDubbed ? Icons.record_voice_over_rounded : Icons.subtitles_rounded,
+                        _isDubbed ? AppIcons.voice(iconPack) : AppIcons.subtitles(iconPack),
                         size: 20,
                         color: _isDubbed ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
                       ),
@@ -507,7 +509,7 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
                   const SizedBox(width: 6),
                   IconButton(
                     icon: Icon(
-                      _currentMappedAnimeId != null ? Icons.link_rounded : Icons.add_link_rounded,
+                      AppIcons.link(iconPack),
                       size: 20,
                       color: _currentMappedAnimeId != null ? theme.colorScheme.primary : null,
                     ),
@@ -517,7 +519,7 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
                     onPressed: () => _showManualMappingSheet(context),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.refresh_rounded, size: 20),
+                    icon: Icon(AppIcons.refresh(iconPack), size: 20),
                     tooltip: l10n.reloadEpisodes,
                     onPressed: _isLoadingEpisodes ? null : _loadEpisodes,
                   ),
@@ -539,7 +541,7 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.link_rounded, size: 14, color: theme.colorScheme.primary),
+                        Icon(AppIcons.link(iconPack), size: 14, color: theme.colorScheme.primary),
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
@@ -553,7 +555,7 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        Icon(Icons.edit_rounded, size: 13, color: theme.colorScheme.primary),
+                        Icon(AppIcons.edit(iconPack), size: 13, color: theme.colorScheme.primary),
                       ],
                     ),
                   ),
@@ -582,9 +584,9 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
                                   _currentListPage = 0;
                                 });
                               },
-                              child: const Padding(
-                                padding: EdgeInsets.all(4),
-                                child: Icon(Icons.close_rounded, size: 16),
+                              child: Padding(
+                                padding: const EdgeInsets.all(4),
+                                child: Icon(AppIcons.close(iconPack), size: 16),
                               ),
                             ),
                           ),
@@ -642,7 +644,7 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
           if (widget.hideTopBar && _episodes.isNotEmpty) ...[
             IconButton(
               icon: Icon(
-                _isSearchExpanded ? Icons.search_off_rounded : Icons.search_rounded,
+                _isSearchExpanded ? AppIcons.searchOff(iconPack) : AppIcons.search(iconPack),
                 size: 20,
                 color: _searchQuery.isNotEmpty
                     ? theme.colorScheme.primary
@@ -671,8 +673,8 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
           IconButton(
             icon: Icon(
               ref.watch(episodeViewModeProvider) == EpisodeViewMode.grid
-                  ? Icons.view_list_rounded
-                  : Icons.grid_view_rounded,
+                  ? AppIcons.list(iconPack)
+                  : AppIcons.grid(iconPack),
               size: 20,
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -716,9 +718,9 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
                                     _currentListPage = 0;
                                   });
                                 },
-                                child: const Padding(
-                                  padding: EdgeInsets.all(4),
-                                  child: Icon(Icons.close_rounded, size: 16),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(4),
+                                  child: Icon(AppIcons.close(iconPack), size: 16),
                                 ),
                               ),
                             ),
@@ -744,7 +746,7 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
             ),
             child: Column(
               children: [
-                Icon(Icons.info_outline, size: 36, color: theme.colorScheme.primary),
+                Icon(AppIcons.info(iconPack), size: 36, color: theme.colorScheme.primary),
                 const SizedBox(height: 8),
                 Text(
                   _episodesError!,
@@ -759,12 +761,12 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
                   children: [
                     FilledButton.icon(
                       onPressed: () => _showManualMappingSheet(context),
-                      icon: const Icon(Icons.link_rounded, size: 16),
+                      icon: Icon(AppIcons.link(iconPack), size: 16),
                       label: Text('${l10n.searchAndLinkIn} ${_selectedProvider?.name ?? ""}'),
                     ),
                     OutlinedButton.icon(
                       onPressed: _refreshAndClearCache,
-                      icon: const Icon(Icons.cleaning_services_rounded, size: 16),
+                      icon: Icon(AppIcons.cleaningServices(iconPack), size: 16),
                       label: Text(l10n.clearCacheAndRetry),
                     ),
                   ],
@@ -784,7 +786,7 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.movie_filter_outlined, size: 38, color: theme.colorScheme.outline),
+                  Icon(AppIcons.movie(iconPack), size: 38, color: theme.colorScheme.outline),
                   const SizedBox(height: 10),
                   Text(
                     _searchQuery.isNotEmpty
@@ -797,7 +799,7 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
                     const SizedBox(height: 14),
                     FilledButton.icon(
                       onPressed: () => _showManualMappingSheet(context),
-                      icon: const Icon(Icons.link_rounded, size: 16),
+                      icon: Icon(AppIcons.link(iconPack), size: 16),
                       label: Text('${l10n.searchAndLinkIn} ${_selectedProvider?.name ?? ""}'),
                     ),
                   ],
@@ -914,7 +916,7 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
                           onPressed: page > 0
                               ? () => setState(() => _currentListPage = page - 1)
                               : null,
-                          icon: const Icon(Icons.chevron_left_rounded, size: 18),
+                          icon: Icon(AppIcons.chevronLeft(iconPack), size: 18),
                           label: Text(l10n.previousPage),
                         ),
                         const SizedBox(width: 12),
@@ -931,7 +933,7 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
                           onPressed: page < totalPages - 1
                               ? () => setState(() => _currentListPage = page + 1)
                               : null,
-                          icon: const Icon(Icons.chevron_right_rounded, size: 18),
+                          icon: Icon(AppIcons.chevronRight(iconPack), size: 18),
                           label: Text('${l10n.nextPage} ($_listPageSize ep)'),
                         ),
                       ],

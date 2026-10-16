@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:g1455/g1455.dart';
+import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/data/models/onlinestream_models.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
@@ -90,6 +91,7 @@ class PlayerSourceSelectorSheet extends ConsumerWidget {
   Widget _buildContent(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final l10n = ref.watch(translationsProvider);
+    final iconPack = ref.watch(iconPackProvider);
 
     final currentIsResolving = controller?.isResolvingSources ?? isResolvingSources;
     final currentSources = controller?.availableSources ?? availableSources;
@@ -216,7 +218,7 @@ class PlayerSourceSelectorSheet extends ConsumerWidget {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Icon(
-                                  isDubbed ? Icons.record_voice_over_rounded : Icons.subtitles_rounded,
+                                  isDubbed ? AppIcons.voice(iconPack) : AppIcons.subtitles(iconPack),
                                   size: 14,
                                   color: isDubbed ? theme.colorScheme.primary : Colors.white70,
                                 ),
@@ -241,7 +243,7 @@ class PlayerSourceSelectorSheet extends ConsumerWidget {
                     // Reload & Close actions
                     if (onReloadSources != null)
                       IconButton(
-                        icon: const Icon(Icons.refresh_rounded, size: 19, color: Colors.white70),
+                        icon: Icon(AppIcons.refresh(iconPack), size: 19, color: Colors.white70),
                         tooltip: l10n.reloadSourcesTooltip,
                         visualDensity: VisualDensity.compact,
                         padding: const EdgeInsets.all(4),
@@ -253,7 +255,7 @@ class PlayerSourceSelectorSheet extends ConsumerWidget {
                       ),
                     const SizedBox(width: 4),
                     IconButton(
-                      icon: const Icon(Icons.close_rounded, size: 19, color: Colors.white70),
+                      icon: Icon(AppIcons.close(iconPack), size: 19, color: Colors.white70),
                       tooltip: l10n.closeSettings,
                       visualDensity: VisualDensity.compact,
                       padding: const EdgeInsets.all(4),
@@ -301,8 +303,8 @@ class PlayerSourceSelectorSheet extends ConsumerWidget {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(
-                            Icons.search_off_rounded,
+                          Icon(
+                            AppIcons.searchOff(iconPack),
                             size: 34,
                             color: Colors.white38,
                           ),
@@ -337,7 +339,7 @@ class PlayerSourceSelectorSheet extends ConsumerWidget {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Icon(
-                                      Icons.refresh_rounded,
+                                      AppIcons.refresh(iconPack),
                                       size: 15,
                                       color: theme.colorScheme.primary,
                                     ),
@@ -579,7 +581,7 @@ class PlayerSourceSelectorSheet extends ConsumerWidget {
                                           // Checkmark for selected item
                                           if (isActive)
                                             Icon(
-                                              Icons.check_rounded,
+                                              AppIcons.check(iconPack),
                                               size: 19,
                                               color: theme.colorScheme.primary,
                                             ),

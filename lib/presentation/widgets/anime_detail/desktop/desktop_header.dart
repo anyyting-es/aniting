@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
+import 'package:seanime_app/core/icons/app_icons.dart';
 
 class DesktopHeader extends ConsumerStatefulWidget {
   final String seasonYearStr;
@@ -51,6 +52,7 @@ class _DesktopHeaderState extends ConsumerState<DesktopHeader> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final l10n = ref.watch(translationsProvider);
+    final iconPack = ref.watch(iconPackProvider);
 
     final titleColor = isDark ? Colors.white : theme.colorScheme.onSurface;
     final subtitleColor = isDark ? Colors.white.withValues(alpha: 0.70) : theme.colorScheme.onSurfaceVariant;
@@ -198,7 +200,7 @@ class _DesktopHeaderState extends ConsumerState<DesktopHeader> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
-                              Icons.edit_outlined,
+                              AppIcons.edit(iconPack),
                               size: 13.5,
                               color: metaColor.withValues(alpha: 0.85),
                             ),
@@ -237,7 +239,7 @@ class _DesktopHeaderState extends ConsumerState<DesktopHeader> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                    Icons.calendar_today_outlined,
+                    AppIcons.calendar(iconPack),
                     size: 14.5,
                     color: metaColor.withValues(alpha: 0.8),
                   ),
@@ -270,7 +272,7 @@ class _DesktopHeaderState extends ConsumerState<DesktopHeader> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                    Icons.favorite_border_rounded,
+                    AppIcons.heartOutline(iconPack),
                     size: 16,
                     color: isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
                   ),

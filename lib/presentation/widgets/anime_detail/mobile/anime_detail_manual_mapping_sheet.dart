@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:g1455/g1455.dart';
+import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/data/models/anime_details.dart';
 import 'package:seanime_app/data/models/onlinestream_models.dart';
@@ -150,6 +151,7 @@ class _AnimeDetailManualMappingSheetState extends ConsumerState<AnimeDetailManua
   @override
   Widget build(BuildContext context) {
     final l10n = ref.watch(translationsProvider);
+    final iconPack = ref.watch(iconPackProvider);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final primaryColor = isDark ? Colors.white : theme.colorScheme.primary;
@@ -158,23 +160,26 @@ class _AnimeDetailManualMappingSheetState extends ConsumerState<AnimeDetailManua
 
     return Material(
       type: MaterialType.transparency,
-      child: Padding(
-        padding: EdgeInsets.only(
-          left: 16,
-          right: 16,
-          top: 6,
-          bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-        ),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxHeight: maxSheetHeight),
-          child: Column(
+      child: SafeArea(
+        top: false,
+        child: AnimatedPadding(
+          duration: const Duration(milliseconds: 180),
+          padding: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: 6,
+            bottom: MediaQuery.viewInsetsOf(context).bottom + 16,
+          ),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: maxSheetHeight),
+            child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Header Row
               Row(
                 children: [
-                  Icon(Icons.link_rounded, size: 22, color: primaryColor),
+                  Icon(AppIcons.link(iconPack), size: 22, color: primaryColor),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Column(
@@ -206,7 +211,7 @@ class _AnimeDetailManualMappingSheetState extends ConsumerState<AnimeDetailManua
                         onTap: () => Navigator.pop(context),
                         child: Padding(
                           padding: const EdgeInsets.all(6),
-                          child: Icon(Icons.close_rounded, size: 20, color: secondaryTextColor),
+                          child: Icon(AppIcons.close(iconPack), size: 20, color: secondaryTextColor),
                         ),
                       ),
                     ),
@@ -233,7 +238,7 @@ class _AnimeDetailManualMappingSheetState extends ConsumerState<AnimeDetailManua
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.check_circle_rounded, size: 16, color: primaryColor),
+                      Icon(AppIcons.checkCircleFilled(iconPack), size: 16, color: primaryColor),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -249,7 +254,7 @@ class _AnimeDetailManualMappingSheetState extends ConsumerState<AnimeDetailManua
                       ),
                       TextButton.icon(
                         onPressed: _unlinkAnime,
-                        icon: const Icon(Icons.link_off_rounded, size: 14),
+                        icon: Icon(AppIcons.linkOff(iconPack), size: 14),
                         label: Text(l10n.unlink, style: const TextStyle(fontSize: 11.5)),
                         style: TextButton.styleFrom(
                           visualDensity: VisualDensity.compact,
@@ -259,7 +264,7 @@ class _AnimeDetailManualMappingSheetState extends ConsumerState<AnimeDetailManua
                     ],
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
               ],
 
               // Search Row with GlassTextField & GlassButton
@@ -286,7 +291,7 @@ class _AnimeDetailManualMappingSheetState extends ConsumerState<AnimeDetailManua
                         : Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.search_rounded, size: 16),
+                              Icon(AppIcons.search(iconPack), size: 16),
                               const SizedBox(width: 4),
                               Text(
                                 l10n.search,
@@ -362,7 +367,7 @@ class _AnimeDetailManualMappingSheetState extends ConsumerState<AnimeDetailManua
                                 child: Column(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(Icons.search_rounded, size: 36, color: secondaryTextColor.withValues(alpha: 0.5)),
+                                    Icon(AppIcons.search(iconPack), size: 36, color: secondaryTextColor.withValues(alpha: 0.5)),
                                     const SizedBox(height: 8),
                                     Text(
                                       l10n.searchPromptMapping,
@@ -448,8 +453,9 @@ class _AnimeDetailManualMappingSheetState extends ConsumerState<AnimeDetailManua
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildSuggestionChip(ThemeData theme, String text, VoidCallback onTap) {
     final isDark = theme.brightness == Brightness.dark;

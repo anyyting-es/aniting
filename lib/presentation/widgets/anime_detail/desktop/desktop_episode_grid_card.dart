@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/preferences/playback_progress_preferences_provider.dart';
 import 'desktop_episode_models.dart';
 
@@ -33,6 +34,7 @@ class _DesktopGridEpisodeCardState extends ConsumerState<DesktopGridEpisodeCard>
 
   @override
   Widget build(BuildContext context) {
+    final iconPack = ref.watch(iconPackProvider);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final titleColor = isDark ? Colors.white : theme.colorScheme.onSurface;
@@ -217,7 +219,7 @@ class _DesktopGridEpisodeCardState extends ConsumerState<DesktopGridEpisodeCard>
                   Padding(
                     padding: const EdgeInsets.only(top: 1.5),
                     child: Icon(
-                      Icons.check_circle_rounded,
+                      AppIcons.checkCircleFilled(iconPack),
                       size: 14,
                       color: Colors.greenAccent.shade400,
                     ),

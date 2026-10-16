@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
+import 'package:seanime_app/core/icons/app_icons.dart';
 
 class DesktopEpisodePagination extends ConsumerWidget {
   final int currentPage;
@@ -21,6 +22,7 @@ class DesktopEpisodePagination extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ref.watch(translationsProvider);
+    final iconPack = ref.watch(iconPackProvider);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -44,7 +46,7 @@ class DesktopEpisodePagination extends ConsumerWidget {
                 onPressed: currentPage > 0
                     ? () => onPageChanged(currentPage - 1)
                     : null,
-                icon: const Icon(Icons.chevron_left_rounded),
+                icon: Icon(AppIcons.chevronLeft(iconPack)),
                 iconSize: 20,
                 tooltip: l10n.previous,
                 style: IconButton.styleFrom(
@@ -142,7 +144,7 @@ class DesktopEpisodePagination extends ConsumerWidget {
                 onPressed: currentPage < totalPages - 1
                     ? () => onPageChanged(currentPage + 1)
                     : null,
-                icon: const Icon(Icons.chevron_right_rounded),
+                icon: Icon(AppIcons.chevronRight(iconPack)),
                 iconSize: 20,
                 tooltip: l10n.next,
                 style: IconButton.styleFrom(

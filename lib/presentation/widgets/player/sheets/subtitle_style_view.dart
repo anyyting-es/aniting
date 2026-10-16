@@ -69,7 +69,7 @@ class SubtitleStyleView extends ConsumerWidget {
           // 4. Text & Background Colors Section
           _buildSectionHeader(context, l10n.subtitleTextColor, AppIcons.sparkles(iconPack)),
           const SizedBox(height: 8),
-          _buildTextColorPicker(context, prefs, notifier),
+          _buildTextColorPicker(context, prefs, notifier, iconPack),
           const SizedBox(height: 12),
           _buildBackgroundSelector(context, prefs, notifier, l10n),
           const SizedBox(height: 16),
@@ -303,6 +303,7 @@ class SubtitleStyleView extends ConsumerWidget {
     BuildContext context,
     SubtitleStylePrefs prefs,
     SubtitleStylePreferencesNotifier notifier,
+    AppIconPack iconPack,
   ) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -321,7 +322,7 @@ class SubtitleStyleView extends ConsumerWidget {
                 width: isSelected ? 3 : 1,
               ),
             ),
-            child: isSelected ? const Icon(Icons.check, size: 16, color: Colors.black) : null,
+            child: isSelected ? Icon(AppIcons.check(iconPack), size: 16, color: Colors.black) : null,
           ),
         );
       }).toList(),

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:g1455/g1455.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
+import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/data/models/anime_details.dart';
 import 'package:seanime_app/data/models/torrent_models.dart';
 import 'package:seanime_app/presentation/widgets/torrent_selector/desktop/torrent_file_card.dart';
@@ -21,7 +23,6 @@ class TorrentSelectorDesktopView extends ConsumerWidget {
   final String selectedQuality;
   final bool isSmartSearch;
   final bool showOnlyBatches;
-  final bool bestReleasesOnly;
   final bool searchAcrossProviders;
   final TorrentSortField sortField;
   final bool sortAscending;
@@ -32,7 +33,6 @@ class TorrentSelectorDesktopView extends ConsumerWidget {
   final ValueChanged<String> onQualityChanged;
   final ValueChanged<bool> onSmartSearchChanged;
   final ValueChanged<bool> onBatchToggleChanged;
-  final ValueChanged<bool> onBestReleasesChanged;
   final ValueChanged<bool> onSearchAcrossProvidersChanged;
   final ValueChanged<TorrentSortField> onSortFieldChanged;
   final VoidCallback onToggleSortDirection;
@@ -57,7 +57,6 @@ class TorrentSelectorDesktopView extends ConsumerWidget {
     required this.selectedQuality,
     required this.isSmartSearch,
     required this.showOnlyBatches,
-    this.bestReleasesOnly = false,
     this.searchAcrossProviders = false,
     this.sortField = TorrentSortField.seeders,
     this.sortAscending = false,
@@ -68,7 +67,6 @@ class TorrentSelectorDesktopView extends ConsumerWidget {
     required this.onQualityChanged,
     required this.onSmartSearchChanged,
     required this.onBatchToggleChanged,
-    required this.onBestReleasesChanged,
     required this.onSearchAcrossProvidersChanged,
     required this.onSortFieldChanged,
     required this.onToggleSortDirection,
@@ -84,6 +82,7 @@ class TorrentSelectorDesktopView extends ConsumerWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final l10n = ref.watch(translationsProvider);
+    final iconPack = ref.watch(iconPackProvider);
 
     final mq = MediaQuery.of(context);
     final dialogWidth = (mq.size.width * 0.92).clamp(900.0, 1260.0);
@@ -92,76 +91,70 @@ class TorrentSelectorDesktopView extends ConsumerWidget {
     final sortedTorrents = sortTorrents(filteredTorrents, sortField, sortAscending);
 
     return Center(
-      child: Container(
-        width: dialogWidth,
-        height: dialogHeight,
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF0C0E15) : theme.scaffoldBackgroundColor,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isDark ? Colors.white.withValues(alpha: 0.08) : theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
-            width: 1.2,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.55),
-              blurRadius: 36,
-              offset: const Offset(0, 10),
+      child: GlassCard(
+        padding: EdgeInsets.zero,
+        borderRadius: BorderRadius.circular(22),
+        child: Container(
+          width: dialogWidth,
+          height: dialogHeight,
+          decoration: BoxDecoration(
+            color: (isDark ? const Color(0xFF0C0F17) : theme.colorScheme.surface).withValues(alpha: 0.72),
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(
+              color: isDark ? Colors.white.withValues(alpha: 0.1) : theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
+              width: 1.0,
             ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // --- LEFT PANEL: Info & Settings ---
-                SizedBox(
-                  width: 320,
-                  child: TorrentSidebarInfoPanel(
-                    animeDetails: animeDetails,
-                    currentEpisodeNumber: currentEpisodeNumber,
-                    episodeTitle: episodeTitle,
-                    providers: providers,
-                    selectedProviderId: selectedProviderId,
-                    isLoadingProviders: isLoadingProviders,
-                    selectedQuality: selectedQuality,
-                    isSmartSearch: isSmartSearch,
-                    showOnlyBatches: showOnlyBatches,
-                    bestReleasesOnly: bestReleasesOnly,
-                    searchAcrossProviders: searchAcrossProviders,
-                    searchController: searchController,
-                    isLoadingTorrents: isLoadingTorrents,
-                    onEpisodeChanged: onEpisodeChanged,
-                    onProviderChanged: onProviderChanged,
-                    onQualityChanged: onQualityChanged,
-                    onSmartSearchChanged: onSmartSearchChanged,
-                    onBatchToggleChanged: onBatchToggleChanged,
-                    onBestReleasesChanged: onBestReleasesChanged,
-                    onSearchAcrossProvidersChanged: onSearchAcrossProvidersChanged,
-                    onRefresh: onRefresh,
-                  ),
-                ),
-
-                const SizedBox(width: 14),
-
-                // --- RIGHT PANEL: Toolbar & Torrents List ---
-                Expanded(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF10131B) : theme.colorScheme.surfaceContainerLowest,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: isDark ? Colors.white.withValues(alpha: 0.07) : theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
-                      ),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(22),
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // --- LEFT PANEL: Info & Settings ---
+                  SizedBox(
+                    width: 320,
+                    child: TorrentSidebarInfoPanel(
+                      animeDetails: animeDetails,
+                      currentEpisodeNumber: currentEpisodeNumber,
+                      episodeTitle: episodeTitle,
+                      providers: providers,
+                      selectedProviderId: selectedProviderId,
+                      isLoadingProviders: isLoadingProviders,
+                      selectedQuality: selectedQuality,
+                      isSmartSearch: isSmartSearch,
+                      showOnlyBatches: showOnlyBatches,
+                      searchAcrossProviders: searchAcrossProviders,
+                      searchController: searchController,
+                      isLoadingTorrents: isLoadingTorrents,
+                      onEpisodeChanged: onEpisodeChanged,
+                      onProviderChanged: onProviderChanged,
+                      onQualityChanged: onQualityChanged,
+                      onSmartSearchChanged: onSmartSearchChanged,
+                      onBatchToggleChanged: onBatchToggleChanged,
+                      onSearchAcrossProvidersChanged: onSearchAcrossProvidersChanged,
+                      onRefresh: onRefresh,
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Top Toolbar: "28 results" on left, Sort chips & Close button on right
-                        Padding(
+                  ),
+
+                  const SizedBox(width: 14),
+
+                  // --- RIGHT PANEL: Toolbar & Torrents List ---
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: (isDark ? const Color(0xFF10131E) : theme.colorScheme.surfaceContainerLowest).withValues(alpha: 0.55),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: isDark ? Colors.white.withValues(alpha: 0.07) : theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Top Toolbar: "28 results" on left, Sort chips & Close button on right
+                          Padding(
                           padding: const EdgeInsets.fromLTRB(14, 10, 10, 10),
                           child: Row(
                             children: [
@@ -183,6 +176,7 @@ class TorrentSelectorDesktopView extends ConsumerWidget {
                                 field: TorrentSortField.seeders,
                                 theme: theme,
                                 isDark: isDark,
+                                iconPack: iconPack,
                               ),
                               const SizedBox(width: 6),
                               _buildSortButton(
@@ -190,6 +184,7 @@ class TorrentSelectorDesktopView extends ConsumerWidget {
                                 field: TorrentSortField.size,
                                 theme: theme,
                                 isDark: isDark,
+                                iconPack: iconPack,
                               ),
                               const SizedBox(width: 6),
                               _buildSortButton(
@@ -197,6 +192,7 @@ class TorrentSelectorDesktopView extends ConsumerWidget {
                                 field: TorrentSortField.date,
                                 theme: theme,
                                 isDark: isDark,
+                                iconPack: iconPack,
                               ),
                               const SizedBox(width: 6),
                               _buildSortButton(
@@ -204,6 +200,7 @@ class TorrentSelectorDesktopView extends ConsumerWidget {
                                 field: TorrentSortField.resolution,
                                 theme: theme,
                                 isDark: isDark,
+                                iconPack: iconPack,
                               ),
 
                               const SizedBox(width: 8),
@@ -212,7 +209,7 @@ class TorrentSelectorDesktopView extends ConsumerWidget {
                               IconButton(
                                 tooltip: l10n.close,
                                 onPressed: onClose,
-                                icon: const Icon(Icons.close_rounded, size: 18),
+                                icon: Icon(AppIcons.close(iconPack), size: 18),
                                 visualDensity: VisualDensity.compact,
                                 style: IconButton.styleFrom(
                                   backgroundColor: isDark
@@ -238,6 +235,7 @@ class TorrentSelectorDesktopView extends ConsumerWidget {
                             isDark,
                             l10n,
                             sortedTorrents,
+                            iconPack,
                           ),
                         ),
                       ],
@@ -249,19 +247,21 @@ class TorrentSelectorDesktopView extends ConsumerWidget {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildSortButton({
     required String label,
     required TorrentSortField field,
     required ThemeData theme,
     required bool isDark,
+    required AppIconPack iconPack,
   }) {
     final isSelected = sortField == field;
     final icon = isSelected
-        ? (sortAscending ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded)
-        : Icons.unfold_more_rounded;
+        ? (sortAscending ? AppIcons.arrowUp(iconPack) : AppIcons.arrowDown(iconPack))
+        : AppIcons.unfoldMore(iconPack);
 
     return InkWell(
       borderRadius: BorderRadius.circular(8),
@@ -314,6 +314,7 @@ class TorrentSelectorDesktopView extends ConsumerWidget {
     bool isDark,
     AppTranslations l10n,
     List<TorrentItem> sortedTorrents,
+    AppIconPack iconPack,
   ) {
     if (isLoadingTorrents) {
       return Center(
@@ -342,13 +343,13 @@ class TorrentSelectorDesktopView extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.error_outline_rounded, size: 40, color: theme.colorScheme.error),
+              Icon(AppIcons.error(iconPack), size: 40, color: theme.colorScheme.error),
               const SizedBox(height: 10),
               Text(errorMessage!, textAlign: TextAlign.center, style: const TextStyle(fontSize: 13)),
               const SizedBox(height: 14),
               OutlinedButton.icon(
                 onPressed: onRefresh,
-                icon: const Icon(Icons.refresh, size: 16),
+                icon: Icon(AppIcons.refresh(iconPack), size: 16),
                 label: Text(l10n.retry),
               ),
             ],
@@ -365,7 +366,7 @@ class TorrentSelectorDesktopView extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                Icons.search_off_rounded,
+                AppIcons.searchOff(iconPack),
                 size: 48,
                 color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
               ),
@@ -395,7 +396,7 @@ class TorrentSelectorDesktopView extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                Icons.filter_alt_off_rounded,
+                AppIcons.filterAltOff(iconPack),
                 size: 46,
                 color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
               ),

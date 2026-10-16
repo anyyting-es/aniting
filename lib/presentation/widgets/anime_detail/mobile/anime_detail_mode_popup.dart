@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:g1455/g1455.dart';
+import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
 
@@ -67,6 +68,7 @@ class AnimeDetailModePopup extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ref.watch(translationsProvider);
+    final iconPack = ref.watch(iconPackProvider);
     final theme = Theme.of(context);
     final isTorrent = !isLocalMode && currentTab == AnimeDetailTab.torrent;
     final isOnline = !isLocalMode && currentTab == AnimeDetailTab.online;
@@ -106,7 +108,7 @@ class AnimeDetailModePopup extends ConsumerWidget {
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Icon(
-                              Icons.swap_horiz_rounded,
+                              AppIcons.swapHoriz(iconPack),
                               size: 19,
                               color: theme.colorScheme.primary,
                             ),
@@ -125,7 +127,7 @@ class AnimeDetailModePopup extends ConsumerWidget {
                           ),
                           IconButton(
                             visualDensity: VisualDensity.compact,
-                            icon: const Icon(Icons.close_rounded, size: 19),
+                            icon: Icon(AppIcons.close(iconPack), size: 19),
                             onPressed: () => Navigator.pop(context),
                           ),
                         ],
@@ -146,9 +148,10 @@ class AnimeDetailModePopup extends ConsumerWidget {
                           _buildModeTile(
                             context: context,
                             theme: theme,
+                            iconPack: iconPack,
                             label: l10n.onlineStreaming,
                             subtitle: l10n.communityServers,
-                            icon: Icons.public_rounded,
+                            icon: AppIcons.globe(iconPack),
                             color: theme.colorScheme.primary,
                             isSelected: isOnline,
                             onTap: () {
@@ -162,9 +165,10 @@ class AnimeDetailModePopup extends ConsumerWidget {
                           _buildModeTile(
                             context: context,
                             theme: theme,
+                            iconPack: iconPack,
                             label: l10n.torrentStreaming,
                             subtitle: l10n.torrentP2p,
-                            icon: Icons.cloud_download_rounded,
+                            icon: AppIcons.cloudDownload(iconPack),
                             color: theme.colorScheme.secondary,
                             isSelected: isTorrent,
                             onTap: () {
@@ -179,9 +183,10 @@ class AnimeDetailModePopup extends ConsumerWidget {
                             _buildModeTile(
                               context: context,
                               theme: theme,
+                              iconPack: iconPack,
                               label: l10n.localLibrary,
                               subtitle: l10n.downloadedLibrary,
-                              icon: Icons.folder_rounded,
+                              icon: AppIcons.folderFilled(iconPack),
                               color: theme.colorScheme.tertiary,
                               isSelected: isLocalMode,
                               onTap: () {
@@ -207,6 +212,7 @@ class AnimeDetailModePopup extends ConsumerWidget {
   Widget _buildModeTile({
     required BuildContext context,
     required ThemeData theme,
+    required AppIconPack iconPack,
     required String label,
     required String subtitle,
     required IconData icon,
@@ -263,7 +269,7 @@ class AnimeDetailModePopup extends ConsumerWidget {
               ),
               if (isSelected)
                 Icon(
-                  Icons.check_rounded,
+                  AppIcons.check(iconPack),
                   size: 19,
                   color: theme.colorScheme.primary,
                 ),

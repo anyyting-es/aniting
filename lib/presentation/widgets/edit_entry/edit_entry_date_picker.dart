@@ -41,16 +41,33 @@ class _EditEntryDatePickerState extends State<EditEntryDatePicker> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          widget.label,
-          style: TextStyle(
-            color: theme.colorScheme.onSurfaceVariant,
-            fontSize: 12.5,
-            fontWeight: FontWeight.w600,
-            letterSpacing: -0.1,
+        SizedBox(
+          height: 22,
+          child: Row(
+            children: [
+              Icon(
+                Icons.calendar_today_rounded,
+                size: 15,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 5),
+              Expanded(
+                child: Text(
+                  widget.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: -0.1,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-        const SizedBox(height: 7),
+        const SizedBox(height: 8),
         MouseRegion(
           onEnter: (_) => setState(() => _isHovered = true),
           onExit: (_) => setState(() => _isHovered = false),

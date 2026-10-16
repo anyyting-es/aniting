@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:g1455/g1455.dart';
+import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/data/models/onlinestream_models.dart';
 import 'anime_detail_advanced_sheet.dart';
@@ -104,6 +105,7 @@ class _AnimeDetailSourcePopupState extends ConsumerState<AnimeDetailSourcePopup>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = ref.watch(translationsProvider);
+    final iconPack = ref.watch(iconPackProvider);
 
     return Center(
       child: Material(
@@ -140,7 +142,7 @@ class _AnimeDetailSourcePopupState extends ConsumerState<AnimeDetailSourcePopup>
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Icon(
-                              Icons.public_rounded,
+                              AppIcons.globe(iconPack),
                               size: 19,
                               color: theme.colorScheme.primary,
                             ),
@@ -171,7 +173,7 @@ class _AnimeDetailSourcePopupState extends ConsumerState<AnimeDetailSourcePopup>
                           ),
                           IconButton(
                             visualDensity: VisualDensity.compact,
-                            icon: const Icon(Icons.close_rounded, size: 19),
+                            icon: Icon(AppIcons.close(iconPack), size: 19),
                             onPressed: () => Navigator.pop(context),
                           ),
                         ],
@@ -192,7 +194,7 @@ class _AnimeDetailSourcePopupState extends ConsumerState<AnimeDetailSourcePopup>
                               padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
                               child: Row(
                                 children: [
-                                  Icon(Icons.extension_off_rounded,
+                                  Icon(AppIcons.extensionOff(iconPack),
                                       size: 19, color: theme.colorScheme.outline),
                                   const SizedBox(width: 10),
                                   Expanded(
@@ -239,8 +241,8 @@ class _AnimeDetailSourcePopupState extends ConsumerState<AnimeDetailSourcePopup>
                                             children: [
                                               Icon(
                                                 isSelected
-                                                    ? Icons.radio_button_checked_rounded
-                                                    : Icons.radio_button_off_rounded,
+                                                    ? AppIcons.radioChecked(iconPack)
+                                                    : AppIcons.radioUnchecked(iconPack),
                                                 size: 18,
                                                 color: isSelected
                                                     ? theme.colorScheme.primary
@@ -327,7 +329,7 @@ class _AnimeDetailSourcePopupState extends ConsumerState<AnimeDetailSourcePopup>
                             mainAxisAlignment: MainAxisAlignment.center,
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.tune_rounded, size: 16, color: theme.colorScheme.primary),
+                              Icon(AppIcons.sliders(iconPack), size: 16, color: theme.colorScheme.primary),
                               const SizedBox(width: 8),
                               Flexible(
                                 child: Text(
@@ -341,7 +343,7 @@ class _AnimeDetailSourcePopupState extends ConsumerState<AnimeDetailSourcePopup>
                                 ),
                               ),
                               const SizedBox(width: 4),
-                              Icon(Icons.chevron_right_rounded,
+                              Icon(AppIcons.chevronRight(iconPack),
                                   size: 17, color: theme.colorScheme.primary),
                             ],
                           ),

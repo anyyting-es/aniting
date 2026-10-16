@@ -189,7 +189,7 @@ class DesktopActionBar extends ConsumerWidget {
                     SnackBar(
                       content: Row(
                         children: [
-                          const Icon(Icons.info_outline_rounded,
+                          Icon(AppIcons.info(iconPack),
                               color: Colors.white, size: 18),
                           const SizedBox(width: 8),
                           Expanded(child: Text(l10n.streamingComingSoon)),
@@ -209,46 +209,46 @@ class DesktopActionBar extends ConsumerWidget {
           items: [
             GlassMenuItem(
               label: l10n.statusWatching,
-              icon: const Icon(
-                Icons.play_circle_fill_rounded,
+              icon: Icon(
+                AppIcons.playCircleFilled(iconPack),
                 size: 18,
-                color: Color(0xFF10B981),
+                color: const Color(0xFF10B981),
               ),
               onPressed: () => _updateStatus(context, ref, 'CURRENT'),
             ),
             GlassMenuItem(
               label: l10n.statusPlanning,
-              icon: const Icon(
-                Icons.bookmark_added_rounded,
+              icon: Icon(
+                AppIcons.bookmarkAdded(iconPack),
                 size: 18,
-                color: Color(0xFF3B82F6),
+                color: const Color(0xFF3B82F6),
               ),
               onPressed: () => _updateStatus(context, ref, 'PLANNING'),
             ),
             GlassMenuItem(
               label: l10n.statusCompleted,
-              icon: const Icon(
-                Icons.check_circle_rounded,
+              icon: Icon(
+                AppIcons.checkCircleFilled(iconPack),
                 size: 18,
-                color: Color(0xFF8B5CF6),
+                color: const Color(0xFF8B5CF6),
               ),
               onPressed: () => _updateStatus(context, ref, 'COMPLETED'),
             ),
             GlassMenuItem(
               label: l10n.statusPaused,
-              icon: const Icon(
-                Icons.pause_circle_filled_rounded,
+              icon: Icon(
+                AppIcons.pauseCircleFilled(iconPack),
                 size: 18,
-                color: Color(0xFFF59E0B),
+                color: const Color(0xFFF59E0B),
               ),
               onPressed: () => _updateStatus(context, ref, 'PAUSED'),
             ),
             GlassMenuItem(
               label: l10n.statusDropped,
-              icon: const Icon(
-                Icons.cancel_rounded,
+              icon: Icon(
+                AppIcons.cancel(iconPack),
                 size: 18,
-                color: Color(0xFFEF4444),
+                color: const Color(0xFFEF4444),
               ),
               onPressed: () => _updateStatus(context, ref, 'DROPPED'),
             ),
@@ -300,7 +300,7 @@ class DesktopActionBar extends ConsumerWidget {
         if (!isTmdb && onDownload != null) ...[
           M3EIconButton(
             tooltip: l10n.downloadWithTorrentClient,
-            icon: const Icon(Icons.download_rounded, size: 20),
+            icon: Icon(AppIcons.download(iconPack), size: 20),
             variant: M3EIconButtonVariant.standard,
             size: M3EIconButtonSize.sm,
             onPressed: onDownload!,
@@ -313,7 +313,7 @@ class DesktopActionBar extends ConsumerWidget {
           Tooltip(
             message: 'The Movie Database (TMDB)',
             child: M3EIconButton(
-              icon: const Icon(Icons.open_in_new_rounded, size: 18),
+              icon: Icon(AppIcons.openInNew(iconPack), size: 18),
               variant: M3EIconButtonVariant.standard,
               size: M3EIconButtonSize.sm,
               onPressed: () => _launchTmdb(mediaId),

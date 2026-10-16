@@ -5,6 +5,66 @@
 > - **NEVER** include microscopic, tedious, or trivial implementation details that end users do not care about (e.g., do **NOT** write: *"Eliminado el brillo fosforescente del indicador deslizante"*, *"Pestañas de los 7 días visibles en frame 0"*, *"Ajustado padding a 4px"*, *"Cambiado color del dot"*).
 > - **ALWAYS** summarize improvements at a high, user-facing level with clear, direct bullet points (e.g., *"Mejoras de UI y navegación en el calendario de emisión"*, *"Nueva pantalla y gestión de estado sin conexión"*, *"Optimizaciones en la caché de seguir viendo"*).
 > - Keep it punchy, professional, and easy to skim.
+## 7.54. Depuración y Simplificación de Tarjetas de Torrents (2026-10-16)
+- **Diseño Más Limpio y Minimalista en Tarjetas**:
+  - Eliminación de elementos redundantes en las tarjetas de la lista de torrents: icono pequeño de reproducción, botones de descarga o reproductor externo, indicador de visto y numeración redundante de episodio.
+  - Mayor protagonismo y legibilidad del nombre del archivo, grupo de lanzamiento, resolución, etiquetas técnicas y salud del enjambre (seeders, tamaño y fecha).
+- **Verificación Completa**:
+  - 0 incidencias en `flutter analyze lib/` y 246/246 tests aprobados al 100%.
+
+---
+
+## 7.53. Unificación Global de Iconos (Lucide & Material) (2026-10-16)
+- **Eliminación Total de Iconos Rígidos**:
+  - Migración exhaustiva de todos los iconos estáticos en las vistas de detalle de anime (móvil, escritorio y TV), selector de torrents, visor de episodios y reproductor de video a la arquitectura unificada `AppIcons.*(iconPack)`.
+  - Respeto impecable y en tiempo real del paquete de iconos seleccionado en Ajustes (`Lucide` o `Material`), eliminando mezclas visuales y garantizando coherencia en toda la experiencia.
+- **Ampliación Semántica de `AppIcons`**:
+  - Incorporación de mapeos semánticos completos para estados de reproducción, enlaces externos, favoritos, controles de listas y selectores contextuales.
+- **Verificación Completa**:
+  - 0 incidencias en `flutter analyze lib/` y suite de pruebas aprobada al 100%.
+
+---
+
+## 7.52. Insets de Navegación del Sistema en Opciones Avanzadas de Streaming (2026-10-16)
+- **Respeto de Insets de Android (Barra de 3 Botones y Gestos)**:
+  - En la hoja modal de opciones avanzadas (`AnimeDetailAdvancedSheet`) y vinculación manual (`AnimeDetailManualMappingSheet`), se incorpora `SafeArea` adaptativo para evitar que los botones de acción inferior queden cubiertos por la barra de navegación de 3 botones de Android o la píldora de gestos.
+  - Sincronización animada fluida con el teclado virtual (`AnimatedPadding`), manteniendo un espaciado óptimo y ergonómico sin importar el modo de navegación del dispositivo.
+- **Verificación Completa**:
+  - 0 incidencias en `flutter analyze lib/` y 246/246 tests aprobados.
+
+---
+
+## 7.51. Reorganización y Alineación del Modal de Edición de Listas (2026-10-16)
+- **Reordenamiento Estratégico de Campos**:
+  - Estado (*Status*) y Progreso (*Progress*) ahora ocupan la primera fila principal lado a lado con proporciones idénticas (50/50).
+  - Fechas de inicio y finalización organizadas en la segunda fila como pareja natural.
+  - Repeticiones (*Total rewatches*) y Puntuación (*Score*) ubicados al final de la cuadrícula.
+- **Armonización de Color y Eliminación del Amarillo en Score**:
+  - La barra y botón deslizante de puntuación ahora adoptan el color primario dinámico del tema de la app, eliminando el color amarillo estático.
+  - El badge de puntuación ahora permite pulsar para ingresar la calificación numérica de forma directa.
+- **Alineación Geométrica Estricta a 46 px**:
+  - Calibración de todos los contenedores y controles a 46 px de altura exacta y cabeceras unificadas de 22 px con iconos contextuales, garantizando un alineamiento horizontal perfecto entre columnas.
+  - Barra inferior de acciones (Eliminar, Cancelar, Guardar cambios) alineada verticalmente.
+- **Verificación Completa**:
+  - 0 advertencias en `flutter analyze lib/` y 246/246 tests aprobados.
+
+---
+
+## 7.50. Rediseño del Selector de Torrents con Vidrio Líquido (2026-10-16)
+- **Modal de Vidrio Líquido Adaptativo con `g1455` (Liquid Glass Theme)**:
+  - En móviles, el selector ahora se abre como una hoja flotante de cristal líquido (`showGlassSheet`) con esquinas curvadas de 36 px, efecto de refracción óptica en tiempo real y cierre suave por arrastre.
+  - Integración nativa con el acabado `Theme` de la aplicación (`GlassFinish.regularDark` / `regularLight`), sincronizando la refracción, desenfoque y tinte dinámico con el tema activo de la interfaz.
+  - Corrección de superposición con la barra de estado y notch: el modal respeta los límites seguros de la pantalla (`SafeArea`) sin ocultarse detrás de la barra de estado.
+- **Fila Unificada: Proveedor y Stepper de Episodios**:
+  - Proveedor y selector de episodios organizados en una sola fila compacta y elegante: a la izquierda el proveedor con desplegable directo, y a la derecha el stepper interactivo con flechas (`<`, `>`) y pastilla de capítulo.
+- **Desplegables en Popover Nativo (`GlassPopoverAnchor`)**:
+  - Reemplazo de los diálogos a pantalla completa por menús popover nativos de cristal líquido (`GlassPopoverAnchor`) alineados con el tema (`Theme`) que crecen directamente desde cada botón en su lugar (Proveedor, Episodio, Calidad y Ordenación).
+- **Eliminación Total de Tintes Azules**:
+  - Sustitución de los fondos azulados de las tarjetas de torrents (`TorrentFileCard`) por un acabado grafito neutro semitransparente que se integra con el vidrio líquido sin perder legibilidad ni contraste.
+- **Verificación Completa**:
+  - 0 incidencias en `flutter analyze lib/` y suite de pruebas aprobada al 100% (246/246 tests).
+
+---
 
 ## 7.49. Reproducción Directa desde Seguir Viendo y Control Inteligente de Siguiente Episodio (2026-10-15)
 - **Reproducción Directa al Tocar un Episodio en Seguir Viendo**:

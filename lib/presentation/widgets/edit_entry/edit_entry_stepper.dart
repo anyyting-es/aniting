@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:seanime_app/core/i18n/translations/translations.dart';
 
 /// Stepper moderno con estética Liquid Glass para Progreso (Episodios / Capítulos)
 /// y Repeticiones (Rewatches / Rereads).
@@ -10,6 +11,7 @@ class EditEntryStepper extends StatelessWidget {
   final ValueChanged<int> onChanged;
   final IconData? icon;
   final BorderRadius borderRadius;
+  final AppTranslations? l10n;
 
   const EditEntryStepper({
     super.key,
@@ -19,6 +21,7 @@ class EditEntryStepper extends StatelessWidget {
     required this.onChanged,
     this.icon,
     this.borderRadius = const BorderRadius.all(Radius.circular(16)),
+    this.l10n,
   });
 
   void _step(int delta) {
@@ -59,14 +62,14 @@ class EditEntryStepper extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Cancelar'),
+              child: Text(l10n?.cancel ?? 'Cancel'),
             ),
             FilledButton(
               onPressed: () {
                 final entered = int.tryParse(controller.text.trim()) ?? value;
                 Navigator.of(ctx).pop(entered);
               },
-              child: const Text('Aceptar'),
+              child: Text(l10n?.save ?? 'Save'),
             ),
           ],
         );
@@ -88,48 +91,51 @@ class EditEntryStepper extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Label Header
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (icon != null) ...[
-                    Icon(icon, size: 16, color: theme.colorScheme.onSurfaceVariant),
-                    const SizedBox(width: 5),
-                  ],
-                  Flexible(
-                    child: Text(
-                      label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: theme.colorScheme.onSurfaceVariant,
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: -0.1,
+        // Label Header (Height 22px for strict grid alignment)
+        SizedBox(
+          height: 22,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (icon != null) ...[
+                      Icon(icon, size: 16, color: theme.colorScheme.onSurfaceVariant),
+                      const SizedBox(width: 5),
+                    ],
+                    Flexible(
+                      child: Text(
+                        label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: -0.1,
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            if (hasTotal) ...[
-              const SizedBox(width: 8),
-              Text(
-                'Total: $totalCount',
-                style: TextStyle(
-                  color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w500,
+                  ],
                 ),
               ),
+              if (hasTotal) ...[
+                const SizedBox(width: 8),
+                Text(
+                  'Total: $totalCount',
+                  style: TextStyle(
+                    color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
-        const SizedBox(height: 7),
+        const SizedBox(height: 8),
 
         // Stepper Control Box
         Container(
