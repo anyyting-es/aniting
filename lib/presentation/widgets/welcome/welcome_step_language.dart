@@ -1,11 +1,12 @@
+import 'dart:ui' show lerpDouble;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:g1455/g1455.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../core/i18n/i18n_provider.dart';
 
-class WelcomeStepLanguage extends ConsumerWidget {
+class WelcomeStepLanguage extends ConsumerStatefulWidget {
   final ValueChanged<AppLanguage>? onLanguageChanged;
 
   const WelcomeStepLanguage({
@@ -14,7 +15,64 @@ class WelcomeStepLanguage extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<WelcomeStepLanguage> createState() => _WelcomeStepLanguageState();
+}
+
+class _WelcomeStepLanguageState extends ConsumerState<WelcomeStepLanguage>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _expandController;
+  late final Animation<double> _expandAnimation;
+  late final Animation<double> _contentFadeAnimation;
+  bool _isOpen = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _expandController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 320),
+      reverseDuration: const Duration(milliseconds: 240),
+    );
+
+    _expandAnimation = CurvedAnimation(
+      parent: _expandController,
+      curve: Curves.easeOutBack,
+      reverseCurve: Curves.easeInOutCubic,
+    );
+
+    _contentFadeAnimation = CurvedAnimation(
+      parent: _expandController,
+      curve: const Interval(0.2, 1.0, curve: Curves.easeOut),
+      reverseCurve: const Interval(0.0, 0.7, curve: Curves.easeIn),
+    );
+  }
+
+  @override
+  void dispose() {
+    _expandController.dispose();
+    super.dispose();
+  }
+
+  void _open() {
+    if (_isOpen) return;
+    setState(() => _isOpen = true);
+    _expandController.forward();
+  }
+
+  void _close() {
+    if (!_isOpen) return;
+    setState(() => _isOpen = false);
+    _expandController.reverse();
+  }
+
+  void _selectLanguage(AppLanguage lang) {
+    ref.read(appLanguageProvider.notifier).setLanguage(lang);
+    widget.onLanguageChanged?.call(lang);
+    _close();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final currentLang = ref.watch(appLanguageProvider);
     final l10n = ref.watch(translationsProvider);
     final theme = Theme.of(context);
@@ -37,17 +95,17 @@ class WelcomeStepLanguage extends ConsumerWidget {
           ),
           const SizedBox(height: 24),
 
-          // ─── Bienvenido a Aniting (Limpio con sombra de profundidad) ───
+          // ─── Bienvenido a Aniting (Limpio y estilizado) ───
           Text(
             l10n.welcomeTitle,
             textAlign: TextAlign.center,
             style: theme.textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.6,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.2,
               shadows: [
                 Shadow(
-                  color: Colors.black.withValues(alpha: 0.65),
-                  blurRadius: 18,
+                  color: Colors.black.withValues(alpha: 0.50),
+                  blurRadius: 14,
                   offset: const Offset(0, 2),
                 ),
               ],
@@ -55,66 +113,124 @@ class WelcomeStepLanguage extends ConsumerWidget {
           ),
           const SizedBox(height: 28),
 
-          // ─── Language Dropdown (Flotando con Liquid Glass sutil) ───
-          GlassMenuAnchor(
-            width: 170,
-            items: [
-              GlassMenuItem(
-                label: 'Español',
-                icon: currentLang == AppLanguage.es
-                    ? Icon(Icons.check_circle_rounded, size: 18, color: theme.colorScheme.primary)
-                    : null,
-                onPressed: () {
-                  ref.read(appLanguageProvider.notifier).setLanguage(AppLanguage.es);
-                  onLanguageChanged?.call(AppLanguage.es);
+          // ─── Language Selector (Centrado, elástico y con física fluida) ───
+          SizedBox(
+            height: 100,
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: TapRegion(
+                onTapOutside: (_) {
+                  if (_isOpen && mounted) {
+                    _close();
+                  }
                 },
-              ),
-              GlassMenuItem(
-                label: 'English',
-                icon: currentLang == AppLanguage.en
-                    ? Icon(Icons.check_circle_rounded, size: 18, color: theme.colorScheme.primary)
-                    : null,
-                onPressed: () {
-                  ref.read(appLanguageProvider.notifier).setLanguage(AppLanguage.en);
-                  onLanguageChanged?.call(AppLanguage.en);
-                },
-              ),
-            ],
-            builder: (context, controller) {
-              return GlassButton(
-                onPressed: controller.open,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
-                borderRadius: BorderRadius.circular(20),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 300),
-                      transitionBuilder: (child, animation) => FadeTransition(
-                        opacity: animation,
-                        child: SlideTransition(
-                          position: Tween<Offset>(
-                            begin: const Offset(0.0, 0.25),
-                            end: Offset.zero,
-                          ).animate(animation),
-                          child: child,
+                child: AnimatedBuilder(
+                  animation: _expandAnimation,
+                  builder: (context, _) {
+                    final t = _expandAnimation.value;
+                    final height = lerpDouble(40.0, 86.0, t)!;
+                    final width = lerpDouble(140.0, 148.0, t)!;
+
+                    return GlassCard(
+                      borderRadius: BorderRadius.circular(22),
+                      padding: const EdgeInsets.all(2),
+                      child: SizedBox(
+                        width: width,
+                        height: height,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              // Estado colapsado: píldora individual interactiva
+                              if (t < 0.85)
+                                Positioned.fill(
+                                  child: Opacity(
+                                    opacity: (1.0 - t * 2.2).clamp(0.0, 1.0),
+                                    child: Material(
+                                      color: Colors.transparent,
+                                      child: InkWell(
+                                        borderRadius: BorderRadius.circular(20),
+                                        onTap: _open,
+                                        child: Center(
+                                          child: Text(
+                                            langLabel,
+                                            style: const TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+
+                              // Estado expandido: opciones fluidas con transición de escala/fade
+                              if (t > 0.08)
+                                Positioned.fill(
+                                  child: Opacity(
+                                    opacity: _contentFadeAnimation.value,
+                                    child: Transform.translate(
+                                      offset: Offset(0, 4 * (1.0 - t.clamp(0.0, 1.0))),
+                                      child: Material(
+                                        color: Colors.transparent,
+                                        child: Column(
+                                          children: [
+                                            Expanded(
+                                              child: InkWell(
+                                                borderRadius: const BorderRadius.vertical(
+                                                  top: Radius.circular(19),
+                                                ),
+                                                onTap: () => _selectLanguage(AppLanguage.es),
+                                                child: const Center(
+                                                  child: Text(
+                                                    'Español',
+                                                    style: TextStyle(
+                                                      fontSize: 14,
+                                                      fontWeight: FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            Container(
+                                              height: 1,
+                                              width: 104,
+                                              color: theme.colorScheme.onSurface.withValues(alpha: 0.08),
+                                            ),
+                                            Expanded(
+                                              child: InkWell(
+                                                borderRadius: const BorderRadius.vertical(
+                                                  bottom: Radius.circular(19),
+                                                ),
+                                                onTap: () => _selectLanguage(AppLanguage.en),
+                                                child: const Center(
+                                                  child: Text(
+                                                    'English',
+                                                    style: TextStyle(
+                                                      fontSize: 14,
+                                                      fontWeight: FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
                       ),
-                      child: Text(
-                        langLabel,
-                        key: ValueKey<String>(langLabel),
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    const Icon(LucideIcons.chevronDown, size: 15),
-                  ],
+                    );
+                  },
                 ),
-              );
-            },
+              ),
+            ),
           ),
 
           const Spacer(flex: 4),

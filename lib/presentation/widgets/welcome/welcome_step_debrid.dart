@@ -66,45 +66,29 @@ class _WelcomeStepDebridState extends ConsumerState<WelcomeStepDebrid> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // ─── Header: Icon + Title only (clean, matching previous steps) ───
           Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE5A00D).withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.bolt_rounded,
-                  color: Color(0xFFE5A00D),
+              GlassCard(
+                borderRadius: BorderRadius.circular(14),
+                padding: const EdgeInsets.all(10),
+                child: Icon(
+                  LucideIcons.zap,
                   size: 22,
+                  color: theme.colorScheme.primary,
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l10n.welcomeStepDebrid,
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: -0.3,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      l10n.welcomeDebridPrompt,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
+              const SizedBox(width: 14),
+              Text(
+                l10n.welcomeStepDebrid,
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: -0.3,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
 
           // Master Switch Glass Card
           GlassCard(

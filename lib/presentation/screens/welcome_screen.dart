@@ -34,7 +34,6 @@ class WelcomeScreen extends ConsumerStatefulWidget {
 
 class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
     with SingleTickerProviderStateMixin {
-  final PageController _pageController = PageController();
   int _currentPage = 0;
 
   // Extensions step state
@@ -76,9 +75,14 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
   ];
 
   // Background Image Animated Carousel & Continuous Ken Burns Camera Motion
-  static const List<String> _backgroundImages = [
-    'https://image.tmdb.org/t/p/original/kT1ZkLmG9oNUz2Z10PqKCh8CwLI.jpg', // Frieren
-    'https://image.tmdb.org/t/p/original/4502U4n9cfgw33v0xTQMZhTDS6p.jpg', // Shingeki no Kyojin / Attack on Titan
+  static const List<String> _mobileBackgroundImages = [
+    'https://image.tmdb.org/t/p/original/kT1ZkLmG9oNUz2Z10PqKCh8CwLI.jpg', // Frieren (portrait)
+    'https://image.tmdb.org/t/p/original/4502U4n9cfgw33v0xTQMZhTDS6p.jpg', // Shingeki no Kyojin / Attack on Titan (portrait)
+  ];
+
+  static const List<String> _horizontalBackgroundImages = [
+    'https://image.tmdb.org/t/p/original/1rfiXsdRf2cYQOzV2CosFKYuF6d.jpg',
+    'https://image.tmdb.org/t/p/original/4n254E5RVKprQbJNV86Kr5WuZaI.jpg',
   ];
   int _currentBgIndex = 0;
   Timer? _bgTimer;
@@ -96,11 +100,22 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
     _startBgTimer();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final size = MediaQuery.sizeOf(context);
+    final isHorizontal = size.width > size.height;
+    final images = isHorizontal ? _horizontalBackgroundImages : _mobileBackgroundImages;
+    for (final url in images) {
+      precacheImage(NetworkImage(url), context);
+    }
+  }
+
   void _startBgTimer() {
     _bgTimer = Timer.periodic(const Duration(seconds: 9), (timer) {
       if (mounted) {
         setState(() {
-          _currentBgIndex = (_currentBgIndex + 1) % _backgroundImages.length;
+          _currentBgIndex++;
         });
       }
     });
@@ -110,7 +125,6 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
   void dispose() {
     _motionController.dispose();
     _bgTimer?.cancel();
-    _pageController.dispose();
     super.dispose();
   }
 
@@ -223,11 +237,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
 
   void _nextPage(int totalSteps) {
     if (_currentPage < totalSteps - 1) {
-      _pageController.animateToPage(
-        _currentPage + 1,
-        duration: const Duration(milliseconds: 320),
-        curve: Curves.easeOutCubic,
-      );
+      setState(() => _currentPage++);
     } else {
       _finishOnboarding();
     }
@@ -235,11 +245,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
 
   void _previousPage() {
     if (_currentPage > 0) {
-      _pageController.animateToPage(
-        _currentPage - 1,
-        duration: const Duration(milliseconds: 320),
-        curve: Curves.easeOutCubic,
-      );
+      setState(() => _currentPage--);
     }
   }
 
@@ -295,6 +301,11 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
     final currentTotalSteps = steps.length;
     final safeCurrentPage = _currentPage.clamp(0, currentTotalSteps - 1);
 
+    final screenSize = MediaQuery.sizeOf(context);
+    final isHorizontal = screenSize.width > screenSize.height;
+    final bgImages = isHorizontal ? _horizontalBackgroundImages : _mobileBackgroundImages;
+    final currentBg = bgImages[_currentBgIndex % bgImages.length];
+
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: Stack(
@@ -328,10 +339,10 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
                   child: child,
                 ),
                 child: Opacity(
-                  key: ValueKey<String>(_backgroundImages[_currentBgIndex]),
+                  key: ValueKey<String>(currentBg),
                   opacity: isDark ? 0.65 : 0.40,
                   child: Image.network(
-                    _backgroundImages[_currentBgIndex],
+                    currentBg,
                     fit: BoxFit.cover,
                     width: double.infinity,
                     height: double.infinity,
@@ -374,26 +385,11 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
                         children: [
                           const SizedBox(width: 44, height: 44),
                           const Spacer(),
-                          // ─── INDICATOR DOTS AT TOP ───
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: List.generate(currentTotalSteps, (idx) {
-                              final isActive = idx == safeCurrentPage;
-                              return AnimatedContainer(
-                                duration: const Duration(milliseconds: 250),
-                                margin: const EdgeInsets.symmetric(horizontal: 3),
-                                height: 5,
-                                width: isActive ? 18 : 5,
-                                decoration: BoxDecoration(
-                                  color: isActive
-                                      ? theme.colorScheme.primary
-                                      : (isDark
-                                          ? Colors.white.withValues(alpha: 0.25)
-                                          : Colors.black.withValues(alpha: 0.15)),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                              );
-                            }),
+                          // ─── INDICATOR DOTS AT TOP (g1455 GlassPageControl) ───
+                          GlassPageControl(
+                            count: currentTotalSteps,
+                            currentPage: safeCurrentPage,
+                            onPageChanged: (page) => setState(() => _currentPage = page),
                           ),
                           const Spacer(),
                           // ─── GLASS 'X' CLOSE / SKIP BUTTON ───
@@ -410,13 +406,29 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
                       ),
                     ),
 
-                    // Main Stepped Content
+                    // Main Stepped Content: Smooth Fade Crossfade Transition
                     Expanded(
-                      child: PageView(
-                        controller: _pageController,
-                        physics: const BouncingScrollPhysics(),
-                        onPageChanged: (page) => setState(() => _currentPage = page),
-                        children: steps,
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 350),
+                        switchInCurve: Curves.easeInOut,
+                        switchOutCurve: Curves.easeInOut,
+                        layoutBuilder: (currentChild, previousChildren) {
+                          return Stack(
+                            alignment: Alignment.topCenter,
+                            children: <Widget>[
+                              ...previousChildren,
+                              ?currentChild,
+                            ],
+                          );
+                        },
+                        transitionBuilder: (child, animation) => FadeTransition(
+                          opacity: animation,
+                          child: child,
+                        ),
+                        child: KeyedSubtree(
+                          key: ValueKey<int>(safeCurrentPage),
+                          child: steps[safeCurrentPage],
+                        ),
                       ),
                     ),
 
@@ -427,88 +439,124 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
                         children: [
                           // Left Section: Smooth morphing between AniList (expanded on Step 0) and Back Button (compact on Steps > 0)
                           Expanded(
-                            flex: safeCurrentPage == 0 ? 1 : 0,
-                            child: AnimatedSize(
-                              duration: const Duration(milliseconds: 320),
-                              curve: Curves.easeOutCubic,
+                            child: Align(
                               alignment: Alignment.centerLeft,
-                              child: safeCurrentPage == 0
-                                  ? Consumer(
-                                      builder: (context, ref, _) {
-                                        final serverState = ref.watch(serverNotifierProvider);
-                                        final status = serverState.status;
-                                        final isLoggedIn = status?.isLoggedIn == true;
+                              child: LayoutBuilder(
+                                builder: (context, constraints) {
+                                  final isStep0 = safeCurrentPage == 0;
+                                  final targetWidth = isStep0 ? constraints.maxWidth : 58.0;
 
-                                        return GlassButton(
-                                          onPressed: () => AnilistAuthSheet.show(context),
-                                          borderRadius: BorderRadius.circular(22),
-                                          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                                          child: Row(
-                                            mainAxisAlignment: MainAxisAlignment.center,
-                                            children: [
-                                              if (isLoggedIn) ...[
-                                                CircleAvatar(
-                                                  radius: 13,
-                                                  backgroundImage: status?.avatarUrl != null
-                                                      ? NetworkImage(status!.avatarUrl!)
-                                                      : null,
-                                                  child: status?.avatarUrl == null
-                                                      ? const Icon(Icons.person, size: 14)
-                                                      : null,
-                                                ),
-                                                const SizedBox(width: 10),
-                                                Flexible(
-                                                  child: Text(
-                                                    status?.username ?? 'AniList',
-                                                    maxLines: 1,
-                                                    overflow: TextOverflow.ellipsis,
-                                                    style: const TextStyle(
-                                                      fontWeight: FontWeight.w700,
-                                                      fontSize: 14.5,
-                                                    ),
-                                                  ),
-                                                ),
-                                                const SizedBox(width: 6),
-                                                const Icon(
-                                                  Icons.check_circle_rounded,
-                                                  color: Color(0xFF10B981),
-                                                  size: 17,
-                                                ),
-                                              ] else ...[
-                                                Image.asset(
-                                                  'assets/icons/AniList_logo.png',
-                                                  width: 22,
-                                                  height: 22,
-                                                  fit: BoxFit.contain,
-                                                ),
-                                                const SizedBox(width: 10),
-                                                const Text(
-                                                  'AniList',
-                                                  style: TextStyle(
-                                                    fontWeight: FontWeight.w700,
-                                                    fontSize: 15,
-                                                    letterSpacing: 0.2,
-                                                  ),
-                                                ),
-                                              ],
-                                            ],
-                                          ),
-                                        );
-                                      },
-                                    )
-                                  : GlassButton(
-                                      onPressed: _previousPage,
+                                  return AnimatedContainer(
+                                    duration: const Duration(milliseconds: 360),
+                                    curve: Curves.easeInOutCubic,
+                                    width: targetWidth,
+                                    height: 50.0,
+                                    child: GlassButton(
+                                      onPressed: isStep0
+                                          ? () => AnilistAuthSheet.show(context)
+                                          : _previousPage,
                                       borderRadius: BorderRadius.circular(22),
-                                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                                      child: Icon(
-                                        LucideIcons.arrowLeft,
-                                        color: isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
-                                        size: 22,
+                                      padding: EdgeInsets.zero,
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(22),
+                                        child: Center(
+                                          child: AnimatedSwitcher(
+                                            duration: const Duration(milliseconds: 260),
+                                            switchInCurve: Curves.easeOutCubic,
+                                            switchOutCurve: Curves.easeInCubic,
+                                            transitionBuilder: (child, animation) {
+                                              return FadeTransition(
+                                                opacity: animation,
+                                                child: ScaleTransition(
+                                                  scale: Tween<double>(begin: 0.85, end: 1.0).animate(animation),
+                                                  child: child,
+                                                ),
+                                              );
+                                            },
+                                            child: isStep0
+                                                ? Consumer(
+                                                    key: const ValueKey('anilist_expanded_content'),
+                                                    builder: (context, ref, _) {
+                                                      final serverState = ref.watch(serverNotifierProvider);
+                                                      final status = serverState.status;
+                                                      final isLoggedIn = status?.isLoggedIn == true;
+
+                                                      return OverflowBox(
+                                                        minWidth: 0,
+                                                        maxWidth: double.infinity,
+                                                        alignment: Alignment.center,
+                                                        child: Padding(
+                                                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                                                          child: Row(
+                                                            mainAxisAlignment: MainAxisAlignment.center,
+                                                            mainAxisSize: MainAxisSize.min,
+                                                            children: [
+                                                              if (isLoggedIn) ...[
+                                                                CircleAvatar(
+                                                                  radius: 13,
+                                                              backgroundImage: status?.avatarUrl != null
+                                                                  ? NetworkImage(status!.avatarUrl!)
+                                                                  : null,
+                                                              child: status?.avatarUrl == null
+                                                                  ? const Icon(Icons.person, size: 14)
+                                                                  : null,
+                                                            ),
+                                                            const SizedBox(width: 10),
+                                                            Flexible(
+                                                              child: Text(
+                                                                status?.username ?? 'AniList',
+                                                                maxLines: 1,
+                                                                overflow: TextOverflow.ellipsis,
+                                                                style: const TextStyle(
+                                                                  fontWeight: FontWeight.w700,
+                                                                  fontSize: 14.5,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                            const SizedBox(width: 6),
+                                                            const Icon(
+                                                              Icons.check_circle_rounded,
+                                                              color: Color(0xFF10B981),
+                                                              size: 17,
+                                                            ),
+                                                          ] else ...[
+                                                            Image.asset(
+                                                              'assets/icons/AniList_logo.png',
+                                                              width: 22,
+                                                              height: 22,
+                                                              fit: BoxFit.contain,
+                                                            ),
+                                                            const SizedBox(width: 10),
+                                                            const Text(
+                                                              'AniList',
+                                                              style: TextStyle(
+                                                                fontWeight: FontWeight.w700,
+                                                                fontSize: 15,
+                                                                letterSpacing: 0.2,
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ],
+                                                        ),
+                                                      ),
+                                                    );
+                                                  },
+                                                )
+                                              : Icon(
+                                                  LucideIcons.arrowLeft,
+                                                  key: const ValueKey('back_arrow_content'),
+                                                  color: isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
+                                                  size: 22,
+                                                ),
+                                        ),
                                       ),
                                     ),
+                                  ),
+                                );
+                                },
+                              ),
                             ),
                           ),
-                          if (safeCurrentPage > 0) const Spacer(),
 
                           const SizedBox(width: 12),
 

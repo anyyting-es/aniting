@@ -1,6 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:g1455/g1455.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../core/i18n/i18n_provider.dart';
 import '../../../core/preferences/title_language_provider.dart';
@@ -36,129 +38,158 @@ class WelcomeStepContentPreferences extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            l10n.welcomeStepPreferences,
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.bold,
-              letterSpacing: -0.3,
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // ─── FILA PRINCIPAL: OPCIONES A LA IZQUIERDA, POSTER A LA DERECHA ───
+          // ─── Header: Icon + Title only (clean, matching Theme and Sections steps) ───
           Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Lado izquierdo: Opciones de texto simples con visto (sin cajas ni bordes)
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _buildMinimalOption(
-                      label: 'Romaji',
-                      isSelected: titleLang == TitleLanguage.romaji,
-                      colors: colors,
-                      onTap: () => ref.read(titleLanguageProvider.notifier).setLanguage(TitleLanguage.romaji),
-                    ),
-                    const SizedBox(height: 14),
-                    _buildMinimalOption(
-                      label: 'English',
-                      isSelected: titleLang == TitleLanguage.english,
-                      colors: colors,
-                      onTap: () => ref.read(titleLanguageProvider.notifier).setLanguage(TitleLanguage.english),
-                    ),
-                    const SizedBox(height: 14),
-                    _buildMinimalOption(
-                      label: 'Native',
-                      isSelected: titleLang == TitleLanguage.native,
-                      colors: colors,
-                      onTap: () => ref.read(titleLanguageProvider.notifier).setLanguage(TitleLanguage.native),
-                    ),
-                  ],
+              GlassCard(
+                borderRadius: BorderRadius.circular(14),
+                padding: const EdgeInsets.all(10),
+                child: Icon(
+                  LucideIcons.sliders,
+                  size: 22,
+                  color: theme.colorScheme.primary,
                 ),
               ),
-
-              const SizedBox(width: 16),
-
-              // Lado derecho: Poster vertical amplio y más grande + Título con altura fija
-              SizedBox(
-                width: 180,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Consumer(
-                      builder: (context, ref, _) {
-                        final radius = ref.watch(themeProvider.select((s) => s.borderRadius));
-                        return ClipRRect(
-                          borderRadius: BorderRadius.circular(radius),
-                          child: Container(
-                            width: 180,
-                            height: 265,
-                            color: colors.surfaceElevated.withValues(alpha: 0.25),
-                            child: CachedNetworkImage(
-                              imageUrl: 'https://image.tmdb.org/t/p/original/kT1ZkLmG9oNUz2Z10PqKCh8CwLI.jpg',
-                              fit: BoxFit.cover,
-                              placeholder: (ctx, url) => Center(
-                                child: SizedBox(
-                                  width: 28,
-                                  height: 28,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: colors.accent.withValues(alpha: 0.7),
-                                  ),
-                                ),
-                              ),
-                              errorWidget: (ctx, url, err) => Center(
-                                child: Icon(Icons.movie_rounded, size: 40, color: colors.textMuted),
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 10),
-                    // Contenedor de altura fija (38px) para que el cambio de idioma no mueva la UI
-                    SizedBox(
-                      height: 38,
-                      child: Center(
-                        child: AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 180),
-                          layoutBuilder: (currentChild, previousChildren) {
-                            return Stack(
-                              alignment: Alignment.center,
-                              children: <Widget>[
-                                ...previousChildren,
-                                ?currentChild,
-                              ],
-                            );
-                          },
-                          child: Text(
-                            sampleTitle,
-                            key: ValueKey(sampleTitle),
-                            textAlign: TextAlign.center,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13.5,
-                              height: 1.25,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+              const SizedBox(width: 14),
+              Text(
+                l10n.welcomeStepPreferences,
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: -0.3,
                 ),
               ),
             ],
           ),
+          const SizedBox(height: 24),
 
-          const SizedBox(height: 32),
+          // ─── Cajón Liquid Glass que envuelve todo el contenido ───
+          GlassCard(
+            borderRadius: BorderRadius.circular(20),
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ─── FILA PRINCIPAL: OPCIONES A LA IZQUIERDA, POSTER A LA DERECHA ───
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // Lado izquierdo: Opciones de texto simples con visto
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _buildMinimalOption(
+                            label: 'Romaji',
+                            isSelected: titleLang == TitleLanguage.romaji,
+                            colors: colors,
+                            onTap: () => ref.read(titleLanguageProvider.notifier).setLanguage(TitleLanguage.romaji),
+                          ),
+                          const SizedBox(height: 14),
+                          _buildMinimalOption(
+                            label: 'English',
+                            isSelected: titleLang == TitleLanguage.english,
+                            colors: colors,
+                            onTap: () => ref.read(titleLanguageProvider.notifier).setLanguage(TitleLanguage.english),
+                          ),
+                          const SizedBox(height: 14),
+                          _buildMinimalOption(
+                            label: 'Native',
+                            isSelected: titleLang == TitleLanguage.native,
+                            colors: colors,
+                            onTap: () => ref.read(titleLanguageProvider.notifier).setLanguage(TitleLanguage.native),
+                          ),
+                        ],
+                      ),
+                    ),
 
-          // ─── SLIDER DE ESQUINAS (M3 EXPRESSIVE) ────────
-          _WelcomeStepRadiusSlider(colors: colors),
+                    const SizedBox(width: 16),
+
+                    // Lado derecho: Poster vertical amplio y más grande + Título con altura fija
+                    SizedBox(
+                      width: 180,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Consumer(
+                            builder: (context, ref, _) {
+                              final radius = ref.watch(themeProvider.select((s) => s.borderRadius));
+                              return ClipRRect(
+                                borderRadius: BorderRadius.circular(radius),
+                                child: Container(
+                                  width: 180,
+                                  height: 265,
+                                  color: colors.surfaceElevated.withValues(alpha: 0.25),
+                                  child: CachedNetworkImage(
+                                    imageUrl: 'https://image.tmdb.org/t/p/original/kT1ZkLmG9oNUz2Z10PqKCh8CwLI.jpg',
+                                    fit: BoxFit.cover,
+                                    placeholder: (ctx, url) => Center(
+                                      child: SizedBox(
+                                        width: 28,
+                                        height: 28,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: colors.accent.withValues(alpha: 0.7),
+                                        ),
+                                      ),
+                                    ),
+                                    errorWidget: (ctx, url, err) => Center(
+                                      child: Icon(Icons.movie_rounded, size: 40, color: colors.textMuted),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 10),
+                          // Contenedor de altura fija (38px) para que el cambio de idioma no mueva la UI
+                          SizedBox(
+                            height: 38,
+                            child: Center(
+                              child: AnimatedSwitcher(
+                                duration: const Duration(milliseconds: 180),
+                                layoutBuilder: (currentChild, previousChildren) {
+                                  return Stack(
+                                    alignment: Alignment.center,
+                                    children: <Widget>[
+                                      ...previousChildren,
+                                      ?currentChild,
+                                    ],
+                                  );
+                                },
+                                child: Text(
+                                  sampleTitle,
+                                  key: ValueKey(sampleTitle),
+                                  textAlign: TextAlign.center,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13.5,
+                                    height: 1.25,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+
+                Divider(
+                  height: 32,
+                  thickness: 0.8,
+                  color: theme.dividerColor.withValues(alpha: 0.08),
+                ),
+
+                // ─── SLIDER DE ESQUINAS (M3 EXPRESSIVE) ────────
+                _WelcomeStepRadiusSlider(colors: colors),
+              ],
+            ),
+          ),
         ],
       ),
     );

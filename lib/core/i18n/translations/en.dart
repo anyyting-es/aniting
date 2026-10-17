@@ -1427,9 +1427,25 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get welcomeExtensionsEmptyHint => 'You can explore and install extensions from the marketplace at any time.';
   @override
+  String get welcomeSourceRepository => 'Repository';
+  @override
+  String get welcomeSourceRepositoryDesc => 'Sources catalog';
+  @override
+  String get welcomeSourceIndividual => 'Individual Extension';
+  @override
+  String get welcomeSourceIndividualDesc => 'Direct manifest install';
+  @override
+  String get welcomeSourceIndividualEmptyHint => 'Enter an extension manifest.json URL to inspect and install';
+  @override
   String get welcomeStepSections => 'Content Modules';
   @override
   String get welcomeSectionsPrompt => 'Choose which media modules to enable in your navigation';
+  @override
+  String get welcomeAnimeSubtitle => 'Advanced search, seasons, genres, schedule and full catalog';
+  @override
+  String get welcomeMangaSubtitle => 'Manga reader, chapters, library and offline reading';
+  @override
+  String get welcomeShowsSubtitle => 'TV shows, movies and media library (also includes anime)';
   @override
   String get welcomeStepDebrid => 'Debrid Service';
   @override
@@ -1437,9 +1453,23 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get welcomeStepDownloads => 'Downloads';
   @override
-  String get welcomeDownloadsPrompt => 'Configure where your downloaded anime and manga are stored';
+  String get welcomeDownloadsPrompt => 'Configure where your downloaded anime, manga and shows are stored';
   @override
-  String get welcomeDownloadsUnifiedDesc => 'Keep all anime and manga files in a single unified directory';
+  String get welcomeDownloadsUnifiedDesc => 'Keep all your active modules under a single unified base directory';
+  @override
+  String get welcomeDownloadsUnifiedTitle => 'Unified Storage';
+  @override
+  String get welcomeDownloadsBaseFolder => 'Unified Base Directory';
+  @override
+  String get welcomeDownloadsAnimeFolder => 'Anime Downloads Folder';
+  @override
+  String get welcomeDownloadsMangaFolder => 'Manga Downloads Folder';
+  @override
+  String get welcomeDownloadsShowsFolder => 'Shows & Movies Downloads Folder';
+  @override
+  String get welcomeDownloadsSubfoldersHint => 'Automatic subfolders:';
+  @override
+  String get welcomeDownloadsOpenFolder => 'Open in file manager';
   @override
   String get welcomeDownloadsBrowse => 'Browse folder';
   @override

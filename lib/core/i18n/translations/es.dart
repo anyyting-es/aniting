@@ -1433,9 +1433,25 @@ class SpanishTranslations implements AppTranslations {
   @override
   String get welcomeExtensionsEmptyHint => 'Podrás explorar e instalar extensiones desde la tienda en cualquier momento.';
   @override
+  String get welcomeSourceRepository => 'Repositorio';
+  @override
+  String get welcomeSourceRepositoryDesc => 'Catálogo de fuentes';
+  @override
+  String get welcomeSourceIndividual => 'Extensión Individual';
+  @override
+  String get welcomeSourceIndividualDesc => 'Instalación directa';
+  @override
+  String get welcomeSourceIndividualEmptyHint => 'Introduce el enlace a un manifest.json para inspeccionar e instalar la fuente';
+  @override
   String get welcomeStepSections => 'Módulos de Contenido';
   @override
   String get welcomeSectionsPrompt => 'Elige qué módulos deseas habilitar en tu navegación';
+  @override
+  String get welcomeAnimeSubtitle => 'Búsqueda avanzada, temporadas, géneros, calendario y catálogo completo';
+  @override
+  String get welcomeMangaSubtitle => 'Lector de manga, capítulos, biblioteca y lecturas sin conexión';
+  @override
+  String get welcomeShowsSubtitle => 'Series de TV, películas y biblioteca multimedia (también incluye anime)';
   @override
   String get welcomeStepDebrid => 'Servicio Debrid';
   @override
@@ -1443,9 +1459,23 @@ class SpanishTranslations implements AppTranslations {
   @override
   String get welcomeStepDownloads => 'Descargas y Almacenamiento';
   @override
-  String get welcomeDownloadsPrompt => 'Configura dónde guardar tus animes y mangas descargados';
+  String get welcomeDownloadsPrompt => 'Configura dónde guardar tus animes, mangas y series descargados';
   @override
-  String get welcomeDownloadsUnifiedDesc => 'Mantener todos los archivos de anime y manga en una carpeta unificada';
+  String get welcomeDownloadsUnifiedDesc => 'Mantener todos los módulos activos bajo una única carpeta base unificada';
+  @override
+  String get welcomeDownloadsUnifiedTitle => 'Almacenamiento Unificado';
+  @override
+  String get welcomeDownloadsBaseFolder => 'Carpeta Base Unificada';
+  @override
+  String get welcomeDownloadsAnimeFolder => 'Carpeta de Descargas de Anime';
+  @override
+  String get welcomeDownloadsMangaFolder => 'Carpeta de Descargas de Manga';
+  @override
+  String get welcomeDownloadsShowsFolder => 'Carpeta de Descargas de Series y Películas';
+  @override
+  String get welcomeDownloadsSubfoldersHint => 'Subcarpetas automáticas:';
+  @override
+  String get welcomeDownloadsOpenFolder => 'Abrir en el gestor de archivos';
   @override
   String get welcomeDownloadsBrowse => 'Explorar carpeta';
   @override

@@ -125,17 +125,12 @@ const List<String> kJapaneseFontFallbacks = [
 ];
 
 final List<AppFontOption> kAvailableFonts = [
-  const AppFontOption(
-    id: 'system',
-    displayName: 'Sistema',
-    description: 'Tipografía predeterminada del dispositivo',
-  ),
   AppFontOption(
-    id: 'inter',
-    displayName: 'Inter',
-    description: 'Moderna, limpia y de máxima legibilidad web/desktop',
-    textThemeBuilder: (t) => GoogleFonts.interTextTheme(t),
-    textStyleBuilder: GoogleFonts.inter,
+    id: 'outfit',
+    displayName: 'Outfit',
+    description: 'Contemporánea, refinada y minimalista',
+    textThemeBuilder: (t) => GoogleFonts.outfitTextTheme(t),
+    textStyleBuilder: GoogleFonts.outfit,
   ),
   AppFontOption(
     id: 'poppins',
@@ -145,11 +140,11 @@ final List<AppFontOption> kAvailableFonts = [
     textStyleBuilder: GoogleFonts.poppins,
   ),
   AppFontOption(
-    id: 'outfit',
-    displayName: 'Outfit',
-    description: 'Contemporánea, refinada y minimalista',
-    textThemeBuilder: (t) => GoogleFonts.outfitTextTheme(t),
-    textStyleBuilder: GoogleFonts.outfit,
+    id: 'inter',
+    displayName: 'Inter',
+    description: 'Moderna, limpia y de máxima legibilidad web/desktop',
+    textThemeBuilder: (t) => GoogleFonts.interTextTheme(t),
+    textStyleBuilder: GoogleFonts.inter,
   ),
   AppFontOption(
     id: 'rubik',
@@ -172,6 +167,11 @@ final List<AppFontOption> kAvailableFonts = [
     textThemeBuilder: (t) => GoogleFonts.jetBrainsMonoTextTheme(t),
     textStyleBuilder: GoogleFonts.jetBrainsMono,
   ),
+  const AppFontOption(
+    id: 'system',
+    displayName: 'Sistema',
+    description: 'Tipografía predeterminada del dispositivo',
+  ),
 ];
 
 Color? parseHexColor(String? hexString) => tryParseHex(hexString);
@@ -191,7 +191,7 @@ class ThemeSettings {
     this.themeMode = AppThemeMode.dark,
     this.isOled = true,
     this.customAccentIndex,
-    this.fontId = 'system',
+    this.fontId = 'outfit',
     this.animeDynamicTheme = true,
     this.paletteId = AppPalettes.oledBlackId,
     this.borderRadius = 10.0,
@@ -278,7 +278,8 @@ class ThemeNotifier extends Notifier<ThemeSettings> {
       final customAccent = (rawAccent != null && rawAccent >= 0 && rawAccent < kMaterialAccents.length)
           ? rawAccent
           : null;
-      final font = cached.getString(_keyFontId) ?? 'system';
+      final savedFont = cached.getString(_keyFontId);
+      final font = (savedFont == null || savedFont == 'system') ? 'outfit' : savedFont;
       final animeDynamic = cached.getBool(_keyAnimeDynamicTheme) ?? true;
       final palette = cached.getString(_keyPaletteId) ?? _defaultPaletteId();
       final radius = cached.getDouble(_keyBorderRadius) ?? 10.0;
@@ -297,6 +298,7 @@ class ThemeNotifier extends Notifier<ThemeSettings> {
     _loadFromPrefs();
     return ThemeSettings(
       isOled: true,
+      fontId: 'outfit',
       paletteId: _defaultPaletteId(),
     );
   }
@@ -317,7 +319,8 @@ class ThemeNotifier extends Notifier<ThemeSettings> {
     final customAccent = (rawAccent != null && rawAccent >= 0 && rawAccent < kMaterialAccents.length)
         ? rawAccent
         : null;
-    final font = prefs.getString(_keyFontId) ?? 'system';
+    final savedFont = prefs.getString(_keyFontId);
+    final font = (savedFont == null || savedFont == 'system') ? 'outfit' : savedFont;
     final animeDynamic = prefs.getBool(_keyAnimeDynamicTheme) ?? true;
     final palette = prefs.getString(_keyPaletteId) ?? _defaultPaletteId();
     final radius = prefs.getDouble(_keyBorderRadius) ?? 10.0;
@@ -420,7 +423,7 @@ class AppThemeBuilder {
     Color? seedColor,
     required bool isDark,
     bool isOled = false,
-    String fontId = 'system',
+    String fontId = 'outfit',
     Color? customAccent,
     double borderRadius = 10.0,
   }) {

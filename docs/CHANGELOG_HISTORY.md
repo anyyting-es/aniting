@@ -5,6 +5,18 @@
 > - **NEVER** include microscopic, tedious, or trivial implementation details that end users do not care about (e.g., do **NOT** write: *"Eliminado el brillo fosforescente del indicador deslizante"*, *"Pestañas de los 7 días visibles en frame 0"*, *"Ajustado padding a 4px"*, *"Cambiado color del dot"*).
 > - **ALWAYS** summarize improvements at a high, user-facing level with clear, direct bullet points (e.g., *"Mejoras de UI y navegación en el calendario de emisión"*, *"Nueva pantalla y gestión de estado sin conexión"*, *"Optimizaciones en la caché de seguir viendo"*).
 > - Keep it punchy, professional, and easy to skim.
+## 7.71. Rediseño del Asistente de Bienvenida e Instalador Oficial de Windows (2026-10-17)
+- **Rediseño Completo del Onboarding y Bienvenida**:
+  - Unificación visual con contenedores Liquid Glass (`GlassCard`) y estética minimalista sin recuadros redundantes.
+  - Navegación fluida por pasos con animaciones elásticas y transiciones suaves en selección de rutas de almacenamiento.
+  - Selección optimizada de extensiones con filtro de idioma inteligente, instalación directa y avisos flotantes compactos.
+- **Instalador Oficial para Windows**:
+  - Script automatizado de Inno Setup 6 y empaquetado para distribución en arquitectura x64 con accesos directos e integración de sistema.
+- **Verificación Completa**:
+  - 0 incidencias en `flutter analyze lib/` y compilación verificada en Android y Windows.
+
+---
+
 ## 7.70. Integración de Servicios Debrid (Real-Debrid, TorBox y Más) (2026-10-16)
 - **Soporte Nativo de Servicios Debrid**:
   - Incorporada compatibilidad completa con proveedores Debrid líderes (Real-Debrid, TorBox, AllDebrid, Debrid-Link y Premiumize).

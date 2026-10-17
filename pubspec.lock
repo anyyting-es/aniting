@@ -249,10 +249,10 @@ packages:
     dependency: "direct main"
     description:
       name: g1455
-      sha256: d47a970372527faa44d79f70b1ee9426e8ff48bded4d8069360c595683027df6
+      sha256: "4d00d6e096ee126de13142f240793c4586febc661349228e810006e9eb7d4932"
       url: "https://pub.dev"
     source: hosted
-    version: "0.1.4"
+    version: "0.2.0"
   gap:
     dependency: "direct main"
     description:

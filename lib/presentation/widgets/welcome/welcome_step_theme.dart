@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:g1455/g1455.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:material_3_expressive/material_3_expressive.dart';
 
 import '../../../core/i18n/i18n_provider.dart';
 import '../../../core/icons/app_icons.dart';
+import '../../../core/preferences/glass_theme_provider.dart';
 import '../../../core/theme/app_palette.dart';
 import '../../../core/theme/app_theme_colors.dart';
 import '../../../core/theme/theme_provider.dart';
@@ -35,24 +38,39 @@ class _WelcomeStepThemeState extends ConsumerState<WelcomeStepTheme> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // ─── Header: Icon + Title ───
           Row(
             children: [
-              Icon(AppIcons.theme(iconPack), size: 24, color: theme.colorScheme.primary),
-              const SizedBox(width: 8),
+              GlassCard(
+                borderRadius: BorderRadius.circular(14),
+                padding: const EdgeInsets.all(10),
+                child: Icon(
+                  AppIcons.theme(iconPack),
+                  size: 22,
+                  color: theme.colorScheme.primary,
+                ),
+              ),
+              const SizedBox(width: 14),
               Text(
                 l10n.welcomeStepTheme,
-                style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: -0.3,
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 22),
 
           // 1. THEME SELECTION (Dark, Light, OLED)
           Text(
             l10n.themeMode,
-            style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.1,
+            ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           Row(
             children: [
               _buildVisualThemeCard(
@@ -101,23 +119,29 @@ class _WelcomeStepThemeState extends ConsumerState<WelcomeStepTheme> {
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 22),
 
           // 2. ACCENT COLOR SELECTOR
           Text(
             l10n.accentColor,
-            style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.1,
+            ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           _buildAccentColorPicker(themeSettings, themeNotifier, iconPack, colors, l10n),
-          const SizedBox(height: 20),
+          const SizedBox(height: 22),
 
           // 3. ICON PACK SELECTOR
           Text(
             l10n.iconPack,
-            style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.1,
+            ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           Row(
             children: [
               Expanded(
@@ -153,6 +177,108 @@ class _WelcomeStepThemeState extends ConsumerState<WelcomeStepTheme> {
               ),
             ],
           ),
+          const SizedBox(height: 22),
+
+          // 4. TIPOGRAFÍA / FONT SELECTOR
+          Text(
+            l10n.fontStyle,
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.1,
+            ),
+          ),
+          const SizedBox(height: 10),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: kAvailableFonts.map((font) {
+                final isSelected = themeSettings.fontId == font.id;
+                final fontStyle = font.textStyleBuilder != null
+                    ? font.textStyleBuilder!()
+                    : const TextStyle();
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: InkWell(
+                    onTap: () => themeNotifier.setFontFamily(font.id),
+                    borderRadius: BorderRadius.circular(16),
+                    child: GlassCard(
+                      borderRadius: BorderRadius.circular(16),
+                      padding: EdgeInsets.zero,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? colors.accent.withValues(alpha: 0.18)
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: isSelected ? colors.accent : Colors.transparent,
+                            width: 1.6,
+                          ),
+                        ),
+                        child: Text(
+                          font.localizedDisplayName(l10n),
+                          style: fontStyle.copyWith(
+                            fontSize: 13,
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                            color: isSelected ? colors.accent : colors.textPrimary,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // 5. LIQUID GLASS EFFECTS TOGGLE (g1455)
+          GlassCard(
+            borderRadius: BorderRadius.circular(16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                Icon(
+                  LucideIcons.sparkles,
+                  size: 20,
+                  color: colors.accent,
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.glassEffectSettingTitle,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        l10n.glassEffectSettingSubtitle,
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          height: 1.3,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                M3ESwitch(
+                  value: ref.watch(glassEffectsEnabledProvider),
+                  onChanged: (val) {
+                    ref.read(glassEffectsEnabledProvider.notifier).setEnabled(val);
+                  },
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -171,70 +297,73 @@ class _WelcomeStepThemeState extends ConsumerState<WelcomeStepTheme> {
     return Expanded(
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.all(7),
+          duration: const Duration(milliseconds: 220),
           decoration: BoxDecoration(
-            color: isSelected
-                ? colors.accent.withValues(alpha: 0.12)
-                : colors.surfaceElevated.withValues(alpha: 0.35),
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isSelected
-                  ? colors.accent
-                  : colors.border.withValues(alpha: 0.45),
-              width: isSelected ? 1.8 : 1.0,
+              color: isSelected ? colors.accent.withValues(alpha: 0.8) : Colors.transparent,
+              width: 1.5,
             ),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Mini graphical window mockup
-              Container(
-                height: 58,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: isSelected
-                        ? colors.accent.withValues(alpha: 0.35)
-                        : colors.border.withValues(alpha: 0.3),
-                    width: 1,
-                  ),
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: _buildThemeGraphic(mode, isOled, iconPack, colors, isSelected),
-              ),
-              const SizedBox(height: 7),
-              // Mode label + indicator
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    isOled
-                        ? AppIcons.tv(iconPack)
-                        : (mode == AppThemeMode.dark
-                            ? AppIcons.darkMode(iconPack)
-                            : AppIcons.lightMode(iconPack)),
-                    size: 13,
-                    color: isSelected ? colors.accent : theme.colorScheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: 5),
-                  Flexible(
-                    child: Text(
-                      label,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                        color: isSelected ? colors.accent : theme.colorScheme.onSurface,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+          child: GlassCard(
+            borderRadius: BorderRadius.circular(15),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+            finish: isSelected
+                ? (theme.brightness == Brightness.dark ? GlassFinish.regularDark : GlassFinish.regularLight).copyWith(
+                    tint: colors.accent.withValues(alpha: 0.16),
+                  )
+                : null,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Mini graphical window mockup
+                Container(
+                  height: 58,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isSelected
+                          ? colors.accent.withValues(alpha: 0.35)
+                          : colors.border.withValues(alpha: 0.3),
+                      width: 1,
                     ),
                   ),
-                ],
-              ),
-            ],
+                  clipBehavior: Clip.antiAlias,
+                  child: _buildThemeGraphic(mode, isOled, iconPack, colors, isSelected),
+                ),
+                const SizedBox(height: 8),
+                // Mode label + indicator
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      isOled
+                          ? AppIcons.tv(iconPack)
+                          : (mode == AppThemeMode.dark
+                              ? AppIcons.darkMode(iconPack)
+                              : AppIcons.lightMode(iconPack)),
+                      size: 13,
+                      color: isSelected ? colors.accent : theme.colorScheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: 5),
+                    Flexible(
+                      child: Text(
+                        label,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                          color: isSelected ? colors.accent : theme.colorScheme.onSurface,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -352,51 +481,57 @@ class _WelcomeStepThemeState extends ConsumerState<WelcomeStepTheme> {
     required AppThemeColors colors,
     required VoidCallback onTap,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(16),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        duration: const Duration(milliseconds: 220),
         decoration: BoxDecoration(
-          color: isSelected
-              ? colors.accent.withValues(alpha: 0.12)
-              : colors.surfaceElevated.withValues(alpha: 0.40),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? colors.accent : colors.border.withValues(alpha: 0.45),
-            width: 1.8,
+            color: isSelected ? colors.accent.withValues(alpha: 0.8) : Colors.transparent,
+            width: 1.5,
           ),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                      color: isSelected ? colors.accent : colors.textPrimary,
+        child: GlassCard(
+          borderRadius: BorderRadius.circular(15),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          finish: isSelected
+              ? (isDark ? GlassFinish.regularDark : GlassFinish.regularLight).copyWith(
+                  tint: colors.accent.withValues(alpha: 0.16),
+                )
+              : null,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                        color: isSelected ? colors.accent : colors.textPrimary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-                if (isSelected)
-                  Icon(AppIcons.checkCircle(iconPack), color: colors.accent, size: 16),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: icons
-                  .map((ic) => Icon(ic, size: 18, color: isSelected ? colors.accent : colors.textSecondary))
-                  .toList(),
-            ),
-          ],
+                  if (isSelected)
+                    Icon(AppIcons.checkCircle(iconPack), color: colors.accent, size: 16),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: icons
+                    .map((ic) => Icon(ic, size: 18, color: isSelected ? colors.accent : colors.textSecondary))
+                    .toList(),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -409,10 +544,13 @@ class _WelcomeStepThemeState extends ConsumerState<WelcomeStepTheme> {
     AppThemeColors colors,
     AppTranslations l10n,
   ) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: [
+    return GlassCard(
+      borderRadius: BorderRadius.circular(22),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
           // Theme default accent
           Tooltip(
             message: l10n.themeAccentDefault,
@@ -431,14 +569,6 @@ class _WelcomeStepThemeState extends ConsumerState<WelcomeStepTheme> {
                     color: themeSettings.customAccentIndex == null ? colors.textPrimary : Colors.transparent,
                     width: 2.5,
                   ),
-                  boxShadow: themeSettings.customAccentIndex == null
-                      ? [
-                          BoxShadow(
-                            color: themeSettings.currentPalette.accent.withValues(alpha: 0.5),
-                            blurRadius: 8,
-                          ),
-                        ]
-                      : null,
                 ),
                 child: Center(
                   child: Icon(
@@ -474,14 +604,6 @@ class _WelcomeStepThemeState extends ConsumerState<WelcomeStepTheme> {
                       color: isSelected ? colors.textPrimary : Colors.transparent,
                       width: 2.5,
                     ),
-                    boxShadow: isSelected
-                        ? [
-                            BoxShadow(
-                              color: item.color.withValues(alpha: 0.5),
-                              blurRadius: 8,
-                            ),
-                          ]
-                        : null,
                   ),
                   child: isSelected
                       ? Center(
@@ -498,6 +620,7 @@ class _WelcomeStepThemeState extends ConsumerState<WelcomeStepTheme> {
           }),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 }
