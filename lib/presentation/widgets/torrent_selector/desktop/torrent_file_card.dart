@@ -11,6 +11,8 @@ class TorrentFileCard extends ConsumerStatefulWidget {
   final VoidCallback onTap;
   final VoidCallback? onDownload;
   final VoidCallback? onExternalPlayer;
+  final VoidCallback? onDebridStream;
+  final VoidCallback? onDebridDownload;
 
   const TorrentFileCard({
     super.key,
@@ -19,6 +21,8 @@ class TorrentFileCard extends ConsumerStatefulWidget {
     required this.onTap,
     this.onDownload,
     this.onExternalPlayer,
+    this.onDebridStream,
+    this.onDebridDownload,
   });
 
   @override
@@ -153,6 +157,35 @@ class _TorrentFileCardState extends ConsumerState<TorrentFileCard> {
                               const SizedBox(width: 6),
                               Icon(AppIcons.star(iconPack), size: 14, color: Colors.amber),
                             ],
+                            if (torrent.isDebridCached) ...[
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.amber.withValues(alpha: 0.18),
+                                  borderRadius: BorderRadius.circular(5),
+                                  border: Border.all(
+                                    color: Colors.amber.withValues(alpha: 0.6),
+                                    width: 0.8,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.bolt_rounded, size: 12, color: Colors.amber),
+                                    const SizedBox(width: 2),
+                                    Text(
+                                      l10n.debridCachedBadge,
+                                      style: const TextStyle(
+                                        fontSize: 9.5,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.amber,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                             const Spacer(),
                             if (widget.isStarting)
                               const SizedBox(
@@ -246,6 +279,32 @@ class _TorrentFileCardState extends ConsumerState<TorrentFileCard> {
                                   fontSize: 11,
                                   color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
                                 ),
+                              ),
+                            ],
+                            const Spacer(),
+                            if (widget.onDebridStream != null) ...[
+                              IconButton(
+                                icon: const Icon(Icons.bolt_rounded, size: 18, color: Colors.amber),
+                                tooltip: l10n.streamWithDebrid,
+                                onPressed: widget.isStarting ? null : widget.onDebridStream,
+                                visualDensity: VisualDensity.compact,
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                              ),
+                              const SizedBox(width: 8),
+                            ],
+                            if (widget.onDownload != null) ...[
+                              IconButton(
+                                icon: Icon(
+                                  AppIcons.download(iconPack),
+                                  size: 16,
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                                tooltip: l10n.downloadEpisode,
+                                onPressed: widget.isStarting ? null : widget.onDownload,
+                                visualDensity: VisualDensity.compact,
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
                               ),
                             ],
                           ],
@@ -449,11 +508,70 @@ class _TorrentFileCardState extends ConsumerState<TorrentFileCard> {
                                     ],
                                   ),
                                 ],
+                                if (torrent.isDebridCached) ...[
+                                  _buildBullet(theme),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: Colors.amber.withValues(alpha: 0.18),
+                                      borderRadius: BorderRadius.circular(6),
+                                      border: Border.all(
+                                        color: Colors.amber.withValues(alpha: 0.6),
+                                        width: 0.8,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(Icons.bolt_rounded, size: 13, color: Colors.amber),
+                                        const SizedBox(width: 3),
+                                        Text(
+                                          l10n.debridCachedBadge,
+                                          style: const TextStyle(
+                                            fontSize: 10.5,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.amber,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ],
                             ),
                           ],
                         ),
                       ),
+
+                      // Actions: Download & Debrid Stream
+                      if (widget.onDebridStream != null || widget.onDownload != null) ...[
+                        const SizedBox(width: 8),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (widget.onDebridStream != null) ...[
+                              IconButton(
+                                icon: const Icon(Icons.bolt_rounded, size: 20, color: Colors.amber),
+                                tooltip: l10n.streamWithDebrid,
+                                onPressed: widget.isStarting ? null : widget.onDebridStream,
+                                visualDensity: VisualDensity.compact,
+                              ),
+                            ],
+                            if (widget.onDownload != null) ...[
+                              IconButton(
+                                icon: Icon(
+                                  AppIcons.download(iconPack),
+                                  size: 18,
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                                tooltip: l10n.downloadEpisode,
+                                onPressed: widget.isStarting ? null : widget.onDownload,
+                                visualDensity: VisualDensity.compact,
+                              ),
+                            ],
+                          ],
+                        ),
+                      ],
                     ],
                   ),
                 ),

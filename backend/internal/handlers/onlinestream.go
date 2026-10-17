@@ -3,6 +3,7 @@ package handlers
 import (
 	"errors"
 	"seanime/internal/api/anilist"
+	hibikeonlinestream "seanime/internal/extension/hibike/onlinestream"
 	"seanime/internal/onlinestream"
 
 	"github.com/labstack/echo/v4"
@@ -75,12 +76,58 @@ func (h *Handler) HandleGetOnlineStreamEpisodeSource(c echo.Context) error {
 		Provider      string `json:"provider"`
 		Dubbed        bool   `json:"dubbed"`
 		Refresh       bool   `json:"refresh,omitempty"`
+
+		// TMDB (movies / series).
+		// When TmdbId is set, the media is resolved from TMDB instead of AniList,
+		// and the request is routed to a provider that supports TMDB.
+		TmdbId       int    `json:"tmdbId,omitempty"`
+		MediaType    string `json:"mediaType,omitempty"` // "tv" or "movie"
+		Title        string `json:"title,omitempty"`
+		EnglishTitle string `json:"englishTitle,omitempty"`
+		Year         int    `json:"year,omitempty"`
+		Season       int    `json:"season,omitempty"`
 	}
 
 	var b body
 	if err := c.Bind(&b); err != nil {
 		return h.RespondWithError(c, err)
 	}
+
+	// +---------------------+
+	// |        TMDB         |
+	// +---------------------+
+
+	if b.TmdbId > 0 {
+		media := &hibikeonlinestream.Media{
+			TmdbId:      b.TmdbId,
+			MediaType:   b.MediaType,
+			Season:      b.Season,
+			RomajiTitle: b.Title,
+			Status:      "FINISHED",
+			Format:      "TV",
+		}
+		if b.EnglishTitle != "" {
+			en := b.EnglishTitle
+			media.EnglishTitle = &en
+		}
+		if b.Year > 0 {
+			media.StartDate = &hibikeonlinestream.FuzzyDate{Year: b.Year}
+		}
+		if b.MediaType == "movie" {
+			media.Format = "MOVIE"
+		}
+
+		sources, err := h.App.OnlinestreamRepository.GetTmdbEpisodeSources(
+			c.Request().Context(), b.Provider, media, b.EpisodeNumber, b.Dubbed, b.Refresh)
+		if err != nil {
+			return h.RespondWithError(c, err)
+		}
+		return h.RespondWithData(c, sources)
+	}
+
+	// +---------------------+
+	// |        AniList      |
+	// +---------------------+
 
 	// Get media
 	// This is cached

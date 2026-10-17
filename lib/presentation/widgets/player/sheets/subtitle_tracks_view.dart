@@ -28,12 +28,21 @@ class SubtitleTracksView extends ConsumerWidget {
         selectedTrackId == 'no' ||
         selectedTrackId == 'none';
 
+    final isDark = theme.brightness == Brightness.dark;
+    final dividerColor = isDark
+        ? Colors.white.withValues(alpha: 0.08)
+        : Colors.black.withValues(alpha: 0.06);
+
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF151518),
+        color: isDark
+            ? Colors.white.withValues(alpha: 0.05)
+            : Colors.black.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.08),
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.09)
+              : Colors.black.withValues(alpha: 0.08),
           width: 1,
         ),
       ),
@@ -55,15 +64,14 @@ class SubtitleTracksView extends ConsumerWidget {
                       Icon(
                         AppIcons.subtitlesOff(iconPack),
                         size: 18,
-                        color: isNoneSelected ? primaryColor : Colors.white60,
+                        color: isNoneSelected ? primaryColor : theme.colorScheme.onSurfaceVariant,
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           l10n.disableSubtitles,
                           style: TextStyle(
-                            color:
-                                isNoneSelected ? Colors.white : Colors.white70,
+                            color: isNoneSelected ? theme.colorScheme.primary : theme.colorScheme.onSurface,
                             fontWeight: isNoneSelected
                                 ? FontWeight.w600
                                 : FontWeight.normal,
@@ -79,7 +87,7 @@ class SubtitleTracksView extends ConsumerWidget {
               ),
             ),
 
-            if (tracks.isNotEmpty) const Divider(color: Colors.white10, height: 1),
+            if (tracks.isNotEmpty) Divider(color: dividerColor, height: 1),
 
             if (tracks.isEmpty)
               Padding(
@@ -87,7 +95,7 @@ class SubtitleTracksView extends ConsumerWidget {
                 child: Center(
                   child: Text(
                     l10n.noSubtitleTracks,
-                    style: const TextStyle(color: Colors.white54, fontSize: 12),
+                    style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12),
                     textAlign: TextAlign.center,
                   ),
                 ),
@@ -101,7 +109,7 @@ class SubtitleTracksView extends ConsumerWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     if (index > 0)
-                      const Divider(color: Colors.white10, height: 1),
+                      Divider(color: dividerColor, height: 1),
                     Material(
                       color: Colors.transparent,
                       child: InkWell(
@@ -114,7 +122,7 @@ class SubtitleTracksView extends ConsumerWidget {
                               Icon(
                                 AppIcons.subtitles(iconPack),
                                 size: 18,
-                                color: isSelected ? primaryColor : Colors.white60,
+                                color: isSelected ? primaryColor : theme.colorScheme.onSurfaceVariant,
                               ),
                               const SizedBox(width: 12),
                               Expanded(
@@ -126,8 +134,8 @@ class SubtitleTracksView extends ConsumerWidget {
                                       track.title,
                                       style: TextStyle(
                                         color: isSelected
-                                            ? Colors.white
-                                            : Colors.white70,
+                                            ? theme.colorScheme.primary
+                                            : theme.colorScheme.onSurface,
                                         fontWeight: isSelected
                                             ? FontWeight.w600
                                             : FontWeight.normal,
@@ -142,7 +150,7 @@ class SubtitleTracksView extends ConsumerWidget {
                                           style: TextStyle(
                                             color: isSelected
                                                 ? primaryColor
-                                                : Colors.white38,
+                                                : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
                                             fontSize: 10,
                                             fontWeight: FontWeight.w600,
                                           ),

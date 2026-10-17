@@ -6,6 +6,7 @@ class OnlinestreamProvider {
   final String lang;
   final List<String> episodeServers;
   final bool supportsDub;
+  final bool supportsTmdb;
 
   const OnlinestreamProvider({
     required this.id,
@@ -13,6 +14,7 @@ class OnlinestreamProvider {
     this.lang = 'multi',
     this.episodeServers = const [],
     this.supportsDub = false,
+    this.supportsTmdb = false,
   });
 
   factory OnlinestreamProvider.fromJson(Map<String, dynamic> json) {
@@ -25,6 +27,7 @@ class OnlinestreamProvider {
               .toList() ??
           const [],
       supportsDub: json['supportsDub'] as bool? ?? false,
+      supportsTmdb: json['supportsTmdb'] as bool? ?? false,
     );
   }
 }

@@ -406,7 +406,7 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
             context: context,
             showGrabber: true,
             constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(context).size.height * 0.90,
+              maxHeight: MediaQuery.of(context).size.height * 0.60,
             ),
             builder: (ctx) => TorrentSelectorSheet(
               mediaId: widget.mediaId,

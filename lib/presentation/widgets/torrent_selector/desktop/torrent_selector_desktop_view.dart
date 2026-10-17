@@ -40,6 +40,8 @@ class TorrentSelectorDesktopView extends ConsumerWidget {
   final void Function(TorrentItem) onTorrentTap;
   final void Function(TorrentItem) onDownloadTorrent;
   final void Function(TorrentItem) onExternalPlayer;
+  final void Function(TorrentItem)? onDebridStream;
+  final void Function(TorrentItem)? onDebridDownload;
   final VoidCallback onClose;
 
   const TorrentSelectorDesktopView({
@@ -74,6 +76,8 @@ class TorrentSelectorDesktopView extends ConsumerWidget {
     required this.onTorrentTap,
     required this.onDownloadTorrent,
     required this.onExternalPlayer,
+    this.onDebridStream,
+    this.onDebridDownload,
     required this.onClose,
   });
 
@@ -430,6 +434,8 @@ class TorrentSelectorDesktopView extends ConsumerWidget {
           onTap: () => onTorrentTap(torrent),
           onDownload: () => onDownloadTorrent(torrent),
           onExternalPlayer: () => onExternalPlayer(torrent),
+          onDebridStream: onDebridStream != null ? () => onDebridStream!(torrent) : null,
+          onDebridDownload: onDebridDownload != null ? () => onDebridDownload!(torrent) : null,
         );
       },
     );

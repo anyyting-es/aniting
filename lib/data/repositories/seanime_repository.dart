@@ -17,6 +17,7 @@ import 'package:seanime_app/data/models/onlinestream_models.dart';
 import 'package:seanime_app/data/models/server_status.dart';
 import 'package:seanime_app/data/models/torrent_file_preview.dart';
 import 'package:seanime_app/data/models/torrent_models.dart';
+import 'package:seanime_app/data/models/debrid_models.dart';
 import 'package:seanime_app/core/storage/app_storage_paths.dart';
 import 'package:seanime_app/data/models/local_file_item.dart';
 import 'package:seanime_app/data/models/show_local_file_item.dart';
@@ -2694,17 +2695,38 @@ class SeanimeRepository {
     String? title,
     bool dubbed = false,
     bool refresh = false,
+    bool isTmdb = false,
+    String? tmdbMediaType,
+    int? tmdbSeason,
+    String? tmdbEnglishTitle,
+    int? tmdbYear,
   }) async {
     try {
+      final body = <String, dynamic>{
+        'mediaId': mediaId,
+        'episodeNumber': episodeNumber,
+        'provider': provider,
+        'dubbed': dubbed,
+        'refresh': refresh,
+      };
+      if (isTmdb) {
+        // Route to a TMDB-capable onlinestream provider (movie / series).
+        body['tmdbId'] = mediaId;
+        body['mediaType'] = tmdbMediaType ?? 'tv';
+        body['title'] = title ?? '';
+        if (tmdbEnglishTitle != null && tmdbEnglishTitle.trim().isNotEmpty) {
+          body['englishTitle'] = tmdbEnglishTitle;
+        }
+        if (tmdbYear != null && tmdbYear > 0) {
+          body['year'] = tmdbYear;
+        }
+        if (tmdbSeason != null && tmdbSeason > 0) {
+          body['season'] = tmdbSeason;
+        }
+      }
       final response = await _apiClient.post(
         ApiEndpoints.onlinestreamEpisodeSource,
-        data: {
-          'mediaId': mediaId,
-          'episodeNumber': episodeNumber,
-          'provider': provider,
-          'dubbed': dubbed,
-          'refresh': refresh,
-        },
+        data: body,
         options: Options(receiveTimeout: const Duration(seconds: 45)),
       );
       if (response.statusCode == 200 && response.data != null) {
@@ -2966,21 +2988,41 @@ class SeanimeRepository {
               ? data['data'] as Map<String, dynamic>
               : data;
         }
+        final instantAvailMap = root?['debridInstantAvailability'] as Map<String, dynamic>?;
+        
+        List<TorrentItem> parseItems(List<dynamic> items) {
+          return items.whereType<Map<String, dynamic>>().map((json) {
+            final item = TorrentItem.fromJson(json);
+            if (instantAvailMap != null && item.infoHash != null && item.infoHash!.isNotEmpty) {
+              final hashLower = item.infoHash!.toLowerCase();
+              final hashUpper = item.infoHash!.toUpperCase();
+              final cachedData = (instantAvailMap[hashLower] ?? instantAvailMap[hashUpper] ?? instantAvailMap[item.infoHash]) as Map<String, dynamic>?;
+              if (cachedData != null) {
+                final cachedFiles = cachedData['cachedFiles'] as Map<String, dynamic>?;
+                final isCached = cachedFiles != null && cachedFiles.isNotEmpty;
+                final fileIds = cachedFiles?.keys.toList() ?? <String>[];
+                return item.copyWith(
+                  isDebridCached: isCached,
+                  debridCachedFileIds: fileIds,
+                );
+              }
+            }
+            return item;
+          }).toList();
+        }
+
         final list = root?['torrents'] as List?;
         if (list != null && list.isNotEmpty) {
-          return list
-              .whereType<Map<String, dynamic>>()
-              .map(TorrentItem.fromJson)
-              .toList();
+          return parseItems(list);
         }
         final previews = root?['previews'] as List?;
         if (previews != null && previews.isNotEmpty) {
-          return previews
+          final torrentJsons = previews
               .whereType<Map<String, dynamic>>()
               .map((p) => p['torrent'])
               .whereType<Map<String, dynamic>>()
-              .map(TorrentItem.fromJson)
               .toList();
+          return parseItems(torrentJsons);
         }
       }
     } catch (e) {
@@ -3971,6 +4013,184 @@ class SeanimeRepository {
       debugPrint('Error getting server downloaded chapter list: $e');
     }
     return [];
+  }
+
+  // ==========================================
+  // DEBRID SERVICES
+  // ==========================================
+
+  Future<DebridSettings?> getDebridSettings() async {
+    try {
+      final response = await _apiClient.get(ApiEndpoints.debridSettings);
+      if (response.statusCode == 200 && response.data != null) {
+        final d = response.data;
+        final map = d is Map<String, dynamic> && d['data'] is Map<String, dynamic>
+            ? d['data'] as Map<String, dynamic>
+            : (d is Map<String, dynamic> ? d : null);
+        if (map != null) {
+          return DebridSettings.fromJson(map);
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching debrid settings: $e');
+    }
+    return null;
+  }
+
+  Future<bool> updateDebridSettings(DebridSettings settings) async {
+    try {
+      final response = await _apiClient.patch(
+        ApiEndpoints.debridSettings,
+        data: {'settings': settings.toJson()},
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error updating debrid settings: $e');
+      return false;
+    }
+  }
+
+  Future<List<DebridTorrentItem>> getDebridTorrents() async {
+    try {
+      final response = await _apiClient.get(ApiEndpoints.debridTorrents);
+      if (response.statusCode == 200 && response.data != null) {
+        final d = response.data;
+        final list = d is Map<String, dynamic> && d['data'] is List
+            ? d['data'] as List
+            : (d is List ? d : []);
+        return list
+            .whereType<Map<String, dynamic>>()
+            .map(DebridTorrentItem.fromJson)
+            .toList();
+      }
+    } catch (e) {
+      debugPrint('Error fetching debrid torrents: $e');
+    }
+    return [];
+  }
+
+  Future<bool> addDebridTorrent({
+    required TorrentItem torrent,
+    required int mediaId,
+    required String destination,
+  }) async {
+    try {
+      final response = await _apiClient.post(
+        ApiEndpoints.debridTorrents,
+        data: {
+          'torrents': [torrent.toJson()],
+          'media': {'id': mediaId},
+          'destination': destination,
+        },
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error adding debrid torrent: $e');
+      return false;
+    }
+  }
+
+  Future<bool> downloadDebridTorrent({
+    required DebridTorrentItem torrentItem,
+    required String destination,
+  }) async {
+    try {
+      final response = await _apiClient.post(
+        ApiEndpoints.debridTorrentsDownload,
+        data: {
+          'torrentItem': torrentItem.toJson(),
+          'destination': destination,
+        },
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error starting debrid download: $e');
+      return false;
+    }
+  }
+
+  Future<bool> cancelDebridDownload(String itemId) async {
+    try {
+      final response = await _apiClient.post(
+        ApiEndpoints.debridTorrentsCancel,
+        data: {'itemID': itemId},
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error cancelling debrid download: $e');
+      return false;
+    }
+  }
+
+  Future<bool> deleteDebridTorrent(DebridTorrentItem torrentItem) async {
+    try {
+      final response = await _apiClient.delete(
+        ApiEndpoints.debridTorrent,
+        data: {'torrentItem': torrentItem.toJson()},
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error deleting debrid torrent: $e');
+      return false;
+    }
+  }
+
+  Future<bool> startDebridStream({
+    required int mediaId,
+    required int episodeNumber,
+    required TorrentItem torrent,
+    String? aniDbEpisode,
+    String? fileId,
+    int? fileIndex,
+    bool autoSelect = false,
+    String playbackType = 'nativeplayer',
+    String? clientId,
+  }) async {
+    try {
+      final payload = <String, dynamic>{
+        'mediaId': mediaId,
+        'episodeNumber': episodeNumber,
+        'aniDBEpisode': aniDbEpisode ?? episodeNumber.toString(),
+        'torrent': torrent.toJson(),
+        'autoSelect': autoSelect,
+        'playbackType': playbackType,
+      };
+      if (fileId != null && fileId.isNotEmpty) {
+        payload['fileId'] = fileId;
+      }
+      if (fileIndex != null) {
+        payload['fileIndex'] = fileIndex;
+      }
+      if (clientId != null && clientId.isNotEmpty) {
+        payload['clientId'] = clientId;
+      }
+
+      final response = await _apiClient.post(
+        ApiEndpoints.debridStreamStart,
+        data: payload,
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error starting debrid stream: $e');
+      return false;
+    }
+  }
+
+  Future<bool> cancelDebridStream({bool removeTorrent = false}) async {
+    try {
+      final response = await _apiClient.post(
+        ApiEndpoints.debridStreamCancel,
+        data: {
+          'options': {
+            'removeTorrent': removeTorrent,
+          },
+        },
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error cancelling debrid stream: $e');
+      return false;
+    }
   }
 }
 

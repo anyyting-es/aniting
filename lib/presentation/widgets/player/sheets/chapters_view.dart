@@ -42,13 +42,22 @@ class ChaptersView extends ConsumerWidget {
     final l10n = ref.watch(translationsProvider);
     final iconPack = ref.watch(iconPackProvider);
 
+    final isDark = theme.brightness == Brightness.dark;
+    final dividerColor = isDark
+        ? Colors.white.withValues(alpha: 0.08)
+        : Colors.black.withValues(alpha: 0.06);
+
     if (chapters.isEmpty) {
       return Container(
         decoration: BoxDecoration(
-          color: const Color(0xFF151518),
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.05)
+              : Colors.black.withValues(alpha: 0.04),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: Colors.white.withValues(alpha: 0.08),
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.09)
+                : Colors.black.withValues(alpha: 0.08),
             width: 1,
           ),
         ),
@@ -56,7 +65,7 @@ class ChaptersView extends ConsumerWidget {
         child: Center(
           child: Text(
             l10n.noChapters,
-            style: const TextStyle(color: Colors.white54, fontSize: 12),
+            style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12),
             textAlign: TextAlign.center,
           ),
         ),
@@ -65,10 +74,14 @@ class ChaptersView extends ConsumerWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF151518),
+        color: isDark
+            ? Colors.white.withValues(alpha: 0.05)
+            : Colors.black.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.08),
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.09)
+              : Colors.black.withValues(alpha: 0.08),
           width: 1,
         ),
       ),
@@ -79,7 +92,7 @@ class ChaptersView extends ConsumerWidget {
           physics: const NeverScrollableScrollPhysics(),
           itemCount: chapters.length,
           separatorBuilder: (context, index) =>
-              const Divider(color: Colors.white10, height: 1),
+              Divider(color: dividerColor, height: 1),
           itemBuilder: (context, index) {
             final chapter = chapters[index];
             final isCurrent = currentPosition >= chapter.start &&
@@ -97,14 +110,14 @@ class ChaptersView extends ConsumerWidget {
                       Icon(
                         _getChapterIcon(chapter, iconPack),
                         size: 18,
-                        color: isCurrent ? primaryColor : Colors.white60,
+                        color: isCurrent ? primaryColor : theme.colorScheme.onSurfaceVariant,
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           chapter.title,
                           style: TextStyle(
-                            color: isCurrent ? Colors.white : Colors.white70,
+                            color: isCurrent ? theme.colorScheme.primary : theme.colorScheme.onSurface,
                             fontWeight: isCurrent
                                 ? FontWeight.w600
                                 : FontWeight.normal,
@@ -117,14 +130,14 @@ class ChaptersView extends ConsumerWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 7, vertical: 3),
                         decoration: BoxDecoration(
-                          color: (isCurrent ? primaryColor : Colors.white)
+                          color: (isCurrent ? primaryColor : theme.colorScheme.onSurface)
                               .withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
                           _formatDuration(chapter.start),
                           style: TextStyle(
-                            color: isCurrent ? primaryColor : Colors.white60,
+                            color: isCurrent ? primaryColor : theme.colorScheme.onSurfaceVariant,
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
                             fontFamily: 'monospace',

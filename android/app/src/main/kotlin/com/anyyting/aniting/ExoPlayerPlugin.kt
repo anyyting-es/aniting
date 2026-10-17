@@ -203,8 +203,21 @@ class ExoPlayerPlugin :
             }
             "seek" -> {
                 val positionMs = (call.argument<Number>("positionMs"))?.toLong() ?: 0L
-                exoPlayer?.seekTo(positionMs)
+                val player = exoPlayer
+                player?.seekTo(positionMs)
                 assSubtitleView?.invalidateSubtitles()
+                // Immediately emit position update to eliminate lag between seek and poll
+                val actualPos = player?.currentPosition ?: positionMs
+                val dur = player?.duration ?: 0L
+                val buf = player?.bufferedPosition ?: actualPos
+                eventSink?.success(
+                    mapOf(
+                        "event" to "position",
+                        "position" to actualPos,
+                        "duration" to (if (dur > 0) dur else 0L),
+                        "buffer" to buf
+                    )
+                )
                 result.success(null)
             }
             "getChapters" -> {
@@ -458,7 +471,7 @@ class ExoPlayerPlugin :
             .setTrackSelector(selector)
             .setRenderersFactory(renderersFactory)
             .setLoadControl(loadControl)
-            .setSeekParameters(SeekParameters.CLOSEST_SYNC)
+            .setSeekParameters(SeekParameters.EXACT)
             .setAudioAttributes(
                 AudioAttributes.Builder()
                     .setContentType(C.AUDIO_CONTENT_TYPE_MOVIE)
@@ -730,6 +743,9 @@ class ExoPlayerPlugin :
                 builder.clearOverridesOfType(C.TRACK_TYPE_TEXT)
                 sel.parameters = builder.build()
             }
+
+            val isLocalFile = uri.scheme == "file" || uri.scheme == "content" || uriString.startsWith("/")
+            player.setSeekParameters(if (isLocalFile) SeekParameters.CLOSEST_SYNC else SeekParameters.EXACT)
 
             surfaceContainer?.visibility = View.VISIBLE
             player.setMediaSource(finalSource)

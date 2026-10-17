@@ -192,6 +192,61 @@ class AppStoragePaths {
     }
   }
 
+  /// Escanea y encuentra archivos de video descargados directamente en disco para una serie,
+  /// asociando cada número de episodio con su ruta absoluta real (incluso si se reinstala la app).
+  static Future<Map<int, String>> findDownloadedEpisodesOnDisk({
+    required int mediaId,
+    String? animeTitle,
+  }) async {
+    final result = <int, String>{};
+    try {
+      final animeRoot = await getAnimeDownloadsDirectory();
+      if (!await animeRoot.exists()) return result;
+
+      // Buscar carpetas candidatas: "Kusuriya no Hitorigoto", "161645", etc.
+      final cleanTitle = animeTitle?.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_').trim().toLowerCase();
+      final targetDirs = <Directory>[];
+
+      for (final entity in animeRoot.listSync()) {
+        if (entity is Directory) {
+          final seg = entity.uri.pathSegments.where((s) => s.isNotEmpty).lastOrNull ?? '';
+          final segLower = seg.toLowerCase();
+          if (seg == '$mediaId' || seg.startsWith('${mediaId}_')) {
+            targetDirs.add(entity);
+          } else if (cleanTitle != null && cleanTitle.isNotEmpty) {
+            if (segLower == cleanTitle || segLower.contains(cleanTitle) || cleanTitle.contains(segLower)) {
+              targetDirs.add(entity);
+            }
+          }
+        }
+      }
+
+      final epRegex = RegExp(r'[-_\s](\d{1,4})(?:\.[a-zA-Z0-9]+)?$');
+      for (final dir in targetDirs) {
+        if (!dir.existsSync()) continue;
+        for (final file in dir.listSync()) {
+          if (file is File) {
+            final fileName = file.uri.pathSegments.where((s) => s.isNotEmpty).lastOrNull ?? '';
+            final ext = fileName.toLowerCase();
+            if (ext.endsWith('.mp4') || ext.endsWith('.mkv') || ext.endsWith('.webm')) {
+              final nameWithoutExt = fileName.replaceAll(RegExp(r'\.[a-zA-Z0-9]+$'), '');
+              final match = epRegex.firstMatch(nameWithoutExt);
+              if (match != null) {
+                final epNum = int.tryParse(match.group(1)!);
+                if (epNum != null && epNum > 0) {
+                  result[epNum] = file.path;
+                }
+              }
+            }
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('[AppStoragePaths] Error finding downloaded episodes on disk: $e');
+    }
+    return result;
+  }
+
   static String _sanitizeFolderName(String name) {
     return name
         .toLowerCase()

@@ -15,6 +15,7 @@ import 'package:seanime_app/presentation/screens/settings/subpages/personalizaci
 import 'package:seanime_app/presentation/screens/settings/subpages/player_settings_screen.dart';
 import 'package:seanime_app/presentation/screens/settings/subpages/server_settings_screen.dart';
 import 'package:seanime_app/presentation/screens/settings/subpages/streaming_settings_screen.dart';
+import 'package:seanime_app/presentation/screens/settings/subpages/debrid_settings_screen.dart';
 import 'package:seanime_app/presentation/screens/settings/subpages/theme_settings_screen.dart';
 import 'package:seanime_app/presentation/screens/settings/widgets/pixel_settings_widgets.dart';
 import 'package:seanime_app/presentation/screens/welcome_screen.dart';
@@ -28,6 +29,7 @@ enum SettingsCategory {
   player,
   manga,
   streaming,
+  debrid,
   downloadManager,
   downloads,
   localLibrary,
@@ -70,6 +72,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         return const MangaSettingsScreen(isEmbedded: true);
       case SettingsCategory.streaming:
         return const StreamingSettingsScreen(isEmbedded: true);
+      case SettingsCategory.debrid:
+        return const DebridSettingsScreen(isEmbedded: true);
       case SettingsCategory.downloadManager:
         return const DownloadManagerScreen(isEmbedded: true);
       case SettingsCategory.downloads:
@@ -106,6 +110,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           break;
         case SettingsCategory.streaming:
           page = const StreamingSettingsScreen();
+          break;
+        case SettingsCategory.debrid:
+          page = const DebridSettingsScreen();
           break;
         case SettingsCategory.downloadManager:
           page = const DownloadManagerScreen();
@@ -267,6 +274,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               title: l10n.streamingSources,
               isSelected: isWideScreen && _selectedCategory == SettingsCategory.streaming,
               onTap: () => _onSelectCategory(SettingsCategory.streaming, isWideScreen),
+            ),
+            SettingsTile(
+              icon: Icons.bolt_rounded,
+              title: l10n.debridSettings,
+              isSelected: isWideScreen && _selectedCategory == SettingsCategory.debrid,
+              onTap: () => _onSelectCategory(SettingsCategory.debrid, isWideScreen),
             ),
             SettingsTile(
               icon: Icons.manage_history_rounded,

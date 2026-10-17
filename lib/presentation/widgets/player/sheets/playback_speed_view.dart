@@ -23,12 +23,18 @@ class PlaybackSpeedView extends ConsumerWidget {
     final l10n = ref.watch(translationsProvider);
     final iconPack = ref.watch(iconPackProvider);
 
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF151518),
+        color: isDark
+            ? Colors.white.withValues(alpha: 0.05)
+            : Colors.black.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.08),
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.09)
+              : Colors.black.withValues(alpha: 0.08),
           width: 1,
         ),
       ),
@@ -38,8 +44,12 @@ class PlaybackSpeedView extends ConsumerWidget {
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: speeds.length,
-          separatorBuilder: (context, index) =>
-              const Divider(color: Colors.white10, height: 1),
+          separatorBuilder: (context, index) => Divider(
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.08)
+                : Colors.black.withValues(alpha: 0.06),
+            height: 1,
+          ),
           itemBuilder: (context, index) {
             final speed = speeds[index];
             final isSelected = (speed - currentSpeed).abs() < 0.05;
@@ -55,14 +65,14 @@ class PlaybackSpeedView extends ConsumerWidget {
                       Icon(
                         AppIcons.speed(iconPack),
                         size: 18,
-                        color: isSelected ? primaryColor : Colors.white60,
+                        color: isSelected ? primaryColor : theme.colorScheme.onSurfaceVariant,
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           speed == 1.0 ? '1.0x (${l10n.normal})' : '${speed}x',
                           style: TextStyle(
-                            color: isSelected ? Colors.white : Colors.white70,
+                            color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurface,
                             fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                             fontSize: 13,
                           ),

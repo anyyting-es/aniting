@@ -5,6 +5,128 @@
 > - **NEVER** include microscopic, tedious, or trivial implementation details that end users do not care about (e.g., do **NOT** write: *"Eliminado el brillo fosforescente del indicador deslizante"*, *"Pestañas de los 7 días visibles en frame 0"*, *"Ajustado padding a 4px"*, *"Cambiado color del dot"*).
 > - **ALWAYS** summarize improvements at a high, user-facing level with clear, direct bullet points (e.g., *"Mejoras de UI y navegación en el calendario de emisión"*, *"Nueva pantalla y gestión de estado sin conexión"*, *"Optimizaciones en la caché de seguir viendo"*).
 > - Keep it punchy, professional, and easy to skim.
+## 7.70. Integración de Servicios Debrid (Real-Debrid, TorBox y Más) (2026-10-16)
+- **Soporte Nativo de Servicios Debrid**:
+  - Incorporada compatibilidad completa con proveedores Debrid líderes (Real-Debrid, TorBox, AllDebrid, Debrid-Link y Premiumize).
+  - Nueva pantalla de configuración en Ajustes con diseño Pixel UI y Liquid Glass para habilitar el servicio, seleccionar proveedor y gestionar tokens de forma segura.
+- **Disponibilidad Instantánea y Streaming en Caché (Instant Debrid)**:
+  - En la búsqueda y selector de torrents (móvil y escritorio), la aplicación ahora identifica en tiempo real los torrents y archivos que ya están en caché en los servidores Debrid con una insignia visual distintiva (`⚡ Instant Debrid`).
+  - Acción directa de reproducción instantánea (`⚡ Stream Debrid`) y descarga de alta velocidad sin depender de disponibilidad de seeders P2P.
+- **Verificación Completa**:
+  - 0 incidencias en `flutter analyze lib/` y código optimizado.
+
+---
+
+## 7.69. Alineación Perfecta y Eliminación de Gap en Barra de Búsqueda (2026-10-16)
+- **Eliminación del Gap Inicial en Barra de Tiempo (`TimelineSlider`)**:
+  - Implementado `_FullWidthRoundedRectSliderTrackShape` para que el slider táctil pinte su recorrido de borde a borde (0px de offset inicial), eliminando la hendidura o espacio vacío que dejaba la sombra al principio.
+  - La pista de fondo gris, la barra de buffer dinámico y los marcadores de capítulos de MKV ahora se alinean con precisión 1:1 desde el píxel 0.
+- **Detección Automática de Episodios Locales desde Almacenamiento**:
+  - Incorporado escaneo persistente en disco (`findDownloadedEpisodesOnDisk`) para que los episodios descargados se reconozcan de inmediato tras reinstalaciones o inicios sin conexión.
+- **Verificación Completa**:
+  - 0 incidencias en `flutter analyze lib/` y tests unitarios verificados.
+
+---
+
+## 7.68. Optimización Dinámica de Búsqueda (Seek) y Resiliencia en Descargas (2026-10-16)
+- **Parámetros de Búsqueda Adaptativos (Archivos Locales vs Red)**:
+  - En archivos locales descargados, ExoPlayer ahora aplica `SeekParameters.CLOSEST_SYNC`, permitiendo saltos instantáneos al fotograma clave más cercano sin saturar el decodificador de hardware con decodificaciones intermedias pesadas.
+  - En transmisiones de red, se mantiene `SeekParameters.EXACT` para sincronización precisa muestra por muestra entre audio y video.
+- **Emisión Precisa de Posición Real Post-Seek**:
+  - Tras cualquier operación de búsqueda, ExoPlayer lee y reporta inmediatamente su posición interna real (`currentPosition`) a la UI de Flutter, garantizando alineación visual perfecta de la barra de tiempo.
+- **Resiliencia en el Motor de Descargas HLS**:
+  - La preparación y limpieza de archivos de salida existentes antes de escribir la descarga ahora previene excepciones por bloqueos de descriptores o inexistencia del archivo.
+- **Verificación Completa**:
+  - 0 incidencias en `flutter analyze lib/` y tests unitarios verificados.
+
+---
+
+## 7.67. Sincronización Exacta de Audio/Video en Barra de Búsqueda (Seek) (2026-10-16)
+- **Sincronización Exacta Audio/Video (`SeekParameters.EXACT`)**:
+  - En ExoPlayer, se cambió el modo de búsqueda a `SeekParameters.EXACT` para que tanto el decodificador de audio como el de video busquen exactamente la misma muestra temporal, eliminando la congelación del video mientras espera al stream de audio.
+- **Despacho Inmediato de Posición Post-Seek**:
+  - Tras invocar `seekTo()`, la posición resultante se emite de inmediato al canal de eventos de Flutter, sincronizando la barra de reproducción y subtítulos en el frame 0 sin retraso por el polling periódico.
+- **Tolerancia y Continuidad en la Barra de Tiempo**:
+  - En `TimelineSlider`, se ajustó la tolerancia del target optimista para que la barra se mueva fluidamente con la nueva posición del reproductor sin quedarse clavada en la posición pulsada.
+- **Verificación Completa**:
+  - 0 incidencias en `flutter analyze lib/` y 253/253 tests aprobados exitosamente.
+
+---
+
+## 7.66. Optimización de Rendimiento en Descargas Online (2026-10-16)
+- **Desencriptación Criptográfica en Segundo Plano (`compute`)**:
+  - En fuentes online HLS cifradas (`AES-128-CBC`), la computación criptográfica de cada fragmento ahora se ejecuta en un hilo de trabajo aislado en segundo plano mediante `compute()`, eliminando los bloqueos del hilo principal de la interfaz.
+- **Throttling de Notificaciones de Progreso**:
+  - Se limitó la emisión de progreso a la UI a intervalos de 500 ms (o al finalizar), evitando decenas de reconstrucciones completas por segundo del árbol de widgets.
+- **Caché de Verificación de Archivos Locales en Disco**:
+  - Eliminadas las comprobaciones síncronas recurrentes `File.existsSync()` en el `build` de la vista de episodios mediante caché en memoria de archivos validados.
+- **Verificación Completa**:
+  - 0 incidencias en `flutter analyze lib/` y 253/253 tests aprobados exitosamente.
+
+---
+
+## 7.65. Modales con Liquid Glass, Desplazamiento Fluido y Altura Adaptativa (2026-10-16)
+- **Modal de Torrents con Altura Adaptativa y Cierre Deslizable**:
+  - El selector de torrents móvil ahora se abre por defecto al ~60% de la pantalla en lugar de pantalla completa fija.
+  - La lista de resultados se ajusta automáticamente a su altura intrínseca cuando hay pocas opciones (`shrinkWrap`), evitando espacios vacíos innecesarios.
+  - Soporte fluido para deslizamiento interactivo hacia abajo (*drag-to-dismiss*) para cerrar el modal cómodamente.
+- **Detalles de Episodio con Liquid Glass (`g1455`)**:
+  - `showEpisodeDetailModal` migrado a `showGlassSheet` con acabados refractivos adaptativos (`GlassFinish.regularDark` / `regularLight`).
+  - Eliminado el contenedor opaco convencional y barra de agarre redundante, integrando la barra nativa del sistema de cristal líquido.
+- **Verificación Completa**:
+  - 0 incidencias en `flutter analyze lib/` y 253/253 tests aprobados exitosamente.
+
+---
+
+## 7.64. Menú de Opciones del Reproductor con Liquid Glass Refractivo (2026-10-16)
+- **Contenedores Liquid Glass sobre Video (`g1455`)**:
+  - `PlayerSettingsSheet` implementa `GlassCard` con refracción translúcida tanto en la hoja inferior móvil como en el drawer lateral de escritorio y pantalla completa.
+  - El fondo se fusiona elegantemente con el contenido del video en reproducción mediante desenfoque gaussiano y tinte translúcido según el tema activo (`0.65` en tema oscuro y `0.75` en claro).
+- **Tarjetas y Vistas Internas Translúcidas y Adaptativas**:
+  - Se eliminaron los fondos oscuros rígidos (`#151518`) en las subvistas de capítulos, pistas de audio, subtítulos, sincronización, relación de aspecto, shaders GLSL, métricas de torrents y estilos de subtítulos.
+  - Elementos y divisores integrados armónicamente con `Theme.of(context).colorScheme`.
+- **Verificación Completa**:
+  - 0 incidencias en `flutter analyze lib/` y 253/253 tests aprobados.
+
+---
+
+## 7.63. Adaptación Completa del Selector de Fuentes a Modo Claro (2026-10-16)
+- **Adaptabilidad a Modo Claro y Oscuro en Selector de Fuentes**:
+  - `PlayerSourceSelectorSheet` ahora selecciona dinámicamente el acabado de cristal `GlassFinish.regularDark` o `GlassFinish.regularLight`.
+  - Integración completa con la paleta de colores de Material 3 (`colorScheme.onSurface`, `onSurfaceVariant`, `surface` y `primary`), garantizando contraste, legibilidad y coherencia visual sin importar el tema activo.
+  - Los chips de proveedores, el interruptor DUB/SUB, los botones de acción y los elementos de servidor/calidad ajustan sus fondos translúcidos y bordes para evitar textos invisibles o superficies sobreexpuestas.
+- **Verificación Completa**:
+  - 0 incidencias en `flutter analyze lib/` y 253/253 tests aprobados.
+
+---
+
+## 7.62. Corrección Integral de Eliminación en Lote, Miniaturas y Transiciones Suaves (2026-10-16)
+- **Eliminación en Lote e Invalidation Completa**:
+  - Eliminación en lote ahora desvincula el historial de descargas (`downloadHistoryProvider`), borra los archivos físicos en disco e invalida la colección para retirar inmediatamente los indicadores de episodio descargado.
+  - Sincronización bidireccional y verificación física de archivos en los mapas de episodios de escritorio y móvil.
+- **Botones y Selectores con Estilo Liquid Glass**:
+  - Reemplazo de los chips y botones genéricos de Material Design por controles translúcidos con micro-bordes esmerilados y un botón principal de descarga estilo cristal fluido con glow suave.
+- **Selector de Fuentes y Servidores Simplificado y Limpio**:
+  - Píldoras de selección de servidores con disponibilidad (`Servidor (X/Total)`) y tipografía limpia integrada con el tema visual.
+- **Miniatura Compacta en Diálogo de Descarga Individual**:
+  - Ajuste a formato compacto de altura contenida para la vista previa junto al título del episodio, dejando accesibles los controles y calidades de video.
+- **Verificación Completa**:
+  - 0 incidencias en `flutter analyze lib/` y 253/253 tests aprobados exitosamente.
+
+---
+
+## 7.61. Servidores de Video Multicolores y Respeto a Navegación del Sistema Android (2026-10-16)
+- **Servidores de Video con Colores Distintivos y Fallback Automático**:
+  - En la descarga por lote de la fuente seleccionada, los colores distintivos ahora representan las diferentes opciones y servidores de video (Streamwish, Filemoon, Mega, etc.).
+  - Selector superior de servidor preferido con contador de disponibilidad (`X/Total`) y asignación inteligente con respaldo a servidores alternativos con su color respectivo.
+  - Selector por episodio para cambiar con un toque el servidor y calidad específica respetando los colores del sistema.
+- **Ajuste de Insets de Navegación del Sistema en Android**:
+  - Tanto el modal de descarga individual como el de descarga por lote ahora respetan las áreas seguras (`SafeArea` y `useSafeArea`), adaptando el padding inferior dinámicamente según la navegación de 3 botones o la barra de gestos para que el botón de descarga nunca quede oculto.
+- **Verificación Completa**:
+  - 0 incidencias en `flutter analyze lib/` y 253/253 tests aprobados.
+
+---
+
 ## 7.60. Alertas Liquid Glass, Gestión de Descargas Online y Transiciones Suaves (2026-10-16)
 - **Alertas Nativas Liquid Glass (`g1455`)**:
   - Implementación de diálogos de confirmación de eliminación con `GlassAlert` y `GlassAlertAction` en escritorio, móvil, biblioteca local y descargas por lote.

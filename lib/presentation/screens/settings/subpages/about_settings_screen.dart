@@ -10,6 +10,7 @@ import 'package:seanime_app/presentation/screens/settings/widgets/pixel_subpage_
 import 'package:seanime_app/data/services/app_update_service.dart';
 import 'package:seanime_app/presentation/providers/app_update_provider.dart';
 import 'package:seanime_app/presentation/widgets/update/app_update_dialog.dart';
+import 'package:seanime_app/presentation/widgets/whats_new/whats_new_dialog.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -349,6 +350,27 @@ class AboutSettingsScreen extends ConsumerWidget {
                         );
                       }
                     },
+            ),
+            const PixelTileDivider(),
+            ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              leading: _LeadingIcon(icon: AppIcons.sparkles(iconPack)),
+              title: Text(
+                l10n.whatsNewDialog,
+                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+              ),
+              subtitle: Text(
+                l10n.whatsNewDialogDesc,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              trailing: Icon(
+                AppIcons.chevronRight(iconPack),
+                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+              ),
+              onTap: () => WhatsNewDialog.show(context),
             ),
             const PixelTileDivider(),
             ListTile(

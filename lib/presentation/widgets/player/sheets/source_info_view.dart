@@ -28,14 +28,23 @@ class SourceInfoView extends ConsumerWidget {
     final isLocal = fullUrl.startsWith('/') || sourceLabel.startsWith('Local');
     final isTorrent = sourceLabel.startsWith('Torrent');
 
+    final isDark = theme.brightness == Brightness.dark;
+    final dividerColor = isDark
+        ? Colors.white.withValues(alpha: 0.08)
+        : Colors.black.withValues(alpha: 0.06);
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFF151518),
+        color: isDark
+            ? Colors.white.withValues(alpha: 0.05)
+            : Colors.black.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.08),
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.09)
+              : Colors.black.withValues(alpha: 0.08),
           width: 1,
         ),
       ),
@@ -78,7 +87,7 @@ class SourceInfoView extends ConsumerWidget {
                               ? l10n.sourceFile
                               : l10n.sourceStream,
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.5),
+                        color: theme.colorScheme.onSurfaceVariant,
                         fontSize: 11,
                         fontWeight: FontWeight.w500,
                       ),
@@ -86,8 +95,8 @@ class SourceInfoView extends ConsumerWidget {
                     const SizedBox(height: 2),
                     Text(
                       sourceLabel,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: theme.colorScheme.onSurface,
                         fontSize: 13,
                         fontWeight: FontWeight.bold,
                       ),
@@ -101,7 +110,7 @@ class SourceInfoView extends ConsumerWidget {
           ),
 
           const SizedBox(height: 14),
-          const Divider(color: Colors.white10, height: 1),
+          Divider(color: dividerColor, height: 1),
           const SizedBox(height: 12),
 
           // Engine row
@@ -111,7 +120,7 @@ class SourceInfoView extends ConsumerWidget {
                 child: Text(
                   '${l10n.playbackEngineLabel}:',
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.6),
+                    color: theme.colorScheme.onSurfaceVariant,
                     fontSize: 12,
                   ),
                 ),
@@ -120,13 +129,15 @@ class SourceInfoView extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.08),
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.08)
+                      : Colors.black.withValues(alpha: 0.06),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
                   isUsingExoPlayer ? 'ExoPlayer' : 'libmpv',
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: theme.colorScheme.onSurface,
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                   ),
@@ -136,14 +147,14 @@ class SourceInfoView extends ConsumerWidget {
           ),
 
           const SizedBox(height: 12),
-          const Divider(color: Colors.white10, height: 1),
+          Divider(color: dividerColor, height: 1),
           const SizedBox(height: 12),
 
           // URL / Link title
           Text(
             isLocal ? '${l10n.filePathLabel}:' : '${l10n.sourceUrlLabel}:',
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.7),
+              color: theme.colorScheme.onSurface,
               fontSize: 12,
               fontWeight: FontWeight.w600,
             ),
@@ -155,17 +166,21 @@ class SourceInfoView extends ConsumerWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: const Color(0xFF1B1B1F),
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.05)
+                  : Colors.black.withValues(alpha: 0.04),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: Colors.white.withValues(alpha: 0.06),
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.08)
+                    : Colors.black.withValues(alpha: 0.06),
                 width: 1,
               ),
             ),
             child: SelectableText(
               fullUrl,
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.9),
+                color: theme.colorScheme.onSurface,
                 fontSize: 11,
                 fontFamily: 'monospace',
                 height: 1.35,

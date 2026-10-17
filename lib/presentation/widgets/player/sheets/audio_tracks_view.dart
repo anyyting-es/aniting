@@ -24,13 +24,19 @@ class AudioTracksView extends ConsumerWidget {
     final l10n = ref.watch(translationsProvider);
     final iconPack = ref.watch(iconPackProvider);
 
+    final isDark = theme.brightness == Brightness.dark;
+
     if (tracks.isEmpty) {
       return Container(
         decoration: BoxDecoration(
-          color: const Color(0xFF151518),
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.05)
+              : Colors.black.withValues(alpha: 0.04),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: Colors.white.withValues(alpha: 0.08),
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.09)
+                : Colors.black.withValues(alpha: 0.08),
             width: 1,
           ),
         ),
@@ -38,7 +44,7 @@ class AudioTracksView extends ConsumerWidget {
         child: Center(
           child: Text(
             l10n.noAudioTracks,
-            style: const TextStyle(color: Colors.white54, fontSize: 12),
+            style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12),
             textAlign: TextAlign.center,
           ),
         ),
@@ -47,10 +53,14 @@ class AudioTracksView extends ConsumerWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF151518),
+        color: isDark
+            ? Colors.white.withValues(alpha: 0.05)
+            : Colors.black.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.08),
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.09)
+              : Colors.black.withValues(alpha: 0.08),
           width: 1,
         ),
       ),
@@ -60,8 +70,12 @@ class AudioTracksView extends ConsumerWidget {
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: tracks.length,
-          separatorBuilder: (context, index) =>
-              const Divider(color: Colors.white10, height: 1),
+          separatorBuilder: (context, index) => Divider(
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.08)
+                : Colors.black.withValues(alpha: 0.06),
+            height: 1,
+          ),
           itemBuilder: (context, index) {
             final track = tracks[index];
             final isSelected = track.id == selectedTrackId;
@@ -77,7 +91,7 @@ class AudioTracksView extends ConsumerWidget {
                       Icon(
                         AppIcons.audio(iconPack),
                         size: 18,
-                        color: isSelected ? primaryColor : Colors.white60,
+                        color: isSelected ? primaryColor : theme.colorScheme.onSurfaceVariant,
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -88,7 +102,7 @@ class AudioTracksView extends ConsumerWidget {
                             Text(
                               track.title,
                               style: TextStyle(
-                                color: isSelected ? Colors.white : Colors.white70,
+                                color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurface,
                                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                                 fontSize: 13,
                               ),

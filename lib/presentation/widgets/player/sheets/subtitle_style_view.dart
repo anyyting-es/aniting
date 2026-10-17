@@ -239,19 +239,27 @@ class SubtitleStyleView extends ConsumerWidget {
     SubtitleStylePreferencesNotifier notifier,
     AppTranslations l10n,
   ) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final percent = (prefs.fontSizeMultiplier * 100).round();
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF151518),
+        color: isDark
+            ? Colors.white.withValues(alpha: 0.05)
+            : Colors.black.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.09)
+              : Colors.black.withValues(alpha: 0.08),
+        ),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: Row(
         children: [
-          Text(l10n.subtitleFontSize, style: const TextStyle(fontSize: 12, color: Colors.white70)),
+          Text(l10n.subtitleFontSize, style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant)),
           const Spacer(),
-          Text('$percent%', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white)),
+          Text('$percent%', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
           Expanded(
             flex: 3,
             child: Slider(
@@ -398,19 +406,28 @@ class SubtitleStyleView extends ConsumerWidget {
     SubtitleStylePreferencesNotifier notifier,
     AppTranslations l10n,
   ) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF151518),
+        color: isDark
+            ? Colors.white.withValues(alpha: 0.05)
+            : Colors.black.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.09)
+              : Colors.black.withValues(alpha: 0.08),
+        ),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: Row(
         children: [
-          Text(l10n.subtitleBorderSize, style: const TextStyle(fontSize: 12, color: Colors.white70)),
+          Text(l10n.subtitleBorderSize, style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant)),
           const Spacer(),
           Text(prefs.borderSize.toStringAsFixed(1),
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white)),
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
           Expanded(
             flex: 3,
             child: Slider(

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:g1455/g1455.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../core/i18n/i18n_provider.dart';
-import '../../../core/icons/app_icons.dart';
-import '../../../core/theme/app_theme_colors.dart';
 
 class WelcomeStepLanguage extends ConsumerWidget {
   final ValueChanged<AppLanguage>? onLanguageChanged;
@@ -16,172 +16,109 @@ class WelcomeStepLanguage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentLang = ref.watch(appLanguageProvider);
-    final iconPack = ref.watch(iconPackProvider);
     final l10n = ref.watch(translationsProvider);
     final theme = Theme.of(context);
-    final colors = context.themeColors;
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+    final langLabel = currentLang == AppLanguage.es ? 'Español' : 'English';
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          const SizedBox(height: 20),
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withValues(alpha: 0.12),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(Icons.language_rounded, size: 42, color: theme.colorScheme.primary),
+          const Spacer(flex: 3),
+
+          // ─── App Logo (Puro flotando sin cajón) ───
+          Image.asset(
+            'assets/icons/logo.png',
+            width: 88,
+            height: 88,
+            fit: BoxFit.contain,
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
+
+          // ─── Bienvenido a Aniting (Limpio con sombra de profundidad) ───
           Text(
             l10n.welcomeTitle,
             textAlign: TextAlign.center,
             style: theme.textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              letterSpacing: -0.5,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.6,
+              shadows: [
+                Shadow(
+                  color: Colors.black.withValues(alpha: 0.65),
+                  blurRadius: 18,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            l10n.welcomeSubtitle,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 14,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: 32),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              l10n.welcomeLanguagePrompt,
-              style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-            ),
-          ),
-          const SizedBox(height: 12),
-          _ChoiceCard(
-            title: 'Español',
-            subtitle: 'Idioma principal para menús y contenido',
-            icon: Icons.translate_rounded,
-            isSelected: currentLang == AppLanguage.es,
-            theme: theme,
-            colors: colors,
-            iconPack: iconPack,
-            onTap: () {
-              ref.read(appLanguageProvider.notifier).setLanguage(AppLanguage.es);
-              onLanguageChanged?.call(AppLanguage.es);
+          const SizedBox(height: 28),
+
+          // ─── Language Dropdown (Flotando con Liquid Glass sutil) ───
+          GlassMenuAnchor(
+            width: 170,
+            items: [
+              GlassMenuItem(
+                label: 'Español',
+                icon: currentLang == AppLanguage.es
+                    ? Icon(Icons.check_circle_rounded, size: 18, color: theme.colorScheme.primary)
+                    : null,
+                onPressed: () {
+                  ref.read(appLanguageProvider.notifier).setLanguage(AppLanguage.es);
+                  onLanguageChanged?.call(AppLanguage.es);
+                },
+              ),
+              GlassMenuItem(
+                label: 'English',
+                icon: currentLang == AppLanguage.en
+                    ? Icon(Icons.check_circle_rounded, size: 18, color: theme.colorScheme.primary)
+                    : null,
+                onPressed: () {
+                  ref.read(appLanguageProvider.notifier).setLanguage(AppLanguage.en);
+                  onLanguageChanged?.call(AppLanguage.en);
+                },
+              ),
+            ],
+            builder: (context, controller) {
+              return GlassButton(
+                onPressed: controller.open,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
+                borderRadius: BorderRadius.circular(20),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 300),
+                      transitionBuilder: (child, animation) => FadeTransition(
+                        opacity: animation,
+                        child: SlideTransition(
+                          position: Tween<Offset>(
+                            begin: const Offset(0.0, 0.25),
+                            end: Offset.zero,
+                          ).animate(animation),
+                          child: child,
+                        ),
+                      ),
+                      child: Text(
+                        langLabel,
+                        key: ValueKey<String>(langLabel),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Icon(LucideIcons.chevronDown, size: 15),
+                  ],
+                ),
+              );
             },
           ),
-          const SizedBox(height: 10),
-          _ChoiceCard(
-            title: 'English',
-            subtitle: 'Primary language for UI and navigation',
-            icon: Icons.language_rounded,
-            isSelected: currentLang == AppLanguage.en,
-            theme: theme,
-            colors: colors,
-            iconPack: iconPack,
-            onTap: () {
-              ref.read(appLanguageProvider.notifier).setLanguage(AppLanguage.en);
-              onLanguageChanged?.call(AppLanguage.en);
-            },
-          ),
+
+          const Spacer(flex: 4),
         ],
-      ),
-    );
-  }
-}
-
-class _ChoiceCard extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final IconData icon;
-  final bool isSelected;
-  final ThemeData theme;
-  final AppThemeColors colors;
-  final AppIconPack iconPack;
-  final VoidCallback onTap;
-
-  const _ChoiceCard({
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-    required this.isSelected,
-    required this.theme,
-    required this.colors,
-    required this.iconPack,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? theme.colorScheme.primary.withValues(alpha: 0.12)
-              : colors.surfaceElevated.withValues(alpha: 0.40),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: isSelected
-                ? theme.colorScheme.primary.withValues(alpha: 0.45)
-                : Colors.transparent,
-            width: 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? theme.colorScheme.primary.withValues(alpha: 0.16)
-                    : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                icon,
-                size: 20,
-                color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                      fontSize: 13.5,
-                      color: isSelected ? theme.colorScheme.primary : null,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (isSelected)
-              Icon(AppIcons.checkCircle(iconPack), color: theme.colorScheme.primary, size: 20)
-            else
-              Icon(AppIcons.radioUnchecked(iconPack), color: colors.border.withValues(alpha: 0.45), size: 18),
-          ],
-        ),
       ),
     );
   }

@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:pointycastle/export.dart';
 
 /// Reason why an HLS stream could not be downloaded.
@@ -121,8 +121,12 @@ class HlsDownloadEngine {
     }
 
     final outFile = File(savePath);
-    if (await outFile.exists()) {
-      await outFile.delete();
+    try {
+      if (await outFile.exists()) {
+        await outFile.delete();
+      }
+    } catch (e) {
+      debugPrint('[HlsDownloadEngine] Note: Could not delete existing output file: $e');
     }
     final ioSink = outFile.openWrite(mode: FileMode.writeOnly);
 
@@ -238,7 +242,17 @@ class HlsDownloadEngine {
       keyCache,
     );
     final iv = key.iv ?? sequenceIv(segment.sequence);
-    return decryptAes128Cbc(bytes, keyBytes, iv);
+    return compute(_decryptSegmentInIsolate, (
+      data: bytes,
+      key: keyBytes,
+      iv: iv,
+    ));
+  }
+
+  static Uint8List _decryptSegmentInIsolate(
+    ({Uint8List data, Uint8List key, Uint8List iv}) params,
+  ) {
+    return decryptAes128Cbc(params.data, params.key, params.iv);
   }
 
   Future<Uint8List> _fetchKey(

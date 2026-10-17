@@ -381,6 +381,82 @@ class _TorrentSelectorDialogState extends ConsumerState<TorrentSelectorDialog> {
     }
   }
 
+  Future<void> _startDebridStream(TorrentItem torrent) async {
+    final l10n = ref.read(translationsProvider);
+    final isOnline = ref.read(serverNotifierProvider).isOnline;
+    if (!isOnline) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.serverNotOnline), behavior: SnackBarBehavior.floating),
+      );
+      return;
+    }
+
+    setState(() => _startingTorrentName = torrent.name);
+    final repo = ref.read(repositoryProvider);
+    final serverManager = ref.read(serverManagerProvider);
+
+    final success = await repo.startDebridStream(
+      mediaId: widget.mediaId,
+      episodeNumber: _currentEpisodeNumber ?? widget.episodeNumber,
+      torrent: torrent,
+      autoSelect: true,
+      playbackType: 'nativeplayer',
+    );
+
+    if (!mounted) return;
+    setState(() => _startingTorrentName = null);
+
+    if (success) {
+      final animeTitle = widget.animeDetails?.title ?? 'Anime';
+      final streamUrl =
+          'http://${serverManager.host}:${serverManager.port}/api/v1/directstream/stream';
+
+      Navigator.of(context).pop(
+        TorrentStreamLaunchInfo(
+          mediaId: widget.mediaId,
+          videoUrl: streamUrl,
+          title: animeTitle,
+          episodeTitle: widget.episodeTitle,
+          episodeNumber: _currentEpisodeNumber ?? widget.episodeNumber,
+          videoSource: '⚡ Debrid • ${torrent.name}',
+          onDispose: () {
+            repo.cancelDebridStream();
+          },
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.failedToStartTorrent),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  Future<void> _downloadDebridTorrent(TorrentItem torrent) async {
+    final l10n = ref.read(translationsProvider);
+    final repo = ref.read(repositoryProvider);
+    final messenger = ScaffoldMessenger.of(context);
+
+    final settings = await repo.getServerSettings();
+    final destination = settings?['library']?['libraryPath'] as String? ?? '';
+    final success = await repo.addDebridTorrent(
+      torrent: torrent,
+      mediaId: widget.mediaId,
+      destination: destination,
+    );
+
+    if (mounted) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(success ? l10n.debridDownloadStarted : l10n.error),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDesktop = !widget.isSheet && MediaQuery.of(context).size.width >= 768;
@@ -438,6 +514,8 @@ class _TorrentSelectorDialogState extends ConsumerState<TorrentSelectorDialog> {
         onExternalPlayer: (t) => isBatchTorrent(t)
             ? _inspectBatchAndStream(t, defaultExternalPlayer: true)
             : _startStream(t, useExternalPlayer: true),
+        onDebridStream: _startDebridStream,
+        onDebridDownload: _downloadDebridTorrent,
         onClose: () => Navigator.of(context).pop(),
       );
     }
@@ -492,6 +570,8 @@ class _TorrentSelectorDialogState extends ConsumerState<TorrentSelectorDialog> {
       onExternalPlayer: (t) => isBatchTorrent(t)
           ? _inspectBatchAndStream(t, defaultExternalPlayer: true)
           : _startStream(t, useExternalPlayer: true),
+      onDebridStream: _startDebridStream,
+      onDebridDownload: _downloadDebridTorrent,
       onClose: () => Navigator.of(context).pop(),
     );
   }

@@ -158,6 +158,8 @@ class OnlineStreamDownloadNotifier extends Notifier<OnlineStreamDownloadState> {
   ) async {
     final taskId = task.id;
 
+    DateTime lastUiUpdate = DateTime.fromMillisecondsSinceEpoch(0);
+
     try {
       await _downloader.download(
         task: task,
@@ -167,6 +169,12 @@ class OnlineStreamDownloadNotifier extends Notifier<OnlineStreamDownloadState> {
           return process;
         },
         onProgress: (progress, bytes, speed) {
+          final now = DateTime.now();
+          final isFinished = progress >= 0.999;
+          final shouldNotifyUi = isFinished || now.difference(lastUiUpdate).inMilliseconds >= 500;
+          if (!shouldNotifyUi) return;
+          lastUiUpdate = now;
+
           final current = state.tasks[taskId];
           if (current != null &&
               current.status == OnlineStreamDownloadStatus.downloading) {

@@ -4,7 +4,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:g1455/g1455.dart';
-import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:seanime_app/core/downloads/online_stream_download_task.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
@@ -55,6 +54,7 @@ Future<void> showOnlineStreamDownloadDialog(
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => OnlineStreamDownloadDialogContent(
         mediaId: mediaId,
@@ -109,10 +109,12 @@ class _OnlineStreamDownloadDialogContentState
   bool _isLoading = false;
   String? _error;
   String? _resolvedSavePath;
+  String? _resolvedThumbnail;
 
   @override
   void initState() {
     super.initState();
+    _resolvedThumbnail = widget.thumbnail;
     _selectedProvider = widget.initialProvider;
     if (widget.preloadedSources != null &&
         widget.preloadedSources!.isNotEmpty) {
@@ -143,6 +145,22 @@ class _OnlineStreamDownloadDialogContentState
         });
       }
     } catch (_) {}
+
+    // Fallback thumbnail if not provided or empty
+    if ((widget.thumbnail == null || widget.thumbnail!.isEmpty) && mounted) {
+      try {
+        final aniZip = await repo.getAniZipData(widget.mediaId);
+        final epThumb = aniZip?.episodes
+            .where((e) => e.episodeNumber == widget.episodeNumber)
+            .firstOrNull
+            ?.image;
+        if (epThumb != null && epThumb.isNotEmpty && mounted) {
+          setState(() {
+            _resolvedThumbnail = epThumb;
+          });
+        }
+      } catch (_) {}
+    }
 
     // Load providers if not provided
     if (_selectedProvider == null) {
@@ -314,13 +332,19 @@ class _OnlineStreamDownloadDialogContentState
 
     final glassEnabled = ref.watch(glassEffectsEnabledProvider);
     final radius = BorderRadius.circular(widget.isSheet ? 24 : 20);
+    final bottomInset = MediaQuery.of(context).padding.bottom;
     return ClipRRect(
       borderRadius: radius,
       child: GlassCard(
         padding: EdgeInsets.zero,
         borderRadius: radius,
         child: Container(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.fromLTRB(
+            20,
+            20,
+            20,
+            widget.isSheet ? (bottomInset > 0 ? bottomInset + 12 : 20) : 20,
+          ),
           decoration: BoxDecoration(
             color: glassEnabled
                 ? (isDark
@@ -363,38 +387,91 @@ class _OnlineStreamDownloadDialogContentState
               ),
             ],
 
-            // Header: Title & Close Button
+            // Header: Screencap/Thumbnail + EP Info + Close Button
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
+                // Thumbnail recuadrito
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: SizedBox(
+                    width: 72,
+                    height: 48,
+                    child: (_resolvedThumbnail != null && _resolvedThumbnail!.isNotEmpty)
+                        ? CachedNetworkImage(
+                            imageUrl: _resolvedThumbnail!,
+                            fit: BoxFit.cover,
+                            memCacheWidth: 200,
+                            errorWidget: (_, _, _) => Container(
+                              color: theme.colorScheme.surfaceContainerHighest,
+                              alignment: Alignment.center,
+                              child: Text(
+                                'EP ${widget.episodeNumber}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ),
+                          )
+                        : Container(
+                            color: theme.colorScheme.surfaceContainerHighest,
+                            alignment: Alignment.center,
+                            child: Text(
+                              'EP ${widget.episodeNumber}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+
+                // Episode info: Prominent EP number + Title
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        l10n.downloadOnlineStream,
-                        style: theme.textTheme.labelMedium?.copyWith(
-                          color: theme.colorScheme.primary,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.5,
-                        ),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          Text(
+                            'EP ${widget.episodeNumber}',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w900,
+                              color: theme.colorScheme.primary,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                          if (widget.episodeTitle.isNotEmpty &&
+                              widget.episodeTitle.toLowerCase() !=
+                                  'episode ${widget.episodeNumber}' &&
+                              widget.episodeTitle.toLowerCase() !=
+                                  'episodio ${widget.episodeNumber}') ...[
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                widget.episodeTitle,
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        widget.episodeTitle.isNotEmpty
-                            ? widget.episodeTitle
-                            : l10n.episodeNumber(widget.episodeNumber),
-                        style: const TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
                         widget.animeTitle,
                         style: TextStyle(
-                          fontSize: 12.5,
+                          fontSize: 12,
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
                         maxLines: 1,
@@ -511,21 +588,6 @@ class _OnlineStreamDownloadDialogContentState
               _buildFailureBanner(theme, l10n, activeTask),
               const SizedBox(height: 12),
             ] else ...[
-              // Preview Thumbnail
-              if (widget.thumbnail != null && widget.thumbnail!.isNotEmpty)
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: AspectRatio(
-                    aspectRatio: 16 / 9,
-                    child: CachedNetworkImage(
-                      imageUrl: widget.thumbnail!,
-                      fit: BoxFit.cover,
-                      memCacheWidth: 640,
-                      errorWidget: (_, _, _) => const SizedBox.shrink(),
-                    ),
-                  ),
-                ),
-              const SizedBox(height: 14),
 
               // Loading sources state
               if (_isLoading) ...[
@@ -595,19 +657,51 @@ class _OnlineStreamDownloadDialogContentState
                     runSpacing: 8,
                     children: _providers.map((prov) {
                       final isSelected = _selectedProvider?.id == prov.id;
-                      return ChoiceChip(
-                        selected: isSelected,
-                        label: Text(prov.name),
-                        onSelected: (selected) {
-                          if (selected) {
-                            setState(() {
-                              _selectedProvider = prov;
-                              _sources = [];
-                              _selectedSource = null;
-                            });
-                            _fetchSources();
-                          }
-                        },
+                      return Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(12),
+                          onTap: () {
+                            if (!isSelected) {
+                              setState(() {
+                                _selectedProvider = prov;
+                                _sources = [];
+                                _selectedSource = null;
+                              });
+                              _fetchSources();
+                            }
+                          },
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 180),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? theme.colorScheme.primary.withValues(alpha: 0.18)
+                                  : (isDark
+                                      ? Colors.white.withValues(alpha: 0.06)
+                                      : Colors.black.withValues(alpha: 0.05)),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: isSelected
+                                    ? theme.colorScheme.primary.withValues(alpha: 0.7)
+                                    : (isDark
+                                        ? Colors.white.withValues(alpha: 0.12)
+                                        : Colors.black.withValues(alpha: 0.08)),
+                                width: isSelected ? 1.4 : 0.8,
+                              ),
+                            ),
+                            child: Text(
+                              prov.name,
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                color: isSelected
+                                    ? theme.colorScheme.primary
+                                    : theme.colorScheme.onSurface,
+                              ),
+                            ),
+                          ),
+                        ),
                       );
                     }).toList(),
                   ),
@@ -629,17 +723,57 @@ class _OnlineStreamDownloadDialogContentState
                   children: _sources.map((src) {
                     final isSelected = _selectedSource == src;
                     final qualityLabel = src.displayLabel;
-                    return FilterChip(
-                      selected: isSelected,
-                      label: Text(qualityLabel),
-                      avatar: src.isHls
-                          ? const Icon(Icons.stream_rounded, size: 14)
-                          : const Icon(Icons.video_file_outlined, size: 14),
-                      onSelected: (selected) {
-                        if (selected) {
+                    return Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        onTap: () {
                           setState(() => _selectedSource = src);
-                        }
-                      },
+                        },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 180),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? theme.colorScheme.primary.withValues(alpha: 0.18)
+                                : (isDark
+                                    ? Colors.white.withValues(alpha: 0.06)
+                                    : Colors.black.withValues(alpha: 0.05)),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isSelected
+                                  ? theme.colorScheme.primary.withValues(alpha: 0.7)
+                                  : (isDark
+                                      ? Colors.white.withValues(alpha: 0.12)
+                                      : Colors.black.withValues(alpha: 0.08)),
+                              width: isSelected ? 1.4 : 0.8,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                src.isHls ? Icons.stream_rounded : Icons.video_file_outlined,
+                                size: 14,
+                                color: isSelected
+                                    ? theme.colorScheme.primary
+                                    : theme.colorScheme.onSurfaceVariant,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                qualityLabel,
+                                style: TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                  color: isSelected
+                                      ? theme.colorScheme.primary
+                                      : theme.colorScheme.onSurface,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     );
                   }).toList(),
                 ),
@@ -698,19 +832,66 @@ class _OnlineStreamDownloadDialogContentState
                   const SizedBox(height: 16),
                 ],
 
-                // Action Buttons
-                SizedBox(
-                  width: double.infinity,
-                  child: M3EButton(
-                    onPressed: _selectedSource != null
-                        ? _onStartDownload
-                        : null,
-                    style: M3EButtonStyle.filled,
-                    icon: Icon(AppIcons.download(iconPack), size: 18),
-                    label: Text(
-                      _selectedSource != null
-                          ? '${l10n.startDownloadAction} (${_selectedSource!.displayLabel})'
-                          : l10n.startDownloadAction,
+                // Download Button (Glass / Fluid styling)
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(16),
+                    onTap: _selectedSource != null ? _onStartDownload : null,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 13),
+                      decoration: BoxDecoration(
+                        color: _selectedSource != null
+                            ? (glassEnabled
+                                ? theme.colorScheme.primary.withValues(alpha: 0.88)
+                                : theme.colorScheme.primary)
+                            : (isDark
+                                ? Colors.white.withValues(alpha: 0.08)
+                                : Colors.black.withValues(alpha: 0.06)),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: _selectedSource != null
+                              ? Colors.white.withValues(alpha: 0.25)
+                              : Colors.transparent,
+                          width: 1.0,
+                        ),
+                        boxShadow: _selectedSource != null
+                            ? [
+                                BoxShadow(
+                                  color: theme.colorScheme.primary.withValues(alpha: 0.35),
+                                  blurRadius: 14,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ]
+                            : null,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            AppIcons.download(iconPack),
+                            size: 18,
+                            color: _selectedSource != null
+                                ? theme.colorScheme.onPrimary
+                                : theme.colorScheme.onSurface.withValues(alpha: 0.38),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            _selectedSource != null
+                                ? '${l10n.startDownloadAction} (${_selectedSource!.displayLabel})'
+                                : l10n.startDownloadAction,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: _selectedSource != null
+                                  ? theme.colorScheme.onPrimary
+                                  : theme.colorScheme.onSurface.withValues(alpha: 0.38),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),

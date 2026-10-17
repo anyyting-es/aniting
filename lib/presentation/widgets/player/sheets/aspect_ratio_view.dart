@@ -21,12 +21,18 @@ class AspectRatioView extends ConsumerWidget {
     final l10n = ref.watch(translationsProvider);
     final iconPack = ref.watch(iconPackProvider);
 
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF151518),
+        color: isDark
+            ? Colors.white.withValues(alpha: 0.05)
+            : Colors.black.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.08),
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.09)
+              : Colors.black.withValues(alpha: 0.08),
           width: 1,
         ),
       ),
@@ -36,8 +42,12 @@ class AspectRatioView extends ConsumerWidget {
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: PlayerFitMode.values.length,
-          separatorBuilder: (context, index) =>
-              const Divider(color: Colors.white10, height: 1),
+          separatorBuilder: (context, index) => Divider(
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.08)
+                : Colors.black.withValues(alpha: 0.06),
+            height: 1,
+          ),
           itemBuilder: (context, index) {
             final mode = PlayerFitMode.values[index];
             final isSelected = mode == currentFitMode;
@@ -52,7 +62,7 @@ class AspectRatioView extends ConsumerWidget {
                     children: [
                       Icon(
                         mode.getIcon(iconPack),
-                        color: isSelected ? primaryColor : Colors.white60,
+                        color: isSelected ? primaryColor : theme.colorScheme.onSurfaceVariant,
                         size: 18,
                       ),
                       const SizedBox(width: 12),
@@ -60,7 +70,7 @@ class AspectRatioView extends ConsumerWidget {
                         child: Text(
                           mode.localizedLabel(l10n),
                           style: TextStyle(
-                            color: isSelected ? Colors.white : Colors.white70,
+                            color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurface,
                             fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                             fontSize: 13,
                           ),

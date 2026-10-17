@@ -57,6 +57,22 @@ class PlayerWindowManager {
           DeviceOrientation.portraitUp,
         ]);
         SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+        try {
+          final themeSettings = ref.read(themeProvider);
+          final isDark = themeSettings.themeMode == AppThemeMode.dark ||
+              (themeSettings.themeMode == AppThemeMode.system &&
+                  WidgetsBinding.instance.platformDispatcher.platformBrightness == Brightness.dark);
+          SystemChrome.setSystemUIOverlayStyle(
+            SystemUiOverlayStyle(
+              statusBarColor: Colors.transparent,
+              statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+              statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+              systemNavigationBarColor: Colors.transparent,
+              systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+              systemNavigationBarDividerColor: Colors.transparent,
+            ),
+          );
+        } catch (_) {}
       }
       if (Platform.isAndroid) {
         try {
@@ -142,6 +158,22 @@ class PlayerWindowManager {
           DeviceOrientation.portraitUp,
         ]);
         SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+        try {
+          final themeSettings = ref.read(themeProvider);
+          final isDark = themeSettings.themeMode == AppThemeMode.dark ||
+              (themeSettings.themeMode == AppThemeMode.system &&
+                  WidgetsBinding.instance.platformDispatcher.platformBrightness == Brightness.dark);
+          SystemChrome.setSystemUIOverlayStyle(
+            SystemUiOverlayStyle(
+              statusBarColor: Colors.transparent,
+              statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+              statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+              systemNavigationBarColor: Colors.transparent,
+              systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+              systemNavigationBarDividerColor: Colors.transparent,
+            ),
+          );
+        } catch (_) {}
       }
 
       Future.delayed(const Duration(milliseconds: 380), () {

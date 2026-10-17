@@ -576,6 +576,12 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get localEpisodes => 'local episodes';
   @override
+  String get all => 'All';
+  @override
+  String get local => 'Local';
+  @override
+  String get unwatched => 'Unwatched';
+  @override
   String get switchToGrid => 'Switch to grid';
   @override
   String get switchToList => 'Switch to list';
@@ -1421,6 +1427,24 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get welcomeExtensionsEmptyHint => 'You can explore and install extensions from the marketplace at any time.';
   @override
+  String get welcomeStepSections => 'Content Modules';
+  @override
+  String get welcomeSectionsPrompt => 'Choose which media modules to enable in your navigation';
+  @override
+  String get welcomeStepDebrid => 'Debrid Service';
+  @override
+  String get welcomeDebridPrompt => 'Connect Real-Debrid, TorBox or AllDebrid for instant streaming';
+  @override
+  String get welcomeStepDownloads => 'Downloads';
+  @override
+  String get welcomeDownloadsPrompt => 'Configure where your downloaded anime and manga are stored';
+  @override
+  String get welcomeDownloadsUnifiedDesc => 'Keep all anime and manga files in a single unified directory';
+  @override
+  String get welcomeDownloadsBrowse => 'Browse folder';
+  @override
+  String get welcomeDownloadsDefault => 'Reset to default';
+  @override
   String get settingsSaved => 'Settings saved successfully';
   @override
   String get searchSettingsHint => 'Search settings...';
@@ -1628,6 +1652,10 @@ class EnglishTranslations implements AppTranslations {
   String latestVersionSnackbar(String version) => 'You are on the latest version (v$version). No new updates.';
   @override
   String get failedCheckUpdateSnackbar => 'Could not check for updates. Check your internet connection.';
+  @override
+  String get whatsNewDialog => "What's New";
+  @override
+  String get whatsNewDialogDesc => 'Check the latest changelog, features, and community links';
   @override
   String get openSourceLicenses => 'Open Source Licenses';
   @override
@@ -2482,11 +2510,50 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get selectPreferredSource => 'Preferred Source';
   @override
+  String get selectPreferredServer => 'Preferred Server';
+  @override
   String get sourceFallbackNotice =>
       'Episodes unavailable in the preferred source will automatically download from an alternative.';
+  @override
+  String get serverFallbackNotice =>
+      'Episodes unavailable on the preferred server will automatically download from an alternative.';
   @override
   String get noSourceAvailable => 'No source';
   @override
   String startDownloadCount(int count) => 'Download $count episodes';
+
+  // Debrid Services
+  @override
+  String get debridSettings => 'Debrid Services';
+  @override
+  String get debridSettingsDesc => 'Configure Real-Debrid, TorBox, and cloud downloading';
+  @override
+  String get enableDebrid => 'Enable Debrid Service';
+  @override
+  String get enableDebridDesc => 'Use high-speed cached streaming and direct downloads';
+  @override
+  String get debridProvider => 'Provider';
+  @override
+  String get debridApiKey => 'API Key / Token';
+  @override
+  String get debridApiKeyHint => 'Paste your Debrid API key';
+  @override
+  String get debridApiKeyDesc => 'Your private token from your Debrid account settings';
+  @override
+  String get debridAutoSelect => 'Auto-select video file';
+  @override
+  String get debridAutoSelectDesc => 'Automatically pick the best matching episode file in the torrent';
+  @override
+  String get debridPreferredResolution => 'Preferred Resolution';
+  @override
+  String get debridCachedBadge => 'Instant Debrid';
+  @override
+  String get streamWithDebrid => 'Stream Debrid';
+  @override
+  String get downloadWithDebrid => 'Download with Debrid';
+  @override
+  String get debridStartingStream => 'Starting Debrid stream...';
+  @override
+  String get debridDownloadStarted => 'Debrid download started';
 }
 

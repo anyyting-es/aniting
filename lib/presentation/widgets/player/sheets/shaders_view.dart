@@ -25,6 +25,11 @@ class ShadersView extends ConsumerWidget {
     final l10n = ref.watch(translationsProvider);
     final iconPack = ref.watch(iconPackProvider);
 
+    final isDark = theme.brightness == Brightness.dark;
+    final dividerColor = isDark
+        ? Colors.white.withValues(alpha: 0.08)
+        : Colors.black.withValues(alpha: 0.06);
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -58,10 +63,14 @@ class ShadersView extends ConsumerWidget {
 
         Container(
           decoration: BoxDecoration(
-            color: const Color(0xFF151518),
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.05)
+                : Colors.black.withValues(alpha: 0.04),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: Colors.white.withValues(alpha: 0.08),
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.09)
+                  : Colors.black.withValues(alpha: 0.08),
               width: 1,
             ),
           ),
@@ -72,7 +81,7 @@ class ShadersView extends ConsumerWidget {
               physics: const NeverScrollableScrollPhysics(),
               itemCount: ShaderPreset.presets.length,
               separatorBuilder: (context, index) =>
-                  const Divider(color: Colors.white10, height: 1),
+                  Divider(color: dividerColor, height: 1),
               itemBuilder: (context, index) {
                 final preset = ShaderPreset.presets[index];
                 final isSelected = preset.id == activePreset.id;
@@ -92,7 +101,7 @@ class ShadersView extends ConsumerWidget {
                                 ? AppIcons.power(iconPack)
                                 : AppIcons.sparkles(iconPack),
                             size: 18,
-                            color: isSelected ? primaryColor : Colors.white60,
+                            color: isSelected ? primaryColor : theme.colorScheme.onSurfaceVariant,
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -103,8 +112,8 @@ class ShadersView extends ConsumerWidget {
                                     preset.localizedName(l10n),
                                     style: TextStyle(
                                       color: isSelected
-                                          ? Colors.white
-                                          : Colors.white70,
+                                          ? theme.colorScheme.primary
+                                          : theme.colorScheme.onSurface,
                                       fontWeight: isSelected
                                           ? FontWeight.w600
                                           : FontWeight.normal,
@@ -120,14 +129,16 @@ class ShadersView extends ConsumerWidget {
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 5, vertical: 1),
                                     decoration: BoxDecoration(
-                                      color: Colors.white12,
+                                      color: isDark
+                                          ? Colors.white.withValues(alpha: 0.08)
+                                          : Colors.black.withValues(alpha: 0.06),
                                       borderRadius:
                                           BorderRadius.circular(4),
                                     ),
                                     child: Text(
                                       l10n.offBadge,
-                                      style: const TextStyle(
-                                        color: Colors.white60,
+                                      style: TextStyle(
+                                        color: theme.colorScheme.onSurfaceVariant,
                                         fontSize: 9.5,
                                         fontWeight: FontWeight.w600,
                                       ),

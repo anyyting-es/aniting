@@ -577,6 +577,12 @@ class SpanishTranslations implements AppTranslations {
   @override
   String get localEpisodes => 'episodios locales';
   @override
+  String get all => 'Todos';
+  @override
+  String get local => 'Local';
+  @override
+  String get unwatched => 'No vistos';
+  @override
   String get switchToGrid => 'Cambiar a cuadrícula';
   @override
   String get switchToList => 'Cambiar a lista';
@@ -1427,6 +1433,24 @@ class SpanishTranslations implements AppTranslations {
   @override
   String get welcomeExtensionsEmptyHint => 'Podrás explorar e instalar extensiones desde la tienda en cualquier momento.';
   @override
+  String get welcomeStepSections => 'Módulos de Contenido';
+  @override
+  String get welcomeSectionsPrompt => 'Elige qué módulos deseas habilitar en tu navegación';
+  @override
+  String get welcomeStepDebrid => 'Servicio Debrid';
+  @override
+  String get welcomeDebridPrompt => 'Conecta Real-Debrid, TorBox o AllDebrid para streaming instantáneo';
+  @override
+  String get welcomeStepDownloads => 'Descargas y Almacenamiento';
+  @override
+  String get welcomeDownloadsPrompt => 'Configura dónde guardar tus animes y mangas descargados';
+  @override
+  String get welcomeDownloadsUnifiedDesc => 'Mantener todos los archivos de anime y manga en una carpeta unificada';
+  @override
+  String get welcomeDownloadsBrowse => 'Explorar carpeta';
+  @override
+  String get welcomeDownloadsDefault => 'Restablecer por defecto';
+  @override
   String get settingsSaved => 'Configuración guardada correctamente';
   @override
   String get searchSettingsHint => 'Buscar en ajustes...';
@@ -1634,6 +1658,10 @@ class SpanishTranslations implements AppTranslations {
   String latestVersionSnackbar(String version) => 'Estás en la versión más reciente (v$version). No hay nuevas actualizaciones.';
   @override
   String get failedCheckUpdateSnackbar => 'No se pudo comprobar la actualización. Revisa tu conexión a internet.';
+  @override
+  String get whatsNewDialog => 'Novedades de la actualización';
+  @override
+  String get whatsNewDialogDesc => 'Ver las novedades, cambios recientes y enlaces de la comunidad';
   @override
   String get openSourceLicenses => 'Licencias de Código Abierto';
   @override
@@ -2488,11 +2516,50 @@ class SpanishTranslations implements AppTranslations {
   @override
   String get selectPreferredSource => 'Fuente preferida';
   @override
+  String get selectPreferredServer => 'Servidor preferido';
+  @override
   String get sourceFallbackNotice =>
       'Los episodios no disponibles en la fuente preferida se descargarán automáticamente desde una alternativa.';
+  @override
+  String get serverFallbackNotice =>
+      'Los episodios no disponibles en el servidor preferido se descargarán automáticamente desde una alternativa.';
   @override
   String get noSourceAvailable => 'Sin fuente';
   @override
   String startDownloadCount(int count) => 'Descargar $count episodios';
+
+  // Debrid Services
+  @override
+  String get debridSettings => 'Servicios Debrid';
+  @override
+  String get debridSettingsDesc => 'Configurar Real-Debrid, TorBox y descargas en la nube';
+  @override
+  String get enableDebrid => 'Activar Servicio Debrid';
+  @override
+  String get enableDebridDesc => 'Streaming instantáneo en caché y descargas directas a alta velocidad';
+  @override
+  String get debridProvider => 'Proveedor';
+  @override
+  String get debridApiKey => 'Clave API / Token';
+  @override
+  String get debridApiKeyHint => 'Pega tu clave API de Debrid';
+  @override
+  String get debridApiKeyDesc => 'Tu token privado generado desde los ajustes de tu cuenta Debrid';
+  @override
+  String get debridAutoSelect => 'Selección automática de video';
+  @override
+  String get debridAutoSelectDesc => 'Elegir automáticamente el mejor archivo de video del torrent';
+  @override
+  String get debridPreferredResolution => 'Resolución preferida';
+  @override
+  String get debridCachedBadge => 'Instant Debrid';
+  @override
+  String get streamWithDebrid => 'Stream Debrid';
+  @override
+  String get downloadWithDebrid => 'Descargar con Debrid';
+  @override
+  String get debridStartingStream => 'Iniciando stream Debrid...';
+  @override
+  String get debridDownloadStarted => 'Descarga Debrid iniciada';
 }
 

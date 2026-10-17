@@ -57,9 +57,10 @@ class PlayerSourceSelectorSheet extends ConsumerWidget {
     ValueChanged<OnlinestreamVideoSource>? onSelectSource,
     ValueChanged<String>? onSelectProvider,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return showGlassSheet(
       context: context,
-      finish: GlassFinish.regularDark,
+      finish: isDark ? GlassFinish.regularDark : GlassFinish.regularLight,
       showGrabber: true,
       builder: (modalCtx) => PlayerSourceSelectorSheet(
         controller: controller,
@@ -99,12 +100,16 @@ class PlayerSourceSelectorSheet extends ConsumerWidget {
     final currentActiveSource = controller?.activeSource ?? activeSource;
     final currentError = controller?.sourceResolutionError ?? sourceResolutionError;
 
+    final isDark = theme.brightness == Brightness.dark;
+
     return Material(
       type: MaterialType.transparency,
       child: Container(
-        // Dark translucent scrim to tone down excessive background transparency
+        // Translucent scrim to tone down excessive background transparency
         decoration: BoxDecoration(
-          color: const Color(0xFF14151B).withValues(alpha: 0.72),
+          color: isDark
+              ? const Color(0xFF14151B).withValues(alpha: 0.72)
+              : theme.colorScheme.surface.withValues(alpha: 0.78),
         ),
         child: SafeArea(
           top: false,
@@ -156,12 +161,16 @@ class PlayerSourceSelectorSheet extends ConsumerWidget {
                                               decoration: BoxDecoration(
                                                 color: isSelected
                                                     ? theme.colorScheme.primary.withValues(alpha: 0.22)
-                                                    : Colors.white.withValues(alpha: 0.08),
+                                                    : (isDark
+                                                        ? Colors.white.withValues(alpha: 0.08)
+                                                        : Colors.black.withValues(alpha: 0.05)),
                                                 borderRadius: BorderRadius.circular(16),
                                                 border: Border.all(
                                                   color: isSelected
                                                       ? theme.colorScheme.primary.withValues(alpha: 0.85)
-                                                      : Colors.white.withValues(alpha: 0.12),
+                                                      : (isDark
+                                                          ? Colors.white.withValues(alpha: 0.12)
+                                                          : Colors.black.withValues(alpha: 0.08)),
                                                   width: isSelected ? 1.2 : 0.8,
                                                 ),
                                               ),
@@ -172,7 +181,7 @@ class PlayerSourceSelectorSheet extends ConsumerWidget {
                                                   fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                                                   color: isSelected
                                                       ? theme.colorScheme.primary
-                                                      : Colors.white70,
+                                                      : theme.colorScheme.onSurfaceVariant,
                                                 ),
                                               ),
                                             ),
@@ -206,12 +215,16 @@ class PlayerSourceSelectorSheet extends ConsumerWidget {
                             decoration: BoxDecoration(
                               color: isDubbed
                                   ? theme.colorScheme.primary.withValues(alpha: 0.22)
-                                  : Colors.white.withValues(alpha: 0.08),
+                                  : (isDark
+                                      ? Colors.white.withValues(alpha: 0.08)
+                                      : Colors.black.withValues(alpha: 0.05)),
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
                                 color: isDubbed
                                     ? theme.colorScheme.primary.withValues(alpha: 0.85)
-                                    : Colors.white.withValues(alpha: 0.12),
+                                    : (isDark
+                                        ? Colors.white.withValues(alpha: 0.12)
+                                        : Colors.black.withValues(alpha: 0.08)),
                                 width: isDubbed ? 1.2 : 0.8,
                               ),
                             ),
@@ -221,7 +234,7 @@ class PlayerSourceSelectorSheet extends ConsumerWidget {
                                 Icon(
                                   isDubbed ? AppIcons.voice(iconPack) : AppIcons.subtitles(iconPack),
                                   size: 14,
-                                  color: isDubbed ? theme.colorScheme.primary : Colors.white70,
+                                  color: isDubbed ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
                                 ),
                                 const SizedBox(width: 5),
                                 Text(
@@ -229,7 +242,7 @@ class PlayerSourceSelectorSheet extends ConsumerWidget {
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.bold,
-                                    color: isDubbed ? theme.colorScheme.primary : Colors.white70,
+                                    color: isDubbed ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
                                     letterSpacing: 0.4,
                                   ),
                                 ),
@@ -243,7 +256,7 @@ class PlayerSourceSelectorSheet extends ConsumerWidget {
 
                     // Download stream action
                     IconButton(
-                      icon: Icon(AppIcons.download(iconPack), size: 19, color: Colors.white70),
+                      icon: Icon(AppIcons.download(iconPack), size: 19, color: theme.colorScheme.onSurfaceVariant),
                       tooltip: l10n.downloadOnlineStream,
                       visualDensity: VisualDensity.compact,
                       padding: const EdgeInsets.all(4),
@@ -278,7 +291,7 @@ class PlayerSourceSelectorSheet extends ConsumerWidget {
                     // Reload & Close actions
                     if (onReloadSources != null)
                       IconButton(
-                        icon: Icon(AppIcons.refresh(iconPack), size: 19, color: Colors.white70),
+                        icon: Icon(AppIcons.refresh(iconPack), size: 19, color: theme.colorScheme.onSurfaceVariant),
                         tooltip: l10n.reloadSourcesTooltip,
                         visualDensity: VisualDensity.compact,
                         padding: const EdgeInsets.all(4),
@@ -290,7 +303,7 @@ class PlayerSourceSelectorSheet extends ConsumerWidget {
                       ),
                     const SizedBox(width: 4),
                     IconButton(
-                      icon: Icon(AppIcons.close(iconPack), size: 19, color: Colors.white70),
+                      icon: Icon(AppIcons.close(iconPack), size: 19, color: theme.colorScheme.onSurfaceVariant),
                       tooltip: l10n.closeSettings,
                       visualDensity: VisualDensity.compact,
                       padding: const EdgeInsets.all(4),
@@ -321,9 +334,9 @@ class PlayerSourceSelectorSheet extends ConsumerWidget {
                           const SizedBox(height: 12),
                           Text(
                             l10n.searchingSources,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 13,
-                              color: Colors.white70,
+                              color: theme.colorScheme.onSurfaceVariant,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -341,15 +354,15 @@ class PlayerSourceSelectorSheet extends ConsumerWidget {
                           Icon(
                             AppIcons.searchOff(iconPack),
                             size: 34,
-                            color: Colors.white38,
+                            color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                           ),
                           const SizedBox(height: 8),
                           Text(
                             currentError ?? l10n.noSourcesFoundForEpisode,
                             textAlign: TextAlign.center,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 13,
-                              color: Colors.white70,
+                              color: theme.colorScheme.onSurfaceVariant,
                             ),
                           ),
                           if (onReloadSources != null) ...[
@@ -408,7 +421,7 @@ class PlayerSourceSelectorSheet extends ConsumerWidget {
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                             letterSpacing: 0.3,
-                            color: Colors.white.withValues(alpha: 0.6),
+                            color: theme.colorScheme.onSurfaceVariant,
                           ),
                         ),
                         if (currentIsResolving) ...[
@@ -430,10 +443,14 @@ class PlayerSourceSelectorSheet extends ConsumerWidget {
                   Flexible(
                     child: Container(
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.05),
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.05)
+                            : Colors.black.withValues(alpha: 0.035),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.09),
+                          color: isDark
+                              ? Colors.white.withValues(alpha: 0.09)
+                              : Colors.black.withValues(alpha: 0.08),
                           width: 0.8,
                         ),
                       ),
@@ -458,7 +475,9 @@ class PlayerSourceSelectorSheet extends ConsumerWidget {
                                 thickness: 0.6,
                                 indent: 14,
                                 endIndent: 14,
-                                color: Colors.white.withValues(alpha: 0.07),
+                                color: isDark
+                                    ? Colors.white.withValues(alpha: 0.07)
+                                    : Colors.black.withValues(alpha: 0.06),
                               ),
                               itemBuilder: (context, idx) {
                                 final src = currentSources[idx];
@@ -551,7 +570,9 @@ class PlayerSourceSelectorSheet extends ConsumerWidget {
                                                         fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
                                                         fontSize: 14,
                                                         letterSpacing: 0.2,
-                                                        color: isActive ? theme.colorScheme.primary : Colors.white,
+                                                        color: isActive
+                                                            ? theme.colorScheme.primary
+                                                            : theme.colorScheme.onSurface,
                                                       ),
                                                     ),
                                                     if (audioBadge != null) ...[
@@ -585,7 +606,7 @@ class PlayerSourceSelectorSheet extends ConsumerWidget {
                                                           fontSize: 12,
                                                           color: isActive
                                                               ? theme.colorScheme.primary.withValues(alpha: 0.85)
-                                                              : Colors.white54,
+                                                              : theme.colorScheme.onSurfaceVariant,
                                                         ),
                                                       ),
                                                     ],
@@ -595,15 +616,17 @@ class PlayerSourceSelectorSheet extends ConsumerWidget {
                                                         padding: const EdgeInsets.symmetric(
                                                             horizontal: 4.5, vertical: 1),
                                                         decoration: BoxDecoration(
-                                                          color: Colors.white.withValues(alpha: 0.08),
+                                                          color: isDark
+                                                              ? Colors.white.withValues(alpha: 0.08)
+                                                              : Colors.black.withValues(alpha: 0.06),
                                                           borderRadius: BorderRadius.circular(4),
                                                         ),
-                                                        child: const Text(
+                                                        child: Text(
                                                           'HLS',
                                                           style: TextStyle(
                                                             fontSize: 9,
                                                             fontWeight: FontWeight.bold,
-                                                            color: Colors.white70,
+                                                            color: theme.colorScheme.onSurfaceVariant,
                                                           ),
                                                         ),
                                                       ),

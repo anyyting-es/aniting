@@ -21,8 +21,13 @@ class SyncOffsetView extends ConsumerWidget {
   });
 
   Widget _buildStepButton(BuildContext context, String label, int delta) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Material(
-      color: const Color(0xFF1E1E24),
+      color: isDark
+          ? Colors.white.withValues(alpha: 0.08)
+          : Colors.black.withValues(alpha: 0.06),
       borderRadius: BorderRadius.circular(8),
       child: InkWell(
         borderRadius: BorderRadius.circular(8),
@@ -32,15 +37,17 @@ class SyncOffsetView extends ConsumerWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: Colors.white.withValues(alpha: 0.08),
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.12)
+                  : Colors.black.withValues(alpha: 0.08),
             ),
           ),
           child: Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
-              color: Colors.white,
+              color: theme.colorScheme.onSurface,
             ),
           ),
         ),
@@ -51,6 +58,7 @@ class SyncOffsetView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final primaryColor = theme.colorScheme.primary;
     final l10n = ref.watch(translationsProvider);
     final iconPack = ref.watch(iconPackProvider);
@@ -61,10 +69,14 @@ class SyncOffsetView extends ConsumerWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF151518),
+        color: isDark
+            ? Colors.white.withValues(alpha: 0.05)
+            : Colors.black.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.08),
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.09)
+              : Colors.black.withValues(alpha: 0.08),
           width: 1,
         ),
       ),
@@ -75,8 +87,8 @@ class SyncOffsetView extends ConsumerWidget {
         children: [
           Text(
             title,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: theme.colorScheme.onSurface,
               fontWeight: FontWeight.w600,
               fontSize: 13,
             ),
@@ -86,7 +98,7 @@ class SyncOffsetView extends ConsumerWidget {
           Text(
             description,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.white54, fontSize: 11),
+            style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 11),
           ),
           const SizedBox(height: 14),
 
@@ -95,12 +107,12 @@ class SyncOffsetView extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
             decoration: BoxDecoration(
               color: offsetMs == 0
-                  ? Colors.white.withValues(alpha: 0.06)
+                  ? (isDark ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.05))
                   : primaryColor.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
                 color: offsetMs == 0
-                    ? Colors.white.withValues(alpha: 0.12)
+                    ? (isDark ? Colors.white.withValues(alpha: 0.12) : Colors.black.withValues(alpha: 0.08))
                     : primaryColor.withValues(alpha: 0.4),
                 width: 1,
               ),
@@ -108,7 +120,7 @@ class SyncOffsetView extends ConsumerWidget {
             child: Text(
               formattedOffset,
               style: TextStyle(
-                color: offsetMs == 0 ? Colors.white70 : primaryColor,
+                color: offsetMs == 0 ? theme.colorScheme.onSurfaceVariant : primaryColor,
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
                 fontFamily: 'monospace',
@@ -137,8 +149,10 @@ class SyncOffsetView extends ConsumerWidget {
           SliderTheme(
             data: SliderTheme.of(context).copyWith(
               activeTrackColor: primaryColor,
-              inactiveTrackColor: Colors.white.withValues(alpha: 0.1),
-              thumbColor: Colors.white,
+              inactiveTrackColor: isDark
+                  ? Colors.white.withValues(alpha: 0.12)
+                  : Colors.black.withValues(alpha: 0.1),
+              thumbColor: primaryColor,
               thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
               trackHeight: 3,
               overlayColor: primaryColor.withValues(alpha: 0.2),
@@ -168,13 +182,17 @@ class SyncOffsetView extends ConsumerWidget {
                     Icon(
                       AppIcons.restore(iconPack),
                       size: 14,
-                      color: offsetMs != 0 ? Colors.white70 : Colors.white24,
+                      color: offsetMs != 0
+                          ? theme.colorScheme.onSurfaceVariant
+                          : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.35),
                     ),
                     const SizedBox(width: 6),
                     Text(
                       l10n.resetTo0ms,
                       style: TextStyle(
-                        color: offsetMs != 0 ? Colors.white70 : Colors.white24,
+                        color: offsetMs != 0
+                            ? theme.colorScheme.onSurfaceVariant
+                            : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.35),
                         fontSize: 11,
                         fontWeight: FontWeight.w500,
                       ),

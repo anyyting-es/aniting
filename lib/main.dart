@@ -30,6 +30,7 @@ import 'package:seanime_app/data/services/offline_library_service.dart';
 import 'package:g1455/g1455.dart';
 import 'package:seanime_app/core/preferences/glass_theme_provider.dart';
 import 'package:seanime_app/core/player/mpris_service.dart';
+import 'package:seanime_app/presentation/providers/download_history_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
@@ -107,6 +108,7 @@ void main() async {
     ExploreCarouselNotifier.setCachedPrefs(prefs);
     DesktopNavStyleNotifier.setCachedPrefs(prefs);
     GlassEffectsEnabledNotifier.setCachedPrefs(prefs);
+    DownloadHistoryNotifier.setCachedPrefs(prefs);
   } catch (_) {}
   runApp(
     const ProviderScope(

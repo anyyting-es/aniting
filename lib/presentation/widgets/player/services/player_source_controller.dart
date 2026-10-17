@@ -30,6 +30,16 @@ class PlayerSourceController extends ChangeNotifier {
   final ValueGetter<Duration> getPosition;
   final ValueGetter<Duration?> getStartPosition;
   final ValueGetter<bool> getHasNextEpisode;
+
+  /// TMDB (movies / series) support.
+  /// When [getIsTmdb] returns true, online sources are resolved against a
+  /// TMDB-capable onlinestream provider (mediaId is the TMDB ID).
+  final ValueGetter<bool>? getIsTmdb;
+  final ValueGetter<String?>? getTmdbMediaType;
+  final ValueGetter<int?>? getTmdbSeason;
+  final ValueGetter<String?>? getTmdbEnglishTitle;
+  final ValueGetter<int?>? getTmdbYear;
+
   final VoidCallback onUpdateUi;
   final void Function({
     required String videoUrl,
@@ -81,6 +91,11 @@ class PlayerSourceController extends ChangeNotifier {
     required this.onUpdateUi,
     required this.onSourceActivated,
     required this.onShowEpisodePicker,
+    this.getIsTmdb,
+    this.getTmdbMediaType,
+    this.getTmdbSeason,
+    this.getTmdbEnglishTitle,
+    this.getTmdbYear,
   });
 
   /// Resolves online stream sources for the current episode and immediately begins
@@ -105,6 +120,11 @@ class PlayerSourceController extends ChangeNotifier {
         provider: provider,
         title: title,
         dubbed: getOnlineStreamDubbed() ?? false,
+        isTmdb: getIsTmdb?.call() ?? false,
+        tmdbMediaType: getTmdbMediaType?.call(),
+        tmdbSeason: getTmdbSeason?.call(),
+        tmdbEnglishTitle: getTmdbEnglishTitle?.call(),
+        tmdbYear: getTmdbYear?.call(),
       );
 
       if (sources.isEmpty) {
@@ -187,6 +207,11 @@ class PlayerSourceController extends ChangeNotifier {
         provider: provider,
         title: title,
         dubbed: getOnlineStreamDubbed() ?? false,
+        isTmdb: getIsTmdb?.call() ?? false,
+        tmdbMediaType: getTmdbMediaType?.call(),
+        tmdbSeason: getTmdbSeason?.call(),
+        tmdbEnglishTitle: getTmdbEnglishTitle?.call(),
+        tmdbYear: getTmdbYear?.call(),
       );
 
       if (sources.isEmpty) return;

@@ -309,6 +309,11 @@ abstract class AppTranslations {
   String get noEpisodesFoundMatching;
   String get noAiredEpisodesAvailable;
 
+  // Episode filters (All / Local / Unwatched)
+  String get all;
+  String get local;
+  String get unwatched;
+
   // Online Stream & Torrent Selector
   String get onlineProvider;
   String get changeProvider;
@@ -713,6 +718,15 @@ abstract class AppTranslations {
   String get welcomeAnilistTitle;
   String get welcomeAnilistSyncDesc;
   String get welcomeExtensionsEmptyHint;
+  String get welcomeStepSections;
+  String get welcomeSectionsPrompt;
+  String get welcomeStepDebrid;
+  String get welcomeDebridPrompt;
+  String get welcomeStepDownloads;
+  String get welcomeDownloadsPrompt;
+  String get welcomeDownloadsUnifiedDesc;
+  String get welcomeDownloadsBrowse;
+  String get welcomeDownloadsDefault;
   String get settingsSaved;
   String get searchSettingsHint;
   String get mangaReader;
@@ -773,6 +787,8 @@ abstract class AppTranslations {
   String get checkLatestGithub;
   String latestVersionSnackbar(String version);
   String get failedCheckUpdateSnackbar;
+  String get whatsNewDialog;
+  String get whatsNewDialogDesc;
   String get openSourceLicenses;
   String get openSourceLicensesDesc;
   String get devAndTesting;
@@ -1211,8 +1227,28 @@ abstract class AppTranslations {
   String episodesQueuedForDownload(int count);
   String get batchDownloadEpisodes;
   String get selectPreferredSource;
+  String get selectPreferredServer;
   String get sourceFallbackNotice;
+  String get serverFallbackNotice;
   String get noSourceAvailable;
   String startDownloadCount(int count);
+
+  // Debrid Services
+  String get debridSettings;
+  String get debridSettingsDesc;
+  String get enableDebrid;
+  String get enableDebridDesc;
+  String get debridProvider;
+  String get debridApiKey;
+  String get debridApiKeyHint;
+  String get debridApiKeyDesc;
+  String get debridAutoSelect;
+  String get debridAutoSelectDesc;
+  String get debridPreferredResolution;
+  String get debridCachedBadge;
+  String get streamWithDebrid;
+  String get downloadWithDebrid;
+  String get debridStartingStream;
+  String get debridDownloadStarted;
 }
 

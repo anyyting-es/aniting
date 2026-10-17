@@ -61,6 +61,14 @@ class VideoPlayerScreen extends ConsumerStatefulWidget {
   final String? onlineStreamServer;
   final bool isLocalFile;
 
+  /// TMDB (movies / series): when [isTmdbMedia] is true, [mediaId] is the TMDB ID
+  /// and online streaming is resolved through a TMDB-capable provider.
+  final bool isTmdbMedia;
+  final String? tmdbMediaType;
+  final int? tmdbSeason;
+  final String? tmdbEnglishTitle;
+  final int? tmdbYear;
+
   const VideoPlayerScreen({
     super.key,
     this.mediaId,
@@ -81,6 +89,11 @@ class VideoPlayerScreen extends ConsumerStatefulWidget {
     this.onlineStreamDubbed,
     this.onlineStreamServer,
     this.isLocalFile = false,
+    this.isTmdbMedia = false,
+    this.tmdbMediaType,
+    this.tmdbSeason,
+    this.tmdbEnglishTitle,
+    this.tmdbYear,
   });
 
   static Route<void> route({
@@ -102,6 +115,11 @@ class VideoPlayerScreen extends ConsumerStatefulWidget {
     bool? onlineStreamDubbed,
     String? onlineStreamServer,
     bool isLocalFile = false,
+    bool isTmdbMedia = false,
+    String? tmdbMediaType,
+    int? tmdbSeason,
+    String? tmdbEnglishTitle,
+    int? tmdbYear,
   }) {
     return PageRouteBuilder(
       opaque: true,
@@ -126,6 +144,11 @@ class VideoPlayerScreen extends ConsumerStatefulWidget {
         onlineStreamDubbed: onlineStreamDubbed,
         onlineStreamServer: onlineStreamServer,
         isLocalFile: isLocalFile,
+        isTmdbMedia: isTmdbMedia,
+        tmdbMediaType: tmdbMediaType,
+        tmdbSeason: tmdbSeason,
+        tmdbEnglishTitle: tmdbEnglishTitle,
+        tmdbYear: tmdbYear,
       ),
     );
   }
@@ -398,7 +421,12 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
         final repo = ref.read(repositoryProvider);
         final results = await Future.wait([
           repo.getAnimeDetails(widget.mediaId!).catchError((_) => null),
-          repo.getAniZipData(widget.mediaId!).catchError((_) => null),
+          // TMDB media doesn't exist on AniZip (which is keyed by AniList ID),
+          // so skip the request entirely to avoid a guaranteed 404.
+          if (widget.isTmdbMedia)
+            Future<AniZipData?>.value(null)
+          else
+            repo.getAniZipData(widget.mediaId!).catchError((_) => null),
         ]);
         if (mounted) {
           final details = results[0] as AnimeDetails?;
@@ -676,6 +704,11 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
           );
         }
       },
+      getIsTmdb: () => widget.isTmdbMedia,
+      getTmdbMediaType: () => widget.tmdbMediaType,
+      getTmdbSeason: () => widget.tmdbSeason,
+      getTmdbEnglishTitle: () => widget.tmdbEnglishTitle,
+      getTmdbYear: () => widget.tmdbYear,
     );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1351,16 +1384,35 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
         ? Colors.transparent
         : (effectiveFullscreen ? Colors.black : theme.scaffoldBackgroundColor);
 
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
-        _handleExit();
-      },
-      child: Scaffold(
-        backgroundColor: _isExiting ? Colors.black : scaffoldBg,
-        body: _isExiting
-            ? const ColoredBox(color: Colors.black, child: SizedBox.expand())
+    final isThemeDark = theme.brightness == Brightness.dark;
+    final statusBarIconBrightness = (effectiveFullscreen || isThemeDark)
+        ? Brightness.light
+        : Brightness.dark;
+    final statusBarBrightness = (effectiveFullscreen || isThemeDark)
+        ? Brightness.dark
+        : Brightness.light;
+
+    final systemOverlayStyle = SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: statusBarIconBrightness,
+      statusBarBrightness: statusBarBrightness,
+      systemNavigationBarColor: Colors.transparent,
+      systemNavigationBarIconBrightness: statusBarIconBrightness,
+      systemNavigationBarDividerColor: Colors.transparent,
+    );
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: systemOverlayStyle,
+      child: PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) {
+          if (didPop) return;
+          _handleExit();
+        },
+        child: Scaffold(
+          backgroundColor: _isExiting ? Colors.black : scaffoldBg,
+          body: _isExiting
+              ? const ColoredBox(color: Colors.black, child: SizedBox.expand())
             : Focus(
                 focusNode: _focusNode,
                 autofocus: true,
@@ -1473,6 +1525,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                             )),
                 ),
               ),
+            ),
       ),
     );
   }

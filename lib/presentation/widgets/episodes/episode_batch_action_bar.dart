@@ -11,6 +11,7 @@ import 'package:seanime_app/data/models/anime_details.dart';
 import 'package:seanime_app/data/models/onlinestream_models.dart';
 import 'package:seanime_app/presentation/providers/active_downloads_provider.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
+import 'package:seanime_app/presentation/providers/download_history_provider.dart';
 import 'package:seanime_app/presentation/providers/episode_selection_provider.dart';
 import 'package:seanime_app/presentation/widgets/online_stream_download_dialog.dart';
 import 'package:seanime_app/presentation/widgets/online_stream_batch_download_dialog.dart';
@@ -79,7 +80,9 @@ class EpisodeBatchActionBar extends ConsumerWidget {
           .toList();
 
       if (paths.isNotEmpty) {
-        await repo.deleteLocalFiles(paths);
+        try {
+          await repo.deleteLocalFiles(paths);
+        } catch (_) {}
         for (final p in paths) {
           try {
             final f = File(p);
@@ -88,8 +91,16 @@ class EpisodeBatchActionBar extends ConsumerWidget {
         }
       }
 
+      final historyNotifier = ref.read(downloadHistoryProvider.notifier);
+      for (final epNum in downloadedSelected) {
+        historyNotifier.removeItem('${mediaId}_$epNum');
+        historyNotifier.removeItem('$epNum');
+      }
+
       onRefreshLocal?.call();
       ref.invalidate(downloadedAnimeProvider);
+      ref.invalidate(animeLibraryEntryProvider(mediaId));
+      ref.invalidate(animeCollectionProvider);
       ref.read(activeDownloadsProvider.notifier).refresh();
       ref.read(episodeSelectionProvider(mediaId).notifier).clear();
 

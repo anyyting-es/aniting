@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:g1455/g1455.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/presentation/widgets/player/models/player_types.dart';
@@ -363,6 +364,9 @@ class _PlayerSettingsSheetState extends ConsumerState<PlayerSettingsSheet> {
     required String value,
     required VoidCallback onTap,
   }) {
+    final theme = Theme.of(context);
+    final iconPack = ref.watch(iconPackProvider);
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -371,13 +375,13 @@ class _PlayerSettingsSheetState extends ConsumerState<PlayerSettingsSheet> {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           child: Row(
             children: [
-              Icon(icon, color: Colors.white70, size: 18),
+              Icon(icon, color: theme.colorScheme.onSurfaceVariant, size: 18),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: theme.colorScheme.onSurface,
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
                   ),
@@ -388,7 +392,7 @@ class _PlayerSettingsSheetState extends ConsumerState<PlayerSettingsSheet> {
                 child: Text(
                   value,
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.4),
+                    color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
                     fontSize: 12,
                     fontWeight: FontWeight.normal,
                   ),
@@ -399,8 +403,8 @@ class _PlayerSettingsSheetState extends ConsumerState<PlayerSettingsSheet> {
               ),
               const SizedBox(width: 4),
               Icon(
-                AppIcons.chevronRight(ref.watch(iconPackProvider)),
-                color: Colors.white24,
+                AppIcons.chevronRight(iconPack),
+                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
                 size: 16,
               ),
             ],
@@ -428,13 +432,13 @@ class _PlayerSettingsSheetState extends ConsumerState<PlayerSettingsSheet> {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           child: Row(
             children: [
-              Icon(icon, color: Colors.white70, size: 18),
+              Icon(icon, color: theme.colorScheme.onSurfaceVariant, size: 18),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: theme.colorScheme.onSurface,
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
                   ),
@@ -443,7 +447,7 @@ class _PlayerSettingsSheetState extends ConsumerState<PlayerSettingsSheet> {
               Text(
                 value ? l10n.onBadge : l10n.offBadge,
                 style: TextStyle(
-                  color: value ? accentColor : Colors.white.withValues(alpha: 0.35),
+                  color: value ? accentColor : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                   fontSize: 12,
                   fontWeight: value ? FontWeight.w600 : FontWeight.normal,
                 ),
@@ -456,18 +460,27 @@ class _PlayerSettingsSheetState extends ConsumerState<PlayerSettingsSheet> {
   }
 
   Widget _buildMainMenu(AppTranslations l10n) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final isTorrent = (widget.videoSource?.toLowerCase().contains('torrent') ?? false) ||
         (widget.videoUrl?.contains('torrentstream') ?? false) ||
         ref.watch(torrentStreamStatusProvider) != null;
 
     final iconPack = ref.watch(iconPackProvider);
+    final dividerColor = isDark
+        ? Colors.white.withValues(alpha: 0.08)
+        : Colors.black.withValues(alpha: 0.06);
 
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF151518),
+        color: isDark
+            ? Colors.white.withValues(alpha: 0.05)
+            : Colors.black.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.08),
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.09)
+              : Colors.black.withValues(alpha: 0.08),
           width: 1,
         ),
       ),
@@ -485,7 +498,7 @@ class _PlayerSettingsSheetState extends ConsumerState<PlayerSettingsSheet> {
                 onTap: () =>
                     setState(() => _currentSection = _SettingsSection.chapters),
               ),
-              const Divider(color: Colors.white10, height: 1),
+              Divider(color: dividerColor, height: 1),
             ],
 
             // 2. Audio Tracks
@@ -496,7 +509,7 @@ class _PlayerSettingsSheetState extends ConsumerState<PlayerSettingsSheet> {
               onTap: () =>
                   setState(() => _currentSection = _SettingsSection.audioTracks),
             ),
-            const Divider(color: Colors.white10, height: 1),
+            Divider(color: dividerColor, height: 1),
 
             // 3. Subtitles
             _buildMenuItem(
@@ -506,7 +519,7 @@ class _PlayerSettingsSheetState extends ConsumerState<PlayerSettingsSheet> {
               onTap: () =>
                   setState(() => _currentSection = _SettingsSection.subtitleTracks),
             ),
-            const Divider(color: Colors.white10, height: 1),
+            Divider(color: dividerColor, height: 1),
 
             // 3.1 Subtitle Style
             _buildMenuItem(
@@ -516,7 +529,7 @@ class _PlayerSettingsSheetState extends ConsumerState<PlayerSettingsSheet> {
               onTap: () =>
                   setState(() => _currentSection = _SettingsSection.subtitleStyle),
             ),
-            const Divider(color: Colors.white10, height: 1),
+            Divider(color: dividerColor, height: 1),
 
             // 4. Playback Speed
             _buildMenuItem(
@@ -525,7 +538,7 @@ class _PlayerSettingsSheetState extends ConsumerState<PlayerSettingsSheet> {
               value: _playbackRate == 1.0 ? l10n.normal : '${_playbackRate}x',
               onTap: () => setState(() => _currentSection = _SettingsSection.speed),
             ),
-            const Divider(color: Colors.white10, height: 1),
+            Divider(color: dividerColor, height: 1),
 
             // 5. Aspect Ratio
             _buildMenuItem(
@@ -535,7 +548,7 @@ class _PlayerSettingsSheetState extends ConsumerState<PlayerSettingsSheet> {
               onTap: () =>
                   setState(() => _currentSection = _SettingsSection.aspectRatio),
             ),
-            const Divider(color: Colors.white10, height: 1),
+            Divider(color: dividerColor, height: 1),
 
             // 6. Subtitle Sync
             _buildMenuItem(
@@ -547,7 +560,7 @@ class _PlayerSettingsSheetState extends ConsumerState<PlayerSettingsSheet> {
               onTap: () =>
                   setState(() => _currentSection = _SettingsSection.subtitleSync),
             ),
-            const Divider(color: Colors.white10, height: 1),
+            Divider(color: dividerColor, height: 1),
 
             // 7. Audio Sync
             _buildMenuItem(
@@ -559,7 +572,7 @@ class _PlayerSettingsSheetState extends ConsumerState<PlayerSettingsSheet> {
               onTap: () =>
                   setState(() => _currentSection = _SettingsSection.audioSync),
             ),
-            const Divider(color: Colors.white10, height: 1),
+            Divider(color: dividerColor, height: 1),
 
             // 8. Shaders GLSL (Anime4K / NVScaler / ArtCNN) - Only supported on MPV
             if (!widget.isUsingExoPlayer) ...[
@@ -570,7 +583,7 @@ class _PlayerSettingsSheetState extends ConsumerState<PlayerSettingsSheet> {
                 onTap: () =>
                     setState(() => _currentSection = _SettingsSection.shaders),
               ),
-              const Divider(color: Colors.white10, height: 1),
+              Divider(color: dividerColor, height: 1),
             ],
 
             // 9. Fuente del video
@@ -581,7 +594,7 @@ class _PlayerSettingsSheetState extends ConsumerState<PlayerSettingsSheet> {
                 value: widget.videoSource!,
                 onTap: () => setState(() => _currentSection = _SettingsSection.source),
               ),
-              const Divider(color: Colors.white10, height: 1),
+              Divider(color: dividerColor, height: 1),
             ],
 
             // 10. Progreso del Torrent
@@ -592,7 +605,7 @@ class _PlayerSettingsSheetState extends ConsumerState<PlayerSettingsSheet> {
                 value: _isTorrentProgressVisible ? l10n.onBadge : l10n.offBadge,
                 onTap: () => setState(() => _currentSection = _SettingsSection.torrent),
               ),
-              const Divider(color: Colors.white10, height: 1),
+              Divider(color: dividerColor, height: 1),
             ],
 
             // 11. Gestos en pantalla Toggle (On / Off)
@@ -606,7 +619,7 @@ class _PlayerSettingsSheetState extends ConsumerState<PlayerSettingsSheet> {
                 widget.onGesturesChanged?.call(val);
               },
             ),
-            const Divider(color: Colors.white10, height: 1),
+            Divider(color: dividerColor, height: 1),
 
             // 12. Amplificación de volumen (>100%)
             _buildToggleItem(
@@ -619,7 +632,7 @@ class _PlayerSettingsSheetState extends ConsumerState<PlayerSettingsSheet> {
                 widget.onVolumeBoostChanged?.call(val);
               },
             ),
-            const Divider(color: Colors.white10, height: 1),
+            Divider(color: dividerColor, height: 1),
 
             // 13. Performance Stats Toggle (On / Off)
             _buildToggleItem(
@@ -641,6 +654,8 @@ class _PlayerSettingsSheetState extends ConsumerState<PlayerSettingsSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final l10n = ref.watch(translationsProvider);
     final iconPack = ref.watch(iconPackProvider);
     final screenSize = MediaQuery.of(context).size;
@@ -648,35 +663,38 @@ class _PlayerSettingsSheetState extends ConsumerState<PlayerSettingsSheet> {
 
     if (widget.isBottomSheet) {
       final sheetHeight = math.min(screenSize.height * 0.70, 560.0);
+      final borderRad = const BorderRadius.vertical(top: Radius.circular(22));
+
       return Material(
         color: Colors.transparent,
-        child: Container(
+        child: SizedBox(
           width: double.infinity,
           height: sheetHeight,
-          decoration: BoxDecoration(
-            color: const Color(0xFF0E0E11),
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(20),
-            ),
-            border: Border(
-              top: BorderSide(
-                color: Colors.white.withValues(alpha: 0.12),
-                width: 1,
-              ),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.5),
-                blurRadius: 10,
-                offset: const Offset(0, -2),
-              ),
-            ],
-          ),
-          child: SafeArea(
-            top: false,
-            left: true,
-            right: true,
-            bottom: true,
+          child: ClipRRect(
+            borderRadius: borderRad,
+            child: GlassCard(
+              borderRadius: borderRad,
+              padding: EdgeInsets.zero,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? const Color(0xFF0C0D12).withValues(alpha: 0.65)
+                      : theme.colorScheme.surface.withValues(alpha: 0.75),
+                  borderRadius: borderRad,
+                  border: Border(
+                    top: BorderSide(
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.15)
+                          : theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+                      width: 1,
+                    ),
+                  ),
+                ),
+                child: SafeArea(
+                  top: false,
+                  left: true,
+                  right: true,
+                  bottom: true,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -709,7 +727,7 @@ class _PlayerSettingsSheetState extends ConsumerState<PlayerSettingsSheet> {
                           ),
                           icon: Icon(
                             AppIcons.arrowLeft(iconPack),
-                            color: Colors.white,
+                            color: theme.colorScheme.onSurface,
                             size: 20,
                           ),
                           tooltip: l10n.back,
@@ -723,8 +741,8 @@ class _PlayerSettingsSheetState extends ConsumerState<PlayerSettingsSheet> {
                       Expanded(
                         child: Text(
                           _getHeaderTitle(l10n),
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: theme.colorScheme.onSurface,
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                             letterSpacing: -0.2,
@@ -744,7 +762,7 @@ class _PlayerSettingsSheetState extends ConsumerState<PlayerSettingsSheet> {
                         ),
                         icon: Icon(
                           AppIcons.close(iconPack),
-                          color: Colors.white70,
+                          color: theme.colorScheme.onSurfaceVariant,
                           size: 20,
                         ),
                         tooltip: l10n.close,
@@ -778,7 +796,10 @@ class _PlayerSettingsSheetState extends ConsumerState<PlayerSettingsSheet> {
             ),
           ),
         ),
-      );
+      ),
+    ),
+  ),
+);
     }
 
     final sheetWidth = isMobile
@@ -786,48 +807,54 @@ class _PlayerSettingsSheetState extends ConsumerState<PlayerSettingsSheet> {
         : math.min(screenSize.width * 0.35, 350.0);
     final finalWidth = math.max(sheetWidth, 280.0);
     final hasRightOffset = widget.rightOffset > 0;
+    final drawerRadius = hasRightOffset
+        ? BorderRadius.circular(16)
+        : const BorderRadius.horizontal(
+            left: Radius.circular(16),
+          );
 
     return Material(
       color: Colors.transparent,
-      child: Container(
+      child: SizedBox(
         width: finalWidth,
         height: double.infinity,
-        margin: EdgeInsets.zero,
-        decoration: BoxDecoration(
-          color: const Color(0xFF0E0E11),
-          borderRadius: hasRightOffset
-              ? BorderRadius.circular(16)
-              : const BorderRadius.horizontal(
-                  left: Radius.circular(16),
-                ),
-          border: Border(
-            left: BorderSide(
-              color: Colors.white.withValues(alpha: 0.1),
-              width: 1,
-            ),
-            right: hasRightOffset
-                ? BorderSide(
-                    color: Colors.white.withValues(alpha: 0.1),
+        child: ClipRRect(
+          borderRadius: drawerRadius,
+          child: GlassCard(
+            borderRadius: drawerRadius,
+            padding: EdgeInsets.zero,
+            child: Container(
+              margin: EdgeInsets.zero,
+              decoration: BoxDecoration(
+                color: isDark
+                    ? const Color(0xFF0C0D12).withValues(alpha: 0.65)
+                    : theme.colorScheme.surface.withValues(alpha: 0.75),
+                borderRadius: drawerRadius,
+                border: Border(
+                  left: BorderSide(
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.15)
+                        : theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
                     width: 1,
-                  )
-                : BorderSide.none,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.4),
-              blurRadius: 6,
-              offset: const Offset(-2, 0),
-            ),
-          ],
-        ),
-        child: SafeArea(
-          left: false,
-          top: false,
-          bottom: false,
-          right: true,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
+                  ),
+                  right: hasRightOffset
+                      ? BorderSide(
+                          color: isDark
+                              ? Colors.white.withValues(alpha: 0.15)
+                              : theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+                          width: 1,
+                        )
+                      : BorderSide.none,
+                ),
+              ),
+              child: SafeArea(
+                left: false,
+                top: false,
+                bottom: false,
+                right: true,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
               // Header Bar (Title on left, Close button on right)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -844,7 +871,7 @@ class _PlayerSettingsSheetState extends ConsumerState<PlayerSettingsSheet> {
                         ),
                         icon: Icon(
                           AppIcons.arrowLeft(iconPack),
-                          color: Colors.white,
+                          color: theme.colorScheme.onSurface,
                           size: 20,
                         ),
                         tooltip: l10n.back,
@@ -858,8 +885,8 @@ class _PlayerSettingsSheetState extends ConsumerState<PlayerSettingsSheet> {
                     Expanded(
                       child: Text(
                         _getHeaderTitle(l10n),
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: theme.colorScheme.onSurface,
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
                           letterSpacing: -0.2,
@@ -879,7 +906,7 @@ class _PlayerSettingsSheetState extends ConsumerState<PlayerSettingsSheet> {
                       ),
                       icon: Icon(
                         AppIcons.close(iconPack),
-                        color: Colors.white70,
+                        color: theme.colorScheme.onSurfaceVariant,
                         size: 20,
                       ),
                       tooltip: l10n.close,
@@ -913,7 +940,10 @@ class _PlayerSettingsSheetState extends ConsumerState<PlayerSettingsSheet> {
           ),
         ),
       ),
-    );
+    ),
+  ),
+),
+);
   }
 
   Widget _buildCurrentContent(AppTranslations l10n) {

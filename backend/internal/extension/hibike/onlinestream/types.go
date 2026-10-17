@@ -50,6 +50,16 @@ type (
 		// Start date of the media.
 		// This will be undefined if it has no start date.
 		StartDate *FuzzyDate `json:"startDate,omitempty"`
+		// TmdbId is the TMDB ID of the media.
+		// It is set (non-zero) when the media comes from TMDB (movies / series) instead of AniList.
+		// Providers that support TMDB (see Settings.SupportsTmdb) should prefer this over ID.
+		TmdbId int `json:"tmdbId,omitempty"`
+		// MediaType is the TMDB media type: "tv" or "movie".
+		// It is only set when TmdbId is set.
+		MediaType string `json:"mediaType,omitempty"`
+		// Season is the season number for TMDB series.
+		// It is only set when TmdbId is set and MediaType is "tv".
+		Season int `json:"season,omitempty"`
 	}
 
 	FuzzyDate struct {
@@ -61,6 +71,9 @@ type (
 	Settings struct {
 		EpisodeServers []string `json:"episodeServers"`
 		SupportsDub    bool     `json:"supportsDub"`
+		// SupportsTmdb indicates that the provider can resolve sources for TMDB media (movies / series).
+		// Only providers with this flag set to true are offered in TMDB detail pages.
+		SupportsTmdb bool `json:"supportsTmdb"`
 	}
 
 	SearchResult struct {

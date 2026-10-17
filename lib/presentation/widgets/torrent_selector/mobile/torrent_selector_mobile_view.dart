@@ -43,6 +43,8 @@ class TorrentSelectorMobileView extends ConsumerStatefulWidget {
   final void Function(TorrentItem) onTorrentTap;
   final void Function(TorrentItem) onDownloadTorrent;
   final void Function(TorrentItem) onExternalPlayer;
+  final void Function(TorrentItem)? onDebridStream;
+  final void Function(TorrentItem)? onDebridDownload;
   final VoidCallback onClose;
 
   const TorrentSelectorMobileView({
@@ -77,6 +79,8 @@ class TorrentSelectorMobileView extends ConsumerStatefulWidget {
     required this.onTorrentTap,
     required this.onDownloadTorrent,
     required this.onExternalPlayer,
+    this.onDebridStream,
+    this.onDebridDownload,
     required this.onClose,
   });
 
@@ -704,6 +708,7 @@ class _TorrentSelectorMobileViewState extends ConsumerState<TorrentSelectorMobil
                                 ),
                               )
                             : ListView.separated(
+                                shrinkWrap: sortedTorrents.length <= 3,
                                 padding: const EdgeInsets.fromLTRB(14, 4, 14, 20),
                                 physics: const BouncingScrollPhysics(),
                                 itemCount: sortedTorrents.length,
@@ -717,6 +722,12 @@ class _TorrentSelectorMobileViewState extends ConsumerState<TorrentSelectorMobil
                                     onTap: () => widget.onTorrentTap(torrent),
                                     onDownload: () => widget.onDownloadTorrent(torrent),
                                     onExternalPlayer: () => widget.onExternalPlayer(torrent),
+                                    onDebridStream: widget.onDebridStream != null
+                                        ? () => widget.onDebridStream!(torrent)
+                                        : null,
+                                    onDebridDownload: widget.onDebridDownload != null
+                                        ? () => widget.onDebridDownload!(torrent)
+                                        : null,
                                   );
                                 },
                               ),

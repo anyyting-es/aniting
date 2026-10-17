@@ -36,6 +36,8 @@ class TorrentItem {
   final String? releaseGroup;
   final bool isBestRelease;
   final bool confirmed;
+  final bool isDebridCached;
+  final List<String> debridCachedFileIds;
 
   const TorrentItem({
     required this.name,
@@ -55,6 +57,8 @@ class TorrentItem {
     this.releaseGroup,
     this.isBestRelease = false,
     this.confirmed = false,
+    this.isDebridCached = false,
+    this.debridCachedFileIds = const [],
   });
 
   factory TorrentItem.fromJson(Map<String, dynamic> json) {
@@ -76,6 +80,55 @@ class TorrentItem {
       releaseGroup: json['releaseGroup'] as String?,
       isBestRelease: json['isBestRelease'] as bool? ?? false,
       confirmed: json['confirmed'] as bool? ?? false,
+      isDebridCached: json['isDebridCached'] as bool? ?? false,
+      debridCachedFileIds: (json['debridCachedFileIds'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          const [],
+    );
+  }
+
+  TorrentItem copyWith({
+    String? name,
+    String? provider,
+    String? date,
+    int? size,
+    String? formattedSize,
+    int? seeders,
+    int? leechers,
+    String? link,
+    String? downloadUrl,
+    String? magnetLink,
+    String? infoHash,
+    String? resolution,
+    bool? isBatch,
+    int? episodeNumber,
+    String? releaseGroup,
+    bool? isBestRelease,
+    bool? confirmed,
+    bool? isDebridCached,
+    List<String>? debridCachedFileIds,
+  }) {
+    return TorrentItem(
+      name: name ?? this.name,
+      provider: provider ?? this.provider,
+      date: date ?? this.date,
+      size: size ?? this.size,
+      formattedSize: formattedSize ?? this.formattedSize,
+      seeders: seeders ?? this.seeders,
+      leechers: leechers ?? this.leechers,
+      link: link ?? this.link,
+      downloadUrl: downloadUrl ?? this.downloadUrl,
+      magnetLink: magnetLink ?? this.magnetLink,
+      infoHash: infoHash ?? this.infoHash,
+      resolution: resolution ?? this.resolution,
+      isBatch: isBatch ?? this.isBatch,
+      episodeNumber: episodeNumber ?? this.episodeNumber,
+      releaseGroup: releaseGroup ?? this.releaseGroup,
+      isBestRelease: isBestRelease ?? this.isBestRelease,
+      confirmed: confirmed ?? this.confirmed,
+      isDebridCached: isDebridCached ?? this.isDebridCached,
+      debridCachedFileIds: debridCachedFileIds ?? this.debridCachedFileIds,
     );
   }
 
@@ -98,6 +151,8 @@ class TorrentItem {
       if (releaseGroup != null) 'releaseGroup': releaseGroup,
       'isBestRelease': isBestRelease,
       'confirmed': confirmed,
+      'isDebridCached': isDebridCached,
+      'debridCachedFileIds': debridCachedFileIds,
     };
   }
 }

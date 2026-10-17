@@ -85,4 +85,15 @@ class ApiEndpoints {
   static const String mangaDownloadChapterDelete = '/manga/download-chapter';
   static const String mangaDownloadsList = '/manga/downloads';
   static const String mangaDownloadedChapters = '/manga/downloaded-chapters';
+
+  // Debrid Services
+  static const String debridSettings = '/debrid/settings';
+  static const String debridTorrents = '/debrid/torrents';
+  static const String debridTorrent = '/debrid/torrent';
+  static const String debridTorrentsDownload = '/debrid/torrents/download';
+  static const String debridTorrentsCancel = '/debrid/torrents/cancel';
+  static const String debridTorrentsInfo = '/debrid/torrents/info';
+  static const String debridTorrentsFilePreviews = '/debrid/torrents/file-previews';
+  static const String debridStreamStart = '/debrid/stream/start';
+  static const String debridStreamCancel = '/debrid/stream/cancel';
 }

@@ -100,6 +100,7 @@ type (
 		Lang           string   `json:"lang"` // ISO 639-1 language code
 		EpisodeServers []string `json:"episodeServers"`
 		SupportsDub    bool     `json:"supportsDub"`
+		SupportsTmdb   bool     `json:"supportsTmdb"`
 	}
 
 	AnimeTorrentProviderExtensionItem struct {
@@ -403,6 +404,7 @@ func (r *Repository) ListOnlinestreamProviderExtensions() []*OnlinestreamProvide
 			Lang:           extension.GetExtensionLang(ext.GetLang()),
 			EpisodeServers: settings.EpisodeServers,
 			SupportsDub:    settings.SupportsDub,
+			SupportsTmdb:   settings.SupportsTmdb,
 		})
 		return true
 	})
