@@ -153,8 +153,7 @@ class _MainShellState extends ConsumerState<MainShell> {
     final desktopNavStyle = ref.watch(desktopNavStyleProvider);
     final iconPack = ref.watch(iconPackProvider);
 
-    final serverState = ref.watch(serverNotifierProvider);
-    final avatarUrl = serverState.status?.avatarUrl;
+    final avatarUrl = ref.watch(serverNotifierProvider.select((s) => s.status?.avatarUrl));
 
     final animeEnabled = ref.watch(animeSectionEnabledProvider);
     final showsEnabled = ref.watch(showsSectionEnabledProvider);

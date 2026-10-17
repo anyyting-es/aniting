@@ -869,6 +869,7 @@ class _FeedLoadingSkeleton extends StatefulWidget {
 class _FeedLoadingSkeletonState extends State<_FeedLoadingSkeleton>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
+  late final Animation<double> _opacityAnimation;
 
   @override
   void initState() {
@@ -877,6 +878,9 @@ class _FeedLoadingSkeletonState extends State<_FeedLoadingSkeleton>
       vsync: this,
       duration: const Duration(milliseconds: 1400),
     )..repeat(reverse: true);
+    _opacityAnimation = Tween<double>(begin: 0.18, end: 0.46).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
   }
 
   @override
@@ -892,8 +896,8 @@ class _FeedLoadingSkeletonState extends State<_FeedLoadingSkeleton>
     final borderRadius = BorderRadius.circular(10);
 
     return RepaintBoundary(
-      child: AnimatedBuilder(
-        animation: _controller,
+      child: FadeTransition(
+        opacity: _opacityAnimation,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -952,13 +956,6 @@ class _FeedLoadingSkeletonState extends State<_FeedLoadingSkeleton>
             const SizedBox(height: 24),
           ],
         ),
-        builder: (context, child) {
-          final opacity = 0.18 + (_controller.value * 0.28);
-          return Opacity(
-            opacity: opacity,
-            child: child,
-          );
-        },
       ),
     );
   }

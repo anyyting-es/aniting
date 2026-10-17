@@ -246,7 +246,7 @@ class _MangaDetailMobileLayoutState extends ConsumerState<MangaDetailMobileLayou
                                   ? (shouldBlur
                                       ? ClipRect(
                                           child: ImageFiltered(
-                                            imageFilter: ImageFilter.blur(sigmaX: 45, sigmaY: 45),
+                                            imageFilter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
                                             child: Transform.scale(
                                               scale: 1.25,
                                               child: CachedNetworkImage(

@@ -39,7 +39,7 @@ class DesktopHeroBanner extends ConsumerWidget {
             shouldBlur
                 ? ClipRect(
                     child: ImageFiltered(
-                      imageFilter: ImageFilter.blur(sigmaX: 25, sigmaY: 25),
+                      imageFilter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
                       child: Transform.scale(
                         scale: 1.25,
                         child: CachedNetworkImage(

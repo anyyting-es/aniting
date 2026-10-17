@@ -1,4 +1,4 @@
-import 'dart:ui';
+// Optimized FloatingResumeBar
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -266,26 +266,22 @@ class FloatingResumeBar extends ConsumerWidget {
               ),
             ],
           ),
-          child: ClipRRect(
-            borderRadius: cardBorderRadius,
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? theme.colorScheme.surface.withValues(alpha: 0.90)
-                      : theme.colorScheme.surface.withValues(alpha: 0.95),
-                  borderRadius: cardBorderRadius,
-                  border: Border.all(
-                    color: isDark
-                        ? Colors.white.withValues(alpha: 0.14)
-                        : theme.colorScheme.outlineVariant.withValues(alpha: 0.40),
-                    width: 1.0,
-                  ),
-                ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
+          child: Container(
+            decoration: BoxDecoration(
+              color: isDark
+                  ? theme.colorScheme.surface.withValues(alpha: 0.95)
+                  : theme.colorScheme.surface.withValues(alpha: 0.98),
+              borderRadius: cardBorderRadius,
+              border: Border.all(
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.14)
+                    : theme.colorScheme.outlineVariant.withValues(alpha: 0.40),
+                width: 1.0,
+              ),
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
                   onTap: () => resumePlayback(context, ref, session),
                   borderRadius: cardBorderRadius,
                   child: Padding(
@@ -410,8 +406,6 @@ class FloatingResumeBar extends ConsumerWidget {
             ),
           ),
         ),
-      ),
-    ),
-  );
-}
+    );
+  }
 }

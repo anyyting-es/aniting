@@ -732,9 +732,9 @@ class _AnimeDetailMobileLayoutState
                           child: bannerUrl != null
                                 ? (shouldBlur
                                     ? ClipRect(
-                                        child: ImageFiltered(
-                                          imageFilter: ImageFilter.blur(sigmaX: 25, sigmaY: 25),
-                                          child: Transform.scale(
+                                          child: ImageFiltered(
+                                            imageFilter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+                                            child: Transform.scale(
                                             scale: 1.25,
                                             child: CachedNetworkImage(
                                               imageUrl: bannerUrl,

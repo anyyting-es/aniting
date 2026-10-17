@@ -262,8 +262,6 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
       }
       return;
     }
-
-    _restoreSavedMode();
     final repo = ref.read(repositoryProvider);
 
     AnimeDetails? details = _details ??
