@@ -208,6 +208,9 @@ class OnlineStreamDownloadCard extends ConsumerWidget {
   }
 
   String _failureMessage(AppTranslations l10n) {
+    if (task.error != null && task.error!.isNotEmpty) {
+      return task.error!;
+    }
     return switch (task.errorCode) {
       'protected' => l10n.downloadFailedProtected,
       'invalid' => l10n.downloadFailedInvalid,

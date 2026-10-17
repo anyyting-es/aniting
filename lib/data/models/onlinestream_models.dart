@@ -96,6 +96,15 @@ class OnlinestreamSubtitle {
       isDefault: json['isDefault'] == true || json['default'] == true,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      if (id != null) 'id': id,
+      'url': url,
+      'language': language,
+      'isDefault': isDefault,
+    };
+  }
 }
 
 class OnlinestreamVideoSource {

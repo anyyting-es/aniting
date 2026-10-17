@@ -52,9 +52,10 @@ const (
 	CheckForUpdates       = "check-for-updates"
 	CheckForAnnouncements = "check-for-announcements"
 
-	RefreshedMangaDownloadData  = "refreshed-manga-download-data"
-	ChapterDownloadQueueUpdated = "chapter-download-queue-updated"
-	OfflineSnapshotCreated      = "offline-snapshot-created"
+	RefreshedMangaDownloadData       = "refreshed-manga-download-data"
+	ChapterDownloadQueueUpdated      = "chapter-download-queue-updated"
+	OnlinestreamDownloadQueueUpdated = "onlinestream-download-queue-updated"
+	OfflineSnapshotCreated           = "offline-snapshot-created"
 	MangaPreferencesUpdated     = "manga-preferences-updated"
 	MangaSourceRefreshUpdated   = "manga-source-refresh-job-updated"
 

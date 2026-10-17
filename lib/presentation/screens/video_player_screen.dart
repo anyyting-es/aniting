@@ -259,6 +259,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   bool? _currentOnlineStreamDubbed;
   String? _currentOnlineStreamServer;
   bool _isCurrentLocalFile = false;
+  Duration? _initialStartPosition;
 
   bool _isPlayerDisposed = false;
 
@@ -481,6 +482,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     _currentOnlineStreamDubbed = widget.onlineStreamDubbed;
     _currentOnlineStreamServer = widget.onlineStreamServer;
     _isCurrentLocalFile = widget.isLocalFile;
+    _initialStartPosition = widget.startPosition;
 
     _animeDetails = widget.initialAnimeDetails;
     _aniZipData = widget.initialAniZipData ?? widget.initialAnimeDetails?.aniZipData;
@@ -689,7 +691,12 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       getIsLocalFile: () => _isCurrentLocalFile,
       getVideoUrl: () => _currentVideoUrl,
       getPosition: () => _position,
-      getStartPosition: () => widget.startPosition ?? getSavedProgress(),
+      getStartPosition: () {
+        final pos = _initialStartPosition;
+        _initialStartPosition = null;
+        return pos ?? getSavedProgress();
+      },
+      getSavedProgress: (epNum) => getSavedProgress(epNum),
       getHasNextEpisode: () => _hasNextEpisode,
       onUpdateUi: () {
         if (mounted && !_isPlayerDisposed) setState(() {});
@@ -729,6 +736,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
         initialSurfaceTop: winInit.initialTop,
         initialSurfaceHeight: winInit.initialHeight,
       );
+      _initialStartPosition = null;
 
       _progressManager.startTracking(initialPosition: resolvedStartPosition);
       if (widget.mediaId != null) {
@@ -885,6 +893,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   }
 
   void _onEpisodeTransitionStarted(int targetEpNum, String targetEpTitle) {
+    _initialStartPosition = null;
     _progressManager.savePlaybackProgress();
     _progressManager.syncAnimeProgressIfNeeded();
     setState(() {

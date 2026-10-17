@@ -56,6 +56,9 @@ class ApiEndpoints {
   static const String onlinestreamManualMapping = '/onlinestream/manual-mapping';
   static const String onlinestreamGetMapping = '/onlinestream/get-mapping';
   static const String onlinestreamRemoveMapping = '/onlinestream/remove-mapping';
+  static const String onlinestreamDownload = '/onlinestream/download';
+  static const String onlinestreamDownloadQueue = '/onlinestream/download-queue';
+  static const String onlinestreamDownloadQueueClear = '/onlinestream/download-queue/clear';
 
   // Discover & Search
   static const String discover = '/discover';

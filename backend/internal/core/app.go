@@ -104,6 +104,7 @@ type (
 		// Streaming
 		DirectStreamManager     *directstream.Manager
 		OnlinestreamRepository  *onlinestream.Repository
+		OnlinestreamDownloader  *onlinestream.Downloader
 		MediastreamRepository   *mediastream.Repository
 		TorrentstreamRepository *torrentstream.Repository
 
@@ -438,6 +439,7 @@ func NewApp(configOpts *ConfigOptions, selfupdater *updater.SelfUpdater) *App {
 		ContinuityManager:             nil, // Initialized in App.initModulesOnce
 		DebridClientRepository:        nil, // Initialized in App.initModulesOnce
 		DirectStreamManager:           nil, // Initialized in App.initModulesOnce
+		OnlinestreamDownloader:        nil, // Initialized in App.initModulesOnce
 		NativePlayer:                  nil, // Initialized in App.initModulesOnce
 		VideoCore:                     nil, // Initialized in App.initModulesOnce
 		MpvCore:                       nil, // Initialized in App.initModulesOnce

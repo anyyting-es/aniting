@@ -29,6 +29,7 @@ class PlayerSourceController extends ChangeNotifier {
   final ValueGetter<String>? getVideoUrl;
   final ValueGetter<Duration> getPosition;
   final ValueGetter<Duration?> getStartPosition;
+  final Duration? Function(int episodeNumber)? getSavedProgress;
   final ValueGetter<bool> getHasNextEpisode;
 
   /// TMDB (movies / series) support.
@@ -87,6 +88,7 @@ class PlayerSourceController extends ChangeNotifier {
     this.getVideoUrl,
     required this.getPosition,
     required this.getStartPosition,
+    this.getSavedProgress,
     required this.getHasNextEpisode,
     required this.onUpdateUi,
     required this.onSourceActivated,
@@ -100,8 +102,11 @@ class PlayerSourceController extends ChangeNotifier {
 
   /// Resolves online stream sources for the current episode and immediately begins
   /// streaming the first available source without manual intervention.
-  Future<void> resolveInitialSources({bool preservePosition = false}) async {
-    final epNum = getEpisodeNumber();
+  Future<void> resolveInitialSources({
+    bool preservePosition = false,
+    int? targetEpisodeNumber,
+  }) async {
+    final epNum = targetEpisodeNumber ?? getEpisodeNumber();
     final provider = getOnlineStreamProvider();
     if (mediaId == null || epNum == null || provider == null) {
       return;
@@ -156,10 +161,15 @@ class PlayerSourceController extends ChangeNotifier {
       sourceResolutionError = null;
 
       final currentPos = getPosition();
-      final savedPos = getStartPosition();
+      final Duration savedPos;
+      if (targetEpisodeNumber != null) {
+        savedPos = getSavedProgress?.call(targetEpisodeNumber) ?? Duration.zero;
+      } else {
+        savedPos = getStartPosition() ?? Duration.zero;
+      }
       final targetStartPos = preservePosition
-          ? (currentPos > Duration.zero ? currentPos : (savedPos ?? Duration.zero))
-          : (savedPos ?? Duration.zero);
+          ? (currentPos > Duration.zero ? currentPos : savedPos)
+          : savedPos;
 
       onSourceActivated(
         videoUrl: chosenSource.url,
@@ -300,7 +310,7 @@ class PlayerSourceController extends ChangeNotifier {
 
     if (!getIsLocalFile() && getOnlineStreamProvider() != null) {
       try {
-        await resolveInitialSources();
+        await resolveInitialSources(targetEpisodeNumber: targetEpNum);
       } finally {
         isLoadingNextEpisode = false;
         _safeUpdateUi();
@@ -338,7 +348,7 @@ class PlayerSourceController extends ChangeNotifier {
           externalSubtitles: resolved.externalSubtitles,
         );
 
-        final targetStartPos = getStartPosition() ?? Duration.zero;
+        final targetStartPos = getSavedProgress?.call(targetEpNum) ?? Duration.zero;
         coordinator.open(
           videoUrl: resolved.videoUrl,
           title: title,

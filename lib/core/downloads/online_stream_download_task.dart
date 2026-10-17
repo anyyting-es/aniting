@@ -130,4 +130,67 @@ class OnlineStreamDownloadTask {
       completedAt: completedAt ?? this.completedAt,
     );
   }
+
+  factory OnlineStreamDownloadTask.fromJson(Map<String, dynamic> json) {
+    OnlineStreamDownloadStatus parseStatus(String? s) {
+      return switch (s?.toLowerCase()) {
+        'downloading' => OnlineStreamDownloadStatus.downloading,
+        'completed' => OnlineStreamDownloadStatus.completed,
+        'failed' => OnlineStreamDownloadStatus.failed,
+        'cancelled' => OnlineStreamDownloadStatus.cancelled,
+        'paused' => OnlineStreamDownloadStatus.paused,
+        'resolving' => OnlineStreamDownloadStatus.resolving,
+        _ => OnlineStreamDownloadStatus.pending,
+      };
+    }
+
+    final headersRaw = json['headers'];
+    Map<String, String>? headers;
+    if (headersRaw is Map) {
+      headers = headersRaw.map((k, v) => MapEntry(k.toString(), v.toString()));
+    }
+
+    final subsRaw = json['subtitles'];
+    List<OnlinestreamSubtitle> subtitles = [];
+    if (subsRaw is List) {
+      subtitles = subsRaw
+          .whereType<Map<String, dynamic>>()
+          .map((m) => OnlinestreamSubtitle.fromJson(m))
+          .toList();
+    }
+
+    DateTime createdAt = DateTime.now();
+    if (json['createdAt'] != null) {
+      createdAt = DateTime.tryParse(json['createdAt'].toString()) ?? createdAt;
+    }
+    DateTime? completedAt;
+    if (json['completedAt'] != null) {
+      completedAt = DateTime.tryParse(json['completedAt'].toString());
+    }
+
+    return OnlineStreamDownloadTask(
+      id: json['id']?.toString() ?? '',
+      mediaId: (json['mediaId'] as num?)?.toInt() ?? 0,
+      episodeNumber: (json['episodeNumber'] as num?)?.toInt() ?? 0,
+      animeTitle: json['animeTitle']?.toString() ?? '',
+      episodeTitle: json['episodeTitle']?.toString() ?? '',
+      thumbnail: json['thumbnail']?.toString(),
+      providerId: json['providerId']?.toString() ?? '',
+      providerName: json['providerName']?.toString() ?? '',
+      server: json['server']?.toString() ?? '',
+      quality: json['quality']?.toString() ?? '',
+      videoUrl: json['videoUrl']?.toString() ?? '',
+      headers: headers,
+      isHls: json['isHls'] == true,
+      savePath: json['savePath']?.toString() ?? '',
+      status: parseStatus(json['status']?.toString()),
+      progress: (json['progress'] as num?)?.toDouble() ?? 0.0,
+      downloadedBytes: (json['downloadedBytes'] as num?)?.toInt() ?? 0,
+      speed: json['speed']?.toString() ?? '',
+      error: json['error']?.toString(),
+      subtitles: subtitles,
+      createdAt: createdAt,
+      completedAt: completedAt,
+    );
+  }
 }

@@ -21,6 +21,7 @@ import 'package:seanime_app/data/models/debrid_models.dart';
 import 'package:seanime_app/core/storage/app_storage_paths.dart';
 import 'package:seanime_app/data/models/local_file_item.dart';
 import 'package:seanime_app/data/models/show_local_file_item.dart';
+import 'package:seanime_app/core/downloads/online_stream_download_task.dart';
 import 'package:seanime_app/data/services/feed_cache_service.dart';
 import 'package:seanime_app/data/services/offline_library_service.dart';
 
@@ -2889,6 +2890,106 @@ class SeanimeRepository {
     }
   }
 
+  // ================= Onlinestream Server Downloads =================
+
+  Future<OnlineStreamDownloadTask?> startOnlinestreamDownload({
+    required int mediaId,
+    required int episodeNumber,
+    required String animeTitle,
+    required String episodeTitle,
+    String? thumbnail,
+    required String providerId,
+    required String providerName,
+    required String server,
+    required String quality,
+    required String videoUrl,
+    Map<String, String>? headers,
+    bool isHls = false,
+    String? destination,
+    List<OnlinestreamSubtitle>? subtitles,
+  }) async {
+    try {
+      final body = <String, dynamic>{
+        'mediaId': mediaId,
+        'episodeNumber': episodeNumber,
+        'animeTitle': animeTitle,
+        'episodeTitle': episodeTitle,
+        'thumbnail': ?thumbnail,
+        'providerId': providerId,
+        'providerName': providerName,
+        'server': server,
+        'quality': quality,
+        'videoUrl': videoUrl,
+        'headers': ?headers,
+        'isHls': isHls,
+        if (destination != null && destination.isNotEmpty) 'destination': destination,
+        if (subtitles != null) 'subtitles': subtitles.map((s) => s.toJson()).toList(),
+      };
+      final res = await _apiClient.post(
+        ApiEndpoints.onlinestreamDownload,
+        data: body,
+      );
+      if (res.statusCode == 200 && res.data != null) {
+        final data = res.data;
+        final map = data is Map && data['data'] is Map
+            ? data['data'] as Map<String, dynamic>
+            : (data is Map<String, dynamic> ? data : null);
+        if (map != null) {
+          return OnlineStreamDownloadTask.fromJson(map);
+        }
+      }
+    } catch (e) {
+      debugPrint('startOnlinestreamDownload error: $e');
+      rethrow;
+    }
+    return null;
+  }
+
+  Future<List<OnlineStreamDownloadTask>> getOnlinestreamDownloadQueue() async {
+    try {
+      final res = await _apiClient.get(ApiEndpoints.onlinestreamDownloadQueue);
+      if (res.statusCode == 200 && res.data != null) {
+        final data = res.data;
+        final list = data is Map && data['data'] is List
+            ? data['data'] as List
+            : (data is List ? data : null);
+        if (list != null) {
+          return list
+              .whereType<Map<String, dynamic>>()
+              .map(OnlineStreamDownloadTask.fromJson)
+              .toList();
+        }
+      }
+    } catch (e) {
+      debugPrint('getOnlinestreamDownloadQueue error: $e');
+    }
+    return [];
+  }
+
+  Future<bool> cancelOnlinestreamDownload(String id) async {
+    try {
+      final res = await _apiClient.delete(
+        '${ApiEndpoints.onlinestreamDownloadQueue}/$id',
+      );
+      return res.statusCode == 200;
+    } catch (e) {
+      debugPrint('cancelOnlinestreamDownload error: $e');
+      return false;
+    }
+  }
+
+  Future<bool> clearCompletedOnlinestreamDownloads() async {
+    try {
+      final res = await _apiClient.post(
+        ApiEndpoints.onlinestreamDownloadQueueClear,
+      );
+      return res.statusCode == 200;
+    } catch (e) {
+      debugPrint('clearCompletedOnlinestreamDownloads error: $e');
+      return false;
+    }
+  }
+
   // ================= Torrent Providers & Search =================
 
   Future<List<AnimeTorrentProvider>> getAnimeTorrentProviders() async {
@@ -3312,9 +3413,13 @@ class SeanimeRepository {
           : libraryPath;
 
       final finalDestination = '$cleanLibPath$separator$title';
-      final destDir = Directory(finalDestination);
-      if (!await destDir.exists()) {
-        await destDir.create(recursive: true);
+      try {
+        final destDir = Directory(finalDestination);
+        if (!await destDir.exists()) {
+          await destDir.create(recursive: true);
+        }
+      } catch (_) {
+        // Directory creation may fail on remote clients (mobile/TV) when paths belong to host server
       }
       return finalDestination;
     } catch (e) {

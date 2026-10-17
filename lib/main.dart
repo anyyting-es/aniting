@@ -32,6 +32,7 @@ import 'package:seanime_app/core/preferences/glass_theme_provider.dart';
 import 'package:seanime_app/core/player/mpris_service.dart';
 import 'package:seanime_app/presentation/providers/download_history_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:seanime_app/presentation/widgets/dpad_navigation_scope.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -250,7 +251,9 @@ class _AnitingFlutterAppState extends ConsumerState<AnitingFlutterApp> with Widg
                       glassEffectsEnabled.toGlassTier(),
                       GlassTierReason.pinnedByHost,
                     ),
-                    child: child ?? const SizedBox.shrink(),
+                    child: DpadNavigationScope(
+                      child: child ?? const SizedBox.shrink(),
+                    ),
                   ),
                 ),
               ),

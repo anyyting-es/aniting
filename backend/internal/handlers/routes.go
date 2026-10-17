@@ -365,6 +365,10 @@ func InitRoutes(app *core.App, e *echo.Echo) {
 	v1.POST("/onlinestream/episode-source", h.HandleGetOnlineStreamEpisodeSource)
 	v1.POST("/onlinestream/episode-list", h.HandleGetOnlineStreamEpisodeList)
 	v1.DELETE("/onlinestream/cache", h.HandleOnlineStreamEmptyCache)
+	v1.POST("/onlinestream/download", h.HandleStartOnlinestreamDownload)
+	v1.GET("/onlinestream/download-queue", h.HandleGetOnlinestreamDownloadQueue)
+	v1.DELETE("/onlinestream/download-queue/:id", h.HandleCancelOnlinestreamDownload)
+	v1.POST("/onlinestream/download-queue/clear", h.HandleClearCompletedOnlinestreamDownloads)
 
 	v1.POST("/onlinestream/search", h.HandleOnlinestreamManualSearch)
 	v1.POST("/onlinestream/manual-mapping", h.HandleOnlinestreamManualMapping)

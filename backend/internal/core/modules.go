@@ -30,6 +30,7 @@ import (
 	"seanime/internal/nakama"
 	"seanime/internal/nativeplayer"
 	"seanime/internal/notifier"
+	"seanime/internal/onlinestream"
 	"seanime/internal/platforms/shared_platform"
 	"seanime/internal/player"
 	"seanime/internal/playlist"
@@ -189,6 +190,30 @@ func (a *App) initModulesOnce() {
 	})
 
 	a.MangaDownloader.Start()
+
+	// +-------------------------+
+	// |   Onlinestream Download |
+	// +-------------------------+
+
+	a.OnlinestreamDownloader = onlinestream.NewDownloader(&onlinestream.NewDownloaderOptions{
+		Logger:         a.Logger,
+		WSEventManager: a.WSEventManager,
+		Database:       a.Database,
+		GetLibraryPath: func() string {
+			if a.Settings != nil && a.Settings.Library != nil {
+				return a.Settings.Library.LibraryPath
+			}
+			return ""
+		},
+		OnCompleted: func(task *onlinestream.DownloadTask) {
+			if a.AutoScanner != nil {
+				a.AutoScanner.Notify()
+			}
+		},
+	})
+	a.AddCleanupFunction(func() {
+		a.OnlinestreamDownloader.Close()
+	})
 
 	// +---------------------+
 	// |      VideoCore      |
