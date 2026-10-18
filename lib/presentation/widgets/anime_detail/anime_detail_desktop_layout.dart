@@ -21,8 +21,6 @@ import 'desktop/desktop_action_bar.dart';
 import 'desktop/desktop_episodes_tab.dart';
 import 'desktop/desktop_header.dart';
 import 'desktop/desktop_hero_banner.dart';
-import 'desktop/desktop_recommendations_tab.dart';
-import 'desktop/desktop_relations_tab.dart';
 import 'desktop/desktop_sidebar.dart';
 import 'package:seanime_app/presentation/widgets/episodes/episodes_view.dart';
 import 'package:seanime_app/presentation/widgets/episodes/episode_batch_action_bar.dart';
@@ -41,6 +39,7 @@ class AnimeDetailDesktopLayout extends ConsumerStatefulWidget {
 
   final VoidCallback onToggleLocalMode;
   final ValueChanged<AnimeDetailTab> onTabChanged;
+  final void Function(String mode)? onModeChanged;
   final void Function(String title) onOpenEditEntryModal;
   final Future<void> Function() onRetryAniZip;
   final Future<void> Function({
@@ -64,6 +63,7 @@ class AnimeDetailDesktopLayout extends ConsumerStatefulWidget {
     required this.currentTab,
     required this.onToggleLocalMode,
     required this.onTabChanged,
+    this.onModeChanged,
     required this.onOpenEditEntryModal,
     required this.onRetryAniZip,
     required this.onOpenTorrentSelector,
@@ -468,14 +468,11 @@ class _AnimeDetailDesktopLayoutState
 
     final description = _cleanHtml(widget.details?.description);
 
-    final relationsEdges = widget.details?.relations.isNotEmpty == true
-        ? widget.details!.relations
-        : ((raw['relations']?['edges'] as List?) ?? []);
-    final recommendationsEdges = widget.details?.recommendations.isNotEmpty == true
-        ? widget.details!.recommendations
-        : ((raw['recommendations']?['edges'] as List?) ?? []);
-
     final libraryEntryAsync = ref.watch(animeLibraryEntryProvider(widget.mediaId));
+    final hasLibFiles = libraryEntryAsync.asData?.value != null &&
+        (libraryEntryAsync.asData!.value!.hasLibraryData ||
+            libraryEntryAsync.asData!.value!.episodes.any((e) => e.isDownloaded));
+    final effectiveHasLocal = widget.hasLocalFiles || hasLibFiles;
     final downloadedMap = {
       for (final ep in (libraryEntryAsync.asData?.value?.episodes ?? <LibraryEpisode>[]))
         if (ep.isDownloaded) ep.episodeNumber: ep.localFilePath,
@@ -593,6 +590,10 @@ class _AnimeDetailDesktopLayoutState
                       onPlayNext: () => _handlePlayNext(progress),
                       onOpenEditEntryModal: widget.onOpenEditEntryModal,
                       onTabChanged: widget.onTabChanged,
+                      isLocalMode: widget.isLocalMode,
+                      hasLocalFiles: effectiveHasLocal,
+                      onToggleLocalMode: widget.onToggleLocalMode,
+                      onModeChanged: widget.onModeChanged,
                       onDownload: () {
                         final totalEps = widget.details?.totalEpisodes ?? widget.initialEntry?.totalEpisodes;
                         final nextEp = (progress + 1).clamp(1, totalEps ?? (progress + 1));
@@ -647,34 +648,6 @@ class _AnimeDetailDesktopLayoutState
                         onTabChanged: widget.onTabChanged,
                         onOpenTorrentSelector: widget.onOpenTorrentSelector,
                       ),
-
-                    // ─── Relations Section (Full Width) ───
-                    if (relationsEdges.isNotEmpty || widget.isLoading) ...[
-                      const SizedBox(height: 48),
-                      _DesktopSectionHeader(
-                        title: l10n.relations,
-                        icon: AppIcons.relations(iconPack),
-                      ),
-                      const SizedBox(height: 18),
-                      DesktopRelationsTab(
-                        relations: relationsEdges,
-                        isLoading: widget.isLoading,
-                      ),
-                    ],
-
-                    // ─── Recommendations Section ("Te podría gustar") (Full Width) ───
-                    if (recommendationsEdges.isNotEmpty || widget.isLoading) ...[
-                      const SizedBox(height: 48),
-                      _DesktopSectionHeader(
-                        title: l10n.recommendations,
-                        icon: AppIcons.sparkles(iconPack),
-                      ),
-                      const SizedBox(height: 18),
-                      DesktopRecommendationsTab(
-                        recommendations: recommendationsEdges,
-                        isLoading: widget.isLoading,
-                      ),
-                    ],
                   ],
                 ),
               ),
@@ -702,43 +675,5 @@ class _AnimeDetailDesktopLayoutState
           ],
         ),
       );
-  }
-}
-
-class _DesktopSectionHeader extends StatelessWidget {
-  final String title;
-  final IconData? icon;
-
-  const _DesktopSectionHeader({
-    required this.title,
-    this.icon,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    return Row(
-      children: [
-        if (icon != null) ...[
-          Icon(
-            icon,
-            size: 20,
-            color: isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
-          ),
-          const SizedBox(width: 8),
-        ],
-        Text(
-          title,
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-            letterSpacing: -0.3,
-            color: isDark ? Colors.white : theme.colorScheme.onSurface,
-          ),
-        ),
-      ],
-    );
   }
 }

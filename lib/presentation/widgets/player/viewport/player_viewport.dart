@@ -139,8 +139,9 @@ class PlayerViewport extends ConsumerWidget {
     final iconPack = ref.watch(iconPackProvider);
     final subStyle = ref.watch(subtitleStylePreferencesProvider);
 
+    final isNativePlayer = isUsingExoPlayer || mpvPlayerService != null;
     return ColoredBox(
-      color: isUsingExoPlayer ? Colors.transparent : Colors.black,
+      color: isNativePlayer ? Colors.transparent : Colors.black,
       child: Stack(
         fit: StackFit.expand,
         children: [
@@ -444,16 +445,19 @@ class _ControlsOverlayState extends State<_ControlsOverlay> {
 
   @override
   Widget build(BuildContext context) {
+    final isVisible =
+        widget.areControlsVisible && !widget.isTransitioningOrientation;
     return AnimatedOpacity(
-      opacity: (widget.areControlsVisible && !widget.isTransitioningOrientation) ? 1.0 : 0.0,
-      duration: const Duration(milliseconds: 200),
+      opacity: isVisible ? 1.0 : 0.0,
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeInOutCubic,
       onEnd: () {
         if (!widget.areControlsVisible && mounted) {
           setState(() => _controlsMounted = false);
         }
       },
       child: IgnorePointer(
-        ignoring: !widget.areControlsVisible || widget.isTransitioningOrientation,
+        ignoring: !isVisible,
         child: Stack(
           fit: StackFit.expand,
           children: [

@@ -10,6 +10,12 @@ import 'package:seanime_app/data/services/offline_library_service.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
 
+enum _DesktopSourceMode {
+  local,
+  online,
+  torrent,
+}
+
 class DesktopActionBar extends ConsumerWidget {
   final int mediaId;
   final String title;
@@ -29,6 +35,10 @@ class DesktopActionBar extends ConsumerWidget {
   final void Function(String title) onOpenEditEntryModal;
   final ValueChanged<AnimeDetailTab> onTabChanged;
   final VoidCallback? onDownload;
+  final bool isLocalMode;
+  final bool hasLocalFiles;
+  final VoidCallback? onToggleLocalMode;
+  final void Function(String mode)? onModeChanged;
 
   const DesktopActionBar({
     super.key,
@@ -50,6 +60,10 @@ class DesktopActionBar extends ConsumerWidget {
     required this.onOpenEditEntryModal,
     required this.onTabChanged,
     this.onDownload,
+    this.isLocalMode = false,
+    this.hasLocalFiles = false,
+    this.onToggleLocalMode,
+    this.onModeChanged,
   });
 
   Future<void> _launchTmdb(int mediaId) async {
@@ -364,55 +378,87 @@ class DesktopActionBar extends ConsumerWidget {
 
         const Spacer(),
 
-        // Source Mode Toggle (Online / Torrent) with GlassSegmentedControl (Anime only)
-        if (!isTmdb && onlineEnabled && torrentEnabled) ...[
-          SizedBox(
-            width: 230,
-            child: GlassSegmentedControl(
-              selectedIndex: currentTab == AnimeDetailTab.online ? 0 : 1,
-              onSelected: (index) {
-                onTabChanged(index == 0 ? AnimeDetailTab.online : AnimeDetailTab.torrent);
-              },
-              trackColor: isDark
-                  ? Colors.white.withValues(alpha: 0.08)
-                  : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-              thumbColor: isDark
-                  ? theme.colorScheme.surfaceContainerHighest
-                  : Colors.white,
-              segments: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(AppIcons.globe(iconPack), size: 13),
-                      const SizedBox(width: 4),
-                      const Text(
-                        'Online',
-                        style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600),
+        // Source Mode Toggle (Local / Online / Torrent) with GlassSegmentedControl (Anime only)
+        if (!isTmdb) ...[
+          () {
+            final availableModes = <_DesktopSourceMode>[
+              if (hasLocalFiles) _DesktopSourceMode.local,
+              if (onlineEnabled) _DesktopSourceMode.online,
+              if (torrentEnabled) _DesktopSourceMode.torrent,
+            ];
+
+            if (availableModes.length < 2) return const SizedBox.shrink();
+
+            final _DesktopSourceMode activeMode = isLocalMode
+                ? _DesktopSourceMode.local
+                : (currentTab == AnimeDetailTab.online
+                    ? _DesktopSourceMode.online
+                    : _DesktopSourceMode.torrent);
+            final rawIndex = availableModes.indexOf(activeMode);
+            final selectedIndex = rawIndex >= 0 ? rawIndex : 0;
+
+            final totalWidth = availableModes.length >= 3 ? 310.0 : 220.0;
+
+            return SizedBox(
+              width: totalWidth,
+              child: GlassSegmentedControl(
+                selectedIndex: selectedIndex,
+                onSelected: (index) {
+                  final mode = availableModes[index];
+                  if (onModeChanged != null) {
+                    onModeChanged!(mode.name);
+                  } else {
+                    switch (mode) {
+                      case _DesktopSourceMode.local:
+                        if (!isLocalMode) onToggleLocalMode?.call();
+                        break;
+                      case _DesktopSourceMode.online:
+                        if (isLocalMode) onToggleLocalMode?.call();
+                        onTabChanged(AnimeDetailTab.online);
+                        break;
+                      case _DesktopSourceMode.torrent:
+                        if (isLocalMode) onToggleLocalMode?.call();
+                        onTabChanged(AnimeDetailTab.torrent);
+                        break;
+                    }
+                  }
+                },
+                trackColor: isDark
+                    ? Colors.white.withValues(alpha: 0.08)
+                    : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                thumbColor: isDark
+                    ? theme.colorScheme.surfaceContainerHighest
+                    : Colors.white,
+                segments: [
+                  for (final mode in availableModes)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            mode == _DesktopSourceMode.local
+                                ? AppIcons.folderFilled(iconPack)
+                                : (mode == _DesktopSourceMode.online
+                                    ? AppIcons.globe(iconPack)
+                                    : AppIcons.cloudDownload(iconPack)),
+                            size: 13,
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            mode == _DesktopSourceMode.local
+                                ? l10n.localLibrary
+                                : (mode == _DesktopSourceMode.online ? 'Online' : 'Torrent'),
+                            style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(AppIcons.cloudDownload(iconPack), size: 13),
-                      const SizedBox(width: 4),
-                      const Text(
-                        'Torrent',
-                        style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
+                    ),
+                ],
+              ),
+            );
+          }(),
         ],
       ],
     );

@@ -160,6 +160,7 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
   void didUpdateWidget(covariant DesktopEpisodesTab oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.currentTab != widget.currentTab ||
+        oldWidget.isLocalMode != widget.isLocalMode ||
         oldWidget.selectedProvider?.id != widget.selectedProvider?.id ||
         oldWidget.isDubbed != widget.isDubbed) {
       if (_currentPage != 0) {

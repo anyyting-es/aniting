@@ -260,6 +260,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   String? _currentOnlineStreamServer;
   bool _isCurrentLocalFile = false;
   Duration? _initialStartPosition;
+  bool _isMouseInside = false;
 
   bool _isPlayerDisposed = false;
 
@@ -531,8 +532,10 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
         }
       },
       onBuffer: (buf) {
-        _buffer = buf;
-        _bufferNotifier.value = buf;
+        final effectiveBuf =
+            _playbackOrigin == PlayerPlaybackOrigin.local ? Duration.zero : buf;
+        _buffer = effectiveBuf;
+        _bufferNotifier.value = effectiveBuf;
       },
       onPlaying: (playing) {
         if (mounted) setState(() => _isPlaying = playing);
@@ -1021,6 +1024,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
 
   void _onMouseEnter() {
     if (!mounted) return;
+    _isMouseInside = true;
     if (!_focusNode.hasFocus) {
       _focusNode.requestFocus();
     }
@@ -1032,6 +1036,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
 
   void _onMouseMove() {
     if (!mounted) return;
+    if (!_isMouseInside) return;
     if (!_areControlsVisible) {
       setState(() => _areControlsVisible = true);
     }
@@ -1040,7 +1045,8 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
 
   void _onMouseExit() {
     if (!mounted) return;
-    if (_isInteractingWithVolume) return;
+    _isMouseInside = false;
+    _isInteractingWithVolume = false;
     _hideTimer?.cancel();
     if (_areControlsVisible) {
       setState(() => _areControlsVisible = false);
@@ -1313,7 +1319,13 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
             setState(() => _areControlsVisible = true);
           }
         } else {
-          _startHideTimer();
+          if (_isMouseInside) {
+            _startHideTimer();
+          } else {
+            if (_areControlsVisible) {
+              setState(() => _areControlsVisible = false);
+            }
+          }
         }
       },
       brightness: _brightness,
@@ -1389,7 +1401,9 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       });
     }
 
-    final scaffoldBg = _coordinator.isUsingExoPlayer
+    final isNativePlayerActive =
+        _coordinator.isUsingExoPlayer || _coordinator.mpvService != null;
+    final scaffoldBg = isNativePlayerActive
         ? Colors.transparent
         : (effectiveFullscreen ? Colors.black : theme.scaffoldBackgroundColor);
 
@@ -1427,7 +1441,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                 autofocus: true,
                 onKeyEvent: _handleKeyEvent,
                 child: MouseRegion(
-                  cursor: (!isDesktop || _areControlsVisible)
+                  cursor: (!isDesktop || _areControlsVisible || !_isMouseInside)
                       ? SystemMouseCursors.basic
                       : SystemMouseCursors.none,
                   onEnter: isDesktop ? (_) => _onMouseEnter() : null,

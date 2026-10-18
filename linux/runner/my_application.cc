@@ -15,24 +15,25 @@
 static void enable_video_plane_transparency(GtkWindow* window, FlView* view) {
 #ifdef GDK_WINDOWING_WAYLAND
   GdkDisplay* display = gtk_widget_get_display(GTK_WIDGET(window));
-  if (!GDK_IS_WAYLAND_DISPLAY(display)) return;
+  if (GDK_IS_WAYLAND_DISPLAY(display)) {
+    GdkScreen* screen = gtk_widget_get_screen(GTK_WIDGET(window));
+    GdkVisual* visual = gdk_screen_get_rgba_visual(screen);
+    if (visual != nullptr) {
+      gtk_widget_set_visual(GTK_WIDGET(window), visual);
+      gtk_widget_set_app_paintable(GTK_WIDGET(window), TRUE);
 
-  GdkScreen* screen = gtk_widget_get_screen(GTK_WIDGET(window));
-  GdkVisual* visual = gdk_screen_get_rgba_visual(screen);
-  if (visual == nullptr) {
-    g_warning("MPV video plane: no RGBA visual");
-    return;
+      GdkRGBA transparent = {0.0, 0.0, 0.0, 0.0};
+      fl_view_set_background_color(view, &transparent);
+      return;
+    } else {
+      g_warning("MPV video plane: no RGBA visual");
+    }
   }
-
-  gtk_widget_set_visual(GTK_WIDGET(window), visual);
-  gtk_widget_set_app_paintable(GTK_WIDGET(window), TRUE);
-
-  GdkRGBA transparent = {0.0, 0.0, 0.0, 0.0};
-  fl_view_set_background_color(view, &transparent);
-#else
-  (void)window;
-  (void)view;
 #endif
+  (void)window;
+  GdkRGBA background_color;
+  gdk_rgba_parse(&background_color, "#000000");
+  fl_view_set_background_color(view, &background_color);
 }
 
 struct _MyApplication {
@@ -195,11 +196,6 @@ static void my_application_activate(GApplication* application) {
 
   FlView* view = fl_view_new(project);
   enable_video_plane_transparency(window, view);
-  GdkRGBA background_color;
-  // Background defaults to black, override it here if necessary, e.g. #00000000
-  // for transparent.
-  gdk_rgba_parse(&background_color, "#000000");
-  fl_view_set_background_color(view, &background_color);
   gtk_widget_show(GTK_WIDGET(view));
   gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(view));
 

@@ -5,6 +5,21 @@
 > - **NEVER** include microscopic, tedious, or trivial implementation details that end users do not care about (e.g., do **NOT** write: *"Eliminado el brillo fosforescente del indicador deslizante"*, *"Pestañas de los 7 días visibles en frame 0"*, *"Ajustado padding a 4px"*, *"Cambiado color del dot"*).
 > - **ALWAYS** summarize improvements at a high, user-facing level with clear, direct bullet points (e.g., *"Mejoras de UI y navegación en el calendario de emisión"*, *"Nueva pantalla y gestión de estado sin conexión"*, *"Optimizaciones en la caché de seguir viendo"*).
 > - Keep it punchy, professional, and easy to skim.
+
+## 7.73. Selector de Fuentes en Escritorio y Mejoras de Reproductor en Linux (2026-10-18)
+- **Mejoras del Reproductor de Video en Linux**:
+  - Corrección de transparencia en la subsuperficie nativa Wayland eliminando pantallas negras durante la reproducción.
+  - Ocultamiento inmediato y fluido de los controles de video al retirar el puntero del ratón de la ventana.
+  - Indicador de buffer en la barra de tiempo optimizado para red (suprimido en reproducción de archivos locales).
+- **Navegación y Fuentes en Vista de Escritorio**:
+  - Nuevo selector segmentado en la barra de acciones con soporte completo para alternar entre Biblioteca Local, Streaming Online y Torrents.
+  - Priorización y apertura automática en modo Local para animes con contenido disponible en disco.
+  - Interfaz de episodios depurada y limpia sin secciones redundantes al pie de página.
+- **Verificación Completa**:
+  - 0 incidencias en `flutter analyze lib/`.
+
+---
+
 ## 7.72. Reimplementación Nativa de libmpv al Estilo Plezy (Zero-Copy) (2026-10-17)
 - **Eliminación Total de `media_kit`**:
   - Reemplazo íntegro de la capa `media_kit` y `media_kit_video` por una arquitectura de reproducción directa en ventana nativa modelada a partir de Plezy.
