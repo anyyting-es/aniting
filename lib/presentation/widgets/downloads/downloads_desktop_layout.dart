@@ -17,6 +17,7 @@ import 'package:seanime_app/presentation/screens/manga_detail_screen.dart';
 import 'package:seanime_app/presentation/widgets/anime_card.dart';
 import 'package:seanime_app/presentation/widgets/manga_card.dart';
 import 'package:seanime_app/presentation/widgets/media_type_toggle.dart';
+import 'package:seanime_app/presentation/widgets/toast/app_toast.dart';
 
 /// Modern Seanime-style desktop layout for offline downloads (Anime & Manga).
 ///
@@ -472,12 +473,7 @@ class _DownloadsDesktopLayoutState extends ConsumerState<DownloadsDesktopLayout>
         OutlinedButton.icon(
           onPressed: () async {
             final repo = ref.read(repositoryProvider);
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(l10n.scanStarted),
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
+            AppToast.info(l10n.scanStarted, context: context);
             await repo.scanLibrary();
             ref.invalidate(downloadedAnimeProvider);
             ref.invalidate(downloadedMangaListProvider);

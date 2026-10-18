@@ -11,6 +11,7 @@ import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/providers/download_history_provider.dart';
 import 'package:seanime_app/presentation/screens/video_player_screen.dart';
 import 'package:seanime_app/presentation/widgets/episode_item_widget.dart';
+import 'package:seanime_app/presentation/widgets/toast/app_toast.dart';
 
 class LocalLibraryView extends ConsumerStatefulWidget {
   final int mediaId;
@@ -67,12 +68,7 @@ class _LocalLibraryViewState extends ConsumerState<LocalLibraryView> {
     final repo = ref.read(repositoryProvider);
     final l10n = ref.read(translationsProvider);
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.scanStarted),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      AppToast.info(l10n.scanStarted, context: context);
     }
     await repo.scanLibrary();
     await _loadLibraryEntry();
@@ -133,7 +129,6 @@ class _LocalLibraryViewState extends ConsumerState<LocalLibraryView> {
 
     if (confirmed == true && mounted) {
       final repo = ref.read(repositoryProvider);
-      final messenger = ScaffoldMessenger.of(context);
       final path = ep.localFilePath;
       if (path != null && path.isNotEmpty) {
         await repo.deleteLocalFiles([path]);
@@ -144,12 +139,7 @@ class _LocalLibraryViewState extends ConsumerState<LocalLibraryView> {
       }
       ref.read(downloadHistoryProvider.notifier).removeItem('${widget.mediaId}_${ep.episodeNumber}');
       await _scanAndRefresh();
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(l10n.downloadDeleted),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      AppToast.success(l10n.downloadDeleted);
     }
   }
 

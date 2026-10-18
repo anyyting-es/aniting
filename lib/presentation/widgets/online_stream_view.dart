@@ -22,6 +22,7 @@ import 'package:seanime_app/presentation/providers/episode_selection_provider.da
 import 'package:seanime_app/presentation/widgets/episode_item_widget.dart';
 import 'package:seanime_app/presentation/widgets/anime_detail/mobile/anime_detail_manual_mapping_sheet.dart';
 import 'package:seanime_app/presentation/widgets/online_stream_download_dialog.dart';
+import 'package:seanime_app/presentation/widgets/toast/app_toast.dart';
 
 class OnlineStreamViewController {
   _OnlineStreamViewState? _state;
@@ -366,7 +367,6 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
 
     if (confirmed == true && mounted) {
       final repo = ref.read(repositoryProvider);
-      final messenger = ScaffoldMessenger.of(context);
       var targetPath = filePath;
       if (targetPath == null || targetPath.isEmpty) {
         final history = ref.read(downloadHistoryProvider);
@@ -388,12 +388,7 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
       ref.invalidate(downloadedAnimeProvider);
       ref.invalidate(animeLibraryEntryProvider(widget.mediaId));
       ref.invalidate(animeCollectionProvider);
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(l10n.downloadDeleted),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      AppToast.success(l10n.downloadDeleted);
     }
   }
 

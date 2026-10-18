@@ -32,6 +32,7 @@ import 'package:seanime_app/core/player/mpris_service.dart';
 import 'package:seanime_app/presentation/providers/download_history_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:seanime_app/presentation/widgets/dpad_navigation_scope.dart';
+import 'package:seanime_app/presentation/widgets/toast/app_toast_host.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -249,7 +250,12 @@ class _AnitingFlutterAppState extends ConsumerState<AnitingFlutterApp> with Widg
                       GlassTierReason.pinnedByHost,
                     ),
                     child: DpadNavigationScope(
-                      child: child ?? const SizedBox.shrink(),
+                      child: Stack(
+                        children: [
+                          child ?? const SizedBox.shrink(),
+                          const AppToastHost(),
+                        ],
+                      ),
                     ),
                   ),
                 ),

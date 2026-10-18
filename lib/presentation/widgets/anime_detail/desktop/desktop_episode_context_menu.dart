@@ -8,6 +8,7 @@ import 'package:seanime_app/data/models/anime_details.dart';
 import 'package:seanime_app/presentation/providers/active_downloads_provider.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/providers/download_history_provider.dart';
+import 'package:seanime_app/presentation/widgets/toast/app_toast.dart';
 import 'desktop_episode_models.dart';
 
 /// Menú de tres puntitos con Liquid Glass `g1455` (GlassMenuAnchor)
@@ -48,16 +49,11 @@ class DesktopEpisodeMenuButton extends ConsumerWidget {
     );
     if (success && context.mounted) {
       ref.invalidate(animeCollectionProvider);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            ep.isWatched
-                ? l10n.markedAsUnwatched(ep.number)
-                : l10n.markedAsWatched(ep.number),
-          ),
-          behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 2),
-        ),
+      AppToast.info(
+        ep.isWatched
+            ? l10n.markedAsUnwatched(ep.number)
+            : l10n.markedAsWatched(ep.number),
+        context: context,
       );
     }
   }
@@ -88,7 +84,6 @@ class DesktopEpisodeMenuButton extends ConsumerWidget {
 
     if (confirmed == true && context.mounted) {
       final repo = ref.read(repositoryProvider);
-      final messenger = ScaffoldMessenger.of(context);
       var path = ep.localFilePath;
       if (path == null || path.isEmpty) {
         final history = ref.read(downloadHistoryProvider);
@@ -111,12 +106,7 @@ class DesktopEpisodeMenuButton extends ConsumerWidget {
       ref.invalidate(downloadedAnimeProvider);
       ref.invalidate(animeLibraryEntryProvider(mediaId));
       ref.read(activeDownloadsProvider.notifier).refresh();
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(l10n.downloadDeleted),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      AppToast.success(l10n.downloadDeleted);
     }
   }
 

@@ -6,6 +6,19 @@
 > - **ALWAYS** summarize improvements at a high, user-facing level with clear, direct bullet points (e.g., *"Mejoras de UI y navegación en el calendario de emisión"*, *"Nueva pantalla y gestión de estado sin conexión"*, *"Optimizaciones en la caché de seguir viendo"*).
 > - Keep it punchy, professional, and easy to skim.
 
+## 7.74. Sistema Global de Notificaciones y Avisos Flotantes en Liquid Glass (2026-10-18)
+- **Nuevo Sistema Global de Notificaciones Flotantes (`AppToast`)**:
+  - Sustitución de los avisos y snackbars grises por un sistema de notificaciones flotantes con diseño Liquid Glass (`GlassCard` de `g1455`).
+  - Posicionamiento moderno en la esquina superior derecha en escritorio y en la parte superior en móviles, visible por encima de diálogos y modales sin bloquear la interacción con la aplicación.
+  - Soporte de tipos contextuales (éxito, error, advertencia e información) con acentos de color, animaciones de entrada fluidas y barra de progreso de tiempo restante.
+  - Pausa inteligente del temporizador al pasar el cursor sobre la notificación y descarte mediante gesto táctil o botón de cierre.
+- **Integración en Toda la Aplicación**:
+  - Avisos renovados al eliminar descargas locales de anime y manga, escanear biblioteca y gestionar torrents o servidores.
+- **Verificación Completa**:
+  - 0 incidencias en `flutter analyze lib/`.
+
+---
+
 ## 7.73. Selector de Fuentes en Escritorio y Mejoras de Reproductor en Linux (2026-10-18)
 - **Mejoras del Reproductor de Video en Linux**:
   - Corrección de transparencia en la subsuperficie nativa Wayland eliminando pantallas negras durante la reproducción.

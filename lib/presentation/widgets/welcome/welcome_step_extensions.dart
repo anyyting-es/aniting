@@ -11,72 +11,9 @@ import '../../../core/i18n/i18n_provider.dart';
 import '../../../core/theme/app_theme_colors.dart';
 import '../../../data/models/extension_item.dart';
 import '../../providers/app_providers.dart';
+import '../toast/app_toast.dart';
 
 enum _SourceMode { repository, individual }
-
-/// Minimalist Liquid Glass floating toast for non-intrusive feedback
-void showGlassToast(
-  BuildContext context, {
-  required String message,
-  IconData? icon,
-  bool isError = false,
-  bool isSuccess = false,
-}) {
-  final theme = Theme.of(context);
-  final isDark = theme.brightness == Brightness.dark;
-
-  ScaffoldMessenger.of(context).clearSnackBars();
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      elevation: 0,
-      backgroundColor: Colors.transparent,
-      behavior: SnackBarBehavior.floating,
-      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      padding: EdgeInsets.zero,
-      duration: const Duration(seconds: 3),
-      content: GlassCard(
-        borderRadius: BorderRadius.circular(16),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        finish: isSuccess
-            ? (isDark ? GlassFinish.regularDark : GlassFinish.regularLight).copyWith(
-                tint: Colors.green.withValues(alpha: 0.18),
-              )
-            : isError
-                ? (isDark ? GlassFinish.regularDark : GlassFinish.regularLight).copyWith(
-                    tint: Colors.redAccent.withValues(alpha: 0.18),
-                  )
-                : null,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (icon != null) ...[
-              Icon(
-                icon,
-                size: 18,
-                color: isSuccess
-                    ? Colors.green.shade400
-                    : isError
-                        ? Colors.redAccent.shade200
-                        : theme.colorScheme.primary,
-              ),
-              const SizedBox(width: 10),
-            ],
-            Flexible(
-              child: Text(
-                message,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : Colors.black87,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
-}
 
 class WelcomeStepExtensions extends ConsumerStatefulWidget {
   final List<ExtensionItem> marketplaceExtensions;

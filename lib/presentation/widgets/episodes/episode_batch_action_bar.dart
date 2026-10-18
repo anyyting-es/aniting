@@ -15,6 +15,7 @@ import 'package:seanime_app/presentation/providers/download_history_provider.dar
 import 'package:seanime_app/presentation/providers/episode_selection_provider.dart';
 import 'package:seanime_app/presentation/widgets/online_stream_download_dialog.dart';
 import 'package:seanime_app/presentation/widgets/online_stream_batch_download_dialog.dart';
+import 'package:seanime_app/presentation/widgets/toast/app_toast.dart';
 
 class EpisodeBatchActionBar extends ConsumerWidget {
   final int mediaId;
@@ -105,12 +106,7 @@ class EpisodeBatchActionBar extends ConsumerWidget {
       ref.read(episodeSelectionProvider(mediaId).notifier).clear();
 
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.downloadDeleted),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        AppToast.success(l10n.downloadDeleted, context: context);
       }
     }
   }
@@ -187,15 +183,11 @@ class EpisodeBatchActionBar extends ConsumerWidget {
       ref.invalidate(animeCollectionProvider);
       ref.invalidate(animeLibraryEntryProvider(mediaId));
       ref.read(episodeSelectionProvider(mediaId).notifier).clear();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            markAsWatched
-                ? l10n.markedAsWatched(targetEpisode)
-                : l10n.markedAsUnwatched(targetEpisode + 1),
-          ),
-          behavior: SnackBarBehavior.floating,
-        ),
+      AppToast.info(
+        markAsWatched
+            ? l10n.markedAsWatched(targetEpisode)
+            : l10n.markedAsUnwatched(targetEpisode + 1),
+        context: context,
       );
     }
   }

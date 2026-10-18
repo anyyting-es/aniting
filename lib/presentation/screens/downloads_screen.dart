@@ -19,6 +19,7 @@ import 'package:seanime_app/core/storage/app_storage_paths.dart';
 import 'package:seanime_app/presentation/widgets/anime_card.dart';
 import 'package:seanime_app/presentation/widgets/downloads/downloads_desktop_layout.dart';
 import 'package:seanime_app/presentation/widgets/manga_card.dart';
+import 'package:seanime_app/presentation/widgets/toast/app_toast.dart';
 
 class DownloadsScreen extends ConsumerStatefulWidget {
   final int initialTabIndex;
@@ -71,7 +72,6 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
 
     if (confirmed == true && mounted) {
       final repo = ref.read(repositoryProvider);
-      final messenger = ScaffoldMessenger.of(context);
       try {
         final entry = await repo.getAnimeLibraryEntry(item.mediaId);
         if (entry != null && entry.episodes.isNotEmpty) {
@@ -107,19 +107,9 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
         await repo.scanLibrary();
         ref.invalidate(downloadedAnimeProvider);
         ref.invalidate(animeCollectionProvider);
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text(l10n.downloadDeleted),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        AppToast.success(l10n.downloadDeleted);
       } catch (e) {
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text('${l10n.error}: $e'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        AppToast.error('${l10n.error}: $e');
       }
     }
   }
@@ -151,7 +141,6 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
     if (confirmed == true && mounted) {
       final offlineService = ref.read(mangaOfflineServiceProvider);
       final repo = ref.read(repositoryProvider);
-      final messenger = ScaffoldMessenger.of(context);
       try {
         await offlineService.deleteEntireManga(item.mediaId);
         final serverState = ref.read(serverNotifierProvider);
@@ -191,19 +180,9 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
           } catch (_) {}
         }
         ref.invalidate(downloadedMangaListProvider);
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text(l10n.downloadDeleted),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        AppToast.success(l10n.downloadDeleted);
       } catch (e) {
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text('${l10n.error}: $e'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        AppToast.error('${l10n.error}: $e');
       }
     }
   }
@@ -698,12 +677,7 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
                       FilledButton.icon(
                         onPressed: () async {
                           final repo = ref.read(repositoryProvider);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(l10n.scanStarted),
-                              behavior: SnackBarBehavior.floating,
-                            ),
-                          );
+                          AppToast.info(l10n.scanStarted, context: context);
                           await repo.scanLibrary();
                           ref.invalidate(downloadedAnimeProvider);
                           ref.invalidate(animeCollectionProvider);
@@ -767,12 +741,7 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
                       icon: Icon(AppIcons.refresh(iconPack), size: 20),
                       onPressed: () async {
                         final repo = ref.read(repositoryProvider);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(l10n.scanStarted),
-                            behavior: SnackBarBehavior.floating,
-                          ),
-                        );
+                        AppToast.info(l10n.scanStarted, context: context);
                         await repo.scanLibrary();
                         ref.invalidate(downloadedAnimeProvider);
                         ref.invalidate(animeCollectionProvider);

@@ -14,6 +14,7 @@ import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/providers/download_history_provider.dart';
 import 'package:seanime_app/presentation/providers/episode_selection_provider.dart';
 import 'package:seanime_app/presentation/widgets/episode_item_widget.dart';
+import 'package:seanime_app/presentation/widgets/toast/app_toast.dart';
 
 class AniZipEpisodeListView extends ConsumerStatefulWidget {
   final AniZipData? aniZipData;
@@ -185,7 +186,6 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
     if (confirmed == true && mounted) {
       final mediaId = widget.animeDetails?.id ?? 0;
       final repo = ref.read(repositoryProvider);
-      final messenger = ScaffoldMessenger.of(context);
       var targetPath = filePath;
       if (targetPath == null || targetPath.isEmpty) {
         final history = ref.read(downloadHistoryProvider);
@@ -207,12 +207,7 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
       ref.invalidate(downloadedAnimeProvider);
       ref.invalidate(animeLibraryEntryProvider(mediaId));
       ref.invalidate(animeCollectionProvider);
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(l10n.downloadDeleted),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      AppToast.success(l10n.downloadDeleted);
     }
   }
 

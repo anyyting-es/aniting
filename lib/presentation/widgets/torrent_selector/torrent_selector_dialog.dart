@@ -5,11 +5,11 @@ import 'package:seanime_app/data/models/anime_details.dart';
 import 'package:seanime_app/data/models/torrent_models.dart';
 import 'package:seanime_app/presentation/providers/active_downloads_provider.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/presentation/widgets/torrent_batch_files_sheet.dart';
 import 'package:seanime_app/presentation/widgets/torrent_selector/desktop/torrent_selector_desktop_view.dart';
 import 'package:seanime_app/presentation/widgets/torrent_selector/mobile/torrent_selector_mobile_view.dart';
 import 'package:seanime_app/presentation/widgets/torrent_selector/models/torrent_selector_helpers.dart';
+import 'package:seanime_app/presentation/widgets/toast/app_toast.dart';
 
 class TorrentSelectorDialog extends ConsumerStatefulWidget {
   final int mediaId;
@@ -162,7 +162,6 @@ class _TorrentSelectorDialogState extends ConsumerState<TorrentSelectorDialog> {
   Future<void> _downloadTorrent(TorrentItem torrent) async {
     final l10n = ref.read(translationsProvider);
     final repo = ref.read(repositoryProvider);
-    final messenger = ScaffoldMessenger.of(context);
     final nav = Navigator.of(context);
 
     if (nav.canPop()) {
@@ -189,29 +188,11 @@ class _TorrentSelectorDialogState extends ConsumerState<TorrentSelectorDialog> {
 
       if (!success) {
         ref.read(downloadingEpisodesProvider.notifier).remove(widget.mediaId, epNum);
-        messenger.showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                Icon(AppIcons.error(ref.read(iconPackProvider)), color: Colors.white, size: 20),
-                const SizedBox(width: 8),
-                Expanded(child: Text(l10n.error)),
-              ],
-            ),
-            backgroundColor: Colors.red.shade700,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        AppToast.error(l10n.error);
       }
     } catch (e) {
       ref.read(downloadingEpisodesProvider.notifier).remove(widget.mediaId, epNum);
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text('${l10n.error}: $e'),
-          backgroundColor: Colors.red.shade700,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      AppToast.error('${l10n.error}: $e');
     }
   }
 
@@ -232,12 +213,7 @@ class _TorrentSelectorDialogState extends ConsumerState<TorrentSelectorDialog> {
     final isOnline = ref.read(serverNotifierProvider).isOnline;
 
     if (!isOnline) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.serverNotOnline),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      AppToast.warning(l10n.serverNotOnline, context: context);
       return;
     }
 
@@ -316,12 +292,7 @@ class _TorrentSelectorDialogState extends ConsumerState<TorrentSelectorDialog> {
     final isOnline = ref.read(serverNotifierProvider).isOnline;
 
     if (!isOnline) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.serverNotOnline),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      AppToast.warning(l10n.serverNotOnline, context: context);
       setState(() => _startingTorrentName = null);
       return;
     }
@@ -341,12 +312,7 @@ class _TorrentSelectorDialogState extends ConsumerState<TorrentSelectorDialog> {
 
     if (success) {
       if (useExternalPlayer) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${l10n.openingExternalPlayer} (${torrent.name})'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        AppToast.info('${l10n.openingExternalPlayer} (${torrent.name})', context: context);
         Navigator.of(context).pop();
       } else {
         final animeTitle = widget.animeDetails?.title ?? 'Anime';
@@ -372,12 +338,7 @@ class _TorrentSelectorDialogState extends ConsumerState<TorrentSelectorDialog> {
         );
       }
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.failedToStartTorrent),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      AppToast.error(l10n.failedToStartTorrent, context: context);
     }
   }
 
@@ -385,9 +346,7 @@ class _TorrentSelectorDialogState extends ConsumerState<TorrentSelectorDialog> {
     final l10n = ref.read(translationsProvider);
     final isOnline = ref.read(serverNotifierProvider).isOnline;
     if (!isOnline) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.serverNotOnline), behavior: SnackBarBehavior.floating),
-      );
+      AppToast.warning(l10n.serverNotOnline, context: context);
       return;
     }
 
@@ -425,19 +384,13 @@ class _TorrentSelectorDialogState extends ConsumerState<TorrentSelectorDialog> {
         ),
       );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.failedToStartTorrent),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      AppToast.error(l10n.failedToStartTorrent, context: context);
     }
   }
 
   Future<void> _downloadDebridTorrent(TorrentItem torrent) async {
     final l10n = ref.read(translationsProvider);
     final repo = ref.read(repositoryProvider);
-    final messenger = ScaffoldMessenger.of(context);
 
     final settings = await repo.getServerSettings();
     final destination = settings?['library']?['libraryPath'] as String? ?? '';
@@ -448,12 +401,11 @@ class _TorrentSelectorDialogState extends ConsumerState<TorrentSelectorDialog> {
     );
 
     if (mounted) {
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(success ? l10n.debridDownloadStarted : l10n.error),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      if (success) {
+        AppToast.success(l10n.debridDownloadStarted, context: context);
+      } else {
+        AppToast.error(l10n.error, context: context);
+      }
     }
   }
 

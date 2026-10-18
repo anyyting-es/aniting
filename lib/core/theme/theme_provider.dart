@@ -575,6 +575,28 @@ class AppThemeBuilder {
           fontSize: 12,
         ),
       ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: isDark
+            ? (isOled ? Colors.black.withValues(alpha: 0.90) : const Color(0xFF181A20).withValues(alpha: 0.92))
+            : Colors.white.withValues(alpha: 0.95),
+        contentTextStyle: TextStyle(
+          color: effectivePalette.textPrimary,
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+          fontFamily: fontFamily,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(borderRadius),
+          side: BorderSide(
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.15)
+                : effectivePalette.border,
+            width: 1,
+          ),
+        ),
+        elevation: 6,
+      ),
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
           TargetPlatform.android: WebPageTransitionsBuilder(),
