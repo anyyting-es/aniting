@@ -25,6 +25,10 @@ class FeedSection extends StatelessWidget {
 
     final theme = Theme.of(context);
 
+    final isDesktop = MediaQuery.of(context).size.width >= 720;
+    final cardWidth = isDesktop ? 215.0 : 155.0;
+    final carouselHeight = isDesktop ? 375.0 : 290.0;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -47,7 +51,7 @@ class FeedSection extends StatelessWidget {
           ),
         ),
         SizedBox(
-          height: 250,
+          height: carouselHeight,
           child: isLoading
               ? const Center(child: CircularProgressIndicator())
               : ListView.separated(
@@ -58,7 +62,7 @@ class FeedSection extends StatelessWidget {
                   itemBuilder: (context, index) {
                     final item = entries[index];
                     return SizedBox(
-                      width: 130,
+                      width: cardWidth,
                       child: AnimeCard(
                         entry: item,
                         onTap: () {

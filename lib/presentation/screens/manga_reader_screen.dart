@@ -10,6 +10,7 @@ import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/preferences/manga_reader_preferences_provider.dart';
 import 'package:seanime_app/core/preferences/resume_bar_preferences_provider.dart';
 import 'package:seanime_app/data/models/manga_entry.dart';
+import 'package:seanime_app/core/theme/smooth_scroll_controller.dart';
 import 'package:seanime_app/core/theme/theme_provider.dart';
 import 'package:seanime_app/data/services/offline_library_service.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
@@ -73,7 +74,7 @@ class _MangaReaderScreenState extends ConsumerState<MangaReaderScreen> {
   bool _isLoading = true;
   String? _error;
   bool _showControls = true;
-  final ScrollController _scrollController = ScrollController();
+  final ScrollController _scrollController = SmoothScrollController();
   late final PageController _pageController;
   int _currentPage = 1;
   bool _hasUpdatedProgress = false;

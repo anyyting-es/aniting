@@ -405,11 +405,23 @@ class _AnimeDetailDesktopLayoutState
             widget.details!.bannerImage!.isNotEmpty) ||
         (widget.initialEntry?.bannerImage != null &&
             widget.initialEntry!.bannerImage!.isNotEmpty);
-    final bannerUrl = hasAniZipFanart
-        ? aniZipFanart
-        : (hasRealBanner
+    final String? bannerUrl;
+    if (isTmdb) {
+      bannerUrl = hasRealBanner
+          ? (widget.details?.bannerImage ?? widget.initialEntry?.bannerImage)
+          : coverUrl;
+    } else {
+      if (hasAniZipFanart) {
+        bannerUrl = aniZipFanart;
+      } else if (widget.isLoadingAniZip) {
+        // While AniZip is loading, avoid prematurely flashing AniList banner to prevent pop-swap
+        bannerUrl = null;
+      } else {
+        bannerUrl = hasRealBanner
             ? (widget.details?.bannerImage ?? widget.initialEntry?.bannerImage)
-            : (widget.aniZipData?.bannerUrl ?? coverUrl));
+            : (widget.aniZipData?.bannerUrl ?? coverUrl);
+      }
+    }
     final isBlurredCover = !hasAniZipFanart && !hasRealBanner && coverUrl != null;
 
     final score = widget.details?.score ?? widget.initialEntry?.score;

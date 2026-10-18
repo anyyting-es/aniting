@@ -302,8 +302,8 @@ class CatalogSearchView extends ConsumerWidget {
         90,
       ),
       gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: isDesktop ? 200 : 150,
-        childAspectRatio: 0.53,
+        maxCrossAxisExtent: isDesktop ? 245 : 160,
+        childAspectRatio: isDesktop ? 0.58 : 0.53,
         crossAxisSpacing: isDesktop ? 16 : 10,
         mainAxisSpacing: isDesktop ? 20 : 14,
       ),

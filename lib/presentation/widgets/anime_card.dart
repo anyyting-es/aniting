@@ -156,10 +156,10 @@ class _AnimeCardState extends ConsumerState<AnimeCard> {
                                     ? CachedNetworkImage(
                                         imageUrl: widget.entry.coverImage!,
                                         fit: BoxFit.cover,
-                                        memCacheWidth: isCompact ? 220 : 280,
-                                        memCacheHeight: isCompact ? 310 : 390,
-                                        maxWidthDiskCache: 350,
-                                        maxHeightDiskCache: 500,
+                                        memCacheWidth: isCompact ? 280 : 420,
+                                        memCacheHeight: isCompact ? 400 : 600,
+                                        maxWidthDiskCache: 500,
+                                        maxHeightDiskCache: 750,
                                         placeholder: (context, url) => ColoredBox(
                                           color: theme.colorScheme.surfaceContainerHighest,
                                         ),
@@ -186,10 +186,10 @@ class _AnimeCardState extends ConsumerState<AnimeCard> {
                                   ? CachedNetworkImage(
                                       imageUrl: widget.entry.coverImage!,
                                       fit: BoxFit.cover,
-                                      memCacheWidth: isCompact ? 220 : 280,
-                                      memCacheHeight: isCompact ? 310 : 390,
-                                      maxWidthDiskCache: 350,
-                                      maxHeightDiskCache: 500,
+                                      memCacheWidth: isCompact ? 280 : 420,
+                                      memCacheHeight: isCompact ? 400 : 600,
+                                      maxWidthDiskCache: 500,
+                                      maxHeightDiskCache: 750,
                                       placeholder: (context, url) => ColoredBox(
                                         color: theme.colorScheme.surfaceContainerHighest,
                                       ),

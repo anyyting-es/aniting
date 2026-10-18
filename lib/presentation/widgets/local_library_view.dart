@@ -42,11 +42,20 @@ class _LocalLibraryViewState extends ConsumerState<LocalLibraryView> {
   @override
   void initState() {
     super.initState();
-    _loadLibraryEntry();
+    final repo = ref.read(repositoryProvider);
+    final cached = repo.getCachedAnimeLibraryEntry(widget.mediaId) ??
+        ref.read(animeLibraryEntryProvider(widget.mediaId)).asData?.value;
+    if (cached != null) {
+      _libraryEntry = cached;
+      _isLoading = false;
+    }
+    _loadLibraryEntry(silent: cached != null);
   }
 
-  Future<void> _loadLibraryEntry() async {
-    setState(() => _isLoading = true);
+  Future<void> _loadLibraryEntry({bool silent = false}) async {
+    if (!silent) {
+      setState(() => _isLoading = true);
+    }
     final repo = ref.read(repositoryProvider);
     try {
       final entry = await repo.getAnimeLibraryEntry(widget.mediaId);
@@ -57,7 +66,7 @@ class _LocalLibraryViewState extends ConsumerState<LocalLibraryView> {
         });
       }
     } catch (e) {
-      if (mounted) {
+      if (mounted && !silent) {
         setState(() => _isLoading = false);
       }
     }

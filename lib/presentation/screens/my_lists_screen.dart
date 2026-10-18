@@ -171,8 +171,8 @@ class _MyListsScreenState extends ConsumerState<MyListsScreen> {
                   padding: const EdgeInsets.only(left: 16, right: 16, top: 4, bottom: 40),
                   sliver: SliverGrid.builder(
                     gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                      maxCrossAxisExtent: isDesktop ? 210 : 135,
-                      childAspectRatio: isDesktop ? 0.58 : 0.52,
+                      maxCrossAxisExtent: isDesktop ? 245 : 160,
+                      childAspectRatio: isDesktop ? 0.58 : 0.53,
                       crossAxisSpacing: isDesktop ? 14 : 10,
                       mainAxisSpacing: isDesktop ? 20 : 14,
                     ),
@@ -298,8 +298,8 @@ class _MyListsScreenState extends ConsumerState<MyListsScreen> {
                   padding: const EdgeInsets.only(left: 16, right: 16, top: 4, bottom: 40),
                   sliver: SliverGrid.builder(
                     gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                      maxCrossAxisExtent: isDesktop ? 210 : 135,
-                      childAspectRatio: isDesktop ? 0.58 : 0.52,
+                      maxCrossAxisExtent: isDesktop ? 245 : 160,
+                      childAspectRatio: isDesktop ? 0.58 : 0.53,
                       crossAxisSpacing: isDesktop ? 14 : 10,
                       mainAxisSpacing: isDesktop ? 20 : 14,
                     ),

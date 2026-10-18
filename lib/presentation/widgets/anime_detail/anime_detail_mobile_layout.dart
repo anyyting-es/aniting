@@ -632,9 +632,24 @@ class _AnimeDetailMobileLayoutState
             widget.details!.bannerImage!.isNotEmpty) ||
         (widget.initialEntry?.bannerImage != null &&
             widget.initialEntry!.bannerImage!.isNotEmpty);
-    final bannerUrl = hasAniZipFanart
-        ? aniZipFanart
-        : (widget.details?.bannerImage ?? widget.initialEntry?.bannerImage ?? widget.aniZipData?.bannerUrl ?? coverUrl);
+    final String? bannerUrl;
+    if (isTmdb) {
+      bannerUrl = hasRealBanner
+          ? (widget.details?.bannerImage ?? widget.initialEntry?.bannerImage)
+          : coverUrl;
+    } else {
+      if (hasAniZipFanart) {
+        bannerUrl = aniZipFanart;
+      } else if (widget.isLoadingAniZip) {
+        // While AniZip is loading, avoid prematurely flashing AniList banner to prevent pop-swap
+        bannerUrl = null;
+      } else {
+        bannerUrl = widget.details?.bannerImage ??
+            widget.initialEntry?.bannerImage ??
+            widget.aniZipData?.bannerUrl ??
+            coverUrl;
+      }
+    }
     final isBlurSetting = ref.watch(bannerBlurProvider);
     final shouldBlur = (!hasAniZipFanart && !hasRealBanner && coverUrl != null) || isBlurSetting;
     final score = widget.details?.score ?? widget.initialEntry?.score;
@@ -741,6 +756,8 @@ class _AnimeDetailMobileLayoutState
                                               fit: BoxFit.cover,
                                               alignment: Alignment.topCenter,
                                               memCacheWidth: 1080,
+                                              fadeInDuration: const Duration(milliseconds: 250),
+                                              fadeOutDuration: const Duration(milliseconds: 150),
                                               errorWidget: (context, url, error) =>
                                                   Container(color: theme.colorScheme.surfaceContainer),
                                             ),
@@ -752,6 +769,8 @@ class _AnimeDetailMobileLayoutState
                                         fit: BoxFit.cover,
                                         alignment: Alignment.topCenter,
                                         memCacheWidth: 1080,
+                                        fadeInDuration: const Duration(milliseconds: 250),
+                                        fadeOutDuration: const Duration(milliseconds: 150),
                                         errorWidget: (context, url, error) =>
                                             Container(color: theme.colorScheme.surfaceContainer),
                                       ))

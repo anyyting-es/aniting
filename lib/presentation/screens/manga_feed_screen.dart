@@ -158,8 +158,8 @@ class _MangaFeedScreenState extends ConsumerState<MangaFeedScreen> {
     final hasAnyMangaContent = hasContinueReading || hasCompleted || hasReading || hasMangaRecs || hasDownloadedManga;
 
     final isDesktop = MediaQuery.of(context).size.width >= 720;
-    final mangaCardWidth = isDesktop ? 180.0 : 135.0;
-    final carouselHeight = isDesktop ? 320.0 : 252.0;
+    final mangaCardWidth = isDesktop ? 215.0 : 155.0;
+    final carouselHeight = isDesktop ? 375.0 : 290.0;
     final carouselSpacing = isDesktop ? 14.0 : 10.0;
     final topPadding = MediaQuery.of(context).padding.top;
 
@@ -274,8 +274,8 @@ class _MangaFeedScreenState extends ConsumerState<MangaFeedScreen> {
                                   padding: const EdgeInsets.fromLTRB(16, 4, 16, 90),
                                   sliver: SliverGrid.builder(
                                     gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                                      maxCrossAxisExtent: isDesktop ? 210 : 135,
-                                      childAspectRatio: isDesktop ? 0.58 : 0.52,
+                                      maxCrossAxisExtent: isDesktop ? 245 : 160,
+                                      childAspectRatio: isDesktop ? 0.58 : 0.53,
                                       crossAxisSpacing: isDesktop ? 14 : 10,
                                       mainAxisSpacing: isDesktop ? 20 : 14,
                                     ),
@@ -489,8 +489,8 @@ class _MangaFeedScreenState extends ConsumerState<MangaFeedScreen> {
   }) {
     if (entries.isEmpty) return [];
 
-    final cardWidth = isDesktop ? 180.0 : 130.0;
-    final listHeight = isDesktop ? 320.0 : 238.0;
+    final cardWidth = isDesktop ? 215.0 : 155.0;
+    final listHeight = isDesktop ? 375.0 : 290.0;
     final spacing = isDesktop ? 14.0 : 10.0;
 
     return [

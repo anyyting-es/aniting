@@ -3,10 +3,38 @@
 #include <windows.h>
 
 #include "flutter_window.h"
+#include "mpv/display_mode_manager.h"
 #include "utils.h"
 
 int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
                       _In_ wchar_t *command_line, _In_ int show_command) {
+  // Presents the Flutter UI on a topmost DirectComposition visual when
+  // FLUTTER_WINDOWS_DCOMP is set. The mpv video window is then a plain child
+  // composed beneath the UI in the same HWND so controls overlay correctly
+  // and window capture (Discord/OBS) works.
+  ::SetEnvironmentVariableW(L"FLUTTER_WINDOWS_DCOMP", L"1");
+
+  // Single instance enforcement
+  HANDLE mutex = CreateMutex(nullptr, TRUE, L"com.anyyting.aniting.SingleInstance");
+  if (GetLastError() == ERROR_ALREADY_EXISTS) {
+    HWND existing = FindWindow(L"FLUTTER_RUNNER_WIN32_WINDOW", L"seanime_app");
+    if (!existing) {
+      existing = FindWindow(L"FLUTTER_RUNNER_WIN32_WINDOW", L"aniting");
+    }
+    if (existing && IsWindowVisible(existing)) {
+      ShowWindow(existing, SW_RESTORE);
+      SetForegroundWindow(existing);
+      CloseHandle(mutex);
+      return EXIT_SUCCESS;
+    }
+    constexpr DWORD kExitingInstanceWaitMs = 20000;
+    const DWORD wait = WaitForSingleObject(mutex, kExitingInstanceWaitMs);
+    if (wait != WAIT_OBJECT_0 && wait != WAIT_ABANDONED) {
+      CloseHandle(mutex);
+      return EXIT_SUCCESS;
+    }
+  }
+
   // Attach to console when present (e.g., 'flutter run') or create a
   // new console when running with a debugger.
   if (!::AttachConsole(ATTACH_PARENT_PROCESS) && ::IsDebuggerPresent()) {
@@ -18,6 +46,15 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   ::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
 
   flutter::DartProject project(L"data");
+  project.set_ui_thread_policy(flutter::UIThreadPolicy::RunOnSeparateThread);
+
+  // Keep rendering with Skia. Flutter 3.47 made Impeller the default Windows
+  // renderer, but the DirectComposition presentation is only correct when the
+  // frame's per-pixel alpha is exact: DWM blends the UI visual over the mpv
+  // video child, so a frame that presents opaque where it should be translucent
+  // hides the video outright (controls scrim blocking video). Skia handles this
+  // compositing correctly.
+  project.set_impeller_switch(flutter::ImpellerSwitch::Disabled);
 
   std::vector<std::string> command_line_arguments =
       GetCommandLineArguments();
@@ -32,12 +69,20 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   }
   window.SetQuitOnClose(true);
 
+  // Recover display mode if a prior crash left it changed.
+  mpv::DisplayModeManager::RecoverIfNeeded();
+
   ::MSG msg;
   while (::GetMessage(&msg, nullptr, 0, 0)) {
     ::TranslateMessage(&msg);
     ::DispatchMessage(&msg);
   }
 
+  // Required app exit posts WM_QUIT without destroying the window. Tear down
+  // the controller and plugins while COM is still initialized.
+  window.Destroy();
+
   ::CoUninitialize();
+  CloseHandle(mutex);
   return EXIT_SUCCESS;
 }

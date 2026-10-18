@@ -317,10 +317,10 @@ class _GenreDetailScreenState extends ConsumerState<GenreDetailScreen> {
                           controller: _scrollController,
                           padding: const EdgeInsets.fromLTRB(14, 12, 14, 30),
                           gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                            maxCrossAxisExtent: isDesktop ? 210 : 135,
-                            childAspectRatio: isDesktop ? 0.58 : 0.52,
-                            crossAxisSpacing: isDesktop ? 10 : 8,
-                            mainAxisSpacing: isDesktop ? 14 : 12,
+                            maxCrossAxisExtent: isDesktop ? 245 : 160,
+                            childAspectRatio: isDesktop ? 0.58 : 0.53,
+                            crossAxisSpacing: isDesktop ? 12 : 8,
+                            mainAxisSpacing: isDesktop ? 16 : 12,
                           ),
                           itemCount: (_mediaType == 'ANIME' ? _animeList.length : _mangaList.length) +
                               (_hasMore ? 1 : 0),

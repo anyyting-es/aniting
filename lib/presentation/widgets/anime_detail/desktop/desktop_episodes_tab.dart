@@ -112,7 +112,14 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
   @override
   void initState() {
     super.initState();
-    _loadLocalEntry();
+    final repo = ref.read(repositoryProvider);
+    final cached = repo.getCachedAnimeLibraryEntry(widget.mediaId) ??
+        ref.read(animeLibraryEntryProvider(widget.mediaId)).asData?.value;
+    if (cached != null) {
+      _libraryEntry = cached;
+      _isLoadingLocal = false;
+    }
+    _loadLocalEntry(silent: cached != null);
   }
 
   void _clearMemoizedCaches() {
@@ -121,9 +128,11 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
     _cachedTorrentItems = null;
   }
 
-  Future<void> _loadLocalEntry() async {
+  Future<void> _loadLocalEntry({bool silent = false}) async {
     if (!mounted) return;
-    setState(() => _isLoadingLocal = true);
+    if (!silent) {
+      setState(() => _isLoadingLocal = true);
+    }
     try {
       final repo = ref.read(repositoryProvider);
       final entry = await repo.getAnimeLibraryEntry(widget.mediaId);
@@ -135,7 +144,7 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
         });
       }
     } catch (_) {
-      if (mounted) setState(() => _isLoadingLocal = false);
+      if (mounted && !silent) setState(() => _isLoadingLocal = false);
     }
   }
 
@@ -650,7 +659,10 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
       }
 
       final downloadedEps = _libraryEntry?.episodes.where((e) => e.isDownloaded).toList() ?? [];
-      if (downloadedEps.isEmpty) {
+      final hasHistoryDownloads = ref.watch(downloadHistoryProvider).any(
+            (item) => item.mediaId == widget.mediaId && item.filePath != null && item.filePath!.isNotEmpty,
+          );
+      if (downloadedEps.isEmpty && !hasHistoryDownloads && !_isLoadingLocal) {
         return _buildLocalEmptyState(theme, l10n, iconPack);
       }
     }

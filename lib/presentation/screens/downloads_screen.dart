@@ -701,6 +701,7 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
           );
         }
 
+        final isDesktop = MediaQuery.of(context).size.width >= 720;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -757,11 +758,11 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
             GridView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: 160,
+              gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: isDesktop ? 245 : 160,
                 mainAxisSpacing: 14,
                 crossAxisSpacing: 12,
-                childAspectRatio: 0.54,
+                childAspectRatio: isDesktop ? 0.58 : 0.53,
               ),
               itemCount: animeList.length,
               itemBuilder: (context, index) {
@@ -909,6 +910,7 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
             final sizeBytes = snapshot.data ?? 0;
             final sizeFormatted = _formatBytes(sizeBytes);
 
+            final isDesktop = MediaQuery.of(context).size.width >= 720;
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -972,11 +974,11 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
                 GridView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                    maxCrossAxisExtent: 160,
+                  gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: isDesktop ? 245 : 160,
                     mainAxisSpacing: 14,
                     crossAxisSpacing: 12,
-                    childAspectRatio: 0.54,
+                    childAspectRatio: isDesktop ? 0.58 : 0.53,
                   ),
                   itemCount: mangaList.length,
                   itemBuilder: (context, index) {

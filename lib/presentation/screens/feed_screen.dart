@@ -286,8 +286,8 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     final continueCardHeight = (continueCardWidth / (16 / 9)) + 48.0;
     final continueListHeight = continueCardHeight + 8.0;
 
-    final animeCardWidth = isDesktop ? 180.0 : 135.0;
-    final carouselHeight = isDesktop ? 320.0 : 252.0;
+    final animeCardWidth = isDesktop ? 215.0 : 155.0;
+    final carouselHeight = isDesktop ? 375.0 : 290.0;
     final carouselSpacing = isDesktop ? 14.0 : 10.0;
     final topPadding = MediaQuery.of(context).padding.top;
     final isLoggedIn = serverState.status?.isLoggedIn ?? false;
@@ -491,8 +491,8 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                             padding: const EdgeInsets.fromLTRB(16, 4, 16, 90),
                             sliver: SliverGrid.builder(
                               gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                                maxCrossAxisExtent: isDesktop ? 210 : 135,
-                                childAspectRatio: isDesktop ? 0.58 : 0.52,
+                                maxCrossAxisExtent: isDesktop ? 245 : 160,
+                                childAspectRatio: isDesktop ? 0.58 : 0.53,
                                 crossAxisSpacing: isDesktop ? 14 : 10,
                                 mainAxisSpacing: isDesktop ? 20 : 14,
                               ),
@@ -821,8 +821,8 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
 
     if (watching.isEmpty) return const [];
 
-    final animeCardWidth = isDesktop ? 180.0 : 135.0;
-    final carouselHeight = isDesktop ? 320.0 : 252.0;
+    final animeCardWidth = isDesktop ? 215.0 : 155.0;
+    final carouselHeight = isDesktop ? 375.0 : 290.0;
     final carouselSpacing = isDesktop ? 14.0 : 10.0;
 
     return [

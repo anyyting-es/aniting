@@ -36,6 +36,12 @@ class SmoothScrollPosition extends ScrollPositionWithSingleContext {
   Ticker? _ticker;
   Duration _lastElapsed = Duration.zero;
 
+  // Anti-jitter & mechanical encoder bounce filter state
+  int _dominantDirection = 0; // +1: forward (down/right), -1: reverse (up/left)
+  int _lastScrollTimestampMs = 0;
+  int _consecutiveReverseTicks = 0;
+  double _accumulatedReverseDelta = 0.0;
+
   void _onTick(Duration elapsed) {
     if (!hasContentDimensions) {
       _stopTicker();
@@ -100,44 +106,67 @@ class SmoothScrollPosition extends ScrollPositionWithSingleContext {
       return;
     }
 
-    // 1. Trackpad & Touchpad Heuristic:
-    // Precision touchpads emit continuous micro-deltas (< 4px per event).
-    // Apply immediate 1:1 direct scrolling to keep trackpads 100% responsive and natural.
-    if (delta.abs() < 4.0) {
-      _stopTicker();
-      final double targetPixels = (pixels + delta).clamp(minScrollExtent, maxScrollExtent);
-      if (targetPixels != pixels) {
-        final double oldPixels = pixels;
-        forcePixels(targetPixels);
-        didStartScroll();
-        didUpdateScrollPositionBy(targetPixels - oldPixels);
-        didEndScroll();
-      }
-      _futurePixels = pixels;
-      return;
-    }
+    final int now = DateTime.now().millisecondsSinceEpoch;
+    final int elapsedSinceLast = _lastScrollTimestampMs == 0 ? 9999 : now - _lastScrollTimestampMs;
+    _lastScrollTimestampMs = now;
 
-    // 2. Hardware Mouse Wheel Encoder Bounce Filter:
-    // Worn or loose mouse wheels often bounce and emit a momentary reverse tick (< 35px).
-    // If the scroll is already moving in one direction, ignore the hardware bounce glitch.
-    final double effectiveDelta = delta * speedMultiplier;
-    final bool isMoving = _ticker != null && _ticker!.isActive;
-    if (isMoving) {
-      final double currentVel = _futurePixels - pixels;
-      final bool oppositeDirection = (currentVel * effectiveDelta) < 0;
-      if (oppositeDirection && effectiveDelta.abs() < 35.0) {
-        // Discard hardware glitch
+    final int currentDirection = delta > 0 ? 1 : -1;
+    final double absDelta = delta.abs();
+
+    // 1. Noise Floor / Micro-Jitter Suppression:
+    // Worn optical/mechanical encoders emit erratic micro-deltas (< 2.5px) when resting or vibrating.
+    // If we recently scrolled, ignore opposite or sub-noise micro-deltas without stopping the animation.
+    if (absDelta < 2.5) {
+      if (_dominantDirection != 0 && currentDirection != _dominantDirection && elapsedSinceLast < 250) {
         return;
       }
     }
 
+    // 2. Hardware Mouse Wheel Encoder Bounce Filter (Direction Hysteresis):
+    // A worn, dirty, or loose mechanical wheel encoder frequently skips or bounces backwards
+    // (e.g. an isolated reverse notch of 60px–120px on Windows, or a micro-tick) during an active scroll gesture.
+    // In Chromium/Electron and browser engines, human intent is modeled with a temporal hysteresis window (~220ms):
+    // humans do not intentionally reverse scroll direction in less than 220ms with a single notch.
+    if (_dominantDirection != 0 && currentDirection != _dominantDirection && elapsedSinceLast < 220) {
+      _consecutiveReverseTicks++;
+      _accumulatedReverseDelta += absDelta;
+
+      // If this is an isolated reverse tick and hasn't exceeded 140px of accumulated movement,
+      // it is a hardware encoder bounce/glitch. Swallow and discard it completely!
+      if (_consecutiveReverseTicks <= 1 && _accumulatedReverseDelta <= 140.0) {
+        return;
+      }
+
+      // If multiple consecutive reverse ticks arrive or accumulated reverse delta is large,
+      // it is a genuine intentional reversal of direction by the user.
+      _dominantDirection = currentDirection;
+      _consecutiveReverseTicks = 0;
+      _accumulatedReverseDelta = 0.0;
+    } else {
+      // Continuing in same direction or outside hysteresis window:
+      _dominantDirection = currentDirection;
+      _consecutiveReverseTicks = 0;
+      _accumulatedReverseDelta = 0.0;
+    }
+
+    final double effectiveDelta = delta * speedMultiplier;
+    final bool isMoving = _ticker != null && _ticker!.isActive;
+
     // 3. Fluid Momentum Accumulation:
-    double base = pixels;
+    // When scrolling continuously in the same direction, accumulate onto _futurePixels.
+    // When legitimately reversing direction, smoothly transition without abrupt position snaps.
+    double base;
     if (isMoving) {
-      final bool sameDirection = (_futurePixels - pixels) * effectiveDelta > 0;
+      final double remainingVel = _futurePixels - pixels;
+      final bool sameDirection = (remainingVel * effectiveDelta) > 0;
       if (sameDirection) {
         base = _futurePixels;
+      } else {
+        // Smoothly decelerate remaining velocity rather than abruptly snapping hard to pixels:
+        base = pixels + remainingVel * 0.4;
       }
+    } else {
+      base = pixels;
     }
 
     _futurePixels = (base + effectiveDelta).clamp(minScrollExtent, maxScrollExtent);
@@ -148,6 +177,9 @@ class SmoothScrollPosition extends ScrollPositionWithSingleContext {
   @override
   void applyUserOffset(double delta) {
     _stopTicker();
+    _dominantDirection = 0;
+    _consecutiveReverseTicks = 0;
+    _accumulatedReverseDelta = 0.0;
     _futurePixels = pixels;
     super.applyUserOffset(delta);
   }
@@ -155,6 +187,9 @@ class SmoothScrollPosition extends ScrollPositionWithSingleContext {
   @override
   void jumpTo(double value) {
     _stopTicker();
+    _dominantDirection = 0;
+    _consecutiveReverseTicks = 0;
+    _accumulatedReverseDelta = 0.0;
     _futurePixels = value;
     super.jumpTo(value);
   }

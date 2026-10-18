@@ -4,6 +4,7 @@ import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:seanime_app/core/preferences/layout_mode_provider.dart';
 import 'package:seanime_app/core/theme/custom_route_transitions.dart';
+import 'package:seanime_app/core/theme/smooth_scroll_controller.dart';
 import 'package:seanime_app/core/theme/theme_provider.dart';
 import 'package:seanime_app/data/models/anime_details.dart';
 import 'package:seanime_app/data/models/anime_entry.dart';
@@ -81,7 +82,7 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
   static const _prefModePrefix = 'pref_anime_detail_mode_';
   static const _prefGlobalLastMode = 'pref_anime_detail_last_mode';
 
-  final ScrollController _scrollController = ScrollController();
+  final ScrollController _scrollController = SmoothScrollController();
 
   @override
   void initState() {
@@ -118,6 +119,8 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
         _isLocalMode = true;
       }
 
+      final repo = ref.read(repositoryProvider);
+
       // Fast checks: downloadedAnimeProvider, animeCollectionProvider, animeLibraryEntryProvider caches
       if (!_hasLocalFiles) {
         final downloadedAnime =
@@ -139,6 +142,7 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
       }
       if (!_hasLocalFiles) {
         final libEntryCache =
+            repo.getCachedAnimeLibraryEntry(widget.mediaId) ??
             ref.read(animeLibraryEntryProvider(widget.mediaId)).asData?.value;
         if (libEntryCache != null &&
             (libEntryCache.hasLibraryData ||
@@ -149,7 +153,6 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
       }
 
       // Pre-populate details and aniZip on frame 0 from repository in-memory cache or initialEntry
-      final repo = ref.read(repositoryProvider);
       final cachedDetails = repo.getCachedAnimeDetails(widget.mediaId);
       if (cachedDetails != null) {
         _details = cachedDetails;
@@ -170,7 +173,7 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
           score: widget.initialEntry!.score,
           status: widget.initialEntry!.status,
         );
-        _isLoading = true;
+        _isLoading = false;
       }
 
       final cachedAniZip = repo.getCachedAniZipData(widget.mediaId);

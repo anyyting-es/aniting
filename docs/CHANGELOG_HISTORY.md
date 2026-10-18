@@ -6,6 +6,37 @@
 > - **ALWAYS** summarize improvements at a high, user-facing level with clear, direct bullet points (e.g., *"Mejoras de UI y navegación en el calendario de emisión"*, *"Nueva pantalla y gestión de estado sin conexión"*, *"Optimizaciones en la caché de seguir viendo"*).
 > - Keep it punchy, professional, and easy to skim.
 
+## 7.78. Tarjetas de Portada Ampliadas, Carga Instantánea Local y Fondos Suaves (2026-10-18)
+- **Tarjetas de Portada Más Grandes en Toda la Aplicación**:
+  - Aumento del tamaño de las tarjetas de Anime y Manga tanto en carruseles como en cuadrículas (Inicio, Manga, Explorar, Búsqueda, Mis Listas, Géneros y Descargas) para una visualización más atractiva y cinematográfica.
+  - Mayor resolución en la memoria de caché de imágenes para mantener nitidez cristalina en pantallas de alta densidad.
+- **Carga Instantánea para Anime Local y Descargas**:
+  - Eliminación del tiempo de espera y spinners al abrir animes de la biblioteca local o descargados; la información, metadatos y lista de episodios locales se cargan y renderizan inmediatamente desde el primer cuadro.
+  - Caché en memoria para entradas de biblioteca local en el repositorio para acceso ultra rápido.
+- **Priorización Limpia de Fondos de AniZip Sin Intercambios Bruscos**:
+  - Priorización directa del fanart de AniZip desde caché sincrónica, evitando que se muestre primero el banner de AniList para luego cambiar repentinamente.
+  - Transición suave de entrada sin parpadeos visuales ni saltos de imagen.
+- **Corrección de Controles sobre el Reproductor en Windows (DirectComposition)**:
+  - Instalación y habilitación del motor Flutter parchado con soporte de DirectComposition (`FLUTTER_WINDOWS_DCOMP`), permitiendo que los controles, barra de progreso y subtítulos se compongan correctamente encima de la ventana nativa de libmpv.
+  - Script automatizado de instalación y respaldo (`windows/tool/install-patched-engine.ps1`) con soporte para restauración inmediata de motor base.
+- **Verificación Completa**:
+  - 0 incidencias en `flutter analyze lib/`.
+
+---
+
+## 7.77. Superposición Nativa de Controles en Windows y Filtro Anti-Rebote de Rueda de Ratón (2026-10-18)
+- **Superposición Nativa de Controles sobre el Reproductor en Windows**:
+  - Activación de DirectComposition visual en el Runner nativo Win32 para componer los controles y subtítulos de Flutter fluidamente por encima de la ventana de video nativa de libmpv.
+  - Fijación del renderizador Skia en Windows para evitar pantallas negras en OSD causadas por cálculo incorrecto de alfa en Impeller.
+  - Persistencia mejorada de posición y tamaño de ventana con soporte nativo de Aero Snap y tema oscuro en el marco.
+- **Filtro Anti-Rebote y Desplazamiento Fluido de Grado Navegador**:
+  - Filtro por histéresis temporal y bloqueo de dirección para amortiguar y absorber saltos inversos involuntarios causados por codificadores de rueda de ratón desgastados o con rebote mecánico.
+  - Supresión de micro-vibraciones y transición inercial suave al cambiar intencionalmente de dirección, replicando la experiencia de Chromium y Electron.
+- **Verificación Completa**:
+  - 0 incidencias en `flutter analyze lib/`.
+
+---
+
 ## 7.76. Estabilidad Visual de Listas y Carga Fluida de Miniaturas (2026-10-18)
 - **Eliminación de Saltos y Cambios Bruscos en el Feed**:
   - Precarga sincrónica en memoria para todas las secciones del feed (Seguir Viendo, Viendo Actualmente, Secuelas y Recomendaciones), eliminando la aparición repentina de carousels y saltos de layout (CLS).

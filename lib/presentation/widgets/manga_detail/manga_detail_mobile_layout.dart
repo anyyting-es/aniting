@@ -8,6 +8,7 @@ import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/preferences/banner_blur_provider.dart';
 import 'package:seanime_app/core/preferences/title_language_provider.dart';
 import 'package:seanime_app/core/theme/app_theme_colors.dart';
+import 'package:seanime_app/core/theme/smooth_scroll_controller.dart';
 import 'package:seanime_app/data/models/manga_entry.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/screens/extensions_marketplace_screen.dart';
@@ -77,7 +78,7 @@ class _MangaDetailMobileLayoutState extends ConsumerState<MangaDetailMobileLayou
   bool _hideRead = true;
   bool _isHeaderScrolled = false;
   final TextEditingController _searchController = TextEditingController();
-  final ScrollController _scrollController = ScrollController();
+  final ScrollController _scrollController = SmoothScrollController();
 
   late final AnimationController _bannerAnimController;
   late final Animation<double> _bannerScaleAnimation;

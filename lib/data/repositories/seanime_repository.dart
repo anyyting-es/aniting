@@ -29,6 +29,7 @@ class SeanimeRepository {
   final ApiClient _apiClient;
   final Map<int, AniZipData> _aniZipCache = {};
   final Map<int, AnimeDetails> _animeDetailsCache = {};
+  final Map<int, LibraryEntryDetails> _animeLibraryEntryCache = {};
   List<OnlinestreamProvider>? _onlinestreamProvidersCache;
   final Map<String, List<OnlinestreamEpisode>> _onlinestreamEpisodesCache = {};
   final Map<int, MangaEntry> _mangaDetailsCache = {};
@@ -48,6 +49,8 @@ class SeanimeRepository {
   SeanimeRepository(this._apiClient);
 
   AnimeDetails? getCachedAnimeDetails(int mediaId) => _animeDetailsCache[mediaId];
+  LibraryEntryDetails? getCachedAnimeLibraryEntry(int mediaId) =>
+      _animeLibraryEntryCache[mediaId];
   AniZipData? getCachedAniZipData(int mediaId) =>
       _aniZipCache[mediaId] ?? FeedCacheService.instance.getAniZipData(mediaId);
   List<OnlinestreamProvider>? getCachedOnlinestreamProviders() => _onlinestreamProvidersCache;
@@ -1490,7 +1493,11 @@ class SeanimeRepository {
           sendTimeout: const Duration(minutes: 2),
         ),
       );
-      return response.statusCode == 200;
+      if (response.statusCode == 200) {
+        _animeLibraryEntryCache.clear();
+        return true;
+      }
+      return false;
     } catch (e) {
       debugPrint('Error triggering library scan: $e');
       return false;
@@ -2406,16 +2413,21 @@ class SeanimeRepository {
 
   // ================= Library Entry Details =================
 
-  Future<LibraryEntryDetails?> getAnimeLibraryEntry(int mediaId) async {
+  Future<LibraryEntryDetails?> getAnimeLibraryEntry(int mediaId, {bool forceRefresh = false}) async {
+    if (!forceRefresh && _animeLibraryEntryCache.containsKey(mediaId)) {
+      return _animeLibraryEntryCache[mediaId];
+    }
     try {
       final response = await _apiClient.get('${ApiEndpoints.animeEntry}/$mediaId');
       if (response.statusCode == 200 && response.data != null) {
-        return LibraryEntryDetails.fromJson(response.data as Map<String, dynamic>);
+        final entry = LibraryEntryDetails.fromJson(response.data as Map<String, dynamic>);
+        _animeLibraryEntryCache[mediaId] = entry;
+        return entry;
       }
     } catch (e) {
       debugPrint('Error fetching anime library entry $mediaId: $e');
     }
-    return null;
+    return _animeLibraryEntryCache[mediaId];
   }
 
   // ================= Online Streaming =================

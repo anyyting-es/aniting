@@ -46,6 +46,8 @@ class DesktopHeroBanner extends ConsumerWidget {
                           imageUrl: bannerUrl!,
                           fit: BoxFit.cover,
                           alignment: const Alignment(0, -0.2),
+                          fadeInDuration: const Duration(milliseconds: 250),
+                          fadeOutDuration: const Duration(milliseconds: 150),
                           errorWidget: (_, _, _) => const SizedBox.shrink(),
                         ),
                       ),
@@ -55,6 +57,8 @@ class DesktopHeroBanner extends ConsumerWidget {
                     imageUrl: bannerUrl!,
                     fit: BoxFit.cover,
                     alignment: const Alignment(0, -0.2),
+                    fadeInDuration: const Duration(milliseconds: 250),
+                    fadeOutDuration: const Duration(milliseconds: 150),
                     errorWidget: (_, _, _) => const SizedBox.shrink(),
                   ),
 

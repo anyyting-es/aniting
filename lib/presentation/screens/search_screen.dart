@@ -307,8 +307,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     if (entries.isEmpty && !isLoading) return const SizedBox.shrink();
 
     final isDesktop = MediaQuery.of(context).size.width >= 720;
-    final cardWidth = isDesktop ? 180.0 : 135.0;
-    final carouselHeight = isDesktop ? 320.0 : 252.0;
+    final cardWidth = isDesktop ? 215.0 : 155.0;
+    final carouselHeight = isDesktop ? 375.0 : 290.0;
     final carouselSpacing = isDesktop ? 14.0 : 10.0;
 
     return Column(
@@ -407,8 +407,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     if (entries.isEmpty && !isLoading) return const SizedBox.shrink();
 
     final isDesktop = MediaQuery.of(context).size.width >= 720;
-    final cardWidth = isDesktop ? 180.0 : 135.0;
-    final carouselHeight = isDesktop ? 320.0 : 252.0;
+    final cardWidth = isDesktop ? 215.0 : 155.0;
+    final carouselHeight = isDesktop ? 375.0 : 290.0;
     final carouselSpacing = isDesktop ? 14.0 : 10.0;
 
     return Column(
