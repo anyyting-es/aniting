@@ -141,7 +141,9 @@ class _PlayerGestureOverlayState extends ConsumerState<PlayerGestureOverlay> {
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: _isDesktop ? widget.onDoubleTapPlayPause : widget.onToggleControls,
-                onDoubleTap: widget.gesturesEnabled ? widget.onSeekBackward : null,
+                onDoubleTap: _isDesktop
+                    ? (widget.onToggleFullscreen ?? widget.onDoubleTapPlayPause)
+                    : (widget.gesturesEnabled ? widget.onSeekBackward : null),
                 onVerticalDragStart: (!_isDesktop && widget.gesturesEnabled)
                     ? (d) => _onVerticalDragStart(d, _DragZone.brightness)
                     : null,
@@ -178,7 +180,9 @@ class _PlayerGestureOverlayState extends ConsumerState<PlayerGestureOverlay> {
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: _isDesktop ? widget.onDoubleTapPlayPause : widget.onToggleControls,
-                onDoubleTap: widget.gesturesEnabled ? widget.onSeekForward : null,
+                onDoubleTap: _isDesktop
+                    ? (widget.onToggleFullscreen ?? widget.onDoubleTapPlayPause)
+                    : (widget.gesturesEnabled ? widget.onSeekForward : null),
                 onVerticalDragStart: (!_isDesktop && widget.gesturesEnabled)
                     ? (d) => _onVerticalDragStart(d, _DragZone.volume)
                     : null,

@@ -4,8 +4,36 @@
 #ifdef GDK_WINDOWING_X11
 #include <gdk/gdkx.h>
 #endif
+#ifdef GDK_WINDOWING_WAYLAND
+#include <gdk/gdkwayland.h>
+#endif
 
 #include "flutter/generated_plugin_registrant.h"
+#include "mpv/mpv_plugin.h"
+
+// On Wayland the mpv video plane is a wl_subsurface stacked below this window's surface.
+static void enable_video_plane_transparency(GtkWindow* window, FlView* view) {
+#ifdef GDK_WINDOWING_WAYLAND
+  GdkDisplay* display = gtk_widget_get_display(GTK_WIDGET(window));
+  if (!GDK_IS_WAYLAND_DISPLAY(display)) return;
+
+  GdkScreen* screen = gtk_widget_get_screen(GTK_WIDGET(window));
+  GdkVisual* visual = gdk_screen_get_rgba_visual(screen);
+  if (visual == nullptr) {
+    g_warning("MPV video plane: no RGBA visual");
+    return;
+  }
+
+  gtk_widget_set_visual(GTK_WIDGET(window), visual);
+  gtk_widget_set_app_paintable(GTK_WIDGET(window), TRUE);
+
+  GdkRGBA transparent = {0.0, 0.0, 0.0, 0.0};
+  fl_view_set_background_color(view, &transparent);
+#else
+  (void)window;
+  (void)view;
+#endif
+}
 
 struct _MyApplication {
   GtkApplication parent_instance;
@@ -166,6 +194,7 @@ static void my_application_activate(GApplication* application) {
       project, self->dart_entrypoint_arguments);
 
   FlView* view = fl_view_new(project);
+  enable_video_plane_transparency(window, view);
   GdkRGBA background_color;
   // Background defaults to black, override it here if necessary, e.g. #00000000
   // for transparent.
@@ -181,6 +210,14 @@ static void my_application_activate(GApplication* application) {
   gtk_widget_realize(GTK_WIDGET(view));
 
   fl_register_plugins(FL_PLUGIN_REGISTRY(view));
+
+  FlPluginRegistrar* registrar =
+      fl_plugin_registry_get_registrar_for_plugin(FL_PLUGIN_REGISTRY(view), "MpvPlugin");
+  mpv_plugin_register_with_registrar(registrar);
+
+  FlPluginRegistrar* audio_registrar =
+      fl_plugin_registry_get_registrar_for_plugin(FL_PLUGIN_REGISTRY(view), "MpvAudioPlugin");
+  mpv_audio_plugin_register_with_registrar(audio_registrar);
 
   gtk_widget_grab_focus(GTK_WIDGET(view));
 }

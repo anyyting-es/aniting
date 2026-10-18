@@ -45,6 +45,82 @@ function(APPLY_STANDARD_SETTINGS TARGET)
   target_compile_definitions(${TARGET} PRIVATE "$<$<CONFIG:Debug>:_DEBUG>")
 endfunction()
 
+# libmpv comes from unified mpv-build repository (edde746/mpv-build)
+set(MPV_LOCK_FILE "${CMAKE_CURRENT_SOURCE_DIR}/../mpv-build.lock.json")
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${MPV_LOCK_FILE}")
+file(READ "${MPV_LOCK_FILE}" MPV_LOCK)
+if(CMAKE_SYSTEM_PROCESSOR STREQUAL "ARM64")
+  set(MPV_ARCH "aarch64")
+else()
+  set(MPV_ARCH "x86_64")
+endif()
+string(JSON MPV_ASSET_BASE GET "${MPV_LOCK}" artifacts windows assetBase)
+string(JSON MPV_ASSET GET "${MPV_LOCK}" artifacts windows assets "${MPV_ARCH}" asset)
+string(JSON MPV_SHA256 GET "${MPV_LOCK}" artifacts windows assets "${MPV_ARCH}" checksum)
+
+include(FetchContent)
+FetchContent_Declare(
+  mpv_dev
+  URL "${MPV_ASSET_BASE}/${MPV_ASSET}"
+  URL_HASH SHA256=${MPV_SHA256}
+  DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+)
+FetchContent_MakeAvailable(mpv_dev)
+
+set(MPV_INCLUDE_DIR "${mpv_dev_SOURCE_DIR}/include")
+set(MPV_LIB_DIR "${mpv_dev_SOURCE_DIR}")
+
+# Vulkan loader
+set(VULKAN_RT_VERSION "1.4.357.0")
+if(CMAKE_SYSTEM_PROCESSOR STREQUAL "ARM64")
+  set(VULKAN_RT_SLUG "warm")
+  set(VULKAN_RT_COMPONENTS "VulkanRT-ARM64-${VULKAN_RT_VERSION}-Components")
+  set(VULKAN_RT_DLL_SUBPATH "${VULKAN_RT_COMPONENTS}/vulkan-1.dll")
+  set(VULKAN_RT_SHA256 "0a51a619525e0c7a156125c4f80c4f591c494cef9ff59dc4481735779a9a280c")
+else()
+  set(VULKAN_RT_SLUG "windows")
+  set(VULKAN_RT_COMPONENTS "VulkanRT-X64-${VULKAN_RT_VERSION}-Components")
+  set(VULKAN_RT_DLL_SUBPATH "${VULKAN_RT_COMPONENTS}/x64/vulkan-1.dll")
+  set(VULKAN_RT_SHA256 "a14672efed15aafc7f5a16572d35cd3a3416eadf670aeee3cdf50ee32d5fbf83")
+endif()
+set(VULKAN_RT_DIR "${CMAKE_BINARY_DIR}/vulkan-runtime")
+if(NOT EXISTS "${VULKAN_RT_DIR}/vulkan-1.dll" OR NOT EXISTS "${VULKAN_RT_DIR}/VulkanRT-License.txt")
+  set(VULKAN_RT_ZIP "${VULKAN_RT_DIR}/vulkan-runtime-components.zip")
+  message(STATUS "Downloading Vulkan runtime (${VULKAN_RT_SLUG} ${VULKAN_RT_VERSION})...")
+  file(DOWNLOAD
+    "https://sdk.lunarg.com/sdk/download/${VULKAN_RT_VERSION}/${VULKAN_RT_SLUG}/vulkan-runtime-components.zip"
+    "${VULKAN_RT_ZIP}"
+    HTTPHEADER "User-Agent: curl/8.4.0"
+    EXPECTED_HASH SHA256=${VULKAN_RT_SHA256}
+    STATUS VULKAN_RT_DL_STATUS)
+  list(GET VULKAN_RT_DL_STATUS 0 VULKAN_RT_DL_RESULT)
+  if(NOT VULKAN_RT_DL_RESULT EQUAL 0)
+    message(FATAL_ERROR "Failed to download Vulkan runtime: ${VULKAN_RT_DL_STATUS}")
+  endif()
+  execute_process(
+    COMMAND "${CMAKE_COMMAND}" -E tar xf "${VULKAN_RT_ZIP}"
+    WORKING_DIRECTORY "${VULKAN_RT_DIR}"
+    RESULT_VARIABLE VULKAN_RT_EXTRACT_RESULT
+  )
+  if(NOT VULKAN_RT_EXTRACT_RESULT EQUAL 0)
+    message(FATAL_ERROR "Failed to extract Vulkan runtime archive")
+  endif()
+  file(RENAME "${VULKAN_RT_DIR}/${VULKAN_RT_DLL_SUBPATH}" "${VULKAN_RT_DIR}/vulkan-1.dll")
+  file(RENAME "${VULKAN_RT_DIR}/${VULKAN_RT_COMPONENTS}/VulkanRT-License.txt"
+    "${VULKAN_RT_DIR}/VulkanRT-License.txt")
+  file(REMOVE_RECURSE "${VULKAN_RT_DIR}/${VULKAN_RT_COMPONENTS}")
+  file(REMOVE "${VULKAN_RT_ZIP}")
+endif()
+
+# Fetch simdutf for SIMD-accelerated UTF-8 validation
+FetchContent_Declare(
+  simdutf
+  URL https://github.com/simdutf/simdutf/releases/download/v6.4.2/singleheader.zip
+  URL_HASH SHA256=9fe4d6f515724a55c8de88fee4463e0890a1abe2267cda13c4b5d245d58039e6
+  DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+)
+FetchContent_MakeAvailable(simdutf)
+
 # Flutter library and tool build rules.
 set(FLUTTER_MANAGED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/flutter")
 add_subdirectory(${FLUTTER_MANAGED_DIR})
@@ -113,3 +189,17 @@ install(DIRECTORY "${PROJECT_BUILD_DIR}/${FLUTTER_ASSET_DIR_NAME}"
 install(FILES "${AOT_LIBRARY}" DESTINATION "${INSTALL_BUNDLE_DATA_DIR}"
   CONFIGURATIONS Profile;Release
   COMPONENT Runtime)
+
+# Install mpv DLL
+install(CODE "
+  file(REMOVE \"${INSTALL_BUNDLE_LIB_DIR}/libmpv-2.dll\")
+  " COMPONENT Runtime)
+install(FILES "${MPV_LIB_DIR}/libmpv-2.dll"
+  DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
+  COMPONENT Runtime)
+
+# Install Vulkan loader
+install(FILES "${VULKAN_RT_DIR}/vulkan-1.dll" "${VULKAN_RT_DIR}/VulkanRT-License.txt"
+  DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
+  COMPONENT Runtime)
+

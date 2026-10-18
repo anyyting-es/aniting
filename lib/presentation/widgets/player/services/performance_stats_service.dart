@@ -58,9 +58,6 @@ class PerformanceStatsService {
 
       final mpv = mpvService;
       if (mpv != null) {
-        final state = mpv.player.state;
-        final platform = (mpv.player.platform as dynamic);
-
         String? vCodec;
         String? vFormat;
         String? aCodec;
@@ -80,91 +77,89 @@ class PerformanceStatsService {
         double? cacheDuration;
 
         try {
-          final vCodecRaw = await platform?.getProperty('video-codec');
-          if (vCodecRaw != null && vCodecRaw is String && vCodecRaw.isNotEmpty) {
+          final vCodecRaw = await mpv.player.getProperty('video-codec');
+          if (vCodecRaw != null && vCodecRaw.isNotEmpty) {
             vCodec = vCodecRaw;
           }
 
-          final vFormatRaw = await platform?.getProperty('video-format');
-          if (vFormatRaw != null && vFormatRaw is String && vFormatRaw.isNotEmpty) {
+          final vFormatRaw = await mpv.player.getProperty('video-format');
+          if (vFormatRaw != null && vFormatRaw.isNotEmpty) {
             vFormat = vFormatRaw;
           }
 
-          final aCodecRaw = await platform?.getProperty('audio-codec-name');
-          if (aCodecRaw != null && aCodecRaw is String && aCodecRaw.isNotEmpty) {
+          final aCodecRaw = await mpv.player.getProperty('audio-codec-name');
+          if (aCodecRaw != null && aCodecRaw.isNotEmpty) {
             aCodec = aCodecRaw;
           }
 
-          final hwdecRaw = await platform?.getProperty('hwdec-current');
-          if (hwdecRaw != null && hwdecRaw is String && hwdecRaw.isNotEmpty) {
+          final hwdecRaw = await mpv.player.getProperty('hwdec-current');
+          if (hwdecRaw != null && hwdecRaw.isNotEmpty) {
             hwdec = hwdecRaw;
           }
 
-          final pixFmtRaw = await platform?.getProperty('video-params/pixelformat');
-          if (pixFmtRaw != null && pixFmtRaw is String && pixFmtRaw.isNotEmpty) {
+          final pixFmtRaw = await mpv.player.getProperty('video-params/pixelformat');
+          if (pixFmtRaw != null && pixFmtRaw.isNotEmpty) {
             pixelFormat = pixFmtRaw;
           }
 
-          final fpsRaw = await platform?.getProperty('estimated-vf-fps');
-          if (fpsRaw != null && fpsRaw is String && fpsRaw.isNotEmpty) {
+          final fpsRaw = await mpv.player.getProperty('estimated-vf-fps');
+          if (fpsRaw != null && fpsRaw.isNotEmpty) {
             fps = double.tryParse(fpsRaw);
           }
 
-          final cFpsRaw = await platform?.getProperty('container-fps');
-          if (cFpsRaw != null && cFpsRaw is String && cFpsRaw.isNotEmpty) {
+          final cFpsRaw = await mpv.player.getProperty('container-fps');
+          if (cFpsRaw != null && cFpsRaw.isNotEmpty) {
             containerFps = double.tryParse(cFpsRaw);
           }
 
-          final vBrRaw = await platform?.getProperty('video-bitrate');
-          if (vBrRaw != null && vBrRaw is String && vBrRaw.isNotEmpty) {
+          final vBrRaw = await mpv.player.getProperty('video-bitrate');
+          if (vBrRaw != null && vBrRaw.isNotEmpty) {
             vBitrate = int.tryParse(vBrRaw);
           }
 
-          final aBrRaw = await platform?.getProperty('audio-bitrate');
-          if (aBrRaw != null && aBrRaw is String && aBrRaw.isNotEmpty) {
+          final aBrRaw = await mpv.player.getProperty('audio-bitrate');
+          if (aBrRaw != null && aBrRaw.isNotEmpty) {
             aBitrate = int.tryParse(aBrRaw);
           }
 
-          final dropRaw = await platform?.getProperty('frame-drop-count');
-          if (dropRaw != null && dropRaw is String && dropRaw.isNotEmpty) {
+          final dropRaw = await mpv.player.getProperty('frame-drop-count');
+          if (dropRaw != null && dropRaw.isNotEmpty) {
             droppedFrames = int.tryParse(dropRaw);
           }
 
-          final decDropRaw = await platform?.getProperty('decoder-frame-drop-count');
-          if (decDropRaw != null && decDropRaw is String && decDropRaw.isNotEmpty) {
+          final decDropRaw = await mpv.player.getProperty('decoder-frame-drop-count');
+          if (decDropRaw != null && decDropRaw.isNotEmpty) {
             decoderDroppedFrames = int.tryParse(decDropRaw);
           }
 
-          final chRaw = await platform?.getProperty('audio-params/channel-count');
-          if (chRaw != null && chRaw is String && chRaw.isNotEmpty) {
+          final chRaw = await mpv.player.getProperty('audio-params/channel-count');
+          if (chRaw != null && chRaw.isNotEmpty) {
             audioChannels = int.tryParse(chRaw);
           }
 
-          final srRaw = await platform?.getProperty('audio-params/samplerate');
-          if (srRaw != null && srRaw is String && srRaw.isNotEmpty) {
+          final srRaw = await mpv.player.getProperty('audio-params/samplerate');
+          if (srRaw != null && srRaw.isNotEmpty) {
             audioSampleRate = int.tryParse(srRaw);
           }
 
-          final avsyncRaw = await platform?.getProperty('avsync');
-          if (avsyncRaw != null && avsyncRaw is String && avsyncRaw.isNotEmpty) {
+          final avsyncRaw = await mpv.player.getProperty('avsync');
+          if (avsyncRaw != null && avsyncRaw.isNotEmpty) {
             avsync = double.tryParse(avsyncRaw);
           }
 
-          final cacheRaw = await platform?.getProperty('demuxer-cache-duration');
-          if (cacheRaw != null && cacheRaw is String && cacheRaw.isNotEmpty) {
+          final cacheRaw = await mpv.player.getProperty('demuxer-cache-duration');
+          if (cacheRaw != null && cacheRaw.isNotEmpty) {
             cacheDuration = double.tryParse(cacheRaw);
           }
 
-          final wRaw = await platform?.getProperty('width');
-          final hRaw = await platform?.getProperty('height');
-          if (wRaw != null && hRaw != null && wRaw.toString().isNotEmpty && hRaw.toString().isNotEmpty) {
+          final wRaw = await mpv.player.getProperty('width');
+          final hRaw = await mpv.player.getProperty('height');
+          if (wRaw != null && hRaw != null && wRaw.isNotEmpty && hRaw.isNotEmpty) {
             resString = '${wRaw}x$hRaw';
-          } else if ((state.width ?? 0) > 0 && (state.height ?? 0) > 0) {
-            resString = '${state.width}x${state.height}';
           }
 
-          final aspRaw = await platform?.getProperty('video-params/aspect');
-          if (aspRaw != null && aspRaw is String && aspRaw.isNotEmpty) {
+          final aspRaw = await mpv.player.getProperty('video-params/aspect');
+          if (aspRaw != null && aspRaw.isNotEmpty) {
             final aspVal = double.tryParse(aspRaw);
             if (aspVal != null) {
               aspectString = aspVal.toStringAsFixed(2);
@@ -173,7 +168,7 @@ class PerformanceStatsService {
         } catch (_) {}
 
         final stats = PerformanceStats(
-          engine: 'libmpv (media_kit)',
+          engine: 'libmpv (native)',
           videoCodec: vCodec ?? vFormat ?? 'H.264 / HEVC',
           videoFormat: vFormat,
           audioCodec: aCodec ?? 'AAC / Opus / FLAC',

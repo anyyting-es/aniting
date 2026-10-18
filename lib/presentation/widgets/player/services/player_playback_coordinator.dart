@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
-import 'package:media_kit/media_kit.dart' as mk;
+import 'package:seanime_app/core/player/mpv/mpv.dart' as mpv;
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/player/exo_player_service.dart';
 import 'package:seanime_app/core/player/mpv_player_service.dart';
@@ -53,6 +53,7 @@ class PlayerPlaybackCoordinator {
   StreamSubscription? _mpvBufferingSub;
   StreamSubscription? _mpvTracksSub;
   StreamSubscription? _mpvTrackSub;
+  StreamSubscription? _mpvEndedSub;
 
   Duration _currentPos = Duration.zero;
 
@@ -337,24 +338,27 @@ class PlayerPlaybackCoordinator {
     bool isOnlineStream = false,
   }) {
     _cancelMpvSubs();
-    final mpv = MpvPlayerService();
-    mpvService = mpv;
+    final service = MpvPlayerService();
+    mpvService = service;
     if (currentSubtitleStyle != null) {
-      mpv.applySubtitleStyle(currentSubtitleStyle!);
+      service.applySubtitleStyle(currentSubtitleStyle!);
     }
 
-    _mpvPosSub = mpv.player.stream.position.listen((pos) {
+    _mpvPosSub = service.player.streams.position.listen((pos) {
       _currentPos = pos;
       onPosition(pos);
     });
-    _mpvDurSub = mpv.player.stream.duration.listen(onDuration);
-    _mpvBufSub = mpv.player.stream.buffer.listen(onBuffer);
-    _mpvPlayingSub = mpv.player.stream.playing.listen(onPlaying);
-    _mpvBufferingSub = mpv.player.stream.buffering.listen(onBuffering);
+    _mpvDurSub = service.player.streams.duration.listen(onDuration);
+    _mpvBufSub = service.player.streams.buffer.listen(onBuffer);
+    _mpvPlayingSub = service.player.streams.playing.listen(onPlaying);
+    _mpvBufferingSub = service.player.streams.buffering.listen(onBuffering);
+    _mpvEndedSub = service.player.streams.completed.listen((completed) {
+      if (completed) onEnded();
+    });
 
-    _mpvTracksSub = mpv.player.stream.tracks.listen((tracks) {
-      final currentSub = mpv.player.state.track.subtitle;
-      final currentAudio = mpv.player.state.track.audio;
+    _mpvTracksSub = service.player.streams.tracks.listen((tracks) {
+      final currentSub = service.player.state.track.subtitle;
+      final currentAudio = service.player.state.track.audio;
 
       final audioList = tracks.audio
           .where((t) => t.id != 'no')
@@ -368,7 +372,7 @@ class PlayerPlaybackCoordinator {
                 ? l10n.automatic
                 : (e.value.title ?? e.value.language ?? '${l10n.audioTracks} #${e.value.id}'),
             language: e.value.language ?? '',
-            selected: e.value.id == currentAudio.id,
+            selected: e.value.id == currentAudio?.id,
           )).toList();
 
       final List<UiTrack> mergedSubs = [];
@@ -384,7 +388,7 @@ class PlayerPlaybackCoordinator {
           index: mergedSubs.length,
           title: subTitle,
           language: t.language ?? '',
-          selected: t.id == currentSub.id,
+          selected: t.id == currentSub?.id,
         ));
       }
 
@@ -407,15 +411,15 @@ class PlayerPlaybackCoordinator {
         }
       }
 
-      onTracks(audioList, mergedSubs, currentAudio.id, currentSub.id);
+      onTracks(audioList, mergedSubs, currentAudio?.id, currentSub?.id);
     });
 
-    _mpvTrackSub = mpv.player.stream.track.listen((track) {
+    _mpvTrackSub = service.player.streams.track.listen((track) {
       // Stream track updates
     });
 
     if (videoUrl.isNotEmpty) {
-      mpv.open(
+      service.open(
         videoUrl,
         title: title,
         episodeTitle: episodeTitle,
@@ -432,7 +436,7 @@ class PlayerPlaybackCoordinator {
         final lang = _getSubLanguage(subToUse);
         final label = _getSubLabel(subToUse);
         if (url.isNotEmpty) {
-          mpv.setSubtitleTrack(mk.SubtitleTrack.uri(
+          service.setSubtitleTrack(mpv.SubtitleTrack.uri(
             url,
             title: label.isNotEmpty ? label : lang,
             language: lang,
@@ -441,7 +445,7 @@ class PlayerPlaybackCoordinator {
       }
     }
 
-    shaderService.applyPreset(mpv, activeShaderPreset);
+    shaderService.applyPreset(service, activeShaderPreset);
   }
 
   void triggerFallbackToMpv([String? reason]) {
@@ -522,7 +526,7 @@ class PlayerPlaybackCoordinator {
         final lang = _getSubLanguage(subToUse);
         final label = _getSubLabel(subToUse);
         if (url.isNotEmpty) {
-          mpvService!.setSubtitleTrack(mk.SubtitleTrack.uri(
+          mpvService!.setSubtitleTrack(mpv.SubtitleTrack.uri(
             url,
             title: label.isNotEmpty ? label : lang,
             language: lang,
@@ -636,7 +640,7 @@ class PlayerPlaybackCoordinator {
     if (isUsingExoPlayer) {
       exoService?.selectAudioTrack(track.index);
     } else {
-      mpvService?.setAudioTrack(mk.AudioTrack(track.id, track.title, track.language));
+      mpvService?.setAudioTrack(mpv.AudioTrack(id: track.id, title: track.title, language: track.language));
       mpvService?.setProperty('aid', track.id);
     }
   }
@@ -646,7 +650,7 @@ class PlayerPlaybackCoordinator {
       if (isUsingExoPlayer) {
         exoService?.selectSubtitleTrack(-1);
       } else {
-        mpvService?.setSubtitleTrack(mk.SubtitleTrack.no());
+        mpvService?.setSubtitleTrack(mpv.SubtitleTrack.off);
         mpvService?.setProperty('sid', 'no');
       }
       return;
@@ -663,7 +667,7 @@ class PlayerPlaybackCoordinator {
           final lang = _getSubLanguage(extSub);
           final label = _getSubLabel(extSub);
           if (url.isNotEmpty) {
-            mpvService?.setSubtitleTrack(mk.SubtitleTrack.uri(
+            mpvService?.setSubtitleTrack(mpv.SubtitleTrack.uri(
               url,
               title: label.isNotEmpty ? label : lang,
               language: lang,
@@ -678,10 +682,10 @@ class PlayerPlaybackCoordinator {
       exoService?.selectSubtitleTrack(track.index);
     } else {
       if (track.id == 'auto') {
-        mpvService?.setSubtitleTrack(mk.SubtitleTrack.auto());
+        mpvService?.setSubtitleTrack(mpv.SubtitleTrack.auto);
         mpvService?.setProperty('sid', 'auto');
       } else {
-        mpvService?.setSubtitleTrack(mk.SubtitleTrack(track.id, track.title, track.language));
+        mpvService?.setSubtitleTrack(mpv.SubtitleTrack(id: track.id, title: track.title, language: track.language));
         mpvService?.setProperty('sid', track.id);
       }
     }
@@ -690,6 +694,8 @@ class PlayerPlaybackCoordinator {
   void setFitMode(PlayerFitMode mode) {
     if (isUsingExoPlayer) {
       exoService?.setFitMode(mode.name);
+    } else {
+      mpvService?.setBoxFit(mode);
     }
   }
 
@@ -726,6 +732,7 @@ class PlayerPlaybackCoordinator {
     _mpvBufferingSub?.cancel();
     _mpvTracksSub?.cancel();
     _mpvTrackSub?.cancel();
+    _mpvEndedSub?.cancel();
   }
 
   void dispose() {

@@ -5,6 +5,21 @@
 > - **NEVER** include microscopic, tedious, or trivial implementation details that end users do not care about (e.g., do **NOT** write: *"Eliminado el brillo fosforescente del indicador deslizante"*, *"Pestañas de los 7 días visibles en frame 0"*, *"Ajustado padding a 4px"*, *"Cambiado color del dot"*).
 > - **ALWAYS** summarize improvements at a high, user-facing level with clear, direct bullet points (e.g., *"Mejoras de UI y navegación en el calendario de emisión"*, *"Nueva pantalla y gestión de estado sin conexión"*, *"Optimizaciones en la caché de seguir viendo"*).
 > - Keep it punchy, professional, and easy to skim.
+## 7.72. Reimplementación Nativa de libmpv al Estilo Plezy (Zero-Copy) (2026-10-17)
+- **Eliminación Total de `media_kit`**:
+  - Reemplazo íntegro de la capa `media_kit` y `media_kit_video` por una arquitectura de reproducción directa en ventana nativa modelada a partir de Plezy.
+  - Supresión del sobrecosto de copiado de texturas OpenGL/Direct3D en el hilo de renderizado de Flutter, logrando cero pérdidas de fotogramas, transiciones inmediatas de seek y menor consumo de GPU/CPU.
+- **Incrustación Nativa de Alto Rendimiento en Windows y Linux**:
+  - Subventana nativa `HWND` en Windows con modo `vo=gpu-next`, shaders Anime4K/FSR de baja latencia y sincronización directa con el ciclo de vida de la ventana principal.
+  - Soporte para subsuperficies Wayland en Linux y enrutamiento directo de pistas de audio y subtítulos.
+- **Transición y Pantalla Completa Nativa Perfecta (Estilo Plezy)**:
+  - Implementado el canal nativo Win32 en C++ para conmutar pantalla completa con remoción atómica de estilos de ventana (`WS_OVERLAPPEDWINDOW`), sin bordes parásitos, sin desajustes de monitor ni pérdidas de estado maximizado.
+  - Persistencia del layout de escritorio para evitar desmontar el viewport de video, doble clic en cualquier zona de la pantalla para alternar pantalla completa y atajos (F / Esc).
+- **Verificación Completa**:
+  - 0 incidencias en `flutter analyze lib/` y compilación verificada en Windows (`build\windows\x64\runner\Debug\seanime_app.exe`).
+
+---
+
 ## 7.71. Rediseño del Asistente de Bienvenida e Instalador Oficial de Windows (2026-10-17)
 - **Rediseño Completo del Onboarding y Bienvenida**:
   - Unificación visual con contenedores Liquid Glass (`GlassCard`) y estética minimalista sin recuadros redundantes.

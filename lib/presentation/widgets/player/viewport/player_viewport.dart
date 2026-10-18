@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:media_kit_video/media_kit_video.dart';
+import 'package:seanime_app/core/player/mpv/mpv.dart' as mpv;
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/player/mpv_player_service.dart';
@@ -151,29 +151,8 @@ class PlayerViewport extends ConsumerWidget {
                 : (mpvPlayerService != null
                     ? SizedBox.expand(
                         child: RepaintBoundary(
-                          child: Video(
-                            controller: mpvPlayerService!.videoController,
-                            controls: NoVideoControls,
-                            fit: fitMode.boxFit,
-                            filterQuality: FilterQuality.low,
-                            subtitleViewConfiguration: SubtitleViewConfiguration(
-                              visible: selectedSubtitleTrackId != 'no' &&
-                                  selectedSubtitleTrackId != 'none',
-                              style: TextStyle(
-                                height: 1.4,
-                                fontFamily: subStyle.fontFamily == 'sans-serif' ? null : subStyle.fontFamily,
-                                fontSize: 26.0 * subStyle.fontSizeMultiplier,
-                                fontWeight: subStyle.bold ? FontWeight.bold : FontWeight.normal,
-                                fontStyle: subStyle.italic ? FontStyle.italic : FontStyle.normal,
-                                color: subStyle.textFlutterColor,
-                                backgroundColor: subStyle.backgroundColor != 0 ? subStyle.bgFlutterColor : null,
-                                shadows: const [
-                                  Shadow(color: Colors.black, blurRadius: 4, offset: Offset(1, 1)),
-                                  Shadow(color: Colors.black, blurRadius: 4, offset: Offset(-1, -1)),
-                                ],
-                              ),
-                              padding: const EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 32.0),
-                            ),
+                          child: mpv.Video(
+                            player: mpvPlayerService!.player,
                           ),
                         ),
                       )

@@ -363,18 +363,30 @@ class PlayerBottomBar extends ConsumerWidget {
                       style: IconButton.styleFrom(
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         padding: const EdgeInsets.all(2),
+                        hoverColor: Colors.white.withValues(alpha: 0.12),
+                        highlightColor: Colors.white.withValues(alpha: 0.20),
                       ),
                       constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                      icon: Icon(
-                        isFullscreen
-                            ? AppIcons.fullscreenExit(iconPack)
-                            : AppIcons.fullscreen(iconPack),
-                        color: Colors.white,
-                        size: fullscreenSize,
+                      icon: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 180),
+                        transitionBuilder: (child, anim) => FadeTransition(
+                          opacity: anim,
+                          child: ScaleTransition(scale: anim, child: child),
+                        ),
+                        child: Icon(
+                          isFullscreen
+                              ? AppIcons.fullscreenExit(iconPack)
+                              : AppIcons.fullscreen(iconPack),
+                          key: ValueKey<bool>(isFullscreen),
+                          color: Colors.white,
+                          size: fullscreenSize,
+                        ),
                       ),
-                      tooltip: isFullscreen
-                          ? l10n.exitFullScreen
-                          : l10n.fullScreen,
+                      tooltip: _isDesktop
+                          ? (isFullscreen
+                              ? '${l10n.exitFullScreen} (Esc / F)'
+                              : '${l10n.fullScreen} (F)')
+                          : (isFullscreen ? l10n.exitFullScreen : l10n.fullScreen),
                       onPressed: onToggleFullscreen,
                     ),
                 ],

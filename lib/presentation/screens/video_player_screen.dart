@@ -1433,59 +1433,59 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                   onEnter: isDesktop ? (_) => _onMouseEnter() : null,
                   onHover: isDesktop ? (_) => _onMouseMove() : null,
                   onExit: isDesktop ? (_) => _onMouseExit() : null,
-                  child: effectiveFullscreen
-                      ? _buildPlayerViewport(
-                          context,
-                          isFullscreen: true,
-                          isDesktop: isDesktop,
+                  child: isDesktop
+                      ? PlayerDesktopLayout(
+                          playerViewport: _buildPlayerViewport(
+                            context,
+                            isFullscreen: effectiveFullscreen,
+                            isDesktop: true,
+                          ),
+                          sidePanel: PlayerInfoPanel(
+                            mediaId: widget.mediaId,
+                            animeTitle: widget.title,
+                            episodeNumber: _currentEpisodeNumber,
+                            episodeTitle: _currentEpisodeTitle,
+                            animeDetails: _animeDetails,
+                            aniZipData: _aniZipData ?? _animeDetails?.aniZipData,
+                            isLoading: _isLoadingDetails,
+                            isDesktop: true,
+                            onCollapse: () => setState(() => _isSidePanelCollapsed = true),
+                            chapters: _chapters,
+                            activeChapter: _activeChapter,
+                            onSeekToChapter: _seekTo,
+                            hasNextEpisode: _hasNextEpisode,
+                            onPlayNextEpisode: (_hasNextEpisode && !_isLoadingNextEpisode)
+                                ? () => _sourceController.playEpisode(
+                                    targetEpNum: (_currentEpisodeNumber ?? 1) + 1,
+                                    onEpisodeTransitionStarted: _onEpisodeTransitionStarted,
+                                  )
+                                : null,
+                            onPlayPreviousEpisode: (_hasPreviousEpisode && !_isLoadingNextEpisode)
+                                ? () => _sourceController.playEpisode(
+                                    targetEpNum: (_currentEpisodeNumber ?? 1) - 1,
+                                    onEpisodeTransitionStarted: _onEpisodeTransitionStarted,
+                                  )
+                                : null,
+                            sourceController: _sourceController,
+                            playbackOrigin: _playbackOrigin,
+                            isResolvingSources: _isResolvingSources,
+                            availableSources: _availableSources,
+                            activeSource: _activeSource,
+                            sourceResolutionError: _sourceResolutionError,
+                            onlineStreamProvider: _currentOnlineStreamProvider,
+                            isDubbed: _currentOnlineStreamDubbed ?? false,
+                            onToggleDubbed: _toggleOnlineStreamDubbed,
+                            onReloadSources: () => _sourceController.resolveInitialSources(preservePosition: true),
+                            onSelectSource: _sourceController.selectSource,
+                            onSelectProvider: _switchOnlineStreamProvider,
+                          ),
+                          isSidePanelCollapsed: effectiveFullscreen || _isSidePanelCollapsed,
                         )
-                      : (isDesktop
-                          ? PlayerDesktopLayout(
-                              playerViewport: _buildPlayerViewport(
-                                context,
-                                isFullscreen: false,
-                                isDesktop: true,
-                              ),
-                              sidePanel: PlayerInfoPanel(
-                                mediaId: widget.mediaId,
-                                animeTitle: widget.title,
-                                episodeNumber: _currentEpisodeNumber,
-                                episodeTitle: _currentEpisodeTitle,
-                                animeDetails: _animeDetails,
-                                aniZipData: _aniZipData ?? _animeDetails?.aniZipData,
-                                isLoading: _isLoadingDetails,
-                                isDesktop: true,
-                                onCollapse: () => setState(() => _isSidePanelCollapsed = true),
-                                chapters: _chapters,
-                                activeChapter: _activeChapter,
-                                onSeekToChapter: _seekTo,
-                                hasNextEpisode: _hasNextEpisode,
-                                onPlayNextEpisode: (_hasNextEpisode && !_isLoadingNextEpisode)
-                                    ? () => _sourceController.playEpisode(
-                                        targetEpNum: (_currentEpisodeNumber ?? 1) + 1,
-                                        onEpisodeTransitionStarted: _onEpisodeTransitionStarted,
-                                      )
-                                    : null,
-                                onPlayPreviousEpisode: (_hasPreviousEpisode && !_isLoadingNextEpisode)
-                                    ? () => _sourceController.playEpisode(
-                                        targetEpNum: (_currentEpisodeNumber ?? 1) - 1,
-                                        onEpisodeTransitionStarted: _onEpisodeTransitionStarted,
-                                      )
-                                    : null,
-                                sourceController: _sourceController,
-                                playbackOrigin: _playbackOrigin,
-                                isResolvingSources: _isResolvingSources,
-                                availableSources: _availableSources,
-                                activeSource: _activeSource,
-                                sourceResolutionError: _sourceResolutionError,
-                                onlineStreamProvider: _currentOnlineStreamProvider,
-                                isDubbed: _currentOnlineStreamDubbed ?? false,
-                                onToggleDubbed: _toggleOnlineStreamDubbed,
-                                onReloadSources: () => _sourceController.resolveInitialSources(preservePosition: true),
-                                onSelectSource: _sourceController.selectSource,
-                                onSelectProvider: _switchOnlineStreamProvider,
-                              ),
-                              isSidePanelCollapsed: _isSidePanelCollapsed,
+                      : (effectiveFullscreen
+                          ? _buildPlayerViewport(
+                              context,
+                              isFullscreen: true,
+                              isDesktop: false,
                             )
                           : PlayerMobileLayout(
                               playerViewport: _buildPlayerViewport(

@@ -9,18 +9,50 @@ project(runner LANGUAGES CXX)
 add_executable(${BINARY_NAME}
   "main.cc"
   "my_application.cc"
+  "mpv/mpv_player.cc"
+  "mpv/mpv_plugin.cc"
+  "mpv/plane_render_executor.cc"
+  "mpv/wayland_video_surface.cc"
   "${FLUTTER_MANAGED_DIR}/generated_plugin_registrant.cc"
 )
 
 # Apply the standard set of build settings. This can be removed for applications
 # that need different build settings.
 apply_standard_settings(${BINARY_NAME})
+target_compile_features(${BINARY_NAME} PRIVATE cxx_std_17)
 
 # Add preprocessor definitions for the application ID.
 add_definitions(-DAPPLICATION_ID="${APPLICATION_ID}")
 
+pkg_check_modules(WAYLAND_CLIENT REQUIRED IMPORTED_TARGET wayland-client)
+pkg_check_modules(WAYLAND_EGL REQUIRED IMPORTED_TARGET wayland-egl)
+pkg_check_modules(EGL REQUIRED IMPORTED_TARGET egl)
+pkg_check_modules(MPV REQUIRED IMPORTED_TARGET mpv)
+pkg_check_modules(EPOXY REQUIRED IMPORTED_TARGET epoxy)
+
+enable_language(C)
+add_library(wayland_protocols STATIC "wayland/color-management-v1-protocol.c")
+target_include_directories(wayland_protocols PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/wayland")
+target_link_libraries(wayland_protocols PUBLIC PkgConfig::WAYLAND_CLIENT)
+target_compile_options(wayland_protocols PRIVATE -w)
+
+add_library(simdutf STATIC "${simdutf_SOURCE_DIR}/simdutf.cpp")
+target_include_directories(simdutf PUBLIC "${simdutf_SOURCE_DIR}")
+target_compile_features(simdutf PUBLIC cxx_std_14)
+target_compile_options(simdutf PRIVATE -w)
+
 # Add dependency libraries. Add any application-specific dependencies here.
 target_link_libraries(${BINARY_NAME} PRIVATE flutter)
 target_link_libraries(${BINARY_NAME} PRIVATE PkgConfig::GTK)
+target_link_libraries(${BINARY_NAME} PRIVATE PkgConfig::WAYLAND_CLIENT)
+target_link_libraries(${BINARY_NAME} PRIVATE PkgConfig::WAYLAND_EGL)
+target_link_libraries(${BINARY_NAME} PRIVATE PkgConfig::EGL)
+target_link_libraries(${BINARY_NAME} PRIVATE PkgConfig::MPV)
+target_link_libraries(${BINARY_NAME} PRIVATE PkgConfig::EPOXY)
+target_link_libraries(${BINARY_NAME} PRIVATE wayland_protocols)
+target_link_libraries(${BINARY_NAME} PRIVATE simdutf)
 
 target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_SOURCE_DIR}")
+target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/../shared/cpp")
+

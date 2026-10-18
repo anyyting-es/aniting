@@ -2,7 +2,8 @@ import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:media_kit_video/media_kit_video.dart';
+import 'package:window_manager/window_manager.dart';
+import 'package:seanime_app/core/player/mpv/native_window_service.dart';
 import 'package:seanime_app/core/theme/theme_provider.dart';
 import 'package:seanime_app/presentation/widgets/desktop_title_bar.dart';
 import 'package:seanime_app/presentation/widgets/player/services/player_playback_coordinator.dart';
@@ -23,6 +24,8 @@ class PlayerWindowManager {
   int? _lastExoHeight;
 
   bool get isDesktop => !Platform.isAndroid && !Platform.isIOS;
+  bool _wasMaximized = false;
+  VoidCallback? _onUpdateUi;
 
   PlayerWindowManager({
     required this.isTv,
@@ -30,10 +33,48 @@ class PlayerWindowManager {
     required this.coordinator,
   });
 
+  Future<void> defaultEnterNativeFullscreen() async {
+    if (Platform.isWindows) {
+      await NativeWindowService.setFullScreen(true);
+    } else if (isDesktop) {
+      _wasMaximized = await windowManager.isMaximized();
+      if (_wasMaximized) {
+        await windowManager.unmaximize();
+      }
+      await windowManager.setFullScreen(true);
+    }
+  }
+
+  Future<void> defaultExitNativeFullscreen() async {
+    if (Platform.isWindows) {
+      await NativeWindowService.setFullScreen(false);
+    } else if (isDesktop) {
+      await windowManager.setFullScreen(false);
+      if (_wasMaximized) {
+        await windowManager.maximize();
+        _wasMaximized = false;
+      }
+    }
+  }
+
+  void _onNativeFullscreenChanged(bool nativeFullscreen) {
+    if (isFullscreen != nativeFullscreen) {
+      isFullscreen = nativeFullscreen;
+      try {
+        ref.read(desktopTitleBarVisibleProvider.notifier).setVisible(!nativeFullscreen);
+      } catch (_) {}
+      _onUpdateUi?.call();
+    }
+  }
+
   /// Calculates initial window state, orientations, and initial surface dimensions.
   ({int initialTop, int initialHeight, bool initialFullscreen}) initWindow() {
     int initialTop = 0;
     int initialHeight = -1;
+
+    if (Platform.isWindows) {
+      NativeWindowService.addListener(_onNativeFullscreenChanged);
+    }
 
     if (isDesktop) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -126,6 +167,7 @@ class PlayerWindowManager {
     required VoidCallback onUpdateUi,
     VoidCallback? onOrientationTransitionStarted,
   }) {
+    _onUpdateUi = onUpdateUi;
     if (isDesktop) {
       isFullscreen = !isFullscreen;
       onUpdateUi();
@@ -234,6 +276,10 @@ class PlayerWindowManager {
 
   /// Restores native window and orientation defaults on dispose.
   void dispose({VoidCallback? onCustomDispose}) {
+    if (Platform.isWindows) {
+      NativeWindowService.removeListener(_onNativeFullscreenChanged);
+    }
+
     if (Platform.isAndroid) {
       try {
         const MethodChannel('com.anyyting.aniting/exo_player')

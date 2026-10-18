@@ -2,51 +2,26 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:media_kit/media_kit.dart';
-import 'package:media_kit_video/media_kit_video.dart';
+import 'package:seanime_app/core/player/mpv/mpv.dart' as mpv;
 import 'package:seanime_app/core/preferences/subtitle_style_preferences_provider.dart';
 import 'package:seanime_app/presentation/widgets/player/models/player_types.dart';
 
-/// MPV Player Service powered by media_kit with optimized libmpv engine
-/// configuration inspired by Plezy (hardware acceleration, smart demuxer buffering,
-/// audio normalization and native libass subtitle rendering with MKV chapter support).
+/// Native MPV Player Service powered by libmpv (without media_kit).
+/// Uses native child window embedding (wid) on Windows and native Wayland video plane on Linux,
+/// eliminating Flutter texture copying bottlenecks and offering flawless 4K/60fps/120fps video.
 class MpvPlayerService {
-  late final Player _player;
-  late final VideoController _videoController;
+  late final mpv.Player _player;
 
   String? _currentTitle;
   String? _currentEpisodeTitle;
   SubtitleStylePrefs? _lastSubtitlePrefs;
 
   MpvPlayerService({int? viewportWidth, int? viewportHeight}) {
-    _player = Player(
-      configuration: const PlayerConfiguration(
-        libass: true,
-        bufferSize: 16 * 1024 * 1024,
-        logLevel: MPVLogLevel.warn,
-      ),
-    );
-
-    // Limit texture resolution to the actual viewport size instead of the video's
-    // native resolution. Without this, a 4K video creates a 3840x2160 OpenGL texture
-    // that Flutter's raster thread must composite on every frame, starving the UI.
-    // With viewport-sized textures, the GPU scales during mpv_render_context_render()
-    // (which is much cheaper) and Flutter only composites a small texture.
-    _videoController = VideoController(
-      _player,
-      configuration: VideoControllerConfiguration(
-        enableHardwareAcceleration: true,
-        hwdec: Platform.isLinux ? 'auto-safe,auto' : 'auto',
-        width: viewportWidth,
-        height: viewportHeight,
-      ),
-    );
-
+    _player = mpv.Player(hardwareDecoding: true);
     _applyPlezyMpvConfigurations();
   }
 
-  Player get player => _player;
-  VideoController get videoController => _videoController;
+  mpv.Player get player => _player;
 
   String? get currentTitle => _currentTitle;
   String? get currentEpisodeTitle => _currentEpisodeTitle;
@@ -54,7 +29,7 @@ class MpvPlayerService {
   /// Applies optimal MPV properties inspired by Plezy's player backend
   void _applyPlezyMpvConfigurations() {
     try {
-      // Hardware decoding: direct zero-copy keeping decoded frames in GPU VRAM
+      // Hardware decoding
       if (Platform.isAndroid) {
         _safeSetProperty('hwdec', 'mediacodec,mediacodec-copy');
         _safeSetProperty('hwdec-codecs', 'all');
@@ -62,21 +37,16 @@ class MpvPlayerService {
         _safeSetProperty('hwdec', 'videotoolbox');
         _safeSetProperty('hwdec-codecs', 'all');
       } else if (Platform.isWindows) {
-        // Direct zero-copy D3D11VA avoids copying 10-bit HEVC frames to host RAM (d3d11va-copy)
         _safeSetProperty('hwdec', 'd3d11va,auto');
         _safeSetProperty('hwdec-codecs', 'all');
       } else {
-        // GNU/Linux: use 'auto-safe,auto' to match Plezy and avoid stalls during driver probe.
         _safeSetProperty('hwdec', 'auto-safe,auto');
         _safeSetProperty('hwdec-codecs', 'all');
       }
 
-      // Balanced thread management (0 auto-detects based on CPU cores, avoiding restriction for Hi10P anime that must decode on CPU)
-      // vd-lavc-dr removed because direct rendering causes context lockups with media_kit's EGL texture sharing
       _safeSetProperty('vd-lavc-threads', '0');
 
-      // HDR Tone Mapping & Color Space (auto lets mpv pick the best algorithm for vo=libmpv, avoiding bt.2446a which needs gpu-next)
-      // hdr-compute-peak disabled to prevent GPU saturation from per-frame histogram analysis
+      // HDR Tone Mapping & Color Space
       _safeSetProperty('target-colorspace-hint', 'no');
       _safeSetProperty('tone-mapping', 'auto');
       _safeSetProperty('gamut-mapping-mode', 'auto');
@@ -84,12 +54,11 @@ class MpvPlayerService {
       if (!Platform.isLinux) {
         _safeSetProperty('video-sync', 'display-resample');
       } else {
-        // Linux: display-resample with Flutter EGL texture sharing causes audio resampler stalls and frame drops
         _safeSetProperty('video-sync', 'audio');
       }
       _safeSetProperty('interpolation', 'no');
 
-      // Demuxer caching: 32MB forward RAM buffer, 10MB rewind RAM buffer, spilling larger cache to SSD
+      // Demuxer caching
       try {
         final cacheDir = Directory('${Directory.systemTemp.path}/aniting/mpv_cache');
         if (!cacheDir.existsSync()) {
@@ -105,13 +74,13 @@ class MpvPlayerService {
       _safeSetProperty('cache', 'yes');
       _safeSetProperty('cache-secs', '25');
 
-      // Network & HLS stream reconnection resilience (inspired by Plezy)
+      // Network & HLS stream reconnection resilience
       _safeSetProperty('network-timeout', '15');
       _safeSetProperty('stream-lavf-o', 'reconnect=1,reconnect_streamed=1,reconnect_delay_max=5');
       _safeSetProperty('hls-bitrate', 'max');
       _safeSetProperty('ytdl', 'no');
 
-      // Seeking optimizations: exact frame seeking without lag
+      // Seeking optimizations
       _safeSetProperty('hr-seek', 'yes');
       _safeSetProperty('hr-seek-framedrop', 'yes');
       _safeSetProperty('keep-open', 'yes');
@@ -123,12 +92,10 @@ class MpvPlayerService {
       _safeSetProperty('sub-ass-override', 'scale');
       _safeSetProperty('sub-scale', '1.0');
       _safeSetProperty('sub-ass-force-margins', 'yes');
-      // basic instead of full to avoid expensive color conversions for every subtitle line
       _safeSetProperty('sub-ass-vsfilter-color-compat', 'basic');
       _safeSetProperty('embeddedfonts', 'yes');
 
       if (Platform.isAndroid) {
-        // Android has no fontconfig. Point libmpv directly to /system/fonts where Roboto lives
         _safeSetProperty('sub-fonts-dir', '/system/fonts');
         _safeSetProperty('sub-font', 'Roboto');
         _safeSetProperty('sub-font-provider', 'none');
@@ -137,7 +104,7 @@ class MpvPlayerService {
         _safeSetProperty('sub-font', 'sans-serif');
       }
 
-      // Plain text subtitle styling (SRT, VTT, etc.): clean white bold text, transparent bg, black outline
+      // Plain text subtitle styling
       _safeSetProperty('sub-color', '#FFFFFFFF');
       _safeSetProperty('sub-back-color', '#00000000');
       _safeSetProperty('sub-border-color', '#FF000000');
@@ -145,11 +112,11 @@ class MpvPlayerService {
       _safeSetProperty('sub-bold', 'yes');
       _safeSetProperty('sub-font-size', '48');
 
-      // Audio: auto-safe channel mapping and volume downmix normalization
+      // Audio
       _safeSetProperty('audio-channels', 'auto-safe');
       _safeSetProperty('audio-normalize-downmix', 'yes');
 
-      // Disable internal MPV OSD so no unwanted chapter or file notices are displayed on-screen
+      // Disable internal MPV OSD
       _safeSetProperty('osd-level', '0');
       _safeSetProperty('osd-playing-msg', '');
     } catch (e) {
@@ -158,27 +125,25 @@ class MpvPlayerService {
   }
 
   void _safeSetProperty(String name, String value) {
-    try {
-      final res = (_player.platform as dynamic)?.setProperty(name, value);
-      if (res is Future) {
-        res.catchError((e) {
-          debugPrint('[MpvPlayerService] Error setting property $name=$value: $e');
-        });
-      }
-    } catch (e) {
-      debugPrint('[MpvPlayerService] Sync error setting property $name=$value: $e');
-    }
+    _player.setProperty(name, value).catchError((e) {
+      debugPrint('[MpvPlayerService] Error setting property $name=$value: $e');
+    });
   }
 
   /// Manually set custom MPV property
   Future<void> setProperty(String name, String value) async {
-    _safeSetProperty(name, value);
+    await _player.setProperty(name, value);
+  }
+
+  /// Get property value
+  Future<String?> getProperty(String name) async {
+    return _player.getProperty(name);
   }
 
   /// Execute a native libmpv command (e.g. ['change-list', 'glsl-shaders', 'clr', ''])
   Future<void> command(List<String> args) async {
     try {
-      await (_player.platform as dynamic)?.command(args);
+      await _player.command(args);
     } catch (e) {
       debugPrint('[MpvPlayerService] Error executing command $args: $e');
     }
@@ -187,8 +152,8 @@ class MpvPlayerService {
   /// Fetches MKV chapters / segments from libmpv
   Future<List<PlayerChapter>> getChapters() async {
     try {
-      final raw = await (_player.platform as dynamic)?.getProperty('chapter-list');
-      if (raw != null && raw is String && raw.isNotEmpty && raw != '[]') {
+      final raw = await _player.getProperty('chapter-list');
+      if (raw != null && raw.isNotEmpty && raw != '[]') {
         final decoded = jsonDecode(raw) as List;
         final List<PlayerChapter> rawList = [];
         for (int i = 0; i < decoded.length; i++) {
@@ -240,58 +205,39 @@ class MpvPlayerService {
         url.contains('/torrent') ||
         (url.contains('127.0.0.1') && url.contains('torrent'));
 
-    // Detect if this is an online stream (HLS / m3u8 or remote HTTP/HTTPS) vs local media / torrent
     final bool effectiveOnlineStream = !isTorrentStream && (isOnlineStream ||
         ((url.startsWith('http://') || url.startsWith('https://')) &&
             !url.contains('127.0.0.1') &&
             !url.contains('localhost')));
 
     if (effectiveOnlineStream) {
-      // ── ONLINE STREAMING MODE (HLS / m3u8 / remote CDN) ────────────────────
-      // 1. Probing optimization: reduce demuxer probing to 64KB & 0.5s (instead of 5MB / 5.0s)
-      //    Starts playback in ~100ms instead of waiting seconds to analyze codecs.
       _safeSetProperty('demuxer-lavf-probesize', '65536');
       _safeSetProperty('demuxer-lavf-analyzeduration', '0.5');
-      _safeSetProperty('demuxer-lavf-buffersize', '524288'); // 512 KB network buffer
-
-      // 2. HTTP persistent connection & reconnection: keep socket open for all HLS chunks (.ts/.m4s)
-      //    Avoids repeating TCP + TLS 1.3 handshakes for every 2-second segment.
+      _safeSetProperty('demuxer-lavf-buffersize', '524288');
       _safeSetProperty(
         'stream-lavf-o',
         'reconnect=1,reconnect_streamed=1,reconnect_delay_max=5,multiple_requests=1,http_persistent=1',
       );
       _safeSetProperty('network-timeout', '10');
-      _safeSetProperty('tls-verify', 'no'); // Prevents SSL handshakes stalling on anime CDNs
-
-      // 3. Fast seeking: seek to nearest keyframe without network decoding freezes
+      _safeSetProperty('tls-verify', 'no');
       _safeSetProperty('hr-seek', 'no');
       _safeSetProperty('hr-seek-framedrop', 'yes');
-
-      // 4. Agile readahead buffer: starts immediately with low initial buffer requirement
       _safeSetProperty('demuxer-readahead-secs', '10');
       _safeSetProperty('cache-secs', '15');
-      _safeSetProperty('demuxer-max-bytes', '67108864'); // 64 MB RAM cache for online video
+      _safeSetProperty('demuxer-max-bytes', '67108864');
     } else if (isTorrentStream) {
-      // ── TORRENT STREAMING MODE (P2P Local Stream) ──────────────────────────
-      // Torrent streams are sequential HTTP streams powered by the local Go backend.
-      // 1. Fast probing: 1MB probe size so playback starts quickly as chunks arrive.
       _safeSetProperty('demuxer-lavf-probesize', '1048576');
       _safeSetProperty('demuxer-lavf-analyzeduration', '2.0');
       _safeSetProperty('demuxer-lavf-buffersize', '65536');
       _safeSetProperty('stream-lavf-o', 'reconnect=1,reconnect_streamed=1,reconnect_delay_max=5');
       _safeSetProperty('network-timeout', '60');
-
-      // 2. Coarse keyframe seeking: avoids requesting unbuffered torrent byte ranges that stall the pipeline.
       _safeSetProperty('hr-seek', 'no');
       _safeSetProperty('hr-seek-framedrop', 'yes');
-
-      // 3. Generous forward cache to prevent underruns during piece download variation.
       _safeSetProperty('demuxer-readahead-secs', '20');
       _safeSetProperty('cache-secs', '30');
-      _safeSetProperty('demuxer-max-bytes', '67108864'); // 64 MB RAM cache
+      _safeSetProperty('demuxer-max-bytes', '67108864');
     } else {
-      // ── LOCAL FILE PLAYBACK MODE (High Fidelity from SSD/Storage) ───────────
-      _safeSetProperty('demuxer-lavf-probesize', '1048576'); // 1 MB
+      _safeSetProperty('demuxer-lavf-probesize', '1048576');
       _safeSetProperty('demuxer-lavf-analyzeduration', '1.0');
       _safeSetProperty('demuxer-lavf-buffersize', '131072');
       _safeSetProperty('stream-lavf-o', 'reconnect=1,reconnect_streamed=1,reconnect_delay_max=5');
@@ -301,10 +247,9 @@ class MpvPlayerService {
       _safeSetProperty('hr-seek-framedrop', 'yes');
       _safeSetProperty('demuxer-readahead-secs', '15');
       _safeSetProperty('cache-secs', '25');
-      _safeSetProperty('demuxer-max-bytes', '33554432'); // 32 MB
+      _safeSetProperty('demuxer-max-bytes', '33554432');
     }
 
-    // Apply Plezy-style header propagation to ensure HLS segment chunks inherit referer/user-agent
     if (httpHeaders != null && httpHeaders.isNotEmpty) {
       final userAgent = httpHeaders['User-Agent'] ?? httpHeaders['user-agent'];
       if (userAgent != null && userAgent.isNotEmpty) {
@@ -320,16 +265,11 @@ class MpvPlayerService {
       _safeSetProperty('http-header-fields', headerFields);
     }
 
-    if (startPosition != null && startPosition > Duration.zero) {
-      _safeSetProperty('start', (startPosition.inMilliseconds / 1000.0).toString());
-    } else {
-      _safeSetProperty('start', 'none');
-    }
-
     await _player.open(
-      Media(
+      mpv.Media(
         url,
-        httpHeaders: httpHeaders,
+        headers: httpHeaders,
+        start: startPosition,
       ),
       play: true,
     );
@@ -347,20 +287,31 @@ class MpvPlayerService {
   Future<void> setRate(double rate) => _player.setRate(rate);
   Future<void> setVolume(double volume) => _player.setVolume(volume);
 
-  Future<void> setAudioTrack(AudioTrack track) => _player.setAudioTrack(track);
-  Future<void> setSubtitleTrack(SubtitleTrack track) => _player.setSubtitleTrack(track);
+  Future<void> setAudioTrack(mpv.AudioTrack track) => _player.selectAudioTrack(track);
+  Future<void> setSubtitleTrack(mpv.SubtitleTrack track) => _player.selectSubtitleTrack(track);
+
+  /// Configure video aspect/fit mode (FIT vs COVER/ZOOM vs STRETCH)
+  void setBoxFit(PlayerFitMode fitMode) {
+    switch (fitMode) {
+      case PlayerFitMode.contain:
+        _safeSetProperty('panscan', '0.0');
+        _safeSetProperty('video-aspect-override', '-1');
+        break;
+      case PlayerFitMode.cover:
+        _safeSetProperty('panscan', '1.0');
+        _safeSetProperty('video-aspect-override', '-1');
+        break;
+      case PlayerFitMode.fill:
+        _safeSetProperty('panscan', '0.0');
+        _safeSetProperty('video-aspect-override', '0');
+        break;
+    }
+  }
 
   /// Applies subtitle styling preferences (font, colors, borders, shadows, ASS override)
   void applySubtitleStyle(SubtitleStylePrefs prefs) {
     _lastSubtitlePrefs = prefs;
     try {
-      debugPrint(
-        '[MpvPlayerService] applySubtitleStyle: overrideAss=${prefs.overrideAss}, '
-        'font=${prefs.fontFamily}, scale=${prefs.fontSizeMultiplier}, '
-        'color=${SubtitleStylePrefs.toMpvHexColor(prefs.textColor)}, '
-        'border=${prefs.borderStyle.name}, borderColor=${SubtitleStylePrefs.toMpvHexColor(prefs.borderColor)}',
-      );
-
       const baseFontSize = 48;
       String targetFont = prefs.fontFamily;
       if (Platform.isAndroid || Platform.isIOS) {

@@ -40,10 +40,8 @@ dependencies:
   cached_network_image: ^4.0.0
   shared_preferences: ^2.5.5
   intl: ^0.20.3
+  collection: ^1.18.0
   gap: ^3.0.1
-  media_kit: ^1.2.6
-  media_kit_video: ^2.0.1
-  media_kit_libs_video: ^1.0.7
   url_launcher: ^6.3.2
   google_fonts: ^8.2.1
   lucide_icons_flutter: ^3.1.20
@@ -65,10 +63,6 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
-
-dependency_overrides:
-  media_kit_video:
-    path: packages/media_kit_video
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

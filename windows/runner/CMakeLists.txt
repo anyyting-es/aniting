@@ -11,6 +11,9 @@ add_executable(${BINARY_NAME} WIN32
   "main.cpp"
   "utils.cpp"
   "win32_window.cpp"
+  "mpv/display_mode_manager.cpp"
+  "mpv/mpv_player.cpp"
+  "mpv/mpv_plugin.cpp"
   "${FLUTTER_MANAGED_DIR}/generated_plugin_registrant.cc"
   "Runner.rc"
   "runner.exe.manifest"
@@ -30,14 +33,35 @@ target_compile_definitions(${BINARY_NAME} PRIVATE "FLUTTER_VERSION_BUILD=${FLUTT
 # Disable Windows macros that collide with C++ standard library functions.
 target_compile_definitions(${BINARY_NAME} PRIVATE "NOMINMAX")
 
+add_library(simdutf STATIC "${simdutf_SOURCE_DIR}/simdutf.cpp")
+target_include_directories(simdutf PUBLIC "${simdutf_SOURCE_DIR}")
+target_compile_features(simdutf PUBLIC cxx_std_17)
+target_compile_options(simdutf PRIVATE /W0)
+
 # Add dependency libraries and include directories. Add any application-specific
 # dependencies here.
-target_link_libraries(${BINARY_NAME} PRIVATE flutter flutter_wrapper_app)
-target_link_libraries(${BINARY_NAME} PRIVATE "dwmapi.lib")
+target_link_libraries(${BINARY_NAME} PRIVATE flutter flutter_wrapper_app flutter_wrapper_plugin)
+target_link_libraries(${BINARY_NAME} PRIVATE "dwmapi.lib" "comctl32.lib" "dxgi.lib")
+target_link_libraries(${BINARY_NAME} PRIVATE "${MPV_LIB_DIR}/libmpv.dll.a")
+target_link_libraries(${BINARY_NAME} PRIVATE simdutf)
+
 target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_SOURCE_DIR}")
+target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+target_include_directories(${BINARY_NAME} PRIVATE "${MPV_INCLUDE_DIR}")
+target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/../shared/cpp")
 
 # Run the Flutter tool portions of the build. This must not be removed.
 add_dependencies(${BINARY_NAME} flutter_assemble)
+
+# Post-build copy of mpv, vulkan and backend binaries next to the runner
+add_custom_command(TARGET ${BINARY_NAME} POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    "${MPV_LIB_DIR}/libmpv-2.dll"
+    "$<TARGET_FILE_DIR:${BINARY_NAME}>/libmpv-2.dll"
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    "${VULKAN_RT_DIR}/vulkan-1.dll"
+    "$<TARGET_FILE_DIR:${BINARY_NAME}>/vulkan-1.dll"
+)
 
 # Automatically bundle seanime.exe next to the runner executable if present
 set(BACKEND_BIN "${CMAKE_CURRENT_SOURCE_DIR}/../../backend/seanime.exe")
@@ -48,3 +72,4 @@ if(EXISTS "${BACKEND_BIN}")
     "$<TARGET_FILE_DIR:${BINARY_NAME}>/seanime.exe"
   )
 endif()
+
