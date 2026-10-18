@@ -1165,6 +1165,10 @@ abstract class AppTranslations {
   String get unlinkMainFolderConfirmTitle;
   String get unlinkMainFolderConfirmMessage;
   String get unlinkFolderAction;
+  String get unlinkAllFoldersAction;
+  String get unlinkAllFoldersConfirmTitle;
+  String get unlinkAllFoldersConfirmMessage;
+  String get allFoldersUnlinkedSuccess;
   String get localShowsSectionTitle;
   String get localShowsSectionSubtitle;
   String get fixMatchAction;

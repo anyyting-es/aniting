@@ -2395,6 +2395,14 @@ class SpanishTranslations implements AppTranslations {
   @override
   String get unlinkFolderAction => 'Desvincular';
   @override
+  String get unlinkAllFoldersAction => 'Desvincular todo';
+  @override
+  String get unlinkAllFoldersConfirmTitle => 'Desvincular todas las carpetas';
+  @override
+  String get unlinkAllFoldersConfirmMessage => '¿Seguro que deseas desvincular todas las carpetas? Se eliminará toda la metadata e indexación local de anime y shows.';
+  @override
+  String get allFoldersUnlinkedSuccess => 'Todas las carpetas fueron desvinculadas de la biblioteca local';
+  @override
   String get localShowsSectionTitle => 'Shows y contenido local';
   @override
   String get localShowsSectionSubtitle => 'Explora visualmente todo el anime, series TV y películas identificados en tu almacenamiento';

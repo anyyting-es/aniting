@@ -6,6 +6,31 @@
 > - **ALWAYS** summarize improvements at a high, user-facing level with clear, direct bullet points (e.g., *"Mejoras de UI y navegación en el calendario de emisión"*, *"Nueva pantalla y gestión de estado sin conexión"*, *"Optimizaciones en la caché de seguir viendo"*).
 > - Keep it punchy, professional, and easy to skim.
 
+## 7.76. Estabilidad Visual de Listas y Carga Fluida de Miniaturas (2026-10-18)
+- **Eliminación de Saltos y Cambios Bruscos en el Feed**:
+  - Precarga sincrónica en memoria para todas las secciones del feed (Seguir Viendo, Viendo Actualmente, Secuelas y Recomendaciones), eliminando la aparición repentina de carousels y saltos de layout (CLS).
+  - Identificadores de widget persistentes para mantener la posición y estado de cada tarjeta durante actualizaciones en segundo plano.
+- **Transición Continua y Sin Parpadeos en Miniaturas de Episodios**:
+  - Detección inmediata de carátulas 16:9 y metadatos de AniZip desde caché sincrónica desde el primer cuadro.
+  - Reemplazo suave y sin destellos grises entre carátulas y capturas de episodio mediante transiciones continuas.
+- **Verificación Completa**:
+  - 0 incidencias en `flutter analyze lib/`.
+
+---
+
+## 7.75. Correcciones en Escaneo y Desvinculación de Biblioteca Local (2026-10-18)
+- **Desvinculación y Purga Completa de Carpetas**:
+  - Corrección en el backend para desvincular carpetas principales y adicionales sin dejar archivos huérfanos ni disparar re-escaneos automáticos innecesarios.
+  - Nuevo botón para desvincular todas las carpetas y limpiar la indexación local en un solo paso.
+  - Normalización en la comparación de rutas para evitar fallos por mayúsculas/minúsculas o separadores de ruta.
+- **Sincronización Limpia del Feed de Inicio**:
+  - Supresión de entradas fantasma en las secciones de Seguir Viendo y Viendo Actualmente al desvincular carpetas locales.
+  - Limpieza adecuada de cachés locales y actualización inmediata de módulos del servidor.
+- **Verificación Completa**:
+  - 0 incidencias en `flutter analyze lib/` y compilación correcta del backend.
+
+---
+
 ## 7.74. Sistema Global de Notificaciones y Avisos Flotantes en Liquid Glass (2026-10-18)
 - **Nuevo Sistema Global de Notificaciones Flotantes (`AppToast`)**:
   - Sustitución de los avisos y snackbars grises por un sistema de notificaciones flotantes con diseño Liquid Glass (`GlassCard` de `g1455`).

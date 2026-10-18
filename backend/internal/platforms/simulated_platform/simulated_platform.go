@@ -72,6 +72,8 @@ func (sp *SimulatedPlatform) Close() {
 }
 
 func (sp *SimulatedPlatform) ClearCache() {
+	sp.invalidateAnimeCollectionCache()
+	sp.invalidateMangaCollectionCache()
 	sp.helper.ClearCache()
 }
 

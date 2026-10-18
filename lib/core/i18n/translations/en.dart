@@ -2389,6 +2389,14 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get unlinkFolderAction => 'Unlink';
   @override
+  String get unlinkAllFoldersAction => 'Unlink All';
+  @override
+  String get unlinkAllFoldersConfirmTitle => 'Unlink All Folders';
+  @override
+  String get unlinkAllFoldersConfirmMessage => 'Are you sure you want to unlink all library folders? All locally indexed anime, shows, and local metadata will be removed.';
+  @override
+  String get allFoldersUnlinkedSuccess => 'All folders unlinked from local library';
+  @override
   String get localShowsSectionTitle => 'Local Shows & Content';
   @override
   String get localShowsSectionSubtitle => 'Visually browse all anime, TV shows, and movies indexed in your local folders';

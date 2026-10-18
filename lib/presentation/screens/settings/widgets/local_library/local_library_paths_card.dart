@@ -216,6 +216,13 @@ class LocalLibraryPathsCard extends ConsumerWidget {
                     style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5),
                   ),
                 ),
+                if (state.mainPath.isNotEmpty || state.additionalPaths.isNotEmpty)
+                  IconButton(
+                    icon: Icon(Icons.link_off_rounded, size: 18, color: theme.colorScheme.error),
+                    tooltip: l10n.unlinkAllFoldersAction,
+                    visualDensity: VisualDensity.compact,
+                    onPressed: () => _confirmUnlinkAllFolders(context, ref),
+                  ),
                 IconButton.filledTonal(
                   icon: const Icon(Icons.add_rounded, size: 18),
                   tooltip: l10n.addLibraryFolder,
@@ -347,8 +354,8 @@ class LocalLibraryPathsCard extends ConsumerWidget {
                         ),
                       ),
                       IconButton(
-                        icon: Icon(Icons.delete_outline_rounded, size: 18, color: theme.colorScheme.error),
-                        tooltip: l10n.removeFolder,
+                        icon: Icon(Icons.link_off_rounded, size: 18, color: theme.colorScheme.error),
+                        tooltip: l10n.unlinkFolderAction,
                         onPressed: () => _confirmRemoveAdditionalFolder(context, ref, path),
                       ),
                     ],
@@ -358,6 +365,52 @@ class LocalLibraryPathsCard extends ConsumerWidget {
             }),
           ],
           const SizedBox(height: 10),
+        ],
+      ),
+    );
+  }
+
+  void _confirmUnlinkAllFolders(BuildContext context, WidgetRef ref) {
+    final l10n = ref.read(translationsProvider);
+    final theme = Theme.of(context);
+
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        backgroundColor: theme.colorScheme.surfaceContainerHigh,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Text(
+          l10n.unlinkAllFoldersConfirmTitle,
+          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
+        ),
+        content: Text(
+          l10n.unlinkAllFoldersConfirmMessage,
+          style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogCtx).pop(),
+            child: Text(MaterialLocalizations.of(context).cancelButtonLabel),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: theme.colorScheme.error,
+              foregroundColor: theme.colorScheme.onError,
+            ),
+            onPressed: () async {
+              Navigator.of(dialogCtx).pop();
+              final ok = await ref.read(localLibraryProvider.notifier).unlinkAllFolders();
+              if (ok && context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(l10n.allFoldersUnlinkedSuccess),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
+            },
+            child: Text(l10n.unlinkAllFoldersAction),
+          ),
         ],
       ),
     );

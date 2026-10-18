@@ -139,10 +139,21 @@ class _MangaFeedScreenState extends ConsumerState<MangaFeedScreen> {
             ? (cachedCr.isNotEmpty ? cachedCr : (isOffline ? offlineCr : <MangaEntry>[]))
             : (isOffline ? offlineCr : <MangaEntry>[]));
 
+    final cachedMangaCol = FeedCacheService.instance.getMangaList(FeedCacheService.kCacheMangaCollection);
+    final offlineMangaCol = OfflineLibraryService.instance.getMangaCollection();
+    final mangaCollectionEntries = mangaCollectionAsync.value ??
+        (mangaCollectionAsync.isLoading
+            ? (cachedMangaCol.isNotEmpty ? cachedMangaCol : (isOffline ? offlineMangaCol : <MangaEntry>[]))
+            : (isOffline ? offlineMangaCol : <MangaEntry>[]));
+
+    final cachedMangaRecs = FeedCacheService.instance.getMangaList(FeedCacheService.kCacheMangaRecommendations);
+    final mangaRecommendationsEntries = mangaRecommendationsAsync.value ??
+        (mangaRecommendationsAsync.isLoading ? cachedMangaRecs : const <MangaEntry>[]);
+
     final hasContinueReading = continueReadingEntries.isNotEmpty;
-    final hasCompleted = mangaCollectionAsync.value?.any((e) => e.status.toUpperCase() == 'COMPLETED') ?? false;
-    final hasReading = mangaCollectionAsync.value?.any((e) => e.status.toUpperCase() == 'CURRENT' || e.status.toUpperCase() == 'READING') ?? false;
-    final hasMangaRecs = mangaRecommendationsAsync.value?.isNotEmpty ?? false;
+    final hasCompleted = mangaCollectionEntries.any((e) => e.status.toUpperCase() == 'COMPLETED');
+    final hasReading = mangaCollectionEntries.any((e) => e.status.toUpperCase() == 'CURRENT' || e.status.toUpperCase() == 'READING');
+    final hasMangaRecs = mangaRecommendationsEntries.isNotEmpty;
     final hasDownloadedManga = downloadedMangaAsync.value?.isNotEmpty ?? false;
     final hasAnyMangaContent = hasContinueReading || hasCompleted || hasReading || hasMangaRecs || hasDownloadedManga;
 
@@ -350,6 +361,7 @@ class _MangaFeedScreenState extends ConsumerState<MangaFeedScreen> {
                                         itemBuilder: (context, index) {
                                           final item = downloaded[index];
                                           return MangaCard(
+                                            key: ValueKey('manga_dl_${item.mediaId}'),
                                             entry: item,
                                             width: mangaCardWidth,
                                             onTap: () {
@@ -373,9 +385,9 @@ class _MangaFeedScreenState extends ConsumerState<MangaFeedScreen> {
                           ),
 
                           // ─── 3. Mangas Completados (Completed Manga) ───
-                          mangaCollectionAsync.when(
-                            data: (collection) {
-                              final completed = collection
+                          Builder(
+                            builder: (context) {
+                              final completed = mangaCollectionEntries
                                   .where((e) => e.status.toUpperCase() == 'COMPLETED')
                                   .toList();
                               if (completed.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
@@ -395,49 +407,11 @@ class _MangaFeedScreenState extends ConsumerState<MangaFeedScreen> {
                                         itemCount: completed.length,
                                         separatorBuilder: (context, index) => SizedBox(width: carouselSpacing),
                                         itemBuilder: (context, index) {
-                                          return MangaCard(entry: completed[index], width: mangaCardWidth);
-                                        },
-                                      ),
-                                    ),
-                                    const SizedBox(height: 20),
-                                  ],
-                                ),
-                              );
-                            },
-                            loading: () => const SliverToBoxAdapter(child: SizedBox.shrink()),
-                            error: (err, stack) => const SliverToBoxAdapter(child: SizedBox.shrink()),
-                          ),
-
-                          // ─── 3. Te podría gustar (Recomendaciones de Manga) ───
-                          mangaRecommendationsAsync.when(
-                            data: (recs) {
-                              if (recs.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
-                              return SliverToBoxAdapter(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    _SectionHeader(title: l10n.recommendations),
-                                    SizedBox(
-                                      height: carouselHeight + 16,
-                                      child: ListView.separated(
-                                        clipBehavior: Clip.none,
-                                        scrollDirection: Axis.horizontal,
-                                        cacheExtent: 350,
-                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                        itemCount: recs.length,
-                                        separatorBuilder: (context, index) => SizedBox(width: carouselSpacing),
-                                        itemBuilder: (context, index) {
-                                          final item = recs[index];
+                                          final item = completed[index];
                                           return MangaCard(
+                                            key: ValueKey('manga_completed_${item.mediaId}'),
                                             entry: item,
                                             width: mangaCardWidth,
-                                            onTap: () {
-                                              MangaDetailScreen.navigate(
-                                                context,
-                                                mediaId: item.mediaId,
-                                                initialEntry: item,
-                                              );
-                                            },
                                           );
                                         },
                                       ),
@@ -447,9 +421,45 @@ class _MangaFeedScreenState extends ConsumerState<MangaFeedScreen> {
                                 ),
                               );
                             },
-                            loading: () => const SliverToBoxAdapter(child: SizedBox.shrink()),
-                            error: (err, stack) => const SliverToBoxAdapter(child: SizedBox.shrink()),
                           ),
+
+                          // ─── 4. Te podría gustar (Recomendaciones de Manga) ───
+                          if (mangaRecommendationsEntries.isNotEmpty)
+                            SliverToBoxAdapter(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _SectionHeader(title: l10n.recommendations),
+                                  SizedBox(
+                                    height: carouselHeight + 16,
+                                    child: ListView.separated(
+                                      clipBehavior: Clip.none,
+                                      scrollDirection: Axis.horizontal,
+                                      cacheExtent: 350,
+                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                      itemCount: mangaRecommendationsEntries.length,
+                                      separatorBuilder: (context, index) => SizedBox(width: carouselSpacing),
+                                      itemBuilder: (context, index) {
+                                        final item = mangaRecommendationsEntries[index];
+                                        return MangaCard(
+                                          key: ValueKey('manga_rec_${item.mediaId}'),
+                                          entry: item,
+                                          width: mangaCardWidth,
+                                          onTap: () {
+                                            MangaDetailScreen.navigate(
+                                              context,
+                                              mediaId: item.mediaId,
+                                              initialEntry: item,
+                                            );
+                                          },
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                  const SizedBox(height: 20),
+                                ],
+                              ),
+                            ),
 
                           const SliverToBoxAdapter(
                             child: SizedBox(height: 90),
@@ -501,6 +511,7 @@ class _MangaFeedScreenState extends ConsumerState<MangaFeedScreen> {
                 itemBuilder: (context, index) {
                   final item = entries[index];
                   return ContinueReadingCard(
+                    key: ValueKey('cr_${item.mediaId}'),
                     entry: item,
                     width: cardWidth,
                     onTap: () {

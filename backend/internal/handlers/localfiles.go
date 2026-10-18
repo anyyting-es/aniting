@@ -447,7 +447,9 @@ func (h *Handler) HandleRemoveLibraryFolder(c echo.Context) error {
 	rawTarget := strings.TrimSpace(b.Path)
 	targetPath := filepath.ToSlash(filepath.Clean(rawTarget))
 	targetPath = strings.TrimSuffix(targetPath, "/")
-	if targetPath == "" && !b.IsMain {
+	isAll := targetPath == "*" || strings.EqualFold(targetPath, "ALL")
+
+	if targetPath == "" && !b.IsMain && !isAll {
 		return h.RespondWithError(c, errors.New("empty path"))
 	}
 
@@ -458,23 +460,28 @@ func (h *Handler) HandleRemoveLibraryFolder(c echo.Context) error {
 	}
 
 	if settings.Library != nil {
-		mainSlash := filepath.ToSlash(filepath.Clean(strings.TrimSpace(settings.Library.LibraryPath)))
-		mainSlash = strings.TrimSuffix(mainSlash, "/")
-		if targetPath == "" && b.IsMain {
-			targetPath = mainSlash
-		}
-		if b.IsMain || (targetPath != "" && mainSlash == targetPath) {
+		if isAll {
 			settings.Library.LibraryPath = ""
-		}
-		var newAdditionals []string
-		for _, p := range settings.Library.LibraryPaths {
-			pSlash := filepath.ToSlash(filepath.Clean(strings.TrimSpace(p)))
-			pSlash = strings.TrimSuffix(pSlash, "/")
-			if pSlash != "" && pSlash != targetPath {
-				newAdditionals = append(newAdditionals, p)
+			settings.Library.LibraryPaths = []string{}
+		} else {
+			mainSlash := filepath.ToSlash(filepath.Clean(strings.TrimSpace(settings.Library.LibraryPath)))
+			mainSlash = strings.TrimSuffix(mainSlash, "/")
+			if targetPath == "" && b.IsMain {
+				targetPath = mainSlash
 			}
+			if b.IsMain || (targetPath != "" && strings.EqualFold(mainSlash, targetPath)) {
+				settings.Library.LibraryPath = ""
+			}
+			var newAdditionals []string
+			for _, p := range settings.Library.LibraryPaths {
+				pSlash := filepath.ToSlash(filepath.Clean(strings.TrimSpace(p)))
+				pSlash = strings.TrimSuffix(pSlash, "/")
+				if pSlash != "" && !strings.EqualFold(pSlash, targetPath) {
+					newAdditionals = append(newAdditionals, p)
+				}
+			}
+			settings.Library.LibraryPaths = newAdditionals
 		}
-		settings.Library.LibraryPaths = newAdditionals
 
 		settings.BaseModel = models.BaseModel{
 			ID:        1,
@@ -493,18 +500,21 @@ func (h *Handler) HandleRemoveLibraryFolder(c echo.Context) error {
 	}
 
 	pathBelongsToTarget := func(filePath string) bool {
+		if isAll || !hasAnyPaths {
+			return true
+		}
 		if targetPath == "" {
 			return false
 		}
 		fClean := filepath.ToSlash(filepath.Clean(strings.TrimSpace(filePath)))
-		return fClean == targetPath || strings.HasPrefix(fClean, targetPath+"/")
+		return strings.EqualFold(fClean, targetPath) || strings.HasPrefix(strings.ToLower(fClean), strings.ToLower(targetPath)+"/")
 	}
 
 	// 2. Purge show local files
 	showFiles, showId, err := db_bridge.GetShowLocalFiles(h.App.Database)
 	if err == nil {
 		filteredShows := make([]*shows.ShowLocalFile, 0)
-		if hasAnyPaths {
+		if hasAnyPaths && !isAll {
 			for _, sf := range showFiles {
 				if !pathBelongsToTarget(sf.Path) {
 					filteredShows = append(filteredShows, sf)
@@ -518,7 +528,7 @@ func (h *Handler) HandleRemoveLibraryFolder(c echo.Context) error {
 	animeFiles, animeId, err := db_bridge.GetLocalFiles(h.App.Database)
 	filteredAnime := make([]*anime.LocalFile, 0)
 	if err == nil {
-		if hasAnyPaths {
+		if hasAnyPaths && !isAll {
 			for _, af := range animeFiles {
 				if !pathBelongsToTarget(af.Path) {
 					filteredAnime = append(filteredAnime, af)
@@ -535,7 +545,7 @@ func (h *Handler) HandleRemoveLibraryFolder(c echo.Context) error {
 	shelved, err := db_bridge.GetShelvedLocalFiles(h.App.Database)
 	if err == nil {
 		filteredShelved := make([]*anime.LocalFile, 0)
-		if hasAnyPaths {
+		if hasAnyPaths && !isAll {
 			for _, sh := range shelved {
 				if !pathBelongsToTarget(sh.Path) {
 					filteredShelved = append(filteredShelved, sh)
@@ -570,9 +580,13 @@ func (h *Handler) HandleRemoveLibraryFolder(c echo.Context) error {
 				_ = wrapper.DeleteEntry(mId)
 			}
 		}
+		sp.ClearCache()
 	}
 
-	// 6. Clear caches and refresh collection
+	// 6. Refresh app modules (stops/reloads watcher and active directories in memory)
+	h.App.InitOrRefreshModules()
+
+	// 7. Clear caches and refresh collection
 	go h.App.RefreshAnimeCollection()
 	anime.ClearMissingEpisodesCache()
 

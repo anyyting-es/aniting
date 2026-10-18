@@ -300,19 +300,35 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
         (continueWatchingAsync.isLoading
             ? (cachedCw.isNotEmpty ? cachedCw : (isOffline ? offlineCw : <AnimeEntry>[]))
             : (isOffline ? offlineCw : <AnimeEntry>[]));
+
+    final cachedCollection = FeedCacheService.instance.getAnimeList(FeedCacheService.kCacheAnimeCollection);
+    final offlineCollection = OfflineLibraryService.instance.getAnimeCollection();
+    final allCollection = collectionAsync.value ??
+        (collectionAsync.isLoading
+            ? (cachedCollection.isNotEmpty ? cachedCollection : (isOffline ? offlineCollection : <AnimeEntry>[]))
+            : (isOffline ? offlineCollection : <AnimeEntry>[]));
+
+    final cachedMissed = FeedCacheService.instance.getAnimeList(FeedCacheService.kCacheMissedSequels);
+    final missedSequelsEntries = missedSequelsAsync.value ??
+        (missedSequelsAsync.isLoading ? cachedMissed : const <AnimeEntry>[]);
+
+    final cachedRecs = FeedCacheService.instance.getAnimeList(FeedCacheService.kCacheRecommendations);
+    final recommendationsEntries = recommendationsAsync.value ??
+        (recommendationsAsync.isLoading ? cachedRecs : const <AnimeEntry>[]);
+
     final hasUserCachedData = cachedCw.isNotEmpty ||
         (isOffline && offlineCw.isNotEmpty) ||
-        (collectionAsync.value?.isNotEmpty ?? false) ||
-        (isOffline && OfflineLibraryService.instance.getAnimeCollection().isNotEmpty);
+        cachedCollection.isNotEmpty ||
+        (isOffline && offlineCollection.isNotEmpty);
     final isServerUnavailable = serverState.state == ServerState.stopped || serverState.state == ServerState.error;
 
-    // Both continueWatching (or its cache) and collection must be settled before removing skeleton to prevent CLS
+    // Both continueWatching (or its cache) and collection (or its cache) must be settled before removing skeleton to prevent CLS
     final isCwSettled = continueWatchingAsync.hasValue || cachedCw.isNotEmpty || (isOffline && offlineCw.isNotEmpty) || continueWatchingAsync.hasError;
-    final isCollectionSettled = collectionAsync.hasValue || collectionAsync.hasError;
+    final isCollectionSettled = collectionAsync.hasValue || cachedCollection.isNotEmpty || (isOffline && offlineCollection.isNotEmpty) || collectionAsync.hasError;
     final isUserFeedReady = isCwSettled && isCollectionSettled;
 
     if (!_hasCompletedInitialLoad) {
-      if ((hasUserCachedData && isCwSettled) || isServerUnavailable || (serverState.isOnline && isUserFeedReady)) {
+      if ((hasUserCachedData && isUserFeedReady) || isServerUnavailable || (serverState.isOnline && isUserFeedReady)) {
         _hasCompletedInitialLoad = true;
       }
     }
@@ -320,8 +336,6 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     final showFeedSkeleton = !_hasCompletedInitialLoad;
 
     final showsSectionEnabled = ref.watch(showsSectionEnabledProvider);
-    final allCollection = collectionAsync.value ?? [];
-    final offlineCollection = OfflineLibraryService.instance.getAnimeCollection();
     final lastSession = ref.watch(lastSessionProvider);
 
     final isWatchingTmdb = showsSectionEnabled && (
@@ -334,11 +348,11 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     final tmdbRecsAsync = isWatchingTmdb ? ref.watch(tmdbRecommendationsProvider) : null;
 
     final hasContinueWatching = continueWatchingEntries.isNotEmpty;
-    final hasWatching = (collectionAsync.value?.any((e) =>
-        e.status.toUpperCase() == 'CURRENT' || e.status.toUpperCase() == 'WATCHING') ?? false) ||
+    final hasWatching = allCollection.any((e) =>
+        e.status.toUpperCase() == 'CURRENT' || e.status.toUpperCase() == 'WATCHING') ||
         continueWatchingEntries.isNotEmpty;
-    final hasMissedSequels = missedSequelsAsync.value?.isNotEmpty ?? false;
-    final hasAniListRecs = recommendationsAsync.value?.isNotEmpty ?? false;
+    final hasMissedSequels = missedSequelsEntries.isNotEmpty;
+    final hasAniListRecs = recommendationsEntries.isNotEmpty;
     final hasTmdbRecs = isWatchingTmdb && (tmdbRecsAsync?.value?.isNotEmpty ?? false);
     final hasRecommendations = hasAniListRecs || hasTmdbRecs;
     final hasDownloadedAnime = downloadedAnimeAsync.value?.isNotEmpty ?? false;
@@ -592,6 +606,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                                       itemBuilder: (context, index) {
                                         final item = sortedEntries[index];
                                         return ContinueWatchingCard(
+                                          key: ValueKey('cw_${item.mediaId}_${item.episodeNumber ?? (item.progress + 1)}'),
                                           entry: item,
                                           width: continueCardWidth,
                                           height: continueCardHeight,
@@ -654,6 +669,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                                     itemBuilder: (context, index) {
                                       final item = downloaded[index];
                                       return AnimeCard(
+                                        key: ValueKey('dl_${item.mediaId}'),
                                         entry: item,
                                         width: animeCardWidth,
                                         onTap: () => _openDetail(context, item),
@@ -672,7 +688,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
 
                       // ─── 3. Viendo Actualmente (Currently Watching) ───
                       ..._buildWatchingSlivers(
-                        collectionAsync: collectionAsync,
+                        allCollection: allCollection,
                         continueWatchingEntries: continueWatchingEntries,
                         l10n: l10n,
                         theme: theme,
@@ -680,46 +696,41 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                       ),
 
                       // ─── 3. Secuelas que te has perdido (Complete Missed Sequels List) ───
-                      missedSequelsAsync.when(
-                        data: (missed) {
-                          if (missed.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
-                          return SliverToBoxAdapter(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _SectionHeader(title: '${l10n.missedSequels} (${missed.length})'),
-                                SizedBox(
-                                  height: carouselHeight + 16,
-                                  child: ListView.separated(
-                                    clipBehavior: Clip.none,
-                                    scrollDirection: Axis.horizontal,
-                                    cacheExtent: 350,
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                    itemCount: missed.length,
-                                    separatorBuilder: (context, index) => SizedBox(width: carouselSpacing),
-                                    itemBuilder: (context, index) {
-                                      final item = missed[index];
-                                      return AnimeCard(
-                                        entry: item,
-                                        width: animeCardWidth,
-                                        onTap: () => _openDetail(context, item),
-                                      );
-                                    },
-                                  ),
+                      if (missedSequelsEntries.isNotEmpty)
+                        SliverToBoxAdapter(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _SectionHeader(title: '${l10n.missedSequels} (${missedSequelsEntries.length})'),
+                              SizedBox(
+                                height: carouselHeight + 16,
+                                child: ListView.separated(
+                                  clipBehavior: Clip.none,
+                                  scrollDirection: Axis.horizontal,
+                                  cacheExtent: 350,
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                  itemCount: missedSequelsEntries.length,
+                                  separatorBuilder: (context, index) => SizedBox(width: carouselSpacing),
+                                  itemBuilder: (context, index) {
+                                    final item = missedSequelsEntries[index];
+                                    return AnimeCard(
+                                      key: ValueKey('missed_${item.mediaId}'),
+                                      entry: item,
+                                      width: animeCardWidth,
+                                      onTap: () => _openDetail(context, item),
+                                    );
+                                  },
                                 ),
-                                const SizedBox(height: 20),
-                              ],
-                            ),
-                          );
-                        },
-                        loading: () => const SliverToBoxAdapter(child: SizedBox.shrink()),
-                        error: (error, stack) => const SliverToBoxAdapter(child: SizedBox.shrink()),
-                      ),
+                              ),
+                              const SizedBox(height: 20),
+                            ],
+                          ),
+                        ),
 
                       // ─── 4. Te podría gustar (Recomendaciones Mixtas AniList + TMDB si el usuario ve shows) ───
                       Builder(
                         builder: (context) {
-                          final aniRecs = recommendationsAsync.value ?? const <AnimeEntry>[];
+                          final aniRecs = recommendationsEntries;
                           final tmdbRecs = (isWatchingTmdb && tmdbRecsAsync != null)
                               ? (tmdbRecsAsync.value ?? const <AnimeEntry>[])
                               : const <AnimeEntry>[];
@@ -747,6 +758,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                                     itemBuilder: (context, index) {
                                       final item = mixedRecs[index];
                                       return AnimeCard(
+                                        key: ValueKey('rec_${item.mediaId}'),
                                         entry: item,
                                         width: animeCardWidth,
                                         onTap: () => _openDetail(context, item),
@@ -780,13 +792,12 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
   }
 
   List<Widget> _buildWatchingSlivers({
-    required AsyncValue<List<AnimeEntry>> collectionAsync,
+    required List<AnimeEntry> allCollection,
     required List<AnimeEntry> continueWatchingEntries,
     required AppTranslations l10n,
     required ThemeData theme,
     required bool isDesktop,
   }) {
-    final allCollection = collectionAsync.value ?? [];
     final watching = <AnimeEntry>[];
     final seenIds = <int>{};
 
@@ -832,6 +843,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                 itemBuilder: (context, index) {
                   final item = watching[index];
                   return AnimeCard(
+                    key: ValueKey('watching_${item.mediaId}'),
                     entry: item,
                     width: animeCardWidth,
                     onTap: () => _openDetail(context, item),

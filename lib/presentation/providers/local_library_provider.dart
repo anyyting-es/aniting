@@ -8,6 +8,7 @@ import 'package:seanime_app/data/models/local_file_item.dart';
 import 'package:seanime_app/data/models/show_local_file_item.dart';
 import 'package:seanime_app/data/repositories/seanime_repository.dart';
 import 'package:seanime_app/data/services/feed_cache_service.dart';
+import 'package:seanime_app/data/services/offline_library_service.dart';
 import 'package:seanime_app/presentation/providers/active_downloads_provider.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
@@ -541,8 +542,10 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_kFolderTypesPrefKey, jsonEncode(nextTypes));
 
-      await _repository.scanShows(folderTypes: nextTypes);
-      await _repository.scanLibrary(folderTypes: nextTypes);
+      if (trimmed.isNotEmpty) {
+        await _repository.scanShows(folderTypes: nextTypes);
+        await _repository.scanLibrary(folderTypes: nextTypes);
+      }
       _invalidateRelatedProviders();
       await loadLibraryData();
     }
@@ -575,10 +578,40 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_kFolderTypesPrefKey, jsonEncode(nextTypes));
 
-      await _repository.scanShows(folderTypes: nextTypes);
-      await _repository.scanLibrary(folderTypes: nextTypes);
       _invalidateRelatedProviders();
       await loadLibraryData();
+    }
+    return ok;
+  }
+
+  /// Unlinks all configured folders and clears local library metadata
+  Future<bool> unlinkAllFolders() async {
+    state = state.copyWith(isLoading: true);
+    final ok = await _repository.removeLibraryFolder('*', isMain: true);
+    if (ok) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_kFolderTypesPrefKey);
+      await OfflineLibraryService.instance.clearAnimeEntries();
+      state = state.copyWith(
+        isLoading: false,
+        mainPath: '',
+        additionalPaths: const [],
+        folderTypes: const {},
+        localFiles: const [],
+        showsCollection: null,
+        unmatchedGroups: const [],
+        matchedShows: const [],
+        matchedShowsCount: 0,
+        animeCount: 0,
+        tvShowsCount: 0,
+        moviesCount: 0,
+        localEpisodesCount: 0,
+        unmatchedFilesCount: 0,
+      );
+      _invalidateRelatedProviders();
+      await loadLibraryData();
+    } else {
+      state = state.copyWith(isLoading: false);
     }
     return ok;
   }

@@ -372,6 +372,8 @@ Future<List<AnimeEntry>> loadAnimeWithCacheAndSwr({
     final fresh = await fetchFresh();
     if (fresh.isNotEmpty || (requireAuth && isLoggedIn)) {
       await cache.saveAnimeList(cacheKey, fresh);
+    } else if (serverState.isOnline && fresh.isEmpty) {
+      await cache.clearCache(cacheKey);
     }
     return fresh;
   } catch (e) {
@@ -403,6 +405,8 @@ Future<List<MangaEntry>> loadMangaWithCacheAndSwr({
     final fresh = await fetchFresh();
     if (fresh.isNotEmpty || (requireAuth && isLoggedIn)) {
       await cache.saveMangaList(cacheKey, fresh);
+    } else if (serverState.isOnline && fresh.isEmpty) {
+      await cache.clearCache(cacheKey);
     }
     return fresh;
   } catch (e) {

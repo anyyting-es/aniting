@@ -7,6 +7,7 @@ import 'package:seanime_app/core/preferences/title_language_provider.dart';
 import 'package:seanime_app/core/theme/app_theme_colors.dart';
 import 'package:seanime_app/core/theme/theme_provider.dart';
 import 'package:seanime_app/data/models/anime_entry.dart';
+import 'package:seanime_app/data/services/feed_cache_service.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 
@@ -74,11 +75,12 @@ class _ContinueWatchingCardState extends ConsumerState<ContinueWatchingCard> {
 
     final epNum = widget.entry.episodeNumber ?? (widget.entry.progress + 1);
 
-    // Always watch AniZip for duration and episode metadata
+    // Always watch AniZip for duration and episode metadata, seeding immediately from synchronous cache
     final aniZipAsync = widget.entry.mediaId > 0
         ? ref.watch(aniZipDataProvider(widget.entry.mediaId))
         : null;
-    final aniZipData = aniZipAsync?.asData?.value;
+    final aniZipData = aniZipAsync?.asData?.value ??
+        (widget.entry.mediaId > 0 ? FeedCacheService.instance.getAniZipData(widget.entry.mediaId) : null);
     final aniZipEpisode = aniZipData?.getEpisode(epNum);
 
     // Check if the server's episodeThumbnail is merely a fallback to the vertical cover poster
@@ -88,27 +90,33 @@ class _ContinueWatchingCardState extends ConsumerState<ContinueWatchingCard> {
                 widget.entry.coverImage!.isNotEmpty &&
                 widget.entry.episodeThumbnail!.contains(widget.entry.coverImage!)));
 
+    final String? aniZipImage = (aniZipEpisode?.image != null && aniZipEpisode!.image!.trim().isNotEmpty)
+        ? aniZipEpisode.image!.trim()
+        : null;
+    final String? validEntryThumb = (widget.entry.episodeThumbnail != null &&
+            !isEpisodeThumbCoverPoster &&
+            widget.entry.episodeThumbnail!.trim().isNotEmpty)
+        ? widget.entry.episodeThumbnail!.trim()
+        : null;
+
     String? imageUrl;
     if (isMovie) {
       // For movies, AniList's bannerImage is the native high-res 16:9 cinematic artwork.
-      // Seanime's episodeThumbnail for movies defaults to the vertical cover poster.
       if (widget.entry.bannerImage != null && widget.entry.bannerImage!.trim().isNotEmpty) {
         imageUrl = widget.entry.bannerImage!.trim();
-      } else if (aniZipEpisode?.image != null && aniZipEpisode!.image!.trim().isNotEmpty) {
-        imageUrl = aniZipEpisode.image!.trim();
-      } else if (widget.entry.episodeThumbnail != null && !isEpisodeThumbCoverPoster) {
-        imageUrl = widget.entry.episodeThumbnail;
+      } else if (aniZipImage != null) {
+        imageUrl = aniZipImage;
+      } else if (validEntryThumb != null) {
+        imageUrl = validEntryThumb;
       } else {
         imageUrl = widget.entry.coverImage;
       }
     } else {
-      // For series, prefer AniZip 16:9 episode screencap, then server episodeThumbnail, then bannerImage
-      if (aniZipEpisode?.image != null && aniZipEpisode!.image!.trim().isNotEmpty) {
-        imageUrl = aniZipEpisode.image!.trim();
-      } else if (widget.entry.episodeThumbnail != null &&
-          !isEpisodeThumbCoverPoster &&
-          widget.entry.episodeThumbnail != widget.entry.bannerImage) {
-        imageUrl = widget.entry.episodeThumbnail;
+      // For series, prefer 16:9 episode screencap (AniZip or enriched entry thumbnail), then banner, then poster
+      if (aniZipImage != null) {
+        imageUrl = aniZipImage;
+      } else if (validEntryThumb != null) {
+        imageUrl = validEntryThumb;
       } else if (widget.entry.bannerImage != null && widget.entry.bannerImage!.trim().isNotEmpty) {
         imageUrl = widget.entry.bannerImage!.trim();
       } else {
@@ -117,6 +125,16 @@ class _ContinueWatchingCardState extends ConsumerState<ContinueWatchingCard> {
     }
 
     final bool isCoverFallback = imageUrl != null && imageUrl == widget.entry.coverImage;
+
+    final String? fallbackImageUrl = (imageUrl != widget.entry.bannerImage &&
+            widget.entry.bannerImage != null &&
+            widget.entry.bannerImage!.trim().isNotEmpty)
+        ? widget.entry.bannerImage!.trim()
+        : (imageUrl != widget.entry.coverImage &&
+                widget.entry.coverImage != null &&
+                widget.entry.coverImage!.trim().isNotEmpty
+            ? widget.entry.coverImage!.trim()
+            : null);
 
     final String resolvedEpTitle = (aniZipEpisode != null &&
             aniZipEpisode.displayTitleForLang(langCode).isNotEmpty &&
@@ -217,13 +235,35 @@ class _ContinueWatchingCardState extends ConsumerState<ContinueWatchingCard> {
                                     fit: BoxFit.cover,
                                     alignment: isCoverFallback ? Alignment.topCenter : Alignment.center,
                                     memCacheWidth: isCompact ? 450 : 600,
-                                    placeholder: (context, url) => Container(
-                                      color: theme.colorScheme.surfaceContainerHighest,
-                                    ),
-                                    errorWidget: (context, url, error) => Container(
-                                      color: theme.colorScheme.surfaceContainerHighest,
-                                      child: Icon(Icons.movie_rounded, color: theme.colorScheme.outline, size: isCompact ? 28 : 36),
-                                    ),
+                                    fadeInDuration: const Duration(milliseconds: 200),
+                                    fadeOutDuration: const Duration(milliseconds: 200),
+                                    placeholder: (context, url) {
+                                      if (fallbackImageUrl != null) {
+                                        return CachedNetworkImage(
+                                          imageUrl: fallbackImageUrl,
+                                          fit: BoxFit.cover,
+                                          alignment: Alignment.topCenter,
+                                          memCacheWidth: isCompact ? 450 : 600,
+                                        );
+                                      }
+                                      return Container(
+                                        color: theme.colorScheme.surfaceContainerHighest,
+                                      );
+                                    },
+                                    errorWidget: (context, url, error) {
+                                      if (fallbackImageUrl != null) {
+                                        return CachedNetworkImage(
+                                          imageUrl: fallbackImageUrl,
+                                          fit: BoxFit.cover,
+                                          alignment: Alignment.topCenter,
+                                          memCacheWidth: isCompact ? 450 : 600,
+                                        );
+                                      }
+                                      return Container(
+                                        color: theme.colorScheme.surfaceContainerHighest,
+                                        child: Icon(Icons.movie_rounded, color: theme.colorScheme.outline, size: isCompact ? 28 : 36),
+                                      );
+                                    },
                                   )
                                 : Container(
                                     color: theme.colorScheme.surfaceContainerHighest,

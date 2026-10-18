@@ -126,7 +126,11 @@ class FeedCacheService {
 
   List<AnimeEntry> getAnimeList(String key) {
     if (_animeListsCache.containsKey(key)) {
-      return UnmodifiableListView(_animeListsCache[key]!);
+      final list = _animeListsCache[key]!;
+      if (key == kCacheContinueWatchingAnime) {
+        return _enrichContinueWatchingWithAniZip(list);
+      }
+      return UnmodifiableListView(list);
     }
     final prefs = _cachedPrefs;
     if (prefs != null) {
@@ -140,12 +144,46 @@ class FeedCacheService {
                 .map((e) => AnimeEntry.fromJson(e))
                 .toList();
             _animeListsCache[key] = list;
+            if (key == kCacheContinueWatchingAnime) {
+              return _enrichContinueWatchingWithAniZip(list);
+            }
             return UnmodifiableListView(list);
           }
         } catch (_) {}
       }
     }
     return [];
+  }
+
+  List<AnimeEntry> _enrichContinueWatchingWithAniZip(List<AnimeEntry> list) {
+    bool hasChanges = false;
+    final enriched = list.map((entry) {
+      final epNum = entry.episodeNumber ?? (entry.progress + 1);
+      final aniZip = getAniZipData(entry.mediaId);
+      final aniEp = aniZip?.getEpisode(epNum);
+      if (aniEp != null) {
+        final epImg = aniEp.image?.trim();
+        final needsThumb = (entry.episodeThumbnail == null ||
+            entry.episodeThumbnail == entry.coverImage ||
+            entry.episodeThumbnail == entry.bannerImage) &&
+            epImg != null &&
+            epImg.isNotEmpty;
+        final needsAirDate = entry.airDate == null && aniEp.airDate != null && aniEp.airDate!.isNotEmpty;
+        if (needsThumb || needsAirDate) {
+          hasChanges = true;
+          return entry.copyWith(
+            episodeThumbnail: needsThumb ? epImg : entry.episodeThumbnail,
+            airDate: needsAirDate ? aniEp.airDate : entry.airDate,
+          );
+        }
+      }
+      return entry;
+    }).toList();
+
+    if (hasChanges) {
+      _animeListsCache[kCacheContinueWatchingAnime] = enriched;
+    }
+    return UnmodifiableListView(enriched);
   }
 
   Future<void> saveAnimeList(String key, List<AnimeEntry> list) async {

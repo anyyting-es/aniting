@@ -331,6 +331,12 @@ class OfflineLibraryService {
     await _persistAnime();
   }
 
+  /// Limpia todas las entradas de anime guardadas localmente.
+  Future<void> clearAnimeEntries() async {
+    _animeEntries.clear();
+    await _persistAnime();
+  }
+
   Future<void> _persistAnime() async {
     try {
       final prefs = _cachedPrefs ?? await SharedPreferences.getInstance();
