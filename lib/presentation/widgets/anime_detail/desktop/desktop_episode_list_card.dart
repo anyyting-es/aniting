@@ -6,6 +6,8 @@ import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/preferences/playback_progress_preferences_provider.dart';
 import 'package:seanime_app/presentation/providers/episode_selection_provider.dart';
+import 'package:seanime_app/core/theme/theme_provider.dart';
+import 'package:seanime_app/core/theme/app_focus_coordinator.dart';
 import 'desktop_episode_models.dart';
 
 class DesktopListEpisodeCard extends ConsumerStatefulWidget {
@@ -14,6 +16,7 @@ class DesktopListEpisodeCard extends ConsumerStatefulWidget {
   final bool isLoading;
   final String formattedTitle;
   final String? fallbackCoverImage;
+  final String? coverColor;
   final VoidCallback onTap;
   final Widget? trailingActions;
 
@@ -24,6 +27,7 @@ class DesktopListEpisodeCard extends ConsumerStatefulWidget {
     required this.isLoading,
     required this.formattedTitle,
     required this.fallbackCoverImage,
+    this.coverColor,
     required this.onTap,
     this.trailingActions,
   });
@@ -41,6 +45,7 @@ class _DesktopListEpisodeCardState extends ConsumerState<DesktopListEpisodeCard>
     final iconPack = ref.watch(iconPackProvider);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final dynamicColor = parseHexColor(widget.coverColor) ?? theme.colorScheme.primary;
     final titleColor = isDark ? Colors.white : theme.colorScheme.onSurface;
     final descColor = isDark
         ? Colors.white.withValues(alpha: 0.65)
@@ -76,7 +81,10 @@ class _DesktopListEpisodeCardState extends ConsumerState<DesktopListEpisodeCard>
     return RepaintBoundary(
       child: MouseRegion(
         cursor: widget.isLoading ? SystemMouseCursors.basic : SystemMouseCursors.click,
-        onEnter: (_) => setState(() => _isHovered = true),
+        onEnter: (_) {
+          AppFocusCoordinator.onPointerEntered();
+          setState(() => _isHovered = true);
+        },
         onExit: (_) => setState(() => _isHovered = false),
         child: AnimatedOpacity(
         opacity: cardOpacity,
@@ -92,62 +100,77 @@ class _DesktopListEpisodeCardState extends ConsumerState<DesktopListEpisodeCard>
           hoverColor: Colors.transparent,
           splashColor: Colors.transparent,
           highlightColor: Colors.transparent,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 260),
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? theme.colorScheme.primaryContainer.withValues(alpha: isDark ? 0.28 : 0.42)
-                  : (_isHovered
-                      ? Colors.white.withValues(alpha: 0.04)
-                      : Colors.transparent),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isSelected
-                    ? theme.colorScheme.primary.withValues(alpha: 0.85)
-                    : (_isHovered
-                        ? Colors.white.withValues(alpha: 0.12)
-                        : Colors.transparent),
-                width: isSelected ? 1.5 : 1.0,
-              ),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                // Left 16:9 Thumbnail with Box Expansion on hover (No play icon)
-                SizedBox(
-                  width: 240,
-                  child: AspectRatio(
-                    aspectRatio: 16 / 9,
-                    child: AnimatedScale(
-                      scale: isSelected ? 0.97 : (_isHovered ? 1.02 : 1.0),
-                      duration: const Duration(milliseconds: 180),
-                      curve: Curves.easeOutCubic,
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 180),
-                        curve: Curves.easeOutCubic,
+          child: Stack(
+            children: [
+              // Ambient color background with inside-out expansion animation (No borders on hover)
+              Positioned.fill(
+                child: isSelected
+                    ? Container(
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(12),
+                          color: theme.colorScheme.primaryContainer.withValues(alpha: isDark ? 0.28 : 0.42),
                           border: Border.all(
-                            color: isSelected
-                                ? theme.colorScheme.primary
-                                : (_isHovered
-                                    ? Colors.white.withValues(alpha: 0.35)
+                            color: theme.colorScheme.primary.withValues(alpha: 0.85),
+                            width: 1.5,
+                          ),
+                        ),
+                      )
+                    : AnimatedScale(
+                        scale: _isHovered ? 1.0 : 0.85,
+                        duration: const Duration(milliseconds: 220),
+                        curve: _isHovered ? Curves.easeOutCubic : Curves.easeInCubic,
+                        alignment: Alignment.center,
+                        child: AnimatedOpacity(
+                          opacity: _isHovered ? 1.0 : 0.0,
+                          duration: const Duration(milliseconds: 200),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              color: dynamicColor.withValues(alpha: isDark ? 0.16 : 0.10),
+                            ),
+                          ),
+                        ),
+                      ),
+              ),
+
+              // Foreground Content
+              Padding(
+                padding: const EdgeInsets.all(8),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // Left 16:9 Thumbnail with Box Expansion on hover (No play icon)
+                    SizedBox(
+                      width: 240,
+                      child: AspectRatio(
+                        aspectRatio: 16 / 9,
+                        child: AnimatedScale(
+                          scale: isSelected ? 0.97 : (_isHovered ? 1.02 : 1.0),
+                          duration: const Duration(milliseconds: 180),
+                          curve: Curves.easeOutCubic,
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 180),
+                            curve: Curves.easeOutCubic,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: isSelected
+                                    ? theme.colorScheme.primary
                                     : (isSelectionMode
                                         ? theme.colorScheme.outlineVariant.withValues(alpha: 0.3)
-                                        : Colors.white.withValues(alpha: 0.08))),
-                            width: isSelected ? 2.0 : 1.0,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: isSelected
-                                  ? theme.colorScheme.primary.withValues(alpha: 0.3)
-                                  : Colors.black.withValues(alpha: _isHovered ? 0.35 : 0.25),
-                              blurRadius: isSelected ? 12 : (_isHovered ? 10 : 6),
-                              offset: Offset(0, _isHovered ? 3 : 2),
+                                        : Colors.white.withValues(alpha: 0.08)),
+                                width: isSelected ? 2.0 : 1.0,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: isSelected
+                                      ? theme.colorScheme.primary.withValues(alpha: 0.3)
+                                      : Colors.black.withValues(alpha: _isHovered ? 0.35 : 0.25),
+                                  blurRadius: isSelected ? 12 : (_isHovered ? 10 : 6),
+                                  offset: Offset(0, _isHovered ? 3 : 2),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
                         clipBehavior: Clip.antiAlias,
                         child: Stack(
                           fit: StackFit.expand,
@@ -301,9 +324,9 @@ class _DesktopListEpisodeCardState extends ConsumerState<DesktopListEpisodeCard>
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
-                                  fontSize: 15,
+                                  fontSize: 16.0,
                                   fontWeight: FontWeight.bold,
-                                  color: _isHovered ? theme.colorScheme.primary : titleColor,
+                                  color: titleColor,
                                 ),
                               ),
                             ),
@@ -340,10 +363,12 @@ class _DesktopListEpisodeCardState extends ConsumerState<DesktopListEpisodeCard>
                 ],
               ),
             ),
-          ),
+          ],
         ),
       ),
-    );
+    ),
+  ),
+);
   }
 
   Widget _buildPlaceholder() {

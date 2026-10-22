@@ -439,10 +439,6 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
             _isLoadingDetails = false;
           });
 
-          if (details != null) {
-            _progressManager.savePlaybackProgress();
-          }
-
           // Auto-update active session with main character image once details load
           final currentSession = ref.read(lastSessionProvider);
           if (currentSession != null && currentSession.mediaId == widget.mediaId) {

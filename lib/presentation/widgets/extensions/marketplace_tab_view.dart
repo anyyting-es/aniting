@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:g1455/g1455.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/data/models/extension_item.dart';
 import 'package:seanime_app/presentation/widgets/extensions/marketplace_extension_card.dart';
@@ -385,81 +387,132 @@ class _MarketplaceTabViewState extends ConsumerState<MarketplaceTabView> {
                     ),
                     const SizedBox(height: 12),
 
-                    // Search & Language bar
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10),
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
-                            ),
-                          ),
-                          child: DropdownButtonHideUnderline(
-                            child: DropdownButton<String>(
-                              value: _getAvailableLanguages().contains(_selectedLanguage)
-                                  ? _selectedLanguage
-                                  : 'All Languages',
-                              icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 18),
-                              items: _getAvailableLanguages().map((l) {
-                                return DropdownMenuItem<String>(
-                                  value: l,
-                                  child: Text(_getLanguageLabel(l, l10n), style: const TextStyle(fontSize: 12.5)),
-                                );
-                              }).toList(),
-                              onChanged: (val) {
-                                if (val != null) setState(() => _selectedLanguage = val);
-                              },
-                            ),
+                    // Full-width search bar
+                    TextField(
+                      controller: _searchController,
+                      decoration: InputDecoration(
+                        hintText: l10n.searchExtensionsHint,
+                        hintStyle: TextStyle(
+                          fontSize: 13,
+                          color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                        ),
+                        prefixIcon: const Icon(Icons.search, size: 18),
+                        suffixIcon: _searchQuery.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear, size: 16),
+                                onPressed: () {
+                                  setState(() {
+                                    _searchController.clear();
+                                    _searchQuery = '';
+                                  });
+                                },
+                              )
+                            : null,
+                        filled: true,
+                        fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+                        isDense: true,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
                           ),
                         ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: TextField(
-                            controller: _searchController,
-                            decoration: InputDecoration(
-                              hintText: l10n.searchExtensionsHint,
-                              hintStyle: TextStyle(
-                                fontSize: 13,
-                                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
-                              ),
-                              prefixIcon: const Icon(Icons.search, size: 18),
-                              suffixIcon: _searchQuery.isNotEmpty
-                                  ? IconButton(
-                                      icon: const Icon(Icons.clear, size: 16),
-                                      onPressed: () {
-                                        setState(() {
-                                          _searchController.clear();
-                                          _searchQuery = '';
-                                        });
-                                      },
-                                    )
-                                  : null,
-                              filled: true,
-                              fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
-                              isDense: true,
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                                borderSide: BorderSide(
-                                  color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
-                                ),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                                borderSide: BorderSide(
-                                  color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
-                                ),
-                              ),
-                            ),
-                            onChanged: (val) => setState(() => _searchQuery = val),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
                           ),
+                        ),
+                      ),
+                      onChanged: (val) => setState(() => _searchQuery = val),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Dedicated prominent Language Selector right above the extensions list
+                    Row(
+                      children: [
+                        Text(
+                          '${l10n.extensionsTitle} (${filtered.length})',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        const Spacer(),
+                        GlassMenuAnchor(
+                          width: 200,
+                          items: _getAvailableLanguages().map((l) {
+                            final isCurrent = l == _selectedLanguage;
+                            return GlassMenuItem(
+                              label: _getLanguageLabel(l, l10n),
+                              icon: Icon(
+                                isCurrent ? Icons.check_circle_rounded : Icons.language_rounded,
+                                size: 18,
+                                color: isCurrent ? theme.colorScheme.primary : null,
+                              ),
+                              onPressed: () {
+                                HapticFeedback.lightImpact();
+                                setState(() => _selectedLanguage = l);
+                              },
+                            );
+                          }).toList(),
+                          builder: (context, controller) {
+                            final isDark = theme.brightness == Brightness.dark;
+                            return Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(10),
+                                onTap: controller.open,
+                                child: Container(
+                                  height: 32,
+                                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                                  decoration: BoxDecoration(
+                                    color: isDark
+                                        ? Colors.white.withValues(alpha: 0.08)
+                                        : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(
+                                      color: isDark
+                                          ? Colors.white.withValues(alpha: 0.16)
+                                          : theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+                                      width: 0.8,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.translate_rounded,
+                                        size: 14,
+                                        color: theme.colorScheme.primary,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        _getLanguageLabel(_selectedLanguage, l10n),
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: isDark ? Colors.white : theme.colorScheme.onSurface,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Icon(
+                                        Icons.keyboard_arrow_down_rounded,
+                                        size: 16,
+                                        color: theme.colorScheme.onSurfaceVariant,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
                   ],
                 ),
               ),

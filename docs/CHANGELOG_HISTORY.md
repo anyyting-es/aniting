@@ -6,6 +6,143 @@
 > - **ALWAYS** summarize improvements at a high, user-facing level with clear, direct bullet points (e.g., *"Mejoras de UI y navegación en el calendario de emisión"*, *"Nueva pantalla y gestión de estado sin conexión"*, *"Optimizaciones en la caché de seguir viendo"*).
 > - Keep it punchy, professional, and easy to skim.
 
+## 7.86. Paletas Material Design 3, Armonización de Superficies y Experiencia TV (2026-10-21)
+- **Paletas Material Design 3 y Material You**:
+  - Selector dinámico de paletas Material You (Violeta, Océano, Turquesa, Bosque, Atardecer, Frambuesa y Sistema).
+  - Generación algorítmica de esquemas de color con `ColorScheme.fromSeed` para unificar superficies, tarjetas y contenedores sin inconsistencias cromáticas.
+  - Sincronización tonal de las semillas de acento en modo Claro, Oscuro y OLED.
+- **Armonización de Superficies y Contenedores**:
+  - Calibración completa del sistema de superficies M3 (`surfaceDim`, `surface`, `surfaceContainer`, `surfaceContainerHigh`) erradicando mezclas y artefactos visuales entre paneles.
+- **Onboarding Limpio para Android TV**:
+  - Carrusel vertical 3D enfocado en rueda lateral para selección fluida de idioma con control remoto.
+  - Eliminación de brillos y capas redundantes, garantizando una estética limpia y fondo sutil en pantallas de TV.
+
+## 7.85. Fluidez en Modales, Efecto Respiración en Tarjetas y Pulido de Detalles (2026-10-21)
+- **Estabilidad y Corrección en Cierre de Filtros**:
+  - Eliminación de la doble invocación de navegación al descartar la hoja de filtros de catálogo, erradicando por completo el bloqueo de pantalla negra.
+  - Sincronización continua de filtros activos al deslizar o salir del modal sin requerir pulsaciones redundantes.
+- **Botón de Alto Contraste y Corrección de Capas en el Carrusel**:
+  - Sustitución del botón celeste por una píldora blanca de máximo contraste cinematográfico con tipografía oscura.
+  - Corrección de la superposición del degradado inferior del visor que cubría los controles de acción.
+- **Alineación Estable en Detalles de Anime**:
+  - Anclaje superior de la metadata junto a la portada, eliminando el rebote y los saltos visuales de texto durante la carga asíncrona.
+- **Optimización de Transición en Modales y Compatibilidad con Android**:
+  - Apertura inmediata a 60/120 FPS del modal de edición de entradas y de opciones avanzadas, eliminando transformaciones de escala pesadas sobre shaders translúcidos.
+  - Protección de márgenes inferiores frente a la barra de navegación del sistema y botones táctiles en dispositivos Android.
+- **Efecto Orgánico de Respiración en Tarjetas de Catálogo**:
+  - Micro-animación de entrada elástica y desvanecimiento progresivo al hacer scroll en ambos sentidos para portadas de anime y manga, con coste cero en reposo.
+
+## 7.84. Transparencia de Ventana, Blur en Niri e Islas Flotantes en Ajustes (2026-10-20)
+- **Soporte de Transparencia Nativa y Blur en Escritorio**:
+  - Tubería de color RGBA transparente en el runner Linux para Wayland y X11 compuesto.
+  - Nuevo ajuste de personalización en escritorio con control interactivo de opacidad (40%–98%).
+  - Integración nativa con compositores de ventana por GPU: regla de desenfoque (`background-effect { blur true }`) para Niri 26.04+, Hyprland, SwayFX y KDE.
+- **Rediseño Expresivo de Ajustes con Islas Flotantes (Material 3 Expressive)**:
+  - Nueva arquitectura de doble panel con islas flotantes sólidas (`surfaceContainer`) sobre el lienzo transparente desenfocado del sistema.
+  - Barra de búsqueda en píldora con avatar de perfil integrado y acceso directo a la autenticación de AniList.
+  - Tarjetas de navegación en cápsula con insignias redondeadas, títulos destacados y subtítulos descriptivos por categoría.
+- **Documentación de Arquitectura de Ventana y Desenfocado**:
+  - Nueva guía técnica en [`docs/DESKTOP_BLUR_TRANSPARENCY.md`](file:///home/anthony/Documents/Eris/aniting/docs/DESKTOP_BLUR_TRANSPARENCY.md) detallando la integración entre capas y su replicación en otros sistemas operativos.
+
+## 7.83. Paridad con Seanime Upstream y Corrección del Escaneo de Biblioteca Local (2026-10-19)
+- **Escaneo y Emparejamiento Real de AniList en Biblioteca Local**:
+  - Corrección de la tubería de escaneo para alinearla al 100% con Seanime oficial: las carpetas locales se procesan como anime por defecto, evitando falsas coincidencias y exclusión de series.
+  - Eliminación de interferencias de TMDB en bibliotecas de anime; el escaneo de series/películas ahora se limita exclusivamente a carpetas explícitamente configuradas por el usuario.
+- **Resolución y Desvinculación de Archivos Sin Emparejar (Unmatched)**:
+  - Detección precisa de carpetas pendientes en AniList con sugerencias directas del servidor y búsqueda integrada.
+  - Sincronización inmediata al desvincular o emparejar archivos manualmente, refrescando en vivo la colección y el tamaño de la biblioteca.
+- **Liquid Glass en Diálogo de Repositorio y Pulido del Asistente**:
+  - Diálogo de cambio de repositorio de extensiones modernizado con Liquid Glass (`g1455`).
+  - En el asistente de bienvenida, el selector de idioma de extensiones ahora cuenta con su propia barra superior segmentada, y el icono de extensión instalada queda perfectamente alineado con los botones de descarga.
+
+## 7.82. Optimizaciones de Rendimiento, Pulido Visual y Experiencia de Usuario (2026-10-19)
+- **Banner de Anime Detail Paritario y Fluido**:
+  - Transición suave de disolvencia cruzada (crossfade) para cargar imágenes de fondo (AniZip -> AniList -> Cover con desenfoque) eliminando parpadeos y desapariciones.
+- **Optimización de Rendimiento en Pantalla de Géneros**:
+  - Eliminación de caídas de FPS al ingresar a la vista de géneros mediante decodificación escalonada tras completar la animación de ruta, fondos en degradé temáticos instantáneos y optimización de caché de imágenes.
+- **Rediseño Expresivo de Lista de Capítulos de Manga**:
+  - Reemplazo del contenedor monolítico rígido por tarjetas individuales modernas con espaciado orgánico, atenuación visual de leídos e insignias translúcidas.
+- **Buscador y Separación de Portadas**:
+  - Distribución de cuadrícula en 3 columnas en móvil para el catálogo, reducción del espaciado excesivo entre portadas y corrección del foco persistente del teclado al navegar.
+  - Auto-aplicación y reseteo inmediato de filtros en el explorador sin pantallas vacías accidentales.
+- **Pulido en Multiselección y Animaciones de Episodios**:
+  - Desplazamiento animado suave de las casillas de verificación al activar el modo selección en lugar de saltos bruscos.
+  - Ajuste dinámico del margen inferior para evitar que la barra flotante cubra el último episodio en móvil.
+  - Transición fluida al expandir la búsqueda en episodios.
+- **Marketplace de Extensiones y Filtros**:
+  - Selector de idioma dedicado y prominente con Liquid Glass (`g1455`) ubicado sobre el catálogo de extensiones, con barra de búsqueda a ancho completo.
+  - Alineación perfecta del icono de verificación de instalación con el botón de descarga.
+- **Filtro de "Solo viendo" en Calendario de Emisión**:
+  - Nueva opción en la barra superior para alternar rápidamente entre todo el calendario o únicamente las series en seguimiento de la biblioteca.
+- **Ajustes de Autenticación, Debrid y Scrobble**:
+  - Botón de pegado directo desde portapapeles en campos de clave API de Debrid.
+  - Modal de autenticación de AniList modernizado con Liquid Glass y corrección del activo del logo.
+  - Corrección del umbral de scrobble al 85% para prevenir marcados prematuros como visto en transmisiones HLS o torrents.
+
+## 7.81. Sistema de Sincronización Automática Fuera de Línea (Offline Sync) (2026-10-19)
+- **Cola Persistente de Progreso Fuera de Línea**:
+  - Nuevo servicio [`OfflineSyncService`](file:///home/anthony/Documents/Eris/aniting/lib/data/services/offline_sync_service.dart) que encola y almacena en almacenamiento local los episodios de anime vistos y capítulos de manga leídos mientras no hay conexión a internet.
+  - Colapso inteligente de cola: si se ven o leen múltiples entregas de una misma serie offline, se sincroniza directamente la más avanzada sin duplicar peticiones de red.
+- **Sincronización Transparente y Automática con AniList**:
+  - Al recuperar la conexión o reconectar el servidor, el progreso diferido se envía de manera 100% autónoma a AniList y Seanime.
+  - Sincronización periódica en segundo plano cada 30 segundos y al retomar la aplicación (`AppLifecycleState.resumed`).
+- **Indicador Visual Reactivo en Perfil y Biblioteca**:
+  - Tarjeta Liquid Glass (`g1455`) en el perfil cuando existen acciones diferidas pendientes, con botón de sincronización manual inmediata y contador en vivo.
+- **Protección contra Marcado Prematuro en Historial**:
+  - Se eliminó el guardado automático instantáneo al abrir un video o capítulo. Se requiere una reproducción efectiva de al menos 10 segundos o avanzar de página en el manga antes de registrar la entrega en *Seguir Viendo / Leyendo*, previniendo registros no deseados por toques accidentales o salidas rápidas.
+
+## 7.80. Modernización Integral del Subsistema de Manga (2026-10-19)
+- **Modales Translúcidos con Liquid Glass (`g1455`) y Animación Orgánica en el Lector**:
+  - Corrección de la jerarquía de renderizado en el lector evitando bloqueos de pantalla blanca.
+  - Transición fluida combinada de fade y deslizamiento con `Curves.easeOutCubic` al ocultar o mostrar los controles.
+  - El selector de capítulos y los ajustes del lector (`MangaReaderSettingsSheet`) se despliegan con desenfoque de cristal líquido (`showGlassSheet` con `GlassCard`).
+- **Selector de Fuente Desplegable y Buscador Idénticos a Anime Detail**:
+  - Menú desplegable (`GlassMenuAnchor`) translúcido para el cambio rápido de fuente o servidor de manga, igualando la interacción de Anime Detail.
+  - Buscador optimizado con bordes redondeados y borrado rápido con un toque.
+- **Filtrado Avanzado, Vista Reducida (Paginación) y Rendimiento Fluido**:
+  - Chips de filtrado interactivo: *Todos*, *No leídos* y *Leídos*, además de *Solo descargados*.
+  - Paginación inteligente configurable (30, 50, 100 o Todos) que reduce la carga inicial y virtualiza la lista de capítulos para eliminar el lag y garantizar 60/120 FPS sin bloqueos de memoria.
+- **Modo Multiselección de Capítulos para Descarga**:
+  - Pulsación larga o toque en modo selección en cualquier capítulo para encolar múltiples elementos a la vez con barra flotante de confirmación y contador reactivo.
+
+## 7.79. Sistema de Multidescarga por Torrent y Unificación del Selector en PC y Móvil (2026-10-19)
+- **Sistema de Multidescarga de Torrents por Lotes**:
+  - Posibilidad de seleccionar torrents individuales por cada episodio con marcado visual de estado y tarjeta resaltada.
+  - Barra de acción inferior flotante con chips de episodios en cola y botón de inicio de descarga masiva con contador dinámico.
+  - Soporte para deseleccionar episodios específicos o vaciar la cola en un solo toque.
+- **Navegación Fluida entre Episodios en el Selector**:
+  - Stepper de episodios con indicador de episodios ya encolados tanto en el selector directo como en el menú desplegable.
+  - Chips interactivos que permiten saltar instantáneamente a cualquier episodio encolado para verificar o cambiar el torrent asignado.
+- **Unificación del Selector de Torrents en PC y Móvil**:
+  - Reemplazo del diseño anterior de escritorio por la interfaz moderna y fluida de móvil, adaptada en un diálogo centrado con tarjeta Liquid Glass (`g1455`) para una experiencia consistente en todas las plataformas.
+- **Integración Directa con la Barra de Acciones de Episodios**:
+  - La multiselección de episodios en la vista de anime abre directamente el selector de torrents en modo descarga comenzando desde el primer episodio pendiente.
+- **Ampliación y Mini-Lock Suave en Seguir Viendo (Móvil y PC)**:
+  - Nueva escala en móvil (`screenWidth - 72px`) que muestra una tarjeta protagonista a pantalla completa con un vistazo continuo (~46px) de la siguiente tarjeta.
+  - Nueva física de desplazamiento `SnappingListScrollPhysics` que genera un mini-lock elástico a la tarjeta adyacente en gestos suaves, pero preserva la inercia fluida para avanzar múltiples episodios al deslizar con rapidez.
+  - Aumento en PC a 380px para equilibrar la escala visual 16:9 con las portadas de la biblioteca.
+- **Contenedor Ambiental Expansivo en Hover/Focus (Animación De Adentro Hacia Afuera)**:
+  - Recuadro ambiental suave que brota y se expande orgánicamente desde el centro hacia afuera (`scale: 0.85 -> 1.0` y `opacity: 0.0 -> 1.0`) al posar el ratón, contrayéndose hacia adentro al retirarlo.
+  - Eliminación total de bordes (`Border.all`) en el efecto de hover para un acabado estético limpio, sin aristas duras ni contrastes estridentes.
+  - El texto del título permanece en blanco puro/onSurface sin teñirse, con tipografía agrandada para mayor presencia visual.
+- **Optimización de Espaciado y Eliminación de GAPs en el Feed**:
+  - Ajuste dinámico de la altura de los carruseles horizontales calculada en base al tamaño real de las tarjetas, eliminando el espacio negro sobrante entre secciones.
+  - Reducción armonizada de separaciones verticales entre filas para un flujo continuo y equilibrado.
+- **Navegación por Foco con Anclaje Central y Scroll Suave (Estilo TV / Consola / DPAD)**:
+  - Implementación del nuevo `SmoothFocusCarousel`: al avanzar horizontalmente desde el inicio, el foco se desplaza libremente hasta alcanzar el centro del viewport.
+  - Al continuar navegando hacia la derecha (o izquierda), el foco se mantiene clavado en la posición central de la pantalla mientras la lista se desliza de forma continua y suave (`Curves.easeOutCubic`) sin saltos bruscos.
+  - Al alcanzar los extremos donde ya no hay más contenido para deslizar, el foco se desclava suavemente del centro y avanza hasta la orilla.
+  - Supresión de los saltos instantáneos toscos nativos de Flutter (`BlockShowOnScreen`) para garantizar una animación fluida a 60/120 FPS.
+  - Sincronización vertical fluida: al desplazarse verticalmente entre secciones con el DPAD (Arriba/Abajo), el feed anima suavemente la pantalla para mantener la fila y su encabezado centrados cómodamente en el área de visualización.
+- **Corrección de Desbordamiento en Seguir Viendo y Armonización de Descargas**:
+  - Corrección del desbordamiento vertical (`RenderFlex overflow`) en las tarjetas de Seguir Viendo del Feed mediante mayor holgura dinámica para títulos y duraciones.
+  - Armonización estética de la sección "Descargas y biblioteca local", unificando el encabezado con el resto del Feed y eliminando botones discordantes.
+  - Modo de Entrada Reactivo (DPAD vs Ratón): al mover o posar el ratón, el resaltado del DPAD se desactiva inmediatamente; al pulsar cualquier flecha o botón del DPAD, el sistema retoma el control del DPAD al instante ignorando el ratón y continuando la navegación desde la tarjeta activa.
+- **Verificación Completa**:
+  - 0 incidencias en `flutter analyze lib/` y 100% de la suite de pruebas unitarias aprobada.
+
+---
+
 ## 7.78. Tarjetas de Portada Ampliadas, Carga Instantánea Local y Fondos Suaves (2026-10-18)
 - **Tarjetas de Portada Más Grandes en Toda la Aplicación**:
   - Aumento del tamaño de las tarjetas de Anime y Manga tanto en carruseles como en cuadrículas (Inicio, Manga, Explorar, Búsqueda, Mis Listas, Géneros y Descargas) para una visualización más atractiva y cinematográfica.
@@ -13,9 +150,9 @@
 - **Carga Instantánea para Anime Local y Descargas**:
   - Eliminación del tiempo de espera y spinners al abrir animes de la biblioteca local o descargados; la información, metadatos y lista de episodios locales se cargan y renderizan inmediatamente desde el primer cuadro.
   - Caché en memoria para entradas de biblioteca local en el repositorio para acceso ultra rápido.
-- **Priorización Limpia de Fondos de AniZip Sin Intercambios Bruscos**:
-  - Priorización directa del fanart de AniZip desde caché sincrónica, evitando que se muestre primero el banner de AniList para luego cambiar repentinamente.
-  - Transición suave de entrada sin parpadeos visuales ni saltos de imagen.
+- **Transición Fluida en Fondos y Skeletons en Episodios**:
+  - Carga inmediata del banner desde el primer cuadro, con transición por crossfade suave (`AnimatedSwitcher`) al recibir fanart de AniZip en alta resolución, eliminando pantallas negras y saltos bruscos.
+  - Skeletons animados con efecto shimmer de pulso fluido en la lista de episodios para modos Online, Torrent y Local mientras se obtienen los datos.
 - **Corrección de Controles sobre el Reproductor en Windows (DirectComposition)**:
   - Instalación y habilitación del motor Flutter parchado con soporte de DirectComposition (`FLUTTER_WINDOWS_DCOMP`), permitiendo que los controles, barra de progreso y subtítulos se compongan correctamente encima de la ventana nativa de libmpv.
   - Script automatizado de instalación y respaldo (`windows/tool/install-patched-engine.ps1`) con soporte para restauración inmediata de motor base.

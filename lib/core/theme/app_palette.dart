@@ -18,6 +18,7 @@ class AppThemePalette {
   final Color textMuted;
   final bool isDark;
   final String category;
+  final Color? seedColor;
 
   const AppThemePalette({
     required this.id,
@@ -34,6 +35,7 @@ class AppThemePalette {
     required this.textMuted,
     this.isDark = true,
     this.category = 'dark',
+    this.seedColor,
   });
 
   AppThemePalette copyWith({
@@ -51,6 +53,7 @@ class AppThemePalette {
     Color? textMuted,
     bool? isDark,
     String? category,
+    Color? seedColor,
   }) {
     return AppThemePalette(
       id: id ?? this.id,
@@ -67,6 +70,7 @@ class AppThemePalette {
       textMuted: textMuted ?? this.textMuted,
       isDark: isDark ?? this.isDark,
       category: category ?? this.category,
+      seedColor: seedColor ?? this.seedColor,
     );
   }
 
@@ -96,24 +100,58 @@ class AppThemePalette {
   ColorScheme toColorScheme({bool? isDarkOverride}) {
     final effectiveDark = isDarkOverride ?? isDark;
     final brightness = effectiveDark ? Brightness.dark : Brightness.light;
+
+    if (seedColor != null || category == 'material' || id == AppPalettes.oledBlackId) {
+      final baseScheme = ColorScheme.fromSeed(
+        seedColor: accent,
+        brightness: brightness,
+      );
+      if (id == AppPalettes.oledBlackId) {
+        return baseScheme.copyWith(
+          surface: const Color(0xFF0C0C0F),
+          surfaceDim: Colors.black,
+          surfaceBright: const Color(0xFF181820),
+          surfaceContainerLowest: Colors.black,
+          surfaceContainerLow: const Color(0xFF08080B),
+          surfaceContainer: const Color(0xFF101015),
+          surfaceContainerHigh: const Color(0xFF181820),
+          surfaceContainerHighest: const Color(0xFF22222C),
+        );
+      }
+      return baseScheme;
+    }
+
+    final surfDim = effectiveDark ? background : surface;
+    final surfLow = surface;
+    final surfCont = surfaceElevated;
+    final surfHigh = Color.lerp(surfaceElevated, textPrimary, effectiveDark ? 0.05 : 0.03) ?? surfaceElevated;
+    final surfHighest = Color.lerp(surfaceElevated, textPrimary, effectiveDark ? 0.09 : 0.06) ?? surfaceElevated;
+
+    final primContainer = effectiveDark
+        ? (Color.lerp(background, accent, 0.22) ?? accent.withValues(alpha: 0.20))
+        : (Color.lerp(Colors.white, accent, 0.18) ?? accent.withValues(alpha: 0.18));
+    final onPrimContainer = effectiveDark
+        ? (Color.lerp(accent, Colors.white, 0.35) ?? accent)
+        : (Color.lerp(accent, Colors.black, 0.40) ?? accent);
+
     return ColorScheme(
       brightness: brightness,
       primary: accent,
       onPrimary: effectiveDark ? const Color(0xFF100F15) : Colors.white,
-      primaryContainer: accent.withValues(alpha: 0.20),
-      onPrimaryContainer: effectiveDark ? Colors.white : accent,
+      primaryContainer: primContainer,
+      onPrimaryContainer: onPrimContainer,
       secondary: accent,
-      onSecondary: Colors.white,
-      secondaryContainer: accent.withValues(alpha: 0.15),
-      onSecondaryContainer: effectiveDark ? Colors.white : accent,
+      onSecondary: effectiveDark ? const Color(0xFF100F15) : Colors.white,
+      secondaryContainer: primContainer,
+      onSecondaryContainer: onPrimContainer,
       surface: surface,
-      surfaceDim: effectiveDark ? background : surface,
+      surfaceDim: surfDim,
       surfaceBright: surfaceElevated,
-      surfaceContainerLowest: effectiveDark ? background : surface,
-      surfaceContainerLow: surface,
-      surfaceContainer: surfaceElevated,
-      surfaceContainerHigh: Color.lerp(surfaceElevated, textPrimary, effectiveDark ? 0.04 : 0.02) ?? surfaceElevated,
-      surfaceContainerHighest: Color.lerp(surfaceElevated, textPrimary, effectiveDark ? 0.08 : 0.04) ?? surfaceElevated,
+      surfaceContainerLowest: surfDim,
+      surfaceContainerLow: surfLow,
+      surfaceContainer: surfCont,
+      surfaceContainerHigh: surfHigh,
+      surfaceContainerHighest: surfHighest,
       onSurface: textPrimary,
       onSurfaceVariant: textSecondary,
       outline: border,
@@ -268,7 +306,8 @@ class AppPalettes {
     textSecondary: Color(0xFFA8A8B0),
     textMuted: Color(0xFF60606A),
     isDark: true,
-    category: 'dark',
+    category: 'material',
+    seedColor: Color(0xFF6750A4),
   );
 
   /// Cyberpunk
@@ -525,10 +564,10 @@ class AppPalettes {
       id: id,
       name: name,
       description: description,
-      background: isDark ? const Color(0xFF141218) : const Color(0xFFFEF7FF),
-      surface: isDark ? const Color(0xFF1D1B20) : const Color(0xFFF7F2FA),
-      surfaceElevated: isDark ? const Color(0xFF2B2930) : const Color(0xFFECE6F0),
-      border: isDark ? const Color(0xFF49454F) : const Color(0xFFCAC4D0),
+      background: isDark ? scheme.surfaceDim : scheme.surface,
+      surface: scheme.surface,
+      surfaceElevated: scheme.surfaceContainer,
+      border: scheme.outlineVariant.withValues(alpha: 0.5),
       borderFocused: scheme.primary,
       accent: scheme.primary,
       textPrimary: scheme.onSurface,
@@ -536,6 +575,7 @@ class AppPalettes {
       textMuted: scheme.outline,
       isDark: isDark,
       category: 'material',
+      seedColor: seedColor,
     );
   }
 

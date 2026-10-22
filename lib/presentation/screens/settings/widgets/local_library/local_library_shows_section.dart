@@ -12,16 +12,15 @@ import 'package:seanime_app/presentation/screens/settings/widgets/local_library/
 class LocalLibraryShowsSection extends ConsumerStatefulWidget {
   final LocalLibraryState state;
 
-  const LocalLibraryShowsSection({
-    super.key,
-    required this.state,
-  });
+  const LocalLibraryShowsSection({super.key, required this.state});
 
   @override
-  ConsumerState<LocalLibraryShowsSection> createState() => _LocalLibraryShowsSectionState();
+  ConsumerState<LocalLibraryShowsSection> createState() =>
+      _LocalLibraryShowsSectionState();
 }
 
-class _LocalLibraryShowsSectionState extends ConsumerState<LocalLibraryShowsSection> {
+class _LocalLibraryShowsSectionState
+    extends ConsumerState<LocalLibraryShowsSection> {
   final TextEditingController _searchController = TextEditingController();
   String _filterType = 'all'; // 'all', 'anime', 'tv', 'movie'
   String _searchQuery = '';
@@ -47,7 +46,10 @@ class _LocalLibraryShowsSectionState extends ConsumerState<LocalLibraryShowsSect
     }).toList();
   }
 
-  void _showUnmatchConfirmDialog(BuildContext context, LocalMatchedShowItem item) {
+  void _showUnmatchConfirmDialog(
+    BuildContext context,
+    LocalMatchedShowItem item,
+  ) {
     final l10n = ref.read(translationsProvider);
     final theme = Theme.of(context);
 
@@ -62,7 +64,10 @@ class _LocalLibraryShowsSectionState extends ConsumerState<LocalLibraryShowsSect
         ),
         content: Text(
           l10n.unmatchShowConfirmMessage(item.title),
-          style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13.5),
+          style: TextStyle(
+            color: theme.colorScheme.onSurfaceVariant,
+            fontSize: 13.5,
+          ),
         ),
         actions: [
           TextButton(
@@ -76,7 +81,9 @@ class _LocalLibraryShowsSectionState extends ConsumerState<LocalLibraryShowsSect
             ),
             onPressed: () async {
               Navigator.of(dialogCtx).pop();
-              final ok = await ref.read(localLibraryProvider.notifier).unmatchShowItem(item);
+              final ok = await ref
+                  .read(localLibraryProvider.notifier)
+                  .unmatchShowItem(item);
               if (ok && context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -127,7 +134,9 @@ class _LocalLibraryShowsSectionState extends ConsumerState<LocalLibraryShowsSect
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+        color: theme.colorScheme.surfaceContainerHighest.withValues(
+          alpha: 0.35,
+        ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: theme.colorScheme.outlineVariant.withValues(alpha: 0.15),
@@ -139,17 +148,27 @@ class _LocalLibraryShowsSectionState extends ConsumerState<LocalLibraryShowsSect
           // Header
           Row(
             children: [
-              Icon(Icons.collections_bookmark_rounded, size: 20, color: theme.colorScheme.primary),
+              Icon(
+                Icons.collections_bookmark_rounded,
+                size: 20,
+                color: theme.colorScheme.primary,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   l10n.localShowsSectionTitle,
-                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14.5,
+                  ),
                 ),
               ),
               if (widget.state.matchedShows.isNotEmpty)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: theme.colorScheme.primary.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(10),
@@ -193,8 +212,13 @@ class _LocalLibraryShowsSectionState extends ConsumerState<LocalLibraryShowsSect
                       )
                     : null,
                 filled: true,
-                fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                fillColor: theme.colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.5,
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
                   borderSide: BorderSide.none,
@@ -207,7 +231,8 @@ class _LocalLibraryShowsSectionState extends ConsumerState<LocalLibraryShowsSect
               child: Row(
                 children: [
                   _FilterChip(
-                    label: '${l10n.filterAll} (${widget.state.matchedShows.length})',
+                    label:
+                        '${l10n.filterAll} (${widget.state.matchedShows.length})',
                     isSelected: _filterType == 'all',
                     onTap: () => setState(() => _filterType = 'all'),
                   ),
@@ -243,7 +268,13 @@ class _LocalLibraryShowsSectionState extends ConsumerState<LocalLibraryShowsSect
               alignment: Alignment.center,
               child: Column(
                 children: [
-                  Icon(Icons.video_library_outlined, size: 36, color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4)),
+                  Icon(
+                    Icons.video_library_outlined,
+                    size: 36,
+                    color: theme.colorScheme.onSurfaceVariant.withValues(
+                      alpha: 0.4,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   Text(
                     l10n.noLocalShowsFound,
@@ -306,7 +337,9 @@ class _FilterChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: isSelected
               ? theme.colorScheme.primary.withValues(alpha: 0.15)
-              : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+              : theme.colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.5,
+                ),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: isSelected
@@ -319,7 +352,9 @@ class _FilterChip extends StatelessWidget {
           style: TextStyle(
             fontSize: 11.5,
             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-            color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
+            color: isSelected
+                ? theme.colorScheme.primary
+                : theme.colorScheme.onSurfaceVariant,
           ),
         ),
       ),
@@ -373,7 +408,9 @@ class _LocalMatchedShowCard extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+          color: theme.colorScheme.surfaceContainerHighest.withValues(
+            alpha: 0.45,
+          ),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: theme.colorScheme.outlineVariant.withValues(alpha: 0.12),
@@ -392,28 +429,39 @@ class _LocalMatchedShowCard extends ConsumerWidget {
                     width: 48,
                     height: 68,
                     color: theme.colorScheme.surfaceContainerHighest,
-                    child: item.coverImage != null && item.coverImage!.isNotEmpty
+                    child:
+                        item.coverImage != null && item.coverImage!.isNotEmpty
                         ? CachedNetworkImage(
                             imageUrl: item.coverImage!,
                             fit: BoxFit.cover,
-                            errorWidget: (ctx, err, stack) => Icon(typeIcon, color: typeColor, size: 24),
+                            errorWidget: (ctx, err, stack) =>
+                                Icon(typeIcon, color: typeColor, size: 24),
                           )
                         : item.isTmdb
-                            ? FutureBuilder<TmdbShowDetails?>(
-                                future: ref.read(tmdbServiceProvider).getShowDetails(item.id, isMovie: item.type == 'movie'),
-                                builder: (ctx, snapshot) {
-                                  final poster = snapshot.data?.posterUrl;
-                                  if (poster != null && poster.isNotEmpty) {
-                                    return CachedNetworkImage(
-                                      imageUrl: poster,
-                                      fit: BoxFit.cover,
-                                      errorWidget: (c, e, s) => Icon(typeIcon, color: typeColor, size: 24),
-                                    );
-                                  }
-                                  return Icon(typeIcon, color: typeColor, size: 24);
-                                },
-                              )
-                            : Icon(typeIcon, color: typeColor, size: 24),
+                        ? FutureBuilder<TmdbShowDetails?>(
+                            future: ref
+                                .read(tmdbServiceProvider)
+                                .getShowDetails(
+                                  item.id,
+                                  isMovie: item.type == 'movie',
+                                ),
+                            builder: (ctx, snapshot) {
+                              final poster = snapshot.data?.posterUrl;
+                              if (poster != null && poster.isNotEmpty) {
+                                return CachedNetworkImage(
+                                  imageUrl: poster,
+                                  fit: BoxFit.cover,
+                                  errorWidget: (c, e, s) => Icon(
+                                    typeIcon,
+                                    color: typeColor,
+                                    size: 24,
+                                  ),
+                                );
+                              }
+                              return Icon(typeIcon, color: typeColor, size: 24);
+                            },
+                          )
+                        : Icon(typeIcon, color: typeColor, size: 24),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -424,7 +472,10 @@ class _LocalMatchedShowCard extends ConsumerWidget {
                       Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: typeColor.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(6),
@@ -472,7 +523,8 @@ class _LocalMatchedShowCard extends ConsumerWidget {
                           item.folderPath,
                           style: TextStyle(
                             fontSize: 11,
-                            color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                            color: theme.colorScheme.onSurfaceVariant
+                                .withValues(alpha: 0.7),
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -505,7 +557,10 @@ class _LocalMatchedShowCard extends ConsumerWidget {
                   label: Text(l10n.fixMatchAction),
                   style: FilledButton.styleFrom(
                     visualDensity: VisualDensity.compact,
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
                   ),
                 ),
               ],

@@ -46,14 +46,14 @@ class AppAccentColor {
 }
 
 const List<AppAccentColor> kMaterialAccents = [
-  AppAccentColor(name: 'Violeta / Lavanda', color: Color(0xFFCBA6F7)),
-  AppAccentColor(name: 'Azul Calmo', color: Color(0xFF7AA2F7)),
-  AppAccentColor(name: 'Cian / Menta', color: Color(0xFF88C0D0)),
-  AppAccentColor(name: 'Rosa', color: Color(0xFFBD93F9)),
-  AppAccentColor(name: 'Ámbar', color: Color(0xFFF0C674)),
-  AppAccentColor(name: 'Esmeralda', color: Color(0xFF50FA7B)),
-  AppAccentColor(name: 'Cereza', color: Color(0xFFFF5555)),
-  AppAccentColor(name: 'Pizarra', color: Color(0xFF395886)),
+  AppAccentColor(name: 'Violeta / Lavanda', color: Color(0xFF6750A4)),
+  AppAccentColor(name: 'Azul Calmo', color: Color(0xFF0061A4)),
+  AppAccentColor(name: 'Cian / Menta', color: Color(0xFF006A6A)),
+  AppAccentColor(name: 'Rosa', color: Color(0xFF984061)),
+  AppAccentColor(name: 'Ámbar', color: Color(0xFF8B5000)),
+  AppAccentColor(name: 'Esmeralda', color: Color(0xFF006E1C)),
+  AppAccentColor(name: 'Cereza', color: Color(0xFFBA1A1A)),
+  AppAccentColor(name: 'Pizarra', color: Color(0xFF4C626B)),
 ];
 
 class AppFontOption {
@@ -444,12 +444,22 @@ class AppThemeBuilder {
     }
 
     final effectiveAccent = customAccent ?? seedColor ?? basePalette.accent;
-    final effectivePalette = isOled
+    var effectivePalette = isOled
         ? AppPalettes.oledBlack.copyWith(accent: effectiveAccent, borderFocused: const Color(0xFFFFFFFF))
         : basePalette.copyWith(
             accent: effectiveAccent,
             borderFocused: isDark ? const Color(0xFFFFFFFF) : effectiveAccent,
           );
+
+    if (!isOled && (basePalette.category == 'material' || basePalette.seedColor != null)) {
+      effectivePalette = AppPalettes.createMaterialPalette(
+        id: basePalette.id,
+        name: basePalette.name,
+        description: basePalette.description,
+        seedColor: effectiveAccent,
+        isDark: isDark,
+      );
+    }
 
     final brightness = isDark ? Brightness.dark : Brightness.light;
     final scheme = effectivePalette.toColorScheme(isDarkOverride: isDark);

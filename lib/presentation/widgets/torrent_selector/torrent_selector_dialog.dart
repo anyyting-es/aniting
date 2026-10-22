@@ -1,12 +1,13 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:g1455/g1455.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/data/models/anime_details.dart';
 import 'package:seanime_app/data/models/torrent_models.dart';
 import 'package:seanime_app/presentation/providers/active_downloads_provider.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/widgets/torrent_batch_files_sheet.dart';
-import 'package:seanime_app/presentation/widgets/torrent_selector/desktop/torrent_selector_desktop_view.dart';
 import 'package:seanime_app/presentation/widgets/torrent_selector/mobile/torrent_selector_mobile_view.dart';
 import 'package:seanime_app/presentation/widgets/torrent_selector/models/torrent_selector_helpers.dart';
 import 'package:seanime_app/presentation/widgets/toast/app_toast.dart';
@@ -18,6 +19,8 @@ class TorrentSelectorDialog extends ConsumerStatefulWidget {
   final AnimeDetails? animeDetails;
   final String? aniDBEpisode;
   final bool isSheet;
+  final bool isDownloadMode;
+  final List<int>? initialSelectedEpisodes;
 
   const TorrentSelectorDialog({
     super.key,
@@ -27,6 +30,8 @@ class TorrentSelectorDialog extends ConsumerStatefulWidget {
     this.animeDetails,
     this.aniDBEpisode,
     this.isSheet = false,
+    this.isDownloadMode = false,
+    this.initialSelectedEpisodes,
   });
 
   @override
@@ -51,6 +56,9 @@ class _TorrentSelectorDialogState extends ConsumerState<TorrentSelectorDialog> {
   late final TextEditingController _searchController;
   late int? _currentEpisodeNumber;
 
+  late bool _isDownloadMode;
+  final Map<int, TorrentItem> _selectedDownloadTorrents = {};
+
   String? _startingTorrentName;
 
   List<TorrentItem> get _filteredTorrents {
@@ -64,7 +72,13 @@ class _TorrentSelectorDialogState extends ConsumerState<TorrentSelectorDialog> {
   @override
   void initState() {
     super.initState();
-    _currentEpisodeNumber = widget.episodeNumber;
+    _isDownloadMode = widget.isDownloadMode;
+    if (widget.initialSelectedEpisodes != null && widget.initialSelectedEpisodes!.isNotEmpty) {
+      _isDownloadMode = true;
+      _currentEpisodeNumber = widget.initialSelectedEpisodes!.first;
+    } else {
+      _currentEpisodeNumber = widget.episodeNumber;
+    }
     _searchController = TextEditingController();
     _loadProviders();
   }
@@ -151,7 +165,78 @@ class _TorrentSelectorDialogState extends ConsumerState<TorrentSelectorDialog> {
     }
   }
 
+  void _toggleSelectForDownload(TorrentItem torrent) {
+    final epNum = _currentEpisodeNumber;
+    if (epNum == null) return;
+    setState(() {
+      final current = _selectedDownloadTorrents[epNum];
+      if (current != null && current.infoHash == torrent.infoHash && current.name == torrent.name) {
+        _selectedDownloadTorrents.remove(epNum);
+      } else {
+        _selectedDownloadTorrents[epNum] = torrent;
+      }
+    });
+  }
+
+  Future<void> _startBatchDownload() async {
+    if (_selectedDownloadTorrents.isEmpty) return;
+
+    final l10n = ref.read(translationsProvider);
+    final repo = ref.read(repositoryProvider);
+    final nav = Navigator.of(context);
+
+    final entries = _selectedDownloadTorrents.entries.toList();
+
+    if (nav.canPop()) {
+      nav.pop();
+    }
+
+    for (final entry in entries) {
+      final epNum = entry.key;
+      final torrent = entry.value;
+      ref.read(downloadingEpisodesProvider.notifier).add(
+            widget.mediaId,
+            epNum,
+            hash: torrent.infoHash,
+            torrentName: torrent.name,
+          );
+    }
+
+    int successCount = 0;
+    for (final entry in entries) {
+      final epNum = entry.key;
+      final torrent = entry.value;
+      try {
+        final success = await repo.downloadTorrentToClient(
+          torrent: torrent,
+          media: widget.animeDetails?.toBaseAnimeMap() ?? widget.animeDetails?.rawMedia,
+          animeTitle: widget.animeDetails?.title,
+          mediaId: widget.animeDetails?.id ?? widget.mediaId,
+        );
+        if (success) {
+          successCount++;
+        } else {
+          ref.read(downloadingEpisodesProvider.notifier).remove(widget.mediaId, epNum);
+        }
+      } catch (e) {
+        ref.read(downloadingEpisodesProvider.notifier).remove(widget.mediaId, epNum);
+      }
+    }
+
+    ref.read(activeDownloadsProvider.notifier).refresh();
+
+    if (successCount > 0) {
+      AppToast.success(l10n.torrentBatchDownloadQueued);
+    } else {
+      AppToast.error(l10n.error);
+    }
+  }
+
   Future<void> _handleTorrentTap(TorrentItem torrent) async {
+    if (_isDownloadMode || _selectedDownloadTorrents.isNotEmpty) {
+      _toggleSelectForDownload(torrent);
+      return;
+    }
     if (isBatchTorrent(torrent)) {
       await _inspectBatchAndStream(torrent);
     } else {
@@ -197,6 +282,10 @@ class _TorrentSelectorDialogState extends ConsumerState<TorrentSelectorDialog> {
   }
 
   void _onDownloadTorrentPressed(TorrentItem torrent) {
+    if (_isDownloadMode || _selectedDownloadTorrents.isNotEmpty) {
+      _toggleSelectForDownload(torrent);
+      return;
+    }
     if (isBatchTorrent(torrent)) {
       _inspectBatchAndStream(torrent, defaultDownload: true);
     } else {
@@ -413,66 +502,7 @@ class _TorrentSelectorDialogState extends ConsumerState<TorrentSelectorDialog> {
   Widget build(BuildContext context) {
     final isDesktop = !widget.isSheet && MediaQuery.of(context).size.width >= 768;
 
-    if (isDesktop) {
-      return TorrentSelectorDesktopView(
-        animeDetails: widget.animeDetails,
-        currentEpisodeNumber: _currentEpisodeNumber,
-        episodeTitle: widget.episodeTitle,
-        providers: _providers,
-        selectedProviderId: _selectedProviderId,
-        isLoadingProviders: _isLoadingProviders,
-        filteredTorrents: _filteredTorrents,
-        allTorrents: _torrents,
-        isLoadingTorrents: _isLoadingTorrents,
-        errorMessage: _errorMessage,
-        selectedQuality: _selectedQuality,
-        isSmartSearch: _isSmartSearch,
-        showOnlyBatches: _showOnlyBatches,
-        searchAcrossProviders: _searchAcrossProviders,
-        sortField: _sortField,
-        sortAscending: _sortAscending,
-        searchController: _searchController,
-        startingTorrentName: _startingTorrentName,
-        onEpisodeChanged: _onEpisodeChanged,
-        onProviderChanged: (val) {
-          setState(() => _selectedProviderId = val);
-          _searchTorrents();
-        },
-        onQualityChanged: (val) => setState(() => _selectedQuality = val),
-        onSmartSearchChanged: (val) {
-          setState(() => _isSmartSearch = val);
-          _searchTorrents();
-        },
-        onBatchToggleChanged: (val) {
-          setState(() => _showOnlyBatches = val);
-          _searchTorrents();
-        },
-        onSearchAcrossProvidersChanged: (val) {
-          setState(() => _searchAcrossProviders = val);
-          _searchTorrents();
-        },
-        onSortFieldChanged: (field) {
-          setState(() {
-            _sortField = field;
-            _sortAscending = false;
-          });
-        },
-        onToggleSortDirection: () {
-          setState(() => _sortAscending = !_sortAscending);
-        },
-        onRefresh: _searchTorrents,
-        onTorrentTap: _handleTorrentTap,
-        onDownloadTorrent: _onDownloadTorrentPressed,
-        onExternalPlayer: (t) => isBatchTorrent(t)
-            ? _inspectBatchAndStream(t, defaultExternalPlayer: true)
-            : _startStream(t, useExternalPlayer: true),
-        onDebridStream: _startDebridStream,
-        onDebridDownload: _downloadDebridTorrent,
-        onClose: () => Navigator.of(context).pop(),
-      );
-    }
-
-    return TorrentSelectorMobileView(
+    final unifiedView = TorrentSelectorMobileView(
       animeDetails: widget.animeDetails,
       currentEpisodeNumber: _currentEpisodeNumber,
       episodeTitle: widget.episodeTitle,
@@ -491,6 +521,12 @@ class _TorrentSelectorDialogState extends ConsumerState<TorrentSelectorDialog> {
       sortAscending: _sortAscending,
       searchController: _searchController,
       startingTorrentName: _startingTorrentName,
+      selectedDownloadTorrents: _selectedDownloadTorrents,
+      isDownloadMode: _isDownloadMode,
+      onToggleDownloadMode: (val) => setState(() => _isDownloadMode = val),
+      onStartBatchDownload: _startBatchDownload,
+      onClearSelectedTorrents: () => setState(() => _selectedDownloadTorrents.clear()),
+      onRemoveSelectedEpisode: (ep) => setState(() => _selectedDownloadTorrents.remove(ep)),
       onEpisodeChanged: _onEpisodeChanged,
       onProviderChanged: (val) {
         setState(() => _selectedProviderId = val);
@@ -526,5 +562,23 @@ class _TorrentSelectorDialogState extends ConsumerState<TorrentSelectorDialog> {
       onDebridDownload: _downloadDebridTorrent,
       onClose: () => Navigator.of(context).pop(),
     );
+
+    if (isDesktop) {
+      return Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: 740,
+            maxHeight: math.min(840, MediaQuery.of(context).size.height * 0.88),
+          ),
+          child: GlassCard(
+            borderRadius: BorderRadius.circular(24),
+            padding: EdgeInsets.zero,
+            child: unifiedView,
+          ),
+        ),
+      );
+    }
+
+    return unifiedView;
   }
 }

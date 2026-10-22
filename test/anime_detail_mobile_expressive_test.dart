@@ -44,7 +44,7 @@ class FakeMobileDetailRepo extends SeanimeRepository {
   Future<AniZipData?> getAniZipData(int mediaId) async => null;
 
   @override
-  Future<LibraryEntryDetails?> getAnimeLibraryEntry(int mediaId) async => null;
+  Future<LibraryEntryDetails?> getAnimeLibraryEntry(int mediaId, {bool forceRefresh = false}) async => null;
 
   @override
   Future<List<OnlinestreamProvider>> getOnlinestreamProviders() async => [

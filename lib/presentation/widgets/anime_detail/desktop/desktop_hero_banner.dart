@@ -35,32 +35,47 @@ class DesktopHeroBanner extends ConsumerWidget {
           child: Stack(
             fit: StackFit.expand,
           children: [
-            // Banner Image with Blur Fallback (scroll darkening handled by overlay below)
-            shouldBlur
-                ? ClipRect(
-                    child: ImageFiltered(
-                      imageFilter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-                      child: Transform.scale(
-                        scale: 1.25,
-                        child: CachedNetworkImage(
-                          imageUrl: bannerUrl!,
-                          fit: BoxFit.cover,
-                          alignment: const Alignment(0, -0.2),
-                          fadeInDuration: const Duration(milliseconds: 250),
-                          fadeOutDuration: const Duration(milliseconds: 150),
-                          errorWidget: (_, _, _) => const SizedBox.shrink(),
+            // Banner Image with Smooth Crossfade and Blur Fallback
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 400),
+              switchInCurve: Curves.easeOutCubic,
+              switchOutCurve: Curves.easeInCubic,
+              layoutBuilder: (currentChild, previousChildren) => Stack(
+                fit: StackFit.expand,
+                children: [
+                  ...previousChildren,
+                  ?currentChild,
+                ],
+              ),
+              child: SizedBox.expand(
+                key: ValueKey<String>(bannerUrl!),
+                child: shouldBlur
+                    ? ClipRect(
+                        child: ImageFiltered(
+                          imageFilter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+                          child: Transform.scale(
+                            scale: 1.25,
+                            child: CachedNetworkImage(
+                              imageUrl: bannerUrl!,
+                              fit: BoxFit.cover,
+                              alignment: const Alignment(0, -0.2),
+                              fadeInDuration: const Duration(milliseconds: 250),
+                              fadeOutDuration: const Duration(milliseconds: 150),
+                              errorWidget: (_, _, _) => const SizedBox.shrink(),
+                            ),
+                          ),
                         ),
+                      )
+                    : CachedNetworkImage(
+                        imageUrl: bannerUrl!,
+                        fit: BoxFit.cover,
+                        alignment: const Alignment(0, -0.2),
+                        fadeInDuration: const Duration(milliseconds: 250),
+                        fadeOutDuration: const Duration(milliseconds: 150),
+                        errorWidget: (_, _, _) => const SizedBox.shrink(),
                       ),
-                    ),
-                  )
-                : CachedNetworkImage(
-                    imageUrl: bannerUrl!,
-                    fit: BoxFit.cover,
-                    alignment: const Alignment(0, -0.2),
-                    fadeInDuration: const Duration(milliseconds: 250),
-                    fadeOutDuration: const Duration(milliseconds: 150),
-                    errorWidget: (_, _, _) => const SizedBox.shrink(),
-                  ),
+              ),
+            ),
 
             // Ambient darkening overlay in theme tone (translucent for vivid fanart)
             Container(

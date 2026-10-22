@@ -84,7 +84,6 @@ void main() {
       await tester.pump();
 
       expect(find.text('Sousou no Frieren'), findsOneWidget);
-      expect(find.text('2023 • TV'), findsOneWidget);
     });
   });
 

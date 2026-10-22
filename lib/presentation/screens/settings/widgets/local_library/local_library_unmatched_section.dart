@@ -8,10 +8,7 @@ import 'package:seanime_app/presentation/screens/settings/widgets/local_library/
 class LocalLibraryUnmatchedSection extends ConsumerWidget {
   final LocalLibraryState state;
 
-  const LocalLibraryUnmatchedSection({
-    super.key,
-    required this.state,
-  });
+  const LocalLibraryUnmatchedSection({super.key, required this.state});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -23,7 +20,9 @@ class LocalLibraryUnmatchedSection extends ConsumerWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+        color: theme.colorScheme.surfaceContainerHighest.withValues(
+          alpha: 0.35,
+        ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: theme.colorScheme.outlineVariant.withValues(alpha: 0.15),
@@ -45,12 +44,18 @@ class LocalLibraryUnmatchedSection extends ConsumerWidget {
               Expanded(
                 child: Text(
                   l10n.resolveUnmatchedTitle,
-                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14.5,
+                  ),
                 ),
               ),
               if (state.unmatchedFilesCount > 0)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(10),
@@ -90,7 +95,11 @@ class LocalLibraryUnmatchedSection extends ConsumerWidget {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.check_circle_outline_rounded, color: Color(0xFF10B981), size: 20),
+                  const Icon(
+                    Icons.check_circle_outline_rounded,
+                    color: Color(0xFF10B981),
+                    size: 20,
+                  ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
@@ -156,7 +165,9 @@ class _UnmatchedGroupCardState extends State<_UnmatchedGroupCard> {
         return Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+            color: theme.colorScheme.surfaceContainerHighest.withValues(
+              alpha: 0.5,
+            ),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: theme.colorScheme.outlineVariant.withValues(alpha: 0.12),
@@ -167,7 +178,11 @@ class _UnmatchedGroupCardState extends State<_UnmatchedGroupCard> {
             children: [
               Row(
                 children: [
-                  Icon(Icons.folder_outlined, size: 18, color: theme.colorScheme.primary),
+                  Icon(
+                    Icons.folder_outlined,
+                    size: 18,
+                    color: theme.colorScheme.primary,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -181,7 +196,10 @@ class _UnmatchedGroupCardState extends State<_UnmatchedGroupCard> {
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: theme.colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(8),
@@ -202,7 +220,9 @@ class _UnmatchedGroupCardState extends State<_UnmatchedGroupCard> {
                 group.folderPath,
                 style: TextStyle(
                   fontSize: 11.5,
-                  color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                  color: theme.colorScheme.onSurfaceVariant.withValues(
+                    alpha: 0.7,
+                  ),
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -214,42 +234,70 @@ class _UnmatchedGroupCardState extends State<_UnmatchedGroupCard> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+                    color: theme.colorScheme.surfaceContainerHighest.withValues(
+                      alpha: 0.35,
+                    ),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.1)),
+                    border: Border.all(
+                      color: theme.colorScheme.outlineVariant.withValues(
+                        alpha: 0.1,
+                      ),
+                    ),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      ...group.files.map((file) => Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 4),
-                        child: Row(
-                          children: [
-                            Icon(Icons.movie_outlined, size: 14, color: theme.colorScheme.onSurfaceVariant),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: Text(
-                                file.name,
-                                style: const TextStyle(fontSize: 11.5, fontFamily: 'monospace'),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                      ...group.files.map(
+                        (file) => Padding(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 3,
+                            horizontal: 4,
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.movie_outlined,
+                                size: 14,
+                                color: theme.colorScheme.onSurfaceVariant,
                               ),
-                            ),
-                            if (file.parsedEpisode != null && file.parsedEpisode!.isNotEmpty)
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                                decoration: BoxDecoration(
-                                  color: theme.colorScheme.primary.withValues(alpha: 0.12),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
+                              const SizedBox(width: 6),
+                              Expanded(
                                 child: Text(
-                                  'EP ${file.parsedEpisode}',
-                                  style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w700, color: theme.colorScheme.primary),
+                                  file.name,
+                                  style: const TextStyle(
+                                    fontSize: 11.5,
+                                    fontFamily: 'monospace',
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
-                          ],
+                              if (file.parsedEpisode != null &&
+                                  file.parsedEpisode!.isNotEmpty)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 5,
+                                    vertical: 1.5,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: theme.colorScheme.primary.withValues(
+                                      alpha: 0.12,
+                                    ),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    'EP ${file.parsedEpisode}',
+                                    style: TextStyle(
+                                      fontSize: 9.5,
+                                      fontWeight: FontWeight.w700,
+                                      color: theme.colorScheme.primary,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
-                      )),
+                      ),
                     ],
                   ),
                 ),
@@ -263,18 +311,25 @@ class _UnmatchedGroupCardState extends State<_UnmatchedGroupCard> {
                     onTap: () => setState(() => _isExpanded = !_isExpanded),
                     borderRadius: BorderRadius.circular(6),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 2,
+                      ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            _isExpanded ? Icons.expand_less_rounded : Icons.expand_more_rounded,
+                            _isExpanded
+                                ? Icons.expand_less_rounded
+                                : Icons.expand_more_rounded,
                             size: 16,
                             color: theme.colorScheme.primary,
                           ),
                           const SizedBox(width: 2),
                           Text(
-                            _isExpanded ? l10n.hideFilesAction : l10n.viewFilesAction,
+                            _isExpanded
+                                ? l10n.hideFilesAction
+                                : l10n.viewFilesAction,
                             style: TextStyle(
                               fontSize: 11.5,
                               fontWeight: FontWeight.w600,
@@ -301,7 +356,10 @@ class _UnmatchedGroupCardState extends State<_UnmatchedGroupCard> {
                     label: Text(l10n.matchWithAnimeAction),
                     style: FilledButton.styleFrom(
                       visualDensity: VisualDensity.compact,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                     ),
                   ),
                 ],

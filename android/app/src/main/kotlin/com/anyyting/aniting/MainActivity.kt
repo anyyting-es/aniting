@@ -118,6 +118,12 @@ class MainActivity : FlutterActivity() {
                 "isManageStorageGranted" -> {
                     result.success(SeanimeServerRuntime.isManageStorageGranted())
                 }
+                "isTvDevice" -> {
+                    val pm = packageManager
+                    val isTv = pm.hasSystemFeature("android.software.leanback") ||
+                               pm.hasSystemFeature("android.hardware.type.television")
+                    result.success(isTv)
+                }
                 "requestManageStorage" -> {
                     result.success(SeanimeServerRuntime.requestManageStorage(applicationContext))
                 }

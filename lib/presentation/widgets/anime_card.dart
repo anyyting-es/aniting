@@ -6,6 +6,7 @@ import 'package:seanime_app/core/preferences/show_scores_provider.dart';
 import 'package:seanime_app/core/preferences/title_language_provider.dart';
 import 'package:seanime_app/core/theme/app_theme_colors.dart';
 import 'package:seanime_app/core/theme/theme_provider.dart';
+import 'package:seanime_app/core/theme/app_focus_coordinator.dart';
 import 'package:seanime_app/data/models/anime_entry.dart';
 import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
 
@@ -30,20 +31,14 @@ class AnimeCard extends ConsumerStatefulWidget {
 }
 
 class _AnimeCardState extends ConsumerState<AnimeCard> {
+  late final FocusNode _focusNode = FocusNode();
   bool _isHovered = false;
   bool _isFocused = false;
 
-  bool get _isActive => _isHovered || _isFocused;
-
-  int? get _year {
-    if (widget.entry.year != null) return widget.entry.year;
-    final airDate = widget.entry.airDate;
-    if (airDate != null && airDate.isNotEmpty) {
-      final parsed = DateTime.tryParse(airDate);
-      if (parsed != null) return parsed.year;
-      return int.tryParse(airDate.split('-').first);
-    }
-    return null;
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
   }
 
   void _triggerTap() {
@@ -79,57 +74,109 @@ class _AnimeCardState extends ConsumerState<AnimeCard> {
     final titleLang = ref.watch(titleLanguageProvider);
     final showScores = ref.watch(showScoresProvider);
     final displayTitle = widget.entry.displayTitle(titleLang);
-    final year = _year;
 
     Widget buildCard(BuildContext context, BoxConstraints constraints) {
       final cardWidth = widget.width ?? constraints.maxWidth;
       final isCompact = cardWidth < 155;
+      final dynamicColor = parseHexColor(widget.entry.coverColor) ?? colors.accent;
 
       return RepaintBoundary(
-        child: Focus(
-          onFocusChange: (focused) => setState(() => _isFocused = focused),
-          onKeyEvent: _handleKeyEvent,
-          child: MouseRegion(
-            onEnter: (_) => setState(() => _isHovered = true),
-            onExit: (_) => setState(() => _isHovered = false),
+        child: TweenAnimationBuilder<double>(
+          tween: Tween<double>(begin: 0.0, end: 1.0),
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
+          builder: (context, animValue, child) {
+            if (animValue >= 0.999) return child!;
+            return Transform.scale(
+              scale: 0.94 + (0.06 * animValue),
+              alignment: Alignment.center,
+              child: Opacity(
+                opacity: animValue,
+                child: child,
+              ),
+            );
+          },
+          child: Focus(
+            focusNode: _focusNode,
+            onFocusChange: (focused) {
+              if (focused) {
+                AppFocusCoordinator.onNodeFocused(_focusNode);
+              }
+              setState(() => _isFocused = focused);
+            },
+            onKeyEvent: _handleKeyEvent,
+            child: MouseRegion(
+              onEnter: (_) {
+                AppFocusCoordinator.switchToMouse(_focusNode);
+              setState(() => _isHovered = true);
+            },
+            onExit: (_) {
+              if (AppFocusCoordinator.lastHoveredNode == _focusNode) {
+                AppFocusCoordinator.lastHoveredNode = null;
+              }
+              setState(() => _isHovered = false);
+            },
             cursor: SystemMouseCursors.click,
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: _triggerTap,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // 1. Poster Art Container (whole box expands on hover)
-                  AspectRatio(
-                    aspectRatio: 0.72,
-                    child: AnimatedScale(
-                      scale: _isHovered ? 1.025 : 1.0,
-                      duration: const Duration(milliseconds: 180),
-                      curve: Curves.easeOutCubic,
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 180),
-                        curve: Curves.easeOutCubic,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(isCompact ? (colors.borderRadius * 0.8).clamp(0.0, 16.0) : colors.borderRadius),
-                          color: colors.surface,
-                          border: Border.all(
-                            color: _isFocused
-                                ? Colors.white
-                                : (_isHovered
-                                    ? Colors.white.withValues(alpha: 0.35)
-                                    : colors.border.withValues(alpha: 0.5)),
-                            width: _isFocused ? 2.0 : 1.0,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: _isHovered ? 0.30 : 0.15),
-                              blurRadius: _isHovered ? 8 : 4,
-                              offset: Offset(0, _isHovered ? 3 : 2),
+              child: ValueListenableBuilder<AppInputMode>(
+                valueListenable: AppFocusCoordinator.inputMode,
+                builder: (context, mode, _) {
+                  final isDpad = mode == AppInputMode.dpad;
+                  final isActive = (mode == AppInputMode.mouse && _isHovered) || (isDpad && _isFocused);
+
+                  return Stack(
+                    children: [
+                      // Ambient color background with inside-out expansion animation (No borders)
+                      Positioned.fill(
+                        child: AnimatedScale(
+                          scale: isActive ? 1.0 : 0.85,
+                          duration: const Duration(milliseconds: 220),
+                          curve: isActive ? Curves.easeOutCubic : Curves.easeInCubic,
+                          alignment: Alignment.center,
+                          child: AnimatedOpacity(
+                            opacity: isActive ? 1.0 : 0.0,
+                            duration: const Duration(milliseconds: 200),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(14),
+                                color: dynamicColor.withValues(
+                                  alpha: theme.brightness == Brightness.dark ? 0.16 : 0.10,
+                                ),
+                              ),
                             ),
-                          ],
+                          ),
                         ),
-                        clipBehavior: Clip.antiAlias,
+                      ),
+
+                      // Card Foreground Content
+                      Padding(
+                        padding: EdgeInsets.all(isCompact ? 2.5 : 4.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // 1. Poster Art Container (whole box expands on hover)
+                            AspectRatio(
+                              aspectRatio: 0.72,
+                              child: AnimatedScale(
+                                scale: isActive ? 1.015 : 1.0,
+                                duration: const Duration(milliseconds: 180),
+                                curve: Curves.easeOutCubic,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(isCompact ? (colors.borderRadius * 0.8).clamp(0.0, 16.0) : colors.borderRadius),
+                                color: colors.surface,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: _isHovered ? 0.32 : 0.15),
+                                    blurRadius: _isHovered ? 10 : 4,
+                                    offset: Offset(0, _isHovered ? 3 : 2),
+                                  ),
+                                ],
+                              ),
+                              clipBehavior: Clip.antiAlias,
                         child: Stack(
                           fit: StackFit.expand,
                           children: [
@@ -249,52 +296,35 @@ class _AnimeCardState extends ConsumerState<AnimeCard> {
                 ),
               ),
 
-              SizedBox(height: isCompact ? 5 : 7),
+                  SizedBox(height: isCompact ? 6 : 8),
 
-                // 2. Info OUTSIDE the card
-                Container(
-                  height: isCompact ? 30.0 : 34.0,
-                  alignment: Alignment.topLeft,
-                  child: Text(
+                  // 2. Title only: enlarged and clean
+                  Text(
                     displayTitle,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: (_isActive || _isHovered)
-                          ? theme.colorScheme.primary
-                          : (theme.brightness == Brightness.dark
-                              ? theme.colorScheme.onSurface
-                              : const Color(0xFF111418)),
-                      fontSize: isCompact ? 11.5 : 12.5,
-                      fontWeight: FontWeight.w700,
+                      color: theme.brightness == Brightness.dark
+                          ? theme.colorScheme.onSurface
+                          : const Color(0xFF111418),
+                      fontSize: isCompact ? 13.0 : 14.5,
+                      fontWeight: FontWeight.bold,
                       height: 1.25,
                       fontFamilyFallback: kJapaneseFontFallbacks,
                     ),
                   ),
-                ),
-                SizedBox(height: isCompact ? 2.0 : 3.0),
-                Text(
-                  [
-                    if (year != null) '$year',
-                    if (widget.entry.format != null && widget.entry.format!.isNotEmpty)
-                      widget.entry.format!
-                    else if (year == null)
-                      'Anime',
-                  ].join(' • '),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: theme.colorScheme.onSurfaceVariant,
-                    fontSize: isCompact ? 10.0 : 11.0,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ),
-      ),
-    );
+          ],
+        );
+      },
+    ),
+  ),
+),
+),
+),
+);
     }
 
     if (widget.width != null) {

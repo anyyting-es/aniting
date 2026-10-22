@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:g1455/g1455.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/preferences/title_language_provider.dart';
 import 'package:seanime_app/data/models/manga_entry.dart';
@@ -31,6 +32,7 @@ class MangaDetailDesktopLayout extends ConsumerStatefulWidget {
   final ValueChanged<MangaChapter> onChapterClicked;
   final ValueChanged<MangaChapter> onDownloadChapter;
   final VoidCallback onBatchDownload;
+  final void Function(List<MangaChapter>)? onDownloadSelected;
   final VoidCallback onOpenEditModal;
   final VoidCallback onContinueReading;
 
@@ -52,6 +54,7 @@ class MangaDetailDesktopLayout extends ConsumerStatefulWidget {
     required this.onChapterClicked,
     required this.onDownloadChapter,
     required this.onBatchDownload,
+    this.onDownloadSelected,
     required this.onOpenEditModal,
     required this.onContinueReading,
   });
@@ -270,22 +273,12 @@ class _MangaDetailDesktopLayoutState extends ConsumerState<MangaDetailDesktopLay
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Left: Chapters Box (Wider)
+                        // Left: Chapters Box (Wider) with Liquid Glass
                         Expanded(
                           flex: 7,
-                          child: Container(
+                          child: GlassCard(
+                            borderRadius: BorderRadius.circular(16),
                             padding: const EdgeInsets.all(20),
-                            decoration: BoxDecoration(
-                              color: isDark
-                                  ? theme.colorScheme.surfaceContainer.withValues(alpha: 0.35)
-                                  : theme.colorScheme.surfaceContainerLowest,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: isDark
-                                    ? Colors.white.withValues(alpha: 0.06)
-                                    : theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
-                              ),
-                            ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -336,6 +329,7 @@ class _MangaDetailDesktopLayoutState extends ConsumerState<MangaDetailDesktopLay
                                   onChapterClicked: widget.onChapterClicked,
                                   onDownloadChapter: widget.onDownloadChapter,
                                   onBatchDownload: widget.onBatchDownload,
+                                  onDownloadSelected: widget.onDownloadSelected,
                                 ),
                               ],
                             ),

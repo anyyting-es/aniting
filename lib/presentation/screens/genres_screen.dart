@@ -13,6 +13,7 @@ class GenreItem {
   final String nameEn;
   final String imageUrl;
   final IconData icon;
+  final List<Color> gradientColors;
 
   const GenreItem({
     required this.key,
@@ -20,6 +21,7 @@ class GenreItem {
     required this.nameEn,
     required this.imageUrl,
     required this.icon,
+    this.gradientColors = const [Color(0xFF1E1E2C), Color(0xFF12121A)],
   });
 }
 
@@ -30,6 +32,7 @@ const List<GenreItem> kAppGenres = [
     nameEn: 'Action',
     imageUrl: 'https://image.tmdb.org/t/p/w300/lTDtH9YnFWJdwOgNuB4dUAzGOQl.jpg',
     icon: Icons.local_fire_department_rounded,
+    gradientColors: [Color(0xFF5A1818), Color(0xFF1E0E0E)],
   ),
   GenreItem(
     key: 'Romance',
@@ -37,6 +40,7 @@ const List<GenreItem> kAppGenres = [
     nameEn: 'Romance',
     imageUrl: 'https://image.tmdb.org/t/p/w300/aneTvaOGDbCYtAlwF1Zc4A2O7at.jpg',
     icon: Icons.favorite_rounded,
+    gradientColors: [Color(0xFF5A1838), Color(0xFF1E0E18)],
   ),
   GenreItem(
     key: 'Fantasy',
@@ -44,6 +48,7 @@ const List<GenreItem> kAppGenres = [
     nameEn: 'Fantasy',
     imageUrl: 'https://image.tmdb.org/t/p/w300/qOyARkfwp6imzDtdz1RMVgg1EyF.jpg',
     icon: Icons.auto_awesome_rounded,
+    gradientColors: [Color(0xFF38185A), Color(0xFF140A24)],
   ),
   GenreItem(
     key: 'Isekai',
@@ -51,6 +56,7 @@ const List<GenreItem> kAppGenres = [
     nameEn: 'Isekai',
     imageUrl: 'https://image.tmdb.org/t/p/w300/pfgndj46RLPVJRWkUSCJBgLJ93w.jpg',
     icon: Icons.travel_explore_rounded,
+    gradientColors: [Color(0xFF18385A), Color(0xFF0A1828)],
   ),
   GenreItem(
     key: 'Adventure',
@@ -58,6 +64,7 @@ const List<GenreItem> kAppGenres = [
     nameEn: 'Adventure',
     imageUrl: 'https://image.tmdb.org/t/p/w300/2rmK7mnchw9Xr3XdiTFSxTTLXqv.jpg',
     icon: Icons.explore_rounded,
+    gradientColors: [Color(0xFF184A38), Color(0xFF0A2018)],
   ),
   GenreItem(
     key: 'Comedy',
@@ -65,6 +72,7 @@ const List<GenreItem> kAppGenres = [
     nameEn: 'Comedy',
     imageUrl: 'https://image.tmdb.org/t/p/w300/shXdGFZIEaSmiOkVW2BeEaPihuA.jpg',
     icon: Icons.sentiment_very_satisfied_rounded,
+    gradientColors: [Color(0xFF5A4418), Color(0xFF221808)],
   ),
   GenreItem(
     key: 'Sci-Fi',
@@ -72,6 +80,7 @@ const List<GenreItem> kAppGenres = [
     nameEn: 'Sci-Fi',
     imageUrl: 'https://image.tmdb.org/t/p/w300/ly0tvRfOp936Zmr6vepusFeo7lp.jpg',
     icon: Icons.rocket_launch_rounded,
+    gradientColors: [Color(0xFF18285A), Color(0xFF0A1028)],
   ),
   GenreItem(
     key: 'Slice of Life',
@@ -79,6 +88,7 @@ const List<GenreItem> kAppGenres = [
     nameEn: 'Slice of Life',
     imageUrl: 'https://image.tmdb.org/t/p/w300/1rfiXsdRf2cYQOzV2CosFKYuF6d.jpg',
     icon: Icons.coffee_rounded,
+    gradientColors: [Color(0xFF4A3828), Color(0xFF1E140C)],
   ),
   GenreItem(
     key: 'Drama',
@@ -86,6 +96,7 @@ const List<GenreItem> kAppGenres = [
     nameEn: 'Drama',
     imageUrl: 'https://image.tmdb.org/t/p/w300/2BgABDABstTVOiAFnoZpkFnePAS.jpg',
     icon: Icons.theater_comedy_rounded,
+    gradientColors: [Color(0xFF2E243A), Color(0xFF14101A)],
   ),
   GenreItem(
     key: 'Mystery',
@@ -93,6 +104,7 @@ const List<GenreItem> kAppGenres = [
     nameEn: 'Mystery',
     imageUrl: 'https://image.tmdb.org/t/p/w300/k0iYs0nAH2ouXFb7elRIKshxEWD.jpg',
     icon: Icons.psychology_alt_rounded,
+    gradientColors: [Color(0xFF1E1E3A), Color(0xFF0A0A1A)],
   ),
   GenreItem(
     key: 'Horror',
@@ -100,6 +112,7 @@ const List<GenreItem> kAppGenres = [
     nameEn: 'Horror',
     imageUrl: 'https://image.tmdb.org/t/p/w300/3Nz7ZiEebqwOYYEzoK2jo1LQsug.jpg',
     icon: Icons.nightlight_round,
+    gradientColors: [Color(0xFF4A1414), Color(0xFF1A0606)],
   ),
   GenreItem(
     key: 'Supernatural',
@@ -107,6 +120,7 @@ const List<GenreItem> kAppGenres = [
     nameEn: 'Supernatural',
     imageUrl: 'https://image.tmdb.org/t/p/w300/z8IPicmEKXUO4I2UDdMEqw7RqOE.jpg',
     icon: Icons.blur_on_rounded,
+    gradientColors: [Color(0xFF3E1E4A), Color(0xFF180A20)],
   ),
   GenreItem(
     key: 'Sports',
@@ -114,6 +128,7 @@ const List<GenreItem> kAppGenres = [
     nameEn: 'Sports',
     imageUrl: 'https://image.tmdb.org/t/p/w300/12mYMPE7Jy7rhDv0rn95GEtF94V.jpg',
     icon: Icons.sports_basketball_rounded,
+    gradientColors: [Color(0xFF5A3018), Color(0xFF241006)],
   ),
   GenreItem(
     key: 'Music',
@@ -121,6 +136,7 @@ const List<GenreItem> kAppGenres = [
     nameEn: 'Music',
     imageUrl: 'https://image.tmdb.org/t/p/w300/3X2DJjlEKszFwclHsTV8SaySyXy.jpg',
     icon: Icons.music_note_rounded,
+    gradientColors: [Color(0xFF184A4A), Color(0xFF0A2020)],
   ),
   GenreItem(
     key: 'Mecha',
@@ -128,6 +144,7 @@ const List<GenreItem> kAppGenres = [
     nameEn: 'Mecha',
     imageUrl: 'https://image.tmdb.org/t/p/w300/2NNKYsWXoO9w8fMctWX7utqyh95.jpg',
     icon: Icons.precision_manufacturing_rounded,
+    gradientColors: [Color(0xFF28384A), Color(0xFF101820)],
   ),
   GenreItem(
     key: 'Psychological',
@@ -135,6 +152,7 @@ const List<GenreItem> kAppGenres = [
     nameEn: 'Psychological',
     imageUrl: 'https://image.tmdb.org/t/p/w300/A1Larywbw79kZQqkvCEiPHJqdLN.jpg',
     icon: Icons.track_changes_rounded,
+    gradientColors: [Color(0xFF401828), Color(0xFF1A0810)],
   ),
   GenreItem(
     key: 'Thriller',
@@ -142,6 +160,7 @@ const List<GenreItem> kAppGenres = [
     nameEn: 'Thriller',
     imageUrl: 'https://image.tmdb.org/t/p/w300/zTNsCRFjWaBxM6Ca5c510e1ewPo.jpg',
     icon: Icons.flash_on_rounded,
+    gradientColors: [Color(0xFF4A2818), Color(0xFF1E0C06)],
   ),
   GenreItem(
     key: 'Ecchi',
@@ -149,6 +168,7 @@ const List<GenreItem> kAppGenres = [
     nameEn: 'Ecchi',
     imageUrl: 'https://image.tmdb.org/t/p/w300/oF8PNdntjZ7DUrAvnhNPPNRi0q6.jpg',
     icon: Icons.whatshot_rounded,
+    gradientColors: [Color(0xFF5A1840), Color(0xFF200614)],
   ),
 ];
 
@@ -175,10 +195,10 @@ class _GenresScreenState extends ConsumerState<GenresScreen> {
         animation.addStatusListener(_onRouteAnimationStatus);
       }
 
-      // Safety fallback: ensure images are enabled even if completed status is skipped
+      // Safety fallback: only enable after transition comfortably completes (600ms)
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!_canLoadImages && mounted) {
-          Future.delayed(const Duration(milliseconds: 320), () {
+          Future.delayed(const Duration(milliseconds: 600), () {
             if (mounted && !_canLoadImages) {
               setState(() => _canLoadImages = true);
             }
@@ -225,7 +245,7 @@ class _GenresScreenState extends ConsumerState<GenresScreen> {
               isDesktop ? 24 : 16,
               isDesktop ? 40 : 30,
             ),
-            cacheExtent: isDesktop ? 300 : 100,
+            cacheExtent: 600,
             gridDelegate: isDesktop
                 ? const SliverGridDelegateWithMaxCrossAxisExtent(
                     maxCrossAxisExtent: 280,
@@ -328,7 +348,11 @@ class _GenreCardState extends State<_GenreCard> {
             child: Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
-                color: theme.colorScheme.surfaceContainerHighest,
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: widget.genre.gradientColors,
+                ),
                 border: Border.all(
                   color: _isActive ? Colors.white : theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
                   width: _isActive ? 2.0 : 1.0,
@@ -344,17 +368,14 @@ class _GenreCardState extends State<_GenreCard> {
                       CachedNetworkImage(
                         imageUrl: widget.genre.imageUrl,
                         fit: BoxFit.cover,
-                        filterQuality: FilterQuality.low,
-                        memCacheWidth: widget.isDesktop ? 360 : 260,
-                        memCacheHeight: widget.isDesktop ? 220 : 160,
-                        maxWidthDiskCache: 300,
-                        maxHeightDiskCache: 200,
-                        fadeInDuration: const Duration(milliseconds: 180),
-                        fadeOutDuration: const Duration(milliseconds: 150),
+                        filterQuality: FilterQuality.none,
+                        memCacheWidth: widget.isDesktop ? 320 : 180,
+                        memCacheHeight: widget.isDesktop ? 200 : 120,
+                        maxWidthDiskCache: 280,
+                        maxHeightDiskCache: 180,
+                        fadeInDuration: const Duration(milliseconds: 250),
                         placeholder: (context, url) => const SizedBox.expand(),
-                        errorWidget: (context, url, error) => Center(
-                          child: Icon(widget.genre.icon, size: 32, color: theme.colorScheme.outline),
-                        ),
+                        errorWidget: (context, url, error) => const SizedBox.shrink(),
                       ),
 
                     // M3 Dark Overlay with gradient

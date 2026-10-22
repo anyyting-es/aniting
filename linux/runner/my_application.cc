@@ -11,13 +11,15 @@
 #include "flutter/generated_plugin_registrant.h"
 #include "mpv/mpv_plugin.h"
 
-// On Wayland the mpv video plane is a wl_subsurface stacked below this window's surface.
-static void enable_video_plane_transparency(GtkWindow* window, FlView* view) {
+// Configures RGBA visual on Wayland and composited X11 so that both Flutter
+// transparency (compositor blur) and mpv video planes (wl_subsurface) work properly.
+static void setup_window_transparency_and_visual(GtkWindow* window, FlView* view) {
+  GdkScreen* screen = gtk_widget_get_screen(GTK_WIDGET(window));
+  GdkVisual* visual = gdk_screen_get_rgba_visual(screen);
+
 #ifdef GDK_WINDOWING_WAYLAND
   GdkDisplay* display = gtk_widget_get_display(GTK_WIDGET(window));
   if (GDK_IS_WAYLAND_DISPLAY(display)) {
-    GdkScreen* screen = gtk_widget_get_screen(GTK_WIDGET(window));
-    GdkVisual* visual = gdk_screen_get_rgba_visual(screen);
     if (visual != nullptr) {
       gtk_widget_set_visual(GTK_WIDGET(window), visual);
       gtk_widget_set_app_paintable(GTK_WIDGET(window), TRUE);
@@ -26,10 +28,25 @@ static void enable_video_plane_transparency(GtkWindow* window, FlView* view) {
       fl_view_set_background_color(view, &transparent);
       return;
     } else {
-      g_warning("MPV video plane: no RGBA visual");
+      g_warning("Wayland RGBA visual not available");
     }
   }
 #endif
+
+#ifdef GDK_WINDOWING_X11
+  GdkDisplay* x11_display = gtk_widget_get_display(GTK_WIDGET(window));
+  if (GDK_IS_X11_DISPLAY(x11_display)) {
+    if (visual != nullptr && gdk_screen_is_composited(screen)) {
+      gtk_widget_set_visual(GTK_WIDGET(window), visual);
+      gtk_widget_set_app_paintable(GTK_WIDGET(window), TRUE);
+
+      GdkRGBA transparent = {0.0, 0.0, 0.0, 0.0};
+      fl_view_set_background_color(view, &transparent);
+      return;
+    }
+  }
+#endif
+
   (void)window;
   GdkRGBA background_color;
   gdk_rgba_parse(&background_color, "#000000");
@@ -158,9 +175,13 @@ static void my_application_activate(GApplication* application) {
   // Ensure window decorations follow modern dark theme styling
   g_object_set(gtk_settings_get_default(), "gtk-application-prefer-dark-theme", TRUE, NULL);
 
-  // Modern compact headerbar styling matching modern GNOME (38px slim, no bulky padding)
+  // Modern compact headerbar styling and ensure GTK window background is transparent
+  // so the RGBA visual and Flutter surface compositor pass through cleanly.
   GtkCssProvider* css_provider = gtk_css_provider_new();
   gtk_css_provider_load_from_data(css_provider,
+    "window, .background {"
+    "  background-color: transparent;"
+    "}"
     "headerbar {"
     "  min-height: 38px;"
     "  padding-top: 0px;"
@@ -195,7 +216,7 @@ static void my_application_activate(GApplication* application) {
       project, self->dart_entrypoint_arguments);
 
   FlView* view = fl_view_new(project);
-  enable_video_plane_transparency(window, view);
+  setup_window_transparency_and_visual(window, view);
   gtk_widget_show(GTK_WIDGET(view));
   gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(view));
 

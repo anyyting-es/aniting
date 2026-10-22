@@ -19,7 +19,7 @@ class _FakeEpisodesRepo extends SeanimeRepository {
   _FakeEpisodesRepo() : super(ApiClient());
 
   @override
-  Future<LibraryEntryDetails?> getAnimeLibraryEntry(int mediaId) async => null;
+  Future<LibraryEntryDetails?> getAnimeLibraryEntry(int mediaId, {bool forceRefresh = false}) async => null;
 }
 
 void main() {

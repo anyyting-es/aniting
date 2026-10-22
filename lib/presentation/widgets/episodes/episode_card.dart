@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/preferences/playback_progress_preferences_provider.dart';
+import 'package:seanime_app/core/theme/theme_provider.dart';
+import 'package:seanime_app/core/theme/app_focus_coordinator.dart';
 import 'package:seanime_app/data/models/episode_item.dart';
 
 /// Universal canonical episode card supporting both Grid (16:9) and List (compact row) modes.
@@ -12,6 +14,7 @@ class EpisodeCard extends ConsumerStatefulWidget {
   final int? mediaId;
   final EpisodeItem episode;
   final String? fallbackImageUrl;
+  final String? coverColor;
   final bool isGridView;
   final VoidCallback? onTap;
   final VoidCallback? onOpenTorrent;
@@ -22,6 +25,7 @@ class EpisodeCard extends ConsumerStatefulWidget {
     this.mediaId,
     required this.episode,
     this.fallbackImageUrl,
+    this.coverColor,
     this.isGridView = true,
     this.onTap,
     this.onOpenTorrent,
@@ -99,121 +103,121 @@ class _EpisodeCardState extends ConsumerState<EpisodeCard> {
     String formattedTitle,
     double? progressFraction,
   ) {
+    final dynamicColor = parseHexColor(widget.coverColor) ?? theme.colorScheme.primary;
     final titleColor = isDark ? Colors.white : theme.colorScheme.onSurface;
 
     return MouseRegion(
       cursor: widget.isLoading ? SystemMouseCursors.basic : SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _isHovered = true),
+      onEnter: (_) {
+        AppFocusCoordinator.onPointerEntered();
+        setState(() => _isHovered = true);
+      },
       onExit: (_) => setState(() => _isHovered = false),
       child: InkWell(
         onTap: widget.isLoading ? null : widget.onTap,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(14),
         hoverColor: Colors.transparent,
         splashColor: Colors.transparent,
         highlightColor: Colors.transparent,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Stack(
           children: [
-            // 16:9 Thumbnail
-            AspectRatio(
-              aspectRatio: 16 / 9,
+            // Ambient color background with inside-out expansion animation (No borders)
+            Positioned.fill(
               child: AnimatedScale(
-                scale: _isHovered ? 1.025 : 1.0,
-                duration: const Duration(milliseconds: 180),
-                curve: Curves.easeOutCubic,
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 180),
-                  curve: Curves.easeOutCubic,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: _isHovered
-                          ? Colors.white.withValues(alpha: 0.35)
-                          : Colors.white.withValues(alpha: 0.08),
-                      width: 1.0,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: _isHovered ? 0.35 : 0.20),
-                        blurRadius: _isHovered ? 10 : 6,
-                        offset: Offset(0, _isHovered ? 3 : 2),
+                scale: _isHovered ? 1.0 : 0.85,
+                duration: const Duration(milliseconds: 220),
+                curve: _isHovered ? Curves.easeOutCubic : Curves.easeInCubic,
+                alignment: Alignment.center,
+                child: AnimatedOpacity(
+                  opacity: _isHovered ? 1.0 : 0.0,
+                  duration: const Duration(milliseconds: 200),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(14),
+                      color: dynamicColor.withValues(
+                        alpha: isDark ? 0.16 : 0.10,
                       ),
-                    ],
+                    ),
                   ),
-                  clipBehavior: Clip.antiAlias,
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      _buildThumbnailImage(imageUrl, theme, iconPack),
-                      if (widget.isLoading)
-                        Container(
-                          color: Colors.black.withValues(alpha: 0.65),
-                          child: const Center(
-                            child: SizedBox(
-                              width: 28,
-                              height: 28,
-                              child: CircularProgressIndicator(strokeWidth: 2.5),
+                ),
+              ),
+            ),
+
+            // Foreground Content
+            Padding(
+              padding: const EdgeInsets.all(8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 16:9 Thumbnail
+                  AspectRatio(
+                    aspectRatio: 16 / 9,
+                    child: AnimatedScale(
+                      scale: _isHovered ? 1.015 : 1.0,
+                      duration: const Duration(milliseconds: 180),
+                      curve: Curves.easeOutCubic,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.08),
+                            width: 1.0,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: _isHovered ? 0.35 : 0.20),
+                              blurRadius: _isHovered ? 10 : 6,
+                              offset: Offset(0, _isHovered ? 3 : 2),
+                            ),
+                          ],
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        _buildThumbnailImage(imageUrl, theme, iconPack),
+                        if (widget.isLoading)
+                          Container(
+                            color: Colors.black.withValues(alpha: 0.65),
+                            child: const Center(
+                              child: SizedBox(
+                                width: 28,
+                                height: 28,
+                                child: CircularProgressIndicator(strokeWidth: 2.5),
+                              ),
                             ),
                           ),
-                        ),
-                      _buildBadges(l10n, iconPack),
-                      if (progressFraction != null && progressFraction > 0)
-                        _buildProgressBar(theme, progressFraction),
-                      if (widget.onOpenTorrent != null && _isHovered)
-                        _buildTorrentHoverButton(l10n, iconPack),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-
-            // Title & duration
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    formattedTitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w600,
-                      color: titleColor,
+                        _buildBadges(l10n, iconPack),
+                        if (progressFraction != null && progressFraction > 0)
+                          _buildProgressBar(theme, progressFraction),
+                        if (widget.onOpenTorrent != null && _isHovered)
+                          _buildTorrentHoverButton(l10n, iconPack),
+                      ],
                     ),
                   ),
                 ),
-                if (widget.episode.durationMinutes != null) ...[
-                  const SizedBox(width: 6),
-                  Text(
-                    '${widget.episode.durationMinutes}m',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
-                    ),
-                  ),
-                ],
-              ],
-            ),
+              ),
+              const SizedBox(height: 8),
 
-            if (widget.episode.synopsis != null && widget.episode.synopsis!.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 2),
-                child: Text(
-                  widget.episode.synopsis!,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    height: 1.3,
-                    color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.75),
-                  ),
+              // Title only: enlarged, clean and white
+              Text(
+                formattedTitle,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 15.0,
+                  fontWeight: FontWeight.w700,
+                  color: titleColor,
+                  height: 1.25,
                 ),
               ),
-          ],
+            ],
+          ),
         ),
-      ),
-    );
+      ],
+    ),
+  ),
+);
   }
 
   Widget _buildListCard(
@@ -226,98 +230,125 @@ class _EpisodeCardState extends ConsumerState<EpisodeCard> {
     String formattedTitle,
     double? progressFraction,
   ) {
+    final dynamicColor = parseHexColor(widget.coverColor) ?? theme.colorScheme.primary;
+
     return MouseRegion(
       cursor: widget.isLoading ? SystemMouseCursors.basic : SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _isHovered = true),
+      onEnter: (_) {
+        AppFocusCoordinator.onPointerEntered();
+        setState(() => _isHovered = true);
+      },
       onExit: (_) => setState(() => _isHovered = false),
       child: InkWell(
         onTap: widget.isLoading ? null : widget.onTap,
         borderRadius: BorderRadius.circular(10),
-        child: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
-            color: _isHovered
-                ? (isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03))
-                : Colors.transparent,
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 16:9 Left Thumbnail
-              SizedBox(
-                width: 130,
-                child: AspectRatio(
-                  aspectRatio: 16 / 9,
+        child: Stack(
+          children: [
+            // Ambient color background with inside-out expansion animation (No borders)
+            Positioned.fill(
+              child: AnimatedScale(
+                scale: _isHovered ? 1.0 : 0.85,
+                duration: const Duration(milliseconds: 220),
+                curve: _isHovered ? Curves.easeOutCubic : Curves.easeInCubic,
+                alignment: Alignment.center,
+                child: AnimatedOpacity(
+                  opacity: _isHovered ? 1.0 : 0.0,
+                  duration: const Duration(milliseconds: 200),
                   child: Container(
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.08),
-                        width: 1.0,
+                      borderRadius: BorderRadius.circular(10),
+                      color: dynamicColor.withValues(
+                        alpha: isDark ? 0.16 : 0.10,
                       ),
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        _buildThumbnailImage(imageUrl, theme, iconPack),
-                        if (progressFraction != null && progressFraction > 0)
-                          _buildProgressBar(theme, progressFraction),
-                        if (widget.episode.isDownloaded)
-                          Positioned(
-                            bottom: 4,
-                            left: 4,
-                            child: _buildLocalBadge(l10n, iconPack),
-                          ),
-                      ],
                     ),
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+            ),
 
-              // Right: Title, synopsis, and duration
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      formattedTitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.white : theme.colorScheme.onSurface,
-                      ),
-                    ),
-                    if (widget.episode.synopsis != null && widget.episode.synopsis!.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 3),
-                        child: Text(
-                          widget.episode.synopsis!,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 11.5,
-                            height: 1.3,
-                            color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.75),
+            // Foreground Content
+            Padding(
+              padding: const EdgeInsets.all(8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 16:9 Left Thumbnail
+                  SizedBox(
+                    width: 130,
+                    child: AspectRatio(
+                      aspectRatio: 16 / 9,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 180),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.08),
+                            width: 1.0,
                           ),
                         ),
+                        clipBehavior: Clip.antiAlias,
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            _buildThumbnailImage(imageUrl, theme, iconPack),
+                            if (progressFraction != null && progressFraction > 0)
+                              _buildProgressBar(theme, progressFraction),
+                            if (widget.episode.isDownloaded)
+                              Positioned(
+                                bottom: 4,
+                                left: 4,
+                                child: _buildLocalBadge(l10n, iconPack),
+                              ),
+                          ],
+                        ),
                       ),
-                  ],
-                ),
-              ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
 
-              if (widget.onOpenTorrent != null)
-                IconButton(
-                  icon: Icon(AppIcons.download(iconPack), size: 20),
-                  tooltip: l10n.torrents,
-                  onPressed: widget.onOpenTorrent,
-                ),
-            ],
-          ),
+                  // Right: Title, synopsis, and duration
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          formattedTitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? Colors.white : theme.colorScheme.onSurface,
+                          ),
+                        ),
+                        if (widget.episode.synopsis != null && widget.episode.synopsis!.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 3),
+                            child: Text(
+                              widget.episode.synopsis!,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                height: 1.3,
+                                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.75),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+
+                  if (widget.onOpenTorrent != null)
+                    IconButton(
+                      icon: Icon(AppIcons.download(iconPack), size: 20),
+                      tooltip: l10n.torrents,
+                      onPressed: widget.onOpenTorrent,
+                    ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

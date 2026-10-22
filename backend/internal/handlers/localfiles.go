@@ -314,6 +314,11 @@ func (h *Handler) HandleUpdateLocalFiles(c echo.Context) error {
 
 	anime.ClearMissingEpisodesCache()
 
+	if b.Action == "unmatch" || b.Action == "match" {
+		go h.App.RefreshAnimeCollection()
+		go h.App.UpdateLibrarySize(true)
+	}
+
 	return h.RespondWithData(c, true)
 }
 

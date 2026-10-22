@@ -13,10 +13,7 @@ import 'package:seanime_app/presentation/screens/settings/widgets/pixel_subpage_
 class LocalLibrarySettingsScreen extends ConsumerWidget {
   final bool isEmbedded;
 
-  const LocalLibrarySettingsScreen({
-    super.key,
-    this.isEmbedded = false,
-  });
+  const LocalLibrarySettingsScreen({super.key, this.isEmbedded = false});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

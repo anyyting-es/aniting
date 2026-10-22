@@ -26,16 +26,21 @@ import 'package:seanime_app/presentation/screens/welcome_screen.dart';
 import 'package:seanime_app/data/services/explore_carousel_service.dart';
 import 'package:seanime_app/data/services/feed_cache_service.dart';
 import 'package:seanime_app/data/services/offline_library_service.dart';
+import 'package:seanime_app/data/services/offline_sync_service.dart';
+import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:g1455/g1455.dart';
+import 'package:seanime_app/core/preferences/desktop_window_transparency_provider.dart';
 import 'package:seanime_app/core/preferences/glass_theme_provider.dart';
 import 'package:seanime_app/core/player/mpris_service.dart';
 import 'package:seanime_app/presentation/providers/download_history_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:seanime_app/presentation/widgets/dpad_navigation_scope.dart';
 import 'package:seanime_app/presentation/widgets/toast/app_toast_host.dart';
+import 'package:seanime_app/core/theme/app_focus_coordinator.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  AppFocusCoordinator.initialize();
   try {
     await GlassHost.precache();
   } catch (_) {}
@@ -91,6 +96,7 @@ void main() async {
     final prefs = await SharedPreferences.getInstance();
     FeedCacheService.setCachedPrefs(prefs);
     OfflineLibraryService.setCachedPrefs(prefs);
+    OfflineSyncService.setCachedPrefs(prefs);
     PlayerEngineNotifier.setCachedPrefs(prefs);
     AppLanguageNotifier.setCachedPrefs(prefs);
     DesktopScrollbarNotifier.setCachedPrefs(prefs);
@@ -106,6 +112,7 @@ void main() async {
     MangaSectionEnabledNotifier.setCachedPrefs(prefs);
     ExploreCarouselNotifier.setCachedPrefs(prefs);
     DesktopNavStyleNotifier.setCachedPrefs(prefs);
+    DesktopWindowTransparencyNotifier.setCachedPrefs(prefs);
     GlassEffectsEnabledNotifier.setCachedPrefs(prefs);
     DownloadHistoryNotifier.setCachedPrefs(prefs);
   } catch (_) {}
@@ -134,6 +141,14 @@ class _AnitingFlutterAppState extends ConsumerState<AnitingFlutterApp> with Widg
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed) {
+      ref.read(offlineSyncServiceProvider).syncPending();
+    }
   }
 
   @override
@@ -193,11 +208,20 @@ class _AnitingFlutterAppState extends ConsumerState<AnitingFlutterApp> with Widg
         return Consumer(
           builder: (context, ref, _) {
             final currentRadius = ref.watch(themeProvider.select((s) => s.borderRadius));
+            final windowTrans = ref.watch(desktopWindowTransparencyProvider);
+            final isDesktop = !kIsWeb && (Platform.isLinux || Platform.isWindows || Platform.isMacOS);
+            final effectiveWindowTransparency = isDesktop && windowTrans.enabled;
+
             final baseTheme = Theme.of(context);
             final baseColors = baseTheme.extension<AppThemeColors>() ??
                 AppThemeColors.fromPalette(palette, borderRadius: currentRadius);
 
+            final effectiveScaffoldBg = effectiveWindowTransparency
+                ? baseTheme.scaffoldBackgroundColor.withValues(alpha: windowTrans.opacity)
+                : baseTheme.scaffoldBackgroundColor;
+
             final updatedTheme = baseTheme.copyWith(
+              scaffoldBackgroundColor: effectiveScaffoldBg,
               cardTheme: baseTheme.cardTheme.copyWith(
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(currentRadius),
@@ -244,7 +268,7 @@ class _AnitingFlutterAppState extends ConsumerState<AnitingFlutterApp> with Widg
                   child: GlassHost(
                     richBackdrop: true,
                     finish: isDark ? GlassFinish.regularDark : GlassFinish.regularLight,
-                    backdrop: updatedTheme.scaffoldBackgroundColor,
+                    backdrop: effectiveWindowTransparency ? Colors.transparent : updatedTheme.scaffoldBackgroundColor,
                     tier: GlassTierChoice(
                       glassEffectsEnabled.toGlassTier(),
                       GlassTierReason.pinnedByHost,

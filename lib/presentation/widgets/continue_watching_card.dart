@@ -10,6 +10,7 @@ import 'package:seanime_app/data/models/anime_entry.dart';
 import 'package:seanime_app/data/services/feed_cache_service.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
+import 'package:seanime_app/core/theme/app_focus_coordinator.dart';
 
 class ContinueWatchingCard extends ConsumerStatefulWidget {
   final AnimeEntry entry;
@@ -32,11 +33,16 @@ class ContinueWatchingCard extends ConsumerStatefulWidget {
 }
 
 class _ContinueWatchingCardState extends ConsumerState<ContinueWatchingCard> {
+  late final FocusNode _focusNode = FocusNode();
   bool _isHovered = false;
   bool _isFocused = false;
   bool _isLaunching = false;
 
-  bool get _isActive => _isHovered || _isFocused;
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
 
   Future<void> _handleTap() async {
     if (_isLaunching) return;
@@ -176,14 +182,29 @@ class _ContinueWatchingCardState extends ConsumerState<ContinueWatchingCard> {
         : null;
 
     final isCompact = widget.width < 270;
+    final dynamicColor = parseHexColor(widget.entry.coverColor) ?? colors.accent;
 
     return RepaintBoundary(
       child: Focus(
-        onFocusChange: (val) => setState(() => _isFocused = val),
+        focusNode: _focusNode,
+        onFocusChange: (val) {
+          if (val) {
+            AppFocusCoordinator.onNodeFocused(_focusNode);
+          }
+          setState(() => _isFocused = val);
+        },
         onKeyEvent: _handleKeyEvent,
         child: MouseRegion(
-          onEnter: (_) => setState(() => _isHovered = true),
-          onExit: (_) => setState(() => _isHovered = false),
+          onEnter: (_) {
+            AppFocusCoordinator.switchToMouse(_focusNode);
+            setState(() => _isHovered = true);
+          },
+          onExit: (_) {
+            if (AppFocusCoordinator.lastHoveredNode == _focusNode) {
+              AppFocusCoordinator.lastHoveredNode = null;
+            }
+            setState(() => _isHovered = false);
+          },
           cursor: SystemMouseCursors.click,
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
@@ -192,40 +213,63 @@ class _ContinueWatchingCardState extends ConsumerState<ContinueWatchingCard> {
             onSecondaryTap: widget.onOpenDetails,
             child: SizedBox(
               width: widget.width,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // 1. Clean Cover Image Container (whole box expands on hover)
-                  AspectRatio(
-                    aspectRatio: 16 / 9,
-                    child: AnimatedScale(
-                      scale: _isHovered ? 1.02 : 1.0,
-                      duration: const Duration(milliseconds: 180),
-                      curve: Curves.easeOutCubic,
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 180),
-                        curve: Curves.easeOutCubic,
-                        decoration: BoxDecoration(
-                          color: colors.surface,
-                          borderRadius: BorderRadius.circular(isCompact ? (colors.borderRadius * 0.8).clamp(0.0, 16.0) : colors.borderRadius),
-                          border: Border.all(
-                            color: _isFocused
-                                ? Colors.white
-                                : (_isHovered
-                                    ? Colors.white.withValues(alpha: 0.35)
-                                    : colors.border.withValues(alpha: 0.5)),
-                            width: _isFocused ? 2.0 : 1.0,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: _isHovered ? 0.30 : 0.15),
-                              blurRadius: _isHovered ? 8 : 4,
-                              offset: Offset(0, _isHovered ? 3 : 2),
+              child: ValueListenableBuilder<AppInputMode>(
+                valueListenable: AppFocusCoordinator.inputMode,
+                builder: (context, mode, _) {
+                  final isDpad = mode == AppInputMode.dpad;
+                  final isActive = (mode == AppInputMode.mouse && _isHovered) || (isDpad && _isFocused);
+
+                  return Stack(
+                    children: [
+                      // Ambient color background with inside-out expansion animation (No borders)
+                      Positioned.fill(
+                        child: AnimatedScale(
+                          scale: isActive ? 1.0 : 0.85,
+                          duration: const Duration(milliseconds: 220),
+                          curve: isActive ? Curves.easeOutCubic : Curves.easeInCubic,
+                          alignment: Alignment.center,
+                          child: AnimatedOpacity(
+                            opacity: isActive ? 1.0 : 0.0,
+                            duration: const Duration(milliseconds: 200),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(14),
+                                color: dynamicColor.withValues(
+                                  alpha: theme.brightness == Brightness.dark ? 0.16 : 0.10,
+                                ),
+                              ),
                             ),
-                          ],
+                          ),
                         ),
-                        clipBehavior: Clip.antiAlias,
+                      ),
+
+                      // Foreground Content
+                      Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // 1. Clean Cover Image Container
+                            AspectRatio(
+                              aspectRatio: 16 / 9,
+                              child: AnimatedScale(
+                                scale: isActive ? 1.015 : 1.0,
+                                duration: const Duration(milliseconds: 180),
+                                curve: Curves.easeOutCubic,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: colors.surface,
+                                borderRadius: BorderRadius.circular(10),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: _isHovered ? 0.32 : 0.15),
+                                    blurRadius: _isHovered ? 10 : 4,
+                                    offset: Offset(0, _isHovered ? 3 : 2),
+                                  ),
+                                ],
+                              ),
+                              clipBehavior: Clip.antiAlias,
                         child: Stack(
                           fit: StackFit.expand,
                           children: [
@@ -270,7 +314,7 @@ class _ContinueWatchingCardState extends ConsumerState<ContinueWatchingCard> {
                                     child: Icon(Icons.movie_rounded, color: theme.colorScheme.outline, size: isCompact ? 28 : 36),
                                   ),
                             // Expressive Play Badge on hover / focus
-                            if (_isActive && !_isLaunching)
+                            if (isActive && !_isLaunching)
                               Center(
                                 child: Container(
                                   width: isCompact ? 36 : 44,
@@ -337,12 +381,10 @@ class _ContinueWatchingCardState extends ConsumerState<ContinueWatchingCard> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: (_isActive || _isHovered)
-                          ? theme.colorScheme.primary
-                          : (theme.brightness == Brightness.dark
-                              ? colors.textPrimary
-                              : const Color(0xFF111418)),
-                      fontSize: isCompact ? 12.0 : 13.0,
+                      color: theme.brightness == Brightness.dark
+                          ? colors.textPrimary
+                          : const Color(0xFF111418),
+                      fontSize: 15.0,
                       fontWeight: FontWeight.bold,
                       height: 1.25,
                       fontFamilyFallback: kJapaneseFontFallbacks,
@@ -361,7 +403,7 @@ class _ContinueWatchingCardState extends ConsumerState<ContinueWatchingCard> {
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               color: colors.textSecondary,
-                              fontSize: isCompact ? 10.5 : 11.5,
+                              fontSize: isCompact ? 11.0 : 12.0,
                               fontWeight: FontWeight.w500,
                               fontFamilyFallback: kJapaneseFontFallbacks,
                             ),
@@ -374,7 +416,7 @@ class _ContinueWatchingCardState extends ConsumerState<ContinueWatchingCard> {
                           episodeDuration,
                           style: TextStyle(
                             color: colors.textMuted,
-                            fontSize: isCompact ? 9.5 : 10.5,
+                            fontSize: isCompact ? 10.0 : 11.0,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -384,9 +426,14 @@ class _ContinueWatchingCardState extends ConsumerState<ContinueWatchingCard> {
                 ],
               ),
             ),
-          ),
-        ),
-      ),
-    );
+          ],
+        );
+      },
+    ),
+  ),
+),
+),
+),
+);
   }
 }

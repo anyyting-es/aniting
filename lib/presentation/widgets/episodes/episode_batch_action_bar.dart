@@ -26,6 +26,7 @@ class EpisodeBatchActionBar extends ConsumerWidget {
   final OnlinestreamProvider? onlineProvider;
   final bool isDubbed;
   final VoidCallback? onRefreshLocal;
+  final void Function(List<int> toDownload)? onDownloadTorrents;
 
   const EpisodeBatchActionBar({
     super.key,
@@ -37,6 +38,7 @@ class EpisodeBatchActionBar extends ConsumerWidget {
     this.onlineProvider,
     this.isDubbed = false,
     this.onRefreshLocal,
+    this.onDownloadTorrents,
   });
 
   Future<void> _handleDeleteDownloaded(
@@ -122,6 +124,14 @@ class EpisodeBatchActionBar extends ConsumerWidget {
           ..sort();
 
     if (toDownload.isEmpty) return;
+
+    if (!isOnlineMode) {
+      if (onDownloadTorrents != null) {
+        onDownloadTorrents!(toDownload);
+        ref.read(episodeSelectionProvider(mediaId).notifier).clear();
+        return;
+      }
+    }
 
     if (toDownload.length == 1) {
       final epNum = toDownload.first;

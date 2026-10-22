@@ -9,9 +9,11 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../core/i18n/i18n_provider.dart';
 import '../../core/preferences/onboarding_provider.dart';
 import '../../core/preferences/section_visibility_provider.dart';
+import '../../core/preferences/tv_mode_provider.dart';
 import '../../data/models/extension_item.dart';
 import '../providers/app_providers.dart';
 import '../widgets/anilist_auth_sheet.dart';
+import '../widgets/welcome/tv/welcome_tv_layout.dart';
 import '../widgets/welcome/welcome_step_content_preferences.dart';
 import '../widgets/welcome/welcome_step_debrid.dart';
 import '../widgets/welcome/welcome_step_downloads.dart';
@@ -22,10 +24,12 @@ import '../widgets/welcome/welcome_step_theme.dart';
 
 class WelcomeScreen extends ConsumerStatefulWidget {
   final bool isDevPreview;
+  final bool? isTv;
 
   const WelcomeScreen({
     super.key,
     this.isDevPreview = false,
+    this.isTv,
   });
 
   @override
@@ -35,6 +39,7 @@ class WelcomeScreen extends ConsumerStatefulWidget {
 class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
     with SingleTickerProviderStateMixin {
   int _currentPage = 0;
+  bool? _forceTvMode;
 
   // Extensions step state
   List<ExtensionItem> _marketplaceExtensions = [];
@@ -306,17 +311,18 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
     final bgImages = isHorizontal ? _horizontalBackgroundImages : _mobileBackgroundImages;
     final currentBg = bgImages[_currentBgIndex % bgImages.length];
 
+    final isTvActive = widget.isTv == true || (_forceTvMode ?? ref.watch(tvModeProvider));
+
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // ─── ANIMATED BACKGROUND IMAGES (Cinematic Ken Burns Slow Motion & Cross-fade) ───
+          // ─── ANIMATED BACKGROUND IMAGES ───
           Positioned.fill(
             child: AnimatedBuilder(
               animation: _motionController,
               builder: (context, child) {
-                // Subtle camera drift: pan +/- 20px horizontally, +/- 12px vertically, scale 1.05 to 1.15
                 final t = _motionController.value;
                 final scale = 1.08 + (0.07 * t);
                 final dx = -18.0 + (36.0 * t);
@@ -340,7 +346,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
                 ),
                 child: Opacity(
                   key: ValueKey<String>(currentBg),
-                  opacity: isDark ? 0.65 : 0.40,
+                  opacity: isTvActive ? 0.18 : (isDark ? 0.65 : 0.40),
                   child: Image.network(
                     currentBg,
                     fit: BoxFit.cover,
@@ -352,8 +358,6 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
               ),
             ),
           ),
-
-          // Gentle ambient gradient overlay: kept light so Liquid Glass is crystal clear and vivid
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
@@ -361,9 +365,9 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    theme.scaffoldBackgroundColor.withValues(alpha: 0.15),
-                    theme.scaffoldBackgroundColor.withValues(alpha: 0.35),
-                    theme.scaffoldBackgroundColor.withValues(alpha: 0.65),
+                    theme.scaffoldBackgroundColor.withValues(alpha: isTvActive ? 0.55 : 0.15),
+                    theme.scaffoldBackgroundColor.withValues(alpha: isTvActive ? 0.75 : 0.35),
+                    theme.scaffoldBackgroundColor.withValues(alpha: isTvActive ? 0.92 : 0.65),
                   ],
                   stops: const [0.0, 0.45, 1.0],
                 ),
@@ -372,39 +376,58 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
           ),
 
           // ─── FOREGROUND CONTENT ───
-          SafeArea(
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 580),
-                child: Column(
-                  children: [
-                    // Top Bar: Indicator Dots in center, and Glass X button on right
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      child: Row(
-                        children: [
-                          const SizedBox(width: 44, height: 44),
-                          const Spacer(),
-                          // ─── INDICATOR DOTS AT TOP (g1455 GlassPageControl) ───
-                          GlassPageControl(
-                            count: currentTotalSteps,
-                            currentPage: safeCurrentPage,
-                            onPageChanged: (page) => setState(() => _currentPage = page),
-                          ),
-                          const Spacer(),
-                          // ─── GLASS 'X' CLOSE / SKIP BUTTON ───
-                          GlassCard(
-                            borderRadius: BorderRadius.circular(20),
-                            padding: EdgeInsets.zero,
-                            child: IconButton(
-                              icon: const Icon(LucideIcons.x, size: 18),
-                              tooltip: l10n.welcomeSkipAll,
-                              onPressed: _finishOnboarding,
+          if (isTvActive)
+            WelcomeTvLayout(
+              onFinish: _finishOnboarding,
+              onSwitchToStandard: () {
+                setState(() => _forceTvMode = false);
+              },
+            )
+          else
+            SafeArea(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 580),
+                  child: Column(
+                    children: [
+                      // Top Bar: Indicator Dots in center, and Glass X button on right
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        child: Row(
+                          children: [
+                            GlassCard(
+                              borderRadius: BorderRadius.circular(20),
+                              padding: EdgeInsets.zero,
+                              child: IconButton(
+                                icon: const Icon(LucideIcons.tv, size: 18),
+                                tooltip: l10n.welcomeTvSwitchToTv,
+                                onPressed: () {
+                                  ref.read(tvModeProvider.notifier).setEnabled(true);
+                                  setState(() => _forceTvMode = true);
+                                },
+                              ),
                             ),
-                          ),
-                        ],
+                            const Spacer(),
+                            // ─── INDICATOR DOTS AT TOP (g1455 GlassPageControl) ───
+                            GlassPageControl(
+                              count: currentTotalSteps,
+                              currentPage: safeCurrentPage,
+                              onPageChanged: (page) => setState(() => _currentPage = page),
+                            ),
+                            const Spacer(),
+                            // ─── GLASS 'X' CLOSE / SKIP BUTTON ───
+                            GlassCard(
+                              borderRadius: BorderRadius.circular(20),
+                              padding: EdgeInsets.zero,
+                              child: IconButton(
+                                icon: const Icon(LucideIcons.x, size: 18),
+                                tooltip: l10n.welcomeSkipAll,
+                                onPressed: _finishOnboarding,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
 
                     // Main Stepped Content: Smooth Fade Crossfade Transition
                     Expanded(
@@ -461,16 +484,13 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
                                         borderRadius: BorderRadius.circular(22),
                                         child: Center(
                                           child: AnimatedSwitcher(
-                                            duration: const Duration(milliseconds: 260),
+                                            duration: const Duration(milliseconds: 280),
                                             switchInCurve: Curves.easeOutCubic,
                                             switchOutCurve: Curves.easeInCubic,
                                             transitionBuilder: (child, animation) {
                                               return FadeTransition(
                                                 opacity: animation,
-                                                child: ScaleTransition(
-                                                  scale: Tween<double>(begin: 0.85, end: 1.0).animate(animation),
-                                                  child: child,
-                                                ),
+                                                child: child,
                                               );
                                             },
                                             child: isStep0
@@ -481,12 +501,10 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
                                                       final status = serverState.status;
                                                       final isLoggedIn = status?.isLoggedIn == true;
 
-                                                      return OverflowBox(
-                                                        minWidth: 0,
-                                                        maxWidth: double.infinity,
-                                                        alignment: Alignment.center,
-                                                        child: Padding(
-                                                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                                                      return Padding(
+                                                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                                                        child: FittedBox(
+                                                          fit: BoxFit.scaleDown,
                                                           child: Row(
                                                             mainAxisAlignment: MainAxisAlignment.center,
                                                             mainAxisSize: MainAxisSize.min,

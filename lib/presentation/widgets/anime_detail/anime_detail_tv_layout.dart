@@ -36,6 +36,8 @@ class AnimeDetailTvLayout extends ConsumerStatefulWidget {
     required int episodeNumber,
     required String episodeTitle,
     String? aniDBEpisode,
+    bool isDownloadMode,
+    List<int>? initialSelectedEpisodes,
   }) onOpenTorrentSelector;
   final VoidCallback onOpenDetailsModal;
 

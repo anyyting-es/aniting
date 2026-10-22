@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
@@ -11,16 +12,15 @@ import 'package:seanime_app/presentation/screens/settings/widgets/pixel_settings
 class ServerDiscoveredListCard extends ConsumerStatefulWidget {
   final void Function(String ip, int port) onSelectServer;
 
-  const ServerDiscoveredListCard({
-    super.key,
-    required this.onSelectServer,
-  });
+  const ServerDiscoveredListCard({super.key, required this.onSelectServer});
 
   @override
-  ConsumerState<ServerDiscoveredListCard> createState() => _ServerDiscoveredListCardState();
+  ConsumerState<ServerDiscoveredListCard> createState() =>
+      _ServerDiscoveredListCardState();
 }
 
-class _ServerDiscoveredListCardState extends ConsumerState<ServerDiscoveredListCard> {
+class _ServerDiscoveredListCardState
+    extends ConsumerState<ServerDiscoveredListCard> {
   bool _isScanning = false;
   Timer? _scanTimeout;
   StreamSubscription<List<DiscoveredServer>>? _sub;
@@ -85,7 +85,9 @@ class _ServerDiscoveredListCardState extends ConsumerState<ServerDiscoveredListC
                 height: 40,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: theme.colorScheme.primaryContainer.withValues(alpha: 0.5),
+                  color: theme.colorScheme.primaryContainer.withValues(
+                    alpha: 0.5,
+                  ),
                 ),
                 child: Icon(
                   Icons.radar_rounded,
@@ -100,7 +102,10 @@ class _ServerDiscoveredListCardState extends ConsumerState<ServerDiscoveredListC
                   children: [
                     Text(
                       l10n.discoveredServers,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(
@@ -125,13 +130,21 @@ class _ServerDiscoveredListCardState extends ConsumerState<ServerDiscoveredListC
               else
                 FilledButton.tonalIcon(
                   style: FilledButton.styleFrom(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     visualDensity: VisualDensity.compact,
                   ),
                   onPressed: _startScan,
                   icon: const Icon(Icons.refresh_rounded, size: 16),
-                  label: Text(l10n.searchServers, style: const TextStyle(fontSize: 12)),
+                  label: Text(
+                    l10n.searchServers,
+                    style: const TextStyle(fontSize: 12),
+                  ),
                 ),
             ],
           ),
@@ -165,7 +178,9 @@ class _ServerDiscoveredListCardState extends ConsumerState<ServerDiscoveredListC
               width: double.infinity,
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                color: theme.colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.3,
+                ),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
@@ -174,7 +189,9 @@ class _ServerDiscoveredListCardState extends ConsumerState<ServerDiscoveredListC
                     children: [
                       Icon(
                         Icons.wifi_find_rounded,
-                        color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                        color: theme.colorScheme.onSurfaceVariant.withValues(
+                          alpha: 0.6,
+                        ),
                         size: 24,
                       ),
                       const SizedBox(width: 12),
@@ -184,7 +201,10 @@ class _ServerDiscoveredListCardState extends ConsumerState<ServerDiscoveredListC
                           children: [
                             Text(
                               l10n.noServersFound,
-                              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                              ),
                             ),
                             const SizedBox(height: 2),
                             Text(
@@ -204,7 +224,9 @@ class _ServerDiscoveredListCardState extends ConsumerState<ServerDiscoveredListC
                     width: double.infinity,
                     child: FilledButton.tonalIcon(
                       style: FilledButton.styleFrom(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
                         padding: const EdgeInsets.symmetric(vertical: 10),
                       ),
                       onPressed: _startScan,
@@ -223,21 +245,29 @@ class _ServerDiscoveredListCardState extends ConsumerState<ServerDiscoveredListC
               separatorBuilder: (_, _) => const SizedBox(height: 8),
               itemBuilder: (context, index) {
                 final server = _servers[index];
-                final isCurrent = server.ip == serverManager.host &&
+                final isCurrent =
+                    server.ip == serverManager.host &&
                     server.port == serverManager.port &&
                     serverState.isOnline;
 
                 return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
                   decoration: BoxDecoration(
                     color: isCurrent
                         ? const Color(0xFF22C55E).withValues(alpha: 0.1)
-                        : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+                        : theme.colorScheme.surfaceContainerHighest.withValues(
+                            alpha: 0.4,
+                          ),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                       color: isCurrent
                           ? const Color(0xFF22C55E).withValues(alpha: 0.3)
-                          : theme.colorScheme.outlineVariant.withValues(alpha: 0.2),
+                          : theme.colorScheme.outlineVariant.withValues(
+                              alpha: 0.2,
+                            ),
                     ),
                   ),
                   child: Row(
@@ -249,11 +279,15 @@ class _ServerDiscoveredListCardState extends ConsumerState<ServerDiscoveredListC
                           shape: BoxShape.circle,
                           color: isCurrent
                               ? const Color(0xFF22C55E).withValues(alpha: 0.2)
-                              : theme.colorScheme.primaryContainer.withValues(alpha: 0.5),
+                              : theme.colorScheme.primaryContainer.withValues(
+                                  alpha: 0.5,
+                                ),
                         ),
                         child: Icon(
                           Icons.dns_rounded,
-                          color: isCurrent ? const Color(0xFF22C55E) : theme.colorScheme.primary,
+                          color: isCurrent
+                              ? const Color(0xFF22C55E)
+                              : theme.colorScheme.primary,
                           size: 20,
                         ),
                       ),
@@ -264,7 +298,10 @@ class _ServerDiscoveredListCardState extends ConsumerState<ServerDiscoveredListC
                           children: [
                             Text(
                               server.name,
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
                             ),
                             const SizedBox(height: 2),
                             Text(
@@ -279,15 +316,23 @@ class _ServerDiscoveredListCardState extends ConsumerState<ServerDiscoveredListC
                       ),
                       if (isCurrent)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF22C55E).withValues(alpha: 0.2),
+                            color: const Color(0xFF22C55E)
+                                .withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.check_rounded, color: Color(0xFF22C55E), size: 16),
+                              const Icon(
+                                Icons.check_rounded,
+                                color: Color(0xFF22C55E),
+                                size: 16,
+                              ),
                               const SizedBox(width: 4),
                               Text(
                                 l10n.connectedToServer,
@@ -303,10 +348,16 @@ class _ServerDiscoveredListCardState extends ConsumerState<ServerDiscoveredListC
                       else
                         FilledButton.tonal(
                           style: FilledButton.styleFrom(
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 8,
+                            ),
                           ),
-                          onPressed: () => widget.onSelectServer(server.ip, server.port),
+                          onPressed: () =>
+                              widget.onSelectServer(server.ip, server.port),
                           child: Text(l10n.connectToServer),
                         ),
                     ],

@@ -367,13 +367,6 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
         final groupFiles = entry.value;
         final first = groupFiles.first;
         final guessed = first.parsedTitle ?? first.folderName;
-        final lower = first.folderPath.toLowerCase();
-        final isTmdbGuess = lower.contains('serie') ||
-            lower.contains('show') ||
-            lower.contains('tv') ||
-            lower.contains('movie') ||
-            lower.contains('pelicula') ||
-            lower.contains('película');
         bool isTmdb = false;
         final normPath = first.folderPath.replaceAll('\\', '/').toLowerCase();
         for (final tEntry in folderTypes.entries) {
@@ -384,9 +377,6 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
               break;
             }
           }
-        }
-        if (!isTmdb) {
-          isTmdb = isTmdbGuess;
         }
 
         return UnmatchedFolderGroup(
@@ -496,13 +486,6 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
   }
 
   String _inferFolderType(String path) {
-    final lower = path.toLowerCase();
-    if (lower.contains('movie') || lower.contains('pelicula') || lower.contains('película')) {
-      return 'movie';
-    }
-    if (lower.contains('serie') || lower.contains('show') || lower.contains('tv')) {
-      return 'tv';
-    }
     return 'anime';
   }
 
@@ -688,16 +671,6 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
         }
       }
 
-      if (!isTmdb) {
-        if (normFolder.contains('serie') || normFolder.contains('show') || normFolder.contains('tv')) {
-          isTmdb = true;
-          preferredType = 'tv';
-        } else if (normFolder.contains('movie') || normFolder.contains('pelicula') || normFolder.contains('película')) {
-          isTmdb = true;
-          preferredType = 'movie';
-        }
-      }
-
       if (!isTmdb) continue;
 
       final query = first.parsedTitle.trim().isNotEmpty
@@ -777,18 +750,16 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
 
   Future<bool> unmatchAnime(int mediaId) async {
     final ok = await _repository.bulkActionAnimeEntry(mediaId, 'unmatch');
-    if (!ok) {
-      final paths = state.localFiles
-          .where((f) => f.mediaId == mediaId)
-          .map((f) => f.path)
-          .toList();
-      if (paths.isNotEmpty) {
-        await _repository.updateLocalFilesAction(paths, 'unmatch');
-      }
+    final paths = state.localFiles
+        .where((f) => f.mediaId == mediaId)
+        .map((f) => f.path)
+        .toList();
+    if (paths.isNotEmpty) {
+      await _repository.updateLocalFilesAction(paths, 'unmatch');
     }
     _invalidateRelatedProviders();
     await loadLibraryData();
-    return true;
+    return ok;
   }
 
   Future<bool> unmatchShowItem(LocalMatchedShowItem item) async {
@@ -815,6 +786,10 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
       folderPath: group.folderPath,
     );
     final okAnime = await _repository.updateLocalFilesAction(paths, 'unmatch');
+    final mediaIds = group.files.map((f) => f.mediaId).where((id) => id > 0).toSet();
+    for (final mId in mediaIds) {
+      await _repository.bulkActionAnimeEntry(mId, 'unmatch');
+    }
     _invalidateRelatedProviders();
     await loadLibraryData();
     return okShow || okAnime;

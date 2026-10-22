@@ -46,6 +46,8 @@ class AnimeDetailDesktopLayout extends ConsumerStatefulWidget {
     required int episodeNumber,
     required String episodeTitle,
     String? aniDBEpisode,
+    bool isDownloadMode,
+    List<int>? initialSelectedEpisodes,
   }) onOpenTorrentSelector;
   final VoidCallback onOpenDetailsModal;
 
@@ -411,16 +413,11 @@ class _AnimeDetailDesktopLayoutState
           ? (widget.details?.bannerImage ?? widget.initialEntry?.bannerImage)
           : coverUrl;
     } else {
-      if (hasAniZipFanart) {
-        bannerUrl = aniZipFanart;
-      } else if (widget.isLoadingAniZip) {
-        // While AniZip is loading, avoid prematurely flashing AniList banner to prevent pop-swap
-        bannerUrl = null;
-      } else {
-        bannerUrl = hasRealBanner
-            ? (widget.details?.bannerImage ?? widget.initialEntry?.bannerImage)
-            : (widget.aniZipData?.bannerUrl ?? coverUrl);
-      }
+      bannerUrl = hasAniZipFanart
+          ? aniZipFanart
+          : (hasRealBanner
+              ? (widget.details?.bannerImage ?? widget.initialEntry?.bannerImage)
+              : (widget.aniZipData?.bannerUrl ?? coverUrl));
     }
     final isBlurredCover = !hasAniZipFanart && !hasRealBanner && coverUrl != null;
 
@@ -546,9 +543,9 @@ class _AnimeDetailDesktopLayoutState
                     // Breathing space so top hero fanart/backdrop is widely visible
                     const SizedBox(height: 72),
 
-                    // ─── Top Poster & Metadata Section (Anchored at bottom, rising upwards) ───
+                    // ─── Top Poster & Metadata Section (Anchored at top, clean flow) ───
                     Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Left: Cover Poster Only (Clean, no bottom metadata pushing layout down)
                         DesktopSidebar(
@@ -680,6 +677,15 @@ class _AnimeDetailDesktopLayoutState
                     isOnlineMode: widget.currentTab == AnimeDetailTab.online,
                     onlineProvider: _selectedProvider,
                     isDubbed: _isDubbed,
+                    onDownloadTorrents: (toDownload) {
+                      final firstEp = toDownload.first;
+                      widget.onOpenTorrentSelector(
+                        episodeNumber: firstEp,
+                        episodeTitle: 'Ep. $firstEp',
+                        isDownloadMode: true,
+                        initialSelectedEpisodes: toDownload,
+                      );
+                    },
                   ),
                 ),
               ),

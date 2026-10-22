@@ -1,8 +1,12 @@
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/preferences/banner_blur_provider.dart';
+import 'package:seanime_app/core/preferences/desktop_window_transparency_provider.dart';
 import 'package:seanime_app/core/preferences/glass_theme_provider.dart';
 import 'package:seanime_app/core/preferences/desktop_nav_style_provider.dart';
 import 'package:seanime_app/core/preferences/desktop_scrollbar_provider.dart';
@@ -37,7 +41,7 @@ class PersonalizacionSettingsScreen extends ConsumerWidget {
     final l10n = ref.watch(translationsProvider);
     final currentLanguage = ref.watch(appLanguageProvider);
     final iconPack = ref.watch(iconPackProvider);
-    
+
     final animeEnabled = ref.watch(animeSectionEnabledProvider);
     final showsEnabled = ref.watch(showsSectionEnabledProvider);
     final mangaEnabled = ref.watch(mangaSectionEnabledProvider);
@@ -51,7 +55,8 @@ class PersonalizacionSettingsScreen extends ConsumerWidget {
         const SizedBox(height: 10),
         PixelCardContainer(
           child: InkWell(
-            onTap: () => _showAppLanguageDialog(context, ref, l10n, currentLanguage),
+            onTap: () =>
+                _showAppLanguageDialog(context, ref, l10n, currentLanguage),
             borderRadius: BorderRadius.circular(12),
             child: Row(
               children: [
@@ -74,7 +79,9 @@ class PersonalizacionSettingsScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        currentLanguage == AppLanguage.en ? 'English' : 'Español',
+                        currentLanguage == AppLanguage.en
+                            ? 'English'
+                            : 'Español',
                         style: TextStyle(
                           fontSize: 14.5,
                           fontWeight: FontWeight.bold,
@@ -86,7 +93,9 @@ class PersonalizacionSettingsScreen extends ConsumerWidget {
                 ),
                 Icon(
                   Icons.arrow_drop_down_rounded,
-                  color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                  color: theme.colorScheme.onSurfaceVariant.withValues(
+                    alpha: 0.6,
+                  ),
                 ),
               ],
             ),
@@ -100,7 +109,8 @@ class PersonalizacionSettingsScreen extends ConsumerWidget {
         const SizedBox(height: 10),
         PixelCardContainer(
           child: InkWell(
-            onTap: () => _showTitleLanguageDialog(context, ref, l10n, titleLang),
+            onTap: () =>
+                _showTitleLanguageDialog(context, ref, l10n, titleLang),
             borderRadius: BorderRadius.circular(12),
             child: Row(
               children: [
@@ -135,7 +145,9 @@ class PersonalizacionSettingsScreen extends ConsumerWidget {
                 ),
                 Icon(
                   Icons.arrow_drop_down_rounded,
-                  color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                  color: theme.colorScheme.onSurfaceVariant.withValues(
+                    alpha: 0.6,
+                  ),
                 ),
               ],
             ),
@@ -198,7 +210,9 @@ class PersonalizacionSettingsScreen extends ConsumerWidget {
                     ),
                     Icon(
                       Icons.arrow_drop_down_rounded,
-                      color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                      color: theme.colorScheme.onSurfaceVariant.withValues(
+                        alpha: 0.6,
+                      ),
                     ),
                   ],
                 ),
@@ -220,7 +234,8 @@ class PersonalizacionSettingsScreen extends ConsumerWidget {
         const SizedBox(height: 10),
         PixelCardContainer(
           child: InkWell(
-            onTap: () => _showEpisodeDisplayDialog(context, ref, l10n, episodeViewMode),
+            onTap: () =>
+                _showEpisodeDisplayDialog(context, ref, l10n, episodeViewMode),
             borderRadius: BorderRadius.circular(12),
             child: Row(
               children: [
@@ -259,7 +274,9 @@ class PersonalizacionSettingsScreen extends ConsumerWidget {
                 ),
                 Icon(
                   Icons.arrow_drop_down_rounded,
-                  color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                  color: theme.colorScheme.onSurfaceVariant.withValues(
+                    alpha: 0.6,
+                  ),
                 ),
               ],
             ),
@@ -273,7 +290,8 @@ class PersonalizacionSettingsScreen extends ConsumerWidget {
         const SizedBox(height: 10),
         PixelCardContainer(
           child: InkWell(
-            onTap: () => _showMobileNavStyleDialog(context, ref, l10n, mobileNavStyle),
+            onTap: () =>
+                _showMobileNavStyleDialog(context, ref, l10n, mobileNavStyle),
             borderRadius: BorderRadius.circular(12),
             child: Row(
               children: [
@@ -310,7 +328,9 @@ class PersonalizacionSettingsScreen extends ConsumerWidget {
                 ),
                 Icon(
                   Icons.arrow_drop_down_rounded,
-                  color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                  color: theme.colorScheme.onSurfaceVariant.withValues(
+                    alpha: 0.6,
+                  ),
                 ),
               ],
             ),
@@ -324,7 +344,8 @@ class PersonalizacionSettingsScreen extends ConsumerWidget {
         const SizedBox(height: 10),
         PixelCardContainer(
           child: InkWell(
-            onTap: () => _showDesktopNavStyleDialog(context, ref, l10n, desktopNavStyle),
+            onTap: () =>
+                _showDesktopNavStyleDialog(context, ref, l10n, desktopNavStyle),
             borderRadius: BorderRadius.circular(12),
             child: Row(
               children: [
@@ -361,7 +382,9 @@ class PersonalizacionSettingsScreen extends ConsumerWidget {
                 ),
                 Icon(
                   Icons.arrow_drop_down_rounded,
-                  color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                  color: theme.colorScheme.onSurfaceVariant.withValues(
+                    alpha: 0.6,
+                  ),
                 ),
               ],
             ),
@@ -451,10 +474,10 @@ class PersonalizacionSettingsScreen extends ConsumerWidget {
                   layoutMode == LayoutMode.desktop
                       ? Icons.desktop_windows_rounded
                       : layoutMode == LayoutMode.tv
-                          ? Icons.tv_rounded
-                          : layoutMode == LayoutMode.mobile
-                              ? Icons.smartphone_rounded
-                              : Icons.devices_rounded,
+                      ? Icons.tv_rounded
+                      : layoutMode == LayoutMode.mobile
+                      ? Icons.smartphone_rounded
+                      : Icons.devices_rounded,
                   size: 20,
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -484,7 +507,9 @@ class PersonalizacionSettingsScreen extends ConsumerWidget {
                 ),
                 Icon(
                   Icons.arrow_drop_down_rounded,
-                  color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                  color: theme.colorScheme.onSurfaceVariant.withValues(
+                    alpha: 0.6,
+                  ),
                 ),
               ],
             ),
@@ -577,6 +602,86 @@ class PersonalizacionSettingsScreen extends ConsumerWidget {
             ref.read(glassEffectsEnabledProvider.notifier).setEnabled(val);
           },
         ),
+
+        // ─── TRANSPARENCIA Y BLUR DE VENTANA (ESCRITORIO / WAYLAND) ────
+        if (!kIsWeb &&
+            (Platform.isLinux || Platform.isWindows || Platform.isMacOS)) ...[
+          const SizedBox(height: 24),
+          SettingsSectionHeader(title: l10n.windowTransparencyTitle),
+          const SizedBox(height: 10),
+          PixelSwitchTile(
+            icon: Icons.blur_on_rounded,
+            title: l10n.windowTransparencyTitle,
+            subtitle: l10n.windowTransparencySubtitle,
+            value: ref.watch(
+              desktopWindowTransparencyProvider.select((s) => s.enabled),
+            ),
+            onChanged: (val) {
+              ref
+                  .read(desktopWindowTransparencyProvider.notifier)
+                  .setEnabled(val);
+            },
+          ),
+          if (ref.watch(
+            desktopWindowTransparencyProvider.select((s) => s.enabled),
+          )) ...[
+            const SizedBox(height: 10),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        l10n.windowOpacityTitle,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13.5,
+                        ),
+                      ),
+                      Text(
+                        '${(ref.watch(desktopWindowTransparencyProvider.select((s) => s.opacity)) * 100).round()}%',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                          color: theme.colorScheme.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Slider(
+                    value: ref.watch(
+                      desktopWindowTransparencyProvider.select(
+                        (s) => s.opacity,
+                      ),
+                    ),
+                    min: 0.40,
+                    max: 0.98,
+                    divisions: 58,
+                    onChanged: (val) {
+                      ref
+                          .read(desktopWindowTransparencyProvider.notifier)
+                          .setOpacity(val);
+                    },
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    l10n.windowCompositorBlurNotice,
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      color: theme.colorScheme.onSurfaceVariant.withValues(
+                        alpha: 0.8,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
       ],
     );
   }
@@ -634,7 +739,9 @@ void _showMobileNavStyleDialog(
                   ),
                 ),
                 trailing: Icon(
-                  isSelected ? Icons.check_circle_rounded : Icons.circle_outlined,
+                  isSelected
+                      ? Icons.check_circle_rounded
+                      : Icons.circle_outlined,
                   color: isSelected
                       ? theme.colorScheme.primary
                       : theme.colorScheme.outline.withValues(alpha: 0.35),
@@ -702,7 +809,9 @@ void _showDesktopNavStyleDialog(
                   ),
                 ),
                 trailing: Icon(
-                  isSelected ? Icons.check_circle_rounded : Icons.circle_outlined,
+                  isSelected
+                      ? Icons.check_circle_rounded
+                      : Icons.circle_outlined,
                   color: isSelected
                       ? theme.colorScheme.primary
                       : theme.colorScheme.outline.withValues(alpha: 0.35),
@@ -771,7 +880,9 @@ void _showAppLanguageDialog(
                   ),
                 ),
                 trailing: Icon(
-                  isSelected ? Icons.check_circle_rounded : Icons.circle_outlined,
+                  isSelected
+                      ? Icons.check_circle_rounded
+                      : Icons.circle_outlined,
                   color: isSelected
                       ? theme.colorScheme.primary
                       : theme.colorScheme.outline.withValues(alpha: 0.35),
@@ -836,7 +947,9 @@ void _showTitleLanguageDialog(
                   ),
                 ),
                 trailing: Icon(
-                  isSelected ? Icons.check_circle_rounded : Icons.circle_outlined,
+                  isSelected
+                      ? Icons.check_circle_rounded
+                      : Icons.circle_outlined,
                   color: isSelected
                       ? theme.colorScheme.primary
                       : theme.colorScheme.outline.withValues(alpha: 0.35),
@@ -883,14 +996,18 @@ void _showFontFamilyDialog(
                 final titleStyle = font.textStyleBuilder != null
                     ? font.textStyleBuilder!(
                         textStyle: TextStyle(
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                          fontWeight: isSelected
+                              ? FontWeight.bold
+                              : FontWeight.w500,
                           color: isSelected
                               ? theme.colorScheme.primary
                               : theme.colorScheme.onSurface,
                         ),
                       )
                     : TextStyle(
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                        fontWeight: isSelected
+                            ? FontWeight.bold
+                            : FontWeight.w500,
                         color: isSelected
                             ? theme.colorScheme.primary
                             : theme.colorScheme.onSurface,
@@ -921,7 +1038,9 @@ void _showFontFamilyDialog(
                     style: subtitleStyle,
                   ),
                   trailing: Icon(
-                    isSelected ? Icons.check_circle_rounded : Icons.circle_outlined,
+                    isSelected
+                        ? Icons.check_circle_rounded
+                        : Icons.circle_outlined,
                     color: isSelected
                         ? theme.colorScheme.primary
                         : theme.colorScheme.outline.withValues(alpha: 0.35),
@@ -1009,7 +1128,9 @@ void _showEpisodeDisplayDialog(
                   ),
                 ),
                 trailing: Icon(
-                  isSelected ? Icons.check_circle_rounded : Icons.circle_outlined,
+                  isSelected
+                      ? Icons.check_circle_rounded
+                      : Icons.circle_outlined,
                   color: isSelected
                       ? theme.colorScheme.primary
                       : theme.colorScheme.outline.withValues(alpha: 0.35),
@@ -1032,10 +1153,12 @@ class _PersonalizacionRadiusSection extends ConsumerStatefulWidget {
   const _PersonalizacionRadiusSection();
 
   @override
-  ConsumerState<_PersonalizacionRadiusSection> createState() => _PersonalizacionRadiusSectionState();
+  ConsumerState<_PersonalizacionRadiusSection> createState() =>
+      _PersonalizacionRadiusSectionState();
 }
 
-class _PersonalizacionRadiusSectionState extends ConsumerState<_PersonalizacionRadiusSection> {
+class _PersonalizacionRadiusSectionState
+    extends ConsumerState<_PersonalizacionRadiusSection> {
   late double _localRadius;
   late double _lastBroadcastRadius;
 
@@ -1074,17 +1197,17 @@ class _PersonalizacionRadiusSectionState extends ConsumerState<_PersonalizacionR
     final l10n = ref.watch(translationsProvider);
 
     // Keep synchronized if updated from elsewhere
-    ref.listen<double>(
-      themeProvider.select((s) => s.borderRadius),
-      (prev, next) {
-        if ((next - _localRadius).abs() > 0.01) {
-          setState(() {
-            _localRadius = next;
-            _lastBroadcastRadius = next.roundToDouble();
-          });
-        }
-      },
-    );
+    ref.listen<double>(themeProvider.select((s) => s.borderRadius), (
+      prev,
+      next,
+    ) {
+      if ((next - _localRadius).abs() > 0.01) {
+        setState(() {
+          _localRadius = next;
+          _lastBroadcastRadius = next.roundToDouble();
+        });
+      }
+    });
 
     return PixelCardContainer(
       child: Column(
@@ -1125,11 +1248,16 @@ class _PersonalizacionRadiusSectionState extends ConsumerState<_PersonalizacionR
                 ],
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.primary.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.4)),
+                  border: Border.all(
+                    color: theme.colorScheme.primary.withValues(alpha: 0.4),
+                  ),
                 ),
                 child: Text(
                   '${_localRadius.round()} px',
@@ -1176,15 +1304,40 @@ class _PersonalizacionRadiusSectionState extends ConsumerState<_PersonalizacionR
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                _buildRadiusChip(l10n.cornerRadiusSquare, 0.0, _localRadius, theme),
+                _buildRadiusChip(
+                  l10n.cornerRadiusSquare,
+                  0.0,
+                  _localRadius,
+                  theme,
+                ),
                 const SizedBox(width: 6),
-                _buildRadiusChip(l10n.cornerRadiusSubtle, 6.0, _localRadius, theme),
+                _buildRadiusChip(
+                  l10n.cornerRadiusSubtle,
+                  6.0,
+                  _localRadius,
+                  theme,
+                ),
                 const SizedBox(width: 6),
-                _buildRadiusChip(l10n.cornerRadiusNormal, 10.0, _localRadius, theme),
+                _buildRadiusChip(
+                  l10n.cornerRadiusNormal,
+                  10.0,
+                  _localRadius,
+                  theme,
+                ),
                 const SizedBox(width: 6),
-                _buildRadiusChip(l10n.cornerRadiusRound, 16.0, _localRadius, theme),
+                _buildRadiusChip(
+                  l10n.cornerRadiusRound,
+                  16.0,
+                  _localRadius,
+                  theme,
+                ),
                 const SizedBox(width: 6),
-                _buildRadiusChip(l10n.cornerRadiusCurved, 22.0, _localRadius, theme),
+                _buildRadiusChip(
+                  l10n.cornerRadiusCurved,
+                  22.0,
+                  _localRadius,
+                  theme,
+                ),
               ],
             ),
           ),
@@ -1193,7 +1346,12 @@ class _PersonalizacionRadiusSectionState extends ConsumerState<_PersonalizacionR
     );
   }
 
-  Widget _buildRadiusChip(String label, double value, double currentRadius, ThemeData theme) {
+  Widget _buildRadiusChip(
+    String label,
+    double value,
+    double currentRadius,
+    ThemeData theme,
+  ) {
     final isSelected = (currentRadius.round() == value.round());
     return InkWell(
       onTap: () => _onChipSelected(value),
@@ -1204,7 +1362,9 @@ class _PersonalizacionRadiusSectionState extends ConsumerState<_PersonalizacionR
         decoration: BoxDecoration(
           color: isSelected
               ? theme.colorScheme.primary.withValues(alpha: 0.18)
-              : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+              : theme.colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.35,
+                ),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: isSelected
@@ -1218,7 +1378,9 @@ class _PersonalizacionRadiusSectionState extends ConsumerState<_PersonalizacionR
           style: TextStyle(
             fontSize: 11,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-            color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
+            color: isSelected
+                ? theme.colorScheme.primary
+                : theme.colorScheme.onSurfaceVariant,
           ),
         ),
       ),
@@ -1262,7 +1424,10 @@ void _showLayoutModeDialog(
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
-                leading: Icon(icon, color: isSelected ? theme.colorScheme.primary : null),
+                leading: Icon(
+                  icon,
+                  color: isSelected ? theme.colorScheme.primary : null,
+                ),
                 title: Text(
                   mode.localizedLabel(l10n),
                   style: TextStyle(
@@ -1280,7 +1445,9 @@ void _showLayoutModeDialog(
                   ),
                 ),
                 trailing: Icon(
-                  isSelected ? Icons.check_circle_rounded : Icons.circle_outlined,
+                  isSelected
+                      ? Icons.check_circle_rounded
+                      : Icons.circle_outlined,
                   color: isSelected
                       ? theme.colorScheme.primary
                       : theme.colorScheme.outline.withValues(alpha: 0.35),
@@ -1298,4 +1465,3 @@ void _showLayoutModeDialog(
     },
   );
 }
-

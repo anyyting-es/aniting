@@ -1,8 +1,11 @@
+import 'dart:io';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class TvModeNotifier extends Notifier<bool> {
   static const _prefKey = 'app_tv_mode_enabled';
+  static const _channel = MethodChannel('com.anyyting.aniting/server');
 
   @override
   bool build() {
@@ -16,6 +19,15 @@ class TvModeNotifier extends Notifier<bool> {
       final saved = prefs.getBool(_prefKey);
       if (saved != null) {
         state = saved;
+        return;
+      }
+      // Auto-detect TV on Android if not previously configured
+      if (Platform.isAndroid) {
+        final isTv = await _channel.invokeMethod<bool>('isTvDevice');
+        if (isTv == true) {
+          state = true;
+          await prefs.setBool(_prefKey, true);
+        }
       }
     } catch (_) {}
   }

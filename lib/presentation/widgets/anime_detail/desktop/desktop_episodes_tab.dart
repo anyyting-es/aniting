@@ -78,7 +78,13 @@ class DesktopEpisodesTab extends ConsumerStatefulWidget {
   ConsumerState<DesktopEpisodesTab> createState() => _DesktopEpisodesTabState();
 }
 
-class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
+class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _shimmerController = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1000),
+  )..repeat(reverse: true);
+
   bool _isGridView = true;
   bool _isSortAscending = true;
   int _currentPage = 0;
@@ -120,6 +126,12 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
       _isLoadingLocal = false;
     }
     _loadLocalEntry(silent: cached != null);
+  }
+
+  @override
+  void dispose() {
+    _shimmerController.dispose();
+    super.dispose();
   }
 
   void _clearMemoizedCaches() {
@@ -635,27 +647,11 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
     final downloadingEpisodes = ref.watch(downloadingEpisodesProvider);
     final langCode = currentLanguage.name;
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     if (widget.isLocalMode) {
       if (_isLoadingLocal && _libraryEntry == null) {
-        return Container(
-          padding: const EdgeInsets.all(48),
-          alignment: Alignment.center,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const CircularProgressIndicator(),
-              const SizedBox(height: 14),
-              Text(
-                l10n.checkingLocalFiles,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
-        );
+        return _buildEpisodeSkeletons(theme, isDark);
       }
 
       final downloadedEps = _libraryEntry?.episodes.where((e) => e.isDownloaded).toList() ?? [];
@@ -690,8 +686,6 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
     final pagedItems = totalEpisodes == 0
         ? <DesktopEpisodeItemData>[]
         : items.sublist(startIndex, endIndex);
-
-    final isDark = theme.brightness == Brightness.dark;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -892,103 +886,12 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
               builder: (context) {
                 // ─── Loading State for Online Mode ───
                 if (widget.currentTab == AnimeDetailTab.online && widget.isLoadingOnlineEpisodes) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 48),
-                    child: Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          SizedBox(
-                            width: 26,
-                            height: 26,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2.2,
-                              color: isDark ? Colors.white : theme.colorScheme.primary,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            l10n.loadingEpisodesFrom(widget.selectedProvider?.name ?? l10n.source),
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              color: isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
+                  return _buildEpisodeSkeletons(theme, isDark);
                 }
 
                 // ─── Loading State for AniZip (Torrent/Default Mode) ───
                 if (widget.currentTab != AnimeDetailTab.online && widget.isLoadingAniZip && items.isEmpty) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 32),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        for (int i = 0; i < 4; i++)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 16),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 220,
-                                  height: 124,
-                                  decoration: BoxDecoration(
-                                    color: isDark
-                                        ? Colors.white.withValues(alpha: 0.06)
-                                        : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Container(
-                                        height: 14,
-                                        width: 180,
-                                        decoration: BoxDecoration(
-                                          color: isDark
-                                              ? Colors.white.withValues(alpha: 0.08)
-                                              : theme.colorScheme.surfaceContainerHighest,
-                                          borderRadius: BorderRadius.circular(6),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 10),
-                                      Container(
-                                        height: 11,
-                                        width: double.infinity,
-                                        decoration: BoxDecoration(
-                                          color: isDark
-                                              ? Colors.white.withValues(alpha: 0.05)
-                                              : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.7),
-                                          borderRadius: BorderRadius.circular(6),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 6),
-                                      Container(
-                                        height: 11,
-                                        width: 140,
-                                        decoration: BoxDecoration(
-                                          color: isDark
-                                              ? Colors.white.withValues(alpha: 0.05)
-                                              : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.7),
-                                          borderRadius: BorderRadius.circular(6),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                      ],
-                    ),
-                  );
+                  return _buildEpisodeSkeletons(theme, isDark);
                 }
 
                 // ─── Empty State for Online Mode ───
@@ -1051,6 +954,7 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
                             isLoading: widget.loadingEpisodeNumber == ep.number,
                             formattedTitle: _formatEpisodeTitle(ep),
                             fallbackCoverImage: widget.fallbackCoverImage,
+                            coverColor: widget.details?.coverColor,
                             onTap: () => widget.onEpisodeClicked(ep),
                             trailingActions: DesktopEpisodeMenuButton(
                               ep: ep,
@@ -1103,6 +1007,7 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
                           isLoading: widget.loadingEpisodeNumber == ep.number,
                           formattedTitle: _formatEpisodeTitle(ep),
                           fallbackCoverImage: widget.fallbackCoverImage,
+                          coverColor: widget.details?.coverColor,
                           onTap: () => widget.onEpisodeClicked(ep),
                           trailingActions: DesktopEpisodeMenuButton(
                             ep: ep,
@@ -1144,6 +1049,85 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab> {
             onPageChanged: (newPage) => setState(() => _currentPage = newPage),
           ),
       ],
+    );
+  }
+
+  Widget _buildEpisodeSkeletons(ThemeData theme, bool isDark) {
+    return AnimatedBuilder(
+      animation: _shimmerController,
+      builder: (context, child) {
+        final opacity = 0.45 + (_shimmerController.value * 0.55);
+        return Opacity(
+          opacity: opacity,
+          child: child,
+        );
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 28),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (int i = 0; i < 4; i++)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 220,
+                      height: 124,
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.06)
+                            : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            height: 14,
+                            width: 180,
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? Colors.white.withValues(alpha: 0.08)
+                                  : theme.colorScheme.surfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Container(
+                            height: 11,
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? Colors.white.withValues(alpha: 0.05)
+                                  : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.7),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Container(
+                            height: 11,
+                            width: 140,
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? Colors.white.withValues(alpha: 0.05)
+                                  : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.7),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ),
     );
   }
 }

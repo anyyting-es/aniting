@@ -157,3 +157,12 @@ This document provides in-depth architectural specifications and implementation 
 
 - High-speed image reader (`manga_reader_screen.dart`) with webtoon continuous vertical scroll and single/double-page horizontal modes.
 - `MangaKeepAlivePage` preserving offscreen decoded images in memory without stuttering.
+
+---
+
+## 11. Desktop Window Transparency & Compositor Blur
+
+- **Architecture Guide**: Full deep dive available in [`docs/DESKTOP_BLUR_TRANSPARENCY.md`](file:///home/anthony/Documents/Eris/aniting/docs/DESKTOP_BLUR_TRANSPARENCY.md).
+- **Native RGBA Visual Pipeline**: `setup_window_transparency_and_visual` in `my_application.cc` sets transparent `FlView` background and RGBA visual on Wayland & composited X11.
+- **Dynamic Scaffolding**: Riverpod provider `desktopWindowTransparencyProvider` dynamically binds window opacity (40%–98%) to `ThemeData.scaffoldBackgroundColor` without double-alpha artifacts.
+- **Compositor Integration**: Native Dual-Kawase blur support across Niri (`background-effect { blur true }`), Hyprland, SwayFX, KDE KWin, and GNOME.

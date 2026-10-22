@@ -21,6 +21,8 @@ import 'package:seanime_app/presentation/widgets/feed_empty_state.dart';
 import 'package:seanime_app/presentation/widgets/top_status_bar_glass.dart';
 import 'package:seanime_app/data/services/feed_cache_service.dart';
 import 'package:seanime_app/data/services/offline_library_service.dart';
+import 'package:seanime_app/presentation/widgets/snapping_scroll_physics.dart';
+import 'package:seanime_app/presentation/widgets/feed/smooth_focus_carousel.dart';
 
 class FeedScreen extends ConsumerStatefulWidget {
   final VoidCallback? onOpenSearch;
@@ -282,13 +284,14 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
 
     final screenWidth = MediaQuery.of(context).size.width;
     final isDesktop = screenWidth >= 720;
-    final continueCardWidth = isDesktop ? 300.0 : (screenWidth * 0.70).clamp(250.0, 275.0);
-    final continueCardHeight = (continueCardWidth / (16 / 9)) + 48.0;
+    final carouselSpacing = isDesktop ? 14.0 : 10.0;
+    // On mobile: 1 card takes almost full width, leaving ~46px peek of the next card
+    final continueCardWidth = isDesktop ? 380.0 : (screenWidth - 72.0).clamp(280.0, 420.0);
+    final continueCardHeight = ((continueCardWidth - 16.0) / (16 / 9)) + (isDesktop ? 80.0 : 72.0);
     final continueListHeight = continueCardHeight + 8.0;
 
     final animeCardWidth = isDesktop ? 215.0 : 155.0;
-    final carouselHeight = isDesktop ? 375.0 : 290.0;
-    final carouselSpacing = isDesktop ? 14.0 : 10.0;
+    final carouselHeight = ((animeCardWidth - 12.0) / 0.72) + (isDesktop ? 58.0 : 52.0);
     final topPadding = MediaQuery.of(context).padding.top;
     final isLoggedIn = serverState.status?.isLoggedIn ?? false;
     final isOffline = !serverState.isOnline || serverState.state == ServerState.error;
@@ -543,85 +546,90 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                                 children: [
                                   _SectionHeader(
                                     title: l10n.continueWatching,
-                                    trailing: SizedBox(
-                                      width: 36,
-                                      height: 36,
-                                      child: PopupMenuButton<ContinueWatchingSortMode>(
-                                        padding: EdgeInsets.zero,
-                                        constraints: const BoxConstraints(minWidth: 175),
-                                        icon: Icon(
-                                          AppIcons.sort(iconPack),
-                                          size: 20,
-                                          color: theme.colorScheme.onSurfaceVariant,
-                                        ),
-                                        tooltip: '',
-                                        onSelected: (mode) {
-                                          ref.read(continueWatchingSortProvider.notifier).setSortMode(mode);
-                                        },
-                                        itemBuilder: (context) => [
-                                          for (final mode in ContinueWatchingSortMode.values)
-                                            PopupMenuItem(
-                                              value: mode,
-                                              height: 38,
-                                              child: Row(
-                                                children: [
-                                                  Icon(
-                                                    mode == continueWatchingSort
-                                                        ? AppIcons.radioChecked(iconPack)
-                                                        : AppIcons.radioUnchecked(iconPack),
-                                                    size: 16,
-                                                    color: mode == continueWatchingSort
-                                                        ? theme.colorScheme.primary
-                                                        : theme.colorScheme.onSurfaceVariant,
-                                                  ),
-                                                  const SizedBox(width: 10),
-                                                  Text(
-                                                    mode.localizedLabel(l10n),
-                                                    style: TextStyle(
-                                                      fontSize: 13,
-                                                      fontWeight: mode == continueWatchingSort
-                                                          ? FontWeight.bold
-                                                          : FontWeight.normal,
+                                    trailing: Focus(
+                                      canRequestFocus: false,
+                                      skipTraversal: true,
+                                      child: SizedBox(
+                                        width: 36,
+                                        height: 36,
+                                        child: PopupMenuButton<ContinueWatchingSortMode>(
+                                          padding: EdgeInsets.zero,
+                                          constraints: const BoxConstraints(minWidth: 175),
+                                          icon: Icon(
+                                            AppIcons.sort(iconPack),
+                                            size: 20,
+                                            color: theme.colorScheme.onSurfaceVariant,
+                                          ),
+                                          tooltip: '',
+                                          onSelected: (mode) {
+                                            ref.read(continueWatchingSortProvider.notifier).setSortMode(mode);
+                                          },
+                                          itemBuilder: (context) => [
+                                            for (final mode in ContinueWatchingSortMode.values)
+                                              PopupMenuItem(
+                                                value: mode,
+                                                height: 38,
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                      mode == continueWatchingSort
+                                                          ? AppIcons.radioChecked(iconPack)
+                                                          : AppIcons.radioUnchecked(iconPack),
+                                                      size: 16,
                                                       color: mode == continueWatchingSort
                                                           ? theme.colorScheme.primary
-                                                          : null,
+                                                          : theme.colorScheme.onSurfaceVariant,
                                                     ),
-                                                  ),
-                                                ],
+                                                    const SizedBox(width: 10),
+                                                    Text(
+                                                      mode.localizedLabel(l10n),
+                                                      style: TextStyle(
+                                                        fontSize: 13,
+                                                        fontWeight: mode == continueWatchingSort
+                                                            ? FontWeight.bold
+                                                            : FontWeight.normal,
+                                                        color: mode == continueWatchingSort
+                                                            ? theme.colorScheme.primary
+                                                            : null,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
                                               ),
-                                            ),
-                                        ],
+                                          ],
+                                        ),
                                       ),
                                     ),
                                   ),
-                                  SizedBox(
-                                    height: continueListHeight + 16,
-                                    child: ListView.separated(
-                                      clipBehavior: Clip.none,
-                                      scrollDirection: Axis.horizontal,
-                                      cacheExtent: 350,
-                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                      itemCount: sortedEntries.length,
-                                      separatorBuilder: (context, index) => SizedBox(width: carouselSpacing),
-                                      itemBuilder: (context, index) {
-                                        final item = sortedEntries[index];
-                                        return ContinueWatchingCard(
-                                          key: ValueKey('cw_${item.mediaId}_${item.episodeNumber ?? (item.progress + 1)}'),
-                                          entry: item,
-                                          width: continueCardWidth,
-                                          height: continueCardHeight,
-                                          onTap: () => ContinueWatchingPlaybackLauncher.launch(
-                                            context,
-                                            ref,
-                                            item,
-                                            onFallbackToDetail: () => _openDetail(context, item),
+                                  SmoothFocusCarousel(
+                                    itemCount: sortedEntries.length,
+                                    itemWidth: continueCardWidth,
+                                    spacing: carouselSpacing,
+                                    height: continueListHeight,
+                                    physics: isDesktop
+                                        ? null
+                                        : SnappingListScrollPhysics(
+                                            itemExtent: continueCardWidth + carouselSpacing,
+                                            parent: const BouncingScrollPhysics(),
                                           ),
-                                          onOpenDetails: () => _openDetail(context, item),
-                                        );
-                                      },
-                                    ),
+                                    itemBuilder: (context, index) {
+                                      final item = sortedEntries[index];
+                                      return ContinueWatchingCard(
+                                        key: ValueKey('cw_${item.mediaId}_${item.episodeNumber ?? (item.progress + 1)}'),
+                                        entry: item,
+                                        width: continueCardWidth,
+                                        height: continueCardHeight,
+                                        onTap: () => ContinueWatchingPlaybackLauncher.launch(
+                                          context,
+                                          ref,
+                                          item,
+                                          onFallbackToDetail: () => _openDetail(context, item),
+                                        ),
+                                        onOpenDetails: () => _openDetail(context, item),
+                                      );
+                                    },
                                   ),
-                                  const SizedBox(height: 20),
+                                  const SizedBox(height: 12),
                                 ],
                               ),
                             );
@@ -638,46 +646,48 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                               children: [
                                 _SectionHeader(
                                   title: '${l10n.downloadedAnimeSection} (${downloaded.length})',
-                                  trailing: TextButton(
-                                    onPressed: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => const DownloadsScreen(initialTabIndex: 0),
+                                  trailing: Focus(
+                                    canRequestFocus: false,
+                                    skipTraversal: true,
+                                    child: SizedBox(
+                                      width: 36,
+                                      height: 36,
+                                      child: IconButton(
+                                        padding: EdgeInsets.zero,
+                                        iconSize: 20,
+                                        tooltip: l10n.viewAll,
+                                        icon: Icon(
+                                          AppIcons.chevronRight(iconPack),
+                                          color: theme.colorScheme.onSurfaceVariant,
                                         ),
-                                      );
-                                    },
-                                    child: Text(
-                                      l10n.viewAll,
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600,
-                                        color: theme.colorScheme.primary,
+                                        onPressed: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) => const DownloadsScreen(initialTabIndex: 0),
+                                            ),
+                                          );
+                                        },
                                       ),
                                     ),
                                   ),
                                 ),
-                                SizedBox(
-                                  height: carouselHeight + 16,
-                                  child: ListView.separated(
-                                    clipBehavior: Clip.none,
-                                    scrollDirection: Axis.horizontal,
-                                    cacheExtent: 350,
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                    itemCount: downloaded.length,
-                                    separatorBuilder: (context, index) => SizedBox(width: carouselSpacing),
-                                    itemBuilder: (context, index) {
-                                      final item = downloaded[index];
-                                      return AnimeCard(
-                                        key: ValueKey('dl_${item.mediaId}'),
-                                        entry: item,
-                                        width: animeCardWidth,
-                                        onTap: () => _openDetail(context, item),
-                                      );
-                                    },
-                                  ),
+                                SmoothFocusCarousel(
+                                  itemCount: downloaded.length,
+                                  itemWidth: animeCardWidth,
+                                  spacing: carouselSpacing,
+                                  height: carouselHeight + 8,
+                                  itemBuilder: (context, index) {
+                                    final item = downloaded[index];
+                                    return AnimeCard(
+                                      key: ValueKey('dl_${item.mediaId}'),
+                                      entry: item,
+                                      width: animeCardWidth,
+                                      onTap: () => _openDetail(context, item),
+                                    );
+                                  },
                                 ),
-                                const SizedBox(height: 20),
+                                const SizedBox(height: 12),
                               ],
                             ),
                           );
@@ -693,6 +703,9 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                         l10n: l10n,
                         theme: theme,
                         isDesktop: isDesktop,
+                        animeCardWidth: animeCardWidth,
+                        carouselHeight: carouselHeight,
+                        carouselSpacing: carouselSpacing,
                       ),
 
                       // ─── 3. Secuelas que te has perdido (Complete Missed Sequels List) ───
@@ -702,27 +715,22 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               _SectionHeader(title: '${l10n.missedSequels} (${missedSequelsEntries.length})'),
-                              SizedBox(
-                                height: carouselHeight + 16,
-                                child: ListView.separated(
-                                  clipBehavior: Clip.none,
-                                  scrollDirection: Axis.horizontal,
-                                  cacheExtent: 350,
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                  itemCount: missedSequelsEntries.length,
-                                  separatorBuilder: (context, index) => SizedBox(width: carouselSpacing),
-                                  itemBuilder: (context, index) {
-                                    final item = missedSequelsEntries[index];
-                                    return AnimeCard(
-                                      key: ValueKey('missed_${item.mediaId}'),
-                                      entry: item,
-                                      width: animeCardWidth,
-                                      onTap: () => _openDetail(context, item),
-                                    );
-                                  },
-                                ),
+                              SmoothFocusCarousel(
+                                itemCount: missedSequelsEntries.length,
+                                itemWidth: animeCardWidth,
+                                spacing: carouselSpacing,
+                                height: carouselHeight + 8,
+                                itemBuilder: (context, index) {
+                                  final item = missedSequelsEntries[index];
+                                  return AnimeCard(
+                                    key: ValueKey('missed_${item.mediaId}'),
+                                    entry: item,
+                                    width: animeCardWidth,
+                                    onTap: () => _openDetail(context, item),
+                                  );
+                                },
                               ),
-                              const SizedBox(height: 20),
+                              const SizedBox(height: 12),
                             ],
                           ),
                         ),
@@ -746,27 +754,22 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 _SectionHeader(title: l10n.recommendations),
-                                SizedBox(
-                                  height: carouselHeight + 16,
-                                  child: ListView.separated(
-                                    clipBehavior: Clip.none,
-                                    scrollDirection: Axis.horizontal,
-                                    cacheExtent: 350,
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                    itemCount: mixedRecs.length,
-                                    separatorBuilder: (context, index) => SizedBox(width: carouselSpacing),
-                                    itemBuilder: (context, index) {
-                                      final item = mixedRecs[index];
-                                      return AnimeCard(
-                                        key: ValueKey('rec_${item.mediaId}'),
-                                        entry: item,
-                                        width: animeCardWidth,
-                                        onTap: () => _openDetail(context, item),
-                                      );
-                                    },
-                                  ),
+                                SmoothFocusCarousel(
+                                  itemCount: mixedRecs.length,
+                                  itemWidth: animeCardWidth,
+                                  spacing: carouselSpacing,
+                                  height: carouselHeight + 8,
+                                  itemBuilder: (context, index) {
+                                    final item = mixedRecs[index];
+                                    return AnimeCard(
+                                      key: ValueKey('rec_${item.mediaId}'),
+                                      entry: item,
+                                      width: animeCardWidth,
+                                      onTap: () => _openDetail(context, item),
+                                    );
+                                  },
                                 ),
-                                const SizedBox(height: 20),
+                                const SizedBox(height: 12),
                               ],
                             ),
                           );
@@ -797,6 +800,9 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     required AppTranslations l10n,
     required ThemeData theme,
     required bool isDesktop,
+    required double animeCardWidth,
+    required double carouselHeight,
+    required double carouselSpacing,
   }) {
     final watching = <AnimeEntry>[];
     final seenIds = <int>{};
@@ -821,37 +827,28 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
 
     if (watching.isEmpty) return const [];
 
-    final animeCardWidth = isDesktop ? 215.0 : 155.0;
-    final carouselHeight = isDesktop ? 375.0 : 290.0;
-    final carouselSpacing = isDesktop ? 14.0 : 10.0;
-
     return [
       SliverToBoxAdapter(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _SectionHeader(title: '${l10n.currentlyWatching} (${watching.length})'),
-            SizedBox(
-              height: carouselHeight + 16,
-              child: ListView.separated(
-                clipBehavior: Clip.none,
-                scrollDirection: Axis.horizontal,
-                cacheExtent: 350,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                itemCount: watching.length,
-                separatorBuilder: (context, index) => SizedBox(width: carouselSpacing),
-                itemBuilder: (context, index) {
-                  final item = watching[index];
-                  return AnimeCard(
-                    key: ValueKey('watching_${item.mediaId}'),
-                    entry: item,
-                    width: animeCardWidth,
-                    onTap: () => _openDetail(context, item),
-                  );
-                },
-              ),
+            SmoothFocusCarousel(
+              itemCount: watching.length,
+              itemWidth: animeCardWidth,
+              spacing: carouselSpacing,
+              height: carouselHeight + 8,
+              itemBuilder: (context, index) {
+                final item = watching[index];
+                return AnimeCard(
+                  key: ValueKey('watching_${item.mediaId}'),
+                  entry: item,
+                  width: animeCardWidth,
+                  onTap: () => _openDetail(context, item),
+                );
+              },
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 12),
           ],
         ),
       ),

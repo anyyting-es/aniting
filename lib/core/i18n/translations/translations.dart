@@ -123,6 +123,8 @@ abstract class AppTranslations {
   String get materialCrimsonName;
   String get materialTealName;
   String get paletteSystem;
+  String get materialDesignPalettes;
+  String get materialDesignPalettesDesc;
   String get iconPack;
   String get iconPackDesc;
   String get iconPackLucide;
@@ -402,6 +404,7 @@ abstract class AppTranslations {
   String get exitFullScreen;
   String get reduceToModal;
   String get watching;
+  String get onlyWatching;
   String get forward10s;
   String get rewind10s;
   String get synchronized;
@@ -582,7 +585,6 @@ abstract class AppTranslations {
   String noAnimeFoundInProvider(String provider, String query);
   String noEpisodesInProvider(String provider);
 
-
   // Status & Season & Relation formatters
   String get statusFinished;
   String get statusReleasing;
@@ -742,6 +744,26 @@ abstract class AppTranslations {
   String get welcomeDownloadsOpenFolder;
   String get welcomeDownloadsBrowse;
   String get welcomeDownloadsDefault;
+  String get welcomeTvSelectLanguage;
+  String get welcomeTvConnectServer;
+  String get welcomeTvConnectServerDesc;
+  String get welcomeTvScanQrTitle;
+  String get welcomeTvScanQrDesc;
+  String get welcomeTvDeviceIp;
+  String get welcomeTvDiscoveredServers;
+  String get welcomeTvSearchingServers;
+  String get welcomeTvNoServersFound;
+  String get welcomeTvManualIp;
+  String get welcomeTvManualIpDesc;
+  String get welcomeTvServerHost;
+  String get welcomeTvServerPort;
+  String get welcomeTvConnect;
+  String get welcomeTvConnecting;
+  String get welcomeTvConnected;
+  String get welcomeTvConnectionFailed;
+  String get welcomeTvSkipServer;
+  String get welcomeTvSwitchToTv;
+  String get welcomeTvSwitchToStandard;
   String get settingsSaved;
   String get searchSettingsHint;
   String get mangaReader;
@@ -783,7 +805,12 @@ abstract class AppTranslations {
   String formatSeason(String? season);
   String formatFormat(String? format);
   String formatRelationType(String? type);
-  String formatWatchStatus(String? status, int progress, int? totalEpisodes, String fallbackFormat);
+  String formatWatchStatus(
+    String? status,
+    int progress,
+    int? totalEpisodes,
+    String fallbackFormat,
+  );
 
   // About Screen & Version Check
   String get nativeClientSubtitle;
@@ -1091,6 +1118,33 @@ abstract class AppTranslations {
   String get glassTierOpaque;
   String get glassTierOpaqueDesc;
 
+  // Window Transparency & Compositor Blur
+  String get windowTransparencyTitle;
+  String get windowTransparencySubtitle;
+  String get windowOpacityTitle;
+  String get windowOpacitySubtitle;
+  String get windowCompositorBlurNotice;
+
+  // Settings Expressive Navigation Groups
+  String get settingsGroupAppearance;
+  String get settingsGroupPlayback;
+  String get settingsGroupLibrary;
+  String get settingsGroupSystem;
+
+  // Settings Expressive Navigation Subtitles
+  String get settingsSubtitleTheme;
+  String get settingsSubtitleAppearance;
+  String get settingsSubtitleExtensions;
+  String get settingsSubtitlePlayer;
+  String get settingsSubtitleManga;
+  String get settingsSubtitleStreaming;
+  String get settingsSubtitleDebrid;
+  String get settingsSubtitleDownloadManager;
+  String get settingsSubtitleDownloads;
+  String get settingsSubtitleLocalLibrary;
+  String get settingsSubtitleServer;
+  String get settingsSubtitleAbout;
+
   // Edit Entry Modal
   String get editEntryTitle;
   String get startDate;
@@ -1269,5 +1323,28 @@ abstract class AppTranslations {
   String get downloadWithDebrid;
   String get debridStartingStream;
   String get debridDownloadStarted;
-}
+  String get torrentDownloadMode;
+  String get torrentStreamMode;
+  String get torrentSelectForDownload;
+  String get torrentSelectedBadge;
+  String get torrentBatchDownloadQueued;
+  String torrentEpisodesSelected(int count);
 
+  // Manga Details & Reader enhancements
+  String get mangaSources;
+  String get selectMangaSource;
+  String get filterUnread;
+  String get filterRead;
+  String get nextToRead;
+  String get selectForDownload;
+  String get downloadSelected;
+  String mangaChaptersSelected(int count);
+  String get showPerPage;
+
+  // Offline Sync
+  String get offlineSyncTitle;
+  String offlineSyncPending(int count);
+  String offlineSyncCompleted(int count);
+  String get offlineSyncNow;
+  String get syncingOfflineProgress;
+}

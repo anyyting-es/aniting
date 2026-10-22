@@ -304,8 +304,10 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
                   setState(() {
                     _isSearchVisible = !_isSearchVisible;
                     if (_isSearchVisible) {
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
-                        if (mounted) _searchFocusNode.requestFocus();
+                      Future.delayed(const Duration(milliseconds: 200), () {
+                        if (mounted && _isSearchVisible) {
+                          _searchFocusNode.requestFocus();
+                        }
                       });
                     } else {
                       _searchFocusNode.unfocus();
@@ -336,48 +338,54 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
             ],
           ),
 
-          // Search Field (collapsible)
-          if (_isSearchVisible) ...[
-            const SizedBox(height: 6),
-            TextField(
-              controller: _searchController,
-              focusNode: _searchFocusNode,
-              autofocus: false,
-              decoration: InputDecoration(
-                hintText: l10n.searchEpisodePlaceholder,
-                prefixIcon: Icon(AppIcons.search(iconPack), size: 18),
-                suffixIcon: _searchQuery.isNotEmpty
-                    ? IconButton(
-                        icon: Icon(AppIcons.close(iconPack), size: 18),
-                        onPressed: () {
-                          setState(() {
-                            _searchController.clear();
-                            _searchQuery = '';
-                            _currentListPage = 0;
-                            _fallbackListPage = 0;
-                          });
-                        },
-                      )
-                    : null,
-                filled: true,
-                fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                isDense: true,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(context.themeColors.borderRadius),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-              onChanged: (val) {
-                setState(() {
-                  _searchQuery = val;
-                  _currentListPage = 0;
-                  _fallbackListPage = 0;
-                });
-              },
-            ),
-            const SizedBox(height: 8),
-          ],
+          // Search Field (collapsible with smooth 60fps physics)
+          AnimatedSize(
+            duration: const Duration(milliseconds: 240),
+            curve: Curves.easeInOutCubic,
+            alignment: Alignment.topCenter,
+            child: _isSearchVisible
+                ? Padding(
+                    padding: const EdgeInsets.only(top: 6, bottom: 8),
+                    child: TextField(
+                      controller: _searchController,
+                      focusNode: _searchFocusNode,
+                      autofocus: false,
+                      decoration: InputDecoration(
+                        hintText: l10n.searchEpisodePlaceholder,
+                        prefixIcon: Icon(AppIcons.search(iconPack), size: 18),
+                        suffixIcon: _searchQuery.isNotEmpty
+                            ? IconButton(
+                                icon: Icon(AppIcons.close(iconPack), size: 18),
+                                onPressed: () {
+                                  setState(() {
+                                    _searchController.clear();
+                                    _searchQuery = '';
+                                    _currentListPage = 0;
+                                    _fallbackListPage = 0;
+                                  });
+                                },
+                              )
+                            : null,
+                        filled: true,
+                        fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                        isDense: true,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(context.themeColors.borderRadius),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                      onChanged: (val) {
+                        setState(() {
+                          _searchQuery = val;
+                          _currentListPage = 0;
+                          _fallbackListPage = 0;
+                        });
+                      },
+                    ),
+                  )
+                : const SizedBox.shrink(),
+          ),
 
           const SizedBox(height: 2),
 

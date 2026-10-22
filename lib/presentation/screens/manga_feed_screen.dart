@@ -12,6 +12,8 @@ import 'package:seanime_app/presentation/widgets/continue_reading_card.dart';
 import 'package:seanime_app/presentation/widgets/feed_empty_state.dart';
 import 'package:seanime_app/presentation/widgets/manga_card.dart';
 import 'package:seanime_app/presentation/widgets/server_status_banner.dart';
+import 'package:seanime_app/presentation/widgets/feed/smooth_focus_carousel.dart';
+import 'package:seanime_app/presentation/widgets/snapping_scroll_physics.dart';
 import 'package:seanime_app/presentation/widgets/top_status_bar_glass.dart';
 
 import 'package:seanime_app/core/theme/smooth_scroll_controller.dart';
@@ -330,52 +332,60 @@ class _MangaFeedScreenState extends ConsumerState<MangaFeedScreen> {
                                   children: [
                                     _SectionHeader(
                                       title: '${l10n.downloadedMangaSection} (${downloaded.length})',
-                                      trailing: TextButton(
-                                        onPressed: () {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (_) => const DownloadsScreen(initialTabIndex: 1),
+                                      trailing: Focus(
+                                        canRequestFocus: false,
+                                        skipTraversal: true,
+                                        child: SizedBox(
+                                          width: 36,
+                                          height: 36,
+                                          child: IconButton(
+                                            padding: EdgeInsets.zero,
+                                            iconSize: 20,
+                                            tooltip: l10n.viewAll,
+                                            icon: Icon(
+                                              AppIcons.chevronRight(iconPack),
+                                              color: theme.colorScheme.onSurfaceVariant,
                                             ),
-                                          );
-                                        },
-                                        child: Text(
-                                          l10n.viewAll,
-                                          style: TextStyle(
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w600,
-                                            color: theme.colorScheme.primary,
+                                            onPressed: () {
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (_) => const DownloadsScreen(initialTabIndex: 1),
+                                                ),
+                                              );
+                                            },
                                           ),
                                         ),
                                       ),
                                     ),
-                                    SizedBox(
-                                      height: carouselHeight + 16,
-                                      child: ListView.separated(
-                                        clipBehavior: Clip.none,
-                                        scrollDirection: Axis.horizontal,
-                                        cacheExtent: 350,
-                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                        itemCount: downloaded.length,
-                                        separatorBuilder: (context, index) => SizedBox(width: carouselSpacing),
-                                        itemBuilder: (context, index) {
-                                          final item = downloaded[index];
-                                          return MangaCard(
-                                            key: ValueKey('manga_dl_${item.mediaId}'),
-                                            entry: item,
-                                            width: mangaCardWidth,
-                                            onTap: () {
-                                              MangaDetailScreen.navigate(
-                                                context,
-                                                mediaId: item.mediaId,
-                                                initialEntry: item,
-                                              );
-                                            },
-                                          );
-                                        },
-                                      ),
+                                    SmoothFocusCarousel(
+                                      itemCount: downloaded.length,
+                                      itemWidth: mangaCardWidth,
+                                      spacing: carouselSpacing,
+                                      height: carouselHeight + 8,
+                                      physics: isDesktop
+                                          ? null
+                                          : SnappingListScrollPhysics(
+                                              itemExtent: mangaCardWidth + carouselSpacing,
+                                              parent: const BouncingScrollPhysics(),
+                                            ),
+                                      itemBuilder: (context, index) {
+                                        final item = downloaded[index];
+                                        return MangaCard(
+                                          key: ValueKey('manga_dl_${item.mediaId}'),
+                                          entry: item,
+                                          width: mangaCardWidth,
+                                          onTap: () {
+                                            MangaDetailScreen.navigate(
+                                              context,
+                                              mediaId: item.mediaId,
+                                              initialEntry: item,
+                                            );
+                                          },
+                                        );
+                                      },
                                     ),
-                                    const SizedBox(height: 20),
+                                    const SizedBox(height: 12),
                                   ],
                                 ),
                               );
@@ -397,26 +407,27 @@ class _MangaFeedScreenState extends ConsumerState<MangaFeedScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     _SectionHeader(title: '${l10n.completedManga} (${completed.length})'),
-                                    SizedBox(
-                                      height: carouselHeight + 16,
-                                      child: ListView.separated(
-                                        clipBehavior: Clip.none,
-                                        scrollDirection: Axis.horizontal,
-                                        cacheExtent: 350,
-                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                        itemCount: completed.length,
-                                        separatorBuilder: (context, index) => SizedBox(width: carouselSpacing),
-                                        itemBuilder: (context, index) {
-                                          final item = completed[index];
-                                          return MangaCard(
-                                            key: ValueKey('manga_completed_${item.mediaId}'),
-                                            entry: item,
-                                            width: mangaCardWidth,
-                                          );
-                                        },
-                                      ),
+                                    SmoothFocusCarousel(
+                                      itemCount: completed.length,
+                                      itemWidth: mangaCardWidth,
+                                      spacing: carouselSpacing,
+                                      height: carouselHeight + 8,
+                                      physics: isDesktop
+                                          ? null
+                                          : SnappingListScrollPhysics(
+                                              itemExtent: mangaCardWidth + carouselSpacing,
+                                              parent: const BouncingScrollPhysics(),
+                                            ),
+                                      itemBuilder: (context, index) {
+                                        final item = completed[index];
+                                        return MangaCard(
+                                          key: ValueKey('manga_completed_${item.mediaId}'),
+                                          entry: item,
+                                          width: mangaCardWidth,
+                                        );
+                                      },
                                     ),
-                                    const SizedBox(height: 20),
+                                    const SizedBox(height: 12),
                                   ],
                                 ),
                               );
@@ -430,33 +441,34 @@ class _MangaFeedScreenState extends ConsumerState<MangaFeedScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   _SectionHeader(title: l10n.recommendations),
-                                  SizedBox(
-                                    height: carouselHeight + 16,
-                                    child: ListView.separated(
-                                      clipBehavior: Clip.none,
-                                      scrollDirection: Axis.horizontal,
-                                      cacheExtent: 350,
-                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                      itemCount: mangaRecommendationsEntries.length,
-                                      separatorBuilder: (context, index) => SizedBox(width: carouselSpacing),
-                                      itemBuilder: (context, index) {
-                                        final item = mangaRecommendationsEntries[index];
-                                        return MangaCard(
-                                          key: ValueKey('manga_rec_${item.mediaId}'),
-                                          entry: item,
-                                          width: mangaCardWidth,
-                                          onTap: () {
-                                            MangaDetailScreen.navigate(
-                                              context,
-                                              mediaId: item.mediaId,
-                                              initialEntry: item,
-                                            );
-                                          },
-                                        );
-                                      },
-                                    ),
+                                  SmoothFocusCarousel(
+                                    itemCount: mangaRecommendationsEntries.length,
+                                    itemWidth: mangaCardWidth,
+                                    spacing: carouselSpacing,
+                                    height: carouselHeight + 8,
+                                    physics: isDesktop
+                                        ? null
+                                        : SnappingListScrollPhysics(
+                                            itemExtent: mangaCardWidth + carouselSpacing,
+                                            parent: const BouncingScrollPhysics(),
+                                          ),
+                                    itemBuilder: (context, index) {
+                                      final item = mangaRecommendationsEntries[index];
+                                      return MangaCard(
+                                        key: ValueKey('manga_rec_${item.mediaId}'),
+                                        entry: item,
+                                        width: mangaCardWidth,
+                                        onTap: () {
+                                          MangaDetailScreen.navigate(
+                                            context,
+                                            mediaId: item.mediaId,
+                                            initialEntry: item,
+                                          );
+                                        },
+                                      );
+                                    },
                                   ),
-                                  const SizedBox(height: 20),
+                                  const SizedBox(height: 12),
                                 ],
                               ),
                             ),
@@ -499,33 +511,34 @@ class _MangaFeedScreenState extends ConsumerState<MangaFeedScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _SectionHeader(title: l10n.continueReading),
-            SizedBox(
-              height: listHeight + 16,
-              child: ListView.separated(
-                clipBehavior: Clip.none,
-                scrollDirection: Axis.horizontal,
-                cacheExtent: 350,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                itemCount: entries.length,
-                separatorBuilder: (context, index) => SizedBox(width: spacing),
-                itemBuilder: (context, index) {
-                  final item = entries[index];
-                  return ContinueReadingCard(
-                    key: ValueKey('cr_${item.mediaId}'),
-                    entry: item,
-                    width: cardWidth,
-                    onTap: () {
-                      MangaDetailScreen.navigate(
-                        context,
-                        mediaId: item.mediaId,
-                        initialEntry: item,
-                      );
-                    },
-                  );
-                },
-              ),
+            SmoothFocusCarousel(
+              itemCount: entries.length,
+              itemWidth: cardWidth,
+              spacing: spacing,
+              height: listHeight + 8,
+              physics: isDesktop
+                  ? null
+                  : SnappingListScrollPhysics(
+                      itemExtent: cardWidth + spacing,
+                      parent: const BouncingScrollPhysics(),
+                    ),
+              itemBuilder: (context, index) {
+                final item = entries[index];
+                return ContinueReadingCard(
+                  key: ValueKey('cr_${item.mediaId}'),
+                  entry: item,
+                  width: cardWidth,
+                  onTap: () {
+                    MangaDetailScreen.navigate(
+                      context,
+                      mediaId: item.mediaId,
+                      initialEntry: item,
+                    );
+                  },
+                );
+              },
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 12),
           ],
         ),
       ),

@@ -11,6 +11,8 @@ class DesktopMangaChapterCard extends ConsumerStatefulWidget {
   final bool canDownload;
   final VoidCallback onTap;
   final VoidCallback onDownload;
+  final bool isSelected;
+  final VoidCallback? onToggleSelect;
 
   const DesktopMangaChapterCard({
     super.key,
@@ -21,6 +23,8 @@ class DesktopMangaChapterCard extends ConsumerStatefulWidget {
     required this.canDownload,
     required this.onTap,
     required this.onDownload,
+    this.isSelected = false,
+    this.onToggleSelect,
   });
 
   @override
@@ -53,19 +57,27 @@ class _DesktopMangaChapterCardState extends ConsumerState<DesktopMangaChapterCar
         widget.chapter.title.toLowerCase() != chapterLabel.toLowerCase() &&
         widget.chapter.title != widget.chapter.chapter;
 
-    final baseBg = isDark
-        ? Colors.white.withValues(alpha: 0.03)
-        : theme.colorScheme.surfaceContainerLow;
-    final hoverBg = isDark
-        ? Colors.white.withValues(alpha: 0.08)
-        : theme.colorScheme.surfaceContainerHighest;
+    final baseBg = widget.isSelected
+        ? theme.colorScheme.primaryContainer.withValues(alpha: 0.35)
+        : (isDark
+            ? Colors.white.withValues(alpha: 0.03)
+            : theme.colorScheme.surfaceContainerLow);
+    final hoverBg = widget.isSelected
+        ? theme.colorScheme.primaryContainer.withValues(alpha: 0.45)
+        : (isDark
+            ? Colors.white.withValues(alpha: 0.08)
+            : theme.colorScheme.surfaceContainerHighest);
 
-    final baseBorder = isDark
-        ? Colors.white.withValues(alpha: 0.05)
-        : theme.colorScheme.outlineVariant.withValues(alpha: 0.22);
-    final hoverBorder = isDark
-        ? Colors.white.withValues(alpha: 0.16)
-        : theme.colorScheme.outlineVariant.withValues(alpha: 0.45);
+    final baseBorder = widget.isSelected
+        ? theme.colorScheme.primary.withValues(alpha: 0.6)
+        : (isDark
+            ? Colors.white.withValues(alpha: 0.05)
+            : theme.colorScheme.outlineVariant.withValues(alpha: 0.22));
+    final hoverBorder = widget.isSelected
+        ? theme.colorScheme.primary
+        : (isDark
+            ? Colors.white.withValues(alpha: 0.16)
+            : theme.colorScheme.outlineVariant.withValues(alpha: 0.45));
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -76,7 +88,8 @@ class _DesktopMangaChapterCardState extends ConsumerState<DesktopMangaChapterCar
         duration: const Duration(milliseconds: 180),
         curve: Curves.easeInOut,
         child: InkWell(
-          onTap: widget.onTap,
+          onTap: widget.onToggleSelect != null && widget.isSelected ? widget.onToggleSelect : widget.onTap,
+          onLongPress: widget.onToggleSelect,
           borderRadius: BorderRadius.circular(8),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 180),
@@ -91,6 +104,16 @@ class _DesktopMangaChapterCardState extends ConsumerState<DesktopMangaChapterCar
             ),
             child: Row(
               children: [
+                // Selection checkbox if selected
+                if (widget.isSelected) ...[
+                  Icon(
+                    Icons.check_circle_rounded,
+                    size: 18,
+                    color: theme.colorScheme.primary,
+                  ),
+                  const SizedBox(width: 8),
+                ],
+
                 // Minimal Chapter Number Badge
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),

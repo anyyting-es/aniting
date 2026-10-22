@@ -89,16 +89,19 @@ class _AnimeDetailSourcePopupState extends ConsumerState<AnimeDetailSourcePopup>
 
   void _openAdvancedSheet() {
     Navigator.pop(context);
-    showGlassSheet(
-      context: context,
-      builder: (ctx) => AnimeDetailAdvancedSheet(
-        selectedProvider: _selectedProv,
-        isDubbed: widget.isDubbed,
-        onToggleDubbed: widget.onToggleDubbed,
-        onOpenManualMapping: widget.onOpenManualMapping,
-        onRefreshCache: widget.onRefreshCache,
-      ),
-    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      showGlassSheet(
+        context: context,
+        builder: (ctx) => AnimeDetailAdvancedSheet(
+          selectedProvider: _selectedProv,
+          isDubbed: widget.isDubbed,
+          onToggleDubbed: widget.onToggleDubbed,
+          onOpenManualMapping: widget.onOpenManualMapping,
+          onRefreshCache: widget.onRefreshCache,
+        ),
+      );
+    });
   }
 
   @override

@@ -29,7 +29,8 @@ class AboutSettingsScreen extends ConsumerWidget {
     final status = serverState.status;
     final updateState = ref.watch(appUpdateNotifierProvider);
     final installedVersionAsync = ref.watch(installedAppVersionProvider);
-    final currentVersionStr = installedVersionAsync.value ?? AppUpdateService.currentAppVersion;
+    final currentVersionStr =
+        installedVersionAsync.value ?? AppUpdateService.currentAppVersion;
 
     return PixelSubpageScaffold(
       title: l10n.aboutApp,
@@ -77,9 +78,14 @@ class AboutSettingsScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 12),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.primaryContainer.withValues(alpha: 0.7),
+                  color: theme.colorScheme.primaryContainer.withValues(
+                    alpha: 0.7,
+                  ),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Text(
@@ -103,14 +109,19 @@ class AboutSettingsScreen extends ConsumerWidget {
         PixelSettingsGroupCard(
           children: [
             ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 6,
+              ),
               leading: Container(
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
+                    color: theme.colorScheme.outlineVariant.withValues(
+                      alpha: 0.35,
+                    ),
                     width: 1,
                   ),
                 ),
@@ -148,12 +159,17 @@ class AboutSettingsScreen extends ConsumerWidget {
             ),
             const PixelTileDivider(),
             ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 6,
+              ),
               leading: Container(
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.secondaryContainer.withValues(alpha: 0.6),
+                  color: theme.colorScheme.secondaryContainer.withValues(
+                    alpha: 0.6,
+                  ),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -186,7 +202,10 @@ class AboutSettingsScreen extends ConsumerWidget {
             ),
             const PixelTileDivider(),
             ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 6,
+              ),
               leading: Container(
                 width: 44,
                 height: 44,
@@ -202,7 +221,10 @@ class AboutSettingsScreen extends ConsumerWidget {
               ),
               title: Text(
                 l10n.discordCommunity,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                ),
               ),
               subtitle: Text(
                 l10n.discordSubtitle,
@@ -233,11 +255,17 @@ class AboutSettingsScreen extends ConsumerWidget {
         PixelSettingsGroupCard(
           children: [
             ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 4,
+              ),
               leading: _LeadingIcon(icon: AppIcons.devices(iconPack)),
               title: Text(
                 l10n.clientDevice,
-                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 15,
+                ),
               ),
               subtitle: Text(
                 'v$currentVersionStr (${l10n.buildRelease})',
@@ -246,24 +274,37 @@ class AboutSettingsScreen extends ConsumerWidget {
             ),
             const PixelTileDivider(),
             ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 4,
+              ),
               leading: Container(
                 width: 42,
                 height: 42,
                 decoration: BoxDecoration(
-                  color: (serverState.isOnline ? const Color(0xFF22C55E) : theme.colorScheme.error)
-                      .withValues(alpha: 0.15),
+                  color:
+                      (serverState.isOnline
+                              ? const Color(0xFF22C55E)
+                              : theme.colorScheme.error)
+                          .withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
-                  serverState.isOnline ? AppIcons.server(iconPack) : AppIcons.serverOff(iconPack),
-                  color: serverState.isOnline ? const Color(0xFF22C55E) : theme.colorScheme.error,
+                  serverState.isOnline
+                      ? AppIcons.server(iconPack)
+                      : AppIcons.serverOff(iconPack),
+                  color: serverState.isOnline
+                      ? const Color(0xFF22C55E)
+                      : theme.colorScheme.error,
                   size: 22,
                 ),
               ),
               title: Text(
                 l10n.seanimeCoreServer,
-                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 15,
+                ),
               ),
               subtitle: Text(
                 serverState.isOnline
@@ -277,11 +318,17 @@ class AboutSettingsScreen extends ConsumerWidget {
             ),
             const PixelTileDivider(),
             ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 4,
+              ),
               leading: _LeadingIcon(icon: AppIcons.update(iconPack)),
               title: Text(
                 l10n.checkForUpdates,
-                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 15,
+                ),
               ),
               subtitle: Text(
                 updateState.isChecking
@@ -309,7 +356,9 @@ class AboutSettingsScreen extends ConsumerWidget {
                       messenger.showSnackBar(
                         SnackBar(
                           behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                           content: Text(l10n.checkingUpdatesGithub),
                           duration: const Duration(seconds: 1),
                         ),
@@ -327,9 +376,13 @@ class AboutSettingsScreen extends ConsumerWidget {
                         messenger.showSnackBar(
                           SnackBar(
                             behavior: SnackBarBehavior.floating,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
                             content: Text(
-                              l10n.latestVersionSnackbar(AppUpdateService.currentAppVersion),
+                              l10n.latestVersionSnackbar(
+                                AppUpdateService.currentAppVersion,
+                              ),
                             ),
                           ),
                         );
@@ -337,12 +390,16 @@ class AboutSettingsScreen extends ConsumerWidget {
                         messenger.showSnackBar(
                           SnackBar(
                             behavior: SnackBarBehavior.floating,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
                             content: Text(l10n.failedCheckUpdateSnackbar),
                             action: SnackBarAction(
                               label: 'GitHub',
                               onPressed: () => launchUrl(
-                                Uri.parse('https://github.com/anyyting-es/aniting/releases'),
+                                Uri.parse(
+                                  'https://github.com/anyyting-es/aniting/releases',
+                                ),
                                 mode: LaunchMode.externalApplication,
                               ),
                             ),
@@ -353,11 +410,17 @@ class AboutSettingsScreen extends ConsumerWidget {
             ),
             const PixelTileDivider(),
             ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 4,
+              ),
               leading: _LeadingIcon(icon: AppIcons.sparkles(iconPack)),
               title: Text(
                 l10n.whatsNewDialog,
-                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 15,
+                ),
               ),
               subtitle: Text(
                 l10n.whatsNewDialogDesc,
@@ -368,17 +431,25 @@ class AboutSettingsScreen extends ConsumerWidget {
               ),
               trailing: Icon(
                 AppIcons.chevronRight(iconPack),
-                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                color: theme.colorScheme.onSurfaceVariant.withValues(
+                  alpha: 0.6,
+                ),
               ),
               onTap: () => WhatsNewDialog.show(context),
             ),
             const PixelTileDivider(),
             ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 4,
+              ),
               leading: _LeadingIcon(icon: AppIcons.shield(iconPack)),
               title: Text(
                 l10n.openSourceLicenses,
-                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 15,
+                ),
               ),
               subtitle: Text(
                 l10n.openSourceLicensesDesc,
@@ -389,7 +460,9 @@ class AboutSettingsScreen extends ConsumerWidget {
               ),
               trailing: Icon(
                 AppIcons.chevronRight(iconPack),
-                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                color: theme.colorScheme.onSurfaceVariant.withValues(
+                  alpha: 0.6,
+                ),
               ),
               onTap: () => showLicensePage(
                 context: context,
@@ -409,11 +482,17 @@ class AboutSettingsScreen extends ConsumerWidget {
         PixelSettingsGroupCard(
           children: [
             ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 4,
+              ),
               leading: _LeadingIcon(icon: AppIcons.wavingHand(iconPack)),
               title: Text(
                 l10n.welcomeDevPreview,
-                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 15,
+                ),
               ),
               subtitle: Text(
                 l10n.welcomeDevPreviewDesc,
@@ -433,11 +512,17 @@ class AboutSettingsScreen extends ConsumerWidget {
             ),
             const PixelTileDivider(),
             ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 4,
+              ),
               leading: _LeadingIcon(icon: AppIcons.restore(iconPack)),
               title: Text(
                 l10n.welcomeResetPrompt,
-                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 15,
+                ),
               ),
               subtitle: Text(
                 l10n.welcomeResetDesc,
@@ -453,7 +538,9 @@ class AboutSettingsScreen extends ConsumerWidget {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                       content: Text(l10n.welcomeResetDone),
                     ),
                   );

@@ -289,10 +289,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     setState(() {
       _filterState = _filterState.clear();
       _searchController.clear();
-      _animeResults.clear();
-      _mangaResults.clear();
-      _isLoading = false;
     });
+    _fetchResults(reset: true);
   }
 
   Widget _buildCuratedAnimeSection({

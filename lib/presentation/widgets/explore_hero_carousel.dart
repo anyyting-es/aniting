@@ -320,27 +320,21 @@ class _ExploreHeroCarouselState extends ConsumerState<ExploreHeroCarousel> {
                   ),
 
                   // 2. Persistent Static Viewport Bottom Blend
-                  // Fixed to the carousel viewport (outside the PageView and never faded by slide Opacity).
-                  // Permanently anchors the bottom of the carousel to theme.scaffoldBackgroundColor,
-                  // guaranteeing zero gap, zero separation from the section below, and preventing any
-                  // backdrop artwork colors from bleeding at the seam during in-place dissolve.
+                  // Anchors the seam between carousel and following content with minimal footprint,
+                  // guaranteeing zero gap while never covering or dimming the action buttons above.
                   Positioned(
                     left: 0,
                     right: 0,
                     bottom: 0,
-                    height: isDesktop ? 68.0 : 44.0,
+                    height: isDesktop ? 16.0 : 10.0,
                     child: IgnorePointer(
                       child: DecoratedBox(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
-                            stops: const [0.0, 0.35, 0.70, 0.90, 1.0],
                             colors: [
                               theme.scaffoldBackgroundColor.withValues(alpha: 0.0),
-                              theme.scaffoldBackgroundColor.withValues(alpha: 0.22),
-                              theme.scaffoldBackgroundColor.withValues(alpha: 0.65),
-                              theme.scaffoldBackgroundColor.withValues(alpha: 0.95),
                               theme.scaffoldBackgroundColor,
                             ],
                           ),
@@ -514,8 +508,8 @@ class _HeroBannerSlide extends ConsumerWidget {
         : null;
 
     final hasLogo = item.logoImage != null && item.logoImage!.isNotEmpty;
-    // Generous bottom shadow height (smooth cubic feather into page background)
-    final bottomShadowHeight = isDesktop ? 320.0 : 230.0;
+    // Generous bottom shadow height on desktop, subtle lower shadow on mobile
+    final bottomShadowHeight = isDesktop ? 320.0 : 175.0;
 
     String? rawDesc = item.description;
     if ((rawDesc == null || rawDesc.isEmpty) && isSidebarMode && !_isInTest) {
@@ -533,11 +527,11 @@ class _HeroBannerSlide extends ConsumerWidget {
             fit: StackFit.expand,
             children: [
               // 1. Static Banner Background Image (Zero continuous repaint, 0% idle GPU)
-              // Aligned towards the upper portion (-0.42 desktop / -0.15 mobile) to fully reveal character heads & composition
+              // Aligned towards the upper portion (-0.42 desktop / -0.25 mobile) to fully reveal character heads & composition
               if (imageUrl.isNotEmpty)
                 CachedNetworkImage(
                   imageUrl: imageUrl,
-                  alignment: Alignment(0.0, isDesktop ? -0.42 : -0.15),
+                  alignment: Alignment(0.0, isDesktop ? -0.42 : -0.25),
                   fit: BoxFit.cover,
                   fadeInDuration: const Duration(milliseconds: 200),
                   memCacheWidth: isDesktop ? 1920 : 1080,
@@ -641,29 +635,29 @@ class _HeroBannerSlide extends ConsumerWidget {
                 ),
               ),
 
-            // 4. Clean Bottom Metadata & Action Pills
+            // 4. Clean Bottom Metadata & Action Pills (Centered on mobile, lowered)
             Positioned(
               left: isDesktop ? 36 : 16,
               right: isDesktop ? 36 : 16,
-              bottom: isDesktop ? 34 : 22,
+              bottom: isDesktop ? 34 : 20,
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: isDesktop ? CrossAxisAlignment.start : CrossAxisAlignment.center,
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Padding(
-                    padding: EdgeInsets.only(bottom: isDesktop ? 10 : 8),
+                    padding: EdgeInsets.only(bottom: isDesktop ? 10 : 6),
                     child: SizedBox(
-                      height: isDesktop ? (isSidebarMode ? 100 : 120) : 65,
+                      height: isDesktop ? (isSidebarMode ? 100 : 120) : 52,
                       child: Align(
-                        alignment: Alignment.bottomLeft,
+                        alignment: isDesktop ? Alignment.bottomLeft : Alignment.bottomCenter,
                         child: hasLogo
                             ? CachedNetworkImage(
                                 imageUrl: optimizeTmdbImageUrl(item.logoImage!, isDesktop: isDesktop, isLogo: true),
                                 fit: BoxFit.contain,
-                                alignment: Alignment.bottomLeft,
+                                alignment: isDesktop ? Alignment.bottomLeft : Alignment.bottomCenter,
                                 fadeInDuration: Duration.zero,
-                                memCacheHeight: isDesktop ? 240 : 140,
-                                maxHeightDiskCache: isDesktop ? 240 : 140,
+                                memCacheHeight: isDesktop ? 240 : 120,
+                                maxHeightDiskCache: isDesktop ? 240 : 120,
                                 placeholder: (context, url) => const SizedBox.shrink(),
                                 errorWidget: (context, url, error) => _buildTitleText(item.title, isDesktop),
                               )
@@ -704,6 +698,7 @@ class _HeroBannerSlide extends ConsumerWidget {
                     scrollDirection: Axis.horizontal,
                     physics: const BouncingScrollPhysics(),
                     child: Row(
+                      mainAxisAlignment: isDesktop ? MainAxisAlignment.start : MainAxisAlignment.center,
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         if (item.year != null) ...[
@@ -773,33 +768,43 @@ class _HeroBannerSlide extends ConsumerWidget {
                   SizedBox(height: isDesktop ? 12 : 8),
 
                   // Action Pill Button (Ver detalles)
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      FilledButton.icon(
-                        onPressed: item.onTap,
-                        icon: const Icon(Icons.info_outline_rounded, size: 16),
-                        label: Text(
-                          l10n.details,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: isDesktop ? 13 : 12,
+                  Builder(
+                    builder: (context) {
+                      final isDark = theme.brightness == Brightness.dark;
+                      final btnBgColor = isDark ? Colors.white : theme.colorScheme.onSurface;
+                      final btnFgColor = isDark ? const Color(0xFF141414) : theme.colorScheme.surface;
+
+                      return Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          FilledButton.icon(
+                            onPressed: item.onTap,
+                            icon: Icon(Icons.info_outline_rounded, size: 16, color: btnFgColor),
+                            label: Text(
+                              l10n.details,
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: isDesktop ? 13 : 12,
+                                color: btnFgColor,
+                              ),
+                            ),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: btnBgColor,
+                              foregroundColor: btnFgColor,
+                              elevation: 2,
+                              visualDensity: VisualDensity.compact,
+                              padding: EdgeInsets.symmetric(
+                                horizontal: isDesktop ? 18 : 14,
+                                vertical: isDesktop ? 10 : 6,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
                           ),
-                        ),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: theme.colorScheme.primary,
-                          foregroundColor: theme.colorScheme.onPrimary,
-                          visualDensity: VisualDensity.compact,
-                          padding: EdgeInsets.symmetric(
-                            horizontal: isDesktop ? 18 : 14,
-                            vertical: isDesktop ? 10 : 6,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                      ),
-                    ],
+                        ],
+                      );
+                    },
                   ),
                 ],
               ),
@@ -830,6 +835,7 @@ class _HeroBannerSlide extends ConsumerWidget {
       title,
       maxLines: 2,
       overflow: TextOverflow.ellipsis,
+      textAlign: isDesktop ? TextAlign.start : TextAlign.center,
       style: TextStyle(
         color: Colors.white,
         fontWeight: FontWeight.w800,

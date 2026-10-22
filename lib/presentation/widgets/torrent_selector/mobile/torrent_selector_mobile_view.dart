@@ -46,6 +46,12 @@ class TorrentSelectorMobileView extends ConsumerStatefulWidget {
   final void Function(TorrentItem)? onDebridStream;
   final void Function(TorrentItem)? onDebridDownload;
   final VoidCallback onClose;
+  final Map<int, TorrentItem> selectedDownloadTorrents;
+  final bool isDownloadMode;
+  final ValueChanged<bool>? onToggleDownloadMode;
+  final VoidCallback? onStartBatchDownload;
+  final VoidCallback? onClearSelectedTorrents;
+  final void Function(int episodeNumber)? onRemoveSelectedEpisode;
 
   const TorrentSelectorMobileView({
     super.key,
@@ -82,6 +88,12 @@ class TorrentSelectorMobileView extends ConsumerStatefulWidget {
     this.onDebridStream,
     this.onDebridDownload,
     required this.onClose,
+    this.selectedDownloadTorrents = const {},
+    this.isDownloadMode = false,
+    this.onToggleDownloadMode,
+    this.onStartBatchDownload,
+    this.onClearSelectedTorrents,
+    this.onRemoveSelectedEpisode,
   });
 
   @override
@@ -252,6 +264,31 @@ class _TorrentSelectorMobileViewState extends ConsumerState<TorrentSelectorMobil
                                   ),
                                 ),
                               ],
+                              if (widget.isDownloadMode || widget.selectedDownloadTorrents.isNotEmpty) ...[
+                                const SizedBox(width: 4),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                  decoration: BoxDecoration(
+                                    color: theme.colorScheme.primary.withValues(alpha: 0.16),
+                                    borderRadius: BorderRadius.circular(5),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(AppIcons.download(iconPack), size: 10, color: theme.colorScheme.primary),
+                                      const SizedBox(width: 2),
+                                      Text(
+                                        l10n.torrentDownloadMode,
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                          color: theme.colorScheme.primary,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ],
                           ),
                           const SizedBox(height: 2),
@@ -267,6 +304,30 @@ class _TorrentSelectorMobileViewState extends ConsumerState<TorrentSelectorMobil
                         ],
                       ),
                     ),
+
+                    // Download Mode Toggle Button
+                    IconButton(
+                      tooltip: widget.isDownloadMode ? l10n.torrentDownloadMode : l10n.torrentStreamMode,
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        widget.onToggleDownloadMode?.call(!widget.isDownloadMode);
+                      },
+                      icon: Icon(
+                        AppIcons.download(iconPack),
+                        size: 19,
+                        color: widget.isDownloadMode || widget.selectedDownloadTorrents.isNotEmpty
+                            ? theme.colorScheme.primary
+                            : theme.colorScheme.onSurfaceVariant,
+                      ),
+                      style: IconButton.styleFrom(
+                        backgroundColor: (widget.isDownloadMode || widget.selectedDownloadTorrents.isNotEmpty)
+                            ? theme.colorScheme.primary.withValues(alpha: 0.16)
+                            : (isDark ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.04)),
+                        minimumSize: const Size(36, 36),
+                        padding: const EdgeInsets.all(8),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
 
                     // Search Toggle Button
                     IconButton(
@@ -464,6 +525,7 @@ class _TorrentSelectorMobileViewState extends ConsumerState<TorrentSelectorMobil
                           popoverBuilder: (ctx) => TorrentEpisodePopoverContent(
                             currentEpisode: widget.currentEpisodeNumber,
                             totalEpisodes: totalEpisodes,
+                            selectedEpisodes: widget.selectedDownloadTorrents.keys.toSet(),
                             onEpisodeSelected: widget.onEpisodeChanged,
                             onClose: () => _episodeController.close(),
                           ),
@@ -474,6 +536,8 @@ class _TorrentSelectorMobileViewState extends ConsumerState<TorrentSelectorMobil
                                 ? 'Ep. ${widget.currentEpisodeNumber}'
                                 : l10n.allBatches,
                             isBatch: widget.currentEpisodeNumber == null,
+                            isQueued: widget.currentEpisodeNumber != null &&
+                                widget.selectedDownloadTorrents.containsKey(widget.currentEpisodeNumber),
                             iconPack: iconPack,
                             onTap: () {
                               HapticFeedback.selectionClick();
@@ -716,9 +780,15 @@ class _TorrentSelectorMobileViewState extends ConsumerState<TorrentSelectorMobil
                                 itemBuilder: (context, index) {
                                   final torrent = sortedTorrents[index];
                                   final isStarting = widget.startingTorrentName == torrent.name;
+                                  final isSelected = widget.currentEpisodeNumber != null &&
+                                      widget.selectedDownloadTorrents[widget.currentEpisodeNumber]?.infoHash == torrent.infoHash &&
+                                      widget.selectedDownloadTorrents[widget.currentEpisodeNumber]?.name == torrent.name;
+
                                   return TorrentFileCard(
                                     torrent: torrent,
                                     isStarting: isStarting,
+                                    isSelectedForDownload: isSelected,
+                                    selectedEpisodeNumber: isSelected ? widget.currentEpisodeNumber : null,
                                     onTap: () => widget.onTorrentTap(torrent),
                                     onDownload: () => widget.onDownloadTorrent(torrent),
                                     onExternalPlayer: () => widget.onExternalPlayer(torrent),
@@ -731,6 +801,171 @@ class _TorrentSelectorMobileViewState extends ConsumerState<TorrentSelectorMobil
                                   );
                                 },
                               ),
+              ),
+
+              // --- 6. Batch Download Bottom Action Bar ---
+              if (widget.selectedDownloadTorrents.isNotEmpty)
+                _buildBottomActionBar(theme, isDark, iconPack, l10n),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottomActionBar(
+    ThemeData theme,
+    bool isDark,
+    AppIconPack iconPack,
+    dynamic l10n,
+  ) {
+    final sortedEpisodes = widget.selectedDownloadTorrents.keys.toList()..sort();
+    final count = sortedEpisodes.length;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: isDark
+            ? theme.colorScheme.surface.withValues(alpha: 0.88)
+            : theme.colorScheme.surface.withValues(alpha: 0.95),
+        border: Border(
+          top: BorderSide(
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.12)
+                : theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+            width: 0.8,
+          ),
+        ),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Row(
+          children: [
+            // Clear button
+            IconButton(
+              tooltip: l10n.deselectAll,
+              onPressed: widget.onClearSelectedTorrents,
+              icon: Icon(AppIcons.trash(iconPack), size: 18),
+              style: IconButton.styleFrom(
+                backgroundColor: isDark
+                    ? Colors.white.withValues(alpha: 0.08)
+                    : Colors.black.withValues(alpha: 0.05),
+                foregroundColor: theme.colorScheme.error,
+                minimumSize: const Size(36, 36),
+                padding: const EdgeInsets.all(8),
+              ),
+            ),
+            const SizedBox(width: 8),
+
+            // Queued episodes chips
+            Expanded(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                child: Row(
+                  children: [
+                    for (final ep in sortedEpisodes)
+                      _buildQueuedEpisodeChip(theme, isDark, iconPack, ep),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+
+            // Start Batch Download Button
+            FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: theme.colorScheme.primary,
+                foregroundColor: theme.colorScheme.onPrimary,
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+              icon: Icon(AppIcons.download(iconPack), size: 16),
+              label: Text(
+                l10n.startDownloadCount(count),
+                style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold),
+              ),
+              onPressed: widget.onStartBatchDownload,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQueuedEpisodeChip(
+    ThemeData theme,
+    bool isDark,
+    AppIconPack iconPack,
+    int ep,
+  ) {
+    final isCurrent = widget.currentEpisodeNumber == ep;
+    return Padding(
+      padding: const EdgeInsets.only(right: 6),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(10),
+        onTap: () {
+          HapticFeedback.selectionClick();
+          widget.onEpisodeChanged(ep);
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+          decoration: BoxDecoration(
+            color: isCurrent
+                ? theme.colorScheme.primary.withValues(alpha: 0.22)
+                : (isDark
+                    ? Colors.white.withValues(alpha: 0.08)
+                    : Colors.black.withValues(alpha: 0.05)),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: isCurrent
+                  ? theme.colorScheme.primary
+                  : (isDark
+                      ? Colors.white.withValues(alpha: 0.12)
+                      : theme.colorScheme.outlineVariant.withValues(alpha: 0.3)),
+              width: isCurrent ? 1.2 : 0.8,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                AppIcons.check(iconPack),
+                size: 13,
+                color: isCurrent
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                'Ep. $ep',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: isCurrent ? FontWeight.bold : FontWeight.w600,
+                  color: isCurrent
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(width: 4),
+              InkWell(
+                borderRadius: BorderRadius.circular(8),
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  widget.onRemoveSelectedEpisode?.call(ep);
+                },
+                child: Padding(
+                  padding: const EdgeInsets.all(2),
+                  child: Icon(
+                    AppIcons.close(iconPack),
+                    size: 12,
+                    color: isCurrent
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
               ),
             ],
           ),
@@ -797,6 +1032,7 @@ class _TorrentSelectorMobileViewState extends ConsumerState<TorrentSelectorMobil
     required bool isDark,
     required String label,
     required bool isBatch,
+    required bool isQueued,
     required AppIconPack iconPack,
     required VoidCallback onTap,
   }) {
@@ -809,20 +1045,28 @@ class _TorrentSelectorMobileViewState extends ConsumerState<TorrentSelectorMobil
           height: 38,
           padding: const EdgeInsets.symmetric(horizontal: 10),
           decoration: BoxDecoration(
-            color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05),
+            color: isQueued
+                ? theme.colorScheme.primary.withValues(alpha: 0.16)
+                : (isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05)),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isDark ? Colors.white.withValues(alpha: 0.12) : theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
-              width: 0.8,
+              color: isQueued
+                  ? theme.colorScheme.primary
+                  : (isDark ? Colors.white.withValues(alpha: 0.12) : theme.colorScheme.outlineVariant.withValues(alpha: 0.35)),
+              width: isQueued ? 1.2 : 0.8,
             ),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                isBatch ? AppIcons.folderZip(iconPack) : AppIcons.playCircle(iconPack),
+                isQueued
+                    ? AppIcons.check(iconPack)
+                    : (isBatch ? AppIcons.folderZip(iconPack) : AppIcons.playCircle(iconPack)),
                 size: 15,
-                color: isBatch ? Colors.purpleAccent : theme.colorScheme.primary,
+                color: isQueued
+                    ? theme.colorScheme.primary
+                    : (isBatch ? Colors.purpleAccent : theme.colorScheme.primary),
               ),
               const SizedBox(width: 5),
               Text(
@@ -830,7 +1074,7 @@ class _TorrentSelectorMobileViewState extends ConsumerState<TorrentSelectorMobil
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.onSurface,
+                  color: isQueued ? theme.colorScheme.primary : theme.colorScheme.onSurface,
                 ),
               ),
               const SizedBox(width: 2),

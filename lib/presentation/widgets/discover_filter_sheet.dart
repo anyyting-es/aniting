@@ -135,18 +135,21 @@ class DiscoverFilterState {
 class DiscoverFilterSheet extends ConsumerStatefulWidget {
   final DiscoverFilterState initialState;
   final ValueChanged<DiscoverFilterState> onApply;
+  final ValueChanged<DiscoverFilterState>? onStateChanged;
 
   const DiscoverFilterSheet({
     super.key,
     required this.initialState,
     required this.onApply,
+    this.onStateChanged,
   });
 
   static Future<DiscoverFilterState?> show(
     BuildContext context, {
     required DiscoverFilterState current,
-  }) {
-    return showModalBottomSheet<DiscoverFilterState>(
+  }) async {
+    DiscoverFilterState latestState = current;
+    final result = await showModalBottomSheet<DiscoverFilterState>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
@@ -156,9 +159,11 @@ class DiscoverFilterSheet extends ConsumerStatefulWidget {
       ),
       builder: (ctx) => DiscoverFilterSheet(
         initialState: current,
+        onStateChanged: (state) => latestState = state,
         onApply: (newState) => Navigator.pop(ctx, newState),
       ),
     );
+    return result ?? latestState;
   }
 
   @override
@@ -174,6 +179,11 @@ class _DiscoverFilterSheetState extends ConsumerState<DiscoverFilterSheet> {
     _state = widget.initialState;
   }
 
+  void _updateState(DiscoverFilterState newState) {
+    setState(() => _state = newState);
+    widget.onStateChanged?.call(newState);
+  }
+
   void _toggleGenre(String key) {
     final next = Set<String>.from(_state.selectedGenres);
     if (next.contains(key)) {
@@ -181,7 +191,7 @@ class _DiscoverFilterSheetState extends ConsumerState<DiscoverFilterSheet> {
     } else {
       next.add(key);
     }
-    setState(() => _state = _state.copyWith(selectedGenres: next));
+    _updateState(_state.copyWith(selectedGenres: next));
   }
 
   void _toggleTag(String key) {
@@ -191,7 +201,7 @@ class _DiscoverFilterSheetState extends ConsumerState<DiscoverFilterSheet> {
     } else {
       next.add(key);
     }
-    setState(() => _state = _state.copyWith(selectedTags: next));
+    _updateState(_state.copyWith(selectedTags: next));
   }
 
   @override
@@ -300,7 +310,7 @@ class _DiscoverFilterSheetState extends ConsumerState<DiscoverFilterSheet> {
                   if (_state.hasActiveFilters)
                     TextButton(
                       onPressed: () {
-                        setState(() => _state = _state.clear());
+                        _updateState(_state.clear());
                       },
                       child: Text(l10n.clearFilters),
                     ),
@@ -332,7 +342,7 @@ class _DiscoverFilterSheetState extends ConsumerState<DiscoverFilterSheet> {
                         label: Text(opt['label'] as String),
                         selected: isSelected,
                         onSelected: (sel) {
-                          if (sel) setState(() => _state = _state.copyWith(sort: opt['key'] as String));
+                          if (sel) _updateState(_state.copyWith(sort: opt['key'] as String));
                         },
                       );
                     }).toList(),
@@ -391,7 +401,7 @@ class _DiscoverFilterSheetState extends ConsumerState<DiscoverFilterSheet> {
                           label: Text(l10n.allSeasons),
                           selected: _state.season == null,
                           onSelected: (sel) {
-                            if (sel) setState(() => _state = _state.copyWith(season: () => null));
+                            if (sel) _updateState(_state.copyWith(season: () => null));
                           },
                         ),
                         ...seasons.map((s) {
@@ -405,7 +415,7 @@ class _DiscoverFilterSheetState extends ConsumerState<DiscoverFilterSheet> {
                             label: Text(s['label'] as String),
                             selected: isSelected,
                             onSelected: (sel) {
-                              setState(() => _state = _state.copyWith(season: () => sel ? s['key'] as String : null));
+                              _updateState(_state.copyWith(season: () => sel ? s['key'] as String : null));
                             },
                           );
                         }),
@@ -430,7 +440,7 @@ class _DiscoverFilterSheetState extends ConsumerState<DiscoverFilterSheet> {
                             selected: isSelected,
                             visualDensity: VisualDensity.compact,
                             onSelected: (sel) {
-                              if (sel) setState(() => _state = _state.copyWith(year: () => null));
+                              if (sel) _updateState(_state.copyWith(year: () => null));
                             },
                           );
                         }
@@ -441,7 +451,7 @@ class _DiscoverFilterSheetState extends ConsumerState<DiscoverFilterSheet> {
                           selected: isSelected,
                           visualDensity: VisualDensity.compact,
                           onSelected: (sel) {
-                            setState(() => _state = _state.copyWith(year: () => sel ? yr : null));
+                            _updateState(_state.copyWith(year: () => sel ? yr : null));
                           },
                         );
                       },
@@ -460,7 +470,7 @@ class _DiscoverFilterSheetState extends ConsumerState<DiscoverFilterSheet> {
                         label: Text(l10n.allFormats),
                         selected: _state.format == null,
                         onSelected: (sel) {
-                          if (sel) setState(() => _state = _state.copyWith(format: () => null));
+                          if (sel) _updateState(_state.copyWith(format: () => null));
                         },
                       ),
                       ...(isAnime
@@ -472,7 +482,7 @@ class _DiscoverFilterSheetState extends ConsumerState<DiscoverFilterSheet> {
                           label: Text(f['label'] as String),
                           selected: isSelected,
                           onSelected: (sel) {
-                            setState(() => _state = _state.copyWith(format: () => sel ? f['key'] as String : null));
+                            _updateState(_state.copyWith(format: () => sel ? f['key'] as String : null));
                           },
                         );
                       }),
@@ -491,7 +501,7 @@ class _DiscoverFilterSheetState extends ConsumerState<DiscoverFilterSheet> {
                         label: Text(l10n.allStatuses),
                         selected: _state.status == null,
                         onSelected: (sel) {
-                          if (sel) setState(() => _state = _state.copyWith(status: () => null));
+                          if (sel) _updateState(_state.copyWith(status: () => null));
                         },
                       ),
                       ...statuses.map((st) {
@@ -500,7 +510,7 @@ class _DiscoverFilterSheetState extends ConsumerState<DiscoverFilterSheet> {
                           label: Text(st['label'] as String),
                           selected: isSelected,
                           onSelected: (sel) {
-                            setState(() => _state = _state.copyWith(status: () => sel ? st['key'] as String : null));
+                            _updateState(_state.copyWith(status: () => sel ? st['key'] as String : null));
                           },
                         );
                       }),

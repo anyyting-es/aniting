@@ -28,7 +28,7 @@ func ScanShowDirectories(opts ScannerOptions) ([]*ShowLocalFile, error) {
 			continue
 		}
 
-		hint := "tv"
+		hint := ""
 		if opts.FolderTypes != nil {
 			normDir := filepath.ToSlash(filepath.Clean(dirPath))
 			for fPath, fType := range opts.FolderTypes {
@@ -39,8 +39,8 @@ func ScanShowDirectories(opts ScannerOptions) ([]*ShowLocalFile, error) {
 			}
 		}
 
-		// Skip folders explicitly designated strictly as anime-only
-		if hint == "anime" {
+		// Only scan folders explicitly designated as TV, movie, or mixed. Anime is default.
+		if hint != "tv" && hint != "movie" && hint != "mixed" {
 			continue
 		}
 

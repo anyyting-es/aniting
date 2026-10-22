@@ -19,6 +19,7 @@ import 'package:seanime_app/data/models/show_local_file_item.dart';
 import 'package:seanime_app/data/repositories/seanime_repository.dart';
 import 'package:seanime_app/data/services/manga_offline_service.dart';
 import 'package:seanime_app/data/services/offline_library_service.dart';
+import 'package:seanime_app/data/services/offline_sync_service.dart';
 import 'package:seanime_app/data/services/feed_cache_service.dart';
 import 'package:seanime_app/core/api/websocket_service.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
@@ -39,6 +40,20 @@ final serverManagerProvider = Provider<ServerManager>((ref) {
 final repositoryProvider = Provider<SeanimeRepository>((ref) {
   final client = ref.watch(apiClientProvider);
   return SeanimeRepository(client);
+});
+
+/// Servicio de sincronización offline para persistir y enviar cambios diferidos a AniList.
+final offlineSyncServiceProvider = Provider<OfflineSyncService>((ref) {
+  final service = OfflineSyncService.instance;
+  final repo = ref.watch(repositoryProvider);
+  service.attachRepository(repo);
+  service.onSyncCompleted = (count) {
+    ref.invalidate(animeCollectionProvider);
+    ref.invalidate(continueWatchingProvider);
+    ref.invalidate(mangaCollectionProvider);
+    ref.invalidate(continueReadingMangaProvider);
+  };
+  return service;
 });
 
 /// Servicio WebSocket singleton — se conecta cuando el servidor está online.
@@ -135,6 +150,7 @@ class ServerNotifier extends Notifier<ServerStateModel> {
           _repo.ensureOnlineStreamingEnabled();
           _repo.ensureTorrentStreamingEnabled();
           _repo.ensureWatchContinuityEnabled();
+          unawaited(ref.read(offlineSyncServiceProvider).syncPending());
           return;
         }
       }
@@ -153,6 +169,7 @@ class ServerNotifier extends Notifier<ServerStateModel> {
       _repo.ensureTorrentStreamingEnabled();
       _repo.ensureWatchContinuityEnabled();
       _checkAndStartLanBroadcasting(info?.version);
+      unawaited(ref.read(offlineSyncServiceProvider).syncPending());
       return;
     }
 
@@ -177,6 +194,7 @@ class ServerNotifier extends Notifier<ServerStateModel> {
           _repo.ensureOnlineStreamingEnabled();
           _repo.ensureTorrentStreamingEnabled();
           _checkAndStartLanBroadcasting(info?.version);
+          unawaited(ref.read(offlineSyncServiceProvider).syncPending());
           return;
         }
       }
@@ -218,6 +236,7 @@ class ServerNotifier extends Notifier<ServerStateModel> {
         _repo.ensureOnlineStreamingEnabled();
         _repo.ensureTorrentStreamingEnabled();
         _repo.ensureWatchContinuityEnabled();
+        unawaited(ref.read(offlineSyncServiceProvider).syncPending());
 
         // 2. Invalidar providers de feeds en el siguiente microtask para evitar dependencias circulares
         _invalidateFeedProviders();

@@ -82,7 +82,7 @@ class _DesktopHeaderState extends ConsumerState<DesktopHeader> {
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisAlignment: MainAxisAlignment.end,
+      mainAxisAlignment: MainAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
         // ─── 1. Main Anime Title (32px Bold) ───

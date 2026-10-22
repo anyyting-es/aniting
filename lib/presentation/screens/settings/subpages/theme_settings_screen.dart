@@ -17,10 +17,13 @@ class ThemeSettingsScreen extends ConsumerStatefulWidget {
   const ThemeSettingsScreen({super.key, this.isEmbedded = false});
 
   @override
-  ConsumerState<ThemeSettingsScreen> createState() => _ThemeSettingsScreenState();
+  ConsumerState<ThemeSettingsScreen> createState() =>
+      _ThemeSettingsScreenState();
 }
 
 class _ThemeSettingsScreenState extends ConsumerState<ThemeSettingsScreen> {
+  bool _showCommunityPalettes = false;
+
   @override
   Widget build(BuildContext context) {
     final themeSettings = ref.watch(themeProvider);
@@ -32,8 +35,10 @@ class _ThemeSettingsScreenState extends ConsumerState<ThemeSettingsScreen> {
     final theme = Theme.of(context);
 
     final bool isOledSelected = themeSettings.isOled;
-    final bool isDarkSelected = !themeSettings.isOled && themeSettings.themeMode == AppThemeMode.dark;
-    final bool isLightSelected = !themeSettings.isOled && themeSettings.themeMode == AppThemeMode.light;
+    final bool isDarkSelected =
+        !themeSettings.isOled && themeSettings.themeMode == AppThemeMode.dark;
+    final bool isLightSelected =
+        !themeSettings.isOled && themeSettings.themeMode == AppThemeMode.light;
 
     return PixelSubpageScaffold(
       title: l10n.themeAndColors,
@@ -55,7 +60,20 @@ class _ThemeSettingsScreenState extends ConsumerState<ThemeSettingsScreen> {
               onTap: () async {
                 await themeNotifier.setOled(false);
                 await themeNotifier.setThemeMode(AppThemeMode.dark);
-                await themeNotifier.setPaletteId(AppPalettes.catppuccinId, resetCustomAccent: false);
+                final curId = themeSettings.paletteId;
+                if (curId == AppPalettes.oledBlackId) {
+                  await themeNotifier.setPaletteId(
+                    AppPalettes.materialPurpleId,
+                    resetCustomAccent: false,
+                  );
+                } else {
+                  final matchingId =
+                      AppPalettes.getMatchingVariant(curId, true);
+                  await themeNotifier.setPaletteId(
+                    matchingId,
+                    resetCustomAccent: false,
+                  );
+                }
               },
             ),
             const SizedBox(width: 10),
@@ -70,7 +88,20 @@ class _ThemeSettingsScreenState extends ConsumerState<ThemeSettingsScreen> {
               onTap: () async {
                 await themeNotifier.setOled(false);
                 await themeNotifier.setThemeMode(AppThemeMode.light);
-                await themeNotifier.setPaletteId(AppPalettes.catppuccinLatteId, resetCustomAccent: false);
+                final curId = themeSettings.paletteId;
+                if (curId == AppPalettes.oledBlackId) {
+                  await themeNotifier.setPaletteId(
+                    AppPalettes.materialPurpleId,
+                    resetCustomAccent: false,
+                  );
+                } else {
+                  final matchingId =
+                      AppPalettes.getMatchingVariant(curId, false);
+                  await themeNotifier.setPaletteId(
+                    matchingId,
+                    resetCustomAccent: false,
+                  );
+                }
               },
             ),
             const SizedBox(width: 10),
@@ -85,17 +116,52 @@ class _ThemeSettingsScreenState extends ConsumerState<ThemeSettingsScreen> {
               onTap: () async {
                 await themeNotifier.setThemeMode(AppThemeMode.dark);
                 await themeNotifier.setOled(true);
-                await themeNotifier.setPaletteId(AppPalettes.oledBlackId, resetCustomAccent: false);
               },
             ),
           ],
         ),
         const SizedBox(height: 24),
 
-        // ─── 2. COLOR DE ACENTO ───────────────────────────────────
-        SettingsSectionHeader(title: l10n.accentColor),
+        // ─── 2. PALETAS MATERIAL DESIGN (MATERIAL YOU) ───────────
+        SettingsSectionHeader(title: l10n.materialDesignPalettes),
+        const SizedBox(height: 4),
+        Text(
+          l10n.materialDesignPalettesDesc,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 12),
+        _buildMaterialPalettesGrid(
+          themeSettings: themeSettings,
+          themeNotifier: themeNotifier,
+          iconPack: iconPack,
+          theme: theme,
+          l10n: l10n,
+        ),
+        const SizedBox(height: 24),
+
+        // ─── 3. COLOR DE ACENTO (SEMILLA TONAL M3) ───────────────
+        SettingsSectionHeader(title: l10n.accentColorPalette),
         const SizedBox(height: 10),
-        _buildAccentColorPicker(themeSettings, themeNotifier, iconPack, colors, l10n),
+        _buildAccentColorPicker(
+          themeSettings,
+          themeNotifier,
+          iconPack,
+          colors,
+          l10n,
+        ),
+        const SizedBox(height: 24),
+
+        // ─── 4. PALETAS DE LA COMUNIDAD (OPCIONAL) ───────────────
+        _buildCommunityPalettesSection(
+          themeSettings: themeSettings,
+          themeNotifier: themeNotifier,
+          iconPack: iconPack,
+          theme: theme,
+          colors: colors,
+          l10n: l10n,
+        ),
         const SizedBox(height: 24),
 
         // ─── 3. ICON PACK ─────────────────────────────────────────
@@ -207,7 +273,13 @@ class _ThemeSettingsScreenState extends ConsumerState<ThemeSettingsScreen> {
                   ),
                 ),
                 clipBehavior: Clip.antiAlias,
-                child: _buildThemeGraphic(mode, isOled, iconPack, colors, isSelected),
+                child: _buildThemeGraphic(
+                  mode,
+                  isOled,
+                  iconPack,
+                  colors,
+                  isSelected,
+                ),
               ),
               const SizedBox(height: 7),
               // Mode label + indicator
@@ -218,10 +290,12 @@ class _ThemeSettingsScreenState extends ConsumerState<ThemeSettingsScreen> {
                     isOled
                         ? AppIcons.tv(iconPack)
                         : (mode == AppThemeMode.dark
-                            ? AppIcons.darkMode(iconPack)
-                            : AppIcons.lightMode(iconPack)),
+                              ? AppIcons.darkMode(iconPack)
+                              : AppIcons.lightMode(iconPack)),
                     size: 13,
-                    color: isSelected ? colors.accent : theme.colorScheme.onSurfaceVariant,
+                    color: isSelected
+                        ? colors.accent
+                        : theme.colorScheme.onSurfaceVariant,
                   ),
                   const SizedBox(width: 5),
                   Flexible(
@@ -229,8 +303,12 @@ class _ThemeSettingsScreenState extends ConsumerState<ThemeSettingsScreen> {
                       label,
                       style: TextStyle(
                         fontSize: 12,
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                        color: isSelected ? colors.accent : theme.colorScheme.onSurface,
+                        fontWeight: isSelected
+                            ? FontWeight.bold
+                            : FontWeight.w500,
+                        color: isSelected
+                            ? colors.accent
+                            : theme.colorScheme.onSurface,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -280,9 +358,23 @@ class _ThemeSettingsScreenState extends ConsumerState<ThemeSettingsScreen> {
         children: [
           Row(
             children: [
-              Container(width: 4.5, height: 4.5, decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle)),
+              Container(
+                width: 4.5,
+                height: 4.5,
+                decoration: BoxDecoration(
+                  color: dotColor,
+                  shape: BoxShape.circle,
+                ),
+              ),
               const SizedBox(width: 3),
-              Container(width: 16, height: 3, decoration: BoxDecoration(color: lineTitle, borderRadius: BorderRadius.circular(2))),
+              Container(
+                width: 16,
+                height: 3,
+                decoration: BoxDecoration(
+                  color: lineTitle,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
             ],
           ),
           const Spacer(),
@@ -303,14 +395,19 @@ class _ThemeSettingsScreenState extends ConsumerState<ThemeSettingsScreen> {
                     decoration: BoxDecoration(
                       color: isOled
                           ? const Color(0xFF16161D)
-                          : (isDark ? const Color(0xFF25293D) : const Color(0xFFECEFF6)),
+                          : (isDark
+                                ? const Color(0xFF25293D)
+                                : const Color(0xFFECEFF6)),
                       borderRadius: BorderRadius.circular(2.5),
                     ),
                   ),
                   const SizedBox(width: 5),
                   Expanded(
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 5,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: cardBg,
                         borderRadius: BorderRadius.circular(3.5),
@@ -325,16 +422,32 @@ class _ThemeSettingsScreenState extends ConsumerState<ThemeSettingsScreen> {
                               Container(
                                 width: 5.0,
                                 height: 5.0,
-                                decoration: BoxDecoration(color: colors.accent, shape: BoxShape.circle),
+                                decoration: BoxDecoration(
+                                  color: colors.accent,
+                                  shape: BoxShape.circle,
+                                ),
                               ),
                               const SizedBox(width: 3.5),
                               Expanded(
-                                child: Container(height: 2.0, decoration: BoxDecoration(color: lineMuted, borderRadius: BorderRadius.circular(1.5))),
+                                child: Container(
+                                  height: 2.0,
+                                  decoration: BoxDecoration(
+                                    color: lineMuted,
+                                    borderRadius: BorderRadius.circular(1.5),
+                                  ),
+                                ),
                               ),
                             ],
                           ),
                           const SizedBox(height: 2),
-                          Container(width: 18, height: 2, decoration: BoxDecoration(color: lineMuted.withValues(alpha: 0.6), borderRadius: BorderRadius.circular(1))),
+                          Container(
+                            width: 18,
+                            height: 2,
+                            decoration: BoxDecoration(
+                              color: lineMuted.withValues(alpha: 0.6),
+                              borderRadius: BorderRadius.circular(1),
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -368,7 +481,9 @@ class _ThemeSettingsScreenState extends ConsumerState<ThemeSettingsScreen> {
               : colors.surfaceElevated.withValues(alpha: 0.40),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? colors.accent : colors.border.withValues(alpha: 0.45),
+            color: isSelected
+                ? colors.accent
+                : colors.border.withValues(alpha: 0.45),
             width: 1.8,
           ),
         ),
@@ -382,7 +497,9 @@ class _ThemeSettingsScreenState extends ConsumerState<ThemeSettingsScreen> {
                     title,
                     style: TextStyle(
                       fontSize: 13,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                      fontWeight: isSelected
+                          ? FontWeight.bold
+                          : FontWeight.w600,
                       color: isSelected ? colors.accent : colors.textPrimary,
                     ),
                     maxLines: 1,
@@ -390,14 +507,24 @@ class _ThemeSettingsScreenState extends ConsumerState<ThemeSettingsScreen> {
                   ),
                 ),
                 if (isSelected)
-                  Icon(AppIcons.checkCircle(iconPack), color: colors.accent, size: 16),
+                  Icon(
+                    AppIcons.checkCircle(iconPack),
+                    color: colors.accent,
+                    size: 16,
+                  ),
               ],
             ),
             const SizedBox(height: 10),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: icons
-                  .map((ic) => Icon(ic, size: 18, color: isSelected ? colors.accent : colors.textSecondary))
+                  .map(
+                    (ic) => Icon(
+                      ic,
+                      size: 18,
+                      color: isSelected ? colors.accent : colors.textSecondary,
+                    ),
+                  )
                   .toList(),
             ),
           ],
@@ -432,13 +559,16 @@ class _ThemeSettingsScreenState extends ConsumerState<ThemeSettingsScreen> {
                   color: themeSettings.currentPalette.accent,
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: themeSettings.customAccentIndex == null ? colors.textPrimary : Colors.transparent,
+                    color: themeSettings.customAccentIndex == null
+                        ? colors.textPrimary
+                        : Colors.transparent,
                     width: 2.5,
                   ),
                   boxShadow: themeSettings.customAccentIndex == null
                       ? [
                           BoxShadow(
-                            color: themeSettings.currentPalette.accent.withValues(alpha: 0.5),
+                            color: themeSettings.currentPalette.accent
+                                .withValues(alpha: 0.5),
                             blurRadius: 8,
                           ),
                         ]
@@ -449,7 +579,9 @@ class _ThemeSettingsScreenState extends ConsumerState<ThemeSettingsScreen> {
                     themeSettings.customAccentIndex == null
                         ? AppIcons.check(iconPack)
                         : AppIcons.sparkles(iconPack),
-                    color: themeSettings.currentPalette.isDark ? Colors.black : Colors.white,
+                    color: themeSettings.currentPalette.isDark
+                        ? Colors.black
+                        : Colors.white,
                     size: 16,
                   ),
                 ),
@@ -475,7 +607,9 @@ class _ThemeSettingsScreenState extends ConsumerState<ThemeSettingsScreen> {
                     color: item.color,
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: isSelected ? colors.textPrimary : Colors.transparent,
+                      color: isSelected
+                          ? colors.textPrimary
+                          : Colors.transparent,
                       width: 2.5,
                     ),
                     boxShadow: isSelected
@@ -491,7 +625,9 @@ class _ThemeSettingsScreenState extends ConsumerState<ThemeSettingsScreen> {
                       ? Center(
                           child: Icon(
                             AppIcons.check(iconPack),
-                            color: item.color.computeLuminance() > 0.5 ? Colors.black : Colors.white,
+                            color: item.color.computeLuminance() > 0.5
+                                ? Colors.black
+                                : Colors.white,
                             size: 16,
                           ),
                         )
@@ -504,6 +640,307 @@ class _ThemeSettingsScreenState extends ConsumerState<ThemeSettingsScreen> {
       ),
     );
   }
+
+  String? _localizedMaterialName(String id, AppTranslations l10n) {
+    switch (id) {
+      case AppPalettes.materialPurpleId:
+        return l10n.materialPurpleName;
+      case AppPalettes.materialBlueId:
+        return l10n.materialBlueName;
+      case AppPalettes.materialGreenId:
+        return l10n.materialGreenName;
+      case AppPalettes.materialOrangeId:
+        return l10n.materialOrangeName;
+      case AppPalettes.materialCrimsonId:
+        return l10n.materialCrimsonName;
+      case AppPalettes.materialTealId:
+        return l10n.materialTealName;
+      default:
+        return null;
+    }
+  }
+
+  Widget _buildMaterialPalettesGrid({
+    required ThemeSettings themeSettings,
+    required ThemeNotifier themeNotifier,
+    required AppIconPack iconPack,
+    required ThemeData theme,
+    required AppTranslations l10n,
+  }) {
+    final systemPalette = AppPalettes.detectSystemPalette();
+    final items = AppPalettes.materialPalettesInfo;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isWide = constraints.maxWidth >= 480;
+        final crossAxisCount = isWide ? 2 : 1;
+
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: items.length + (systemPalette != null ? 1 : 0),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            mainAxisSpacing: 8,
+            crossAxisSpacing: 8,
+            childAspectRatio: isWide ? 3.4 : 4.4,
+          ),
+          itemBuilder: (context, index) {
+            if (systemPalette != null && index == items.length) {
+              final isSelected = themeSettings.paletteId == AppPalettes.systemId &&
+                  themeSettings.customAccentIndex == null;
+              return _buildPaletteTile(
+                title: l10n.paletteSystem,
+                subtitle: systemPalette.description,
+                primaryColor: systemPalette.accent,
+                containerColor: systemPalette.surfaceElevated,
+                isSelected: isSelected,
+                iconPack: iconPack,
+                theme: theme,
+                onTap: () async {
+                  await themeNotifier.setPaletteId(
+                    AppPalettes.systemId,
+                    resetCustomAccent: true,
+                  );
+                },
+              );
+            }
+
+            final info = items[index];
+            final isSelected = themeSettings.paletteId == info.id &&
+                themeSettings.customAccentIndex == null;
+            final itemScheme = ColorScheme.fromSeed(
+              seedColor: info.seed,
+              brightness: theme.brightness,
+            );
+
+            return _buildPaletteTile(
+              title: _localizedMaterialName(info.id, l10n) ?? info.name,
+              subtitle: info.description,
+              primaryColor: itemScheme.primary,
+              containerColor: itemScheme.primaryContainer,
+              isSelected: isSelected,
+              iconPack: iconPack,
+              theme: theme,
+              onTap: () async {
+                await themeNotifier.setPaletteId(
+                  info.id,
+                  resetCustomAccent: true,
+                );
+              },
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildPaletteTile({
+    required String title,
+    required String subtitle,
+    required Color primaryColor,
+    required Color containerColor,
+    required bool isSelected,
+    required AppIconPack iconPack,
+    required ThemeData theme,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? primaryColor.withValues(alpha: 0.14)
+              : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isSelected
+                ? primaryColor
+                : theme.colorScheme.outlineVariant.withValues(alpha: 0.20),
+            width: isSelected ? 1.8 : 1.0,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: primaryColor,
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: Container(
+                  width: 14,
+                  height: 14,
+                  decoration: BoxDecoration(
+                    color: containerColor,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                      color: isSelected ? primaryColor : theme.colorScheme.onSurface,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.75),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            if (isSelected)
+              Icon(
+                AppIcons.checkCircle(iconPack),
+                size: 18,
+                color: primaryColor,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCommunityPalettesSection({
+    required ThemeSettings themeSettings,
+    required ThemeNotifier themeNotifier,
+    required AppIconPack iconPack,
+    required ThemeData theme,
+    required AppThemeColors colors,
+    required AppTranslations l10n,
+  }) {
+    final communityPalettes = themeSettings.themeMode == AppThemeMode.light
+        ? AppPalettes.getLightPresets()
+        : AppPalettes.getDarkPresets();
+
+    return PixelSettingsGroupCard(
+      children: [
+        InkWell(
+          onTap: () => setState(() => _showCommunityPalettes = !_showCommunityPalettes),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
+              children: [
+                Icon(
+                  AppIcons.palette(iconPack),
+                  size: 20,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.themePresets,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        l10n.themePresetsDesc,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  _showCommunityPalettes
+                      ? Icons.keyboard_arrow_up_rounded
+                      : Icons.keyboard_arrow_down_rounded,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (_showCommunityPalettes) ...[
+          const Divider(height: 1),
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: communityPalettes.map((p) {
+                final isSelected = themeSettings.paletteId == p.id;
+                return InkWell(
+                  onTap: () async {
+                    await themeNotifier.setPaletteId(p.id, resetCustomAccent: false);
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? p.accent.withValues(alpha: 0.18)
+                          : p.surfaceElevated.withValues(alpha: 0.4),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isSelected ? p.accent : p.border.withValues(alpha: 0.5),
+                        width: isSelected ? 1.5 : 1.0,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 12,
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: p.accent,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          p.localizedName(l10n),
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                            color: isSelected ? p.accent : theme.colorScheme.onSurface,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
 }
 
 /// Slider for app corner radius adjustment with Material 3 Expressive shapes.
@@ -512,10 +949,12 @@ class _ThemeSettingsRadiusSection extends ConsumerStatefulWidget {
   const _ThemeSettingsRadiusSection({required this.colors});
 
   @override
-  ConsumerState<_ThemeSettingsRadiusSection> createState() => _ThemeSettingsRadiusSectionState();
+  ConsumerState<_ThemeSettingsRadiusSection> createState() =>
+      _ThemeSettingsRadiusSectionState();
 }
 
-class _ThemeSettingsRadiusSectionState extends ConsumerState<_ThemeSettingsRadiusSection> {
+class _ThemeSettingsRadiusSectionState
+    extends ConsumerState<_ThemeSettingsRadiusSection> {
   late double _localRadius;
   double? _lastBroadcastRadius;
 
@@ -552,17 +991,17 @@ class _ThemeSettingsRadiusSectionState extends ConsumerState<_ThemeSettingsRadiu
     final colors = widget.colors;
     final l10n = ref.watch(translationsProvider);
 
-    ref.listen<double>(
-      themeProvider.select((s) => s.borderRadius),
-      (prev, next) {
-        if ((next - _localRadius).abs() > 0.01) {
-          setState(() {
-            _localRadius = next;
-            _lastBroadcastRadius = next.roundToDouble();
-          });
-        }
-      },
-    );
+    ref.listen<double>(themeProvider.select((s) => s.borderRadius), (
+      prev,
+      next,
+    ) {
+      if ((next - _localRadius).abs() > 0.01) {
+        setState(() {
+          _localRadius = next;
+          _lastBroadcastRadius = next.roundToDouble();
+        });
+      }
+    });
 
     return PixelCardContainer(
       child: Column(
@@ -573,7 +1012,11 @@ class _ThemeSettingsRadiusSectionState extends ConsumerState<_ThemeSettingsRadiu
             children: [
               Row(
                 children: [
-                  Icon(Icons.rounded_corner_rounded, size: 20, color: colors.textSecondary),
+                  Icon(
+                    Icons.rounded_corner_rounded,
+                    size: 20,
+                    color: colors.textSecondary,
+                  ),
                   const SizedBox(width: 12),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -589,21 +1032,23 @@ class _ThemeSettingsRadiusSectionState extends ConsumerState<_ThemeSettingsRadiu
                       const SizedBox(height: 2),
                       Text(
                         l10n.adjustCornerRadiusDesc,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: colors.textMuted,
-                        ),
+                        style: TextStyle(fontSize: 12, color: colors.textMuted),
                       ),
                     ],
                   ),
                 ],
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: colors.accent.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: colors.accent.withValues(alpha: 0.4)),
+                  border: Border.all(
+                    color: colors.accent.withValues(alpha: 0.4),
+                  ),
                 ),
                 child: Text(
                   '${_localRadius.round()} px',
@@ -650,15 +1095,40 @@ class _ThemeSettingsRadiusSectionState extends ConsumerState<_ThemeSettingsRadiu
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                _buildRadiusChip(l10n.cornerRadiusSquare, 0.0, _localRadius, colors),
+                _buildRadiusChip(
+                  l10n.cornerRadiusSquare,
+                  0.0,
+                  _localRadius,
+                  colors,
+                ),
                 const SizedBox(width: 6),
-                _buildRadiusChip(l10n.cornerRadiusSubtle, 6.0, _localRadius, colors),
+                _buildRadiusChip(
+                  l10n.cornerRadiusSubtle,
+                  6.0,
+                  _localRadius,
+                  colors,
+                ),
                 const SizedBox(width: 6),
-                _buildRadiusChip(l10n.cornerRadiusNormal, 10.0, _localRadius, colors),
+                _buildRadiusChip(
+                  l10n.cornerRadiusNormal,
+                  10.0,
+                  _localRadius,
+                  colors,
+                ),
                 const SizedBox(width: 6),
-                _buildRadiusChip(l10n.cornerRadiusRound, 16.0, _localRadius, colors),
+                _buildRadiusChip(
+                  l10n.cornerRadiusRound,
+                  16.0,
+                  _localRadius,
+                  colors,
+                ),
                 const SizedBox(width: 6),
-                _buildRadiusChip(l10n.cornerRadiusCurved, 22.0, _localRadius, colors),
+                _buildRadiusChip(
+                  l10n.cornerRadiusCurved,
+                  22.0,
+                  _localRadius,
+                  colors,
+                ),
               ],
             ),
           ),
@@ -667,7 +1137,12 @@ class _ThemeSettingsRadiusSectionState extends ConsumerState<_ThemeSettingsRadiu
     );
   }
 
-  Widget _buildRadiusChip(String label, double value, double currentRadius, AppThemeColors colors) {
+  Widget _buildRadiusChip(
+    String label,
+    double value,
+    double currentRadius,
+    AppThemeColors colors,
+  ) {
     final isSelected = (currentRadius.round() == value.round());
     return InkWell(
       onTap: () => _onChipSelected(value),
@@ -676,10 +1151,14 @@ class _ThemeSettingsRadiusSectionState extends ConsumerState<_ThemeSettingsRadiu
         duration: const Duration(milliseconds: 140),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
-          color: isSelected ? colors.accent.withValues(alpha: 0.18) : colors.surfaceElevated.withValues(alpha: 0.35),
+          color: isSelected
+              ? colors.accent.withValues(alpha: 0.18)
+              : colors.surfaceElevated.withValues(alpha: 0.35),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: isSelected ? colors.accent : colors.border.withValues(alpha: 0.3),
+            color: isSelected
+                ? colors.accent
+                : colors.border.withValues(alpha: 0.3),
             width: isSelected ? 1.2 : 1.0,
           ),
         ),

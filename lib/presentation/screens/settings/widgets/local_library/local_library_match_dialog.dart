@@ -10,10 +10,7 @@ import 'package:seanime_app/presentation/providers/local_library_provider.dart';
 class LocalLibraryMatchDialog extends ConsumerStatefulWidget {
   final UnmatchedFolderGroup group;
 
-  const LocalLibraryMatchDialog({
-    super.key,
-    required this.group,
-  });
+  const LocalLibraryMatchDialog({super.key, required this.group});
 
   static Future<bool?> show(BuildContext context, UnmatchedFolderGroup group) {
     return showDialog<bool>(
@@ -24,10 +21,12 @@ class LocalLibraryMatchDialog extends ConsumerStatefulWidget {
   }
 
   @override
-  ConsumerState<LocalLibraryMatchDialog> createState() => _LocalLibraryMatchDialogState();
+  ConsumerState<LocalLibraryMatchDialog> createState() =>
+      _LocalLibraryMatchDialogState();
 }
 
-class _LocalLibraryMatchDialogState extends ConsumerState<LocalLibraryMatchDialog> {
+class _LocalLibraryMatchDialogState
+    extends ConsumerState<LocalLibraryMatchDialog> {
   final TextEditingController _searchController = TextEditingController();
   bool _isTmdbMode = false;
   List<AnimeEntry> _suggestions = [];
@@ -41,16 +40,6 @@ class _LocalLibraryMatchDialogState extends ConsumerState<LocalLibraryMatchDialo
   void initState() {
     super.initState();
     _isTmdbMode = widget.group.isTmdb;
-    final lower = widget.group.folderPath.toLowerCase();
-    if (!_isTmdbMode &&
-        (lower.contains('serie') ||
-            lower.contains('show') ||
-            lower.contains('tv') ||
-            lower.contains('movie') ||
-            lower.contains('pelicula') ||
-            lower.contains('película'))) {
-      _isTmdbMode = true;
-    }
     _loadSuggestions();
   }
 
@@ -152,7 +141,9 @@ class _LocalLibraryMatchDialogState extends ConsumerState<LocalLibraryMatchDialo
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = ref.watch(translationsProvider);
-    final displayList = _searchController.text.trim().isNotEmpty ? _searchResults : _suggestions;
+    final displayList = _searchController.text.trim().isNotEmpty
+        ? _searchResults
+        : _suggestions;
 
     final hasAnyMatched = widget.group.files.any((f) => f.isMatched);
 
@@ -175,7 +166,11 @@ class _LocalLibraryMatchDialogState extends ConsumerState<LocalLibraryMatchDialo
                       color: theme.colorScheme.primary.withValues(alpha: 0.12),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(Icons.link_rounded, size: 20, color: theme.colorScheme.primary),
+                    child: Icon(
+                      Icons.link_rounded,
+                      size: 20,
+                      color: theme.colorScheme.primary,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -183,8 +178,13 @@ class _LocalLibraryMatchDialogState extends ConsumerState<LocalLibraryMatchDialo
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          _isTmdbMode ? l10n.matchProviderTmdb : l10n.matchWithAnimeAction,
-                          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 17),
+                          _isTmdbMode
+                              ? l10n.matchProviderTmdb
+                              : l10n.matchWithAnimeAction,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 17,
+                          ),
                         ),
                         Text(
                           widget.group.folderName,
@@ -211,17 +211,24 @@ class _LocalLibraryMatchDialogState extends ConsumerState<LocalLibraryMatchDialo
                 segments: [
                   ButtonSegment<bool>(
                     value: false,
-                    label: Text(l10n.matchProviderAniList, style: const TextStyle(fontSize: 12.5)),
+                    label: Text(
+                      l10n.matchProviderAniList,
+                      style: const TextStyle(fontSize: 12.5),
+                    ),
                     icon: const Icon(Icons.animation_rounded, size: 16),
                   ),
                   ButtonSegment<bool>(
                     value: true,
-                    label: Text(l10n.matchProviderTmdb, style: const TextStyle(fontSize: 12.5)),
+                    label: Text(
+                      l10n.matchProviderTmdb,
+                      style: const TextStyle(fontSize: 12.5),
+                    ),
                     icon: const Icon(Icons.movie_filter_rounded, size: 16),
                   ),
                 ],
                 selected: {_isTmdbMode},
-                onSelectionChanged: (newSelection) => _switchProviderMode(newSelection.first),
+                onSelectionChanged: (newSelection) =>
+                    _switchProviderMode(newSelection.first),
                 style: const ButtonStyle(
                   visualDensity: VisualDensity.compact,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -234,7 +241,9 @@ class _LocalLibraryMatchDialogState extends ConsumerState<LocalLibraryMatchDialo
                 controller: _searchController,
                 onChanged: _onSearch,
                 decoration: InputDecoration(
-                  hintText: _isTmdbMode ? 'Buscar serie o película en TMDB...' : l10n.searchAnimePrompt,
+                  hintText: _isTmdbMode
+                      ? 'Buscar serie o película en TMDB...'
+                      : l10n.searchAnimePrompt,
                   prefixIcon: const Icon(Icons.search_rounded, size: 20),
                   suffixIcon: _searchController.text.isNotEmpty
                       ? IconButton(
@@ -246,12 +255,16 @@ class _LocalLibraryMatchDialogState extends ConsumerState<LocalLibraryMatchDialo
                         )
                       : null,
                   filled: true,
-                  fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                  fillColor: theme.colorScheme.surfaceContainerHighest
+                      .withValues(alpha: 0.5),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
                     borderSide: BorderSide.none,
                   ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                 ),
               ),
               const SizedBox(height: 10),
@@ -274,114 +287,138 @@ class _LocalLibraryMatchDialogState extends ConsumerState<LocalLibraryMatchDialo
                 child: _isLoadingSuggestions || _isSearching
                     ? const Center(child: CircularProgressIndicator())
                     : displayList.isEmpty
-                        ? Center(
-                            child: Text(
-                              l10n.noEpisodesFound,
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          )
-                        : ListView.separated(
-                            itemCount: displayList.length,
-                            separatorBuilder: (ctx, i) => const SizedBox(height: 6),
-                            itemBuilder: (ctx, i) {
-                              final anime = displayList[i];
-                              final isSelected = _selectedAnime?.id == anime.id;
+                    ? Center(
+                        child: Text(
+                          l10n.noEpisodesFound,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      )
+                    : ListView.separated(
+                        itemCount: displayList.length,
+                        separatorBuilder: (ctx, i) => const SizedBox(height: 6),
+                        itemBuilder: (ctx, i) {
+                          final anime = displayList[i];
+                          final isSelected = _selectedAnime?.id == anime.id;
 
-                              return InkWell(
-                                onTap: () => setState(() => _selectedAnime = anime),
+                          return InkWell(
+                            onTap: () => setState(() => _selectedAnime = anime),
+                            borderRadius: BorderRadius.circular(14),
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? theme.colorScheme.primary.withValues(
+                                        alpha: 0.15,
+                                      )
+                                    : theme.colorScheme.surfaceContainerHighest
+                                          .withValues(alpha: 0.25),
                                 borderRadius: BorderRadius.circular(14),
-                                child: Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: isSelected
-                                        ? theme.colorScheme.primary.withValues(alpha: 0.15)
-                                        : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.25),
-                                    borderRadius: BorderRadius.circular(14),
-                                    border: Border.all(
-                                      color: isSelected
-                                          ? theme.colorScheme.primary
-                                          : Colors.transparent,
-                                      width: 1.5,
+                                border: Border.all(
+                                  color: isSelected
+                                      ? theme.colorScheme.primary
+                                      : Colors.transparent,
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  // Cover Image
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: SizedBox(
+                                      width: 44,
+                                      height: 60,
+                                      child: anime.coverImage != null
+                                          ? CachedNetworkImage(
+                                              imageUrl: anime.coverImage!,
+                                              fit: BoxFit.cover,
+                                              errorWidget:
+                                                  (
+                                                    context,
+                                                    url,
+                                                    err,
+                                                  ) => Container(
+                                                    color: theme
+                                                        .colorScheme
+                                                        .surfaceContainerHighest,
+                                                    child: const Icon(
+                                                      Icons.movie_outlined,
+                                                      size: 20,
+                                                    ),
+                                                  ),
+                                            )
+                                          : Container(
+                                              color: theme
+                                                  .colorScheme
+                                                  .surfaceContainerHighest,
+                                              child: const Icon(
+                                                Icons.movie_outlined,
+                                                size: 20,
+                                              ),
+                                            ),
                                     ),
                                   ),
-                                  child: Row(
-                                    children: [
-                                      // Cover Image
-                                      ClipRRect(
-                                        borderRadius: BorderRadius.circular(8),
-                                        child: SizedBox(
-                                          width: 44,
-                                          height: 60,
-                                          child: anime.coverImage != null
-                                              ? CachedNetworkImage(
-                                                  imageUrl: anime.coverImage!,
-                                                  fit: BoxFit.cover,
-                                                  errorWidget: (context, url, err) => Container(
-                                                    color: theme.colorScheme.surfaceContainerHighest,
-                                                    child: const Icon(Icons.movie_outlined, size: 20),
-                                                  ),
-                                                )
-                                              : Container(
-                                                  color: theme.colorScheme.surfaceContainerHighest,
-                                                  child: const Icon(Icons.movie_outlined, size: 20),
-                                                ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
+                                  const SizedBox(width: 12),
 
-                                      // Titles & info
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              anime.title,
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.w700,
-                                                fontSize: 13.5,
-                                                color: isSelected
-                                                    ? theme.colorScheme.primary
-                                                    : theme.colorScheme.onSurface,
-                                              ),
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              [
-                                                if (anime.format != null) anime.format,
-                                                if (anime.year != null) '${anime.year}',
-                                                if (anime.totalEpisodes != null && anime.totalEpisodes! > 0)
-                                                  '${anime.totalEpisodes} eps',
-                                              ].join(' • '),
-                                              style: TextStyle(
-                                                fontSize: 11.5,
-                                                color: theme.colorScheme.onSurfaceVariant,
-                                              ),
-                                            ),
-                                          ],
+                                  // Titles & info
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          anime.title,
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 13.5,
+                                            color: isSelected
+                                                ? theme.colorScheme.primary
+                                                : theme.colorScheme.onSurface,
+                                          ),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
                                         ),
-                                      ),
-
-                                      // Selected radio check
-                                      if (isSelected)
-                                        Padding(
-                                          padding: const EdgeInsets.only(right: 6),
-                                          child: Icon(
-                                            Icons.check_circle_rounded,
-                                            color: theme.colorScheme.primary,
-                                            size: 22,
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          [
+                                            if (anime.format != null)
+                                              anime.format,
+                                            if (anime.year != null)
+                                              '${anime.year}',
+                                            if (anime.totalEpisodes != null &&
+                                                anime.totalEpisodes! > 0)
+                                              '${anime.totalEpisodes} eps',
+                                          ].join(' • '),
+                                          style: TextStyle(
+                                            fontSize: 11.5,
+                                            color: theme
+                                                .colorScheme
+                                                .onSurfaceVariant,
                                           ),
                                         ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
-                                ),
-                              );
-                            },
-                          ),
+
+                                  // Selected radio check
+                                  if (isSelected)
+                                    Padding(
+                                      padding: const EdgeInsets.only(right: 6),
+                                      child: Icon(
+                                        Icons.check_circle_rounded,
+                                        color: theme.colorScheme.primary,
+                                        size: 22,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
               ),
 
               const SizedBox(height: 14),
@@ -393,12 +430,16 @@ class _LocalLibraryMatchDialogState extends ConsumerState<LocalLibraryMatchDialo
                     TextButton.icon(
                       icon: const Icon(Icons.link_off_rounded, size: 16),
                       label: Text(l10n.unmatchAction),
-                      style: TextButton.styleFrom(foregroundColor: theme.colorScheme.error),
+                      style: TextButton.styleFrom(
+                        foregroundColor: theme.colorScheme.error,
+                      ),
                       onPressed: _isSubmitting
                           ? null
                           : () async {
                               setState(() => _isSubmitting = true);
-                              final notifier = ref.read(localLibraryProvider.notifier);
+                              final notifier = ref.read(
+                                localLibraryProvider.notifier,
+                              );
                               await notifier.unmatchShowGroup(widget.group);
                               if (context.mounted) {
                                 Navigator.of(context).pop(true);
@@ -413,8 +454,12 @@ class _LocalLibraryMatchDialogState extends ConsumerState<LocalLibraryMatchDialo
                     ),
                   const Spacer(),
                   TextButton(
-                    onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(false),
-                    child: Text(MaterialLocalizations.of(context).cancelButtonLabel),
+                    onPressed: _isSubmitting
+                        ? null
+                        : () => Navigator.of(context).pop(false),
+                    child: Text(
+                      MaterialLocalizations.of(context).cancelButtonLabel,
+                    ),
                   ),
                   const SizedBox(width: 8),
                   FilledButton(
@@ -422,10 +467,14 @@ class _LocalLibraryMatchDialogState extends ConsumerState<LocalLibraryMatchDialo
                         ? null
                         : () async {
                             setState(() => _isSubmitting = true);
-                            final notifier = ref.read(localLibraryProvider.notifier);
+                            final notifier = ref.read(
+                              localLibraryProvider.notifier,
+                            );
                             bool ok;
                             if (_isTmdbMode) {
-                              final isMovie = _selectedAnime!.format?.toUpperCase() == 'MOVIE';
+                              final isMovie =
+                                  _selectedAnime!.format?.toUpperCase() ==
+                                  'MOVIE';
                               ok = await notifier.matchShowGroup(
                                 group: widget.group,
                                 tmdbId: _selectedAnime!.id,
@@ -458,7 +507,11 @@ class _LocalLibraryMatchDialogState extends ConsumerState<LocalLibraryMatchDialo
                             height: 18,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : Text(_isTmdbMode ? 'Vincular TMDB' : l10n.matchWithAnimeAction),
+                        : Text(
+                            _isTmdbMode
+                                ? 'Vincular TMDB'
+                                : l10n.matchWithAnimeAction,
+                          ),
                   ),
                 ],
               ),

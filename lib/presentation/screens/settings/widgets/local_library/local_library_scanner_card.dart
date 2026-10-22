@@ -7,10 +7,7 @@ import 'package:seanime_app/presentation/screens/settings/widgets/pixel_settings
 class LocalLibraryScannerCard extends ConsumerWidget {
   final LocalLibraryState state;
 
-  const LocalLibraryScannerCard({
-    super.key,
-    required this.state,
-  });
+  const LocalLibraryScannerCard({super.key, required this.state});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -22,7 +19,9 @@ class LocalLibraryScannerCard extends ConsumerWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+        color: theme.colorScheme.surfaceContainerHighest.withValues(
+          alpha: 0.35,
+        ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: theme.colorScheme.outlineVariant.withValues(alpha: 0.15),
@@ -41,7 +40,10 @@ class LocalLibraryScannerCard extends ConsumerWidget {
               const SizedBox(width: 8),
               Text(
                 l10n.scanLibrarySection,
-                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14.5,
+                ),
               ),
             ],
           ),
@@ -111,10 +113,16 @@ class LocalLibraryScannerCard extends ConsumerWidget {
                   ClipRRect(
                     borderRadius: BorderRadius.circular(8),
                     child: LinearProgressIndicator(
-                      value: state.scanProgress > 0 ? (state.scanProgress / 100.0) : null,
+                      value: state.scanProgress > 0
+                          ? (state.scanProgress / 100.0)
+                          : null,
                       minHeight: 6,
-                      backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.15),
-                      valueColor: AlwaysStoppedAnimation(theme.colorScheme.primary),
+                      backgroundColor: theme.colorScheme.primary.withValues(
+                        alpha: 0.15,
+                      ),
+                      valueColor: AlwaysStoppedAnimation(
+                        theme.colorScheme.primary,
+                      ),
                     ),
                   ),
                 ],
@@ -141,16 +149,25 @@ class LocalLibraryScannerCard extends ConsumerWidget {
                       }
                     },
               icon: Icon(
-                state.isScanning ? Icons.hourglass_top_rounded : Icons.search_rounded,
+                state.isScanning
+                    ? Icons.hourglass_top_rounded
+                    : Icons.search_rounded,
                 size: 20,
               ),
               label: Text(
-                state.isScanning ? l10n.scanInProgressStatus : l10n.scanLibraryNow,
-                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5),
+                state.isScanning
+                    ? l10n.scanInProgressStatus
+                    : l10n.scanLibraryNow,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14.5,
+                ),
               ),
               style: FilledButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
               ),
             ),
           ),

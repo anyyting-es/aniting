@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/constants/app_constants.dart';
@@ -18,7 +19,8 @@ class ServerSettingsScreen extends ConsumerStatefulWidget {
   const ServerSettingsScreen({super.key, this.isEmbedded = false});
 
   @override
-  ConsumerState<ServerSettingsScreen> createState() => _ServerSettingsScreenState();
+  ConsumerState<ServerSettingsScreen> createState() =>
+      _ServerSettingsScreenState();
 }
 
 class _ServerSettingsScreenState extends ConsumerState<ServerSettingsScreen> {
@@ -85,23 +87,27 @@ class _ServerSettingsScreenState extends ConsumerState<ServerSettingsScreen> {
                     height: 42,
                     decoration: BoxDecoration(
                       color: serverState.state == ServerState.remote
-                          ? theme.colorScheme.primaryContainer.withValues(alpha: 0.7)
+                          ? theme.colorScheme.primaryContainer.withValues(
+                              alpha: 0.7,
+                            )
                           : serverState.isOnline
-                              ? const Color(0xFF22C55E).withValues(alpha: 0.15)
-                              : theme.colorScheme.errorContainer.withValues(alpha: 0.4),
+                          ? const Color(0xFF22C55E).withValues(alpha: 0.15)
+                          : theme.colorScheme.errorContainer.withValues(
+                              alpha: 0.4,
+                            ),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
                       serverState.state == ServerState.remote
                           ? Icons.lan_rounded
                           : serverState.isOnline
-                              ? Icons.check_circle_rounded
-                              : Icons.cancel_rounded,
+                          ? Icons.check_circle_rounded
+                          : Icons.cancel_rounded,
                       color: serverState.state == ServerState.remote
                           ? theme.colorScheme.primary
                           : serverState.isOnline
-                              ? const Color(0xFF22C55E)
-                              : theme.colorScheme.error,
+                          ? const Color(0xFF22C55E)
+                          : theme.colorScheme.error,
                       size: 24,
                     ),
                   ),
@@ -114,17 +120,20 @@ class _ServerSettingsScreenState extends ConsumerState<ServerSettingsScreen> {
                           serverState.state == ServerState.remote
                               ? l10n.serverActiveRemote
                               : serverState.isOnline
-                                  ? l10n.serverActiveLocal
-                                  : l10n.serverOffline,
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                              ? l10n.serverActiveLocal
+                              : l10n.serverOffline,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           serverState.state == ServerState.remote
                               ? '${ref.watch(serverManagerProvider).host}:${ref.watch(serverManagerProvider).port}${serverState.status?.version != null ? ' • v${serverState.status!.version}' : ''}'
                               : serverState.isOnline
-                                  ? '127.0.0.1:${ref.watch(serverManagerProvider).port}${serverState.status?.version != null ? ' • ${l10n.coreVersion}: ${serverState.status!.version}' : ''}'
-                                  : '127.0.0.1:${ref.watch(serverManagerProvider).port}',
+                              ? '127.0.0.1:${ref.watch(serverManagerProvider).port}${serverState.status?.version != null ? ' • ${l10n.coreVersion}: ${serverState.status!.version}' : ''}'
+                              : '127.0.0.1:${ref.watch(serverManagerProvider).port}',
                           style: TextStyle(
                             color: theme.colorScheme.onSurfaceVariant,
                             fontSize: 12.5,
@@ -141,7 +150,9 @@ class _ServerSettingsScreenState extends ConsumerState<ServerSettingsScreen> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.primaryContainer.withValues(alpha: 0.25),
+                    color: theme.colorScheme.primaryContainer.withValues(
+                      alpha: 0.25,
+                    ),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                       color: theme.colorScheme.primary.withValues(alpha: 0.2),
@@ -149,25 +160,35 @@ class _ServerSettingsScreenState extends ConsumerState<ServerSettingsScreen> {
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.info_outline_rounded, size: 18, color: theme.colorScheme.primary),
+                      Icon(
+                        Icons.info_outline_rounded,
+                        size: 18,
+                        color: theme.colorScheme.primary,
+                      ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
                           l10n.connectedToRemoteDesc,
-                          style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 12),
+                          style: TextStyle(
+                            color: theme.colorScheme.onSurface,
+                            fontSize: 12,
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
               ],
-              if (serverState.errorMessage != null && !serverState.isOnline) ...[
+              if (serverState.errorMessage != null &&
+                  !serverState.isOnline) ...[
                 const SizedBox(height: 12),
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.errorContainer.withValues(alpha: 0.3),
+                    color: theme.colorScheme.errorContainer.withValues(
+                      alpha: 0.3,
+                    ),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                       color: theme.colorScheme.error.withValues(alpha: 0.3),
@@ -175,7 +196,10 @@ class _ServerSettingsScreenState extends ConsumerState<ServerSettingsScreen> {
                   ),
                   child: Text(
                     serverState.errorMessage!,
-                    style: TextStyle(color: theme.colorScheme.error, fontSize: 12.5),
+                    style: TextStyle(
+                      color: theme.colorScheme.error,
+                      fontSize: 12.5,
+                    ),
                   ),
                 ),
               ],
@@ -185,7 +209,9 @@ class _ServerSettingsScreenState extends ConsumerState<ServerSettingsScreen> {
                   width: double.infinity,
                   child: FilledButton.tonalIcon(
                     style: FilledButton.styleFrom(
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
                       padding: const EdgeInsets.symmetric(vertical: 13),
                     ),
                     onPressed: () async {
@@ -195,7 +221,9 @@ class _ServerSettingsScreenState extends ConsumerState<ServerSettingsScreen> {
                         messenger.showSnackBar(
                           SnackBar(
                             behavior: SnackBarBehavior.floating,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
                             content: Text(l10n.serverStarting),
                             duration: const Duration(seconds: 2),
                           ),
@@ -216,7 +244,9 @@ class _ServerSettingsScreenState extends ConsumerState<ServerSettingsScreen> {
                     Expanded(
                       child: FilledButton.icon(
                         style: FilledButton.styleFrom(
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
                           padding: const EdgeInsets.symmetric(vertical: 13),
                         ),
                         onPressed: serverState.state == ServerState.starting
@@ -226,7 +256,9 @@ class _ServerSettingsScreenState extends ConsumerState<ServerSettingsScreen> {
                             ? const SizedBox(
                                 width: 16,
                                 height: 16,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
                               )
                             : const Icon(Icons.play_arrow_rounded),
                         label: Text(
@@ -240,10 +272,14 @@ class _ServerSettingsScreenState extends ConsumerState<ServerSettingsScreen> {
                     Expanded(
                       child: OutlinedButton.icon(
                         style: OutlinedButton.styleFrom(
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
                           padding: const EdgeInsets.symmetric(vertical: 13),
                         ),
-                        onPressed: (serverState.isOnline || serverState.state == ServerState.starting)
+                        onPressed:
+                            (serverState.isOnline ||
+                                serverState.state == ServerState.starting)
                             ? () => serverNotifier.stopServer()
                             : null,
                         icon: const Icon(Icons.stop_rounded),
@@ -277,7 +313,9 @@ class _ServerSettingsScreenState extends ConsumerState<ServerSettingsScreen> {
             messenger.showSnackBar(
               SnackBar(
                 behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
                 content: Text(l10n.testingConnection),
                 duration: const Duration(seconds: 1),
               ),
@@ -290,7 +328,9 @@ class _ServerSettingsScreenState extends ConsumerState<ServerSettingsScreen> {
               messenger.showSnackBar(
                 SnackBar(
                   behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                   content: Text(l10n.connectedToServer),
                   backgroundColor: const Color(0xFF22C55E),
                 ),
@@ -299,8 +339,12 @@ class _ServerSettingsScreenState extends ConsumerState<ServerSettingsScreen> {
               messenger.showSnackBar(
                 SnackBar(
                   behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  content: Text(currentState.errorMessage ?? l10n.serverOffline),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  content: Text(
+                    currentState.errorMessage ?? l10n.serverOffline,
+                  ),
                   backgroundColor: Theme.of(context).colorScheme.error,
                 ),
               );
@@ -322,18 +366,30 @@ class _ServerSettingsScreenState extends ConsumerState<ServerSettingsScreen> {
                   labelText: l10n.hostIp,
                   hintText: l10n.hostHint,
                   filled: true,
-                  fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+                  fillColor: theme.colorScheme.surfaceContainerHighest
+                      .withValues(alpha: 0.35),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3)),
+                    borderSide: BorderSide(
+                      color: theme.colorScheme.outlineVariant.withValues(
+                        alpha: 0.3,
+                      ),
+                    ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3)),
+                    borderSide: BorderSide(
+                      color: theme.colorScheme.outlineVariant.withValues(
+                        alpha: 0.3,
+                      ),
+                    ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
+                    borderSide: BorderSide(
+                      color: theme.colorScheme.primary,
+                      width: 2,
+                    ),
                   ),
                   prefixIcon: const Icon(Icons.dns_rounded),
                 ),
@@ -346,18 +402,30 @@ class _ServerSettingsScreenState extends ConsumerState<ServerSettingsScreen> {
                   labelText: l10n.port,
                   hintText: '${AppConstants.defaultPort}',
                   filled: true,
-                  fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+                  fillColor: theme.colorScheme.surfaceContainerHighest
+                      .withValues(alpha: 0.35),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3)),
+                    borderSide: BorderSide(
+                      color: theme.colorScheme.outlineVariant.withValues(
+                        alpha: 0.3,
+                      ),
+                    ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3)),
+                    borderSide: BorderSide(
+                      color: theme.colorScheme.outlineVariant.withValues(
+                        alpha: 0.3,
+                      ),
+                    ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
+                    borderSide: BorderSide(
+                      color: theme.colorScheme.primary,
+                      width: 2,
+                    ),
                   ),
                   prefixIcon: const Icon(Icons.tag_rounded),
                 ),
@@ -367,23 +435,32 @@ class _ServerSettingsScreenState extends ConsumerState<ServerSettingsScreen> {
                 width: double.infinity,
                 child: FilledButton.tonalIcon(
                   style: FilledButton.styleFrom(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
                     padding: const EdgeInsets.symmetric(vertical: 13),
                   ),
                   onPressed: () async {
                     final host = _hostController.text.trim();
-                    final port = int.tryParse(_portController.text.trim()) ?? AppConstants.defaultPort;
+                    final port =
+                        int.tryParse(_portController.text.trim()) ??
+                        AppConstants.defaultPort;
                     final messenger = ScaffoldMessenger.of(context);
                     messenger.hideCurrentSnackBar();
                     messenger.showSnackBar(
                       SnackBar(
                         behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
                         content: Text(l10n.testingConnection),
                         duration: const Duration(seconds: 1),
                       ),
                     );
-                    await serverNotifier.checkConnection(host: host, port: port);
+                    await serverNotifier.checkConnection(
+                      host: host,
+                      port: port,
+                    );
                     if (!context.mounted) return;
                     final currentState = ref.read(serverNotifierProvider);
                     messenger.hideCurrentSnackBar();
@@ -391,7 +468,9 @@ class _ServerSettingsScreenState extends ConsumerState<ServerSettingsScreen> {
                       messenger.showSnackBar(
                         SnackBar(
                           behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                           content: Text(l10n.connectedToServer),
                           backgroundColor: const Color(0xFF22C55E),
                         ),
@@ -400,8 +479,12 @@ class _ServerSettingsScreenState extends ConsumerState<ServerSettingsScreen> {
                       messenger.showSnackBar(
                         SnackBar(
                           behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                          content: Text(currentState.errorMessage ?? l10n.serverOffline),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          content: Text(
+                            currentState.errorMessage ?? l10n.serverOffline,
+                          ),
                           backgroundColor: Theme.of(context).colorScheme.error,
                         ),
                       );
@@ -451,7 +534,10 @@ class _ServerSettingsScreenState extends ConsumerState<ServerSettingsScreen> {
                         children: [
                           Text(
                             l10n.batteryOpt,
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14.5),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14.5,
+                            ),
                           ),
                           const SizedBox(height: 2),
                           Text(
@@ -474,11 +560,15 @@ class _ServerSettingsScreenState extends ConsumerState<ServerSettingsScreen> {
                     width: double.infinity,
                     child: OutlinedButton.icon(
                       style: OutlinedButton.styleFrom(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
                         padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
                       onPressed: () async {
-                        await ref.read(serverManagerProvider).requestIgnoreBatteryOptimization();
+                        await ref
+                            .read(serverManagerProvider)
+                            .requestIgnoreBatteryOptimization();
                         await Future.delayed(const Duration(seconds: 1));
                         _loadAndroidStatus();
                       },
@@ -519,7 +609,10 @@ class _ServerSettingsScreenState extends ConsumerState<ServerSettingsScreen> {
                         children: [
                           Text(
                             l10n.storageAccess,
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14.5),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14.5,
+                            ),
                           ),
                           const SizedBox(height: 2),
                           Text(
@@ -542,11 +635,15 @@ class _ServerSettingsScreenState extends ConsumerState<ServerSettingsScreen> {
                     width: double.infinity,
                     child: OutlinedButton.icon(
                       style: OutlinedButton.styleFrom(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
                         padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
                       onPressed: () async {
-                        await ref.read(serverManagerProvider).requestManageStorage();
+                        await ref
+                            .read(serverManagerProvider)
+                            .requestManageStorage();
                         await Future.delayed(const Duration(seconds: 1));
                         _loadAndroidStatus();
                       },

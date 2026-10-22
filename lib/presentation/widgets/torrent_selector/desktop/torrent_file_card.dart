@@ -13,6 +13,8 @@ class TorrentFileCard extends ConsumerStatefulWidget {
   final VoidCallback? onExternalPlayer;
   final VoidCallback? onDebridStream;
   final VoidCallback? onDebridDownload;
+  final bool isSelectedForDownload;
+  final int? selectedEpisodeNumber;
 
   const TorrentFileCard({
     super.key,
@@ -23,6 +25,8 @@ class TorrentFileCard extends ConsumerStatefulWidget {
     this.onExternalPlayer,
     this.onDebridStream,
     this.onDebridDownload,
+    this.isSelectedForDownload = false,
+    this.selectedEpisodeNumber,
   });
 
   @override
@@ -54,25 +58,49 @@ class _TorrentFileCardState extends ConsumerState<TorrentFileCard> {
                 ? '4K'
                 : '1080p'));
 
-    final bgColor = isDark
-        ? (_isHovered
-            ? const Color(0xFF1C1D21).withValues(alpha: 0.82)
-            : const Color(0xFF131416).withValues(alpha: 0.68))
-        : (_isHovered
-            ? theme.colorScheme.surfaceContainerHigh.withValues(alpha: 0.85)
-            : theme.colorScheme.surfaceContainerLow.withValues(alpha: 0.72));
+    final isSelected = widget.isSelectedForDownload;
 
-    final borderColor = isBest
-        ? Colors.amber.withValues(alpha: _isHovered ? 0.7 : 0.35)
-        : (_isHovered
-            ? theme.colorScheme.primary.withValues(alpha: 0.35)
-            : (isDark
-                ? Colors.white.withValues(alpha: 0.08)
-                : theme.colorScheme.outlineVariant.withValues(alpha: 0.35)));
+    final bgColor = isSelected
+        ? theme.colorScheme.primary.withValues(alpha: isDark ? 0.14 : 0.08)
+        : (isDark
+            ? (_isHovered
+                ? const Color(0xFF1C1D21).withValues(alpha: 0.82)
+                : const Color(0xFF131416).withValues(alpha: 0.68))
+            : (_isHovered
+                ? theme.colorScheme.surfaceContainerHigh.withValues(alpha: 0.85)
+                : theme.colorScheme.surfaceContainerLow.withValues(alpha: 0.72)));
+
+    final borderColor = isSelected
+        ? theme.colorScheme.primary
+        : (isBest
+            ? Colors.amber.withValues(alpha: _isHovered ? 0.7 : 0.35)
+            : (_isHovered
+                ? theme.colorScheme.primary.withValues(alpha: 0.35)
+                : (isDark
+                    ? Colors.white.withValues(alpha: 0.08)
+                    : theme.colorScheme.outlineVariant.withValues(alpha: 0.35))));
 
     final leftBoxBg = isDark
         ? const Color(0xFF18191D).withValues(alpha: 0.75)
         : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.6);
+
+    final cardBoxShadow = isSelected
+        ? [
+            BoxShadow(
+              color: theme.colorScheme.primary.withValues(alpha: isDark ? 0.25 : 0.15),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ]
+        : (_isHovered
+            ? [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.06),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ]
+            : null);
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
@@ -82,16 +110,8 @@ class _TorrentFileCardState extends ConsumerState<TorrentFileCard> {
         decoration: BoxDecoration(
           color: bgColor,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: borderColor, width: isBest ? 1.2 : 1.0),
-          boxShadow: _isHovered
-              ? [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.06),
-                    blurRadius: 10,
-                    offset: const Offset(0, 3),
-                  ),
-                ]
-              : null,
+          border: Border.all(color: borderColor, width: isSelected ? 1.6 : (isBest ? 1.2 : 1.0)),
+          boxShadow: cardBoxShadow,
         ),
         child: Material(
           color: Colors.transparent,
@@ -180,6 +200,37 @@ class _TorrentFileCardState extends ConsumerState<TorrentFileCard> {
                                         fontSize: 9.5,
                                         fontWeight: FontWeight.bold,
                                         color: Colors.amber,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                            if (isSelected) ...[
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: theme.colorScheme.primary.withValues(alpha: 0.20),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(
+                                    color: theme.colorScheme.primary,
+                                    width: 0.8,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.check_circle_rounded, size: 12, color: theme.colorScheme.primary),
+                                    const SizedBox(width: 3),
+                                    Text(
+                                      widget.selectedEpisodeNumber != null
+                                          ? 'Ep. ${widget.selectedEpisodeNumber}'
+                                          : l10n.torrentSelectedBadge,
+                                      style: TextStyle(
+                                        fontSize: 9.5,
+                                        fontWeight: FontWeight.bold,
+                                        color: theme.colorScheme.primary,
                                       ),
                                     ),
                                   ],
@@ -296,11 +347,17 @@ class _TorrentFileCardState extends ConsumerState<TorrentFileCard> {
                             if (widget.onDownload != null) ...[
                               IconButton(
                                 icon: Icon(
-                                  AppIcons.download(iconPack),
-                                  size: 16,
-                                  color: theme.colorScheme.onSurfaceVariant,
+                                  isSelected
+                                      ? Icons.check_circle_rounded
+                                      : AppIcons.download(iconPack),
+                                  size: isSelected ? 18 : 16,
+                                  color: isSelected
+                                      ? theme.colorScheme.primary
+                                      : theme.colorScheme.onSurfaceVariant,
                                 ),
-                                tooltip: l10n.downloadEpisode,
+                                tooltip: isSelected
+                                    ? l10n.torrentSelectedBadge
+                                    : l10n.downloadEpisode,
                                 onPressed: widget.isStarting ? null : widget.onDownload,
                                 visualDensity: VisualDensity.compact,
                                 padding: EdgeInsets.zero,
@@ -390,6 +447,37 @@ class _TorrentFileCardState extends ConsumerState<TorrentFileCard> {
                                     ),
                                   ),
                                 ),
+                                if (isSelected) ...[
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: theme.colorScheme.primary.withValues(alpha: 0.20),
+                                      borderRadius: BorderRadius.circular(6),
+                                      border: Border.all(
+                                        color: theme.colorScheme.primary,
+                                        width: 0.9,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.check_circle_rounded, size: 13, color: theme.colorScheme.primary),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          widget.selectedEpisodeNumber != null
+                                              ? 'Ep. ${widget.selectedEpisodeNumber}'
+                                              : l10n.torrentSelectedBadge,
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                            color: theme.colorScheme.primary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                                 if (widget.isStarting) ...[
                                   const SizedBox(width: 8),
                                   const SizedBox(
@@ -560,11 +648,17 @@ class _TorrentFileCardState extends ConsumerState<TorrentFileCard> {
                             if (widget.onDownload != null) ...[
                               IconButton(
                                 icon: Icon(
-                                  AppIcons.download(iconPack),
-                                  size: 18,
-                                  color: theme.colorScheme.onSurfaceVariant,
+                                  isSelected
+                                      ? Icons.check_circle_rounded
+                                      : AppIcons.download(iconPack),
+                                  size: isSelected ? 20 : 18,
+                                  color: isSelected
+                                      ? theme.colorScheme.primary
+                                      : theme.colorScheme.onSurfaceVariant,
                                 ),
-                                tooltip: l10n.downloadEpisode,
+                                tooltip: isSelected
+                                    ? l10n.torrentSelectedBadge
+                                    : l10n.downloadEpisode,
                                 onPressed: widget.isStarting ? null : widget.onDownload,
                                 visualDensity: VisualDensity.compact,
                               ),

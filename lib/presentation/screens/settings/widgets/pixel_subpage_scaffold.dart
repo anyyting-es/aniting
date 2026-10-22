@@ -1,4 +1,5 @@
 import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:seanime_app/presentation/widgets/desktop_title_bar.dart';
 
@@ -18,7 +19,9 @@ class PixelSubpageScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final extraDesktopTop = DesktopWindowFrame.isDesktopPlatform ? DesktopTitleBar.height : 0.0;
+    final extraDesktopTop = DesktopWindowFrame.isDesktopPlatform
+        ? DesktopTitleBar.height
+        : 0.0;
     final topPadding = MediaQuery.paddingOf(context).top + extraDesktopTop;
 
     // En pantallas grandes (PC / Tablet): centrado compacto sin estiramiento exagerado
@@ -32,10 +35,7 @@ class PixelSubpageScaffold extends StatelessWidget {
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
               children: [
-                PixelPageHeader(
-                  title: title,
-                  showBackButton: false,
-                ),
+                PixelPageHeader(title: title, showBackButton: false),
                 const SizedBox(height: 12),
                 ...children,
                 const SizedBox(height: 32),
@@ -65,7 +65,10 @@ class PixelSubpageScaffold extends StatelessWidget {
                 ),
               ),
               SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
                     ...children,
@@ -102,16 +105,30 @@ class _PixelSubpageHeaderDelegate extends SliverPersistentHeaderDelegate {
   double get maxExtent => 128.0 + topPadding;
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
     final double delta = maxExtent - minExtent;
-    final double progress = delta > 0 ? (shrinkOffset / delta).clamp(0.0, 1.0) : 0.0;
+    final double progress = delta > 0
+        ? (shrinkOffset / delta).clamp(0.0, 1.0)
+        : 0.0;
     final double curveProgress = Curves.easeInOutCubic.transform(progress);
 
     // Interpolación continua de posición, tamaño de fuente y espaciado
     final double currentLeft = ui.lerpDouble(16.0, 60.0, curveProgress)!;
-    final double currentBottom = ui.lerpDouble(14.0, (kToolbarHeight - 24) / 2, curveProgress)!;
+    final double currentBottom = ui.lerpDouble(
+      14.0,
+      (kToolbarHeight - 24) / 2,
+      curveProgress,
+    )!;
     final double currentFontSize = ui.lerpDouble(26.0, 19.0, curveProgress)!;
-    final double currentLetterSpacing = ui.lerpDouble(-0.5, -0.2, curveProgress)!;
+    final double currentLetterSpacing = ui.lerpDouble(
+      -0.5,
+      -0.2,
+      curveProgress,
+    )!;
 
     return Container(
       color: theme.scaffoldBackgroundColor,
@@ -141,7 +158,9 @@ class _PixelSubpageHeaderDelegate extends SliverPersistentHeaderDelegate {
               height: 40,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
+                color: theme.colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.6,
+                ),
               ),
               child: IconButton(
                 padding: EdgeInsets.zero,
@@ -197,8 +216,11 @@ class PixelPageHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final extraDesktopTop = DesktopWindowFrame.isDesktopPlatform ? DesktopTitleBar.height : 0.0;
-    final topPadding = (showBackButton ? MediaQuery.paddingOf(context).top : 0.0) +
+    final extraDesktopTop = DesktopWindowFrame.isDesktopPlatform
+        ? DesktopTitleBar.height
+        : 0.0;
+    final topPadding =
+        (showBackButton ? MediaQuery.paddingOf(context).top : 0.0) +
         (showBackButton ? extraDesktopTop : 0.0);
 
     return Padding(
@@ -212,7 +234,9 @@ class PixelPageHeader extends StatelessWidget {
               height: 40,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
+                color: theme.colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.6,
+                ),
               ),
               child: IconButton(
                 padding: EdgeInsets.zero,

@@ -461,40 +461,49 @@ class _WelcomeStepExtensionsState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // ─── FILA DE FILTROS: IDIOMA & TIPO ───
+        // ─── 1. SELECTOR DE IDIOMA DEDICADO Y PROMINENTE (LIQUID GLASS) ───
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.18),
+            ),
+          ),
+          child: Row(
+            children: [
+              _buildLanguagePill(
+                label: 'Español',
+                langCode: 'es',
+                icon: LucideIcons.languages,
+                theme: theme,
+              ),
+              const SizedBox(width: 4),
+              _buildLanguagePill(
+                label: 'English',
+                langCode: 'en',
+                icon: LucideIcons.languages,
+                theme: theme,
+              ),
+              const SizedBox(width: 4),
+              _buildLanguagePill(
+                label: l10n.allLanguages,
+                langCode: 'all',
+                icon: LucideIcons.globe,
+                theme: theme,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // ─── 2. CATEGORÍAS (TODAS / TORRENTS / STREAMING / MANGA) ───
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
             children: [
-              // Idioma Selector
-              _buildFilterChip(
-                label: 'Español',
-                icon: LucideIcons.languages,
-                isSelected: _selectedLang == 'es',
-                theme: theme,
-                onTap: () => setState(() => _selectedLang = 'es'),
-              ),
-              const SizedBox(width: 6),
-              _buildFilterChip(
-                label: 'English',
-                icon: LucideIcons.languages,
-                isSelected: _selectedLang == 'en',
-                theme: theme,
-                onTap: () => setState(() => _selectedLang = 'en'),
-              ),
-              const SizedBox(width: 6),
-              _buildFilterChip(
-                label: l10n.allLanguages,
-                isSelected: _selectedLang == 'all',
-                theme: theme,
-                onTap: () => setState(() => _selectedLang = 'all'),
-              ),
-
-              const SizedBox(width: 10),
-              Container(width: 1, height: 16, color: theme.dividerColor),
-              const SizedBox(width: 10),
-
-              // Categorías
               _buildFilterChip(
                 label: l10n.allRecommended,
                 isSelected: _extensionsFilterIndex == 0,
@@ -768,6 +777,69 @@ class _WelcomeStepExtensionsState
     );
   }
 
+  Widget _buildLanguagePill({
+    required String label,
+    required String langCode,
+    required IconData icon,
+    required ThemeData theme,
+  }) {
+    final isSelected = _selectedLang == langCode;
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Expanded(
+      child: InkWell(
+        onTap: () => setState(() => _selectedLang = langCode),
+        borderRadius: BorderRadius.circular(12),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutCubic,
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? (isDark
+                    ? theme.colorScheme.primary.withValues(alpha: 0.22)
+                    : theme.colorScheme.primary.withValues(alpha: 0.14))
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            border: isSelected
+                ? Border.all(
+                    color: theme.colorScheme.primary.withValues(alpha: 0.45),
+                    width: 1,
+                  )
+                : null,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 14,
+                color: isSelected
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                    color: isSelected
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.onSurfaceVariant,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildFilterChip({
     required String label,
     IconData? icon,
@@ -990,21 +1062,40 @@ class _ExtensionCleanRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          if (isInstalling)
-            const SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
-          else if (isInstalled)
-            const Icon(LucideIcons.checkCircle2, color: Colors.green, size: 20)
-          else
-            IconButton.filledTonal(
-              icon: const Icon(LucideIcons.download, size: 16),
-              tooltip: 'Instalar',
-              visualDensity: VisualDensity.compact,
-              onPressed: onInstall,
+          SizedBox(
+            width: 36,
+            height: 36,
+            child: Center(
+              child: isInstalling
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : isInstalled
+                      ? Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: Colors.green.withValues(alpha: 0.16),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            LucideIcons.check,
+                            color: Colors.green,
+                            size: 16,
+                          ),
+                        )
+                      : IconButton.filledTonal(
+                          icon: const Icon(LucideIcons.download, size: 16),
+                          tooltip: 'Instalar',
+                          visualDensity: VisualDensity.compact,
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                          onPressed: onInstall,
+                        ),
             ),
+          ),
         ],
       ),
     );

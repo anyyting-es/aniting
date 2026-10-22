@@ -131,7 +131,11 @@ class _CompactSearchBarState extends ConsumerState<CompactSearchBar> {
                             color: _isActive
                                 ? theme.colorScheme.onSurface
                                 : theme.colorScheme.onSurfaceVariant,
-                            onPressed: widget.onBack,
+                            onPressed: () {
+                              _effectiveFocusNode.unfocus();
+                              FocusScope.of(context).unfocus();
+                              widget.onBack?.call();
+                            },
                           )
                         : Padding(
                             key: const ValueKey('compact_search_icon_padding'),
@@ -153,7 +157,10 @@ class _CompactSearchBarState extends ConsumerState<CompactSearchBar> {
                     controller: widget.controller,
                     focusNode: _effectiveFocusNode,
                     onChanged: widget.onChanged,
-                    onSubmitted: widget.onSubmitted,
+                    onSubmitted: (val) {
+                      _effectiveFocusNode.unfocus();
+                      widget.onSubmitted?.call(val);
+                    },
                     textInputAction: TextInputAction.search,
                     style: TextStyle(
                       fontSize: 13.5,

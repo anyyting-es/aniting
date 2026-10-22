@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:g1455/g1455.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/theme/custom_route_transitions.dart';
+import 'package:seanime_app/data/services/offline_sync_service.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/screens/download_manager_screen.dart';
 import 'package:seanime_app/presentation/screens/downloads_screen.dart';
@@ -156,6 +158,9 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   totalAnime: allEntries.length,
                   totalManga: mangaEntries.length,
                 ),
+
+                // Offline Sync Banner (Visible when offline actions are pending)
+                _buildOfflineSyncBanner(context, theme, isDark, l10n, iconPack),
 
                 const SizedBox(height: 20),
 
@@ -559,6 +564,112 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           fontSize: 13.5,
         ),
       ),
+    );
+  }
+
+  Widget _buildOfflineSyncBanner(
+    BuildContext context,
+    ThemeData theme,
+    bool isDark,
+    AppTranslations l10n,
+    AppIconPack iconPack,
+  ) {
+    return ValueListenableBuilder<int>(
+      valueListenable: OfflineSyncService.instance.pendingCountNotifier,
+      builder: (context, pendingCount, _) {
+        if (pendingCount <= 0) return const SizedBox.shrink();
+
+        return Padding(
+          padding: const EdgeInsets.only(top: 14),
+          child: ValueListenableBuilder<bool>(
+            valueListenable: OfflineSyncService.instance.isSyncingNotifier,
+            builder: (context, isSyncing, _) {
+              return GlassCard(
+                borderRadius: BorderRadius.circular(16),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primaryContainer,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: isSyncing
+                            ? SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: theme.colorScheme.primary,
+                                ),
+                              )
+                            : Icon(
+                                AppIcons.sync(iconPack),
+                                size: 18,
+                                color: theme.colorScheme.onPrimaryContainer,
+                              ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l10n.offlineSyncTitle,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? Colors.white : theme.colorScheme.onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            isSyncing
+                                ? l10n.syncingOfflineProgress
+                                : l10n.offlineSyncPending(pendingCount),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    FilledButton.tonal(
+                      onPressed: isSyncing
+                          ? null
+                          : () async {
+                              final count = await OfflineSyncService.instance.syncPending();
+                              if (context.mounted && count > 0) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(l10n.offlineSyncCompleted(count)),
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                              }
+                            },
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                      child: Text(
+                        l10n.offlineSyncNow,
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 }

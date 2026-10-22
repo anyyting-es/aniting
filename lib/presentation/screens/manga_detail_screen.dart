@@ -20,12 +20,14 @@ class MangaDetailScreen extends ConsumerStatefulWidget {
   final int mediaId;
   final MangaEntry? initialEntry;
   final bool fromDownloads;
+  final Object? heroTag;
 
   const MangaDetailScreen({
     super.key,
     required this.mediaId,
     this.initialEntry,
     this.fromDownloads = false,
+    this.heroTag,
   });
 
   static Future<T?> navigate<T>(
@@ -33,6 +35,7 @@ class MangaDetailScreen extends ConsumerStatefulWidget {
     required int mediaId,
     MangaEntry? initialEntry,
     bool fromDownloads = false,
+    Object? heroTag,
   }) {
     return Navigator.push<T>(
       context,
@@ -41,6 +44,7 @@ class MangaDetailScreen extends ConsumerStatefulWidget {
           mediaId: mediaId,
           initialEntry: initialEntry,
           fromDownloads: fromDownloads,
+          heroTag: heroTag,
         ),
       ),
     );
@@ -629,6 +633,7 @@ class _MangaDetailScreenState extends ConsumerState<MangaDetailScreen> {
               onChapterClicked: _openReader,
               onDownloadChapter: _downloadChapter,
               onBatchDownload: () => _showBatchDownloadModal(context),
+              onDownloadSelected: _downloadMultiple,
               onOpenEditModal: () => _openEditEntryModal(),
               onContinueReading: _continueReading,
             );
@@ -656,6 +661,7 @@ class _MangaDetailScreenState extends ConsumerState<MangaDetailScreen> {
             onChapterClicked: _openReader,
             onDownloadChapter: _downloadChapter,
             onBatchDownload: () => _showBatchDownloadModal(context),
+            onDownloadSelected: _downloadMultiple,
             onOpenEditModal: () => _openEditEntryModal(),
             onShowDetailsModal: () => _showDetailsModal(context),
             onContinueReading: _continueReading,

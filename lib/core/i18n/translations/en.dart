@@ -228,15 +228,18 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get themePresets => 'Community Palettes';
   @override
-  String get themePresetsDesc => 'Curated visual themes inspired by the community and your system';
+  String get themePresetsDesc =>
+      'Curated visual themes inspired by the community and your system';
   @override
   String get iconPack => 'Icon Pack';
   @override
-  String get iconPackDesc => 'Choose the visual style of icons across the application';
+  String get iconPackDesc =>
+      'Choose the visual style of icons across the application';
   @override
   String get iconPackLucide => 'Lucide (Modern Web / Desktop)';
   @override
-  String get iconPackLucideDesc => 'Clean, refined outline web icons with high clarity';
+  String get iconPackLucideDesc =>
+      'Clean, refined outline web icons with high clarity';
   @override
   String get iconPackMaterial => 'Material Symbols (Classic)';
   @override
@@ -257,7 +260,8 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get appLanguage => 'App Language';
   @override
-  String get appLanguageDesc => 'Choose your preferred language for the interface';
+  String get appLanguageDesc =>
+      'Choose your preferred language for the interface';
   @override
   String get serverSettings => 'Seanime Server';
   @override
@@ -271,21 +275,25 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get appearanceSubtitle => 'Theme, accent colors, titles and views';
   @override
-  String get extensionsSubtitle => 'Marketplace, online providers and repositories';
+  String get extensionsSubtitle =>
+      'Marketplace, online providers and repositories';
   @override
   String get streamingSources => 'Streaming Sources';
   @override
-  String get streamingSourcesSubtitle => 'Enable or disable Torrent and Online Streaming';
+  String get streamingSourcesSubtitle =>
+      'Enable or disable Torrent and Online Streaming';
   @override
   String get serverAndNetwork => 'Seanime Server & Network';
   @override
-  String get serverAndNetworkSubtitle => 'Local server, remote IP connection and performance';
+  String get serverAndNetworkSubtitle =>
+      'Local server, remote IP connection and performance';
   @override
   String get aboutApp => 'About Aniting';
   @override
   String get aboutSubtitle => 'Native Aniting Flutter Client';
   @override
-  String get aboutLegalese => 'Native client for anime management and playback.';
+  String get aboutLegalese =>
+      'Native client for anime management and playback.';
 
   // Appearance & Personalization
   @override
@@ -295,15 +303,18 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get fontStyle => 'Font Style';
   @override
-  String get fontStyleDesc => 'Select the font to be used across the interface.';
+  String get fontStyleDesc =>
+      'Select the font to be used across the interface.';
   @override
   String get livePreview => 'Live Preview';
   @override
-  String get fontPangram => 'The quick brown fox jumps over the lazy dog. 1234567890';
+  String get fontPangram =>
+      'The quick brown fox jumps over the lazy dog. 1234567890';
   @override
   String get preferredTitleLanguage => 'Preferred Title Language';
   @override
-  String get preferredTitleLanguageDesc => 'Choose how anime names are displayed throughout the app.';
+  String get preferredTitleLanguageDesc =>
+      'Choose how anime names are displayed throughout the app.';
   @override
   String get titleExample => 'Example';
   @override
@@ -328,7 +339,8 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get mobileNavStyle => 'Mobile Navigation Style';
   @override
-  String get mobileNavStyleDesc => 'Choose between the traditional fixed navigation bar or the floating dock';
+  String get mobileNavStyleDesc =>
+      'Choose between the traditional fixed navigation bar or the floating dock';
   @override
   String get mobileNavStyleFloating => 'Floating (Dock)';
   @override
@@ -336,7 +348,8 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get desktopNavStyle => 'Desktop Navigation Style';
   @override
-  String get desktopNavStyleDesc => 'Choose between the classic side rail or the centered floating dock';
+  String get desktopNavStyleDesc =>
+      'Choose between the classic side rail or the centered floating dock';
   @override
   String get desktopNavStyleFloating => 'Floating Dock';
   @override
@@ -344,11 +357,13 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get showScores => 'Show Ratings';
   @override
-  String get showScoresDesc => 'Display star ratings on content cards and posters';
+  String get showScoresDesc =>
+      'Display star ratings on content cards and posters';
   @override
   String get floatingResumeBar => 'Continue where you left off';
   @override
-  String get floatingResumeBarDesc => 'Show a floating bar to instantly resume your last anime or manga';
+  String get floatingResumeBarDesc =>
+      'Show a floating bar to instantly resume your last anime or manga';
 
   // Player Settings
   @override
@@ -404,7 +419,8 @@ class EnglishTranslations implements AppTranslations {
   String get pauseTorrentOnExitDesc =>
       'Pause torrent piece downloads when leaving the video player to save bandwidth and battery.';
   @override
-  String get defaultDirectoryHint => 'Default (~/.cache/aniting/torrentstream on SSD)';
+  String get defaultDirectoryHint =>
+      'Default (~/.cache/aniting/torrentstream on SSD)';
   @override
   String get savePath => 'Save path';
   @override
@@ -430,15 +446,18 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get batteryOpt => 'Background (Battery Saver)';
   @override
-  String get batteryOptDisabled => 'Optimization disabled (server will stay running)';
+  String get batteryOptDisabled =>
+      'Optimization disabled (server will stay running)';
   @override
-  String get batteryOptEnabled => 'Optimization active (Android may pause the server)';
+  String get batteryOptEnabled =>
+      'Optimization active (Android may pause the server)';
   @override
   String get disableOptimization => 'Disable Optimization';
   @override
   String get storageAccess => 'Files & Downloads Access';
   @override
-  String get storageAccessGranted => 'Permission granted to store torrents and anime';
+  String get storageAccessGranted =>
+      'Permission granted to store torrents and anime';
   @override
   String get storageAccessDenied => 'No full storage permission';
   @override
@@ -450,11 +469,13 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get lanSharing => 'Share Server on Network';
   @override
-  String get lanSharingDesc => 'Allow other devices on your Wi-Fi to connect to this server';
+  String get lanSharingDesc =>
+      'Allow other devices on your Wi-Fi to connect to this server';
   @override
   String get lanSharingActive => 'Sharing Active';
   @override
-  String get lanSharingActiveDesc => 'Other devices can find and connect to this server';
+  String get lanSharingActiveDesc =>
+      'Other devices can find and connect to this server';
   @override
   String get serverName => 'Server Name';
   @override
@@ -472,21 +493,26 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get noServersFound => 'No servers found';
   @override
-  String get noServersFoundDesc => 'Make sure a device on your network has server sharing enabled';
+  String get noServersFoundDesc =>
+      'Make sure a device on your network has server sharing enabled';
   @override
   String get connectToServer => 'Connect';
   @override
   String get connectedToServer => 'Connected';
   @override
-  String discoveredServerLabel(String name, String ip, int port) => '$name ($ip:$port)';
+  String discoveredServerLabel(String name, String ip, int port) =>
+      '$name ($ip:$port)';
   @override
-  String get restartingServer => 'Restarting local server to apply network changes...';
+  String get restartingServer =>
+      'Restarting local server to apply network changes...';
   @override
   String get useLocalServer => 'Switch to Local Server';
   @override
-  String get connectedToRemoteDesc => 'Connected to a server on your network. The local server on this device is paused to save battery and RAM.';
+  String get connectedToRemoteDesc =>
+      'Connected to a server on your network. The local server on this device is paused to save battery and RAM.';
   @override
-  String get lanSharingRequiresLocal => 'Only available when using the local server on this device';
+  String get lanSharingRequiresLocal =>
+      'Only available when using the local server on this device';
 
   // Extensions & Marketplace
   @override
@@ -519,7 +545,8 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get disable => 'Disable';
   @override
-  String get allExtensionsUpToDate => 'All installed extensions are up to date.';
+  String get allExtensionsUpToDate =>
+      'All installed extensions are up to date.';
   @override
   String get updatesFound => 'update(s) found available!';
 
@@ -603,7 +630,8 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get noEpisodesFoundMatching => 'No episodes found matching';
   @override
-  String get noAiredEpisodesAvailable => 'No aired episodes available in this section.';
+  String get noAiredEpisodesAvailable =>
+      'No aired episodes available in this section.';
 
   // Online Stream & Torrent Selector
   @override
@@ -635,7 +663,8 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get noTorrentsFound => 'No torrents found';
   @override
-  String get noTorrentsFoundDesc => 'Try switching providers or using simple search.';
+  String get noTorrentsFoundDesc =>
+      'Try switching providers or using simple search.';
 
   // AniList Authentication Sheet
   @override
@@ -710,7 +739,8 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get reloadSourcesTooltip => 'Reload sources';
   @override
-  String get noSourcesFoundForEpisode => 'No playback options found for this episode';
+  String get noSourcesFoundForEpisode =>
+      'No playback options found for this episode';
   @override
   String get availableSourcesCount => 'available options';
   @override
@@ -744,7 +774,8 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get completed => 'Completed';
   @override
-  String get switchingToMpvNotice => 'Switching to libmpv for format compatibility...';
+  String get switchingToMpvNotice =>
+      'Switching to libmpv for format compatibility...';
   @override
   String get noChapters => 'No chapters available';
   @override
@@ -773,6 +804,8 @@ class EnglishTranslations implements AppTranslations {
   String get reduceToModal => 'Reduce to modal';
   @override
   String get watching => 'Watching';
+  @override
+  String get onlyWatching => 'Only watching';
   @override
   String get forward10s => 'Forward 10s';
   @override
@@ -823,7 +856,8 @@ class EnglishTranslations implements AppTranslations {
   String get subtitleSyncDesc =>
       'Adjust delay to advance or delay subtitles relative to the video.';
   @override
-  String get audioSyncDesc => 'Adjust the audio track offset relative to the video.';
+  String get audioSyncDesc =>
+      'Adjust the audio track offset relative to the video.';
   @override
   String get closeSettings => 'Close settings';
   @override
@@ -1055,8 +1089,7 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get resultsFound => 'results found';
   @override
-  String get noTorrentsForEpisode =>
-      'No torrents were found for this episode.';
+  String get noTorrentsForEpisode => 'No torrents were found for this episode.';
   @override
   String get trySimpleSearchOrProvider =>
       'Try switching to "Simple Search" or selecting another provider.';
@@ -1067,15 +1100,13 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get bestRelease => 'BEST RELEASE';
   @override
-  String get openingExternalPlayer =>
-      'Opening in external player (MPV)...';
+  String get openingExternalPlayer => 'Opening in external player (MPV)...';
   @override
   String get serverNotOnline => 'Seanime server is not online.';
   @override
   String get failedToStartTorrent => 'Could not start torrent stream.';
   @override
-  String get loadingStreamingExtensions =>
-      'Loading streaming extensions...';
+  String get loadingStreamingExtensions => 'Loading streaming extensions...';
   @override
   String get noOnlineExtensionsInstalled =>
       'No online streaming extensions installed';
@@ -1095,8 +1126,7 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get reloadEpisodes => 'Reload episodes';
   @override
-  String get filterEpisodesHint =>
-      'Filter episodes by number or title...';
+  String get filterEpisodesHint => 'Filter episodes by number or title...';
   @override
   String get filterByTitle => 'Filter by title...';
   @override
@@ -1150,7 +1180,6 @@ class EnglishTranslations implements AppTranslations {
   @override
   String noEpisodesInProvider(String provider) =>
       'No episodes found in "$provider".';
-
 
   // Status & Season & Relation formatters
   @override
@@ -1329,7 +1358,8 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get welcomeTitle => 'Welcome to Aniting';
   @override
-  String get welcomeSubtitle => 'Tailor your experience just how you like it in a few simple steps.';
+  String get welcomeSubtitle =>
+      'Tailor your experience just how you like it in a few simple steps.';
   @override
   String get welcomeStepLanguage => 'Language';
   @override
@@ -1353,37 +1383,45 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get welcomeDevPreview => 'Welcome Wizard (Dev)';
   @override
-  String get welcomeResetDone => 'Welcome wizard reset. It will appear on next app launch.';
+  String get welcomeResetDone =>
+      'Welcome wizard reset. It will appear on next app launch.';
   @override
   String get welcomeResetPrompt => 'Reset welcome screen';
   @override
   String get welcomeLanguagePrompt => 'Select the primary application language';
   @override
-  String get welcomeThemePrompt => 'Choose your favorite visual theme and palette';
+  String get welcomeThemePrompt =>
+      'Choose your favorite visual theme and palette';
   @override
   String get welcomeTitleLangPrompt => 'Preferred anime title display format';
   @override
-  String get welcomeStreamingModePrompt => 'How do you prefer to watch your anime?';
+  String get welcomeStreamingModePrompt =>
+      'How do you prefer to watch your anime?';
   @override
   String get welcomeModeBoth => 'Both (Recommended)';
   @override
-  String get welcomeModeBothDesc => 'Access peer-to-peer torrents and direct online streaming servers';
+  String get welcomeModeBothDesc =>
+      'Access peer-to-peer torrents and direct online streaming servers';
   @override
   String get welcomeModeOnline => 'Online Only';
   @override
-  String get welcomeModeOnlineDesc => 'Stream directly from web servers without using torrents';
+  String get welcomeModeOnlineDesc =>
+      'Stream directly from web servers without using torrents';
   @override
   String get welcomeModeTorrent => 'Torrent Only';
   @override
-  String get welcomeModeTorrentDesc => 'High-fidelity peer-to-peer streaming with maximum quality';
+  String get welcomeModeTorrentDesc =>
+      'High-fidelity peer-to-peer streaming with maximum quality';
   @override
-  String get welcomeExtensionsPrompt => 'Recommended extensions to start watching and reading';
+  String get welcomeExtensionsPrompt =>
+      'Recommended extensions to start watching and reading';
   @override
   String get welcomeInstallAll => 'Install selected';
   @override
   String get welcomeInstalledCount => 'installed';
   @override
-  String get welcomeAnilistPrompt => 'Connect your AniList account to sync your watch progress and lists';
+  String get welcomeAnilistPrompt =>
+      'Connect your AniList account to sync your watch progress and lists';
   @override
   String get welcomeAnilistConnected => 'Account connected successfully!';
   @override
@@ -1409,6 +1447,11 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get paletteSystem => 'System (Dank Shell / Matugen)';
   @override
+  String get materialDesignPalettes => 'Material Design 3 Palettes';
+  @override
+  String get materialDesignPalettesDesc =>
+      'Harmonious dynamic color schemes derived from Material You';
+  @override
   String get exploreAllMarketplace => 'Explore Full Marketplace';
   @override
   String get allRecommended => 'All Recommended';
@@ -1417,15 +1460,18 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get blurBanner => 'Blur banner';
   @override
-  String get blurBannerDesc => 'Applies a cinematic blur to the background banner on anime and manga details';
+  String get blurBannerDesc =>
+      'Applies a cinematic blur to the background banner on anime and manga details';
   @override
   String get cornerRadius => 'Corners';
   @override
   String get welcomeAnilistTitle => 'Sync with AniList';
   @override
-  String get welcomeAnilistSyncDesc => 'Sync anime, manga, episodes, and scores in real time.';
+  String get welcomeAnilistSyncDesc =>
+      'Sync anime, manga, episodes, and scores in real time.';
   @override
-  String get welcomeExtensionsEmptyHint => 'You can explore and install extensions from the marketplace at any time.';
+  String get welcomeExtensionsEmptyHint =>
+      'You can explore and install extensions from the marketplace at any time.';
   @override
   String get welcomeSourceRepository => 'Repository';
   @override
@@ -1435,27 +1481,35 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get welcomeSourceIndividualDesc => 'Direct manifest install';
   @override
-  String get welcomeSourceIndividualEmptyHint => 'Enter an extension manifest.json URL to inspect and install';
+  String get welcomeSourceIndividualEmptyHint =>
+      'Enter an extension manifest.json URL to inspect and install';
   @override
   String get welcomeStepSections => 'Content Modules';
   @override
-  String get welcomeSectionsPrompt => 'Choose which media modules to enable in your navigation';
+  String get welcomeSectionsPrompt =>
+      'Choose which media modules to enable in your navigation';
   @override
-  String get welcomeAnimeSubtitle => 'Advanced search, seasons, genres, schedule and full catalog';
+  String get welcomeAnimeSubtitle =>
+      'Advanced search, seasons, genres, schedule and full catalog';
   @override
-  String get welcomeMangaSubtitle => 'Manga reader, chapters, library and offline reading';
+  String get welcomeMangaSubtitle =>
+      'Manga reader, chapters, library and offline reading';
   @override
-  String get welcomeShowsSubtitle => 'TV shows, movies and media library (also includes anime)';
+  String get welcomeShowsSubtitle =>
+      'TV shows, movies and media library (also includes anime)';
   @override
   String get welcomeStepDebrid => 'Debrid Service';
   @override
-  String get welcomeDebridPrompt => 'Connect Real-Debrid, TorBox or AllDebrid for instant streaming';
+  String get welcomeDebridPrompt =>
+      'Connect Real-Debrid, TorBox or AllDebrid for instant streaming';
   @override
   String get welcomeStepDownloads => 'Downloads';
   @override
-  String get welcomeDownloadsPrompt => 'Configure where your downloaded anime, manga and shows are stored';
+  String get welcomeDownloadsPrompt =>
+      'Configure where your downloaded anime, manga and shows are stored';
   @override
-  String get welcomeDownloadsUnifiedDesc => 'Keep all your active modules under a single unified base directory';
+  String get welcomeDownloadsUnifiedDesc =>
+      'Keep all your active modules under a single unified base directory';
   @override
   String get welcomeDownloadsUnifiedTitle => 'Unified Storage';
   @override
@@ -1474,6 +1528,46 @@ class EnglishTranslations implements AppTranslations {
   String get welcomeDownloadsBrowse => 'Browse folder';
   @override
   String get welcomeDownloadsDefault => 'Reset to default';
+  @override
+  String get welcomeTvSelectLanguage => 'Select Your Language';
+  @override
+  String get welcomeTvConnectServer => 'Connect to Server';
+  @override
+  String get welcomeTvConnectServerDesc => 'Sync your catalog and extensions from your PC or mobile';
+  @override
+  String get welcomeTvScanQrTitle => 'Pair with Mobile';
+  @override
+  String get welcomeTvScanQrDesc => 'Scan this QR code with the Aniting app or mobile camera to use your phone as a server';
+  @override
+  String get welcomeTvDeviceIp => 'TV IP Address';
+  @override
+  String get welcomeTvDiscoveredServers => 'Local Servers Found';
+  @override
+  String get welcomeTvSearchingServers => 'Searching for local servers on your Wi-Fi...';
+  @override
+  String get welcomeTvNoServersFound => 'No local servers found yet';
+  @override
+  String get welcomeTvManualIp => 'Enter IP Manually';
+  @override
+  String get welcomeTvManualIpDesc => 'Type the Seanime / Aniting server address and port';
+  @override
+  String get welcomeTvServerHost => 'IP Address or Host';
+  @override
+  String get welcomeTvServerPort => 'Port';
+  @override
+  String get welcomeTvConnect => 'Connect';
+  @override
+  String get welcomeTvConnecting => 'Connecting to server...';
+  @override
+  String get welcomeTvConnected => 'Connected successfully!';
+  @override
+  String get welcomeTvConnectionFailed => 'Connection failed. Check host and port.';
+  @override
+  String get welcomeTvSkipServer => 'Continue without Server (Skip)';
+  @override
+  String get welcomeTvSwitchToTv => 'Switch to TV Mode';
+  @override
+  String get welcomeTvSwitchToStandard => 'Switch to Standard Mode';
   @override
   String get settingsSaved => 'Settings saved successfully';
   @override
@@ -1513,7 +1607,8 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get mangaDownloadDir => 'Download Directory';
   @override
-  String get mangaDownloadDirDesc => 'Anime/aniting/Manga (Independent of working/cache directory)';
+  String get mangaDownloadDirDesc =>
+      'Anime/aniting/Manga (Independent of working/cache directory)';
   @override
   String get loadingPath => 'Loading path...';
   @override
@@ -1637,7 +1732,12 @@ class EnglishTranslations implements AppTranslations {
   }
 
   @override
-  String formatWatchStatus(String? status, int progress, int? totalEpisodes, String fallbackFormat) {
+  String formatWatchStatus(
+    String? status,
+    int progress,
+    int? totalEpisodes,
+    String fallbackFormat,
+  ) {
     if (progress > 0) {
       if (totalEpisodes != null && progress >= totalEpisodes) {
         return statusCompleted;
@@ -1655,13 +1755,16 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get developerAndCredits => 'DEVELOPER & CREDITS';
   @override
-  String get developerSubtitle => 'Flutter native client developer\nGitHub: github.com/anyyting-es';
+  String get developerSubtitle =>
+      'Flutter native client developer\nGitHub: github.com/anyyting-es';
   @override
-  String get originalServerSubtitle => 'Original backend & media server created by 5rahim\nhttps://seanime.app';
+  String get originalServerSubtitle =>
+      'Original backend & media server created by 5rahim\nhttps://seanime.app';
   @override
   String get discordCommunity => 'Discord Community';
   @override
-  String get discordSubtitle => 'Join the Aniting community on Discord\ndiscord.gg/FaPcNGURdN';
+  String get discordSubtitle =>
+      'Join the Aniting community on Discord\ndiscord.gg/FaPcNGURdN';
   @override
   String get systemAndUpdates => 'SYSTEM & UPDATES';
   @override
@@ -1671,7 +1774,8 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get seanimeCoreServer => 'Seanime Core Server';
   @override
-  String serverVersionConnected(String version) => 'Version $version (Connected)';
+  String serverVersionConnected(String version) =>
+      'Version $version (Connected)';
   @override
   String get serverOfflineOrLocal => 'Disconnected or Local Server';
   @override
@@ -1679,17 +1783,21 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get checkLatestGithub => 'Check for the latest version on GitHub';
   @override
-  String latestVersionSnackbar(String version) => 'You are on the latest version (v$version). No new updates.';
+  String latestVersionSnackbar(String version) =>
+      'You are on the latest version (v$version). No new updates.';
   @override
-  String get failedCheckUpdateSnackbar => 'Could not check for updates. Check your internet connection.';
+  String get failedCheckUpdateSnackbar =>
+      'Could not check for updates. Check your internet connection.';
   @override
   String get whatsNewDialog => "What's New";
   @override
-  String get whatsNewDialogDesc => 'Check the latest changelog, features, and community links';
+  String get whatsNewDialogDesc =>
+      'Check the latest changelog, features, and community links';
   @override
   String get openSourceLicenses => 'Open Source Licenses';
   @override
-  String get openSourceLicensesDesc => 'View free and open source software licenses and libraries';
+  String get openSourceLicensesDesc =>
+      'View free and open source software licenses and libraries';
   @override
   String get devAndTesting => 'DEVELOPMENT & TESTING';
   @override
@@ -1725,11 +1833,14 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get exploreMarketplaceMore => 'Explore more extensions in store';
   @override
-  String loadingEpisodesFrom(String provider) => 'Loading episodes from $provider...';
+  String loadingEpisodesFrom(String provider) =>
+      'Loading episodes from $provider...';
   @override
-  String noEpisodesFoundInProvider(String provider) => 'No episodes found on $provider';
+  String noEpisodesFoundInProvider(String provider) =>
+      'No episodes found on $provider';
   @override
-  String get tryAnotherServerOrSubDub => 'Try selecting another server or switching between subtitled and dubbed';
+  String get tryAnotherServerOrSubDub =>
+      'Try selecting another server or switching between subtitled and dubbed';
   @override
   String episodeNumber(int number) => 'Episode $number';
 
@@ -1737,7 +1848,8 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get cornerAndBorders => 'Corners & Borders (Card Radius)';
   @override
-  String get adjustCornerRadiusDesc => 'Adjust the visual roundness of components and cards';
+  String get adjustCornerRadiusDesc =>
+      'Adjust the visual roundness of components and cards';
   @override
   String get cornerRadiusSquare => '0 px (Square)';
   @override
@@ -1761,7 +1873,8 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get interfaceModeDesktop => 'Desktop (PC)';
   @override
-  String get interfaceModeDesktopDesc => 'Full 2-column layout with hero banner';
+  String get interfaceModeDesktopDesc =>
+      'Full 2-column layout with hero banner';
   @override
   String get interfaceModeMobile => 'Mobile';
   @override
@@ -1769,15 +1882,18 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get interfaceModeTv => 'TV Mode (10ft)';
   @override
-  String get interfaceModeTvDesc => 'Simplified 10-foot UI for remote control and D-Pad';
+  String get interfaceModeTvDesc =>
+      'Simplified 10-foot UI for remote control and D-Pad';
   @override
-  String get episodeDisplayDetailedDesc => 'Shows large thumbnails with title and synopsis';
+  String get episodeDisplayDetailedDesc =>
+      'Shows large thumbnails with title and synopsis';
   @override
   String get episodeDisplayGridDesc => 'Compact numbered grid of episodes';
   @override
   String get oledTrueBlackTitle => 'Pure Black (OLED True Black)';
   @override
-  String get oledTrueBlackDesc => 'Absolute #000000 black background for OLED screens';
+  String get oledTrueBlackDesc =>
+      'Absolute #000000 black background for OLED screens';
   @override
   String get fontSystemDisplayName => 'System';
   @override
@@ -1798,7 +1914,8 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get updateDialogChangelogTitle => 'Release Notes & Changes';
   @override
-  String get updateDialogDefaultNotes => 'Stability, performance improvements, and bug fixes are included in this release.';
+  String get updateDialogDefaultNotes =>
+      'Stability, performance improvements, and bug fixes are included in this release.';
   @override
   String get updateDialogDownloading => 'Downloading update...';
   @override
@@ -1818,23 +1935,29 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get emptyAnimeFeedTitle => 'Your anime list is empty';
   @override
-  String get emptyMangaFeedDesc => "You don't have any manga in progress. Explore the catalog or search for your favorite series.";
+  String get emptyMangaFeedDesc =>
+      "You don't have any manga in progress. Explore the catalog or search for your favorite series.";
   @override
-  String get emptyAnimeFeedDesc => "You don't have any anime in progress. Explore the catalog or search for your favorite series.";
+  String get emptyAnimeFeedDesc =>
+      "You don't have any anime in progress. Explore the catalog or search for your favorite series.";
   @override
   String get noDownloadedAnimeTitle => 'No downloaded anime';
   @override
-  String get noDownloadedAnimeDesc => 'Episodes downloaded in your local library will appear here for offline viewing.';
+  String get noDownloadedAnimeDesc =>
+      'Episodes downloaded in your local library will appear here for offline viewing.';
   @override
   String get noDownloadedMangaTitle => 'No downloaded manga';
   @override
-  String get noDownloadedMangaDesc => 'Chapters downloaded to read in the offline reader will be saved in Anime/aniting/Manga and appear here.';
+  String get noDownloadedMangaDesc =>
+      'Chapters downloaded to read in the offline reader will be saved in Anime/aniting/Manga and appear here.';
   @override
   String get exploreManga => 'Explore Manga';
   @override
-  String downloadedAnimeCount(int count) => '$count downloaded ${count == 1 ? "anime" : "anime"} in local library';
+  String downloadedAnimeCount(int count) =>
+      '$count downloaded ${count == 1 ? "anime" : "anime"} in local library';
   @override
-  String downloadedMangaCount(int mangaCount, int chaptersCount) => '$mangaCount ${mangaCount == 1 ? "manga" : "manga"} • $chaptersCount ch.';
+  String downloadedMangaCount(int mangaCount, int chaptersCount) =>
+      '$mangaCount ${mangaCount == 1 ? "manga" : "manga"} • $chaptersCount ch.';
   @override
   String storageUsed(String formattedSize) => 'Storage used: $formattedSize';
   @override
@@ -1958,9 +2081,11 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get noSimilarWorksAvailable => 'No similar titles available';
   @override
-  String get noDownloadedChaptersForManga => 'No downloaded chapters for this title';
+  String get noDownloadedChaptersForManga =>
+      'No downloaded chapters for this title';
   @override
-  String get noChaptersMatchingFilters => 'No chapters found with current filters';
+  String get noChaptersMatchingFilters =>
+      'No chapters found with current filters';
   @override
   String get resetFilters => 'Reset filters';
   @override
@@ -2041,9 +2166,11 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get selectProviderToDownload => 'Select a provider to download';
   @override
-  String downloadingChapter(String chapter) => 'Downloading chapter $chapter...';
+  String downloadingChapter(String chapter) =>
+      'Downloading chapter $chapter...';
   @override
-  String errorSchedulingDownload(String error) => 'Error scheduling download: $error';
+  String errorSchedulingDownload(String error) =>
+      'Error scheduling download: $error';
   @override
   String get downloadChapters => 'Download Chapters';
   @override
@@ -2059,7 +2186,8 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get downloadAllUnreadDesc => 'Full download of all pending chapters';
   @override
-  String downloadingChaptersCount(int count) => 'Downloading $count chapters...';
+  String downloadingChaptersCount(int count) =>
+      'Downloading $count chapters...';
   @override
   String torrentsFilterCount(int filtered, int total, String quality) =>
       '$filtered of $total torrents ($quality)';
@@ -2086,11 +2214,14 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get updateNoApkFound => 'No APK file found attached to this release.';
   @override
-  String updateDownloadError(String error) => 'Error downloading update: $error';
+  String updateDownloadError(String error) =>
+      'Error downloading update: $error';
   @override
-  String get updateAndroidOnly => 'Direct installation is only available on Android.';
+  String get updateAndroidOnly =>
+      'Direct installation is only available on Android.';
   @override
-  String updateInstallerError(String error) => 'Error opening installer: $error';
+  String updateInstallerError(String error) =>
+      'Error opening installer: $error';
 
   @override
   String get navigationSections => 'Navigation Sections';
@@ -2107,7 +2238,8 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get mangaSectionDesc => 'Show manga tab in navigation';
   @override
-  String get cannotDisableBothSections => 'You must keep at least one section enabled';
+  String get cannotDisableBothSections =>
+      'You must keep at least one section enabled';
   @override
   String get shows => 'Shows';
   @override
@@ -2119,9 +2251,11 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get subtitleStyle => 'Subtitle Style';
   @override
-  String get subtitleStyleDesc => 'Font family, size, colors, borders and shadow effects';
+  String get subtitleStyleDesc =>
+      'Font family, size, colors, borders and shadow effects';
   @override
-  String get subtitlePreviewText => 'The quick brown fox jumps over the lazy dog';
+  String get subtitlePreviewText =>
+      'The quick brown fox jumps over the lazy dog';
   @override
   String get subtitleFont => 'Font Family';
   @override
@@ -2177,17 +2311,20 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get downloadManager => 'Download Manager';
   @override
-  String get downloadManagerDesc => 'Monitor active speeds, ETA, and download history';
+  String get downloadManagerDesc =>
+      'Monitor active speeds, ETA, and download history';
   @override
   String get downloadHistory => 'Download History';
   @override
   String get noDownloadHistory => 'No download history';
   @override
-  String get noDownloadHistoryDesc => 'Completed anime and manga downloads will appear here.';
+  String get noDownloadHistoryDesc =>
+      'Completed anime and manga downloads will appear here.';
   @override
   String get clearHistory => 'Clear History';
   @override
-  String get clearHistoryConfirm => 'Are you sure you want to clear the download history?';
+  String get clearHistoryConfirm =>
+      'Are you sure you want to clear the download history?';
   @override
   String get timeRemaining => 'Time remaining';
   @override
@@ -2231,19 +2368,75 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get glassEffectSettingTitle => 'Liquid Glass Effects';
   @override
-  String get glassEffectSettingSubtitle => 'Enable modern optical refraction and frosted glass styling across the app';
+  String get glassEffectSettingSubtitle =>
+      'Enable modern optical refraction and frosted glass styling across the app';
   @override
   String get glassTierFull => 'Full (Liquid Glass)';
   @override
-  String get glassTierFullDesc => 'Dynamic backdrop refraction, specular rims, and fluid blur';
+  String get glassTierFullDesc =>
+      'Dynamic backdrop refraction, specular rims, and fluid blur';
   @override
   String get glassTierCheap => 'Performance (Low)';
   @override
-  String get glassTierCheapDesc => 'Lightweight translucent tint without sampling backdrops';
+  String get glassTierCheapDesc =>
+      'Lightweight translucent tint without sampling backdrops';
   @override
   String get glassTierOpaque => 'Disabled (Opaque)';
   @override
-  String get glassTierOpaqueDesc => 'Solid high-contrast surface without transparency';
+  String get glassTierOpaqueDesc =>
+      'Solid high-contrast surface without transparency';
+
+  // Window Transparency & Compositor Blur
+  @override
+  String get windowTransparencyTitle => 'Desktop Window Transparency';
+  @override
+  String get windowTransparencySubtitle =>
+      'Allow desktop wallpaper and compositor blur to show through the app background';
+  @override
+  String get windowOpacityTitle => 'Window Opacity';
+  @override
+  String get windowOpacitySubtitle =>
+      'Adjust transparency level for compositor blur (Niri, Hyprland, KDE)';
+  @override
+  String get windowCompositorBlurNotice =>
+      'Notice: On Wayland/Linux, background blur is rendered by your window compositor (Niri, Hyprland, SwayFX, KDE Plasma). Requires an RGBA visual and a compositor window rule with background blur enabled.';
+
+  // Settings Expressive Navigation Groups
+  @override
+  String get settingsGroupAppearance => 'Appearance';
+  @override
+  String get settingsGroupPlayback => 'Playback';
+  @override
+  String get settingsGroupLibrary => 'Library';
+  @override
+  String get settingsGroupSystem => 'System';
+
+  // Settings Expressive Navigation Subtitles
+  @override
+  String get settingsSubtitleTheme => 'Theme, palette, dark mode, OLED';
+  @override
+  String get settingsSubtitleAppearance => 'Blur, style, navigation, font';
+  @override
+  String get settingsSubtitleExtensions => 'Marketplace, providers, repos';
+  @override
+  String get settingsSubtitlePlayer =>
+      'Engine, GLSL shaders, subtitles, gestures';
+  @override
+  String get settingsSubtitleManga => 'Reading mode, zoom, double-page';
+  @override
+  String get settingsSubtitleStreaming => 'Online anime providers, resolution';
+  @override
+  String get settingsSubtitleDebrid => 'Real-Debrid, TorBox, Premiumize';
+  @override
+  String get settingsSubtitleDownloadManager => 'Active queues, torrent tasks';
+  @override
+  String get settingsSubtitleDownloads => 'Saved offline episodes & chapters';
+  @override
+  String get settingsSubtitleLocalLibrary => 'Shows, movies, paths, scanner';
+  @override
+  String get settingsSubtitleServer => 'Seanime server, ports, LAN sharing';
+  @override
+  String get settingsSubtitleAbout => 'Version, updates, GitHub, credits';
 
   // Edit Entry Modal
   @override
@@ -2277,11 +2470,13 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get noEpisodesFound => 'No episodes found';
   @override
-  String get tmdbSourceNotice => 'Metadata provided by The Movie Database (TMDB)';
+  String get tmdbSourceNotice =>
+      'Metadata provided by The Movie Database (TMDB)';
   @override
   String get movieDetails => 'Movie Details';
   @override
-  String get streamingComingSoon => 'Streaming providers for series will be available soon';
+  String get streamingComingSoon =>
+      'Streaming providers for series will be available soon';
   @override
   String episodeRuntime(int minutes) => '${minutes}m';
   @override
@@ -2291,7 +2486,8 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get localLibrarySettingsTitle => 'Local Library';
   @override
-  String get localLibrarySettingsDesc => 'Manage disk folders, episode scanner, and manual matching';
+  String get localLibrarySettingsDesc =>
+      'Manage disk folders, episode scanner, and manual matching';
   @override
   String get libraryFoldersSection => 'Library Folders';
   @override
@@ -2303,7 +2499,8 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get removeFolder => 'Remove Folder';
   @override
-  String get enterFolderPathHint => 'Enter absolute folder path (e.g. D:\\Anime)';
+  String get enterFolderPathHint =>
+      'Enter absolute folder path (e.g. D:\\Anime)';
   @override
   String get folderPathLabel => 'Folder Path';
   @override
@@ -2333,15 +2530,18 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get enhancedScanOption => 'Enhanced scan (Offline DB + MAL)';
   @override
-  String get enhancedScanOptionDesc => 'Identify anime not yet in your list using external databases';
+  String get enhancedScanOptionDesc =>
+      'Identify anime not yet in your list using external databases';
   @override
   String get resolveUnmatchedTitle => 'Unmatched Files';
   @override
-  String get resolveUnmatchedSubtitle => 'Files that could not be matched automatically to any anime';
+  String get resolveUnmatchedSubtitle =>
+      'Files that could not be matched automatically to any anime';
   @override
   String get resolveUnmatchedAction => 'Resolve Unmatched';
   @override
-  String get noUnmatchedFilesNotice => 'No unmatched files found. Everything is matched!';
+  String get noUnmatchedFilesNotice =>
+      'No unmatched files found. Everything is matched!';
   @override
   String get matchWithAnimeAction => 'Match with Anime';
   @override
@@ -2381,11 +2581,13 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get unlinkFolderConfirmTitle => 'Unlink Folder';
   @override
-  String get unlinkFolderConfirmMessage => 'Are you sure you want to unlink this folder from the local library?';
+  String get unlinkFolderConfirmMessage =>
+      'Are you sure you want to unlink this folder from the local library?';
   @override
   String get unlinkMainFolderConfirmTitle => 'Unlink Main Library Folder';
   @override
-  String get unlinkMainFolderConfirmMessage => 'Are you sure you want to unlink the main library folder? You can configure it again at any time.';
+  String get unlinkMainFolderConfirmMessage =>
+      'Are you sure you want to unlink the main library folder? You can configure it again at any time.';
   @override
   String get unlinkFolderAction => 'Unlink';
   @override
@@ -2393,19 +2595,23 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get unlinkAllFoldersConfirmTitle => 'Unlink All Folders';
   @override
-  String get unlinkAllFoldersConfirmMessage => 'Are you sure you want to unlink all library folders? All locally indexed anime, shows, and local metadata will be removed.';
+  String get unlinkAllFoldersConfirmMessage =>
+      'Are you sure you want to unlink all library folders? All locally indexed anime, shows, and local metadata will be removed.';
   @override
-  String get allFoldersUnlinkedSuccess => 'All folders unlinked from local library';
+  String get allFoldersUnlinkedSuccess =>
+      'All folders unlinked from local library';
   @override
   String get localShowsSectionTitle => 'Local Shows & Content';
   @override
-  String get localShowsSectionSubtitle => 'Visually browse all anime, TV shows, and movies indexed in your local folders';
+  String get localShowsSectionSubtitle =>
+      'Visually browse all anime, TV shows, and movies indexed in your local folders';
   @override
   String get fixMatchAction => 'Fix Match';
   @override
   String get unmatchShowConfirmTitle => 'Unlink from Library';
   @override
-  String unmatchShowConfirmMessage(String title) => 'Are you sure you want to unlink "$title"? Its files will become unmatched so you can re-match them.';
+  String unmatchShowConfirmMessage(String title) =>
+      'Are you sure you want to unlink "$title"? Its files will become unmatched so you can re-match them.';
   @override
   String get unmatchShowSuccess => 'Content unlinked from local library';
   @override
@@ -2558,17 +2764,19 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get noSourceAvailable => 'No source';
   @override
-  String startDownloadCount(int count) => 'Download $count episodes';
+  String startDownloadCount(int count) => 'Start download ($count)';
 
   // Debrid Services
   @override
   String get debridSettings => 'Debrid Services';
   @override
-  String get debridSettingsDesc => 'Configure Real-Debrid, TorBox, and cloud downloading';
+  String get debridSettingsDesc =>
+      'Configure Real-Debrid, TorBox, and cloud downloading';
   @override
   String get enableDebrid => 'Enable Debrid Service';
   @override
-  String get enableDebridDesc => 'Use high-speed cached streaming and direct downloads';
+  String get enableDebridDesc =>
+      'Use high-speed cached streaming and direct downloads';
   @override
   String get debridProvider => 'Provider';
   @override
@@ -2576,11 +2784,13 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get debridApiKeyHint => 'Paste your Debrid API key';
   @override
-  String get debridApiKeyDesc => 'Your private token from your Debrid account settings';
+  String get debridApiKeyDesc =>
+      'Your private token from your Debrid account settings';
   @override
   String get debridAutoSelect => 'Auto-select video file';
   @override
-  String get debridAutoSelectDesc => 'Automatically pick the best matching episode file in the torrent';
+  String get debridAutoSelectDesc =>
+      'Automatically pick the best matching episode file in the torrent';
   @override
   String get debridPreferredResolution => 'Preferred Resolution';
   @override
@@ -2593,5 +2803,53 @@ class EnglishTranslations implements AppTranslations {
   String get debridStartingStream => 'Starting Debrid stream...';
   @override
   String get debridDownloadStarted => 'Debrid download started';
-}
+  @override
+  String get torrentDownloadMode => 'Download Mode';
+  @override
+  String get torrentStreamMode => 'Stream Mode';
+  @override
+  String get torrentSelectForDownload => 'Select for download';
+  @override
+  String get torrentSelectedBadge => 'Selected';
+  @override
+  String get torrentBatchDownloadQueued =>
+      'Downloads started for selected episodes';
+  @override
+  String torrentEpisodesSelected(int count) =>
+      '$count ${count == 1 ? "episode" : "episodes"} selected';
 
+  // Manga Details & Reader enhancements
+  @override
+  String get mangaSources => 'Manga Sources';
+  @override
+  String get selectMangaSource => 'Select Manga Source';
+  @override
+  String get filterUnread => 'Unread';
+  @override
+  String get filterRead => 'Read';
+  @override
+  String get nextToRead => 'Next up';
+  @override
+  String get selectForDownload => 'Select';
+  @override
+  String get downloadSelected => 'Download Selected';
+  @override
+  String mangaChaptersSelected(int count) =>
+      '$count ${count == 1 ? "chapter" : "chapters"} selected';
+  @override
+  String get showPerPage => 'Show';
+
+  // Offline Sync
+  @override
+  String get offlineSyncTitle => 'Offline Synchronization';
+  @override
+  String offlineSyncPending(int count) =>
+      '$count ${count == 1 ? "item" : "items"} pending sync';
+  @override
+  String offlineSyncCompleted(int count) =>
+      'Successfully synced $count ${count == 1 ? "item" : "items"} with AniList';
+  @override
+  String get offlineSyncNow => 'Sync now';
+  @override
+  String get syncingOfflineProgress => 'Syncing offline progress...';
+}

@@ -191,6 +191,11 @@ func (h *Handler) HandleAnimeEntryBulkAction(c echo.Context) error {
 
 	anime.ClearMissingEpisodesCache()
 
+	if p.Action == "unmatch" {
+		go h.App.RefreshAnimeCollection()
+		go h.App.UpdateLibrarySize(true)
+	}
+
 	return h.RespondWithData(c, retLfs)
 
 }
@@ -283,7 +288,17 @@ func (h *Handler) HandleFetchAnimeEntrySuggestions(c echo.Context) error {
 
 	selectedLfs, found := groupedLfs[b.Dir]
 	if !found {
-		return h.RespondWithError(c, errors.New("no local files found for selected directory"))
+		cleanDir := strings.TrimSuffix(b.Dir, "/")
+		for dir, files := range groupedLfs {
+			if strings.TrimSuffix(dir, "/") == cleanDir {
+				selectedLfs = files
+				found = true
+				break
+			}
+		}
+	}
+	if !found || len(selectedLfs) == 0 {
+		return h.RespondWithData(c, make([]*anilist.BaseAnime, 0))
 	}
 
 	// Filter out local files that are already matched
@@ -464,6 +479,9 @@ func (h *Handler) HandleAnimeEntryManualMatch(c echo.Context) error {
 	}
 
 	anime.ClearMissingEpisodesCache()
+
+	go h.App.RefreshAnimeCollection()
+	go h.App.UpdateLibrarySize(true)
 
 	return h.RespondWithData(c, retLfs)
 }

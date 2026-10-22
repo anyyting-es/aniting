@@ -12,6 +12,7 @@ class _PopoverRowItem extends StatelessWidget {
   final bool isSelected;
   final IconData icon;
   final Color? iconColor;
+  final Widget? trailing;
   final VoidCallback onTap;
   final AppIconPack iconPack;
 
@@ -20,6 +21,7 @@ class _PopoverRowItem extends StatelessWidget {
     required this.isSelected,
     required this.icon,
     this.iconColor,
+    this.trailing,
     required this.onTap,
     required this.iconPack,
   });
@@ -64,7 +66,9 @@ class _PopoverRowItem extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              if (isSelected)
+              if (trailing != null)
+                trailing!
+              else if (isSelected)
                 Icon(
                   AppIcons.check(iconPack),
                   size: 16,
@@ -146,6 +150,7 @@ class TorrentProviderPopoverContent extends ConsumerWidget {
 class TorrentEpisodePopoverContent extends ConsumerWidget {
   final int? currentEpisode;
   final int totalEpisodes;
+  final Set<int>? selectedEpisodes;
   final ValueChanged<int?> onEpisodeSelected;
   final VoidCallback onClose;
 
@@ -153,6 +158,7 @@ class TorrentEpisodePopoverContent extends ConsumerWidget {
     super.key,
     required this.currentEpisode,
     required this.totalEpisodes,
+    this.selectedEpisodes,
     required this.onEpisodeSelected,
     required this.onClose,
   });
@@ -161,6 +167,7 @@ class TorrentEpisodePopoverContent extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ref.watch(translationsProvider);
     final iconPack = ref.watch(iconPackProvider);
+    final theme = Theme.of(context);
 
     return ConstrainedBox(
       constraints: const BoxConstraints(maxHeight: 300),
@@ -184,18 +191,40 @@ class TorrentEpisodePopoverContent extends ConsumerWidget {
                 },
               ),
               const Divider(height: 6, indent: 8, endIndent: 8),
-              for (int ep = 1; ep <= totalEpisodes; ep++)
-                _PopoverRowItem(
-                  title: l10n.episodeNumber(ep),
-                  isSelected: currentEpisode == ep,
-                  icon: AppIcons.playCircle(iconPack),
-                  iconPack: iconPack,
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    onEpisodeSelected(ep);
-                    onClose();
-                  },
-                ),
+              for (int ep = 1; ep <= totalEpisodes; ep++) ...[
+                () {
+                  final isQueued = selectedEpisodes?.contains(ep) == true;
+                  final isCurrent = currentEpisode == ep;
+                  return _PopoverRowItem(
+                    title: l10n.episodeNumber(ep),
+                    isSelected: isCurrent,
+                    icon: AppIcons.playCircle(iconPack),
+                    iconPack: iconPack,
+                    trailing: isQueued
+                        ? Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.primary.withValues(alpha: 0.18),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(AppIcons.check(iconPack), size: 11, color: theme.colorScheme.primary),
+                                const SizedBox(width: 3),
+                                Icon(AppIcons.download(iconPack), size: 11, color: theme.colorScheme.primary),
+                              ],
+                            ),
+                          )
+                        : null,
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      onEpisodeSelected(ep);
+                      onClose();
+                    },
+                  );
+                }(),
+              ],
             ],
           ),
         ),

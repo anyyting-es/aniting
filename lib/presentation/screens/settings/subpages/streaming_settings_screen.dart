@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -51,8 +52,9 @@ class _StreamingSettingsScreenState
 
   Future<void> _loadLibrarySettings() async {
     try {
-      final serverSettings =
-          await ref.read(repositoryProvider).getServerSettings();
+      final serverSettings = await ref
+          .read(repositoryProvider)
+          .getServerSettings();
       if (serverSettings != null) {
         final libSettings = serverSettings['library'] as Map<String, dynamic>?;
         final currentLibPath = (libSettings?['libraryPath'] as String?) ?? '';
@@ -81,11 +83,13 @@ class _StreamingSettingsScreenState
       final l10n = ref.read(translationsProvider);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(ok
-              ? (path.isEmpty
-                  ? l10n.pathRestoredDefault
-                  : l10n.workDirSavedSuccess)
-              : l10n.workDirSaveError),
+          content: Text(
+            ok
+                ? (path.isEmpty
+                      ? l10n.pathRestoredDefault
+                      : l10n.workDirSavedSuccess)
+                : l10n.workDirSaveError,
+          ),
           behavior: SnackBarBehavior.floating,
           duration: const Duration(seconds: 2),
         ),
@@ -99,14 +103,17 @@ class _StreamingSettingsScreenState
       final hasConfigured =
           prefs.getBool('has_configured_auto_delete_torrents_v1') ?? false;
 
-      final settings =
-          await ref.read(repositoryProvider).getTorrentstreamSettings();
+      final settings = await ref
+          .read(repositoryProvider)
+          .getTorrentstreamSettings();
       if (mounted && settings != null) {
         bool autoDeleteVal;
         if (!hasConfigured) {
           autoDeleteVal = true;
           settings['autoDeletePreviousTorrents'] = true;
-          unawaited(ref.read(repositoryProvider).saveTorrentstreamSettings(settings));
+          unawaited(
+            ref.read(repositoryProvider).saveTorrentstreamSettings(settings),
+          );
           await prefs.setBool('has_configured_auto_delete_torrents_v1', true);
         } else {
           autoDeleteVal = settings['autoDeletePreviousTorrents'] == true;
@@ -163,11 +170,13 @@ class _StreamingSettingsScreenState
       final l10n = ref.read(translationsProvider);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(ok
-              ? (path.isEmpty
-                  ? l10n.pathRestoredDefault
-                  : l10n.workDirSavedSuccess)
-              : l10n.workDirSaveError),
+          content: Text(
+            ok
+                ? (path.isEmpty
+                      ? l10n.pathRestoredDefault
+                      : l10n.workDirSavedSuccess)
+                : l10n.workDirSaveError,
+          ),
           behavior: SnackBarBehavior.floating,
           duration: const Duration(seconds: 2),
         ),
@@ -294,18 +303,22 @@ class _StreamingSettingsScreenState
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                     borderSide: BorderSide(
-                      color: theme.colorScheme.outlineVariant
-                          .withValues(alpha: 0.5),
+                      color: theme.colorScheme.outlineVariant.withValues(
+                        alpha: 0.5,
+                      ),
                     ),
                   ),
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
               Row(
                 children: [
-                  if (_libraryDirController.text.isNotEmpty || _defaultAnimePath.isNotEmpty)
+                  if (_libraryDirController.text.isNotEmpty ||
+                      _defaultAnimePath.isNotEmpty)
                     IconButton.filledTonal(
                       tooltip: l10n.openDownloadsFolder,
                       onPressed: () {
@@ -318,13 +331,17 @@ class _StreamingSettingsScreenState
                     ),
                   const Spacer(),
                   TextButton.icon(
-                    onPressed: _isSavingLibraryDir ? null : () => _saveLibraryDir(''),
+                    onPressed: _isSavingLibraryDir
+                        ? null
+                        : () => _saveLibraryDir(''),
                     icon: const Icon(Icons.restore_rounded, size: 18),
                     label: Text(l10n.resetPath),
                   ),
                   const SizedBox(width: 8),
                   FilledButton.tonalIcon(
-                    onPressed: _isSavingLibraryDir ? null : () => _saveLibraryDir(),
+                    onPressed: _isSavingLibraryDir
+                        ? null
+                        : () => _saveLibraryDir(),
                     icon: _isSavingLibraryDir
                         ? const SizedBox(
                             width: 14,
@@ -397,12 +414,15 @@ class _StreamingSettingsScreenState
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                     borderSide: BorderSide(
-                      color: theme.colorScheme.outlineVariant
-                          .withValues(alpha: 0.5),
+                      color: theme.colorScheme.outlineVariant.withValues(
+                        alpha: 0.5,
+                      ),
                     ),
                   ),
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
                 ),
               ),
               const SizedBox(height: 12),

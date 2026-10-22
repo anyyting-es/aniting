@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:g1455/g1455.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -44,6 +45,17 @@ class _WelcomeStepDebridState extends ConsumerState<WelcomeStepDebrid> {
       apiKey: _apiKeyController.text.trim(),
     );
     ref.read(debridSettingsProvider.notifier).updateSettings(updated);
+  }
+
+  Future<void> _pasteApiKey() async {
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    final text = data?.text?.trim();
+    if (text != null && text.isNotEmpty) {
+      setState(() {
+        _apiKeyController.text = text;
+      });
+      _saveSettings();
+    }
   }
 
   @override
@@ -237,15 +249,25 @@ class _WelcomeStepDebridState extends ConsumerState<WelcomeStepDebrid> {
                           ),
                           contentPadding: const EdgeInsets.symmetric(
                               horizontal: 14, vertical: 12),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscureApiKey
-                                  ? LucideIcons.eyeOff
-                                  : LucideIcons.eye,
-                              size: 18,
-                            ),
-                            onPressed: () => setState(
-                                () => _obscureApiKey = !_obscureApiKey),
+                          suffixIcon: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                tooltip: 'Paste API Key',
+                                icon: const Icon(LucideIcons.clipboardPaste, size: 18),
+                                onPressed: _pasteApiKey,
+                              ),
+                              IconButton(
+                                icon: Icon(
+                                  _obscureApiKey
+                                      ? LucideIcons.eyeOff
+                                      : LucideIcons.eye,
+                                  size: 18,
+                                ),
+                                onPressed: () => setState(
+                                    () => _obscureApiKey = !_obscureApiKey),
+                              ),
+                            ],
                           ),
                         ),
                       ),

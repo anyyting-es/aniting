@@ -5,6 +5,7 @@ import 'package:seanime_app/core/preferences/playback_progress_preferences_provi
 import 'package:seanime_app/core/preferences/resume_bar_preferences_provider.dart';
 import 'package:seanime_app/data/repositories/seanime_repository.dart';
 import 'package:seanime_app/data/services/offline_library_service.dart';
+import 'package:seanime_app/data/services/offline_sync_service.dart';
 
 /// Service responsible for managing video playback progress, periodic continuity updates,
 /// LastSession persistence, and automatic AniList watched progress synchronization.
@@ -43,8 +44,11 @@ class PlayerProgressManager {
   final VoidCallback? onProgressSynced;
   final VoidCallback? onLocalWatchRecorded;
 
+  static const int kMinWatchDurationSeconds = 10;
+
   Timer? _continuityTimer;
   bool _hasUpdatedAnimeProgress = false;
+  Duration? _initialPosition;
 
   PlayerProgressManager({
     required this.repository,
@@ -86,15 +90,18 @@ class PlayerProgressManager {
   void startTracking({Duration? initialPosition}) {
     if (mediaId == null) return;
 
+    _initialPosition = initialPosition;
     final initialSec = (initialPosition?.inSeconds ?? 0).toDouble();
-    repository.updateContinuityItem(
-      mediaId: mediaId!,
-      episodeNumber: getEpisodeNumber() ?? 1,
-      currentTime: initialSec,
-      duration: 0.0,
-    );
 
-    savePlaybackProgress();
+    // Only update backend continuity initially if resuming from a meaningful saved position
+    if (initialSec >= kMinWatchDurationSeconds) {
+      repository.updateContinuityItem(
+        mediaId: mediaId!,
+        episodeNumber: getEpisodeNumber() ?? 1,
+        currentTime: initialSec,
+        duration: 0.0,
+      );
+    }
 
     _continuityTimer?.cancel();
     _continuityTimer = Timer.periodic(const Duration(seconds: 20), (_) {
@@ -107,16 +114,27 @@ class PlayerProgressManager {
   /// Resets the AniList watched sync latch for a newly switched episode.
   void resetEpisodeLatch() {
     _hasUpdatedAnimeProgress = false;
+    _initialPosition = null;
   }
 
   /// Saves the current playback progress both to the server continuity item
   /// and local LastSessionItem.
-  void savePlaybackProgress() {
+  void savePlaybackProgress({bool force = false}) {
     if (mediaId == null) return;
 
     final pos = getPosition();
     final dur = getDuration();
     final epNum = getEpisodeNumber() ?? 1;
+
+    // Minimum playback threshold check:
+    // If the video hasn't loaded or less than 10s were played (and user was not resuming
+    // a previously advanced position), do NOT mark as currently watching in library.
+    final isResumingPrior = _initialPosition != null && _initialPosition!.inSeconds >= kMinWatchDurationSeconds;
+    final hasReachedMinThreshold = pos.inSeconds >= kMinWatchDurationSeconds;
+
+    if (!force && !isResumingPrior && !hasReachedMinThreshold) {
+      return;
+    }
 
     try {
       repository.updateContinuityItem(
@@ -217,7 +235,9 @@ class PlayerProgressManager {
 
     final fraction = posSec / durSec;
     final remaining = durSec - posSec;
-    final isNearEnd = fraction >= 0.80 || (posSec >= 120 && remaining <= 120);
+    // Require at least 85% watched OR within 90s of end ONLY if the duration is reliable (> 300s)
+    final isReliableDuration = durSec >= 300;
+    final isNearEnd = fraction >= 0.85 || (isReliableDuration && posSec >= 180 && remaining <= 90);
 
     if (!isNearEnd) return;
 
@@ -235,10 +255,24 @@ class PlayerProgressManager {
       episodeNumber: epNum,
       totalEpisodes: getTotalEpisodes(),
     )
-        .then((_) {
+        .then((success) {
+      if (!success) {
+        OfflineSyncService.instance.enqueueAnimeProgress(
+          mediaId: mediaId!,
+          episodeNumber: epNum,
+          totalEpisodes: getTotalEpisodes(),
+          title: title,
+        );
+      }
       onProgressSynced?.call();
     }).catchError((e) {
       debugPrint('[PlayerProgressManager] Error syncing AniList progress: $e');
+      OfflineSyncService.instance.enqueueAnimeProgress(
+        mediaId: mediaId!,
+        episodeNumber: epNum,
+        totalEpisodes: getTotalEpisodes(),
+        title: title,
+      );
       // Even if AniList remote sync fails, local progress succeeded
       onProgressSynced?.call();
     });

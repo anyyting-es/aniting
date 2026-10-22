@@ -12,6 +12,8 @@ class TorrentSelectorSheet extends StatelessWidget {
   final AnimeDetails? animeDetails;
   final String? aniDBEpisode;
   final bool isSheet;
+  final bool isDownloadMode;
+  final List<int>? initialSelectedEpisodes;
 
   const TorrentSelectorSheet({
     super.key,
@@ -21,6 +23,8 @@ class TorrentSelectorSheet extends StatelessWidget {
     this.animeDetails,
     this.aniDBEpisode,
     this.isSheet = false,
+    this.isDownloadMode = false,
+    this.initialSelectedEpisodes,
   });
 
   @override
@@ -32,6 +36,8 @@ class TorrentSelectorSheet extends StatelessWidget {
       animeDetails: animeDetails,
       aniDBEpisode: aniDBEpisode,
       isSheet: isSheet,
+      isDownloadMode: isDownloadMode,
+      initialSelectedEpisodes: initialSelectedEpisodes,
     );
   }
 }

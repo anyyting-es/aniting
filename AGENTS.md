@@ -153,6 +153,7 @@ Use this directory to quickly locate any screen, widget, provider, or subsystem:
 | **Settings Screen** | [`settings_screen.dart`](file:///home/anthony/Documents/Eris/aniting/lib/presentation/screens/settings_screen.dart) | Adaptive dual-panel settings (Appearance, Player, Library, etc.) |
 | **Theme Provider** | [`theme_provider.dart`](file:///home/anthony/Documents/Eris/aniting/lib/core/theme/theme_provider.dart) | Light, Dark, and OLED theme state, dynamic color schemes |
 | **Liquid Glass Toggle**| [`media_type_toggle.dart`](file:///home/anthony/Documents/Eris/aniting/lib/presentation/widgets/media_type_toggle.dart) | Non-wrapping segmented control for Anime / Shows / Manga |
+| **Window Transparency**| [`desktop_window_transparency_provider.dart`](file:///home/anthony/Documents/Eris/aniting/lib/core/preferences/desktop_window_transparency_provider.dart) | Compositor blur and window opacity state (Niri, Hyprland, KDE) |
 | **M3 Expressive Select**| [`m3_expressive_select.dart`](file:///home/anthony/Documents/Eris/aniting/lib/presentation/widgets/m3_expressive_select.dart) | Fluid dropdown select with decoupled popover overlay |
 
 ---

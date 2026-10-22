@@ -20,6 +20,7 @@ class _AiringCalendarScreenState extends ConsumerState<AiringCalendarScreen> {
   int _selectedDayIndex = 0;
   List<AiringScheduleItem> _allSchedules = [];
   bool _isLoading = true;
+  bool _onlyWatching = false;
 
   @override
   void initState() {
@@ -66,6 +67,7 @@ class _AiringCalendarScreenState extends ConsumerState<AiringCalendarScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final l10n = ref.watch(translationsProvider);
     final titleLang = ref.watch(titleLanguageProvider);
     final isSpanish = ref.watch(appLanguageProvider) == AppLanguage.es;
@@ -74,6 +76,23 @@ class _AiringCalendarScreenState extends ConsumerState<AiringCalendarScreen> {
     final days = _getWeekDays();
     final canPop = Navigator.canPop(context);
 
+    final animeCollection = ref.watch(animeCollectionProvider).asData?.value ?? [];
+    final watchingMediaIds = animeCollection
+        .where((e) =>
+            e.status.toUpperCase() == 'CURRENT' ||
+            e.status.toUpperCase() == 'WATCHING' ||
+            e.status.toUpperCase() == 'REPEATING')
+        .map((e) => e.mediaId)
+        .toSet();
+
+    final displayedSchedules = _onlyWatching
+        ? _allSchedules
+            .where((s) =>
+                watchingMediaIds.contains(s.media.mediaId) ||
+                watchingMediaIds.contains(s.media.id))
+            .toList()
+        : _allSchedules;
+
     return Scaffold(
       appBar: DesktopSafeAppBar(
         child: AppBar(
@@ -81,6 +100,37 @@ class _AiringCalendarScreenState extends ConsumerState<AiringCalendarScreen> {
           automaticallyImplyLeading: canPop,
           titleSpacing: canPop ? 0 : 16,
           actions: [
+            FilterChip(
+              avatar: Icon(
+                _onlyWatching ? Icons.visibility_rounded : Icons.visibility_outlined,
+                size: 15,
+                color: _onlyWatching ? Colors.black : theme.colorScheme.onSurfaceVariant,
+              ),
+              label: Text(
+                l10n.onlyWatching,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: _onlyWatching ? FontWeight.bold : FontWeight.w500,
+                  color: _onlyWatching ? Colors.black : theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              selected: _onlyWatching,
+              selectedColor: Colors.white,
+              backgroundColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+              showCheckmark: false,
+              visualDensity: VisualDensity.compact,
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(
+                  color: _onlyWatching
+                      ? Colors.white
+                      : theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
+                ),
+              ),
+              onSelected: (val) => setState(() => _onlyWatching = val),
+            ),
+            const SizedBox(width: 8),
             IconButton(
               icon: const Icon(Icons.refresh_rounded),
               tooltip: l10n.refresh,
@@ -106,7 +156,7 @@ class _AiringCalendarScreenState extends ConsumerState<AiringCalendarScreen> {
               days: days,
               selectedIndex: _selectedDayIndex,
               onDaySelected: (idx) => setState(() => _selectedDayIndex = idx),
-              allSchedules: _allSchedules,
+              allSchedules: displayedSchedules,
               titleLang: titleLang,
               l10n: l10n,
               isSpanish: isSpanish,
@@ -117,7 +167,7 @@ class _AiringCalendarScreenState extends ConsumerState<AiringCalendarScreen> {
             days: days,
             selectedIndex: _selectedDayIndex,
             onDaySelected: (idx) => setState(() => _selectedDayIndex = idx),
-            allSchedules: _allSchedules,
+            allSchedules: displayedSchedules,
             titleLang: titleLang,
             l10n: l10n,
             isSpanish: isSpanish,

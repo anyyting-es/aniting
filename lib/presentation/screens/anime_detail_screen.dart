@@ -413,6 +413,8 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
     required int episodeNumber,
     required String episodeTitle,
     String? aniDBEpisode,
+    bool isDownloadMode = false,
+    List<int>? initialSelectedEpisodes,
   }) async {
     final isDesktop = MediaQuery.of(context).size.width >= 768;
     final launchInfo = await (isDesktop
@@ -429,6 +431,8 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
                 episodeTitle: episodeTitle,
                 animeDetails: _details,
                 aniDBEpisode: aniDBEpisode,
+                isDownloadMode: isDownloadMode,
+                initialSelectedEpisodes: initialSelectedEpisodes,
               ),
             ),
           )
@@ -436,7 +440,7 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
             context: context,
             showGrabber: true,
             constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(context).size.height * 0.60,
+              maxHeight: MediaQuery.of(context).size.height * 0.85,
             ),
             builder: (ctx) => TorrentSelectorSheet(
               mediaId: widget.mediaId,
@@ -445,6 +449,8 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
               animeDetails: _details,
               aniDBEpisode: aniDBEpisode,
               isSheet: true,
+              isDownloadMode: isDownloadMode,
+              initialSelectedEpisodes: initialSelectedEpisodes,
             ),
           ));
 

@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:g1455/g1455.dart';
+import 'package:material_3_expressive/material_3_expressive.dart';
+import 'package:seanime_app/core/i18n/i18n_provider.dart';
+import 'package:seanime_app/core/icons/app_icons.dart';
+import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:url_launcher/url_launcher_string.dart';
-import '../../../../core/i18n/i18n_provider.dart';
 
 class DesktopMangaActionBar extends ConsumerWidget {
   final int mediaId;
@@ -52,280 +56,192 @@ class DesktopMangaActionBar extends ConsumerWidget {
     );
   }
 
+  Future<void> _updateStatus(
+    BuildContext context,
+    WidgetRef ref,
+    String newStatus,
+  ) async {
+    final repo = ref.read(repositoryProvider);
+    final serverState = ref.read(serverNotifierProvider);
+    final isLoggedIn = serverState.status?.isLoggedIn ?? false;
+    final l10n = ref.read(translationsProvider);
+
+    if (isLoggedIn) {
+      await repo.editAnilistListEntry(
+        mediaId: mediaId,
+        type: 'manga',
+        status: newStatus,
+        progress: progress,
+      );
+      ref.invalidate(mangaCollectionProvider);
+      ref.invalidate(continueReadingMangaProvider);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.formatStatus(newStatus)),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } else {
+      if (context.mounted) {
+        onOpenEditEntryModal(title);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ref.watch(translationsProvider);
+    final iconPack = ref.watch(iconPackProvider);
     final label = progress > 0
         ? l10n.continueChapterNumbered(progress + 1)
         : l10n.startReading;
 
     return Row(
       children: [
-        // Big Pill Read Button
-        _HoverReadButton(
-          label: label,
-          onTap: onContinueReading,
+        // Big M3E Read Button
+        M3EButton.icon(
+          style: M3EButtonStyle.filled,
+          size: M3EButtonSize.sm,
+          shape: M3EButtonShape.round,
+          icon: const Icon(Icons.menu_book_rounded, size: 18),
+          label: Text(
+            label,
+            style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700),
+          ),
+          onPressed: onContinueReading,
         ),
         const SizedBox(width: 10),
 
-        // Bookmark Button (AniList status modal)
-        _HoverIconButton(
-          tooltip: l10n.editInAnilist,
-          icon: Icons.bookmark_border_rounded,
-          onTap: () => onOpenEditEntryModal(title),
+        // Bookmark / Status Button (GlassMenuAnchor with fluid detachment)
+        GlassMenuAnchor(
+          width: 210,
+          items: [
+            GlassMenuItem(
+              label: l10n.statusWatching,
+              icon: Icon(
+                AppIcons.playCircleFilled(iconPack),
+                size: 18,
+                color: const Color(0xFF10B981),
+              ),
+              onPressed: () => _updateStatus(context, ref, 'CURRENT'),
+            ),
+            GlassMenuItem(
+              label: l10n.statusPlanning,
+              icon: Icon(
+                AppIcons.bookmarkAdded(iconPack),
+                size: 18,
+                color: const Color(0xFF3B82F6),
+              ),
+              onPressed: () => _updateStatus(context, ref, 'PLANNING'),
+            ),
+            GlassMenuItem(
+              label: l10n.statusCompleted,
+              icon: Icon(
+                AppIcons.checkCircleFilled(iconPack),
+                size: 18,
+                color: const Color(0xFF8B5CF6),
+              ),
+              onPressed: () => _updateStatus(context, ref, 'COMPLETED'),
+            ),
+            GlassMenuItem(
+              label: l10n.statusPaused,
+              icon: Icon(
+                AppIcons.pauseCircleFilled(iconPack),
+                size: 18,
+                color: const Color(0xFFF59E0B),
+              ),
+              onPressed: () => _updateStatus(context, ref, 'PAUSED'),
+            ),
+            GlassMenuItem(
+              label: l10n.statusDropped,
+              icon: Icon(
+                AppIcons.cancel(iconPack),
+                size: 18,
+                color: const Color(0xFFEF4444),
+              ),
+              onPressed: () => _updateStatus(context, ref, 'DROPPED'),
+            ),
+            GlassMenuItem(
+              label: l10n.editDetails,
+              icon: Icon(
+                AppIcons.edit(iconPack),
+                size: 18,
+              ),
+              onPressed: () => onOpenEditEntryModal(title),
+            ),
+          ],
+          builder: (context, controller) {
+            return M3EIconButton(
+              tooltip: l10n.editInAnilist,
+              icon: Icon(AppIcons.edit(iconPack), size: 18),
+              variant: M3EIconButtonVariant.tonal,
+              size: M3EIconButtonSize.sm,
+              onPressed: controller.open,
+            );
+          },
         ),
         const SizedBox(width: 8),
 
         // Batch Download Button
-        _HoverIconButton(
+        M3EIconButton(
           tooltip: l10n.batchDownload,
-          icon: Icons.download_rounded,
-          onTap: onBatchDownload,
+          icon: const Icon(Icons.download_rounded, size: 18),
+          variant: M3EIconButtonVariant.tonal,
+          size: M3EIconButtonSize.sm,
+          onPressed: onBatchDownload,
         ),
         const SizedBox(width: 8),
 
         // Share Button
-        _HoverIconButton(
+        M3EIconButton(
           tooltip: l10n.share,
-          icon: Icons.share_rounded,
-          onTap: () => _shareManga(context, title, l10n.linkCopiedFor(title)),
+          icon: const Icon(Icons.share_rounded, size: 18),
+          variant: M3EIconButtonVariant.tonal,
+          size: M3EIconButtonSize.sm,
+          onPressed: () => _shareManga(context, title, l10n.linkCopiedFor(title)),
         ),
         const SizedBox(width: 8),
 
-        // AniList External Link with Official Brand Icon (Clean, no borders)
-        _HoverBrandIcon(
-          assetPath: 'assets/icons/AniList_logo.png',
+        // AniList External Link
+        M3EIconButton(
           tooltip: l10n.viewOnAnilist,
-          onTap: () => _launchAnilist(mediaId),
+          icon: ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: Image.asset(
+              'assets/icons/AniList_logo.png',
+              width: 18,
+              height: 18,
+              fit: BoxFit.contain,
+            ),
+          ),
+          variant: M3EIconButtonVariant.tonal,
+          size: M3EIconButtonSize.sm,
+          onPressed: () => _launchAnilist(mediaId),
         ),
         const SizedBox(width: 8),
 
-        // MAL External Link with Official Brand Icon (Clean, no borders)
+        // MAL External Link
         if (idMal != null) ...[
-          _HoverBrandIcon(
-            assetPath: 'assets/icons/MyAnimeList_Logo.png',
+          M3EIconButton(
             tooltip: l10n.viewOnMal,
-            onTap: () => _launchMal(idMal!),
+            icon: ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: Image.asset(
+                'assets/icons/MyAnimeList_Logo.png',
+                width: 18,
+                height: 18,
+                fit: BoxFit.contain,
+              ),
+            ),
+            variant: M3EIconButtonVariant.tonal,
+            size: M3EIconButtonSize.sm,
+            onPressed: () => _launchMal(idMal!),
           ),
           const SizedBox(width: 8),
         ],
       ],
-    );
-  }
-}
-
-class _HoverReadButton extends StatefulWidget {
-  final String label;
-  final VoidCallback onTap;
-
-  const _HoverReadButton({
-    required this.label,
-    required this.onTap,
-  });
-
-  @override
-  State<_HoverReadButton> createState() => _HoverReadButtonState();
-}
-
-class _HoverReadButtonState extends State<_HoverReadButton> {
-  bool _isHovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: AnimatedScale(
-        scale: _isHovered ? 1.025 : 1.0,
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOutCubic,
-        child: FilledButton.icon(
-          style: FilledButton.styleFrom(
-            backgroundColor: theme.colorScheme.primary,
-            foregroundColor: theme.colorScheme.onPrimary,
-            minimumSize: const Size(0, 38),
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            elevation: _isHovered ? 4 : 1,
-            shadowColor: (isDark ? Colors.black : theme.colorScheme.primary).withValues(alpha: 0.25),
-          ),
-          onPressed: widget.onTap,
-          icon: Icon(Icons.menu_book_rounded, size: 18, color: theme.colorScheme.onPrimary),
-          label: Text(
-            widget.label,
-            style: TextStyle(
-              fontWeight: FontWeight.w700,
-              fontSize: 13,
-              letterSpacing: 0.1,
-              color: theme.colorScheme.onPrimary,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _HoverIconButton extends StatefulWidget {
-  final String tooltip;
-  final IconData icon;
-  final VoidCallback onTap;
-
-  const _HoverIconButton({
-    required this.tooltip,
-    required this.icon,
-    required this.onTap,
-  });
-
-  @override
-  State<_HoverIconButton> createState() => _HoverIconButtonState();
-}
-
-class _HoverIconButtonState extends State<_HoverIconButton> {
-  bool _isHovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    final baseBg = isDark
-        ? Colors.white.withValues(alpha: 0.06)
-        : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.85);
-    final hoverBg = isDark
-        ? Colors.white.withValues(alpha: 0.12)
-        : theme.colorScheme.surfaceContainerHigh;
-
-    final iconColor = isDark
-        ? (_isHovered ? Colors.white : Colors.white70)
-        : (_isHovered ? theme.colorScheme.onSurface : theme.colorScheme.onSurfaceVariant);
-
-    return Tooltip(
-      message: widget.tooltip,
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        onEnter: (_) => setState(() => _isHovered = true),
-        onExit: (_) => setState(() => _isHovered = false),
-        child: AnimatedScale(
-          scale: _isHovered ? 1.025 : 1.0,
-          duration: const Duration(milliseconds: 180),
-          curve: Curves.easeOutCubic,
-          child: InkWell(
-            onTap: widget.onTap,
-            borderRadius: BorderRadius.circular(10),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              curve: Curves.easeOutCubic,
-              padding: const EdgeInsets.all(9),
-              decoration: BoxDecoration(
-                color: _isHovered ? hoverBg : baseBg,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: _isHovered ? 0.18 : 0.08)
-                      : theme.colorScheme.outlineVariant.withValues(alpha: _isHovered ? 0.6 : 0.3),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: _isHovered ? 0.25 : 0.10),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Icon(
-                widget.icon,
-                color: iconColor,
-                size: 20,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _HoverBrandIcon extends StatefulWidget {
-  final String assetPath;
-  final String tooltip;
-  final VoidCallback onTap;
-
-  const _HoverBrandIcon({
-    required this.assetPath,
-    required this.tooltip,
-    required this.onTap,
-  });
-
-  @override
-  State<_HoverBrandIcon> createState() => _HoverBrandIconState();
-}
-
-class _HoverBrandIconState extends State<_HoverBrandIcon> {
-  bool _isHovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    final baseBg = isDark
-        ? Colors.white.withValues(alpha: 0.06)
-        : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.85);
-    final hoverBg = isDark
-        ? Colors.white.withValues(alpha: 0.12)
-        : theme.colorScheme.surfaceContainerHigh;
-
-    return Tooltip(
-      message: widget.tooltip,
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        onEnter: (_) => setState(() => _isHovered = true),
-        onExit: (_) => setState(() => _isHovered = false),
-        child: AnimatedScale(
-          scale: _isHovered ? 1.025 : 1.0,
-          duration: const Duration(milliseconds: 180),
-          curve: Curves.easeOutCubic,
-          child: InkWell(
-            onTap: widget.onTap,
-            borderRadius: BorderRadius.circular(10),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              curve: Curves.easeOutCubic,
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: _isHovered ? hoverBg : baseBg,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: _isHovered ? 0.18 : 0.08)
-                      : theme.colorScheme.outlineVariant.withValues(alpha: _isHovered ? 0.6 : 0.3),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: _isHovered ? 0.25 : 0.10),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(5),
-                child: Image.asset(
-                  widget.assetPath,
-                  width: 22,
-                  height: 22,
-                  fit: BoxFit.contain,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

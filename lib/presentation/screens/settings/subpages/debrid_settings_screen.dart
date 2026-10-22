@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:g1455/g1455.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -36,6 +37,16 @@ class _DebridSettingsScreenState extends ConsumerState<DebridSettingsScreen> {
   void dispose() {
     _apiKeyController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pasteApiKey() async {
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    final text = data?.text?.trim();
+    if (text != null && text.isNotEmpty) {
+      setState(() {
+        _apiKeyController.text = text;
+      });
+    }
   }
 
   @override
@@ -90,8 +101,9 @@ class _DebridSettingsScreenState extends ConsumerState<DebridSettingsScreen> {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color:
-                            theme.colorScheme.primary.withValues(alpha: 0.15),
+                        color: theme.colorScheme.primary.withValues(
+                          alpha: 0.15,
+                        ),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
@@ -143,8 +155,10 @@ class _DebridSettingsScreenState extends ConsumerState<DebridSettingsScreen> {
               // 2. Selector de proveedor
               GlassCard(
                 child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<String>(
                       value: _providers.any((p) => p['id'] == settings.provider)
@@ -171,8 +185,9 @@ class _DebridSettingsScreenState extends ConsumerState<DebridSettingsScreen> {
                       }).toList(),
                       onChanged: (newProvider) async {
                         if (newProvider != null) {
-                          final updated =
-                              settings.copyWith(provider: newProvider);
+                          final updated = settings.copyWith(
+                            provider: newProvider,
+                          );
                           await ref
                               .read(debridSettingsProvider.notifier)
                               .updateSettings(updated);
@@ -198,20 +213,35 @@ class _DebridSettingsScreenState extends ConsumerState<DebridSettingsScreen> {
                         obscureText: _obscureApiKey,
                         decoration: InputDecoration(
                           hintText: l10n.debridApiKeyHint,
-                          prefixIcon:
-                              const Icon(LucideIcons.keyRound, size: 20),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscureApiKey
-                                  ? LucideIcons.eye
-                                  : LucideIcons.eyeOff,
-                              size: 18,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _obscureApiKey = !_obscureApiKey;
-                              });
-                            },
+                          prefixIcon: const Icon(
+                            LucideIcons.keyRound,
+                            size: 20,
+                          ),
+                          suffixIcon: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                tooltip: 'Paste API Key',
+                                icon: const Icon(
+                                  LucideIcons.clipboardPaste,
+                                  size: 18,
+                                ),
+                                onPressed: _pasteApiKey,
+                              ),
+                              IconButton(
+                                icon: Icon(
+                                  _obscureApiKey
+                                      ? LucideIcons.eye
+                                      : LucideIcons.eyeOff,
+                                  size: 18,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _obscureApiKey = !_obscureApiKey;
+                                  });
+                                },
+                              ),
+                            ],
                           ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
@@ -236,7 +266,9 @@ class _DebridSettingsScreenState extends ConsumerState<DebridSettingsScreen> {
                           onPressed: _isSaving
                               ? null
                               : () async {
-                                  final messenger = ScaffoldMessenger.of(context);
+                                  final messenger = ScaffoldMessenger.of(
+                                    context,
+                                  );
                                   setState(() => _isSaving = true);
                                   final updated = settings.copyWith(
                                     apiKey: _apiKeyController.text.trim(),
@@ -248,9 +280,11 @@ class _DebridSettingsScreenState extends ConsumerState<DebridSettingsScreen> {
                                   setState(() => _isSaving = false);
                                   messenger.showSnackBar(
                                     SnackBar(
-                                      content: Text(ok
-                                          ? 'API Key guardada correctamente'
-                                          : 'Error al guardar API Key'),
+                                      content: Text(
+                                        ok
+                                            ? 'API Key guardada correctamente'
+                                            : 'Error al guardar API Key',
+                                      ),
                                       behavior: SnackBarBehavior.floating,
                                       duration: const Duration(seconds: 2),
                                     ),
@@ -291,8 +325,9 @@ class _DebridSettingsScreenState extends ConsumerState<DebridSettingsScreen> {
                               children: [
                                 Text(
                                   l10n.debridAutoSelect,
-                                  style: theme.textTheme.titleSmall
-                                      ?.copyWith(fontWeight: FontWeight.w600),
+                                  style: theme.textTheme.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
@@ -307,8 +342,9 @@ class _DebridSettingsScreenState extends ConsumerState<DebridSettingsScreen> {
                           Switch(
                             value: settings.streamAutoSelect,
                             onChanged: (val) async {
-                              final updated =
-                                  settings.copyWith(streamAutoSelect: val);
+                              final updated = settings.copyWith(
+                                streamAutoSelect: val,
+                              );
                               await ref
                                   .read(debridSettingsProvider.notifier)
                                   .updateSettings(updated);
@@ -322,13 +358,16 @@ class _DebridSettingsScreenState extends ConsumerState<DebridSettingsScreen> {
                         children: [
                           Text(
                             l10n.debridPreferredResolution,
-                            style: theme.textTheme.titleSmall
-                                ?.copyWith(fontWeight: FontWeight.w600),
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                           DropdownButtonHideUnderline(
                             child: DropdownButton<String>(
-                              value: _resolutions.contains(
-                                      settings.streamPreferredResolution)
+                              value:
+                                  _resolutions.contains(
+                                    settings.streamPreferredResolution,
+                                  )
                                   ? settings.streamPreferredResolution
                                   : _resolutions.first,
                               items: _resolutions.map((res) {
@@ -337,7 +376,8 @@ class _DebridSettingsScreenState extends ConsumerState<DebridSettingsScreen> {
                                   child: Text(
                                     res,
                                     style: const TextStyle(
-                                        fontWeight: FontWeight.bold),
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 );
                               }).toList(),

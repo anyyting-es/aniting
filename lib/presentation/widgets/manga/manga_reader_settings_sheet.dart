@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:g1455/g1455.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/preferences/manga_reader_preferences_provider.dart';
@@ -8,15 +9,8 @@ class MangaReaderSettingsSheet extends ConsumerWidget {
   const MangaReaderSettingsSheet({super.key});
 
   static Future<void> show(BuildContext context) {
-    final theme = Theme.of(context);
-    return showModalBottomSheet(
+    return showGlassSheet(
       context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      backgroundColor: theme.colorScheme.surfaceContainerHigh,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
       builder: (ctx) => const MangaReaderSettingsSheet(),
     );
   }

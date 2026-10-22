@@ -292,21 +292,28 @@ class CatalogSearchView extends ConsumerWidget {
       );
     }
 
-    // Grid usando proporciones estándar de la app (maxCrossAxisExtent: 200–220, childAspectRatio: 0.53–0.58)
     return GridView.builder(
       clipBehavior: Clip.none,
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       padding: EdgeInsets.fromLTRB(
-        isDesktop ? 4 : 16,
+        isDesktop ? 4 : 10,
         isDesktop ? 0 : 8,
-        isDesktop ? 12 : 16,
+        isDesktop ? 12 : 10,
         90,
       ),
-      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: isDesktop ? 245 : 160,
-        childAspectRatio: isDesktop ? 0.58 : 0.53,
-        crossAxisSpacing: isDesktop ? 16 : 10,
-        mainAxisSpacing: isDesktop ? 20 : 14,
-      ),
+      gridDelegate: isDesktop
+          ? const SliverGridDelegateWithMaxCrossAxisExtent(
+              maxCrossAxisExtent: 245,
+              childAspectRatio: 0.58,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 20,
+            )
+          : const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              childAspectRatio: 0.54,
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 12,
+            ),
       itemCount: totalItems + (hasMore ? 1 : 0),
       itemBuilder: (context, index) {
         if (index >= totalItems) {
@@ -326,6 +333,8 @@ class CatalogSearchView extends ConsumerWidget {
           return AnimeCard(
             entry: anime,
             onTap: () {
+              searchFocusNode.unfocus();
+              FocusScope.of(context).unfocus();
               AnimeDetailScreen.navigate(
                 context,
                 mediaId: anime.mediaId,
@@ -338,6 +347,8 @@ class CatalogSearchView extends ConsumerWidget {
           return MangaCard(
             entry: manga,
             onTap: () {
+              searchFocusNode.unfocus();
+              FocusScope.of(context).unfocus();
               MangaDetailScreen.navigate(
                 context,
                 mediaId: manga.mediaId,

@@ -37,64 +37,55 @@ void showEpisodeDetailModal({
           final l10n = ref.watch(translationsProvider);
           final iconPack = ref.watch(iconPackProvider);
           final modalRadius = context.themeColors.borderRadius;
-          return Container(
-            decoration: BoxDecoration(
-              color: theme.scaffoldBackgroundColor,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.5),
-                  blurRadius: 20,
-                  offset: const Offset(0, -4),
+          return GlassCard(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            child: SafeArea(
+              top: false,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(ctx).size.height * 0.85,
                 ),
-              ],
-            ),
-        child: SafeArea(
-          top: false,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(ctx).size.height * 0.85,
-            ),
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Handle bar
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      margin: const EdgeInsets.only(bottom: 16),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-
-                  // Screencap
-                  AspectRatio(
-                    aspectRatio: 16 / 9,
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(modalRadius),
-                          child: image != null && image.isNotEmpty
-                              ? CachedNetworkImage(
-                                  memCacheWidth: 320, maxWidthDiskCache: 480,
-                                  imageUrl: image,
-                                  fit: BoxFit.cover,
-                                  errorWidget: (context, url, error) => fallbackImage != null
-                                      ? CachedNetworkImage(memCacheWidth: 320, maxWidthDiskCache: 480, imageUrl: fallbackImage, fit: BoxFit.cover)
-                                      : Container(color: theme.colorScheme.surfaceContainerHighest),
-                                )
-                              : fallbackImage != null
-                                  ? CachedNetworkImage(memCacheWidth: 320, maxWidthDiskCache: 480, imageUrl: fallbackImage, fit: BoxFit.cover)
-                                  : Container(color: theme.colorScheme.surfaceContainerHighest),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Handle bar
+                      Center(
+                        child: Container(
+                          width: 40,
+                          height: 4,
+                          margin: const EdgeInsets.only(bottom: 16),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                            borderRadius: BorderRadius.circular(2),
+                          ),
                         ),
+                      ),
+
+                      // Screencap in High Resolution
+                      AspectRatio(
+                        aspectRatio: 16 / 9,
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(modalRadius),
+                              child: image != null && image.isNotEmpty
+                                  ? CachedNetworkImage(
+                                      memCacheWidth: 1080,
+                                      maxWidthDiskCache: 1280,
+                                      imageUrl: image,
+                                      fit: BoxFit.cover,
+                                      errorWidget: (context, url, error) => fallbackImage != null
+                                          ? CachedNetworkImage(memCacheWidth: 1080, maxWidthDiskCache: 1280, imageUrl: fallbackImage, fit: BoxFit.cover)
+                                          : Container(color: theme.colorScheme.surfaceContainerHighest),
+                                    )
+                                  : fallbackImage != null
+                                      ? CachedNetworkImage(memCacheWidth: 1080, maxWidthDiskCache: 1280, imageUrl: fallbackImage, fit: BoxFit.cover)
+                                      : Container(color: theme.colorScheme.surfaceContainerHighest),
+                            ),
                         Container(
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(modalRadius),
@@ -434,32 +425,45 @@ class EpisodeListItem extends ConsumerWidget {
         : null;
 
     final showCheckbox = isSelectionMode || isSelected;
+    bool isHovered = false;
 
-    return RepaintBoundary(
-      child: AnimatedScale(
-        scale: isSelected ? 0.98 : 1.0,
-        duration: const Duration(milliseconds: 220),
-        curve: Curves.easeOutCubic,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 220),
-          curve: Curves.easeOutCubic,
-          decoration: BoxDecoration(
-            color: isSelected
-                ? theme.colorScheme.primaryContainer.withValues(alpha: isDark ? 0.28 : 0.42)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(itemRadius),
-            border: isSelected
-                ? Border.all(
-                    color: theme.colorScheme.primary.withValues(alpha: 0.9),
-                    width: 1.6,
-                  )
-                : (isSelectionMode
-                    ? Border.all(
-                        color: theme.colorScheme.outlineVariant.withValues(alpha: 0.2),
-                        width: 0.8,
-                      )
-                    : null),
-          ),
+    return StatefulBuilder(
+      builder: (context, setLocalState) {
+        return MouseRegion(
+          onEnter: (_) => setLocalState(() => isHovered = true),
+          onExit: (_) => setLocalState(() => isHovered = false),
+          child: RepaintBoundary(
+            child: AnimatedScale(
+              scale: isSelected ? 0.98 : 1.0,
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOutCubic,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOutCubic,
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? theme.colorScheme.primaryContainer.withValues(alpha: isDark ? 0.28 : 0.42)
+                      : (isHovered
+                          ? theme.colorScheme.primary.withValues(alpha: isDark ? 0.08 : 0.05)
+                          : Colors.transparent),
+                  borderRadius: BorderRadius.circular(itemRadius),
+                  border: isSelected
+                      ? Border.all(
+                          color: theme.colorScheme.primary.withValues(alpha: 0.9),
+                          width: 1.6,
+                        )
+                      : (isHovered
+                          ? Border.all(
+                              color: theme.colorScheme.primary.withValues(alpha: 0.25),
+                              width: 1.0,
+                            )
+                          : (isSelectionMode
+                              ? Border.all(
+                                  color: theme.colorScheme.outlineVariant.withValues(alpha: 0.2),
+                                  width: 0.8,
+                                )
+                              : null)),
+                ),
           child: Material(
             color: Colors.transparent,
             child: InkWell(
@@ -502,40 +506,50 @@ class EpisodeListItem extends ConsumerWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Animated Selection Checkbox
-                    if (showCheckbox) ...[
-                      Padding(
-                        padding: const EdgeInsets.only(top: 14, right: 6),
-                        child: AnimatedScale(
-                          scale: isSelected ? 1.0 : 0.88,
-                          duration: const Duration(milliseconds: 200),
-                          curve: Curves.easeOutBack,
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            curve: Curves.easeOutCubic,
-                            width: 22,
-                            height: 22,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: isSelected ? theme.colorScheme.primary : Colors.transparent,
-                              border: Border.all(
-                                color: isSelected
-                                    ? theme.colorScheme.primary
-                                    : theme.colorScheme.outlineVariant,
-                                width: 1.8,
+                    // Smooth Animated Selection Checkbox
+                    ClipRect(
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 240),
+                        curve: Curves.easeInOutCubic,
+                        width: showCheckbox ? 32.0 : 0.0,
+                        alignment: Alignment.topLeft,
+                        child: AnimatedOpacity(
+                          opacity: showCheckbox ? 1.0 : 0.0,
+                          duration: const Duration(milliseconds: 180),
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 14, right: 10),
+                            child: AnimatedScale(
+                              scale: isSelected ? 1.0 : 0.88,
+                              duration: const Duration(milliseconds: 200),
+                              curve: Curves.easeOutBack,
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                curve: Curves.easeOutCubic,
+                                width: 22,
+                                height: 22,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: isSelected ? theme.colorScheme.primary : Colors.transparent,
+                                  border: Border.all(
+                                    color: isSelected
+                                        ? theme.colorScheme.primary
+                                        : theme.colorScheme.outlineVariant,
+                                    width: 1.8,
+                                  ),
+                                ),
+                                child: isSelected
+                                    ? const Icon(
+                                        Icons.check_rounded,
+                                        size: 15,
+                                        color: Colors.white,
+                                      )
+                                    : null,
                               ),
                             ),
-                            child: isSelected
-                                ? const Icon(
-                                    Icons.check_rounded,
-                                    size: 15,
-                                    color: Colors.white,
-                                  )
-                                : null,
                           ),
                         ),
                       ),
-                    ],
+                    ),
               // Larger, squarer 4:3 Thumbnail without play icon inside or on side
               SizedBox(
                 width: 132,
@@ -870,7 +884,10 @@ class EpisodeListItem extends ConsumerWidget {
     ),
   ),
 ),
+),
 );
+      },
+    );
   }
 }
 
@@ -958,36 +975,55 @@ class EpisodeGridItem extends ConsumerWidget {
             ? Colors.green.withValues(alpha: 0.08)
             : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45);
 
-    return RepaintBoundary(
-      child: AnimatedScale(
-        scale: isSelected ? 0.96 : 1.0,
-        duration: const Duration(milliseconds: 220),
-        curve: Curves.easeOutCubic,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 220),
-          curve: Curves.easeOutCubic,
-          decoration: BoxDecoration(
-            color: isSelected
-                ? theme.colorScheme.primaryContainer.withValues(alpha: isDark ? 0.35 : 0.5)
-                : baseColor,
-            borderRadius: BorderRadius.circular(gridRadius),
-            border: Border.all(
-              color: isSelected
-                  ? theme.colorScheme.primary
-                  : (isPlaying
-                      ? theme.colorScheme.primary
-                      : isDownloading
-                          ? theme.colorScheme.primary.withValues(alpha: 0.6)
-                          : isDownloaded
-                              ? Colors.greenAccent.withValues(alpha: 0.5)
-                              : isWatched
-                                  ? theme.colorScheme.primary.withValues(alpha: 0.2)
-                                  : (isSelectionMode
-                                      ? theme.colorScheme.outlineVariant.withValues(alpha: 0.25)
-                                      : theme.colorScheme.outlineVariant.withValues(alpha: 0.3))),
-              width: isSelected ? 2.0 : ((isPlaying || isDownloading) ? 1.5 : 1.0),
-            ),
-          ),
+    bool isHovered = false;
+
+    return StatefulBuilder(
+      builder: (context, setLocalState) {
+        return MouseRegion(
+          onEnter: (_) => setLocalState(() => isHovered = true),
+          onExit: (_) => setLocalState(() => isHovered = false),
+          child: RepaintBoundary(
+            child: AnimatedScale(
+              scale: isSelected ? 0.96 : (isHovered ? 1.02 : 1.0),
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOutCubic,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOutCubic,
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? theme.colorScheme.primaryContainer.withValues(alpha: isDark ? 0.35 : 0.5)
+                      : (isHovered
+                          ? theme.colorScheme.primary.withValues(alpha: isDark ? 0.16 : 0.10)
+                          : baseColor),
+                  borderRadius: BorderRadius.circular(gridRadius),
+                  border: Border.all(
+                    color: isSelected
+                        ? theme.colorScheme.primary
+                        : (isHovered
+                            ? theme.colorScheme.primary.withValues(alpha: 0.55)
+                            : (isPlaying
+                                ? theme.colorScheme.primary
+                                : isDownloading
+                                    ? theme.colorScheme.primary.withValues(alpha: 0.6)
+                                    : isDownloaded
+                                        ? Colors.greenAccent.withValues(alpha: 0.5)
+                                        : isWatched
+                                            ? theme.colorScheme.primary.withValues(alpha: 0.2)
+                                            : (isSelectionMode
+                                                ? theme.colorScheme.outlineVariant.withValues(alpha: 0.25)
+                                                : theme.colorScheme.outlineVariant.withValues(alpha: 0.3)))),
+                    width: isSelected ? 2.0 : ((isPlaying || isDownloading) ? 1.5 : 1.0),
+                  ),
+                  boxShadow: [
+                    if (isHovered && !isSelected)
+                      BoxShadow(
+                        color: theme.colorScheme.primary.withValues(alpha: isDark ? 0.20 : 0.14),
+                        blurRadius: 10,
+                        spreadRadius: 1,
+                      ),
+                  ],
+                ),
           clipBehavior: Clip.antiAlias,
           child: Material(
             color: Colors.transparent,
@@ -1185,6 +1221,9 @@ class EpisodeGridItem extends ConsumerWidget {
       ),
     ),
   ),
+),
 );
-}
+      },
+    );
+  }
 }

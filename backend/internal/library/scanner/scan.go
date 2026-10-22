@@ -453,37 +453,12 @@ func (scn *Scanner) Scan(ctx context.Context) (lfs []*anime.LocalFile, err error
 	// |  Add missing media  |
 	// +---------------------+
 
-	// Add matched media entries that are missing from the collection
-	matchedMissingMediaIds := make([]int, 0)
-	seenMatchedMediaIds := make(map[int]struct{})
-	for _, lf := range localFiles {
-		if lf.MediaId != 0 {
-			if _, seen := seenMatchedMediaIds[lf.MediaId]; !seen {
-				seenMatchedMediaIds[lf.MediaId] = struct{}{}
-				inCollection := false
-				if mf.AnimeCollectionWithRelations != nil && mf.AnimeCollectionWithRelations.MediaListCollection != nil {
-					for _, list := range mf.AnimeCollectionWithRelations.MediaListCollection.Lists {
-						for _, entry := range list.Entries {
-							if entry.GetMedia().GetID() == lf.MediaId {
-								inCollection = true
-								break
-							}
-						}
-						if inCollection {
-							break
-						}
-					}
-				}
-				if !inCollection {
-					matchedMissingMediaIds = append(matchedMissingMediaIds, lf.MediaId)
-				}
-			}
-		}
-	}
+	// Add non-added media entries to AniList collection
+	// Max of 4 to avoid rate limit issues
+	if len(mf.UnknownMediaIds) < 5 {
+		scn.WSEventManager.SendEvent(events.EventScanStatus, "Adding missing media to AniList...")
 
-	if len(matchedMissingMediaIds) > 0 {
-		scn.WSEventManager.SendEvent(events.EventScanStatus, "Adding missing media to library...")
-		if err = scn.PlatformRef.Get().AddMediaToCollection(ctx, matchedMissingMediaIds); err != nil {
+		if err = scn.PlatformRef.Get().AddMediaToCollection(ctx, mf.UnknownMediaIds); err != nil {
 			scn.Logger.Warn().Msg("scanner: An error occurred while adding media to planning list: " + err.Error())
 		}
 	}

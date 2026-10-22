@@ -19,6 +19,7 @@ import 'package:seanime_app/data/models/anizip_data.dart';
 import 'package:seanime_app/data/models/library_entry_details.dart';
 import 'package:seanime_app/data/models/onlinestream_models.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
+import 'package:seanime_app/presentation/providers/episode_selection_provider.dart';
 import 'package:seanime_app/presentation/screens/video_player_screen.dart';
 import 'package:seanime_app/presentation/widgets/anizip_episode_list.dart';
 import 'package:seanime_app/presentation/widgets/local_library_view.dart';
@@ -55,6 +56,8 @@ class AnimeDetailMobileLayout extends ConsumerStatefulWidget {
     required int episodeNumber,
     required String episodeTitle,
     String? aniDBEpisode,
+    bool isDownloadMode,
+    List<int>? initialSelectedEpisodes,
   }) onOpenTorrentSelector;
   final VoidCallback onOpenDetailsModal;
   final Object? heroTag;
@@ -638,20 +641,15 @@ class _AnimeDetailMobileLayoutState
           ? (widget.details?.bannerImage ?? widget.initialEntry?.bannerImage)
           : coverUrl;
     } else {
-      if (hasAniZipFanart) {
-        bannerUrl = aniZipFanart;
-      } else if (widget.isLoadingAniZip) {
-        // While AniZip is loading, avoid prematurely flashing AniList banner to prevent pop-swap
-        bannerUrl = null;
-      } else {
-        bannerUrl = widget.details?.bannerImage ??
-            widget.initialEntry?.bannerImage ??
-            widget.aniZipData?.bannerUrl ??
-            coverUrl;
-      }
+      bannerUrl = hasAniZipFanart
+          ? aniZipFanart
+          : (hasRealBanner
+              ? (widget.details?.bannerImage ?? widget.initialEntry?.bannerImage)
+              : (widget.aniZipData?.bannerUrl ?? coverUrl));
     }
     final isBlurSetting = ref.watch(bannerBlurProvider);
-    final shouldBlur = (!hasAniZipFanart && !hasRealBanner && coverUrl != null) || isBlurSetting;
+    final isBlurredCover = !hasAniZipFanart && !hasRealBanner && coverUrl != null;
+    final shouldBlur = isBlurredCover || isBlurSetting;
     final score = widget.details?.score ?? widget.initialEntry?.score;
     final format = widget.details?.format ?? widget.initialEntry?.format ?? 'TV';
     final episodes = widget.details?.totalEpisodes ?? widget.initialEntry?.totalEpisodes;
@@ -744,37 +742,57 @@ class _AnimeDetailMobileLayoutState
                         // Parallax Banner Image (strictly clipped to bounds to avoid blur bleed)
                         Transform.translate(
                           offset: Offset(0, parallaxTranslateY),
-                          child: bannerUrl != null
-                                ? (shouldBlur
-                                    ? ClipRect(
-                                          child: ImageFiltered(
-                                            imageFilter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-                                            child: Transform.scale(
-                                            scale: 1.25,
-                                            child: CachedNetworkImage(
-                                              imageUrl: bannerUrl,
-                                              fit: BoxFit.cover,
-                                              alignment: Alignment.topCenter,
-                                              memCacheWidth: 1080,
-                                              fadeInDuration: const Duration(milliseconds: 250),
-                                              fadeOutDuration: const Duration(milliseconds: 150),
-                                              errorWidget: (context, url, error) =>
-                                                  Container(color: theme.colorScheme.surfaceContainer),
+                          child: AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 400),
+                            switchInCurve: Curves.easeOutCubic,
+                            switchOutCurve: Curves.easeInCubic,
+                            transitionBuilder: (child, animation) => FadeTransition(
+                              opacity: animation,
+                              child: child,
+                            ),
+                            layoutBuilder: (currentChild, previousChildren) => Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                ...previousChildren,
+                                ?currentChild,
+                              ],
+                            ),
+                            child: bannerUrl != null
+                                ? SizedBox.expand(
+                                    key: ValueKey<String>(bannerUrl),
+                                    child: shouldBlur
+                                        ? ClipRect(
+                                            child: ImageFiltered(
+                                              imageFilter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+                                              child: Transform.scale(
+                                                scale: 1.25,
+                                                child: CachedNetworkImage(
+                                                  imageUrl: bannerUrl,
+                                                  fit: BoxFit.cover,
+                                                  alignment: Alignment.topCenter,
+                                                  memCacheWidth: 1080,
+                                                  fadeInDuration: const Duration(milliseconds: 250),
+                                                  fadeOutDuration: const Duration(milliseconds: 150),
+                                                  errorWidget: (_, _, _) => const SizedBox.shrink(),
+                                                ),
+                                              ),
                                             ),
+                                          )
+                                        : CachedNetworkImage(
+                                            imageUrl: bannerUrl,
+                                            fit: BoxFit.cover,
+                                            alignment: Alignment.topCenter,
+                                            memCacheWidth: 1080,
+                                            fadeInDuration: const Duration(milliseconds: 250),
+                                            fadeOutDuration: const Duration(milliseconds: 150),
+                                            errorWidget: (_, _, _) => const SizedBox.shrink(),
                                           ),
-                                        ),
-                                      )
-                                    : CachedNetworkImage(
-                                        imageUrl: bannerUrl,
-                                        fit: BoxFit.cover,
-                                        alignment: Alignment.topCenter,
-                                        memCacheWidth: 1080,
-                                        fadeInDuration: const Duration(milliseconds: 250),
-                                        fadeOutDuration: const Duration(milliseconds: 150),
-                                        errorWidget: (context, url, error) =>
-                                            Container(color: theme.colorScheme.surfaceContainer),
-                                      ))
-                                : Container(color: theme.colorScheme.surfaceContainer),
+                                  )
+                                : Container(
+                                    key: const ValueKey<String>('empty_mobile_banner'),
+                                    color: theme.colorScheme.surfaceContainer,
+                                  ),
+                          ),
                         ),
 
                         // Stationary Cinematic Multi-Stop Gradient into Theme Background
@@ -824,6 +842,8 @@ class _AnimeDetailMobileLayoutState
         Builder(
           builder: (context) {
             final bottomPadding = MediaQuery.of(context).viewPadding.bottom;
+            final isBatchMode = ref.watch(episodeSelectionProvider(widget.mediaId)).isSelectionMode;
+            final effectiveBottomPadding = bottomPadding + (isBatchMode ? 96.0 : 24.0);
             return CustomScrollView(
               controller: widget.scrollController,
               physics: const ClampingScrollPhysics(),
@@ -949,13 +969,13 @@ class _AnimeDetailMobileLayoutState
 
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: EdgeInsets.fromLTRB(16, 26, 16, bottomPadding + 24),
+                    padding: EdgeInsets.fromLTRB(16, 26, 16, effectiveBottomPadding),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Poster + Header Info Row
                         Row(
-                          crossAxisAlignment: CrossAxisAlignment.end,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             if (coverUrl != null)
                               RepaintBoundary(
@@ -1017,7 +1037,7 @@ class _AnimeDetailMobileLayoutState
                               child: SizedBox(
                                 height: 185,
                                 child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  mainAxisAlignment: MainAxisAlignment.start,
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
@@ -1607,6 +1627,15 @@ class _AnimeDetailMobileLayoutState
             isOnlineMode: widget.currentTab == AnimeDetailTab.online,
             onlineProvider: _selectedProvider,
             isDubbed: _isDubbed,
+            onDownloadTorrents: (toDownload) {
+              final firstEp = toDownload.first;
+              widget.onOpenTorrentSelector(
+                episodeNumber: firstEp,
+                episodeTitle: 'Ep. $firstEp',
+                isDownloadMode: true,
+                initialSelectedEpisodes: toDownload,
+              );
+            },
           ),
         ),
       ],

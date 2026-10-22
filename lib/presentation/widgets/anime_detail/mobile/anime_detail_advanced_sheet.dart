@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -46,17 +47,19 @@ class _AnimeDetailAdvancedSheetState extends ConsumerState<AnimeDetailAdvancedSh
 
     final primaryColor = isDark ? Colors.white : theme.colorScheme.primary;
     final secondaryTextColor = isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant;
+    final bottomInset = math.max(
+      MediaQuery.paddingOf(context).bottom,
+      MediaQuery.viewPaddingOf(context).bottom,
+    );
 
     return Material(
       type: MaterialType.transparency,
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 6, 16, 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(16, 6, 16, 20 + bottomInset),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
             // Title Row
             Row(
               children: [
@@ -198,7 +201,6 @@ class _AnimeDetailAdvancedSheetState extends ConsumerState<AnimeDetailAdvancedSh
           ],
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 }

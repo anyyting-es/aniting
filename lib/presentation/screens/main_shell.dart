@@ -312,9 +312,12 @@ class _MainShellState extends ConsumerState<MainShell> {
 
                 // Full-width Main Content Area for Desktop & TV with Smooth Animation
                 Expanded(
-                  child: ShellAnimatedIndexedStack(
-                    index: activeIndex,
-                    children: availablePages,
+                  child: Theme(
+                    data: theme.copyWith(scaffoldBackgroundColor: Colors.transparent),
+                    child: ShellAnimatedIndexedStack(
+                      index: activeIndex,
+                      children: availablePages,
+                    ),
                   ),
                 ),
               ],
@@ -328,9 +331,12 @@ class _MainShellState extends ConsumerState<MainShell> {
             extendBody: true,
             body: NotificationListener<ScrollNotification>(
               onNotification: _onScrollNotification,
-              child: ShellAnimatedIndexedStack(
-                index: activeIndex,
-                children: availablePages,
+              child: Theme(
+                data: theme.copyWith(scaffoldBackgroundColor: Colors.transparent),
+                child: ShellAnimatedIndexedStack(
+                  index: activeIndex,
+                  children: availablePages,
+                ),
               ),
             ),
             bottomNavigationBar: SafeArea(

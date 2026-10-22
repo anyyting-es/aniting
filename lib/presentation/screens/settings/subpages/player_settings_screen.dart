@@ -34,7 +34,10 @@ class PlayerSettingsScreen extends ConsumerWidget {
             children: [
               Text(
                 l10n.defaultEngine,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14.5),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14.5,
+                ),
               ),
               const SizedBox(height: 4),
               Text(
@@ -141,7 +144,10 @@ class PlayerSettingsScreen extends ConsumerWidget {
                             ),
                             const Spacer(),
                             IconButton(
-                              icon: const Icon(Icons.close, color: Colors.white70),
+                              icon: const Icon(
+                                Icons.close,
+                                color: Colors.white70,
+                              ),
                               onPressed: () => Navigator.pop(ctx),
                             ),
                           ],

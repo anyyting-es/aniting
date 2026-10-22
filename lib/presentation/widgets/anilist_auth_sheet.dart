@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:g1455/g1455.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
@@ -233,26 +234,15 @@ class _AnilistAuthSheetState extends ConsumerState<AnilistAuthSheet> {
             constraints: BoxConstraints(
               maxWidth: isDesktop ? 500 : double.infinity,
             ),
-            child: Material(
-          color: theme.colorScheme.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          elevation: 8,
-          clipBehavior: Clip.antiAlias,
-          child: Container(
-            decoration: BoxDecoration(
-              border: isDesktop
-                  ? Border.all(
-                      color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
-                    )
-                  : null,
-            ),
-            padding: EdgeInsets.fromLTRB(24, 12, 24, 24 + bottomInset),
-            child: SingleChildScrollView(
-              physics: const ClampingScrollPhysics(),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
+            child: GlassCard(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              padding: EdgeInsets.fromLTRB(24, 12, 24, 24 + bottomInset),
+              child: SingleChildScrollView(
+                physics: const ClampingScrollPhysics(),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
                   // Clean Drag Handle
                   Center(
                     child: Container(
@@ -307,7 +297,7 @@ class _AnilistAuthSheetState extends ConsumerState<AnilistAuthSheet> {
                                 ),
                                 clipBehavior: Clip.antiAlias,
                                 child: Image.asset(
-                                  'assets/icons/3840px-AniList_logo.svg.png',
+                                  'assets/icons/AniList_logo.png',
                                   cacheWidth: 44,
                                   cacheHeight: 44,
                                   fit: BoxFit.cover,
@@ -399,7 +389,7 @@ class _AnilistAuthSheetState extends ConsumerState<AnilistAuthSheet> {
                               ),
                               clipBehavior: Clip.antiAlias,
                               child: Image.asset(
-                                'assets/icons/3840px-AniList_logo.svg.png',
+                                'assets/icons/AniList_logo.png',
                                 cacheWidth: 64,
                                 cacheHeight: 64,
                                 fit: BoxFit.cover,
@@ -587,15 +577,14 @@ class _AnilistAuthSheetState extends ConsumerState<AnilistAuthSheet> {
                             l10n.linkAccountBtn,
                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14.5),
                           ),
-                  ),
+                    ),
+                  ],
                 ],
-              ],
               ),
-            ),
-            ),
             ),
           ),
         ),
+      ),
       ),
     );
   }

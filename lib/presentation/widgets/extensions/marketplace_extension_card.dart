@@ -112,29 +112,32 @@ class MarketplaceExtensionCard extends ConsumerWidget {
                     color: theme.colorScheme.outlineVariant.withValues(alpha: 0.2),
                   ),
                 ),
-                child: isInstalling
-                    ? const Padding(
-                        padding: EdgeInsets.all(8),
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : isInstalled
-                        ? Tooltip(
-                            message: l10n.installedCardLabel,
-                            child: Icon(
-                              Icons.check_rounded,
-                              size: 18,
-                              color: theme.colorScheme.primary,
+                child: Center(
+                  child: isInstalling
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : isInstalled
+                          ? Tooltip(
+                              message: l10n.installedCardLabel,
+                              child: Icon(
+                                Icons.check_rounded,
+                                size: 18,
+                                color: theme.colorScheme.primary,
+                              ),
+                            )
+                          : IconButton(
+                              padding: EdgeInsets.zero,
+                              tooltip: '${l10n.install} ${ext.name}',
+                              icon: const Icon(
+                                Icons.file_download_outlined,
+                                size: 18,
+                              ),
+                              onPressed: onInstall,
                             ),
-                          )
-                        : IconButton(
-                            padding: EdgeInsets.zero,
-                            tooltip: '${l10n.install} ${ext.name}',
-                            icon: const Icon(
-                              Icons.file_download_outlined,
-                              size: 18,
-                            ),
-                            onPressed: onInstall,
-                          ),
+                ),
               ),
             ],
           ),

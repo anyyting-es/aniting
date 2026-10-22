@@ -6,10 +6,7 @@ import 'package:seanime_app/presentation/providers/local_library_provider.dart';
 class LocalLibraryStatsCard extends ConsumerWidget {
   final LocalLibraryState state;
 
-  const LocalLibraryStatsCard({
-    super.key,
-    required this.state,
-  });
+  const LocalLibraryStatsCard({super.key, required this.state});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -24,7 +21,9 @@ class LocalLibraryStatsCard extends ConsumerWidget {
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+            color: theme.colorScheme.surfaceContainerHighest.withValues(
+              alpha: 0.35,
+            ),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: theme.colorScheme.outlineVariant.withValues(alpha: 0.15),
@@ -92,7 +91,9 @@ class LocalLibraryStatsCard extends ConsumerWidget {
                         Container(
                           height: 38,
                           width: 1,
-                          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.2),
+                          color: theme.colorScheme.outlineVariant.withValues(
+                            alpha: 0.2,
+                          ),
                         ),
                         Expanded(
                           child: _StatItem(
@@ -105,7 +106,9 @@ class LocalLibraryStatsCard extends ConsumerWidget {
                         Container(
                           height: 38,
                           width: 1,
-                          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.2),
+                          color: theme.colorScheme.outlineVariant.withValues(
+                            alpha: 0.2,
+                          ),
                         ),
                         Expanded(
                           child: _StatItem(
@@ -178,7 +181,11 @@ class _BreakdownChip extends StatelessWidget {
           const SizedBox(width: 5),
           Text(
             label,
-            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color),
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
           ),
         ],
       ),
@@ -234,7 +241,9 @@ class _StatItem extends StatelessWidget {
                   label,
                   style: TextStyle(
                     fontSize: 11,
-                    color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+                    color: theme.colorScheme.onSurfaceVariant.withValues(
+                      alpha: 0.8,
+                    ),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,

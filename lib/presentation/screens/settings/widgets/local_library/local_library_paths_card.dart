@@ -7,15 +7,18 @@ import 'package:seanime_app/presentation/providers/local_library_provider.dart';
 class LocalLibraryPathsCard extends ConsumerWidget {
   final LocalLibraryState state;
 
-  const LocalLibraryPathsCard({
-    super.key,
-    required this.state,
-  });
+  const LocalLibraryPathsCard({super.key, required this.state});
 
-  void _showAddFolderDialog(BuildContext context, WidgetRef ref, {bool isMain = false}) {
+  void _showAddFolderDialog(
+    BuildContext context,
+    WidgetRef ref, {
+    bool isMain = false,
+  }) {
     final l10n = ref.read(translationsProvider);
     final theme = Theme.of(context);
-    final controller = TextEditingController(text: isMain ? state.mainPath : '');
+    final controller = TextEditingController(
+      text: isMain ? state.mainPath : '',
+    );
     final repo = ref.read(repositoryProvider);
     List<String> suggestions = [];
     String selectedType = isMain
@@ -44,10 +47,15 @@ class LocalLibraryPathsCard extends ConsumerWidget {
 
             return AlertDialog(
               backgroundColor: theme.colorScheme.surfaceContainerHigh,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
               title: Text(
                 isMain ? l10n.mainLibraryFolder : l10n.addLibraryFolder,
-                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 18,
+                ),
               ),
               content: SizedBox(
                 width: 480,
@@ -62,14 +70,21 @@ class LocalLibraryPathsCard extends ConsumerWidget {
                       decoration: InputDecoration(
                         labelText: l10n.folderPathLabel,
                         hintText: l10n.enterFolderPathHint,
-                        prefixIcon: const Icon(Icons.folder_open_rounded, size: 20),
+                        prefixIcon: const Icon(
+                          Icons.folder_open_rounded,
+                          size: 20,
+                        ),
                         filled: true,
-                        fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                        fillColor: theme.colorScheme.surfaceContainerHighest
+                            .withValues(alpha: 0.5),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
                           borderSide: BorderSide.none,
                         ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 14),
@@ -87,24 +102,40 @@ class LocalLibraryPathsCard extends ConsumerWidget {
                       runSpacing: 6,
                       children: [
                         ChoiceChip(
-                          label: Text(l10n.folderTypeAnime, style: const TextStyle(fontSize: 12)),
+                          label: Text(
+                            l10n.folderTypeAnime,
+                            style: const TextStyle(fontSize: 12),
+                          ),
                           selected: selectedType == 'anime',
-                          onSelected: (_) => setDialogState(() => selectedType = 'anime'),
+                          onSelected: (_) =>
+                              setDialogState(() => selectedType = 'anime'),
                         ),
                         ChoiceChip(
-                          label: Text(l10n.folderTypeTv, style: const TextStyle(fontSize: 12)),
+                          label: Text(
+                            l10n.folderTypeTv,
+                            style: const TextStyle(fontSize: 12),
+                          ),
                           selected: selectedType == 'tv',
-                          onSelected: (_) => setDialogState(() => selectedType = 'tv'),
+                          onSelected: (_) =>
+                              setDialogState(() => selectedType = 'tv'),
                         ),
                         ChoiceChip(
-                          label: Text(l10n.folderTypeMovie, style: const TextStyle(fontSize: 12)),
+                          label: Text(
+                            l10n.folderTypeMovie,
+                            style: const TextStyle(fontSize: 12),
+                          ),
                           selected: selectedType == 'movie',
-                          onSelected: (_) => setDialogState(() => selectedType = 'movie'),
+                          onSelected: (_) =>
+                              setDialogState(() => selectedType = 'movie'),
                         ),
                         ChoiceChip(
-                          label: Text(l10n.folderTypeMixed, style: const TextStyle(fontSize: 12)),
+                          label: Text(
+                            l10n.folderTypeMixed,
+                            style: const TextStyle(fontSize: 12),
+                          ),
                           selected: selectedType == 'mixed',
-                          onSelected: (_) => setDialogState(() => selectedType = 'mixed'),
+                          onSelected: (_) =>
+                              setDialogState(() => selectedType = 'mixed'),
                         ),
                       ],
                     ),
@@ -119,8 +150,13 @@ class LocalLibraryPathsCard extends ConsumerWidget {
                             final sug = suggestions[i];
                             return ListTile(
                               dense: true,
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-                              leading: const Icon(Icons.subdirectory_arrow_right_rounded, size: 16),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                              ),
+                              leading: const Icon(
+                                Icons.subdirectory_arrow_right_rounded,
+                                size: 16,
+                              ),
                               title: Text(
                                 sug,
                                 style: const TextStyle(fontSize: 12.5),
@@ -157,15 +193,25 @@ class LocalLibraryPathsCard extends ConsumerWidget {
 
                     bool success;
                     if (isMain) {
-                      success = await notifier.setMainPath(path, type: selectedType);
+                      success = await notifier.setMainPath(
+                        path,
+                        type: selectedType,
+                      );
                     } else {
-                      success = await notifier.addAdditionalPath(path, type: selectedType);
+                      success = await notifier.addAdditionalPath(
+                        path,
+                        type: selectedType,
+                      );
                     }
 
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(success ? l10n.folderAddedSuccess : l10n.folderPathInvalid),
+                          content: Text(
+                            success
+                                ? l10n.folderAddedSuccess
+                                : l10n.folderPathInvalid,
+                          ),
                           behavior: SnackBarBehavior.floating,
                         ),
                       );
@@ -190,7 +236,9 @@ class LocalLibraryPathsCard extends ConsumerWidget {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+        color: theme.colorScheme.surfaceContainerHighest.withValues(
+          alpha: 0.35,
+        ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: theme.colorScheme.outlineVariant.withValues(alpha: 0.15),
@@ -213,12 +261,20 @@ class LocalLibraryPathsCard extends ConsumerWidget {
                 Expanded(
                   child: Text(
                     l10n.libraryFoldersSection,
-                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14.5,
+                    ),
                   ),
                 ),
-                if (state.mainPath.isNotEmpty || state.additionalPaths.isNotEmpty)
+                if (state.mainPath.isNotEmpty ||
+                    state.additionalPaths.isNotEmpty)
                   IconButton(
-                    icon: Icon(Icons.link_off_rounded, size: 18, color: theme.colorScheme.error),
+                    icon: Icon(
+                      Icons.link_off_rounded,
+                      size: 18,
+                      color: theme.colorScheme.error,
+                    ),
                     tooltip: l10n.unlinkAllFoldersAction,
                     visualDensity: VisualDensity.compact,
                     onPressed: () => _confirmUnlinkAllFolders(context, ref),
@@ -227,7 +283,8 @@ class LocalLibraryPathsCard extends ConsumerWidget {
                   icon: const Icon(Icons.add_rounded, size: 18),
                   tooltip: l10n.addLibraryFolder,
                   visualDensity: VisualDensity.compact,
-                  onPressed: () => _showAddFolderDialog(context, ref, isMain: false),
+                  onPressed: () =>
+                      _showAddFolderDialog(context, ref, isMain: false),
                 ),
               ],
             ),
@@ -239,7 +296,9 @@ class LocalLibraryPathsCard extends ConsumerWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                color: theme.colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.5,
+                ),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Row(
@@ -250,7 +309,11 @@ class LocalLibraryPathsCard extends ConsumerWidget {
                       color: theme.colorScheme.primary.withValues(alpha: 0.15),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(Icons.home_filled, size: 16, color: theme.colorScheme.primary),
+                    child: Icon(
+                      Icons.home_filled,
+                      size: 16,
+                      color: theme.colorScheme.primary,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -270,15 +333,22 @@ class LocalLibraryPathsCard extends ConsumerWidget {
                             if (state.mainPath.isNotEmpty) ...[
                               const SizedBox(width: 8),
                               _FolderTypeBadge(
-                                type: state.folderTypes[state.mainPath] ?? 'anime',
-                                onSelectType: (type) => notifier.setFolderType(state.mainPath, type),
+                                type:
+                                    state.folderTypes[state.mainPath] ??
+                                    'anime',
+                                onSelectType: (type) => notifier.setFolderType(
+                                  state.mainPath,
+                                  type,
+                                ),
                               ),
                             ],
                           ],
                         ),
                         const SizedBox(height: 3),
                         Text(
-                          state.mainPath.isNotEmpty ? state.mainPath : l10n.noFoldersConfigured,
+                          state.mainPath.isNotEmpty
+                              ? state.mainPath
+                              : l10n.noFoldersConfigured,
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
@@ -295,11 +365,16 @@ class LocalLibraryPathsCard extends ConsumerWidget {
                   IconButton(
                     icon: const Icon(Icons.edit_outlined, size: 18),
                     tooltip: l10n.mainLibraryFolder,
-                    onPressed: () => _showAddFolderDialog(context, ref, isMain: true),
+                    onPressed: () =>
+                        _showAddFolderDialog(context, ref, isMain: true),
                   ),
                   if (state.mainPath.isNotEmpty)
                     IconButton(
-                      icon: Icon(Icons.link_off_rounded, size: 18, color: theme.colorScheme.error),
+                      icon: Icon(
+                        Icons.link_off_rounded,
+                        size: 18,
+                        color: theme.colorScheme.error,
+                      ),
                       tooltip: l10n.unlinkFolderAction,
                       onPressed: () => _confirmUnlinkMainFolder(context, ref),
                     ),
@@ -324,16 +399,28 @@ class LocalLibraryPathsCard extends ConsumerWidget {
             ...state.additionalPaths.map((path) {
               final folderType = state.folderTypes[path] ?? 'anime';
               return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 3,
+                ),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+                    color: theme.colorScheme.surfaceContainerHighest.withValues(
+                      alpha: 0.35,
+                    ),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.folder_outlined, size: 18, color: theme.colorScheme.onSurfaceVariant),
+                      Icon(
+                        Icons.folder_outlined,
+                        size: 18,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
@@ -341,22 +428,31 @@ class LocalLibraryPathsCard extends ConsumerWidget {
                           children: [
                             Text(
                               path,
-                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                              ),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
                             const SizedBox(height: 4),
                             _FolderTypeBadge(
                               type: folderType,
-                              onSelectType: (t) => notifier.setFolderType(path, t),
+                              onSelectType: (t) =>
+                                  notifier.setFolderType(path, t),
                             ),
                           ],
                         ),
                       ),
                       IconButton(
-                        icon: Icon(Icons.link_off_rounded, size: 18, color: theme.colorScheme.error),
+                        icon: Icon(
+                          Icons.link_off_rounded,
+                          size: 18,
+                          color: theme.colorScheme.error,
+                        ),
                         tooltip: l10n.unlinkFolderAction,
-                        onPressed: () => _confirmRemoveAdditionalFolder(context, ref, path),
+                        onPressed: () =>
+                            _confirmRemoveAdditionalFolder(context, ref, path),
                       ),
                     ],
                   ),
@@ -385,7 +481,10 @@ class LocalLibraryPathsCard extends ConsumerWidget {
         ),
         content: Text(
           l10n.unlinkAllFoldersConfirmMessage,
-          style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13.5),
+          style: TextStyle(
+            color: theme.colorScheme.onSurfaceVariant,
+            fontSize: 13.5,
+          ),
         ),
         actions: [
           TextButton(
@@ -399,7 +498,9 @@ class LocalLibraryPathsCard extends ConsumerWidget {
             ),
             onPressed: () async {
               Navigator.of(dialogCtx).pop();
-              final ok = await ref.read(localLibraryProvider.notifier).unlinkAllFolders();
+              final ok = await ref
+                  .read(localLibraryProvider.notifier)
+                  .unlinkAllFolders();
               if (ok && context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -431,7 +532,10 @@ class LocalLibraryPathsCard extends ConsumerWidget {
         ),
         content: Text(
           l10n.unlinkMainFolderConfirmMessage,
-          style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13.5),
+          style: TextStyle(
+            color: theme.colorScheme.onSurfaceVariant,
+            fontSize: 13.5,
+          ),
         ),
         actions: [
           TextButton(
@@ -445,7 +549,9 @@ class LocalLibraryPathsCard extends ConsumerWidget {
             ),
             onPressed: () async {
               Navigator.of(dialogCtx).pop();
-              final ok = await ref.read(localLibraryProvider.notifier).setMainPath('');
+              final ok = await ref
+                  .read(localLibraryProvider.notifier)
+                  .setMainPath('');
               if (ok && context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -462,7 +568,11 @@ class LocalLibraryPathsCard extends ConsumerWidget {
     );
   }
 
-  void _confirmRemoveAdditionalFolder(BuildContext context, WidgetRef ref, String path) {
+  void _confirmRemoveAdditionalFolder(
+    BuildContext context,
+    WidgetRef ref,
+    String path,
+  ) {
     final l10n = ref.read(translationsProvider);
     final theme = Theme.of(context);
 
@@ -477,7 +587,10 @@ class LocalLibraryPathsCard extends ConsumerWidget {
         ),
         content: Text(
           l10n.unlinkFolderConfirmMessage,
-          style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13.5),
+          style: TextStyle(
+            color: theme.colorScheme.onSurfaceVariant,
+            fontSize: 13.5,
+          ),
         ),
         actions: [
           TextButton(
@@ -491,7 +604,9 @@ class LocalLibraryPathsCard extends ConsumerWidget {
             ),
             onPressed: () async {
               Navigator.of(dialogCtx).pop();
-              final ok = await ref.read(localLibraryProvider.notifier).removeAdditionalPath(path);
+              final ok = await ref
+                  .read(localLibraryProvider.notifier)
+                  .removeAdditionalPath(path);
               if (ok && context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -513,10 +628,7 @@ class _FolderTypeBadge extends ConsumerWidget {
   final String type;
   final ValueChanged<String> onSelectType;
 
-  const _FolderTypeBadge({
-    required this.type,
-    required this.onSelectType,
-  });
+  const _FolderTypeBadge({required this.type, required this.onSelectType});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -574,7 +686,11 @@ class _FolderTypeBadge extends ConsumerWidget {
             const SizedBox(width: 4),
             Text(
               label,
-              style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: color),
+              style: TextStyle(
+                fontSize: 10.5,
+                fontWeight: FontWeight.w600,
+                color: color,
+              ),
             ),
             const SizedBox(width: 2),
             Icon(Icons.arrow_drop_down, size: 14, color: color),

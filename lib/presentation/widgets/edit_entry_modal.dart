@@ -5,6 +5,7 @@ import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/preferences/glass_theme_provider.dart';
 import 'package:seanime_app/core/theme/app_theme_colors.dart';
 import 'package:seanime_app/data/services/offline_library_service.dart';
+import 'package:seanime_app/data/services/offline_sync_service.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/widgets/edit_entry/edit_entry_date_picker.dart';
 import 'package:seanime_app/presentation/widgets/edit_entry/edit_entry_score_slider.dart';
@@ -61,7 +62,7 @@ class EditEntryModal extends ConsumerStatefulWidget {
       barrierDismissible: true,
       barrierLabel: 'Dismiss',
       barrierColor: Colors.black.withValues(alpha: 0.55),
-      transitionDuration: const Duration(milliseconds: 320),
+      transitionDuration: const Duration(milliseconds: 240),
       transitionBuilder: (context, animation, secondaryAnimation, child) {
         final curved = CurvedAnimation(
           parent: animation,
@@ -70,15 +71,12 @@ class EditEntryModal extends ConsumerStatefulWidget {
         );
         return SlideTransition(
           position: Tween<Offset>(
-            begin: const Offset(0.0, -0.16),
+            begin: const Offset(0.0, -0.05),
             end: Offset.zero,
           ).animate(curved),
           child: FadeTransition(
             opacity: curved,
-            child: ScaleTransition(
-              scale: Tween<double>(begin: 0.95, end: 1.0).animate(curved),
-              child: child,
-            ),
+            child: child,
           ),
         );
       },
@@ -137,7 +135,9 @@ class _EditEntryModalState extends ConsumerState<EditEntryModal> {
     _completionDate = _parseDate(widget.initialCompletedAt);
 
     if (widget.isEntryInList && (widget.initialStartedAt == null || widget.initialRepeat == null)) {
-      _fetchLatestListData();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _fetchLatestListData();
+      });
     }
   }
 
@@ -302,6 +302,18 @@ class _EditEntryModalState extends ConsumerState<EditEntryModal> {
       ref.invalidate(mangaCollectionProvider);
       ref.invalidate(continueReadingMangaProvider);
       ref.invalidate(mangaRecommendationsProvider);
+    }
+
+    if (isLoggedIn && !remoteSuccess) {
+      await OfflineSyncService.instance.enqueueListEdit(
+        mediaId: widget.mediaId,
+        type: _isAnime ? 'anime' : 'manga',
+        status: _status,
+        score: scoreInput,
+        progress: progress,
+        totalCount: widget.totalCount,
+        title: widget.title,
+      );
     }
 
     if (!mounted) return;

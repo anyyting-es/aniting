@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Encabezado de sección con estilo Android 16
+/// Encabezado de sección con estilo Material 3 Expressive
 class SettingsSectionHeader extends StatelessWidget {
   final String title;
   const SettingsSectionHeader({super.key, required this.title});
@@ -9,50 +9,76 @@ class SettingsSectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.only(left: 8, bottom: 2),
+      padding: const EdgeInsets.only(left: 4, bottom: 8, top: 10),
       child: Text(
         title,
         style: theme.textTheme.titleSmall?.copyWith(
           color: theme.colorScheme.primary,
           fontWeight: FontWeight.w700,
-          letterSpacing: 0.1,
-          fontSize: 14,
+          letterSpacing: 0.2,
+          fontSize: 13.5,
         ),
       ),
     );
   }
 }
 
-/// Contenedor de grupo de ajustes abierto (sin cajas envolventes ni bordes)
+/// Contenedor de grupo de ajustes encapsulado estilo Material 3 Expressive
 class PixelSettingsGroupCard extends StatelessWidget {
   final List<Widget> children;
   const PixelSettingsGroupCard({super.key, required this.children});
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: children,
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.12),
+          width: 1,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: children,
+      ),
     );
   }
 }
 
-/// Contenedor abierto para componentes internos (sin cajas ni bordes)
+/// Contenedor encapsulado para componentes internos estilo Material 3 Expressive
 class PixelCardContainer extends StatelessWidget {
   final Widget child;
   const PixelCardContainer({super.key, required this.child});
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.12),
+          width: 1,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
       child: child,
     );
   }
 }
 
-/// Divisor tenue interior para elementos
+/// Divisor tenue interior para elementos dentro de un PixelSettingsGroupCard
 class PixelTileDivider extends StatelessWidget {
   const PixelTileDivider({super.key});
 
@@ -62,22 +88,17 @@ class PixelTileDivider extends StatelessWidget {
     return Divider(
       height: 1,
       thickness: 1,
-      indent: 48,
+      indent: 66,
       endIndent: 16,
-      color: theme.colorScheme.outlineVariant.withValues(alpha: 0.15),
+      color: theme.colorScheme.outlineVariant.withValues(alpha: 0.12),
     );
   }
 }
 
 /// Posición de un SettingsTile dentro de su grupo/sección (mantenido para compatibilidad)
-enum SettingsTilePosition {
-  single,
-  top,
-  middle,
-  bottom,
-}
+enum SettingsTilePosition { single, top, middle, bottom }
 
-/// Fila de ajuste suelta (sin cajón envolvente) con resaltado sutil en selección.
+/// Fila de ajuste encapsulada dentro de grupo con insignia redondeada estilo dotfiles.
 class SettingsTile extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -104,48 +125,71 @@ class SettingsTile extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
-        splashColor: Colors.transparent,
-        highlightColor: Colors.transparent,
+        splashColor: theme.colorScheme.primary.withValues(alpha: 0.1),
         hoverColor: theme.colorScheme.onSurface.withValues(alpha: 0.05),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 140),
-          curve: Curves.easeOutCubic,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? theme.colorScheme.primary.withValues(alpha: 0.12)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
-          ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
           child: Row(
             children: [
-              Icon(
-                icon,
-                color: isSelected
-                    ? theme.colorScheme.primary
-                    : theme.colorScheme.onSurfaceVariant,
-                size: 22,
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? theme.colorScheme.primary.withValues(alpha: 0.2)
+                      : theme.colorScheme.surfaceContainerHighest.withValues(
+                          alpha: 0.5,
+                        ),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  icon,
+                  color: isSelected
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.onSurfaceVariant,
+                  size: 19,
+                ),
               ),
               const SizedBox(width: 14),
               Expanded(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                    fontSize: 15,
-                    color: isSelected
-                        ? theme.colorScheme.primary
-                        : theme.colorScheme.onSurface,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontWeight: isSelected
+                            ? FontWeight.w700
+                            : FontWeight.w600,
+                        fontSize: 14.5,
+                        color: isSelected
+                            ? theme.colorScheme.primary
+                            : theme.colorScheme.onSurface,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle!,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: theme.colorScheme.onSurfaceVariant,
+                          height: 1.2,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ],
                 ),
               ),
               const SizedBox(width: 8),
               Icon(
                 Icons.chevron_right_rounded,
-                size: 19,
+                size: 20,
                 color: isSelected
                     ? theme.colorScheme.primary
                     : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
@@ -158,7 +202,7 @@ class SettingsTile extends StatelessWidget {
   }
 }
 
-/// Fila de ajuste con Switch integrado estilo Pixel
+/// Fila de ajuste con Switch integrado estilo Material 3 Expressive
 class PixelSwitchTile extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -180,11 +224,25 @@ class PixelSwitchTile extends StatelessWidget {
     final theme = Theme.of(context);
 
     return SwitchListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-      secondary: Icon(
-        icon,
-        color: value ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
-        size: 22,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      secondary: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: value
+              ? theme.colorScheme.primary.withValues(alpha: 0.18)
+              : theme.colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.5,
+                ),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(
+          icon,
+          color: value
+              ? theme.colorScheme.primary
+              : theme.colorScheme.onSurfaceVariant,
+          size: 19,
+        ),
       ),
       title: Text(
         title,
@@ -214,11 +272,7 @@ class PixelInfoBanner extends StatelessWidget {
   final IconData icon;
   final String text;
 
-  const PixelInfoBanner({
-    super.key,
-    required this.icon,
-    required this.text,
-  });
+  const PixelInfoBanner({super.key, required this.icon, required this.text});
 
   @override
   Widget build(BuildContext context) {
@@ -299,7 +353,9 @@ class PixelSelectablePill extends StatelessWidget {
         decoration: BoxDecoration(
           color: isSelected
               ? theme.colorScheme.primaryContainer
-              : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+              : theme.colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.4,
+                ),
           borderRadius: BorderRadius.circular(isSelected ? 24 : 12),
           border: Border.all(
             color: isSelected
@@ -330,7 +386,9 @@ class PixelSelectablePill extends StatelessWidget {
                     label,
                     style: TextStyle(
                       fontSize: compact ? 13 : 14,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                      fontWeight: isSelected
+                          ? FontWeight.bold
+                          : FontWeight.w600,
                       color: isSelected
                           ? theme.colorScheme.onPrimaryContainer
                           : theme.colorScheme.onSurface,
@@ -345,7 +403,9 @@ class PixelSelectablePill extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 11,
                         color: isSelected
-                            ? theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.75)
+                            ? theme.colorScheme.onPrimaryContainer.withValues(
+                                alpha: 0.75,
+                              )
                             : theme.colorScheme.onSurfaceVariant,
                       ),
                       maxLines: 1,
@@ -362,7 +422,9 @@ class PixelSelectablePill extends StatelessWidget {
               height: compact ? 16 : 18,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: isSelected ? theme.colorScheme.primary : Colors.transparent,
+                color: isSelected
+                    ? theme.colorScheme.primary
+                    : Colors.transparent,
                 border: Border.all(
                   color: isSelected
                       ? theme.colorScheme.primary
@@ -384,4 +446,3 @@ class PixelSelectablePill extends StatelessWidget {
     );
   }
 }
-

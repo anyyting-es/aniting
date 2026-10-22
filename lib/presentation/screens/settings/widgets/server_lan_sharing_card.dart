@@ -12,7 +12,8 @@ class ServerLanSharingCard extends ConsumerStatefulWidget {
   const ServerLanSharingCard({super.key});
 
   @override
-  ConsumerState<ServerLanSharingCard> createState() => _ServerLanSharingCardState();
+  ConsumerState<ServerLanSharingCard> createState() =>
+      _ServerLanSharingCardState();
 }
 
 class _ServerLanSharingCardState extends ConsumerState<ServerLanSharingCard> {
@@ -22,7 +23,9 @@ class _ServerLanSharingCardState extends ConsumerState<ServerLanSharingCard> {
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: ref.read(lanServerNameProvider));
+    _nameController = TextEditingController(
+      text: ref.read(lanServerNameProvider),
+    );
     _resolveIp();
   }
 
@@ -58,11 +61,15 @@ class _ServerLanSharingCardState extends ConsumerState<ServerLanSharingCard> {
                   shape: BoxShape.circle,
                   color: isSharing
                       ? const Color(0xFF22C55E).withValues(alpha: 0.15)
-                      : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                      : theme.colorScheme.surfaceContainerHighest.withValues(
+                          alpha: 0.5,
+                        ),
                 ),
                 child: Icon(
                   Icons.wifi_tethering_rounded,
-                  color: isSharing ? const Color(0xFF22C55E) : theme.colorScheme.onSurfaceVariant,
+                  color: isSharing
+                      ? const Color(0xFF22C55E)
+                      : theme.colorScheme.onSurfaceVariant,
                   size: 22,
                 ),
               ),
@@ -73,7 +80,10 @@ class _ServerLanSharingCardState extends ConsumerState<ServerLanSharingCard> {
                   children: [
                     Text(
                       l10n.lanSharing,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(
@@ -93,7 +103,9 @@ class _ServerLanSharingCardState extends ConsumerState<ServerLanSharingCard> {
                 onChanged: serverState.state == ServerState.remote
                     ? null
                     : (val) async {
-                        await ref.read(lanSharingProvider.notifier).setEnabled(val);
+                        await ref
+                            .read(lanSharingProvider.notifier)
+                            .setEnabled(val);
                         final discovery = ref.read(lanDiscoveryServiceProvider);
 
                         if (!val) {
@@ -106,13 +118,17 @@ class _ServerLanSharingCardState extends ConsumerState<ServerLanSharingCard> {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 behavior: SnackBarBehavior.floating,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
                                 content: Text(l10n.restartingServer),
                                 duration: const Duration(seconds: 2),
                               ),
                             );
                           }
-                          final notifier = ref.read(serverNotifierProvider.notifier);
+                          final notifier = ref.read(
+                            serverNotifierProvider.notifier,
+                          );
                           await notifier.stopServer();
                           await notifier.startLocal();
                         }
@@ -133,25 +149,40 @@ class _ServerLanSharingCardState extends ConsumerState<ServerLanSharingCard> {
                 labelText: l10n.serverName,
                 hintText: l10n.serverNameHint,
                 filled: true,
-                fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+                fillColor: theme.colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.35,
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3)),
+                  borderSide: BorderSide(
+                    color: theme.colorScheme.outlineVariant.withValues(
+                      alpha: 0.3,
+                    ),
+                  ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3)),
+                  borderSide: BorderSide(
+                    color: theme.colorScheme.outlineVariant.withValues(
+                      alpha: 0.3,
+                    ),
+                  ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
+                  borderSide: BorderSide(
+                    color: theme.colorScheme.primary,
+                    width: 2,
+                  ),
                 ),
                 prefixIcon: const Icon(Icons.badge_rounded),
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.check_rounded),
                   tooltip: l10n.save,
                   onPressed: () {
-                    ref.read(lanServerNameProvider.notifier).setName(_nameController.text);
+                    ref
+                        .read(lanServerNameProvider.notifier)
+                        .setName(_nameController.text);
                     FocusScope.of(context).unfocus();
                   },
                 ),
