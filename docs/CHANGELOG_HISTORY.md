@@ -6,6 +6,14 @@
 > - **ALWAYS** summarize improvements at a high, user-facing level with clear, direct bullet points (e.g., *"Mejoras de UI y navegación en el calendario de emisión"*, *"Nueva pantalla y gestión de estado sin conexión"*, *"Optimizaciones en la caché de seguir viendo"*).
 > - Keep it punchy, professional, and easy to skim.
 
+## 7.87. Emparejamiento Rápido de Smart TV mediante Código QR y Deep Linking (2026-10-22)
+- **Flujo Automático de Vinculación Smart TV <-> Móvil**:
+  - Soporte de Deep Links con esquema `aniting://pair` en Android para reconocimiento instantáneo desde la cámara del móvil o Google Lens.
+  - Activación automática del modo host local y transmisión LAN en el móvil al escanear el código QR de la pantalla de bienvenida de la TV.
+  - Conexión desatendida en la TV mediante balizas UDP directas: la TV se conecta y avanza automáticamente sin necesidad de tocar el control remoto.
+  - Nueva hoja modal de vinculación expressiva (`TvPairingSheet`) con visualización de estado en tiempo real.
+  - Opción de vinculación manual de TV por IP desde la configuración de Compartir en LAN.
+
 ## 7.86. Paletas Material Design 3, Armonización de Superficies y Experiencia TV (2026-10-21)
 - **Paletas Material Design 3 y Material You**:
   - Selector dinámico de paletas Material You (Violeta, Océano, Turquesa, Bosque, Atardecer, Frambuesa y Sistema).

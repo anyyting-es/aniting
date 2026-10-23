@@ -1586,6 +1586,26 @@ class SpanishTranslations implements AppTranslations {
   @override
   String get welcomeTvSwitchToStandard => 'Cambiar a Modo Estándar';
   @override
+  String get tvPairingTitle => 'Vincular con Smart TV';
+  @override
+  String get tvPairingSubtitle => 'Configurando tu móvil como servidor multimedia para tu TV';
+  @override
+  String get tvPairingStartingServer => 'Iniciando servidor local...';
+  @override
+  String get tvPairingEnablingSharing => 'Activando modo compartir en LAN...';
+  @override
+  String get tvPairingSendingBeacon => 'Enviando señal de conexión a la TV...';
+  @override
+  String get tvPairingSuccess => '¡TV vinculada con éxito! Tu biblioteca ahora está compartida con tu Smart TV.';
+  @override
+  String get tvPairingAutoConnecting => '¡Dispositivo móvil detectado! Conectando automáticamente...';
+  @override
+  String get tvPairingManualButton => 'Vincular con TV por IP';
+  @override
+  String get tvPairingEnterIp => 'Introduce la dirección IP de la Smart TV';
+  @override
+  String get tvPairingClose => 'Listo';
+  @override
   String get settingsSaved => 'Configuración guardada correctamente';
   @override
   String get searchSettingsHint => 'Buscar en ajustes...';

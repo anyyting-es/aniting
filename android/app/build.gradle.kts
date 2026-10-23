@@ -1,3 +1,5 @@
+import java.util.Base64
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
@@ -16,14 +18,8 @@ android {
 
     defaultConfig {
         applicationId = "com.anyyting.aniting"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
-        // Uses the version code from pubspec.yaml. When using split APKs, 1000 * ABI_VERSION
-        // is added automatically by Flutter. (https://developer.android.com/studio/build/configure-apk-splits#configure-APK-versions)
-        // You can force using the value of versionCode by specifying the `-P force-version-code-ignoring-abi=true`
-        // flag during build.
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
@@ -34,8 +30,6 @@ android {
             storePassword = "anitingapp"
             keyAlias = "aniting"
             keyPassword = "anitingapp"
-            isV1SigningEnabled = true
-            isV2SigningEnabled = true
         }
     }
 
@@ -58,8 +52,33 @@ kotlin {
     }
 }
 
+val dartDefinesString = project.findProperty("dart-defines") as? String
+val isNoBackendViaDartDefine = if (!dartDefinesString.isNullOrEmpty()) {
+    try {
+        val decoded = String(Base64.getDecoder().decode(dartDefinesString))
+        decoded.contains("NO_BACKEND=true") || decoded.contains("INCLUDE_BACKEND=false")
+    } catch (_: Exception) { false }
+} else false
+
+val includeBackend = if (isNoBackendViaDartDefine) {
+    false
+} else {
+    project.findProperty("includeBackend")?.toString()?.toBoolean()
+        ?: (System.getenv("INCLUDE_BACKEND")?.toBoolean() ?: true)
+}
+
+if (includeBackend) {
+    println("[Aniting Build] Packaging FULL build with embedded Go backend (seanime.aar)")
+} else {
+    println("[Aniting Build] Packaging LIGHTWEIGHT build WITHOUT Go backend (client-only)")
+}
+
 dependencies {
-    implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar", "*.aar"))))
+    if (includeBackend) {
+        implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar", "*.aar"))))
+    } else {
+        implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"), "exclude" to listOf("seanime.aar"))))
+    }
     implementation(project(":libass"))
     implementation("androidx.media3:media3-exoplayer:1.5.1")
     implementation("androidx.media3:media3-exoplayer-hls:1.5.1")

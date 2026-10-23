@@ -1569,6 +1569,26 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get welcomeTvSwitchToStandard => 'Switch to Standard Mode';
   @override
+  String get tvPairingTitle => 'Pair with Smart TV';
+  @override
+  String get tvPairingSubtitle => 'Configuring your phone as a local media server for your TV';
+  @override
+  String get tvPairingStartingServer => 'Starting local server...';
+  @override
+  String get tvPairingEnablingSharing => 'Enabling LAN sharing...';
+  @override
+  String get tvPairingSendingBeacon => 'Sending connection beacon to TV...';
+  @override
+  String get tvPairingSuccess => 'TV paired successfully! Your library is now shared with your Smart TV.';
+  @override
+  String get tvPairingAutoConnecting => 'Mobile device detected! Connecting automatically...';
+  @override
+  String get tvPairingManualButton => 'Pair with TV by IP';
+  @override
+  String get tvPairingEnterIp => 'Enter Smart TV IP address';
+  @override
+  String get tvPairingClose => 'Done';
+  @override
   String get settingsSaved => 'Settings saved successfully';
   @override
   String get searchSettingsHint => 'Search settings...';

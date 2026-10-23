@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/preferences/lan_sharing_provider.dart';
 import 'package:seanime_app/core/server/lan_discovery_service.dart';
 import 'package:seanime_app/core/server/server_manager.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/screens/settings/widgets/pixel_settings_widgets.dart';
+import 'package:seanime_app/presentation/widgets/welcome/tv/tv_pairing_sheet.dart';
 
 /// Card widget to configure LAN server sharing and broadcasting.
 class ServerLanSharingCard extends ConsumerStatefulWidget {
@@ -242,7 +245,61 @@ class _ServerLanSharingCardState extends ConsumerState<ServerLanSharingCard> {
                 ],
               ),
             ),
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: M3EButton.icon(
+                style: M3EButtonStyle.outlined,
+                size: M3EButtonSize.sm,
+                shape: M3EButtonShape.round,
+                icon: const Icon(LucideIcons.tv, size: 16),
+                label: Text(l10n.tvPairingManualButton),
+                onPressed: () => _showManualTvPairDialog(context, l10n),
+              ),
+            ),
           ],
+        ],
+      ),
+    );
+  }
+
+  void _showManualTvPairDialog(BuildContext context, dynamic l10n) {
+    final ipController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(LucideIcons.tv, size: 20),
+            const SizedBox(width: 8),
+            Text(l10n.tvPairingManualButton),
+          ],
+        ),
+        content: TextField(
+          controller: ipController,
+          autofocus: true,
+          keyboardType: TextInputType.number,
+          decoration: InputDecoration(
+            hintText: '192.168.1.xxx',
+            labelText: l10n.tvPairingEnterIp,
+            border: const OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(MaterialLocalizations.of(ctx).cancelButtonLabel),
+          ),
+          FilledButton(
+            onPressed: () {
+              final ip = ipController.text.trim();
+              if (ip.isNotEmpty) {
+                Navigator.of(ctx).pop();
+                TvPairingSheet.show(context: context, tvIp: ip);
+              }
+            },
+            child: Text(l10n.welcomeTvConnect),
+          ),
         ],
       ),
     );

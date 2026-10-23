@@ -29,6 +29,7 @@ migrate_working_dir/
 .pub-cache/
 .pub/
 /build/
+build/
 
 # Android related
 **/android/**/gradle-wrapper.jar
@@ -41,6 +42,8 @@ migrate_working_dir/
 **/android/local.properties
 **/android/**/GeneratedPluginRegistrant.java
 **/android/.cxx/
+**/android/build/
+android/build/
 key.properties
 **/*.keystore
 **/*.jks
@@ -75,3 +78,4 @@ key.properties
 backend/seanime
 backend/seanime.exe
 backend/seanime_darwin
+backend/test_seanime.aar

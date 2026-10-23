@@ -11,6 +11,7 @@ class DiscoveredServer {
   final int port;
   final String version;
   final DateTime lastSeen;
+  final String? pairedWith;
 
   const DiscoveredServer({
     required this.name,
@@ -18,6 +19,7 @@ class DiscoveredServer {
     required this.port,
     required this.version,
     required this.lastSeen,
+    this.pairedWith,
   });
 
   String get address => '$ip:$port';
@@ -117,6 +119,43 @@ class LanDiscoveryService {
     }
   }
 
+  /// Sends targeted pairing beacons directly to a specific target IP (e.g. Smart TV).
+  /// This bypasses Wi-Fi client isolation or dropped 255.255.255.255 broadcast packets.
+  Future<void> sendDirectBeacon({
+    required String targetIp,
+    required String serverName,
+    required int serverPort,
+    required String version,
+    required String pairedWith,
+  }) async {
+    try {
+      final socket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 0);
+      final localIp = await getLocalIpAddress();
+
+      final payload = jsonEncode({
+        'h': _magicHeader,
+        'n': serverName,
+        'ip': localIp ?? '0.0.0.0',
+        'p': serverPort,
+        'v': version,
+        'pairedWith': pairedWith,
+      });
+
+      final data = utf8.encode(payload);
+      final targetAddr = InternetAddress(targetIp);
+
+      for (int i = 0; i < 3; i++) {
+        socket.send(data, targetAddr, _discoveryPort);
+        await Future.delayed(const Duration(milliseconds: 150));
+      }
+
+      socket.close();
+      debugPrint('LanDiscovery: Direct pairing beacon sent to $targetIp:$_discoveryPort');
+    } catch (e) {
+      debugPrint('LanDiscovery: Failed to send direct beacon to $targetIp: $e');
+    }
+  }
+
   /// Stop broadcasting this server's presence.
   void stopBroadcasting() {
     _broadcastTimer?.cancel();
@@ -185,9 +224,9 @@ class LanDiscoveryService {
         port: json['p'] as int? ?? AppConstants.defaultPort,
         version: json['v'] as String? ?? '',
         lastSeen: DateTime.now(),
+        pairedWith: json['pairedWith'] as String?,
       );
 
-      // Skip if it's our own broadcast (same IP as this device)
       _updateServer(server);
     } catch (e) {
       // Ignore malformed packets silently

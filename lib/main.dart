@@ -37,10 +37,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:seanime_app/presentation/widgets/dpad_navigation_scope.dart';
 import 'package:seanime_app/presentation/widgets/toast/app_toast_host.dart';
 import 'package:seanime_app/core/theme/app_focus_coordinator.dart';
+import 'package:seanime_app/core/services/deep_link_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   AppFocusCoordinator.initialize();
+  DeepLinkService.instance.initialize();
   try {
     await GlassHost.precache();
   } catch (_) {}
@@ -184,6 +186,7 @@ class _AnitingFlutterAppState extends ConsumerState<AnitingFlutterApp> with Widg
     final initialRadius = ref.read(themeProvider).borderRadius;
 
     return MaterialApp(
+      navigatorKey: rootNavigatorKey,
       title: 'Aniting',
       debugShowCheckedModeBanner: false,
       scrollBehavior: AppScrollBehavior(showScrollbar: showScrollbar),

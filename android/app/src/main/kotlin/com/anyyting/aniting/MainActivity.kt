@@ -13,6 +13,8 @@ import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
     private val CHANNEL = "com.anyyting.aniting/server"
+    private var initialDeepLink: String? = null
+    private var serverChannel: MethodChannel? = null
 
     override fun getRenderMode(): RenderMode = RenderMode.texture
 
@@ -20,7 +22,23 @@ class MainActivity : FlutterActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (intent?.action == Intent.ACTION_VIEW) {
+            initialDeepLink = intent?.dataString
+        }
         enableHighRefreshRate()
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (intent.action == Intent.ACTION_VIEW) {
+            val link = intent.dataString
+            if (link != null) {
+                serverChannel?.invokeMethod("onDeepLink", link) ?: run {
+                    initialDeepLink = link
+                }
+            }
+        }
     }
 
     override fun onResume() {
@@ -68,8 +86,16 @@ class MainActivity : FlutterActivity() {
         super.configureFlutterEngine(flutterEngine)
         flutterEngine.plugins.add(ExoPlayerPlugin())
 
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
+        val channel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL)
+        serverChannel = channel
+
+        channel.setMethodCallHandler { call, result ->
             when (call.method) {
+                "getInitialDeepLink" -> {
+                    val link = initialDeepLink
+                    initialDeepLink = null
+                    result.success(link)
+                }
                 "startServer" -> {
                     try {
                         val port = call.argument<Int>("port") ?: SeanimeServerRuntime.defaultPort

@@ -28,6 +28,7 @@ class WelcomeTvStepServer extends ConsumerStatefulWidget {
 class _WelcomeTvStepServerState extends ConsumerState<WelcomeTvStepServer> {
   String? _tvIp;
   String? _connectingServerAddress;
+  bool _hasAutoConnected = false;
 
   @override
   void initState() {
@@ -76,6 +77,25 @@ class _WelcomeTvStepServerState extends ConsumerState<WelcomeTvStepServer> {
 
     final discoveredAsync = ref.watch(discoveredServersProvider);
     final discoveredList = discoveredAsync.value ?? [];
+
+    ref.listen<AsyncValue<List<DiscoveredServer>>>(discoveredServersProvider, (prev, next) {
+      if (_hasAutoConnected || _connectingServerAddress != null) return;
+      final list = next.value ?? [];
+      for (final server in list) {
+        if (server.pairedWith != null && (_tvIp == null || server.pairedWith == _tvIp)) {
+          _hasAutoConnected = true;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${l10n.tvPairingAutoConnecting} (${server.name})'),
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+          _connectToServer(server);
+          break;
+        }
+      }
+    });
 
     final ipString = _tvIp ?? '127.0.0.1';
     final qrData = 'aniting://pair?action=serve_tv&ip=$ipString&port=${AppConstants.defaultPort}';

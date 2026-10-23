@@ -764,6 +764,16 @@ abstract class AppTranslations {
   String get welcomeTvSkipServer;
   String get welcomeTvSwitchToTv;
   String get welcomeTvSwitchToStandard;
+  String get tvPairingTitle;
+  String get tvPairingSubtitle;
+  String get tvPairingStartingServer;
+  String get tvPairingEnablingSharing;
+  String get tvPairingSendingBeacon;
+  String get tvPairingSuccess;
+  String get tvPairingAutoConnecting;
+  String get tvPairingManualButton;
+  String get tvPairingEnterIp;
+  String get tvPairingClose;
   String get settingsSaved;
   String get searchSettingsHint;
   String get mangaReader;
