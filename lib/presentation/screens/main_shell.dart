@@ -9,7 +9,6 @@ import 'package:seanime_app/core/preferences/desktop_nav_style_provider.dart';
 import 'package:seanime_app/core/preferences/mobile_nav_style_provider.dart';
 import 'package:seanime_app/core/preferences/resume_bar_preferences_provider.dart';
 import 'package:seanime_app/core/preferences/section_visibility_provider.dart';
-import 'package:seanime_app/core/theme/custom_route_transitions.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/screens/airing_calendar_screen.dart';
 import 'package:seanime_app/presentation/screens/feed_screen.dart';
@@ -105,7 +104,7 @@ class _MainShellState extends ConsumerState<MainShell> {
   void _openSettings() {
     Navigator.push(
       context,
-      SlideRightToLeftPageRoute(child: const SettingsScreen()),
+      MaterialPageRoute(builder: (_) => const SettingsScreen()),
     );
   }
 

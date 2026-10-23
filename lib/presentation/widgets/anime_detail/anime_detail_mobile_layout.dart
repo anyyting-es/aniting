@@ -1037,7 +1037,7 @@ class _AnimeDetailMobileLayoutState
                               child: SizedBox(
                                 height: 185,
                                 child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.end,
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(

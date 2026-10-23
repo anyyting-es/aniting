@@ -9,6 +9,7 @@ import 'package:seanime_app/core/preferences/player_engine_provider.dart';
 import 'package:seanime_app/core/preferences/player_gesture_provider.dart';
 import 'package:seanime_app/core/preferences/playback_progress_preferences_provider.dart';
 import 'package:seanime_app/core/preferences/resume_bar_preferences_provider.dart';
+import 'package:seanime_app/core/preferences/track_preferences_provider.dart';
 import 'package:seanime_app/core/preferences/tv_mode_provider.dart';
 import 'package:seanime_app/core/preferences/volume_boost_provider.dart';
 import 'package:seanime_app/core/preferences/streaming_preferences_provider.dart';
@@ -263,6 +264,77 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   bool _isMouseInside = false;
 
   bool _isPlayerDisposed = false;
+  bool _hasAutoAppliedTracks = false;
+
+  String get _currentVideoKey {
+    if (widget.mediaId != null && _currentEpisodeNumber != null) {
+      return '${widget.mediaId}_$_currentEpisodeNumber';
+    }
+    if (_currentVideoUrl.isNotEmpty) {
+      return 'url_${_currentVideoUrl.hashCode}';
+    }
+    return '';
+  }
+
+  void _applySavedOrPreferredTracks(List<UiTrack> audioList, List<UiTrack> subList) {
+    final key = _currentVideoKey;
+    final pref = ref.read(trackPreferencesProvider.notifier).getPreference(key);
+
+    // 1. Audio track restoration
+    if (pref?.audioTrackId != null) {
+      final target = audioList.where((t) => t.id == pref!.audioTrackId).firstOrNull ??
+          (pref?.audioLanguage != null
+              ? audioList.where((t) => t.language.toLowerCase() == pref!.audioLanguage!.toLowerCase()).firstOrNull
+              : null);
+      if (target != null && target.id != _selectedAudioTrackId) {
+        _selectAudioTrack(target);
+      }
+    }
+
+    // 2. Subtitle track restoration or smart default
+    if (pref?.subtitleTrackId != null) {
+      if (pref!.subtitleTrackId == 'off' || pref.subtitleTrackId == 'no') {
+        _selectSubtitleTrack(null);
+      } else {
+        final target = subList.where((t) => t.id == pref.subtitleTrackId).firstOrNull ??
+            (pref.subtitleLanguage != null
+                ? subList.where((t) => t.language.toLowerCase() == pref.subtitleLanguage!.toLowerCase()).firstOrNull
+                : null);
+        if (target != null && target.id != _selectedSubtitleTrackId) {
+          _selectSubtitleTrack(target);
+        }
+      }
+    } else if (subList.isNotEmpty && _selectedSubtitleTrackId == null) {
+      // Auto-match user's app language or fallback to first available track
+      final appLang = ref.read(appLanguageProvider);
+      final isSpanish = appLang == AppLanguage.es;
+
+      UiTrack? matchedSub;
+      if (isSpanish) {
+        matchedSub = subList.where((t) {
+          final l = t.language.toLowerCase();
+          final title = t.title.toLowerCase();
+          return l.contains('es') ||
+              l.contains('spa') ||
+              title.contains('esp') ||
+              title.contains('spanish') ||
+              title.contains('castellano') ||
+              title.contains('latino') ||
+              title.contains('español');
+        }).firstOrNull;
+      } else {
+        matchedSub = subList.where((t) {
+          final l = t.language.toLowerCase();
+          final title = t.title.toLowerCase();
+          return l.contains('en') || l.contains('eng') || title.contains('english');
+        }).firstOrNull;
+      }
+
+      // If no matching language track found, select the first available subtitle track
+      matchedSub ??= subList.first;
+      _selectSubtitleTrack(matchedSub);
+    }
+  }
 
   // Delegated getters to modular services
   bool get _isFullscreen => _windowManager.isFullscreen;
@@ -561,6 +633,11 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
           _selectedSubtitleTrackId = selectedSub;
         });
         _loadChapters();
+
+        if (!_hasAutoAppliedTracks && (audio.isNotEmpty || subs.isNotEmpty)) {
+          _hasAutoAppliedTracks = true;
+          _applySavedOrPreferredTracks(audio, subs);
+        }
       },
       onCues: (text) {
         if (mounted && _currentSubtitleText != text) {
@@ -884,6 +961,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       _selectedAudioTrackId = null;
       _selectedSubtitleTrackId = null;
       _seekFeedback = null;
+      _hasAutoAppliedTracks = false;
     });
 
     _seekFeedbackTimer?.cancel();
@@ -893,6 +971,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
 
   void _onEpisodeTransitionStarted(int targetEpNum, String targetEpTitle) {
     _initialStartPosition = null;
+    _hasAutoAppliedTracks = false;
     _progressManager.savePlaybackProgress();
     _progressManager.syncAnimeProgressIfNeeded();
     setState(() {
@@ -1154,6 +1233,11 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       _audioTracks = _audioTracks.map((t) => t.copyWith(selected: t.id == track.id)).toList();
     });
     _coordinator.selectAudioTrack(track);
+    ref.read(trackPreferencesProvider.notifier).saveAudioTrack(
+      _currentVideoKey,
+      id: track.id,
+      language: track.language,
+    );
   }
 
   void _selectSubtitleTrack(UiTrack? track) {
@@ -1163,6 +1247,11 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       _subtitleTracks = _subtitleTracks.map((t) => t.copyWith(selected: t.id == track?.id)).toList();
     });
     _coordinator.selectSubtitleTrack(track, _currentExternalSubtitles);
+    ref.read(trackPreferencesProvider.notifier).saveSubtitleTrack(
+      _currentVideoKey,
+      id: track?.id,
+      language: track?.language,
+    );
   }
 
   void _setSubtitleDelay(int ms) {

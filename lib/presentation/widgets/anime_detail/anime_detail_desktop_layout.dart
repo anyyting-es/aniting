@@ -426,8 +426,9 @@ class _AnimeDetailDesktopLayoutState
     final status = widget.details?.status ?? widget.initialEntry?.status;
 
     final year = widget.details?.seasonYear ??
-        widget.details?.rawMedia?['startDate']?['year'];
-    final season = widget.details?.season;
+        widget.details?.rawMedia?['startDate']?['year'] ??
+        widget.initialEntry?.year;
+    final season = widget.details?.season ?? widget.initialEntry?.season;
     final seasonYearStr = (season != null && year != null)
         ? '${l10n.formatSeason(season)} $year'.toUpperCase()
         : (year != null ? '$year' : '');
@@ -444,9 +445,9 @@ class _AnimeDetailDesktopLayoutState
         ? '$dateStr - $seasonStr'
         : (dateStr.isNotEmpty ? dateStr : seasonYearStr);
 
-    final romaji = widget.details?.romajiTitle;
-    final english = widget.details?.englishTitle;
-    final native = widget.details?.nativeTitle;
+    final romaji = widget.details?.romajiTitle ?? widget.initialEntry?.romajiTitle;
+    final english = widget.details?.englishTitle ?? widget.initialEntry?.englishTitle;
+    final native = widget.details?.nativeTitle ?? widget.initialEntry?.nativeTitle;
     final subtitle = (romaji != null && romaji.isNotEmpty && romaji != title)
         ? romaji
         : ((english != null && english.isNotEmpty && english != title)
@@ -475,7 +476,7 @@ class _AnimeDetailDesktopLayoutState
         widget.initialEntry?.progress ??
         0;
 
-    final description = _cleanHtml(widget.details?.description);
+    final description = _cleanHtml(widget.details?.description ?? widget.initialEntry?.description);
 
     final libraryEntryAsync = ref.watch(animeLibraryEntryProvider(widget.mediaId));
     final hasLibFiles = libraryEntryAsync.asData?.value != null &&
@@ -543,9 +544,9 @@ class _AnimeDetailDesktopLayoutState
                     // Breathing space so top hero fanart/backdrop is widely visible
                     const SizedBox(height: 72),
 
-                    // ─── Top Poster & Metadata Section (Anchored at top, clean flow) ───
+                    // ─── Top Poster & Metadata Section (Settled at bottom with poster) ───
                     Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         // Left: Cover Poster Only (Clean, no bottom metadata pushing layout down)
                         DesktopSidebar(
@@ -558,22 +559,31 @@ class _AnimeDetailDesktopLayoutState
 
                         // Right: Title, Badges (Format, Status, Score, Studio) & Synopsis
                         Expanded(
-                          child: DesktopHeader(
-                            seasonYearStr: seasonYearStr,
-                            dateSeasonStr: dateSeasonStr,
-                            title: title,
-                            subtitle: subtitle,
-                            genres: widget.details?.genres ?? [],
-                            description: description,
-                            format: format,
-                            status: status,
-                            userStatus: userStatus,
-                            progress: progress,
-                            score: score,
-                            studio: studio,
-                            totalEpisodes: totalEpisodes,
-                            duration: duration,
-                            onEditStatus: () => widget.onOpenEditEntryModal(title),
+                          child: AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 240),
+                            child: widget.isLoading &&
+                                    (widget.details == null ||
+                                        (widget.details!.genres.isEmpty &&
+                                            (widget.details!.description?.isEmpty ?? true)))
+                                ? _buildHeaderSkeleton(isDark)
+                                : DesktopHeader(
+                                    key: const ValueKey('desktop_header_ready'),
+                                    seasonYearStr: seasonYearStr,
+                                    dateSeasonStr: dateSeasonStr,
+                                    title: title,
+                                    subtitle: subtitle,
+                                    genres: widget.details?.genres ?? widget.initialEntry?.genres ?? [],
+                                    description: description,
+                                    format: format,
+                                    status: status,
+                                    userStatus: userStatus,
+                                    progress: progress,
+                                    score: score,
+                                    studio: studio,
+                                    totalEpisodes: totalEpisodes,
+                                    duration: duration,
+                                    onEditStatus: () => widget.onOpenEditEntryModal(title),
+                                  ),
                           ),
                         ),
                       ],
@@ -682,7 +692,7 @@ class _AnimeDetailDesktopLayoutState
                       widget.onOpenTorrentSelector(
                         episodeNumber: firstEp,
                         episodeTitle: 'Ep. $firstEp',
-                        isDownloadMode: true,
+                         isDownloadMode: true,
                         initialSelectedEpisodes: toDownload,
                       );
                     },
@@ -693,5 +703,87 @@ class _AnimeDetailDesktopLayoutState
           ],
         ),
       );
+  }
+
+  Widget _buildHeaderSkeleton(bool isDark) {
+    final blockColor = isDark
+        ? Colors.white.withValues(alpha: 0.08)
+        : Colors.black.withValues(alpha: 0.06);
+
+    return Column(
+      key: const ValueKey('desktop_header_skeleton'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.end,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Title Bar Skeleton
+        Container(
+          width: 380,
+          height: 32,
+          decoration: BoxDecoration(
+            color: blockColor,
+            borderRadius: BorderRadius.circular(6),
+          ),
+        ),
+        const SizedBox(height: 10),
+        // Subtitle Bar Skeleton
+        Container(
+          width: 220,
+          height: 16,
+          decoration: BoxDecoration(
+            color: blockColor,
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ),
+        const SizedBox(height: 16),
+        // Row 1 Badges Skeleton
+        Container(
+          width: 280,
+          height: 24,
+          decoration: BoxDecoration(
+            color: blockColor,
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        const SizedBox(height: 12),
+        // Row 2 Badges Skeleton
+        Container(
+          width: 340,
+          height: 24,
+          decoration: BoxDecoration(
+            color: blockColor,
+            borderRadius: BorderRadius.circular(6),
+          ),
+        ),
+        const SizedBox(height: 18),
+        // Synopsis 3 Lines Skeleton
+        Container(
+          width: 680,
+          height: 14,
+          decoration: BoxDecoration(
+            color: blockColor,
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          width: 620,
+          height: 14,
+          decoration: BoxDecoration(
+            color: blockColor,
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          width: 440,
+          height: 14,
+          decoration: BoxDecoration(
+            color: blockColor,
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ),
+      ],
+    );
   }
 }

@@ -2872,4 +2872,12 @@ class EnglishTranslations implements AppTranslations {
   String get offlineSyncNow => 'Sync now';
   @override
   String get syncingOfflineProgress => 'Syncing offline progress...';
+
+  // App Startup Warm-Up
+  @override
+  String get startupWarmUpStarting => 'Starting services...';
+  @override
+  String get startupWarmUpSyncing => 'Synchronizing library...';
+  @override
+  String get startupWarmUpReady => 'Ready';
 }

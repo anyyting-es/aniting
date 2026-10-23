@@ -261,7 +261,9 @@ class _DesktopHeaderState extends ConsumerState<DesktopHeader> {
         const SizedBox(height: 10),
 
         // ─── 4. Metadata Row 2: [♡ Score] [Studio] [Genre 1] [Genre 2] ───
-        Wrap(
+        ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 24),
+          child: Wrap(
           crossAxisAlignment: WrapCrossAlignment.center,
           spacing: 14,
           runSpacing: 6,
@@ -320,6 +322,7 @@ class _DesktopHeaderState extends ConsumerState<DesktopHeader> {
               ),
           ],
         ),
+      ),
 
         const SizedBox(height: 16),
 

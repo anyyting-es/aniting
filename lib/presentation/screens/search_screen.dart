@@ -592,11 +592,16 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final trendingMangaAsync = (!isAnime && !isShows) ? ref.watch(trendingMangaProvider) : null;
 
     // Curated providers for Anime
+    final popularAnimeAsync = isAnime && !_showSearchBar ? ref.watch(popularAnimeProvider) : null;
+    final fantasyAnimeAsync = isAnime && !_showSearchBar ? ref.watch(curatedFantasyAnimeProvider) : null;
+    final scifiAnimeAsync = isAnime && !_showSearchBar ? ref.watch(curatedSciFiAnimeProvider) : null;
     final romanceAnimeAsync = isAnime && !_showSearchBar ? ref.watch(curatedRomanceAnimeProvider) : null;
     final actionAnimeAsync = isAnime && !_showSearchBar ? ref.watch(curatedActionAnimeProvider) : null;
     final comedyAnimeAsync = isAnime && !_showSearchBar ? ref.watch(curatedComedyAnimeProvider) : null;
 
     // Curated providers for Manga
+    final popularMangaAsync = (!isAnime && !isShows) && !_showSearchBar ? ref.watch(popularMangaProvider) : null;
+    final fantasyMangaAsync = (!isAnime && !isShows) && !_showSearchBar ? ref.watch(curatedFantasyMangaProvider) : null;
     final romanceMangaAsync = (!isAnime && !isShows) && !_showSearchBar ? ref.watch(curatedRomanceMangaProvider) : null;
     final actionMangaAsync = (!isAnime && !isShows) && !_showSearchBar ? ref.watch(curatedActionMangaProvider) : null;
     final comedyMangaAsync = (!isAnime && !isShows) && !_showSearchBar ? ref.watch(curatedComedyMangaProvider) : null;
@@ -643,8 +648,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             onRefresh: () async {
               if (isAnime) {
                 ref.invalidate(trendingAnimeProvider);
-                ref.invalidate(curatedRomanceAnimeProvider);
+                ref.invalidate(popularAnimeProvider);
+                ref.invalidate(curatedFantasyAnimeProvider);
                 ref.invalidate(curatedActionAnimeProvider);
+                ref.invalidate(curatedSciFiAnimeProvider);
+                ref.invalidate(curatedRomanceAnimeProvider);
                 ref.invalidate(curatedComedyAnimeProvider);
                 ref.read(exploreCarouselNotifierProvider.notifier).refresh();
               } else if (isShows) {
@@ -653,8 +661,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 ref.invalidate(tmdbTopRatedShowsProvider);
               } else {
                 ref.invalidate(trendingMangaProvider);
-                ref.invalidate(curatedRomanceMangaProvider);
+                ref.invalidate(popularMangaProvider);
+                ref.invalidate(curatedFantasyMangaProvider);
                 ref.invalidate(curatedActionMangaProvider);
+                ref.invalidate(curatedRomanceMangaProvider);
                 ref.invalidate(curatedComedyMangaProvider);
               }
             },
@@ -689,6 +699,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       child: ExploreHeroCarousel(
                         key: ValueKey('explore_hero_anime_v${config?.version ?? 0}_${carouselItems.length}'),
                         items: carouselItems,
+                        scrollController: _scrollController,
                       ),
                     );
                   })
@@ -704,6 +715,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       child: ExploreHeroCarousel(
                         key: ValueKey('explore_hero_shows_${carouselItems.length}'),
                         items: carouselItems,
+                        scrollController: _scrollController,
                       ),
                     );
                   })
@@ -721,6 +733,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       child: ExploreHeroCarousel(
                         key: ValueKey('explore_hero_manga_${carouselItems.length}'),
                         items: carouselItems,
+                        scrollController: _scrollController,
                       ),
                     );
                   }),
@@ -814,10 +827,24 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                                 l10n: l10n,
                               ),
                               _buildCuratedAnimeSection(
-                                title: isSpanish ? 'Romance en tendencia' : 'Trending Romance',
-                                genreKey: 'Romance',
-                                entries: romanceAnimeAsync?.asData?.value ?? [],
-                                isLoading: romanceAnimeAsync?.isLoading ?? false,
+                                title: isSpanish ? 'Más populares' : 'Most Popular',
+                                onSeeMoreTap: () {
+                                  setState(() {
+                                    _filterState = _filterState.copyWith(sort: 'POPULARITY_DESC');
+                                    _isSearchExpanded = true;
+                                  });
+                                  _fetchResults(reset: true);
+                                },
+                                entries: popularAnimeAsync?.asData?.value ?? [],
+                                isLoading: popularAnimeAsync?.isLoading ?? false,
+                                theme: theme,
+                                l10n: l10n,
+                              ),
+                              _buildCuratedAnimeSection(
+                                title: isSpanish ? 'Fantasía en tendencia' : 'Trending Fantasy',
+                                genreKey: 'Fantasy',
+                                entries: fantasyAnimeAsync?.asData?.value ?? [],
+                                isLoading: fantasyAnimeAsync?.isLoading ?? false,
                                 theme: theme,
                                 l10n: l10n,
                               ),
@@ -826,6 +853,22 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                                 genreKey: 'Action',
                                 entries: actionAnimeAsync?.asData?.value ?? [],
                                 isLoading: actionAnimeAsync?.isLoading ?? false,
+                                theme: theme,
+                                l10n: l10n,
+                              ),
+                              _buildCuratedAnimeSection(
+                                title: isSpanish ? 'Ciencia ficción en tendencia' : 'Trending Sci-Fi',
+                                genreKey: 'Sci-Fi',
+                                entries: scifiAnimeAsync?.asData?.value ?? [],
+                                isLoading: scifiAnimeAsync?.isLoading ?? false,
+                                theme: theme,
+                                l10n: l10n,
+                              ),
+                              _buildCuratedAnimeSection(
+                                title: isSpanish ? 'Romance en tendencia' : 'Trending Romance',
+                                genreKey: 'Romance',
+                                entries: romanceAnimeAsync?.asData?.value ?? [],
+                                isLoading: romanceAnimeAsync?.isLoading ?? false,
                                 theme: theme,
                                 l10n: l10n,
                               ),
@@ -896,10 +939,24 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                                 l10n: l10n,
                               ),
                               _buildCuratedMangaSection(
-                                title: isSpanish ? 'Romance en tendencia' : 'Trending Romance',
-                                genreKey: 'Romance',
-                                entries: romanceMangaAsync?.asData?.value ?? [],
-                                isLoading: romanceMangaAsync?.isLoading ?? false,
+                                title: isSpanish ? 'Manga más popular' : 'Popular Manga',
+                                onSeeMoreTap: () {
+                                  setState(() {
+                                    _filterState = _filterState.copyWith(sort: 'POPULARITY_DESC');
+                                    _isSearchExpanded = true;
+                                  });
+                                  _fetchResults(reset: true);
+                                },
+                                entries: popularMangaAsync?.asData?.value ?? [],
+                                isLoading: popularMangaAsync?.isLoading ?? false,
+                                theme: theme,
+                                l10n: l10n,
+                              ),
+                              _buildCuratedMangaSection(
+                                title: isSpanish ? 'Fantasía en tendencia' : 'Trending Fantasy',
+                                genreKey: 'Fantasy',
+                                entries: fantasyMangaAsync?.asData?.value ?? [],
+                                isLoading: fantasyMangaAsync?.isLoading ?? false,
                                 theme: theme,
                                 l10n: l10n,
                               ),
@@ -908,6 +965,14 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                                 genreKey: 'Action',
                                 entries: actionMangaAsync?.asData?.value ?? [],
                                 isLoading: actionMangaAsync?.isLoading ?? false,
+                                theme: theme,
+                                l10n: l10n,
+                              ),
+                              _buildCuratedMangaSection(
+                                title: isSpanish ? 'Romance en tendencia' : 'Trending Romance',
+                                genreKey: 'Romance',
+                                entries: romanceMangaAsync?.asData?.value ?? [],
+                                isLoading: romanceMangaAsync?.isLoading ?? false,
                                 theme: theme,
                                 l10n: l10n,
                               ),

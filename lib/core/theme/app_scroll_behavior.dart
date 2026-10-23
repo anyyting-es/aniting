@@ -27,7 +27,11 @@ class AppScrollBehavior extends MaterialScrollBehavior {
 
   @override
   Widget buildOverscrollIndicator(BuildContext context, Widget child, ScrollableDetails details) {
-    return child;
+    return StretchingOverscrollIndicator(
+      axisDirection: details.direction,
+      clipBehavior: Clip.hardEdge,
+      child: child,
+    );
   }
 
   @override

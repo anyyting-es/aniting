@@ -1,8 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:seanime_app/data/repositories/seanime_repository.dart';
+
+bool get _isInTest => !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST');
 
 /// Tipo de acción pendiente de sincronización offline.
 enum OfflineSyncType {
@@ -111,6 +114,7 @@ class OfflineSyncService {
   }
 
   void _startPeriodicTimer() {
+    if (_isInTest) return;
     _periodicSyncTimer?.cancel();
     _periodicSyncTimer = Timer.periodic(const Duration(seconds: 30), (_) {
       if (_queue.isNotEmpty && !_isSyncing) {

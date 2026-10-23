@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -21,6 +23,8 @@ import '../widgets/welcome/welcome_step_extensions.dart';
 import '../widgets/welcome/welcome_step_language.dart';
 import '../widgets/welcome/welcome_step_sections.dart';
 import '../widgets/welcome/welcome_step_theme.dart';
+
+bool get _isInTest => !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST');
 
 class WelcomeScreen extends ConsumerStatefulWidget {
   final bool isDevPreview;
@@ -99,15 +103,21 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
     _motionController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 16),
-    )..repeat(reverse: true);
+    );
+    if (!_isInTest) {
+      _motionController.repeat(reverse: true);
+    }
 
     _loadExtensions();
-    _startBgTimer();
+    if (!_isInTest) {
+      _startBgTimer();
+    }
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    if (_isInTest) return;
     final size = MediaQuery.sizeOf(context);
     final isHorizontal = size.width > size.height;
     final images = isHorizontal ? _horizontalBackgroundImages : _mobileBackgroundImages;
@@ -117,6 +127,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen>
   }
 
   void _startBgTimer() {
+    if (_isInTest) return;
     _bgTimer = Timer.periodic(const Duration(seconds: 9), (timer) {
       if (mounted) {
         setState(() {

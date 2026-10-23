@@ -89,19 +89,36 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
 
     final bottomInset = MediaQuery.of(context).viewPadding.bottom;
 
-    return Container(
-      width: 72,
-      height: double.infinity,
-      color: Colors.transparent,
-      padding: EdgeInsets.only(
-        top: 38,
-        bottom: 24 + bottomInset,
-        left: 8,
-        right: 8,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
+    return FocusScope(
+      child: FocusTraversalGroup(
+        policy: WidgetOrderTraversalPolicy(),
+        child: Focus(
+          onKeyEvent: (node, event) {
+            if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
+              return KeyEventResult.ignored;
+            }
+            if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+              return KeyEventResult.handled;
+            }
+            if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+              FocusScope.of(context).focusInDirection(TraversalDirection.right);
+              return KeyEventResult.handled;
+            }
+            return KeyEventResult.ignored;
+          },
+          child: Container(
+            width: 72,
+            height: double.infinity,
+            color: Colors.transparent,
+            padding: EdgeInsets.only(
+              top: 38,
+              bottom: 24 + bottomInset,
+              left: 8,
+              right: 8,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
           // 1. Floating Search Action Button (Focusable with DPAD)
           Focus(
             onFocusChange: (val) => setState(() => _isSearchFocused = val),
@@ -236,6 +253,9 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
             ),
           ],
         ],
+            ),
+          ),
+        ),
       ),
     );
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 
 /// Intercepts and swallows Flutter's default instantaneous `showOnScreen` request
 /// (which jumps without animation and aligns strictly to the edge).
@@ -78,20 +79,106 @@ class SmoothFocusCarousel extends StatefulWidget {
 }
 
 class _SmoothFocusCarouselState extends State<SmoothFocusCarousel> {
+  static final List<_SmoothFocusCarouselState> _activeCarousels = [];
+
   late final ScrollController _scrollController;
+  final Map<int, FocusNode> _itemNodes = {};
   int? _currentlyFocusedIndex;
   int? get currentlyFocusedIndex => _currentlyFocusedIndex;
 
   @override
   void initState() {
     super.initState();
+    _activeCarousels.add(this);
     _scrollController = ScrollController();
   }
 
   @override
   void dispose() {
+    _activeCarousels.remove(this);
+    for (final node in _itemNodes.values) {
+      node.dispose();
+    }
+    _itemNodes.clear();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void focusBeginning() {
+    if (_scrollController.hasClients && _scrollController.offset > 0) {
+      _scrollController.animateTo(
+        0.0,
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOutCubic,
+      );
+    }
+
+    void tryFocus() {
+      if (!mounted) return;
+      final node0 = _itemNodes[0];
+      if (node0 != null) {
+        final target = node0.descendants.where((n) => n.canRequestFocus).firstOrNull;
+        if (target != null) {
+          target.requestFocus();
+          _onItemFocused(0, context);
+          return;
+        }
+      }
+    }
+
+    tryFocus();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      tryFocus();
+    });
+  }
+
+  bool _navigateVertical({required bool isDown}) {
+    final eligible = _activeCarousels.where((c) {
+      if (!c.mounted) return false;
+      if (c == this) return false;
+      if (c.widget.itemCount <= 0) return false;
+      final box = c.context.findRenderObject() as RenderBox?;
+      return box != null && box.attached && box.hasSize;
+    }).toList();
+
+    if (eligible.isEmpty) return false;
+
+    final myBox = context.findRenderObject() as RenderBox?;
+    if (myBox == null || !myBox.attached || !myBox.hasSize) return false;
+    final myY = myBox.localToGlobal(Offset.zero).dy;
+
+    _SmoothFocusCarouselState? targetCarousel;
+    if (isDown) {
+      final below = eligible
+          .where((c) => (c.context.findRenderObject() as RenderBox).localToGlobal(Offset.zero).dy > myY + 25)
+          .toList();
+      if (below.isNotEmpty) {
+        below.sort((a, b) {
+          final aY = (a.context.findRenderObject() as RenderBox).localToGlobal(Offset.zero).dy;
+          final bY = (b.context.findRenderObject() as RenderBox).localToGlobal(Offset.zero).dy;
+          return aY.compareTo(bY);
+        });
+        targetCarousel = below.first;
+      }
+    } else {
+      final above = eligible
+          .where((c) => (c.context.findRenderObject() as RenderBox).localToGlobal(Offset.zero).dy < myY - 25)
+          .toList();
+      if (above.isNotEmpty) {
+        above.sort((a, b) {
+          final aY = (a.context.findRenderObject() as RenderBox).localToGlobal(Offset.zero).dy;
+          final bY = (b.context.findRenderObject() as RenderBox).localToGlobal(Offset.zero).dy;
+          return bY.compareTo(aY);
+        });
+        targetCarousel = above.first;
+      }
+    }
+
+    if (targetCarousel != null) {
+      targetCarousel.focusBeginning();
+      return true;
+    }
+    return false;
   }
 
   void _onItemFocused(int index, BuildContext itemContext) {
@@ -197,14 +284,34 @@ class _SmoothFocusCarouselState extends State<SmoothFocusCarousel> {
             itemCount: widget.itemCount,
             separatorBuilder: (context, index) => SizedBox(width: widget.spacing),
             itemBuilder: (context, index) {
+              final node = _itemNodes.putIfAbsent(
+                index,
+                () => FocusNode(debugLabel: 'CarouselItem_${identityHashCode(this)}_$index'),
+              );
               return Builder(
                 builder: (itemContext) {
                   return Focus(
+                    focusNode: node,
                     canRequestFocus: false,
+                    descendantsAreFocusable: true,
                     onFocusChange: (hasFocus) {
                       if (hasFocus) {
                         _onItemFocused(index, itemContext);
                       }
+                    },
+                    onKeyEvent: (fNode, event) {
+                      if (event is KeyDownEvent) {
+                        if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+                          if (_navigateVertical(isDown: true)) {
+                            return KeyEventResult.handled;
+                          }
+                        } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+                          if (_navigateVertical(isDown: false)) {
+                            return KeyEventResult.handled;
+                          }
+                        }
+                      }
+                      return KeyEventResult.ignored;
                     },
                     child: BlockShowOnScreen(
                       child: widget.itemBuilder(context, index),

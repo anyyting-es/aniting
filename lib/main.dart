@@ -20,8 +20,10 @@ import 'package:seanime_app/core/preferences/section_visibility_provider.dart';
 import 'package:seanime_app/core/theme/app_scroll_behavior.dart';
 import 'package:seanime_app/core/theme/app_theme_colors.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:seanime_app/core/preferences/track_preferences_provider.dart';
 import 'package:seanime_app/core/theme/theme_provider.dart';
-import 'package:seanime_app/presentation/screens/main_shell.dart';
+import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
+import 'package:seanime_app/presentation/screens/startup/app_warm_up_gate.dart';
 import 'package:seanime_app/presentation/screens/welcome_screen.dart';
 import 'package:seanime_app/data/services/explore_carousel_service.dart';
 import 'package:seanime_app/data/services/feed_cache_service.dart';
@@ -117,6 +119,8 @@ void main() async {
     DesktopWindowTransparencyNotifier.setCachedPrefs(prefs);
     GlassEffectsEnabledNotifier.setCachedPrefs(prefs);
     DownloadHistoryNotifier.setCachedPrefs(prefs);
+    TrackPreferencesNotifier.setCachedPrefs(prefs);
+    AnimeDetailScreen.setCachedPrefs(prefs);
   } catch (_) {}
   runApp(
     const ProviderScope(
@@ -206,7 +210,7 @@ class _AnitingFlutterAppState extends ConsumerState<AnitingFlutterApp> with Widg
         borderRadius: initialRadius,
       ),
       themeMode: mode,
-      home: ref.watch(onboardingProvider) ? const MainShell() : const WelcomeScreen(),
+      home: ref.watch(onboardingProvider) ? const AppWarmUpGate() : const WelcomeScreen(),
       builder: (context, child) {
         return Consumer(
           builder: (context, ref, _) {

@@ -319,19 +319,16 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     final recommendationsEntries = recommendationsAsync.value ??
         (recommendationsAsync.isLoading ? cachedRecs : const <AnimeEntry>[]);
 
-    final hasUserCachedData = cachedCw.isNotEmpty ||
-        (isOffline && offlineCw.isNotEmpty) ||
-        cachedCollection.isNotEmpty ||
-        (isOffline && offlineCollection.isNotEmpty);
     final isServerUnavailable = serverState.state == ServerState.stopped || serverState.state == ServerState.error;
+    final isServerSettled = serverState.state != ServerState.starting;
 
-    // Both continueWatching (or its cache) and collection (or its cache) must be settled before removing skeleton to prevent CLS
-    final isCwSettled = continueWatchingAsync.hasValue || cachedCw.isNotEmpty || (isOffline && offlineCw.isNotEmpty) || continueWatchingAsync.hasError;
-    final isCollectionSettled = collectionAsync.hasValue || cachedCollection.isNotEmpty || (isOffline && offlineCollection.isNotEmpty) || collectionAsync.hasError;
+    // Both continueWatching and collection must be settled before removing skeleton to prevent CLS
+    final isCwSettled = continueWatchingAsync.hasValue || (isOffline && (cachedCw.isNotEmpty || offlineCw.isNotEmpty)) || continueWatchingAsync.hasError;
+    final isCollectionSettled = collectionAsync.hasValue || (isOffline && (cachedCollection.isNotEmpty || offlineCollection.isNotEmpty)) || collectionAsync.hasError;
     final isUserFeedReady = isCwSettled && isCollectionSettled;
 
     if (!_hasCompletedInitialLoad) {
-      if ((hasUserCachedData && isUserFeedReady) || isServerUnavailable || (serverState.isOnline && isUserFeedReady)) {
+      if (isServerSettled && (isUserFeedReady || isServerUnavailable)) {
         _hasCompletedInitialLoad = true;
       }
     }

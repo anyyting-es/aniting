@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/theme/custom_route_transitions.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/screens/settings_screen.dart';
 import 'package:seanime_app/presentation/widgets/anime_card.dart';
@@ -66,7 +65,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             onPressed: () {
               Navigator.push(
                 context,
-                SlideRightToLeftPageRoute(child: const SettingsScreen()),
+                MaterialPageRoute(builder: (_) => const SettingsScreen()),
               );
             },
           ),
@@ -78,7 +77,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             onOpenSettings: () {
               Navigator.push(
                 context,
-                SlideRightToLeftPageRoute(child: const SettingsScreen()),
+                MaterialPageRoute(builder: (_) => const SettingsScreen()),
               );
             },
           ),
@@ -131,7 +130,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           onPressed: () {
                             Navigator.push(
                               context,
-                              SlideRightToLeftPageRoute(child: const SettingsScreen()),
+                              MaterialPageRoute(builder: (_) => const SettingsScreen()),
                             );
                           },
                           child: Text(l10n.serverSettings),

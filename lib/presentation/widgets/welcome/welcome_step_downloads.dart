@@ -86,11 +86,13 @@ class _WelcomeStepDownloadsState extends ConsumerState<WelcomeStepDownloads> {
                 ),
               ),
               const SizedBox(width: 14),
-              Text(
-                l10n.welcomeStepDownloads,
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: -0.3,
+              Expanded(
+                child: Text(
+                  l10n.welcomeStepDownloads,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: -0.3,
+                  ),
                 ),
               ),
             ],

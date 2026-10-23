@@ -138,11 +138,13 @@ class ExploreCarouselItem {
 class ExploreHeroCarousel extends ConsumerStatefulWidget {
   final List<ExploreCarouselItem> items;
   final double? height;
+  final ScrollController? scrollController;
 
   const ExploreHeroCarousel({
     super.key,
     required this.items,
     this.height,
+    this.scrollController,
   });
 
   @override
@@ -311,6 +313,7 @@ class _ExploreHeroCarouselState extends ConsumerState<ExploreHeroCarousel> {
                                 l10n: l10n,
                                 isDesktop: isDesktop,
                                 isSidebarMode: isSidebarMode,
+                                scrollController: widget.scrollController,
                               ),
                             ),
                           );
@@ -458,6 +461,7 @@ class _HeroBannerSlide extends ConsumerWidget {
   final AppTranslations l10n;
   final bool isDesktop;
   final bool isSidebarMode;
+  final ScrollController? scrollController;
 
   const _HeroBannerSlide({
     super.key,
@@ -466,6 +470,7 @@ class _HeroBannerSlide extends ConsumerWidget {
     required this.l10n,
     required this.isDesktop,
     this.isSidebarMode = false,
+    this.scrollController,
   });
 
   String _cleanHtml(String? html) {
@@ -526,26 +531,51 @@ class _HeroBannerSlide extends ConsumerWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              // 1. Static Banner Background Image (Zero continuous repaint, 0% idle GPU)
-              // Aligned towards the upper portion (-0.42 desktop / -0.25 mobile) to fully reveal character heads & composition
+              // 1. Dynamic Banner Background Image with breathing overscroll & depth contraction
               if (imageUrl.isNotEmpty)
-                CachedNetworkImage(
-                  imageUrl: imageUrl,
-                  alignment: Alignment(0.0, isDesktop ? -0.42 : -0.25),
-                  fit: BoxFit.cover,
-                  fadeInDuration: const Duration(milliseconds: 200),
-                  memCacheWidth: isDesktop ? 1920 : 1080,
-                  maxWidthDiskCache: isDesktop ? 1920 : 1080,
-                  placeholder: (context, url) => Container(
-                    color: Colors.black26,
-                  ),
-                  errorWidget: (context, url, error) => Container(
-                    color: Colors.black26,
-                    child: const Center(
-                      child: Icon(
-                        Icons.broken_image_rounded,
-                        color: Colors.white24,
-                        size: 32,
+                AnimatedBuilder(
+                  animation: scrollController ?? const AlwaysStoppedAnimation(0),
+                  builder: (context, child) {
+                    final scrollOffset = (scrollController != null && scrollController!.hasClients)
+                        ? scrollController!.offset
+                        : 0.0;
+                    final double bgScale;
+                    final double bgTranslateY;
+                    if (scrollOffset < 0) {
+                      final pull = -scrollOffset;
+                      bgScale = 1.0 + (pull / 320.0).clamp(0.0, 0.45);
+                      bgTranslateY = -pull * 0.12;
+                    } else {
+                      bgScale = (1.0 - (scrollOffset / 1400.0)).clamp(0.90, 1.0);
+                      bgTranslateY = scrollOffset * 0.42;
+                    }
+
+                    return Transform(
+                      alignment: Alignment.center,
+                      transform: Matrix4.identity()
+                        ..translate(0.0, bgTranslateY)
+                        ..scale(bgScale, bgScale),
+                      child: child,
+                    );
+                  },
+                  child: CachedNetworkImage(
+                    imageUrl: imageUrl,
+                    alignment: Alignment(0.0, isDesktop ? -0.42 : -0.25),
+                    fit: BoxFit.cover,
+                    fadeInDuration: const Duration(milliseconds: 200),
+                    memCacheWidth: isDesktop ? 1920 : 1080,
+                    maxWidthDiskCache: isDesktop ? 1920 : 1080,
+                    placeholder: (context, url) => Container(
+                      color: Colors.black26,
+                    ),
+                    errorWidget: (context, url, error) => Container(
+                      color: Colors.black26,
+                      child: const Center(
+                        child: Icon(
+                          Icons.broken_image_rounded,
+                          color: Colors.white24,
+                          size: 32,
+                        ),
                       ),
                     ),
                   ),
@@ -635,12 +665,27 @@ class _HeroBannerSlide extends ConsumerWidget {
                 ),
               ),
 
-            // 4. Clean Bottom Metadata & Action Pills (Centered on mobile, lowered)
             Positioned(
               left: isDesktop ? 36 : 16,
               right: isDesktop ? 36 : 16,
               bottom: isDesktop ? 34 : 20,
-              child: Column(
+              child: AnimatedBuilder(
+                animation: scrollController ?? const AlwaysStoppedAnimation(0),
+                builder: (context, child) {
+                  final scrollOffset = (scrollController != null && scrollController!.hasClients)
+                      ? scrollController!.offset
+                      : 0.0;
+                  final fgOpacity = (1.0 - (scrollOffset / 300.0)).clamp(0.0, 1.0);
+                  final fgTranslateY = scrollOffset > 0 ? -scrollOffset * 0.15 : 0.0;
+                  return Opacity(
+                    opacity: fgOpacity,
+                    child: Transform.translate(
+                      offset: Offset(0, fgTranslateY),
+                      child: child,
+                    ),
+                  );
+                },
+                child: Column(
                 crossAxisAlignment: isDesktop ? CrossAxisAlignment.start : CrossAxisAlignment.center,
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -809,8 +854,9 @@ class _HeroBannerSlide extends ConsumerWidget {
                 ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
+      ),
       ),
     ),
   );

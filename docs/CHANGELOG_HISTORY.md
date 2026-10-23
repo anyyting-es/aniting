@@ -6,6 +6,31 @@
 > - **ALWAYS** summarize improvements at a high, user-facing level with clear, direct bullet points (e.g., *"Mejoras de UI y navegación en el calendario de emisión"*, *"Nueva pantalla y gestión de estado sin conexión"*, *"Optimizaciones en la caché de seguir viendo"*).
 > - Keep it punchy, professional, and easy to skim.
 
+## 7.89. Estabilidad en Detalles de Anime, Navegación DPAD Precisa y Scroll Elástico (2026-10-23)
+- **Eliminación de Saltos Visuales y Metadata Asentada en Detalles**:
+  - Restauración síncrona en frame 0 del modo de visualización guardado (Local / Torrent / Online) y detección instantánea de historial de descargas.
+  - Eliminación de saltos bruscos en la lista de episodios y vibración de etiquetas en móviles al entrar a series descargadas.
+  - Metadata anclada en la parte inferior del póster, con reserva de espacio para evitar saltos tardíos de texto durante la carga.
+- **Subtítulos Inteligentes y Preferencias por Video**:
+  - Selección automática de pistas de subtítulos según el idioma de la aplicación o primera pista disponible.
+  - Persistencia de preferencias de audio y subtítulos por archivo o episodio.
+- **Navegación DPAD Precisa en Carruseles y Barra Lateral**:
+  - Aislamiento de foco en la barra lateral de escritorio: desplazamiento vertical estricto sin fugas accidentales hacia el contenido.
+  - Transición vertical intuitiva entre carruseles: el control aterriza en el comienzo de la fila siguiente sin omitir filas con pocos elementos.
+- **Física de Scroll Elástica y Efecto Respiración en Explorar**:
+  - Adopción global de física con rebote elástico (`BouncingScrollPhysics`) para un desplazamiento fluido con mouse, pantalla táctil y trackpad.
+  - Efecto respiración con resorte en el carrusel de explorar al sobre-desplazar y contracción en profundidad al hacer scroll vertical.
+  - Incorporación de nuevas secciones curadas por defecto (Más populares, Fantasía, Ciencia ficción).
+- **Transiciones Nativas en Ajustes y Herramientas**:
+  - Adopción de rutas estándar de plataforma (`MaterialPageRoute`) para Ajustes, Temas, Mis Listas y Descargas, preservando las transiciones de detalles.
+
+## 7.88. Pantalla de Calentamiento Inicial (App Warm-Up Gate) y Carga Fluida Sin Saltos (2026-10-22)
+- **Compuerta de Calentamiento Inicial (`AppWarmUpGate`)**:
+  - Nueva pantalla de inicio con transición suave que coordina el arranque del servidor embebido y la preparación de los proveedores esenciales.
+  - Erradicación de saltos visuales (CLS) y aparición brusca de carruseles al entrar a la aplicación, garantizando una carga estable.
+  - Precarga de miniaturas en alta resolución de "Seguir viendo" para evitar el intercambio tardío entre pósters y capturas.
+  - Soporte completo de internacionalización (i18n) y sincronización con el modo OLED negro puro.
+
 ## 7.87. Emparejamiento Rápido de Smart TV mediante Código QR y Deep Linking (2026-10-22)
 - **Flujo Automático de Vinculación Smart TV <-> Móvil**:
   - Soporte de Deep Links con esquema `aniting://pair` en Android para reconocimiento instantáneo desde la cámara del móvil o Google Lens.

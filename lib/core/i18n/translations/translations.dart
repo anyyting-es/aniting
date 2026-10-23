@@ -1357,4 +1357,9 @@ abstract class AppTranslations {
   String offlineSyncCompleted(int count);
   String get offlineSyncNow;
   String get syncingOfflineProgress;
+
+  // App Startup Warm-Up
+  String get startupWarmUpStarting;
+  String get startupWarmUpSyncing;
+  String get startupWarmUpReady;
 }

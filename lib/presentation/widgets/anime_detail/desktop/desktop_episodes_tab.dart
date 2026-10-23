@@ -650,10 +650,6 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab>
     final isDark = theme.brightness == Brightness.dark;
 
     if (widget.isLocalMode) {
-      if (_isLoadingLocal && _libraryEntry == null) {
-        return _buildEpisodeSkeletons(theme, isDark);
-      }
-
       final downloadedEps = _libraryEntry?.episodes.where((e) => e.isDownloaded).toList() ?? [];
       final hasHistoryDownloads = ref.watch(downloadHistoryProvider).any(
             (item) => item.mediaId == widget.mediaId && item.filePath != null && item.filePath!.isNotEmpty,
@@ -884,6 +880,11 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab>
             key: ValueKey('episodes_view_${_isGridView ? "grid" : "list"}_${widget.isLocalMode ? "local" : widget.currentTab.name}'),
             child: Builder(
               builder: (context) {
+                // ─── Loading State for Local Mode ───
+                if (widget.isLocalMode && _isLoadingLocal && items.isEmpty) {
+                  return _buildEpisodeSkeletons(theme, isDark);
+                }
+
                 // ─── Loading State for Online Mode ───
                 if (widget.currentTab == AnimeDetailTab.online && widget.isLoadingOnlineEpisodes) {
                   return _buildEpisodeSkeletons(theme, isDark);

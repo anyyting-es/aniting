@@ -2909,4 +2909,12 @@ class SpanishTranslations implements AppTranslations {
   @override
   String get syncingOfflineProgress =>
       'Sincronizando progreso fuera de línea...';
+
+  // App Startup Warm-Up
+  @override
+  String get startupWarmUpStarting => 'Iniciando servicios...';
+  @override
+  String get startupWarmUpSyncing => 'Sincronizando biblioteca...';
+  @override
+  String get startupWarmUpReady => 'Listo';
 }

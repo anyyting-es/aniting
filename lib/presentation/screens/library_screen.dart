@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:g1455/g1455.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/core/theme/custom_route_transitions.dart';
 import 'package:seanime_app/data/services/offline_sync_service.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/screens/download_manager_screen.dart';
@@ -88,7 +87,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     } else {
       Navigator.push(
         context,
-        SlideRightToLeftPageRoute(child: const SettingsScreen()),
+        MaterialPageRoute(builder: (_) => const SettingsScreen()),
       );
     }
   }
@@ -177,7 +176,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   onTap: () {
                     Navigator.push(
                       context,
-                      SlideRightToLeftPageRoute(child: const MyListsScreen()),
+                      MaterialPageRoute(builder: (_) => const MyListsScreen()),
                     );
                   },
                 ),
@@ -191,7 +190,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   onTap: () {
                     Navigator.push(
                       context,
-                      SlideRightToLeftPageRoute(child: const DownloadsScreen(initialTabIndex: 0)),
+                      MaterialPageRoute(builder: (_) => const DownloadsScreen(initialTabIndex: 0)),
                     );
                   },
                 ),
@@ -205,7 +204,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   onTap: () {
                     Navigator.push(
                       context,
-                      SlideRightToLeftPageRoute(child: const DownloadsScreen(initialTabIndex: 1)),
+                      MaterialPageRoute(builder: (_) => const DownloadsScreen(initialTabIndex: 1)),
                     );
                   },
                 ),
@@ -219,7 +218,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   onTap: () {
                     Navigator.push(
                       context,
-                      SlideRightToLeftPageRoute(child: const DownloadManagerScreen()),
+                      MaterialPageRoute(builder: (_) => const DownloadManagerScreen()),
                     );
                   },
                 ),
@@ -233,7 +232,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   onTap: () {
                     Navigator.push(
                       context,
-                      SlideRightToLeftPageRoute(child: const ExtensionsMarketplaceScreen()),
+                      MaterialPageRoute(builder: (_) => const ExtensionsMarketplaceScreen()),
                     );
                   },
                 ),
@@ -494,7 +493,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             onTap: () {
               Navigator.push(
                 context,
-                SlideRightToLeftPageRoute(child: const ThemeSettingsScreen()),
+                MaterialPageRoute(builder: (_) => const ThemeSettingsScreen()),
               );
             },
             borderRadius: BorderRadius.circular(10),

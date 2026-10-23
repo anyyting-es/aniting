@@ -11,6 +11,7 @@ import 'package:seanime_app/data/models/anime_entry.dart';
 import 'package:seanime_app/data/models/anizip_data.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
+import 'package:seanime_app/presentation/providers/download_history_provider.dart';
 import 'package:seanime_app/presentation/screens/video_player_screen.dart';
 import 'package:seanime_app/presentation/widgets/anime_detail/anime_detail_desktop_layout.dart';
 import 'package:seanime_app/presentation/widgets/anime_detail/anime_detail_mobile_layout.dart';
@@ -29,6 +30,9 @@ class AnimeDetailScreen extends ConsumerStatefulWidget {
   final bool initialLocalMode;
   final bool? isTmdb;
   final Object? heroTag;
+
+  static SharedPreferences? _cachedPrefs;
+  static void setCachedPrefs(SharedPreferences prefs) => _cachedPrefs = prefs;
 
   const AnimeDetailScreen({
     super.key,
@@ -152,6 +156,46 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
         }
       }
 
+      if (!_hasLocalFiles) {
+        final history = ref.read(downloadHistoryProvider);
+        if (history.any((item) =>
+            item.mediaId == widget.mediaId &&
+            item.filePath != null &&
+            item.filePath!.isNotEmpty)) {
+          _hasLocalFiles = true;
+          _isLocalMode = true;
+        }
+      }
+
+      // Synchronously restore saved mode from memory cache on frame 0
+      final prefs = AnimeDetailScreen._cachedPrefs;
+      if (prefs != null) {
+        final perMediaSaved = prefs.getString('$_prefModePrefix${widget.mediaId}');
+        final globalSaved = prefs.getString(_prefGlobalLastMode);
+        if (perMediaSaved != null) {
+          _userManuallyChangedMode = true;
+          if (perMediaSaved == 'local' && (_hasLocalFiles || widget.initialLocalMode)) {
+            _isLocalMode = true;
+          } else if (perMediaSaved == 'torrent') {
+            _isLocalMode = false;
+            _currentTab = AnimeDetailTab.torrent;
+          } else if (perMediaSaved == 'online') {
+            _isLocalMode = false;
+            _currentTab = AnimeDetailTab.online;
+          }
+        } else if (_hasLocalFiles || widget.initialLocalMode) {
+          _isLocalMode = true;
+        } else if (globalSaved != null) {
+          if (globalSaved == 'torrent') {
+            _isLocalMode = false;
+            _currentTab = AnimeDetailTab.torrent;
+          } else if (globalSaved == 'online') {
+            _isLocalMode = false;
+            _currentTab = AnimeDetailTab.online;
+          }
+        }
+      }
+
       // Pre-populate details and aniZip on frame 0 from repository in-memory cache or initialEntry
       final cachedDetails = repo.getCachedAnimeDetails(widget.mediaId);
       if (cachedDetails != null) {
@@ -172,8 +216,11 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
           format: widget.initialEntry!.format,
           score: widget.initialEntry!.score,
           status: widget.initialEntry!.status,
+          genres: widget.initialEntry!.genres,
+          season: widget.initialEntry!.season,
+          seasonYear: widget.initialEntry!.year,
         );
-        _isLoading = false;
+        _isLoading = true;
       }
 
       final cachedAniZip = repo.getCachedAniZipData(widget.mediaId);
@@ -190,6 +237,7 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
   Future<void> _restoreSavedMode() async {
     try {
       final prefs = await SharedPreferences.getInstance();
+      AnimeDetailScreen._cachedPrefs = prefs;
       final perMediaSaved = prefs.getString('$_prefModePrefix${widget.mediaId}');
       final globalSaved = prefs.getString(_prefGlobalLastMode);
 
@@ -312,6 +360,9 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
                 format: widget.initialEntry!.format,
                 score: widget.initialEntry!.score,
                 status: widget.initialEntry!.status,
+                genres: widget.initialEntry!.genres,
+                season: widget.initialEntry!.season,
+                seasonYear: widget.initialEntry!.year,
               )
             : null);
 
@@ -335,7 +386,7 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
         _isLoading = false;
         if (hasDownloadedFiles) {
           _hasLocalFiles = true;
-          if (!_userManuallyChangedMode) {
+          if (!_userManuallyChangedMode && !_isLocalMode && _currentTab == AnimeDetailTab.online) {
             _isLocalMode = true;
           }
         }
