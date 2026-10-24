@@ -40,13 +40,6 @@ Widget buildWebPageTransition({
     end: 1.0,
   ).animate(curvedEnter);
 
-  // Micro-breath tactile heartbeat scale (0.985 -> 1.0) on enter,
-  // softly dissolving back on exit with zero translation
-  final scaleTransition = Tween<double>(
-    begin: 0.985,
-    end: 1.0,
-  ).animate(curvedEnter);
-
   // Secondary animation (when a new route is pushed on top of this one)
   final curvedSecondary = CurvedAnimation(
     parent: secondaryAnimation,
@@ -63,10 +56,7 @@ Widget buildWebPageTransition({
     opacity: secondaryFade,
     child: FadeTransition(
       opacity: fadeTransition,
-      child: ScaleTransition(
-        scale: scaleTransition,
-        child: child,
-      ),
+      child: child,
     ),
   );
 }

@@ -6,6 +6,12 @@
 > - **ALWAYS** summarize improvements at a high, user-facing level with clear, direct bullet points (e.g., *"Mejoras de UI y navegación en el calendario de emisión"*, *"Nueva pantalla y gestión de estado sin conexión"*, *"Optimizaciones en la caché de seguir viendo"*).
 > - Keep it punchy, professional, and easy to skim.
 
+## 7.94. Optimización Integral de Carga de Detalles y Pre-cacheo de Assets (2026-10-24)
+- **Pre-cacheo en Memoria y Cero Brincos de Logotipos y Fondos**:
+  - Pre-decodificación en memoria GPU de logotipos y fondos antes de revelar la pantalla de detalles, eliminando cualquier salto de posición horizontal o sustitución tardía de imágenes.
+  - Asignación atómica con prioridad a TMDB y mapeo directo AniList-TMDB con persistencia local.
+  - Posicionamiento vertical calibrado para mantener la fila de episodios al borde inferior de la ventana y el reparto fuera de pantalla hasta hacer scroll.
+
 ## 7.93. Indicador de Carga Expresivo y Fijación de Logotipo en Detalles (2026-10-23)
 - **Indicador de Carga Material 3 Expressive**:
   - Incorporación del componente `M3ELoadingIndicator` de `material_3_expressive` con variante contenida durante la carga de detalles de anime.

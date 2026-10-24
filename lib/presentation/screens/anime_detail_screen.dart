@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
@@ -10,9 +11,11 @@ import 'package:seanime_app/data/models/anime_details.dart';
 import 'package:seanime_app/data/models/anime_entry.dart';
 import 'package:seanime_app/data/models/anizip_data.dart';
 import 'package:seanime_app/data/models/library_entry_details.dart';
+import 'package:seanime_app/data/models/tmdb_models.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/preferences/tmdb_preferences_provider.dart';
 import 'package:seanime_app/data/services/tmdb_service.dart';
+import 'package:seanime_app/data/services/tmdb_mapping_service.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/providers/download_history_provider.dart';
 import 'package:seanime_app/presentation/screens/video_player_screen.dart';
@@ -76,7 +79,10 @@ class AnimeDetailScreen extends ConsumerStatefulWidget {
 class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
   AnimeDetails? _details;
   AniZipData? _aniZipData;
+  /// The final resolved logo URL – set once when all data is ready, never changed.
   String? _resolvedLogoUrl;
+  /// The final resolved banner/backdrop URL – set once, never changed.
+  String? _resolvedBannerUrl;
   bool _isLoading = true;
   bool _isLoadingAniZip = true;
   bool _isLocalMode = false;
@@ -115,7 +121,7 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
           status: widget.initialEntry!.status,
           isTmdb: true,
         );
-        _isLoading = false;
+        _isLoading = true;
       }
     } else {
       final initialHasLocal = widget.initialLocalMode ||
@@ -199,11 +205,11 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
         }
       }
 
-      // Pre-populate details and aniZip on frame 0 from repository in-memory cache or initialEntry
+      // Pre-populate details and aniZip from repository cache for fast-data,
+      // but keep _isLoading = true until TMDB assets and fallbacks are completely resolved.
       final cachedDetails = repo.getCachedAnimeDetails(widget.mediaId);
       if (cachedDetails != null) {
         _details = cachedDetails;
-        _isLoading = false;
       } else if (widget.initialEntry != null) {
         _details = AnimeDetails(
           id: widget.mediaId,
@@ -223,14 +229,32 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
           season: widget.initialEntry!.season,
           seasonYear: widget.initialEntry!.year,
         );
-        _isLoading = true;
       }
+      _isLoading = true;
 
       final cachedAniZip = repo.getCachedAniZipData(widget.mediaId);
       if (cachedAniZip != null) {
         _aniZipData = cachedAniZip;
         _isLoadingAniZip = false;
-        _resolvedLogoUrl = cachedAniZip.clearlogoUrl;
+        final mapping = TmdbMappingService.getMapping(widget.mediaId);
+        final isTmdbMedia = widget.isTmdb ?? widget.initialEntry?.isTmdb ?? false;
+        final parsedTmdb = int.tryParse(cachedAniZip.mappings?.themoviedbId ?? '');
+        final tvdb = (mapping?.tvdbId != null && mapping!.tvdbId > 0)
+            ? mapping.tvdbId
+            : cachedAniZip.mappings?.thetvdbId;
+        final tmdbId = mapping?.tmdbId ?? parsedTmdb ?? (isTmdbMedia ? widget.mediaId : null);
+        if (tmdbId != null || tvdb != null) {
+          final isMovie = mapping?.isMovie ??
+              ((widget.initialEntry?.format?.toUpperCase() == 'MOVIE') ||
+                  (cachedDetails?.format?.toUpperCase() == 'MOVIE'));
+          final cachedAssets = TmdbService.getCachedAssets(tmdbId ?? 0, isMovie, tvdbId: tvdb);
+          if (cachedAssets?.logoUrl != null && cachedAssets!.logoUrl!.isNotEmpty) {
+            _resolvedLogoUrl = cachedAssets.logoUrl;
+          }
+          if (cachedAssets?.backdropUrl != null && cachedAssets!.backdropUrl!.isNotEmpty) {
+            _resolvedBannerUrl = cachedAssets.backdropUrl;
+          }
+        }
       }
     }
 
@@ -330,20 +354,47 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
       final lang = isSpanish ? 'es-ES' : 'en-US';
       final isMovie = (widget.initialEntry?.format == 'MOVIE') || (_details?.format == 'MOVIE');
       final tmdbService = ref.read(tmdbServiceProvider);
-      final showDetails = await tmdbService.getShowDetails(
-        widget.mediaId,
-        language: lang,
-        isMovie: isMovie,
-      );
-      if (mounted) {
-        setState(() {
+      final results = await Future.wait([
+        tmdbService.getShowDetails(
+          widget.mediaId,
+          language: lang,
+          isMovie: isMovie,
+        ),
+        tmdbService.getMediaAssets(
+          tmdbId: widget.mediaId,
+          isMovie: isMovie,
+        ),
+      ]);
+      final showDetails = results[0] as TmdbShowDetails?;
+      final assets = results[1] as TmdbMediaAssets?;
+
+      String? logo = assets?.logoUrl;
+      String? banner = assets?.backdropUrl;
+      banner ??= showDetails?.backdropPath != null ? 'https://image.tmdb.org/t/p/w1280${showDetails!.backdropPath}' : null;
+      banner ??= showDetails?.posterPath != null ? 'https://image.tmdb.org/t/p/w500${showDetails!.posterPath}' : null;
+
+      if (!mounted) return;
+      if (logo != null && logo.isNotEmpty) {
+        try {
+          await precacheImage(CachedNetworkImageProvider(logo), context);
+        } catch (_) {}
+      }
+      if (!mounted) return;
+      if (banner != null && banner.isNotEmpty) {
+        try {
+          await precacheImage(CachedNetworkImageProvider(banner), context);
+        } catch (_) {}
+      }
+      if (!mounted) return;
+      setState(() {
           if (showDetails != null) {
             _details = showDetails.toAnimeDetails();
           }
+          if (logo != null && logo.isNotEmpty) _resolvedLogoUrl = logo;
+          if (banner != null && banner.isNotEmpty) _resolvedBannerUrl = banner;
           _isLoading = false;
           _isLoadingAniZip = false;
         });
-      }
       return;
     }
     final repo = ref.read(repositoryProvider);
@@ -371,33 +422,90 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
     }
 
     final effectiveAniZip = aniZip ?? details?.aniZipData;
-    String? resolvedLogo = effectiveAniZip?.clearlogoUrl;
-    if (resolvedLogo == null || resolvedLogo.isEmpty) {
-      final parsedTmdbId = int.tryParse(effectiveAniZip?.mappings?.themoviedbId ?? '');
-      final tvdbId = effectiveAniZip?.mappings?.thetvdbId;
-      final effectiveTmdbId = parsedTmdbId ?? (isTmdb ? widget.mediaId : null);
-      if (effectiveTmdbId != null || tvdbId != null) {
-        try {
-          final apiKey = ref.read(tmdbApiKeyProvider);
-          final tmdbService = TmdbService(apiKey: apiKey);
-          resolvedLogo = await tmdbService.getLogo(
-            tmdbId: effectiveTmdbId,
-            tvdbId: tvdbId,
-            isMovie: (details?.format?.toUpperCase() == 'MOVIE') || (widget.initialEntry?.format?.toUpperCase() == 'MOVIE'),
-          );
-        } catch (_) {}
+    final mapping = TmdbMappingService.getMapping(widget.mediaId);
+    final isMovie = mapping?.isMovie ??
+        ((details?.format?.toUpperCase() == 'MOVIE') ||
+            (widget.initialEntry?.format?.toUpperCase() == 'MOVIE'));
+    final parsedTmdbId = int.tryParse(effectiveAniZip?.mappings?.themoviedbId ?? '');
+    final tvdbId = (mapping?.tvdbId != null && mapping!.tvdbId > 0)
+        ? mapping.tvdbId
+        : effectiveAniZip?.mappings?.thetvdbId;
+    final effectiveTmdbId = mapping?.tmdbId ?? parsedTmdbId ?? (isTmdb ? widget.mediaId : null);
+
+    if (parsedTmdbId != null && parsedTmdbId > 0) {
+      TmdbMappingService.registerMapping(
+        anilistId: widget.mediaId,
+        tmdbId: parsedTmdbId,
+        isMovie: isMovie,
+        tvdbId: tvdbId ?? 0,
+      );
+    }
+
+    String? resolvedLogo;
+    String? resolvedBanner;
+
+    // Resolve TMDB assets (logo + backdrop) all at once BEFORE setState – zero visual updates after paint.
+    if (effectiveTmdbId != null || tvdbId != null) {
+      try {
+        final apiKey = ref.read(tmdbApiKeyProvider);
+        final tmdbService = TmdbService(apiKey: apiKey);
+        final assets = await tmdbService.getMediaAssets(
+          tmdbId: effectiveTmdbId,
+          tvdbId: tvdbId,
+          isMovie: isMovie,
+        );
+        if (assets != null) {
+          if (assets.logoUrl != null && assets.logoUrl!.isNotEmpty) {
+            resolvedLogo = assets.logoUrl;
+          }
+          if (assets.backdropUrl != null && assets.backdropUrl!.isNotEmpty) {
+            resolvedBanner = assets.backdropUrl;
+          }
+        }
+      } catch (_) {}
+    }
+
+    // Fallback logo: AniZip clearlogo (only for non-TMDB anime)
+    resolvedLogo ??= effectiveAniZip?.clearlogoUrl;
+
+    // Fallback banner: AniZip fanart → banner → AniList banner → cover
+    if (resolvedBanner == null) {
+      final isTmdbEntry = details?.isTmdb ?? widget.initialEntry?.isTmdb ?? false;
+      if (!isTmdbEntry) {
+        final fanart = effectiveAniZip?.fanartUrl;
+        final azBanner = effectiveAniZip?.bannerUrl;
+        if (fanart != null && fanart.isNotEmpty) {
+          resolvedBanner = fanart;
+        } else if (azBanner != null && azBanner.isNotEmpty) {
+          resolvedBanner = azBanner;
+        }
       }
+      resolvedBanner ??= details?.bannerImage ?? widget.initialEntry?.bannerImage;
+      resolvedBanner ??= details?.coverImage ?? widget.initialEntry?.coverImage;
     }
 
     final hasDownloadedFiles = libEntry != null &&
         (libEntry.hasLibraryData ||
             libEntry.episodes.any((e) => e.isDownloaded));
 
-    if (mounted) {
-      setState(() {
+    if (!mounted) return;
+    if (resolvedLogo != null && resolvedLogo.isNotEmpty) {
+      try {
+        await precacheImage(CachedNetworkImageProvider(resolvedLogo), context);
+      } catch (_) {}
+    }
+    if (!mounted) return;
+    if (resolvedBanner != null && resolvedBanner.isNotEmpty) {
+      try {
+        await precacheImage(CachedNetworkImageProvider(resolvedBanner), context);
+      } catch (_) {}
+    }
+    if (!mounted) return;
+    setState(() {
         _details = details;
         _aniZipData = aniZip ?? details?.aniZipData;
         _resolvedLogoUrl = resolvedLogo;
+        _resolvedBannerUrl = resolvedBanner;
         _isLoading = false;
         _isLoadingAniZip = false;
         if (hasDownloadedFiles) {
@@ -407,7 +515,6 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
           }
         }
       });
-    }
   }
 
   Future<void> _retryAniZip() async {
@@ -582,6 +689,23 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
             : M3EThemeData.light(seedColor: effectiveTheme.colorScheme.primary),
         child: Builder(
         builder: (context) {
+          // ─── Full-screen loading gate ───────────────────────────────────────
+          // Show the spinner until ALL async data (details + logo + banner) is
+          // fully resolved. The layout renders ONCE with complete data – zero
+          // image swaps or position jumps after the first frame.
+          if (_isLoading) {
+            return Scaffold(
+              backgroundColor: effectiveTheme.scaffoldBackgroundColor,
+              body: Center(
+                child: M3ELoadingIndicator(
+                  variant: M3ELoadingIndicatorVariant.contained,
+                  size: 48,
+                  color: effectiveTheme.colorScheme.tertiary,
+                ),
+              ),
+            );
+          }
+
           switch (effectiveLayout) {
             case LayoutMode.desktop:
             case LayoutMode.tv:
@@ -592,7 +716,8 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
                 details: _details,
                 aniZipData: _aniZipData,
                 resolvedLogoUrl: _resolvedLogoUrl,
-                isLoading: _isLoading,
+                resolvedBannerUrl: _resolvedBannerUrl,
+                isLoading: false,
                 isLoadingAniZip: _isLoadingAniZip,
                 isLocalMode: _isLocalMode,
                 hasLocalFiles: effectiveHasLocal,
@@ -616,7 +741,7 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
                   heroTag: widget.heroTag,
                   details: _details,
                   aniZipData: _aniZipData,
-                  isLoading: _isLoading,
+                  isLoading: false,
                   isLoadingAniZip: _isLoadingAniZip,
                   isLocalMode: _isLocalMode,
                   hasLocalFiles: effectiveHasLocal,

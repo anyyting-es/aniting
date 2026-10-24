@@ -102,22 +102,62 @@ class _DesktopHeaderState extends ConsumerState<DesktopHeader> {
         mainAxisAlignment: MainAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          // ─── 1. Clear Logo (If no logo, show nothing) ───
+          // ─── 1. Clear Logo or Text Title ───
           if (hasClearLogo) ...[
-            ConstrainedBox(
-              constraints: const BoxConstraints(
-                maxHeight: 180,
-                maxWidth: 580,
-              ),
-              child: CachedNetworkImage(
-                imageUrl: widget.clearlogoUrl!,
-                fit: BoxFit.contain,
-                alignment: Alignment.centerLeft,
-                fadeInDuration: Duration.zero,
-                errorWidget: (_, _, _) => const SizedBox.shrink(),
+            SizedBox(
+              height: 120,
+              child: Align(
+                alignment: Alignment.bottomLeft,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    maxHeight: 120,
+                    maxWidth: 480,
+                  ),
+                  child: CachedNetworkImage(
+                    imageUrl: widget.clearlogoUrl!,
+                    fit: BoxFit.contain,
+                    alignment: Alignment.bottomLeft,
+                    fadeInDuration: Duration.zero,
+                    fadeOutDuration: Duration.zero,
+                    placeholderFadeInDuration: Duration.zero,
+                    memCacheHeight: 240,
+                    maxHeightDiskCache: 240,
+                    placeholder: (_, _) => const SizedBox.shrink(),
+                    errorWidget: (_, _, _) => const SizedBox.shrink(),
+                  ),
+                ),
               ),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 12),
+          ] else ...[
+            Text(
+              widget.title,
+              style: TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.w900,
+                letterSpacing: -0.4,
+                height: 1.15,
+                color: isDark ? Colors.white : theme.colorScheme.onSurface,
+                shadows: textShadows,
+              ),
+            ),
+            if (widget.subtitle != null &&
+                widget.subtitle!.isNotEmpty &&
+                widget.subtitle != widget.title) ...[
+              const SizedBox(height: 6),
+              Text(
+                widget.subtitle!,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: -0.2,
+                  height: 1.25,
+                  color: isDark ? Colors.white.withValues(alpha: 0.70) : theme.colorScheme.onSurfaceVariant,
+                  shadows: textShadows,
+                ),
+              ),
+            ],
+            const SizedBox(height: 12),
           ],
 
         // ─── 2. Metadata Row: Year • Duration • [Rating / Status Pill] • [IMDb / Score Badge] ───

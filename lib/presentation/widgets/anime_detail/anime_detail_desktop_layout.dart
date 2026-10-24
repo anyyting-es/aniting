@@ -7,13 +7,11 @@ import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/preferences/playback_progress_preferences_provider.dart';
 import 'package:seanime_app/core/preferences/streaming_preferences_provider.dart';
 import 'package:seanime_app/core/preferences/title_language_provider.dart';
-import 'package:seanime_app/core/preferences/tmdb_preferences_provider.dart';
 import 'package:seanime_app/data/models/anime_details.dart';
 import 'package:seanime_app/data/models/anime_entry.dart';
 import 'package:seanime_app/data/models/anizip_data.dart';
 import 'package:seanime_app/data/models/library_entry_details.dart';
 import 'package:seanime_app/data/models/onlinestream_models.dart';
-import 'package:seanime_app/data/services/tmdb_service.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
 import 'package:seanime_app/presentation/screens/video_player_screen.dart';
@@ -36,7 +34,12 @@ class AnimeDetailDesktopLayout extends ConsumerStatefulWidget {
   final AnimeEntry? initialEntry;
   final AnimeDetails? details;
   final AniZipData? aniZipData;
+  /// Pre-resolved logo URL (TMDB logo preferred, fallback to AniZip clearlogo).
+  /// Set once by the parent before the first render – never changes.
   final String? resolvedLogoUrl;
+  /// Pre-resolved banner/backdrop URL (TMDB backdrop preferred, fallback chain).
+  /// Set once by the parent before the first render – never changes.
+  final String? resolvedBannerUrl;
   final bool isLoading;
   final bool isLoadingAniZip;
   final bool isLocalMode;
@@ -66,6 +69,7 @@ class AnimeDetailDesktopLayout extends ConsumerStatefulWidget {
     required this.details,
     required this.aniZipData,
     this.resolvedLogoUrl,
+    this.resolvedBannerUrl,
     required this.isLoading,
     required this.isLoadingAniZip,
     required this.isLocalMode,
@@ -97,13 +101,11 @@ class _AnimeDetailDesktopLayoutState
   List<OnlinestreamEpisode> _onlineEpisodes = [];
   bool _isLoadingOnlineEpisodes = false;
   final int? _loadingEpisodeNumber = null;
-  String? _tmdbLogoUrl;
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
-    _resolveLogo();
 
     final isTmdb = widget.details?.isTmdb ?? widget.initialEntry?.isTmdb ?? false;
     if (!isTmdb) {
@@ -122,7 +124,6 @@ class _AnimeDetailDesktopLayoutState
           _isLoadingOnlineEpisodes = false;
         }
       }
-
       _loadOnlineProviders();
     }
   }
@@ -147,35 +148,6 @@ class _AnimeDetailDesktopLayoutState
         !_isLoadingOnlineEpisodes) {
       _loadOnlineEpisodes();
     }
-    if (widget.aniZipData != oldWidget.aniZipData ||
-        widget.details != oldWidget.details) {
-      _resolveLogo();
-    }
-  }
-
-  void _resolveLogo() {
-    final existingLogo = widget.aniZipData?.clearlogoUrl ?? widget.details?.aniZipData?.clearlogoUrl;
-    if (existingLogo != null && existingLogo.isNotEmpty) return;
-
-    final aniZip = widget.aniZipData ?? widget.details?.aniZipData;
-    final parsedTmdbId = int.tryParse(aniZip?.mappings?.themoviedbId ?? '');
-    final tvdbId = aniZip?.mappings?.thetvdbId;
-    final isTmdb = widget.details?.isTmdb ?? widget.initialEntry?.isTmdb ?? false;
-    final effectiveTmdbId = parsedTmdbId ?? (isTmdb ? widget.mediaId : null);
-
-    if (effectiveTmdbId == null && tvdbId == null) return;
-
-    final apiKey = ref.read(tmdbApiKeyProvider);
-    final tmdbService = TmdbService(apiKey: apiKey);
-    tmdbService.getLogo(
-      tmdbId: effectiveTmdbId,
-      tvdbId: tvdbId,
-      isMovie: widget.details?.format?.toUpperCase() == 'MOVIE',
-    ).then((logo) {
-      if (mounted && logo != null && logo.isNotEmpty) {
-        setState(() => _tmdbLogoUrl = logo);
-      }
-    });
   }
 
   @override
@@ -439,33 +411,13 @@ class _AnimeDetailDesktopLayoutState
 
     final coverUrl =
         widget.initialEntry?.coverImage ?? widget.details?.coverImage;
-    final clearLogo = widget.resolvedLogoUrl ??
-        widget.aniZipData?.clearlogoUrl ??
-        widget.details?.aniZipData?.clearlogoUrl ??
-        _tmdbLogoUrl;
-    final aniZipFanart = widget.aniZipData?.fanartUrl ?? widget.details?.aniZipData?.fanartUrl;
-    final aniZipBanner = widget.aniZipData?.bannerUrl ?? widget.details?.aniZipData?.bannerUrl;
-    final aniZipBg = (aniZipFanart != null && aniZipFanart.isNotEmpty)
-        ? aniZipFanart
-        : ((aniZipBanner != null && aniZipBanner.isNotEmpty) ? aniZipBanner : null);
-    final hasAniZipBg = !isTmdb && aniZipBg != null && aniZipBg.isNotEmpty;
-    final hasRealBanner = (widget.details?.bannerImage != null &&
-            widget.details!.bannerImage!.isNotEmpty) ||
-        (widget.initialEntry?.bannerImage != null &&
-            widget.initialEntry!.bannerImage!.isNotEmpty);
-    final String? bannerUrl;
-    if (isTmdb) {
-      bannerUrl = hasRealBanner
-          ? (widget.details?.bannerImage ?? widget.initialEntry?.bannerImage)
-          : coverUrl;
-    } else {
-      bannerUrl = hasAniZipBg
-          ? aniZipBg
-          : (hasRealBanner
-              ? (widget.details?.bannerImage ?? widget.initialEntry?.bannerImage)
-              : coverUrl);
-    }
-    final isBlurredCover = !hasAniZipBg && !hasRealBanner && coverUrl != null;
+
+    // ─── Assets resolved ONCE by the parent – never change after first frame ───
+    // Logo: TMDB logo (preferred) or AniZip clearlogo
+    final clearLogo = widget.resolvedLogoUrl;
+    // Banner: TMDB backdrop (preferred) or AniZip fanart/banner or AniList banner or cover
+    final bannerUrl = widget.resolvedBannerUrl ?? coverUrl;
+    final isBlurredCover = bannerUrl == coverUrl && coverUrl != null;
 
     final score = widget.details?.score ?? widget.initialEntry?.score;
     final format = widget.details?.format ?? widget.initialEntry?.format ?? 'TV';
@@ -562,7 +514,11 @@ class _AnimeDetailDesktopLayoutState
           Positioned.fill(
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final topSpacing = (constraints.maxHeight * 0.08).clamp(32.0, 96.0);
+                // Precision calculation:
+                // Aligns the bottom edge of the Episode cards row directly with
+                // the bottom line of the app window on the initial fold, giving the top
+                // fanart breathing room and keeping Cast strictly off-screen until scrolled.
+                final topSpacing = (constraints.maxHeight - 660.0).clamp(40.0, 380.0);
 
                 return SingleChildScrollView(
                   controller: _scrollController,
@@ -574,7 +530,7 @@ class _AnimeDetailDesktopLayoutState
                       children: [
                         // Top Navigation Bar (Back button)
                         Padding(
-                          padding: const EdgeInsets.only(top: 36, bottom: 20),
+                          padding: const EdgeInsets.only(top: 24, bottom: 12),
                           child: M3EIconButton(
                             variant: M3EIconButtonVariant.tonal,
                             size: M3EIconButtonSize.sm,
@@ -591,24 +547,12 @@ class _AnimeDetailDesktopLayoutState
                         // Breathing space pushing hero header, actions, and episode row down
                         SizedBox(height: topSpacing),
 
-                        if (widget.isLoading || widget.details == null)
-                          Padding(
-                            padding: EdgeInsets.only(top: (constraints.maxHeight * 0.22).clamp(60.0, 180.0)),
-                            child: Center(
-                              child: M3ELoadingIndicator(
-                                variant: M3ELoadingIndicatorVariant.contained,
-                                size: 48,
-                                color: theme.colorScheme.tertiary,
-                              ),
-                            ),
-                          )
-                        else ...[
-                          // ─── Top Hero Section (Matching Image 2: Logo, Badges, Genres, Synopsis) ───
-                          DesktopHeader(
-                            key: const ValueKey('desktop_header_ready'),
-                            clearlogoUrl: clearLogo,
-                            isTmdb: isTmdb,
-                            seasonYearStr: seasonYearStr,
+                        // ─── Top Hero Section (Logo, Badges, Genres, Synopsis) ───
+                        DesktopHeader(
+                          key: const ValueKey('desktop_header_ready'),
+                          clearlogoUrl: clearLogo,
+                          isTmdb: isTmdb,
+                          seasonYearStr: seasonYearStr,
                             dateSeasonStr: dateSeasonStr,
                             title: title,
                             subtitle: subtitle,
@@ -625,7 +569,7 @@ class _AnimeDetailDesktopLayoutState
                             onEditStatus: () => widget.onOpenEditEntryModal(title),
                           ),
 
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 14),
 
                         // ─── Action Bar (Play, Edit, Share, Trailer, Links & Online/Torrent Toggle) ───
                         DesktopActionBar(
@@ -660,7 +604,7 @@ class _AnimeDetailDesktopLayoutState
                           },
                         ),
 
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 16),
 
                         // ─── Episodes Section (Single horizontal row directly underneath actions) ───
                         if (isTmdb)
@@ -712,7 +656,7 @@ class _AnimeDetailDesktopLayoutState
                               const [];
                           if (charList.isEmpty) return const SizedBox.shrink();
                           return Padding(
-                            padding: const EdgeInsets.only(top: 16),
+                            padding: const EdgeInsets.only(top: 48),
                             child: DesktopCastRow(
                               characters: charList,
                               isTmdb: isTmdb,
@@ -744,10 +688,9 @@ class _AnimeDetailDesktopLayoutState
                             ),
                           ),
                       ],
-                    ],
+                    ),
                   ),
-                ),
-              );
+                );
               },
             ),
           ),

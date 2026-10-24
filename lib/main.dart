@@ -43,11 +43,14 @@ import 'package:seanime_app/presentation/widgets/dpad_navigation_scope.dart';
 import 'package:seanime_app/presentation/widgets/toast/app_toast_host.dart';
 import 'package:seanime_app/core/theme/app_focus_coordinator.dart';
 import 'package:seanime_app/core/services/deep_link_service.dart';
+import 'package:seanime_app/data/services/tmdb_mapping_service.dart';
+import 'package:seanime_app/data/services/tmdb_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   AppFocusCoordinator.initialize();
   DeepLinkService.instance.initialize();
+  unawaited(TmdbMappingService.init());
   try {
     await GlassHost.precache();
   } catch (_) {}
@@ -125,6 +128,7 @@ void main() async {
     DownloadHistoryNotifier.setCachedPrefs(prefs);
     TrackPreferencesNotifier.setCachedPrefs(prefs);
     AnimeDetailScreen.setCachedPrefs(prefs);
+    TmdbService.setCachedPrefs(prefs);
   } catch (_) {}
   runApp(
     const ProviderScope(
