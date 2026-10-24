@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:seanime_app/core/theme/app_dpad_navigator.dart';
 
 /// Global scope that enables directional navigation (D-pad, arrow keys)
 /// to seamlessly exit and traverse out of text fields ([TextField], [TextFormField], [EditableText]).
@@ -21,6 +22,9 @@ class DpadNavigationScope extends StatefulWidget {
 }
 
 class _DpadNavigationScopeState extends State<DpadNavigationScope> {
+  final AppDirectionalFocusAction _directionalFocusAction =
+      AppDirectionalFocusAction();
+
   @override
   void initState() {
     super.initState();
@@ -59,7 +63,11 @@ class _DpadNavigationScopeState extends State<DpadNavigationScope> {
     }
 
     final currentFocus = FocusManager.instance.primaryFocus;
-    if (currentFocus == null) return false;
+    if (currentFocus == null) {
+      // D-pad pressed before anything received focus (TV / gamepad startup).
+      if (isEscape) return false;
+      return AppDpadNavigator.focusFirst();
+    }
 
     final context = currentFocus.context;
     if (context == null || !context.mounted) return false;
@@ -77,31 +85,33 @@ class _DpadNavigationScopeState extends State<DpadNavigationScope> {
     final text = textValue.text;
     final selection = textValue.selection;
     final isSingleLine = editableState.widget.maxLines == 1;
+    final hasCollapsedCursor = selection.isValid && selection.isCollapsed;
+    final cursor = hasCollapsedCursor
+        ? selection.baseOffset.clamp(0, text.length).toInt()
+        : 0;
 
     if (isArrowDown) {
       // In single-line inputs or when on the bottom-most line, navigate down
       if (isSingleLine ||
           text.isEmpty ||
-          (selection.isCollapsed &&
-              !text.substring(selection.baseOffset).contains('\n'))) {
+          (hasCollapsedCursor && !text.substring(cursor).contains('\n'))) {
         return _moveFocus(currentFocus, TraversalDirection.down);
       }
     } else if (isArrowUp) {
       // In single-line inputs or when on the top-most line, navigate up
       if (isSingleLine ||
           text.isEmpty ||
-          (selection.isCollapsed &&
-              !text.substring(0, selection.baseOffset).contains('\n'))) {
+          (hasCollapsedCursor && !text.substring(0, cursor).contains('\n'))) {
         return _moveFocus(currentFocus, TraversalDirection.up);
       }
     } else if (isArrowLeft) {
       // When cursor is at the very beginning (offset 0) or empty, navigate left
-      if (text.isEmpty || (selection.isCollapsed && selection.baseOffset <= 0)) {
+      if (text.isEmpty || (hasCollapsedCursor && cursor <= 0)) {
         return _moveFocus(currentFocus, TraversalDirection.left);
       }
     } else if (isArrowRight) {
       // When cursor is at the very end or empty, navigate right
-      if (text.isEmpty || (selection.isCollapsed && selection.baseOffset >= text.length)) {
+      if (text.isEmpty || (hasCollapsedCursor && cursor >= text.length)) {
         return _moveFocus(currentFocus, TraversalDirection.right);
       }
     }
@@ -110,10 +120,12 @@ class _DpadNavigationScopeState extends State<DpadNavigationScope> {
   }
 
   bool _moveFocus(FocusNode focusNode, TraversalDirection direction) {
-    final moved = focusNode.focusInDirection(direction);
-    if (moved) return true;
+    if (focusNode.focusInDirection(direction)) return true;
 
-    // Fallback to sequential traversal if geometric direction has no direct neighbor
+    // Cross carousels, scrollables, focus scopes and traversal groups.
+    if (AppDpadNavigator.moveFocus(focusNode, direction)) return true;
+
+    // Last resort: sequential traversal if geometric direction has no direct neighbor
     if (direction == TraversalDirection.down || direction == TraversalDirection.right) {
       focusNode.nextFocus();
     } else if (direction == TraversalDirection.up || direction == TraversalDirection.left) {
@@ -131,6 +143,11 @@ class _DpadNavigationScopeState extends State<DpadNavigationScope> {
 
   @override
   Widget build(BuildContext context) {
-    return widget.child;
+    return Actions(
+      actions: <Type, Action<Intent>>{
+        DirectionalFocusIntent: _directionalFocusAction,
+      },
+      child: widget.child,
+    );
   }
 }

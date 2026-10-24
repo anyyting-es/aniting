@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:seanime_app/core/theme/app_dpad_navigator.dart';
 
 enum AppInputMode {
   dpad,
@@ -48,33 +49,83 @@ class AppFocusCoordinator {
     return false; // Passive observer: never consumes the key event
   }
 
-  /// Switches active mode to DPAD / Keyboard and focuses the element under the mouse or last focus.
+  /// Switches active mode to DPAD / Keyboard.
+  ///
+  /// The hovered node is used only on the mouse -> D-pad transition. Re-using
+  /// it on every arrow key would keep stealing focus back to whatever card the
+  /// mouse cursor happens to be resting on, trapping the user in that card.
   static void switchToDpad() {
-    if (inputMode.value != AppInputMode.dpad) {
+    final wasDpad = inputMode.value == AppInputMode.dpad;
+    if (!wasDpad) {
       inputMode.value = AppInputMode.dpad;
     }
 
-    // Seamlessly transfer focus to the hovered node if available, so DPAD continues directly from where the mouse was!
-    final target = (lastHoveredNode != null &&
-            lastHoveredNode!.context != null &&
-            lastHoveredNode!.canRequestFocus)
-        ? lastHoveredNode
-        : (lastFocusedNode != null &&
-                lastFocusedNode!.context != null &&
-                lastFocusedNode!.canRequestFocus)
-            ? lastFocusedNode
-            : null;
+    // Already navigating with the D-pad: never move focus on our own.
+    if (wasDpad) return;
 
-    if (target != null && !target.hasFocus) {
-      target.requestFocus();
+    // While typing, arrows belong to the text field. DpadNavigationScope is in
+    // charge of leaving it once the caret reaches an edge.
+    final primary = FocusManager.instance.primaryFocus;
+    if (primary != null && _isTextInput(primary)) {
+      lastHoveredNode = null;
+      return;
     }
+
+    final hovered = lastHoveredNode;
+    // Consume the hovered node so it cannot steal focus again on the next key.
+    lastHoveredNode = null;
+
+    if (hovered != null) {
+      // Already on the hovered card: let the key navigate from it instead of
+      // falling back to a different previously focused card.
+      if (hovered.hasFocus) return;
+      if (_canFocus(hovered)) {
+        hovered.requestFocus();
+        return;
+      }
+    }
+
+    final last = lastFocusedNode;
+    if (last != null && _canFocus(last)) {
+      last.requestFocus();
+    }
+  }
+
+  static bool _isTextInput(FocusNode node) {
+    final context = node.context;
+    if (context == null || !context.mounted) return false;
+    try {
+      if (context is StatefulElement && context.state is EditableTextState) {
+        return true;
+      }
+      return context.findAncestorStateOfType<EditableTextState>() != null;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Whether [node] belongs to the current route and can take focus.
+  ///
+  /// A stale hover/focus target from a covered route (detail screen, dialog,
+  /// bottom sheet) must never pull the D-pad focus back to a hidden page.
+  static bool _canFocus(FocusNode node) {
+    if (node.hasFocus || !AppDpadNavigator.canReceiveFocus(node)) return false;
+    final context = node.context;
+    if (context == null || !context.mounted) return false;
+    try {
+      final route = ModalRoute.of(context);
+      if (route != null && !route.isCurrent) return false;
+    } catch (_) {
+      return false;
+    }
+    return true;
   }
 
   /// Switches active mode to Mouse. Deactivates DPAD highlights so only the hovered card is active.
   static void switchToMouse([FocusNode? hoveredNode]) {
-    if (hoveredNode != null) {
-      lastHoveredNode = hoveredNode;
-    }
+    // Keep the hover target in sync even when the caller does not expose its
+    // node; a stale target would steal focus on the next D-pad key.
+    lastHoveredNode = hoveredNode;
     if (inputMode.value != AppInputMode.mouse) {
       inputMode.value = AppInputMode.mouse;
     }

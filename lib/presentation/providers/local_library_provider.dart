@@ -131,6 +131,8 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
   StreamSubscription? _wsSubscription;
   static const String _kFolderTypesPrefKey = 'local_library_folder_types';
   final Map<int, String> _tmdbCoverCache = {};
+  DateTime? _lastLoadAt;
+  Future<void>? _inFlightLoad;
 
   SeanimeRepository get _repository => ref.read(repositoryProvider);
   WebSocketService get _webSocketService => ref.read(webSocketServiceProvider);
@@ -179,7 +181,29 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
     });
   }
 
-  Future<void> loadLibraryData() async {
+  /// Recarga los datos solo si han pasado más de [maxAge]. Evita volver a
+  /// pedir todo al servidor (y reconstruir cientos de tarjetas) cada vez que
+  /// se entra a la página de Ajustes → Biblioteca local.
+  Future<void> refreshIfStale({
+    Duration maxAge = const Duration(seconds: 45),
+  }) async {
+    final last = _lastLoadAt;
+    if (last != null && DateTime.now().difference(last) < maxAge) {
+      return;
+    }
+    await loadLibraryData();
+  }
+
+  Future<void> loadLibraryData() {
+    _lastLoadAt = DateTime.now();
+    final inFlight = _inFlightLoad;
+    if (inFlight != null) return inFlight;
+    final future = _performLoad().whenComplete(() => _inFlightLoad = null);
+    _inFlightLoad = future;
+    return future;
+  }
+
+  Future<void> _performLoad() async {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
       // 1. Fetch server settings for library paths
@@ -477,8 +501,6 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
         localEpisodesCount: totalLocalEps,
         unmatchedFilesCount: unmatchedFiles.length,
       );
-
-      _invalidateRelatedProviders();
     } catch (e) {
       debugPrint('[LocalLibraryNotifier] Error loading data: $e');
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
@@ -544,6 +566,7 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
     final ok = await _repository.patchServerSetting('library.libraryPaths', next);
     if (ok) {
       await setFolderType(trimmed, type);
+      _invalidateRelatedProviders();
       await loadLibraryData();
     }
     return ok;
@@ -816,6 +839,12 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
   }
 }
 
+/// Se mantiene vivo mientras la app esté abierta: así cambiar de categoría en
+/// Ajustes y volver a Biblioteca local es instantáneo (sin recargar ni
+/// reconstruir toda la colección). Los cambios reales (escaneo, match,
+/// desvincular) siguen recargando explícitamente.
 final localLibraryProvider =
-    NotifierProvider.autoDispose<LocalLibraryNotifier, LocalLibraryState>(LocalLibraryNotifier.new);
+    NotifierProvider<LocalLibraryNotifier, LocalLibraryState>(
+      LocalLibraryNotifier.new,
+    );
 

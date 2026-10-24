@@ -101,11 +101,17 @@ class _MainShellState extends ConsumerState<MainShell> {
     super.dispose();
   }
 
-  void _openSettings() {
-    Navigator.push(
+  bool _isSettingsOpen = false;
+
+  void _openSettings() async {
+    setState(() => _isSettingsOpen = true);
+    await Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const SettingsScreen()),
     );
+    if (mounted) {
+      setState(() => _isSettingsOpen = false);
+    }
   }
 
   bool _onScrollNotification(ScrollNotification notification) {
@@ -313,9 +319,13 @@ class _MainShellState extends ConsumerState<MainShell> {
                 Expanded(
                   child: Theme(
                     data: theme.copyWith(scaffoldBackgroundColor: Colors.transparent),
-                    child: ShellAnimatedIndexedStack(
-                      index: activeIndex,
-                      children: availablePages,
+                    child: Visibility(
+                      visible: !_isSettingsOpen,
+                      maintainState: true,
+                      child: ShellAnimatedIndexedStack(
+                        index: activeIndex,
+                        children: availablePages,
+                      ),
                     ),
                   ),
                 ),
@@ -332,9 +342,13 @@ class _MainShellState extends ConsumerState<MainShell> {
               onNotification: _onScrollNotification,
               child: Theme(
                 data: theme.copyWith(scaffoldBackgroundColor: Colors.transparent),
-                child: ShellAnimatedIndexedStack(
-                  index: activeIndex,
-                  children: availablePages,
+                child: Visibility(
+                  visible: !_isSettingsOpen,
+                  maintainState: true,
+                  child: ShellAnimatedIndexedStack(
+                    index: activeIndex,
+                    children: availablePages,
+                  ),
                 ),
               ),
             ),
@@ -367,11 +381,19 @@ class _MainShellState extends ConsumerState<MainShell> {
       return wrapWithSystemOverlay(
         Scaffold(
           extendBody: true,
+          backgroundColor: Colors.transparent,
           body: NotificationListener<ScrollNotification>(
             onNotification: _onScrollNotification,
-            child: ShellAnimatedIndexedStack(
-              index: activeIndex,
-              children: availablePages,
+            child: Theme(
+              data: theme.copyWith(scaffoldBackgroundColor: Colors.transparent),
+              child: Visibility(
+                visible: !_isSettingsOpen,
+                maintainState: true,
+                child: ShellAnimatedIndexedStack(
+                  index: activeIndex,
+                  children: availablePages,
+                ),
+              ),
             ),
           ),
           bottomNavigationBar: SafeArea(

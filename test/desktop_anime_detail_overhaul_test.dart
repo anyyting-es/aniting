@@ -108,7 +108,8 @@ void main() {
       );
 
       expect(find.text('SPRING 2026'), findsOneWidget);
-      expect(find.text('Test Anime'), findsOneWidget);
+      // When no clearlogo is present, no title is rendered as per user specification
+      expect(find.text('Test Anime'), findsNothing);
       expect(find.text('TV'), findsOneWidget);
       expect(find.text('Finalizado'), findsOneWidget);
       expect(find.text('Madhouse'), findsOneWidget);
@@ -117,7 +118,7 @@ void main() {
       expect(find.text('Fantasy'), findsOneWidget);
     });
 
-    testWidgets('DesktopActionBar renders trailer button next to play and bookmark', (tester) async {
+    testWidgets('DesktopActionBar renders play, bookmark, expand button and secondary tools', (tester) async {
       await tester.pumpWidget(
         ProviderScope(
           child: MaterialApp(
@@ -146,11 +147,19 @@ void main() {
       expect(find.byIcon(AppIcons.play(AppIconPack.lucide)), findsOneWidget);
       // Check edit icon
       expect(find.byIcon(AppIcons.edit(AppIconPack.lucide)), findsOneWidget);
-      // Check trailer icon in action bar
-      expect(find.byIcon(AppIcons.video(AppIconPack.lucide)), findsOneWidget);
-      // Check MAL and AniList brand icons
-      expect(find.byTooltip('Ver en AniList'), findsOneWidget);
-      expect(find.byTooltip('Ver en MyAnimeList'), findsOneWidget);
+
+      // Tap expand button to reveal secondary tools (share)
+      final expandFinder = find.byTooltip('Más opciones');
+      expect(expandFinder, findsOneWidget);
+      await tester.tap(expandFinder);
+      await tester.pumpAndSettle();
+
+      // Check share icon in action bar
+      expect(find.byIcon(AppIcons.share(AppIconPack.lucide)), findsOneWidget);
+      // Trailer and brand tracker buttons removed from action bar per user design
+      expect(find.byIcon(AppIcons.video(AppIconPack.lucide)), findsNothing);
+      expect(find.byTooltip('Ver en AniList'), findsNothing);
+      expect(find.byTooltip('Ver en MyAnimeList'), findsNothing);
     });
 
     testWidgets('DesktopCharactersTab renders characters with role and name', (tester) async {

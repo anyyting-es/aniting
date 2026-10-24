@@ -16,6 +16,7 @@ import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
 import 'package:seanime_app/presentation/widgets/anime_detail/anime_detail_desktop_layout.dart';
 import 'package:seanime_app/presentation/widgets/anime_detail/anime_detail_mobile_layout.dart';
 import 'package:seanime_app/presentation/widgets/anime_detail/anime_detail_tv_layout.dart';
+import 'package:seanime_app/presentation/widgets/anime_detail/desktop/desktop_action_bar.dart';
 import 'package:seanime_app/presentation/widgets/anime_detail/desktop/desktop_episodes_tab.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -154,20 +155,19 @@ void main() {
       expect(find.text('85%'), findsOneWidget);
 
       // Check Right Column elements
-      expect(find.text('Mushoku Tensei: Jobless Reincarnation Season 3'), findsOneWidget);
       expect(find.text('Adventure'), findsOneWidget);
       expect(find.text('Drama'), findsOneWidget);
       expect(find.text('Ecchi'), findsOneWidget);
 
-      // Check Action bar brand icons
-      expect(find.byTooltip('View on AniList'), findsOneWidget);
-      expect(find.byTooltip('View on MyAnimeList'), findsOneWidget);
+      // Check Action bar is rendered with collapsible options
+      expect(find.byType(DesktopActionBar), findsOneWidget);
+      expect(find.byTooltip('More options'), findsOneWidget);
 
       // Check Desktop Sections (Episodes section is primary, characters removed)
       expect(find.byType(DesktopEpisodesTab), findsOneWidget);
     });
 
-    testWidgets('Renders TV Layout when LayoutMode.tv is active', (WidgetTester tester) async {
+    testWidgets('Renders Unified Desktop/TV Layout when LayoutMode.tv is active', (WidgetTester tester) async {
       tester.view.physicalSize = const Size(1920, 1080);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() {
@@ -181,6 +181,7 @@ void main() {
             repositoryProvider.overrideWithValue(FakeDetailRepo()),
             serverNotifierProvider.overrideWith(() => MockServerNotifier()),
             layoutModeProvider.overrideWith(() => MockTvLayoutModeNotifier()),
+            translationsProvider.overrideWithValue(const EnglishTranslations()),
           ],
           child: const MaterialApp(
             home: AnimeDetailScreen(mediaId: 170000),
@@ -189,11 +190,11 @@ void main() {
       );
 
       await tester.pump(const Duration(milliseconds: 100));
+      await tester.pump(const Duration(milliseconds: 200));
 
-      // Check TV layout is rendered
-      expect(find.byType(AnimeDetailTvLayout), findsOneWidget);
-      expect(find.text('Comenzar a ver'), findsOneWidget);
-      expect(find.text('Detalles'), findsOneWidget);
+      // Check unified Desktop/TV layout is rendered
+      expect(find.byType(AnimeDetailDesktopLayout), findsOneWidget);
+      expect(find.byType(DesktopEpisodesTab), findsOneWidget);
     });
 
     testWidgets('Renders Mobile Layout with banner blur enabled without gaps', (WidgetTester tester) async {

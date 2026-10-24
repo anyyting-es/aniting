@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/preferences/settings_sidebar_width_provider.dart';
+import 'package:seanime_app/core/preferences/tv_mode_provider.dart';
 import 'package:seanime_app/presentation/screens/download_manager_screen.dart';
 import 'package:seanime_app/presentation/screens/downloads_screen.dart';
 import 'package:seanime_app/presentation/screens/extensions_marketplace_screen.dart';
@@ -19,6 +20,8 @@ import 'package:seanime_app/presentation/widgets/desktop_title_bar.dart';
 
 import 'widgets/expressive/expressive_settings_detail_panel.dart';
 import 'widgets/expressive/expressive_settings_sidebar.dart';
+/// Ancho máximo del fondo angosto de detalle (isla flotante).
+const double _kDetailPanelMaxWidth = 820;
 
 enum SettingsCategory {
   theme,
@@ -138,14 +141,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final iconPack = ref.watch(iconPackProvider);
+    final isTv = ref.watch(tvModeProvider);
+    final l10n = ref.watch(translationsProvider);
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final isWideScreen = constraints.maxWidth >= 780;
+        final isWideScreen = constraints.maxWidth >= 780 || isTv;
 
         if (isWideScreen) {
           final sidebarWidth = ref.watch(settingsSidebarWidthProvider);
-          final l10n = ref.watch(translationsProvider);
 
           return Scaffold(
             backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -209,13 +213,23 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ),
 
                   // ─── 2. PANEL DERECHO FLOTANTE (DETALLE / OPCIONES) ─────────
+                  // Mantiene el fondo angosto (isla delimitada y centrada)
                   Expanded(
-                    child: ExpressiveSettingsDetailPanel(
-                      selectedCategory: _selectedCategory,
-                      detailViewBuilder: _buildDetailView,
-                      focusScopeNode: _detailFocusScope,
-                      onExitToSidebar: () =>
-                          _sidebarKey.currentState?.focusSelectedRow(),
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(
+                          maxWidth: _kDetailPanelMaxWidth,
+                        ),
+                        child: SizedBox.expand(
+                          child: ExpressiveSettingsDetailPanel(
+                            selectedCategory: _selectedCategory,
+                            detailViewBuilder: _buildDetailView,
+                            focusScopeNode: _detailFocusScope,
+                            onExitToSidebar: () =>
+                                _sidebarKey.currentState?.focusSelectedRow(),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -242,15 +256,25 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         color: colorScheme.onSurface,
                         size: 20,
                       ),
+                      tooltip: l10n.back,
                       onPressed: () => Navigator.of(context).maybePop(),
                     )
                   : null,
+              title: Text(
+                l10n.settingsTitle,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurface,
+                ),
+              ),
             ),
           ),
           body: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
             child: ExpressiveSettingsSidebar(
-              selectedCategory: _selectedCategory,
+              selectedCategory: null,
+              showChevron: true,
               onSelectCategory: (cat) => _onSelectCategory(cat, false),
             ),
           ),

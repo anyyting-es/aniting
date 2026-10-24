@@ -7,6 +7,8 @@ import 'package:g1455/g1455.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/preferences/glass_theme_provider.dart';
 import 'package:seanime_app/core/preferences/resume_bar_preferences_provider.dart';
+import 'package:seanime_app/core/constants/feature_flags.dart';
+import 'package:seanime_app/core/preferences/wallpaper_preferences_provider.dart';
 
 /// A solid Material Design 3 resume playback companion card.
 ///
@@ -54,6 +56,9 @@ class _FloatingResumeCompanionState extends ConsumerState<FloatingResumeCompanio
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final glassEnabled = ref.watch(glassEffectsEnabledProvider);
+    final wallpaper = ref.watch(wallpaperPreferencesProvider);
+    final hasWallpaper =
+        FeatureFlags.customWallpaper && wallpaper.hasValidWallpaper;
     final t = widget.tWidth.clamp(0.0, 1.0);
 
     // Text & right button opacity fade out quickly when contracting
@@ -146,9 +151,13 @@ class _FloatingResumeCompanionState extends ConsumerState<FloatingResumeCompanio
                       height: math.max(0.0, widget.height),
                       decoration: BoxDecoration(
                         color: glassEnabled
-                            ? (isDark
-                                ? theme.colorScheme.surfaceContainer.withValues(alpha: 0.35)
-                                : theme.colorScheme.surfaceContainer.withValues(alpha: 0.48))
+                            ? (hasWallpaper
+                                ? (isDark
+                                    ? theme.colorScheme.surfaceContainer.withValues(alpha: 0.16)
+                                    : theme.colorScheme.surfaceContainer.withValues(alpha: 0.22))
+                                : (isDark
+                                    ? theme.colorScheme.surfaceContainer.withValues(alpha: 0.35)
+                                    : theme.colorScheme.surfaceContainer.withValues(alpha: 0.48)))
                             : theme.colorScheme.surfaceContainer,
                         borderRadius: widget.borderRadius,
                         border: Border.all(

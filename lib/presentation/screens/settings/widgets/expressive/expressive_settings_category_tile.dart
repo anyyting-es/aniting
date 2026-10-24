@@ -14,6 +14,8 @@ class ExpressiveSettingsCategoryTile extends StatefulWidget {
   final bool isSelected;
   final bool isFirst;
   final bool isLast;
+  final bool showChevron;
+  final bool isDpadFocused;
   final FocusNode? focusNode;
   final VoidCallback onTap;
 
@@ -25,12 +27,14 @@ class ExpressiveSettingsCategoryTile extends StatefulWidget {
     required this.isSelected,
     required this.isFirst,
     required this.isLast,
+    this.showChevron = false,
+    this.isDpadFocused = false,
     this.focusNode,
     required this.onTap,
   });
 
   static const double _selectedRadius = 16;
-  static const double _outerRadius = 12;
+  static const double _outerRadius = 14;
   static const double _innerRadius = 4;
 
   @override
@@ -110,21 +114,37 @@ class _ExpressiveSettingsCategoryTileState
     final colorScheme = Theme.of(context).colorScheme;
 
     final iconColor = widget.isSelected
-        ? colorScheme.onPrimaryContainer
+        ? colorScheme.primary
         : colorScheme.onSurfaceVariant;
     final titleColor = widget.isSelected
-        ? colorScheme.onPrimaryContainer
+        ? colorScheme.primary
         : colorScheme.onSurface;
     final subtitleColor = widget.isSelected
-        ? colorScheme.onPrimaryContainer.withValues(alpha: 0.72)
+        ? colorScheme.onSurfaceVariant.withValues(alpha: 0.85)
         : colorScheme.onSurfaceVariant.withValues(alpha: 0.7);
 
-    // Drawn inside the row instead of the package focus ring, which would be
-    // painted under the next row and lose its bottom edge.
-    final focusBorder = BorderSide(
-      color: _focused ? colorScheme.primary : Colors.transparent,
-      width: 2,
-    );
+    // Focus ring only visible during active D-pad navigation. Never on mouse clicks or touch.
+    final showDpadFocusRing = widget.isDpadFocused && _focused;
+
+    final BorderSide tileBorder;
+    if (showDpadFocusRing) {
+      tileBorder = BorderSide(
+        color: colorScheme.primary,
+        width: 2,
+      );
+    } else {
+      tileBorder = const BorderSide(
+        color: Colors.transparent,
+        width: 1.2,
+      );
+    }
+
+    final cardColor = widget.isSelected
+        ? Color.alphaBlend(
+            colorScheme.primary.withValues(alpha: 0.16),
+            colorScheme.surfaceContainerHigh,
+          )
+        : colorScheme.surfaceContainerHigh;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 2),
@@ -136,11 +156,9 @@ class _ExpressiveSettingsCategoryTileState
         // sides, even when there are none. Disabling that mode lets the
         // sidebar use Right to jump into the options panel.
         swipeMode: M3ECardSwipeMode.dismiss,
-        color: widget.isSelected
-            ? colorScheme.primaryContainer
-            : colorScheme.surfaceContainerHigh,
+        color: cardColor,
         borderRadius: _resolveRadius(),
-        border: focusBorder,
+        border: tileBorder,
         showFocusRing: false,
         animationDuration: const Duration(milliseconds: 220),
         animationCurve: Curves.easeOutCubic,
@@ -183,6 +201,14 @@ class _ExpressiveSettingsCategoryTileState
                 ],
               ),
             ),
+            if (widget.showChevron) ...[
+              const SizedBox(width: 8),
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 20,
+                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.45),
+              ),
+            ],
           ],
         ),
       ),

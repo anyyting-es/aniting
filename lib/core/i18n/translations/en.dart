@@ -216,6 +216,43 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get lightMode => 'Light';
   @override
+  String get customWallpaper => 'Custom Wallpaper';
+  @override
+  String get customWallpaperDesc =>
+      'Show a custom image as the app background with blur and opacity';
+  @override
+  String get wallpaperOpacity => 'Wallpaper Opacity';
+  @override
+  String get wallpaperOpacityDesc =>
+      'Adjust how prominently the custom image is projected onto the background';
+  @override
+  String get wallpaperBlur => 'Wallpaper Blur';
+  @override
+  String get wallpaperBlurDesc =>
+      'Apply Gaussian blur to preserve readability of text and interface elements';
+  @override
+  String get wallpaperBlurSharp => '0 px (Sharp)';
+  @override
+  String get wallpaperBlurSoft => '6 px (Soft)';
+  @override
+  String get wallpaperBlurBalanced => '12 px (Balanced)';
+  @override
+  String get wallpaperBlurDeep => '20 px (Deep)';
+  @override
+  String get pickWallpaper => 'Choose Wallpaper';
+  @override
+  String get changeWallpaper => 'Change Image';
+  @override
+  String get removeWallpaper => 'Remove Wallpaper';
+  @override
+  String get noWallpaperSelected => 'No wallpaper selected';
+  @override
+  String get tapToPickWallpaper => 'Tap to choose wallpaper';
+  @override
+  String get darkModeSubtitleManual => 'Manual';
+  @override
+  String get themeColorsSubtitleDynamic => 'Dynamic';
+  @override
   String get systemMode => 'System';
   @override
   String get themeDark => 'Dark';
@@ -1445,6 +1482,23 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get materialTealName => 'Material You Teal';
   @override
+  String get materialWallpaperName => 'Material You Wallpaper';
+  @override
+  String get materialWallpaperDesc =>
+      'Dynamic Material 3 scheme generated from your wallpaper';
+  @override
+  String get adjustWallpaper => 'Adjust Wallpaper';
+  @override
+  String get selectThemeAndColors => 'Select Color Palette';
+  @override
+  String get selectDarkMode => 'Select Dark Mode';
+  @override
+  String get darkModeManual => 'Standard Dark';
+  @override
+  String get darkModeOled => 'Pure Black OLED';
+  @override
+  String get darkModeSystem => 'Follow System';
+  @override
   String get paletteSystem => 'System (Dank Shell / Matugen)';
   @override
   String get materialDesignPalettes => 'Material Design 3 Palettes';
@@ -2060,6 +2114,16 @@ class EnglishTranslations implements AppTranslations {
   String get share => 'Share';
   @override
   String get watchTrailer => 'Watch trailer';
+  @override
+  String get cast => 'Cast';
+  @override
+  String get trailersAndVideos => 'Trailers & Videos';
+  @override
+  String get officialTrailer => 'Official Trailer';
+  @override
+  String get collapse => 'Collapse';
+  @override
+  String get moreOptions => 'More options';
   @override
   String get viewOnAnilist => 'View on AniList';
   @override

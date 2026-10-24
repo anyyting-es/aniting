@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/data/models/local_file_item.dart';
-import 'package:seanime_app/data/models/tmdb_models.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/providers/local_library_provider.dart';
 import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
@@ -21,9 +20,17 @@ class LocalLibraryShowsSection extends ConsumerStatefulWidget {
 
 class _LocalLibraryShowsSectionState
     extends ConsumerState<LocalLibraryShowsSection> {
+  /// Se renderizan como máximo esta cantidad de tarjetas a la vez. Con
+  /// bibliotecas grandes, construir cientos de tarjetas (cada una con su
+  /// póster y su petición a TMDB) en un solo frame provocaba tirones.
+  static const int _pageSize = 24;
+
   final TextEditingController _searchController = TextEditingController();
   String _filterType = 'all'; // 'all', 'anime', 'tv', 'movie'
   String _searchQuery = '';
+  int _visibleCount = _pageSize;
+
+  void _resetPagination() => _visibleCount = _pageSize;
 
   @override
   void dispose() {
@@ -129,6 +136,9 @@ class _LocalLibraryShowsSectionState
     final theme = Theme.of(context);
     final l10n = ref.watch(translationsProvider);
     final filtered = _filteredShows;
+    final visible = filtered.length > _visibleCount
+        ? filtered.sublist(0, _visibleCount)
+        : filtered;
 
     return Container(
       width: double.infinity,
@@ -198,7 +208,10 @@ class _LocalLibraryShowsSectionState
           if (widget.state.matchedShows.isNotEmpty) ...[
             TextField(
               controller: _searchController,
-              onChanged: (val) => setState(() => _searchQuery = val),
+              onChanged: (val) => setState(() {
+                _searchQuery = val;
+                _resetPagination();
+              }),
               decoration: InputDecoration(
                 hintText: l10n.searchLocalShowsHint,
                 prefixIcon: const Icon(Icons.search_rounded, size: 18),
@@ -207,7 +220,10 @@ class _LocalLibraryShowsSectionState
                         icon: const Icon(Icons.clear_rounded, size: 16),
                         onPressed: () {
                           _searchController.clear();
-                          setState(() => _searchQuery = '');
+                          setState(() {
+                            _searchQuery = '';
+                            _resetPagination();
+                          });
                         },
                       )
                     : null,
@@ -234,25 +250,37 @@ class _LocalLibraryShowsSectionState
                     label:
                         '${l10n.filterAll} (${widget.state.matchedShows.length})',
                     isSelected: _filterType == 'all',
-                    onTap: () => setState(() => _filterType = 'all'),
+                    onTap: () => setState(() {
+                      _filterType = 'all';
+                      _resetPagination();
+                    }),
                   ),
                   const SizedBox(width: 6),
                   _FilterChip(
                     label: '${l10n.filterAnime} (${widget.state.animeCount})',
                     isSelected: _filterType == 'anime',
-                    onTap: () => setState(() => _filterType = 'anime'),
+                    onTap: () => setState(() {
+                      _filterType = 'anime';
+                      _resetPagination();
+                    }),
                   ),
                   const SizedBox(width: 6),
                   _FilterChip(
                     label: '${l10n.filterTv} (${widget.state.tvShowsCount})',
                     isSelected: _filterType == 'tv',
-                    onTap: () => setState(() => _filterType = 'tv'),
+                    onTap: () => setState(() {
+                      _filterType = 'tv';
+                      _resetPagination();
+                    }),
                   ),
                   const SizedBox(width: 6),
                   _FilterChip(
                     label: '${l10n.filterMovie} (${widget.state.moviesCount})',
                     isSelected: _filterType == 'movie',
-                    onTap: () => setState(() => _filterType = 'movie'),
+                    onTap: () => setState(() {
+                      _filterType = 'movie';
+                      _resetPagination();
+                    }),
                   ),
                 ],
               ),
@@ -287,14 +315,14 @@ class _LocalLibraryShowsSectionState
                 ],
               ),
             )
-          else
+          else ...[
             ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: filtered.length,
+              itemCount: visible.length,
               separatorBuilder: (ctx, i) => const SizedBox(height: 8),
               itemBuilder: (ctx, i) {
-                final item = filtered[i];
+                final item = visible[i];
                 return _LocalMatchedShowCard(
                   item: item,
                   onUnmatch: () => _showUnmatchConfirmDialog(context, item),
@@ -309,6 +337,19 @@ class _LocalLibraryShowsSectionState
                 );
               },
             ),
+            if (filtered.length > _visibleCount) ...[
+              const SizedBox(height: 10),
+              Center(
+                child: TextButton.icon(
+                  onPressed: () => setState(() => _visibleCount += _pageSize),
+                  icon: const Icon(Icons.expand_more_rounded, size: 18),
+                  label: Text(
+                    '${l10n.seeMore} (${filtered.length - _visibleCount})',
+                  ),
+                ),
+              ),
+            ],
+          ],
         ],
       ),
     );
@@ -375,6 +416,42 @@ class _LocalMatchedShowCard extends ConsumerWidget {
     required this.onTap,
   });
 
+  /// Miniatura de la tarjeta. El póster de TMDB se resuelve con un provider
+  /// memoizado por id: antes se creaba un `FutureBuilder` nuevo en cada
+  /// rebuild, lo que relanzaba la petición (y un microframe) por cada tarjeta.
+  Widget _buildThumbnail(WidgetRef ref, IconData typeIcon, Color typeColor) {
+    final fallback = Icon(typeIcon, color: typeColor, size: 24);
+
+    final cover = item.coverImage;
+    if (cover != null && cover.isNotEmpty) {
+      return CachedNetworkImage(
+        imageUrl: cover,
+        fit: BoxFit.cover,
+        errorWidget: (ctx, err, stack) => fallback,
+      );
+    }
+
+    if (item.isTmdb) {
+      final poster = ref
+          .watch(
+            tmdbShowPosterProvider((
+              id: item.id,
+              isMovie: item.type == 'movie',
+            )),
+          )
+          .asData?.value;
+      if (poster != null && poster.isNotEmpty) {
+        return CachedNetworkImage(
+          imageUrl: poster,
+          fit: BoxFit.cover,
+          errorWidget: (c, e, s) => fallback,
+        );
+      }
+    }
+
+    return fallback;
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
@@ -429,39 +506,7 @@ class _LocalMatchedShowCard extends ConsumerWidget {
                     width: 48,
                     height: 68,
                     color: theme.colorScheme.surfaceContainerHighest,
-                    child:
-                        item.coverImage != null && item.coverImage!.isNotEmpty
-                        ? CachedNetworkImage(
-                            imageUrl: item.coverImage!,
-                            fit: BoxFit.cover,
-                            errorWidget: (ctx, err, stack) =>
-                                Icon(typeIcon, color: typeColor, size: 24),
-                          )
-                        : item.isTmdb
-                        ? FutureBuilder<TmdbShowDetails?>(
-                            future: ref
-                                .read(tmdbServiceProvider)
-                                .getShowDetails(
-                                  item.id,
-                                  isMovie: item.type == 'movie',
-                                ),
-                            builder: (ctx, snapshot) {
-                              final poster = snapshot.data?.posterUrl;
-                              if (poster != null && poster.isNotEmpty) {
-                                return CachedNetworkImage(
-                                  imageUrl: poster,
-                                  fit: BoxFit.cover,
-                                  errorWidget: (c, e, s) => Icon(
-                                    typeIcon,
-                                    color: typeColor,
-                                    size: 24,
-                                  ),
-                                );
-                              }
-                              return Icon(typeIcon, color: typeColor, size: 24);
-                            },
-                          )
-                        : Icon(typeIcon, color: typeColor, size: 24),
+                    child: _buildThumbnail(ref, typeIcon, typeColor),
                   ),
                 ),
                 const SizedBox(width: 12),

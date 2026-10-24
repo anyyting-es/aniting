@@ -1,10 +1,11 @@
-import 'dart:ui';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
 
 class DesktopHeader extends ConsumerStatefulWidget {
+  final String? clearlogoUrl;
+  final bool isTmdb;
   final String seasonYearStr;
   final String title;
   final String? subtitle;
@@ -23,6 +24,8 @@ class DesktopHeader extends ConsumerStatefulWidget {
 
   const DesktopHeader({
     super.key,
+    this.clearlogoUrl,
+    this.isTmdb = false,
     this.seasonYearStr = '',
     required this.title,
     this.subtitle,
@@ -52,10 +55,7 @@ class _DesktopHeaderState extends ConsumerState<DesktopHeader> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final l10n = ref.watch(translationsProvider);
-    final iconPack = ref.watch(iconPackProvider);
 
-    final titleColor = isDark ? Colors.white : theme.colorScheme.onSurface;
-    final subtitleColor = isDark ? Colors.white.withValues(alpha: 0.70) : theme.colorScheme.onSurfaceVariant;
     final metaColor = isDark ? Colors.white.withValues(alpha: 0.85) : theme.colorScheme.onSurface;
     final descColor = isDark ? Colors.white.withValues(alpha: 0.75) : theme.colorScheme.onSurfaceVariant;
     final textShadows = isDark
@@ -76,283 +76,253 @@ class _DesktopHeaderState extends ConsumerState<DesktopHeader> {
             : l10n.formatStatus(displayStatusRaw))
         : null;
 
+    // Duration formatting (e.g. 2h 25m or 24m or 12 Episodes)
+    final String? durationStr;
+    if (widget.duration != null && widget.duration! > 0) {
+      final hours = widget.duration! ~/ 60;
+      final mins = widget.duration! % 60;
+      durationStr = hours > 0 ? '${hours}h ${mins}m' : '${mins}m';
+    } else if (widget.totalEpisodes != null && widget.totalEpisodes! > 0) {
+      durationStr = '${widget.totalEpisodes} ${l10n.episodes}';
+    } else {
+      durationStr = null;
+    }
+
+    // Score format: e.g. "7.9" or "84%"
     final scoreDisplay = widget.score != null && widget.score! > 0
         ? (widget.score! > 10 ? '${widget.score!.round()}%' : widget.score!.toStringAsFixed(1))
         : null;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisAlignment: MainAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // ─── 1. Main Anime Title (32px Bold) ───
-        Text(
-          widget.title,
-          style: TextStyle(
-            fontSize: 32,
-            fontWeight: FontWeight.w900,
-            letterSpacing: -0.4,
-            height: 1.15,
-            color: titleColor,
-            shadows: textShadows,
-          ),
-        ),
+    final hasClearLogo = widget.clearlogoUrl != null && widget.clearlogoUrl!.isNotEmpty;
 
-        // ─── 2. Subtitle / Alternate Title (16px Medium) ───
-        if (widget.subtitle != null && widget.subtitle!.isNotEmpty && widget.subtitle != widget.title) ...[
-          const SizedBox(height: 6),
-          Text(
-            widget.subtitle!,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              letterSpacing: -0.2,
-              height: 1.25,
-              color: subtitleColor,
-              shadows: textShadows,
+    return SizedBox(
+      width: double.infinity,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // ─── 1. Clear Logo (If no logo, show nothing) ───
+          if (hasClearLogo) ...[
+            ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxHeight: 180,
+                maxWidth: 580,
+              ),
+              child: CachedNetworkImage(
+                imageUrl: widget.clearlogoUrl!,
+                fit: BoxFit.contain,
+                alignment: Alignment.centerLeft,
+                fadeInDuration: Duration.zero,
+                errorWidget: (_, _, _) => const SizedBox.shrink(),
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 14),
+          ],
 
-        const SizedBox(height: 14),
-
-        // ─── 3. Metadata Row 1: [Progress / Total Eps] [Status Pill] | [Date - Season] ───
+        // ─── 2. Metadata Row: Year • Duration • [Rating / Status Pill] • [IMDb / Score Badge] ───
         Wrap(
           crossAxisAlignment: WrapCrossAlignment.center,
           spacing: 12,
           runSpacing: 8,
           children: [
-            // Format (e.g. TV, MOVIE, OVA)
-            if (widget.format != null && widget.format!.isNotEmpty)
+            // Year
+            if (effectiveDateSeason.isNotEmpty)
               Text(
-                widget.format!.toUpperCase() == 'TV' ? 'TV' : l10n.formatFormat(widget.format),
+                effectiveDateSeason,
                 style: TextStyle(
-                  fontSize: 15.5,
-                  fontWeight: FontWeight.w800,
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w700,
                   color: metaColor,
                   shadows: textShadows,
                 ),
               ),
 
-            // Episodes / Progress Info (e.g. 4/12 or 12 Eps)
-            if (widget.progress != null && widget.progress! > 0 && widget.totalEpisodes != null && widget.totalEpisodes! > 0)
-              Text.rich(
-                TextSpan(
+            // Duration (e.g. 2h 25m or 12 Episodes)
+            if (durationStr != null)
+              Text(
+                durationStr,
+                style: TextStyle(
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w700,
+                  color: metaColor,
+                  shadows: textShadows,
+                ),
+              ),
+
+            // Format Pill (e.g. [TV], [MOVIE])
+            if (widget.format != null && widget.format!.isNotEmpty)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.28),
+                    width: 1,
+                  ),
+                ),
+                child: Text(
+                  widget.format!.toUpperCase() == 'TV' ? 'TV' : l10n.formatFormat(widget.format),
+                  style: const TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ),
+
+            // Status Pill (e.g. [Watching], [Finished], [PG-13])
+            if (displayStatus != null)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.28),
+                    width: 1,
+                  ),
+                ),
+                child: Text(
+                  displayStatus,
+                  style: const TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ),
+
+            // Score Badge (e.g. Yellow [IMDb 7.9] or [TMDB 7.9] or [★ 8.4])
+            if (scoreDisplay != null)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7.5, vertical: 2.5),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF5C518),
+                  borderRadius: BorderRadius.circular(5),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    TextSpan(
-                      text: '${widget.progress}',
-                      style: TextStyle(
-                        fontSize: 16.5,
+                    Text(
+                      widget.isTmdb ? 'TMDB ' : (scoreDisplay.contains('%') ? '' : '★ '),
+                      style: const TextStyle(
+                        fontSize: 10.5,
                         fontWeight: FontWeight.w900,
-                        color: metaColor,
-                        shadows: textShadows,
+                        color: Colors.black,
                       ),
                     ),
-                    TextSpan(
-                      text: '/${widget.totalEpisodes}',
-                      style: TextStyle(
-                        fontSize: 15.5,
-                        fontWeight: FontWeight.w700,
-                        color: metaColor.withValues(alpha: 0.75),
-                        shadows: textShadows,
+                    Text(
+                      scoreDisplay,
+                      style: const TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.black,
                       ),
                     ),
                   ],
                 ),
-              )
-            else if (widget.totalEpisodes != null && widget.totalEpisodes! > 0)
-              Text(
-                '${widget.totalEpisodes} ${l10n.episodesCountSuffix}',
-                style: TextStyle(
-                  fontSize: 15.5,
-                  fontWeight: FontWeight.w800,
-                  color: metaColor,
-                  shadows: textShadows,
-                ),
-              ),
-
-            // Status Pill (with subtle edit pencil icon, iOS liquid glass pill)
-            if (displayStatus != null)
-              ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: widget.onEditStatus,
-                      borderRadius: BorderRadius.circular(16),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                        decoration: BoxDecoration(
-                          color: isDark
-                              ? Colors.white.withValues(alpha: 0.10)
-                              : theme.colorScheme.primary.withValues(alpha: 0.08),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: isDark
-                                ? Colors.white.withValues(alpha: 0.22)
-                                : theme.colorScheme.primary.withValues(alpha: 0.20),
-                            width: 0.8,
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              AppIcons.edit(iconPack),
-                              size: 13.5,
-                              color: metaColor.withValues(alpha: 0.85),
-                            ),
-                            const SizedBox(width: 5),
-                            Text(
-                              displayStatus,
-                              style: TextStyle(
-                                fontSize: 13.5,
-                                fontWeight: FontWeight.w700,
-                                color: metaColor,
-                                shadows: textShadows,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-
-            // Vertical divider bar '|'
-            if (effectiveDateSeason.isNotEmpty)
-              Text(
-                '|',
-                style: TextStyle(
-                  color: isDark ? Colors.white30 : Colors.black26,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w300,
-                ),
-              ),
-
-            // Date & Season with Calendar Icon
-            if (effectiveDateSeason.isNotEmpty)
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    AppIcons.calendar(iconPack),
-                    size: 14.5,
-                    color: metaColor.withValues(alpha: 0.8),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    effectiveDateSeason,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: metaColor,
-                      shadows: textShadows,
-                    ),
-                  ),
-                ],
               ),
           ],
         ),
 
-        const SizedBox(height: 10),
-
-        // ─── 4. Metadata Row 2: [♡ Score] [Studio] [Genre 1] [Genre 2] ───
-        ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 24),
-          child: Wrap(
-          crossAxisAlignment: WrapCrossAlignment.center,
-          spacing: 14,
-          runSpacing: 6,
-          children: [
-            // Score with Clean Heart Outline (Neutral typography, no yellow background/text)
-            if (scoreDisplay != null)
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    AppIcons.heartOutline(iconPack),
-                    size: 16,
-                    color: isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: 5),
-                  Text(
-                    scoreDisplay,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                      color: isDark ? Colors.white : theme.colorScheme.onSurface,
-                      shadows: textShadows,
-                    ),
-                  ),
-                ],
-              ),
-
-            // Studio in Bold
-            if (widget.studio != null && widget.studio!.isNotEmpty)
-              Text(
-                widget.studio!,
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w800,
-                  color: isDark ? Colors.white : theme.colorScheme.onSurface,
-                  shadows: textShadows,
-                ),
-              ),
-
-            // Genres as Clean Plain Text with spacing (No boxes, no borders, no cyan)
-            if (widget.genres.isNotEmpty)
-              Wrap(
-                spacing: 12,
-                runSpacing: 4,
-                children: widget.genres.map((g) {
-                  return Text(
-                    g,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                      color: descColor,
-                      shadows: textShadows,
-                    ),
-                  );
-                }).toList(),
-              ),
-          ],
-        ),
-      ),
-
-        const SizedBox(height: 16),
-
-        // ─── 5. Expandable Synopsis (Constrained Width for Comfortable Reading) ───
-        if (widget.description.isNotEmpty) ...[
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 820),
-            child: AnimatedSize(
-              duration: const Duration(milliseconds: 220),
-              curve: Curves.easeOutCubic,
-              alignment: Alignment.topLeft,
-              child: GestureDetector(
-                onTap: () => setState(() => _isSynopsisExpanded = !_isSynopsisExpanded),
-                child: Text(
-                  widget.description,
-                  maxLines: _isSynopsisExpanded ? 99 : 3,
-                  overflow: TextOverflow.ellipsis,
+        // ─── 3. Studio & Genres Row (bullet separated) ───
+        if ((widget.studio != null && widget.studio!.isNotEmpty) || widget.genres.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 4,
+            children: [
+              if (widget.studio != null && widget.studio!.isNotEmpty) ...[
+                Text(
+                  widget.studio!,
                   style: TextStyle(
                     fontSize: 14,
-                    height: 1.5,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white.withValues(alpha: 0.90),
+                    shadows: textShadows,
+                  ),
+                ),
+                if (widget.genres.isNotEmpty)
+                  Text(
+                    '•',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.white.withValues(alpha: 0.50),
+                    ),
+                  ),
+              ],
+              for (int i = 0; i < widget.genres.length; i++) ...[
+                if (i > 0)
+                  Text(
+                    '•',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.white.withValues(alpha: 0.50),
+                    ),
+                  ),
+                Text(
+                  widget.genres[i],
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.white.withValues(alpha: 0.75),
+                    shadows: textShadows,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ],
+
+        // ─── 4. Expandable Synopsis ───
+        if (widget.description.isNotEmpty) ...[
+          const SizedBox(height: 14),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 740),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.description,
+                  maxLines: _isSynopsisExpanded ? null : 3,
+                  overflow: _isSynopsisExpanded ? TextOverflow.visible : TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 14.5,
+                    height: 1.45,
                     color: descColor,
                     shadows: textShadows,
                   ),
                 ),
-              ),
+                if (widget.description.length > 160) ...[
+                  const SizedBox(height: 4),
+                  InkWell(
+                    onTap: () => setState(() => _isSynopsisExpanded = !_isSynopsisExpanded),
+                    borderRadius: BorderRadius.circular(4),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 2),
+                      child: Text(
+                        _isSynopsisExpanded ? '${l10n.synopsisLess} ▲' : '${l10n.synopsisMore} ▼',
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white.withValues(alpha: 0.65),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
-          const SizedBox(height: 12),
         ],
       ],
-    );
+    ),
+  );
   }
 }
+

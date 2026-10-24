@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:seanime_app/core/constants/feature_flags.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/preferences/anime_playback_source_provider.dart';
@@ -32,6 +33,8 @@ import 'package:seanime_app/data/services/offline_sync_service.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:g1455/g1455.dart';
 import 'package:seanime_app/core/preferences/desktop_window_transparency_provider.dart';
+import 'package:seanime_app/core/preferences/wallpaper_preferences_provider.dart';
+import 'package:seanime_app/presentation/widgets/app_wallpaper_background.dart';
 import 'package:seanime_app/core/preferences/glass_theme_provider.dart';
 import 'package:seanime_app/core/player/mpris_service.dart';
 import 'package:seanime_app/presentation/providers/download_history_provider.dart';
@@ -105,6 +108,7 @@ void main() async {
     AppLanguageNotifier.setCachedPrefs(prefs);
     DesktopScrollbarNotifier.setCachedPrefs(prefs);
     SettingsSidebarWidthNotifier.setCachedPrefs(prefs);
+    AppWallpaperNotifier.setCachedPrefs(prefs);
     ThemeNotifier.setCachedPrefs(prefs);
     IconPackNotifier.setCachedPrefs(prefs);
     PlaybackProgressNotifier.setCachedPrefs(prefs);
@@ -216,15 +220,20 @@ class _AnitingFlutterAppState extends ConsumerState<AnitingFlutterApp> with Widg
           builder: (context, ref, _) {
             final currentRadius = ref.watch(themeProvider.select((s) => s.borderRadius));
             final windowTrans = ref.watch(desktopWindowTransparencyProvider);
+            final wallpaperState = ref.watch(wallpaperPreferencesProvider);
+            final hasWallpaper =
+                FeatureFlags.customWallpaper && wallpaperState.hasValidWallpaper;
             final isDesktop = !kIsWeb && (Platform.isLinux || Platform.isWindows || Platform.isMacOS);
-            final effectiveWindowTransparency = isDesktop && windowTrans.enabled;
+            final effectiveWindowTransparency = FeatureFlags.desktopWindowTransparency &&
+                isDesktop &&
+                windowTrans.enabled;
 
             final baseTheme = Theme.of(context);
             final baseColors = baseTheme.extension<AppThemeColors>() ??
                 AppThemeColors.fromPalette(palette, borderRadius: currentRadius);
 
-            final effectiveScaffoldBg = effectiveWindowTransparency
-                ? baseTheme.scaffoldBackgroundColor.withValues(alpha: windowTrans.opacity)
+            final effectiveScaffoldBg = (effectiveWindowTransparency || hasWallpaper)
+                ? Colors.transparent
                 : baseTheme.scaffoldBackgroundColor;
 
             final updatedTheme = baseTheme.copyWith(
@@ -275,14 +284,19 @@ class _AnitingFlutterAppState extends ConsumerState<AnitingFlutterApp> with Widg
                   child: GlassHost(
                     richBackdrop: true,
                     finish: isDark ? GlassFinish.regularDark : GlassFinish.regularLight,
-                    backdrop: effectiveWindowTransparency ? Colors.transparent : updatedTheme.scaffoldBackgroundColor,
+                    backdrop: (effectiveWindowTransparency || hasWallpaper)
+                        ? Colors.transparent
+                        : baseTheme.scaffoldBackgroundColor,
                     tier: GlassTierChoice(
                       glassEffectsEnabled.toGlassTier(),
                       GlassTierReason.pinnedByHost,
                     ),
                     child: DpadNavigationScope(
                       child: Stack(
+                        fit: StackFit.expand,
                         children: [
+                          if (hasWallpaper)
+                            AppWallpaperBackground(wallpaper: wallpaperState),
                           child ?? const SizedBox.shrink(),
                           const AppToastHost(),
                         ],

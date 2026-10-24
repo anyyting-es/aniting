@@ -13,6 +13,7 @@ import 'package:seanime_app/presentation/widgets/episodes/episode_card.dart';
 class EpisodesView extends ConsumerStatefulWidget {
   final int mediaId;
   final bool isTmdb;
+  final bool isHorizontal;
   final AnimeDetails? animeDetails;
   final AniZipData? aniZipData;
   final TmdbShowDetails? tmdbDetails;
@@ -26,6 +27,7 @@ class EpisodesView extends ConsumerStatefulWidget {
     super.key,
     required this.mediaId,
     this.isTmdb = false,
+    this.isHorizontal = false,
     this.animeDetails,
     this.aniZipData,
     this.tmdbDetails,
@@ -83,12 +85,25 @@ class _EpisodesViewState extends ConsumerState<EpisodesView> {
       );
     }
 
-    final episodes = state.pagedEpisodes;
+    final episodes = widget.isHorizontal ? state.visibleEpisodes : state.pagedEpisodes;
+
+    final isDark = theme.brightness == Brightness.dark;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
+        // ─── Header: Episodes Title ───
+        Text(
+          l10n.episodes,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: isDark ? Colors.white : theme.colorScheme.onSurface,
+          ),
+        ),
+        const SizedBox(height: 12),
+
         // ─── Controls & Season Bar ───
         _buildControlsHeader(context, theme, l10n, state, controller),
         const SizedBox(height: 12),
@@ -107,13 +122,15 @@ class _EpisodesViewState extends ConsumerState<EpisodesView> {
               ),
             ),
           )
+        else if (widget.isHorizontal)
+          _buildHorizontalView(context, episodes, controller)
         else if (state.isGridView)
           _buildGridView(context, episodes, controller)
         else
           _buildListView(context, episodes, controller),
 
         // ─── Pagination ───
-        if (state.totalPages > 1) ...[
+        if (!widget.isHorizontal && state.totalPages > 1) ...[
           const SizedBox(height: 20),
           _buildPaginationBar(context, theme, state, controller, iconPack),
         ],
@@ -182,24 +199,26 @@ class _EpisodesViewState extends ConsumerState<EpisodesView> {
 
             const Spacer(),
 
-            // Grid / List View toggle
-            IconButton(
-              style: IconButton.styleFrom(
-                visualDensity: VisualDensity.compact,
-                padding: const EdgeInsets.all(6),
-                hoverColor: isDark
-                    ? Colors.white.withValues(alpha: 0.08)
-                    : Colors.black.withValues(alpha: 0.05),
+            if (!widget.isHorizontal) ...[
+              // Grid / List View toggle
+              IconButton(
+                style: IconButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  padding: const EdgeInsets.all(6),
+                  hoverColor: isDark
+                      ? Colors.white.withValues(alpha: 0.08)
+                      : Colors.black.withValues(alpha: 0.05),
+                ),
+                onPressed: controller.toggleLayout,
+                tooltip: state.isGridView ? l10n.switchToList : l10n.switchToGrid,
+                icon: Icon(
+                  state.isGridView ? AppIcons.list(iconPack) : AppIcons.grid(iconPack),
+                  size: 18,
+                  color: isDark ? Colors.white70 : Colors.black87,
+                ),
               ),
-              onPressed: controller.toggleLayout,
-              tooltip: state.isGridView ? l10n.switchToList : l10n.switchToGrid,
-              icon: Icon(
-                state.isGridView ? AppIcons.list(iconPack) : AppIcons.grid(iconPack),
-                size: 18,
-                color: isDark ? Colors.white70 : Colors.black87,
-              ),
-            ),
-            const SizedBox(width: 4),
+              const SizedBox(width: 4),
+            ],
 
             // Sort direction button
             IconButton(
@@ -221,6 +240,41 @@ class _EpisodesViewState extends ConsumerState<EpisodesView> {
           ],
         ),
       ],
+    );
+  }
+
+  Widget _buildHorizontalView(
+    BuildContext context,
+    List<dynamic> episodes,
+    EpisodesNotifier controller,
+  ) {
+    return SizedBox(
+      height: 272,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        itemCount: episodes.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 18),
+        itemBuilder: (context, index) {
+          final ep = episodes[index];
+          return SizedBox(
+            width: 365,
+            child: EpisodeCard(
+              mediaId: widget.mediaId,
+              episode: ep,
+              isGridView: true,
+              onTap: () => controller.playEpisode(context, ep),
+              onOpenTorrent: widget.onOpenTorrentSelector != null
+                  ? () => widget.onOpenTorrentSelector!(
+                        episodeNumber: ep.number,
+                        episodeTitle: 'EP ${ep.number}. ${ep.title}',
+                        aniDBEpisode: ep.aniDBEpisode,
+                      )
+                  : null,
+            ),
+          );
+        },
+      ),
     );
   }
 

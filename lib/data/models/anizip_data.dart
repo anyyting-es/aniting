@@ -255,6 +255,8 @@ class AniZipData {
   String? get clearlogoUrl {
     for (final img in images) {
       if (img.coverType.toLowerCase() == 'clearlogo' && img.url.isNotEmpty) {
+        // Exclude TVDB square icons (/icons/) which are 1024x1024 opaque avatars, NOT transparent clearlogos
+        if (img.url.contains('/icons/')) continue;
         return img.url;
       }
     }

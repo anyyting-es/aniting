@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:seanime_app/core/theme/custom_route_transitions.dart';
 
 class AppTheme {
   static final ThemeData darkTheme = ThemeData(
@@ -30,15 +29,6 @@ class AppTheme {
       waitDuration: Duration(milliseconds: 700),
       showDuration: Duration(milliseconds: 1500),
     ),
-    pageTransitionsTheme: const PageTransitionsTheme(
-      builders: {
-        TargetPlatform.android: WebPageTransitionsBuilder(),
-        TargetPlatform.iOS: WebPageTransitionsBuilder(),
-        TargetPlatform.linux: WebPageTransitionsBuilder(),
-        TargetPlatform.macOS: WebPageTransitionsBuilder(),
-        TargetPlatform.windows: WebPageTransitionsBuilder(),
-        TargetPlatform.fuchsia: WebPageTransitionsBuilder(),
-      },
-    ),
+    pageTransitionsTheme: const PageTransitionsTheme(),
   );
 }

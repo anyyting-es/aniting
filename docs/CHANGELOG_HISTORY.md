@@ -6,6 +6,53 @@
 > - **ALWAYS** summarize improvements at a high, user-facing level with clear, direct bullet points (e.g., *"Mejoras de UI y navegación en el calendario de emisión"*, *"Nueva pantalla y gestión de estado sin conexión"*, *"Optimizaciones en la caché de seguir viendo"*).
 > - Keep it punchy, professional, and easy to skim.
 
+## 7.93. Indicador de Carga Expresivo y Fijación de Logotipo en Detalles (2026-10-23)
+- **Indicador de Carga Material 3 Expressive**:
+  - Incorporación del componente `M3ELoadingIndicator` de `material_3_expressive` con variante contenida durante la carga de detalles de anime.
+- **Estabilidad y Alineación Fija del Logotipo**:
+  - Eliminación de saltos y transiciones descentradas en el logotipo transparente al abrir una serie.
+  - Resolución anticipada y atómica de logotipos de TMDB y AniZip antes del renderizado de la interfaz para evitar desplazamientos tardíos.
+
+## 7.92. Detalles Cinemáticos Expresivos: Botón Primario Reactivo, Gradiente Dominante, Elenco y Trailers (2026-10-23)
+- **Barra de Acciones Homogénea y Botón Primario Adaptativo**:
+  - Altura estandarizada y consistente en todos los botones de acción sin reducciones de escala ni saltos verticales.
+  - Botón principal de reproducción alargado y destacado, contrayéndose suavemente en anchura al desplegar las opciones secundarias (compartir y descargas).
+  - Eliminación de accesos redundantes a trackers externos y trailers de la barra principal.
+- **Carga Unificada sin Saltos de Contenido ni Cambios de Texto**:
+  - Resolución paralela de metadatos finales, imágenes y logotipos antes de la entrada en pantalla, eliminando sustituciones tardías de sinopsis o brincos del logo.
+  - Sombra lateral izquierda generada a partir del color dominante del anime para garantizar contraste de texto sin oscurecer el fondo derecho, preservando la intensidad del fanart.
+- **Tarjetas de Episodios Panorámicas y Secciones de Elenco y Trailers**:
+  - Episodios horizontales con mayor presencia visual y escala.
+  - Nueva sección horizontal de elenco con personajes y actores de voz.
+  - Sección de trailers oficiales con vista previa de miniatura limpia y reproducción directa.
+
+## 7.91. Experiencia Cinemática Unificada en Detalles para PC y TV (2026-10-23)
+- **Fondo de Pantalla Completo y Diseño Cinemático**:
+  - El fanart y fondo de AniZip se extienden por toda la pantalla con gradientes cinematográficos y crossfade suave.
+  - Ocultamiento de título textual si no existe logotipo transparente (`clearlogoUrl`), manteniendo el fondo despejado.
+- **Unificación de Interfaz para PC y TV**:
+  - Ambas plataformas comparten ahora la misma arquitectura y distribución visual optimizada.
+  - Todo el bloque de información, metadatos y acciones se sitúa en la parte inferior para dar máximo protagonismo al fanart superior.
+- **Fila Horizontal de Episodios**:
+  - La lista de episodios se transforma en una única fila horizontal con tarjetas panorámicas 16:9 y scroll continuo, unificando la experiencia tanto en modo AniList como en TMDB.
+
+## 7.90. Fondos de Pantalla Personalizados, Tematizado Dinámico M3 y Cabecera Expresiva (2026-10-23)
+- **Soporte de Fondos de Pantalla Personalizados (Custom Wallpaper)**:
+  - Nueva opción para seleccionar cualquier imagen local como fondo dinámico de la aplicación.
+  - Controles integrados por hover sobre la miniatura: cambio de imagen, ajustes de opacidad y desenfoque, y eliminación sin cajas redundantes.
+  - Sincronización automática con la paleta dinámica Material 3 (`ColorScheme.fromImageProvider`) extrayendo el color clave de la imagen.
+- **Distribución de Color y Alto Contraste Material 3 (Estilo Dank Material Shell)**:
+  - Jerarquía visual sólida (`surface`, `surfaceContainer`, `surfaceContainerHigh` y `surfaceContainerHighest`) para eliminar tonalidades lavadas o demasiado oscuras.
+  - Botones y tarjetas agrupadas de alta definición con bordes sutiles y contraste armónico.
+- **Navegación en la Misma Página y Ajuste de Márgenes**:
+  - Transición fluida dentro de la propia página para subopciones (Modo oscuro, Temas y colores, Ajustes de fondo) sin modales emergentes.
+  - Eliminación de márgenes y paddings laterales excesivos, logrando que el contenido abrace naturalmente el fondo de la isla.
+- **Adaptación Multiplataforma y Transición Limpia de Ajustes**:
+  - Entrada limpia a ajustes en escritorio mediante deslizamiento suave (`SlideRightToLeftPageRoute`) que se monta directamente sobre la vista previa sin parpadeos ni desvanecimientos bruscos.
+  - Corrección en la capa de fondo de pantalla asegurando que la opacidad y el tintado oscuro del tema persistan en todo momento durante las transiciones.
+  - El anillo de enfoque solo se activa al navegar con DPAD/control remoto y se oculta automáticamente con toques o clics de mouse.
+  - Tonalidades suavizadas en las opciones seleccionadas y espaciado limpio entre secciones.
+
 ## 7.89. Estabilidad en Detalles de Anime, Navegación DPAD Precisa y Scroll Elástico (2026-10-23)
 - **Eliminación de Saltos Visuales y Metadata Asentada en Detalles**:
   - Restauración síncrona en frame 0 del modo de visualización guardado (Local / Torrent / Online) y detección instantánea de historial de descargas.

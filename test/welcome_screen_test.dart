@@ -14,7 +14,6 @@ import 'package:seanime_app/data/models/extension_item.dart';
 import 'package:seanime_app/data/repositories/seanime_repository.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/screens/welcome_screen.dart';
-import 'package:seanime_app/presentation/widgets/welcome/welcome_marketplace_sheet.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class MockServerNotifier extends ServerNotifier {

@@ -261,4 +261,79 @@ class TmdbService {
       return [];
     }
   }
+
+  static final Map<String, String?> _logoCache = {};
+
+  /// Fetches transparent PNG logo for a show or movie from TMDB.
+  /// Resolves via tmdbId directly, or via tvdbId using TMDB's /find endpoint.
+  Future<String?> getLogo({
+    int? tmdbId,
+    int? tvdbId,
+    bool isMovie = false,
+  }) async {
+    final cacheKey = '$tmdbId-$tvdbId-$isMovie';
+    if (_logoCache.containsKey(cacheKey)) {
+      return _logoCache[cacheKey];
+    }
+
+    try {
+      int? resolvedTmdbId = tmdbId;
+
+      // 1. If no tmdbId is given but we have tvdbId, resolve via /find
+      if ((resolvedTmdbId == null || resolvedTmdbId <= 0) && tvdbId != null && tvdbId > 0) {
+        final findRes = await _dio.get(
+          '/find/$tvdbId',
+          queryParameters: {
+            'api_key': apiKey,
+            'external_source': 'tvdb_id',
+          },
+        );
+        final data = findRes.data as Map<String, dynamic>?;
+        final tvResults = data?['tv_results'] as List<dynamic>?;
+        final movieResults = data?['movie_results'] as List<dynamic>?;
+
+        if (tvResults != null && tvResults.isNotEmpty) {
+          resolvedTmdbId = tvResults.first['id'] as int?;
+        } else if (movieResults != null && movieResults.isNotEmpty) {
+          resolvedTmdbId = movieResults.first['id'] as int?;
+        }
+      }
+
+      if (resolvedTmdbId == null || resolvedTmdbId <= 0) {
+        _logoCache[cacheKey] = null;
+        return null;
+      }
+
+      // 2. Fetch images for the resolved TMDB show
+      final endpoint = isMovie ? '/movie/$resolvedTmdbId/images' : '/tv/$resolvedTmdbId/images';
+      final imgRes = await _dio.get(
+        endpoint,
+        queryParameters: {
+          'api_key': apiKey,
+        },
+      );
+
+      final logos = (imgRes.data?['logos'] as List<dynamic>?) ?? [];
+      if (logos.isEmpty) {
+        _logoCache[cacheKey] = null;
+        return null;
+      }
+
+      // Prioritize English or Spanish logo, fallback to first available
+      final selectedLogo = logos.firstWhere(
+        (l) => l['iso_639_1'] == 'en' || l['iso_639_1'] == 'es',
+        orElse: () => logos.first,
+      );
+
+      final filePath = selectedLogo['file_path'] as String?;
+      if (filePath != null && filePath.isNotEmpty) {
+        final fullUrl = '$imageBaseUrl$filePath';
+        _logoCache[cacheKey] = fullUrl;
+        return fullUrl;
+      }
+    } catch (_) {}
+
+    _logoCache[cacheKey] = null;
+    return null;
+  }
 }

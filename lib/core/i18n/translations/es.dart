@@ -216,6 +216,43 @@ class SpanishTranslations implements AppTranslations {
   @override
   String get lightMode => 'Claro';
   @override
+  String get customWallpaper => 'Fondo de Pantalla';
+  @override
+  String get customWallpaperDesc =>
+      'Muestra una imagen personalizada de fondo en la app con desenfoque y opacidad';
+  @override
+  String get wallpaperOpacity => 'Opacidad del fondo';
+  @override
+  String get wallpaperOpacityDesc =>
+      'Ajusta la intensidad con la que se proyecta la imagen en el fondo';
+  @override
+  String get wallpaperBlur => 'Desenfoque del fondo';
+  @override
+  String get wallpaperBlurDesc =>
+      'Aplica desenfoque gaussiano para preservar la legibilidad del texto';
+  @override
+  String get wallpaperBlurSharp => '0 px (Nítido)';
+  @override
+  String get wallpaperBlurSoft => '6 px (Suave)';
+  @override
+  String get wallpaperBlurBalanced => '12 px (Equilibrado)';
+  @override
+  String get wallpaperBlurDeep => '20 px (Profundo)';
+  @override
+  String get pickWallpaper => 'Elegir fondo';
+  @override
+  String get changeWallpaper => 'Cambiar imagen';
+  @override
+  String get removeWallpaper => 'Quitar fondo';
+  @override
+  String get noWallpaperSelected => 'Sin fondo seleccionado';
+  @override
+  String get tapToPickWallpaper => 'Toca para elegir fondo';
+  @override
+  String get darkModeSubtitleManual => 'Manual';
+  @override
+  String get themeColorsSubtitleDynamic => 'Dinámico';
+  @override
   String get systemMode => 'Sistema';
   @override
   String get themeDark => 'Oscuro';
@@ -1461,6 +1498,23 @@ class SpanishTranslations implements AppTranslations {
   @override
   String get materialTealName => 'Material You Turquesa';
   @override
+  String get materialWallpaperName => 'Material You Fondo';
+  @override
+  String get materialWallpaperDesc =>
+      'Diseño Material 3 dinámico generado a partir de tu fondo de pantalla';
+  @override
+  String get adjustWallpaper => 'Ajustar Fondo';
+  @override
+  String get selectThemeAndColors => 'Seleccionar Paleta de Color';
+  @override
+  String get selectDarkMode => 'Seleccionar Modo Oscuro';
+  @override
+  String get darkModeManual => 'Oscuro Estándar';
+  @override
+  String get darkModeOled => 'OLED Negro Puro';
+  @override
+  String get darkModeSystem => 'Seguir Sistema';
+  @override
   String get paletteSystem => 'Sistema (Dank Shell / Matugen)';
   @override
   String get materialDesignPalettes => 'Paletas Material Design 3';
@@ -2084,6 +2138,16 @@ class SpanishTranslations implements AppTranslations {
   String get share => 'Compartir';
   @override
   String get watchTrailer => 'Ver tráiler';
+  @override
+  String get cast => 'Reparto';
+  @override
+  String get trailersAndVideos => 'Tráilers y videos';
+  @override
+  String get officialTrailer => 'Tráiler oficial';
+  @override
+  String get collapse => 'Colapsar';
+  @override
+  String get moreOptions => 'Más opciones';
   @override
   String get viewOnAnilist => 'Ver en AniList';
   @override

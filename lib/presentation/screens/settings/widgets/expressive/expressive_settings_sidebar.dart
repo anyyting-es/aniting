@@ -136,8 +136,9 @@ final List<SettingsCategoryGroup> kSettingsCategoryGroups = [
 /// * At the edges focus falls back to the reading order, so Down on the last
 ///   row lands inside the options panel instead of getting stuck.
 class ExpressiveSettingsSidebar extends ConsumerStatefulWidget {
-  final SettingsCategory selectedCategory;
+  final SettingsCategory? selectedCategory;
   final ValueChanged<SettingsCategory> onSelectCategory;
+  final bool showChevron;
 
   /// Focus scope of the options panel on the right. When provided, pressing
   /// Right on a row moves the focus inside that panel.
@@ -145,8 +146,9 @@ class ExpressiveSettingsSidebar extends ConsumerStatefulWidget {
 
   const ExpressiveSettingsSidebar({
     super.key,
-    required this.selectedCategory,
+    this.selectedCategory,
     required this.onSelectCategory,
+    this.showChevron = false,
     this.detailFocusScope,
   });
 
@@ -165,6 +167,7 @@ class ExpressiveSettingsSidebarState
   late final List<GlobalKey> _itemKeys;
   final ScrollController _scrollController = ScrollController();
   int _focusedIndex = -1;
+  bool _isNavigatingWithDpad = false;
 
   int get _itemCount => kSettingsCategoryGroups.fold(
     0,
@@ -195,13 +198,36 @@ class ExpressiveSettingsSidebarState
   }
 
   /// Focuses the row that matches the currently selected category.
-  void focusSelectedRow() {
-    final index = _indexOf(widget.selectedCategory);
+  void focusSelectedRow({bool fromDpad = true}) {
+    final cat = widget.selectedCategory;
+    if (cat == null) {
+      return;
+    }
+    final index = _indexOf(cat);
     if (index < 0 || index >= _focusNodes.length) {
       return;
     }
+    if (fromDpad && !_isNavigatingWithDpad) {
+      setState(() {
+        _isNavigatingWithDpad = true;
+        _focusedIndex = index;
+      });
+    }
     _focusNodes[index].requestFocus();
     _reveal(index);
+  }
+
+  SettingsCategoryItem? _findItemByIndex(int targetIndex) {
+    var index = 0;
+    for (final group in kSettingsCategoryGroups) {
+      for (final item in group.items) {
+        if (index == targetIndex) {
+          return item;
+        }
+        index++;
+      }
+    }
+    return null;
   }
 
   int _indexOf(SettingsCategory category) {
@@ -221,8 +247,13 @@ class ExpressiveSettingsSidebarState
     if (!_focusNodes[index].hasFocus) {
       return;
     }
-    _focusedIndex = index;
-    WidgetsBinding.instance.addPostFrameCallback((_) => _reveal(index));
+    if (_focusedIndex != index) {
+      setState(() => _focusedIndex = index);
+    }
+    // Only scroll to reveal on active D-pad navigation, avoiding fighting pointer scrolls
+    if (_isNavigatingWithDpad) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _reveal(index));
+    }
   }
 
   /// Keeps the focused row vertically centered while there is content left,
@@ -267,9 +298,30 @@ class ExpressiveSettingsSidebarState
 
     // Right arrow: jump straight into the options panel.
     if (key == LogicalKeyboardKey.arrowRight) {
+      if (_isNavigatingWithDpad) {
+        setState(() => _isNavigatingWithDpad = false);
+      }
       return _focusDetailOptions()
           ? KeyEventResult.handled
           : KeyEventResult.ignored;
+    }
+
+    // Select / Enter / Space / Gamepad A
+    if (key == LogicalKeyboardKey.enter ||
+        key == LogicalKeyboardKey.numpadEnter ||
+        key == LogicalKeyboardKey.space ||
+        key == LogicalKeyboardKey.select ||
+        key == LogicalKeyboardKey.gameButtonA) {
+      if (_focusedIndex >= 0 && _focusedIndex < _itemCount) {
+        final item = _findItemByIndex(_focusedIndex);
+        if (item != null) {
+          if (_isNavigatingWithDpad) {
+            setState(() => _isNavigatingWithDpad = false);
+          }
+          widget.onSelectCategory(item.category);
+          return KeyEventResult.handled;
+        }
+      }
     }
 
     final isDown = key == LogicalKeyboardKey.arrowDown;
@@ -278,9 +330,14 @@ class ExpressiveSettingsSidebarState
       return KeyEventResult.ignored;
     }
 
+    if (!_isNavigatingWithDpad) {
+      setState(() => _isNavigatingWithDpad = true);
+    }
+
     final current = _focusedIndex;
     if (current < 0 || current >= _focusNodes.length) {
-      return KeyEventResult.ignored;
+      _focusNodes[0].requestFocus();
+      return KeyEventResult.handled;
     }
 
     final next = isDown ? current + 1 : current - 1;
@@ -346,9 +403,11 @@ class ExpressiveSettingsSidebarState
 
     final children = <Widget>[];
     var index = 0;
-    for (final group in kSettingsCategoryGroups) {
-      children.add(_SidebarSectionLabel(text: group.titleBuilder(l10n)));
-      children.add(const SizedBox(height: 6));
+    for (var g = 0; g < kSettingsCategoryGroups.length; g++) {
+      final group = kSettingsCategoryGroups[g];
+      if (g > 0) {
+        children.add(const SizedBox(height: 12));
+      }
 
       for (var i = 0; i < group.items.length; i++) {
         final item = group.items[i];
@@ -361,14 +420,19 @@ class ExpressiveSettingsSidebarState
             title: item.titleBuilder(l10n),
             subtitle: item.subtitleBuilder(l10n),
             isSelected: widget.selectedCategory == item.category,
+            showChevron: widget.showChevron,
+            isDpadFocused: _isNavigatingWithDpad && _focusedIndex == itemIndex,
             isFirst: i == 0,
             isLast: i == group.items.length - 1,
-            onTap: () => widget.onSelectCategory(item.category),
+            onTap: () {
+              if (_isNavigatingWithDpad) {
+                setState(() => _isNavigatingWithDpad = false);
+              }
+              widget.onSelectCategory(item.category);
+            },
           ),
         );
       }
-
-      children.add(const SizedBox(height: 8));
     }
 
     return M3ETheme(
@@ -379,37 +443,21 @@ class ExpressiveSettingsSidebarState
         canRequestFocus: false,
         skipTraversal: true,
         onKeyEvent: _handleKeyEvent,
-        child: SingleChildScrollView(
-          controller: _scrollController,
-          padding: const EdgeInsets.fromLTRB(4, 10, 4, 6),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: children,
+        child: Listener(
+          behavior: HitTestBehavior.translucent,
+          onPointerDown: (_) {
+            if (_isNavigatingWithDpad) {
+              setState(() => _isNavigatingWithDpad = false);
+            }
+          },
+          child: SingleChildScrollView(
+            controller: _scrollController,
+            padding: const EdgeInsets.fromLTRB(4, 10, 4, 6),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: children,
+            ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SidebarSectionLabel extends StatelessWidget {
-  final String text;
-
-  const _SidebarSectionLabel({required this.text});
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 4, 12, 2),
-      child: Text(
-        text.toUpperCase(),
-        style: TextStyle(
-          fontSize: 10.5,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 1.1,
-          color: colorScheme.onSurfaceVariant.withValues(alpha: 0.65),
         ),
       ),
     );

@@ -301,16 +301,19 @@ class _CuratedSectionRowBody extends StatelessWidget {
     final color = theme.colorScheme.surfaceContainerHighest;
     final borderRadius = BorderRadius.circular(10);
     final isDesktop = MediaQuery.of(context).size.width >= 720;
-    final cardWidth = isDesktop ? 180.0 : 135.0;
-    final carouselHeight = isDesktop ? 320.0 : 252.0;
+    // Misma geometría que las secciones reales de Explorar para que el
+    // esqueleto no dé un salto de tamaño al llegar los datos.
+    final cardWidth = isDesktop ? 215.0 : 155.0;
     final carouselSpacing = isDesktop ? 14.0 : 10.0;
+    final cardHeight = ((cardWidth - 8.0) / 0.72) + 71.0;
+    final carouselHeight = cardHeight + (isDesktop ? 6.0 : 4.0);
 
     return SizedBox(
-      height: carouselHeight + 16,
+      height: carouselHeight + 4,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         physics: const NeverScrollableScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
         itemCount: 5,
         separatorBuilder: (context, index) => SizedBox(width: carouselSpacing),
         itemBuilder: (context, index) {

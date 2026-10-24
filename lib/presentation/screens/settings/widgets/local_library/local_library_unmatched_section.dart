@@ -5,16 +5,33 @@ import 'package:seanime_app/data/models/local_file_item.dart';
 import 'package:seanime_app/presentation/providers/local_library_provider.dart';
 import 'package:seanime_app/presentation/screens/settings/widgets/local_library/local_library_match_dialog.dart';
 
-class LocalLibraryUnmatchedSection extends ConsumerWidget {
+class LocalLibraryUnmatchedSection extends ConsumerStatefulWidget {
   final LocalLibraryState state;
 
   const LocalLibraryUnmatchedSection({super.key, required this.state});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<LocalLibraryUnmatchedSection> createState() =>
+      _LocalLibraryUnmatchedSectionState();
+}
+
+class _LocalLibraryUnmatchedSectionState
+    extends ConsumerState<LocalLibraryUnmatchedSection> {
+  /// Igual que en la lista de shows: no construimos cientos de grupos de
+  /// archivos en un solo frame.
+  static const int _pageSize = 20;
+
+  int _visibleCount = _pageSize;
+
+  @override
+  Widget build(BuildContext context) {
+    final state = widget.state;
     final theme = Theme.of(context);
     final l10n = ref.watch(translationsProvider);
     final notifier = ref.read(localLibraryProvider.notifier);
+    final visibleGroups = state.unmatchedGroups.length > _visibleCount
+        ? state.unmatchedGroups.sublist(0, _visibleCount)
+        : state.unmatchedGroups;
 
     return Container(
       width: double.infinity,
@@ -114,14 +131,14 @@ class LocalLibraryUnmatchedSection extends ConsumerWidget {
                 ],
               ),
             )
-          else
+          else ...[
             ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: state.unmatchedGroups.length,
+              itemCount: visibleGroups.length,
               separatorBuilder: (ctx, i) => const SizedBox(height: 8),
               itemBuilder: (ctx, i) {
-                final group = state.unmatchedGroups[i];
+                final group = visibleGroups[i];
                 return _UnmatchedGroupCard(
                   group: group,
                   onIgnore: () => notifier.ignoreGroup(group),
@@ -129,6 +146,20 @@ class LocalLibraryUnmatchedSection extends ConsumerWidget {
                 );
               },
             ),
+            if (state.unmatchedGroups.length > _visibleCount) ...[
+              const SizedBox(height: 10),
+              Center(
+                child: TextButton.icon(
+                  onPressed: () => setState(() => _visibleCount += _pageSize),
+                  icon: const Icon(Icons.expand_more_rounded, size: 18),
+                  label: Text(
+                    '${l10n.seeMore} '
+                    '(${state.unmatchedGroups.length - _visibleCount})',
+                  ),
+                ),
+              ),
+            ],
+          ],
         ],
       ),
     );

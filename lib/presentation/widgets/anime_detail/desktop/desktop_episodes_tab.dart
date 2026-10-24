@@ -17,9 +17,7 @@ import 'package:g1455/g1455.dart';
 import 'package:seanime_app/presentation/widgets/online_stream_download_dialog.dart';
 import 'desktop_episode_context_menu.dart';
 import 'desktop_episode_grid_card.dart';
-import 'desktop_episode_list_card.dart';
 import 'desktop_episode_models.dart';
-import 'desktop_episode_pagination.dart';
 
 export 'desktop_episode_models.dart';
 
@@ -85,10 +83,7 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab>
     duration: const Duration(milliseconds: 1000),
   )..repeat(reverse: true);
 
-  bool _isGridView = true;
   bool _isSortAscending = true;
-  int _currentPage = 0;
-  static const int _episodesPerPage = 20;
 
   LibraryEntryDetails? _libraryEntry;
   bool _isLoadingLocal = false;
@@ -184,11 +179,8 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab>
         oldWidget.isLocalMode != widget.isLocalMode ||
         oldWidget.selectedProvider?.id != widget.selectedProvider?.id ||
         oldWidget.isDubbed != widget.isDubbed) {
-      if (_currentPage != 0) {
-        setState(() {
-          _currentPage = 0;
-        });
-      }
+      // The desktop layout keeps every episode visible in one scroll view, so
+      // there is no page cursor to reset here.
     }
     if (oldWidget.mediaId != widget.mediaId) {
       _clearMemoizedCaches();
@@ -669,19 +661,6 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab>
     }
 
     final totalEpisodes = items.length;
-    final totalPages = (totalEpisodes / _episodesPerPage).ceil();
-    if (_currentPage >= totalPages && totalPages > 0) {
-      _currentPage = totalPages - 1;
-    }
-    if (_currentPage < 0) {
-      _currentPage = 0;
-    }
-
-    final startIndex = _currentPage * _episodesPerPage;
-    final endIndex = (startIndex + _episodesPerPage).clamp(0, totalEpisodes);
-    final pagedItems = totalEpisodes == 0
-        ? <DesktopEpisodeItemData>[]
-        : items.sublist(startIndex, endIndex);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -698,15 +677,15 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab>
                 color: isDark ? Colors.white : theme.colorScheme.onSurface,
               ),
             ),
-            if (totalPages > 1) ...[
-              const SizedBox(width: 12),
+            if (totalEpisodes > 0) ...[
+              const SizedBox(width: 10),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3.5),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
                 decoration: BoxDecoration(
                   color: isDark
                       ? Colors.white.withValues(alpha: 0.08)
                       : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(10),
                   border: Border.all(
                     color: isDark
                         ? Colors.white.withValues(alpha: 0.16)
@@ -715,7 +694,7 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab>
                   ),
                 ),
                 child: Text(
-                  '${l10n.page} ${_currentPage + 1}/$totalPages',
+                  '$totalEpisodes',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -827,29 +806,12 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab>
               const SizedBox(width: 6),
             ],
 
-            // Toggle Grid / List View (Material 3 Expressive)
-            M3EIconButton(
-              variant: M3EIconButtonVariant.tonal,
-              size: M3EIconButtonSize.xs,
-              onPressed: () => setState(() => _isGridView = !_isGridView),
-              tooltip: _isGridView
-                  ? l10n.switchToList
-                  : l10n.switchToGrid,
-              icon: Icon(
-                _isGridView ? AppIcons.list(iconPack) : AppIcons.grid(iconPack),
-                size: 16,
-                color: isDark ? Colors.white70 : Colors.black87,
-              ),
-            ),
-            const SizedBox(width: 6),
-
             // Toggle Sort Ascending / Descending (Material 3 Expressive)
             M3EIconButton(
               variant: M3EIconButtonVariant.tonal,
               size: M3EIconButtonSize.xs,
               onPressed: () => setState(() {
                 _isSortAscending = !_isSortAscending;
-                _currentPage = 0;
               }),
               tooltip: _isSortAscending
                   ? l10n.orderAsc
@@ -865,7 +827,7 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab>
 
         const SizedBox(height: 16),
 
-        // ─── Dynamic Episode Content (Animated Transition between View Modes & Sources) ───
+        // ─── Dynamic Episode Content (Horizontal List) ───
         AnimatedSwitcher(
           duration: const Duration(milliseconds: 260),
           switchInCurve: Curves.easeOutCubic,
@@ -877,7 +839,7 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab>
             );
           },
           child: RepaintBoundary(
-            key: ValueKey('episodes_view_${_isGridView ? "grid" : "list"}_${widget.isLocalMode ? "local" : widget.currentTab.name}'),
+            key: ValueKey('episodes_horiz_${widget.isLocalMode ? "local" : widget.currentTab.name}_${items.length}'),
             child: Builder(
               builder: (context) {
                 // ─── Loading State for Local Mode ───
@@ -897,8 +859,8 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab>
 
                 // ─── Empty State for Online Mode ───
                 if (widget.currentTab == AnimeDetailTab.online && items.isEmpty) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 48),
+                  return SizedBox(
+                    height: 272,
                     child: Center(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
@@ -931,78 +893,35 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab>
                   );
                 }
 
-                // ─── Mode 1: Grid Mode (Bigger cards, clean thumbnails) ───
-                if (_isGridView) {
-                  return LayoutBuilder(
-                    builder: (context, constraints) {
-                      final crossAxisCount = (constraints.maxWidth / 320).floor().clamp(2, 5);
-                      return GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: pagedItems.length,
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: crossAxisCount,
-                          childAspectRatio: 1.28,
-                          crossAxisSpacing: 20,
-                          mainAxisSpacing: 22,
+                if (items.isEmpty) {
+                  return SizedBox(
+                    height: 272,
+                    child: Center(
+                      child: Text(
+                        l10n.noEpisodesFound,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
                         ),
-                        itemBuilder: (context, index) {
-                          final ep = pagedItems[index];
-                          return DesktopGridEpisodeCard(
-                            key: ValueKey('grid_ep_${ep.number}'),
-                            mediaId: widget.mediaId,
-                            ep: ep,
-                            isLoading: widget.loadingEpisodeNumber == ep.number,
-                            formattedTitle: _formatEpisodeTitle(ep),
-                            fallbackCoverImage: widget.fallbackCoverImage,
-                            coverColor: widget.details?.coverColor,
-                            onTap: () => widget.onEpisodeClicked(ep),
-                            trailingActions: DesktopEpisodeMenuButton(
-                              ep: ep,
-                              mediaId: widget.mediaId,
-                              details: widget.details,
-                              onEpisodeClicked: widget.onEpisodeClicked,
-                              onOpenTorrentSelector: widget.onOpenTorrentSelector,
-                              onDownloadOnline: widget.currentTab == AnimeDetailTab.online
-                                  ? () => showOnlineStreamDownloadDialog(
-                                        context,
-                                        mediaId: widget.mediaId,
-                                        episodeNumber: ep.number,
-                                        animeTitle: widget.details?.title ?? '',
-                                        episodeTitle: ep.title,
-                                        thumbnail: ep.image,
-                                        provider: widget.selectedProvider,
-                                        isDubbed: widget.isDubbed,
-                                      )
-                                  : null,
-                              onRefreshLocal: _scanAndRefreshLocal,
-                            ),
-                          );
-                        },
-                      );
-                    },
+                      ),
+                    ),
                   );
                 }
 
-                // ─── Mode 2: 2-Column List Mode (Unboxed, Clean Image + Text) ───
-                return LayoutBuilder(
-                  builder: (context, constraints) {
-                    final isWide = constraints.maxWidth > 1200;
-                    final crossAxisCount = isWide ? 2 : 1;
-                    return GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: pagedItems.length,
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: crossAxisCount,
-                        mainAxisExtent: 154,
-                        crossAxisSpacing: 24,
-                        mainAxisSpacing: 18,
-                      ),
-                      itemBuilder: (context, index) {
-                        final ep = pagedItems[index];
-                        return DesktopListEpisodeCard(
-                          key: ValueKey('list_ep_${ep.number}'),
+                // ─── Single Horizontal List (Cards with 16:9 thumbnails) ───
+                return SizedBox(
+                  height: 272,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    physics: const BouncingScrollPhysics(),
+                    itemCount: items.length,
+                    separatorBuilder: (_, _) => const SizedBox(width: 18),
+                    itemBuilder: (context, index) {
+                      final ep = items[index];
+                      return SizedBox(
+                        width: 365,
+                        child: DesktopGridEpisodeCard(
+                          key: ValueKey('grid_ep_${ep.number}'),
                           mediaId: widget.mediaId,
                           ep: ep,
                           isLoading: widget.loadingEpisodeNumber == ep.number,
@@ -1030,25 +949,15 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab>
                                 : null,
                             onRefreshLocal: _scanAndRefreshLocal,
                           ),
-                        );
-                      },
-                    );
-                  },
+                        ),
+                      );
+                    },
+                  ),
                 );
               },
             ),
           ),
         ),
-
-        // ─── Pagination Controls (Next / Prev / Page Buttons) ───
-        if (totalPages > 1)
-          DesktopEpisodePagination(
-            currentPage: _currentPage,
-            totalPages: totalPages,
-            startIndex: startIndex,
-            endIndex: endIndex,
-            onPageChanged: (newPage) => setState(() => _currentPage = newPage),
-          ),
       ],
     );
   }
@@ -1058,77 +967,51 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab>
       animation: _shimmerController,
       builder: (context, child) {
         final opacity = 0.45 + (_shimmerController.value * 0.55);
-        return Opacity(
-          opacity: opacity,
-          child: child,
+        return SizedBox(
+          height: 272,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: 6,
+            separatorBuilder: (_, _) => const SizedBox(width: 18),
+            itemBuilder: (context, index) {
+              return SizedBox(
+                width: 365,
+                child: Opacity(
+                  opacity: opacity,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AspectRatio(
+                        aspectRatio: 16 / 9,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? Colors.white.withValues(alpha: 0.08)
+                                : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Container(
+                        height: 14,
+                        width: 170,
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? Colors.white.withValues(alpha: 0.08)
+                              : theme.colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
         );
       },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 28),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            for (int i = 0; i < 4; i++)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 220,
-                      height: 124,
-                      decoration: BoxDecoration(
-                        color: isDark
-                            ? Colors.white.withValues(alpha: 0.06)
-                            : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            height: 14,
-                            width: 180,
-                            decoration: BoxDecoration(
-                              color: isDark
-                                  ? Colors.white.withValues(alpha: 0.08)
-                                  : theme.colorScheme.surfaceContainerHighest,
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          Container(
-                            height: 11,
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              color: isDark
-                                  ? Colors.white.withValues(alpha: 0.05)
-                                  : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.7),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Container(
-                            height: 11,
-                            width: 140,
-                            decoration: BoxDecoration(
-                              color: isDark
-                                  ? Colors.white.withValues(alpha: 0.05)
-                                  : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.7),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-          ],
-        ),
-      ),
     );
   }
 }

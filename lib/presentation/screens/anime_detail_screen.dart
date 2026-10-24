@@ -9,13 +9,15 @@ import 'package:seanime_app/core/theme/theme_provider.dart';
 import 'package:seanime_app/data/models/anime_details.dart';
 import 'package:seanime_app/data/models/anime_entry.dart';
 import 'package:seanime_app/data/models/anizip_data.dart';
+import 'package:seanime_app/data/models/library_entry_details.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
+import 'package:seanime_app/core/preferences/tmdb_preferences_provider.dart';
+import 'package:seanime_app/data/services/tmdb_service.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/providers/download_history_provider.dart';
 import 'package:seanime_app/presentation/screens/video_player_screen.dart';
 import 'package:seanime_app/presentation/widgets/anime_detail/anime_detail_desktop_layout.dart';
 import 'package:seanime_app/presentation/widgets/anime_detail/anime_detail_mobile_layout.dart';
-import 'package:seanime_app/presentation/widgets/anime_detail/anime_detail_tv_layout.dart';
 import 'package:seanime_app/presentation/widgets/anime_details_modal_sheet.dart';
 import 'package:seanime_app/presentation/widgets/edit_entry_modal.dart';
 import 'package:g1455/g1455.dart';
@@ -74,6 +76,7 @@ class AnimeDetailScreen extends ConsumerStatefulWidget {
 class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
   AnimeDetails? _details;
   AniZipData? _aniZipData;
+  String? _resolvedLogoUrl;
   bool _isLoading = true;
   bool _isLoadingAniZip = true;
   bool _isLocalMode = false;
@@ -227,6 +230,7 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
       if (cachedAniZip != null) {
         _aniZipData = cachedAniZip;
         _isLoadingAniZip = false;
+        _resolvedLogoUrl = cachedAniZip.clearlogoUrl;
       }
     }
 
@@ -344,38 +348,47 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
     }
     final repo = ref.read(repositoryProvider);
 
-    AnimeDetails? details = _details ??
-        (widget.initialEntry != null
-            ? AnimeDetails(
-                id: widget.mediaId,
-                title: widget.initialEntry!.title,
-                englishTitle: widget.initialEntry!.englishTitle,
-                romajiTitle: widget.initialEntry!.romajiTitle,
-                nativeTitle: widget.initialEntry!.nativeTitle,
-                coverImage: widget.initialEntry!.coverImage,
-                coverColor: widget.initialEntry!.coverColor,
-                bannerImage: widget.initialEntry!.bannerImage,
-                description: widget.initialEntry!.description,
-                totalEpisodes: widget.initialEntry!.totalEpisodes,
-                format: widget.initialEntry!.format,
-                score: widget.initialEntry!.score,
-                status: widget.initialEntry!.status,
-                genres: widget.initialEntry!.genres,
-                season: widget.initialEntry!.season,
-                seasonYear: widget.initialEntry!.year,
-              )
-            : null);
+    AnimeDetails? details = _details;
 
-    final fetchedDetails = await repo.getAnimeDetails(
-      widget.mediaId,
-      initialEntry: widget.initialEntry,
-    );
+    // Fetch details, aniZip, and library entry in parallel to avoid staggered state updates
+    final results = await Future.wait([
+      repo.getAnimeDetails(
+        widget.mediaId,
+        initialEntry: widget.initialEntry,
+      ),
+      _aniZipData != null
+          ? Future.value(_aniZipData)
+          : repo.getAniZipData(widget.mediaId).catchError((_) => null),
+      repo.getAnimeLibraryEntry(widget.mediaId).catchError((_) => null),
+    ]);
+
+    final fetchedDetails = results[0] as AnimeDetails?;
+    final aniZip = results[1] as AniZipData?;
+    final libEntry = results[2] as LibraryEntryDetails?;
+
     if (fetchedDetails != null) {
       details = fetchedDetails;
     }
 
-    // Check local files in library
-    final libEntry = await repo.getAnimeLibraryEntry(widget.mediaId);
+    final effectiveAniZip = aniZip ?? details?.aniZipData;
+    String? resolvedLogo = effectiveAniZip?.clearlogoUrl;
+    if (resolvedLogo == null || resolvedLogo.isEmpty) {
+      final parsedTmdbId = int.tryParse(effectiveAniZip?.mappings?.themoviedbId ?? '');
+      final tvdbId = effectiveAniZip?.mappings?.thetvdbId;
+      final effectiveTmdbId = parsedTmdbId ?? (isTmdb ? widget.mediaId : null);
+      if (effectiveTmdbId != null || tvdbId != null) {
+        try {
+          final apiKey = ref.read(tmdbApiKeyProvider);
+          final tmdbService = TmdbService(apiKey: apiKey);
+          resolvedLogo = await tmdbService.getLogo(
+            tmdbId: effectiveTmdbId,
+            tvdbId: tvdbId,
+            isMovie: (details?.format?.toUpperCase() == 'MOVIE') || (widget.initialEntry?.format?.toUpperCase() == 'MOVIE'),
+          );
+        } catch (_) {}
+      }
+    }
+
     final hasDownloadedFiles = libEntry != null &&
         (libEntry.hasLibraryData ||
             libEntry.episodes.any((e) => e.isDownloaded));
@@ -383,7 +396,10 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
     if (mounted) {
       setState(() {
         _details = details;
+        _aniZipData = aniZip ?? details?.aniZipData;
+        _resolvedLogoUrl = resolvedLogo;
         _isLoading = false;
+        _isLoadingAniZip = false;
         if (hasDownloadedFiles) {
           _hasLocalFiles = true;
           if (!_userManuallyChangedMode && !_isLocalMode && _currentTab == AnimeDetailTab.online) {
@@ -391,16 +407,6 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
           }
         }
       });
-    }
-
-    if (_aniZipData == null) {
-      final aniZip = await repo.getAniZipData(widget.mediaId);
-      if (mounted) {
-        setState(() {
-          _aniZipData = aniZip;
-          _isLoadingAniZip = false;
-        });
-      }
     }
   }
 
@@ -578,12 +584,14 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
         builder: (context) {
           switch (effectiveLayout) {
             case LayoutMode.desktop:
+            case LayoutMode.tv:
               return AnimeDetailDesktopLayout(
                 mediaId: widget.mediaId,
                 initialEntry: widget.initialEntry,
                 heroTag: widget.heroTag,
                 details: _details,
                 aniZipData: _aniZipData,
+                resolvedLogoUrl: _resolvedLogoUrl,
                 isLoading: _isLoading,
                 isLoadingAniZip: _isLoadingAniZip,
                 isLocalMode: _isLocalMode,
@@ -592,25 +600,6 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
                 onToggleLocalMode: _toggleLocalMode,
                 onTabChanged: _changeTab,
                 onModeChanged: _selectMode,
-                onOpenEditEntryModal: _openEditEntryModal,
-                onRetryAniZip: _retryAniZip,
-                onOpenTorrentSelector: _openTorrentSelector,
-                onOpenDetailsModal: _openDetailsModal,
-              );
-
-            case LayoutMode.tv:
-              return AnimeDetailTvLayout(
-                mediaId: widget.mediaId,
-                initialEntry: widget.initialEntry,
-                details: _details,
-                aniZipData: _aniZipData,
-                isLoading: _isLoading,
-                isLoadingAniZip: _isLoadingAniZip,
-                isLocalMode: _isLocalMode,
-                hasLocalFiles: effectiveHasLocal,
-                currentTab: _currentTab,
-                onToggleLocalMode: _toggleLocalMode,
-                onTabChanged: _changeTab,
                 onOpenEditEntryModal: _openEditEntryModal,
                 onRetryAniZip: _retryAniZip,
                 onOpenTorrentSelector: _openTorrentSelector,

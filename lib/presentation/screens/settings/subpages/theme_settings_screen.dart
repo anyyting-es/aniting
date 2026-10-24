@@ -2,27 +2,38 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../../core/constants/feature_flags.dart';
 import '../../../../core/i18n/i18n_provider.dart';
 import '../../../../core/icons/app_icons.dart';
-import '../../../../core/theme/app_palette.dart';
 import '../../../../core/theme/app_theme_colors.dart';
 import '../../../../core/theme/theme_provider.dart';
 import '../widgets/pixel_settings_widgets.dart';
 import '../widgets/pixel_subpage_scaffold.dart';
+import '../widgets/theme/theme_appearance_header_card.dart';
+import '../widgets/theme/theme_dark_mode_view.dart';
+import '../widgets/theme/theme_material_palettes_view.dart';
+import '../widgets/theme/theme_wallpaper_adjust_view.dart';
 import '../../../widgets/m3_expressive_slider.dart';
 
-/// Modern Web & Media Center Theme Settings Screen, matching the clean appearance of the Setup Wizard.
+enum ThemeSubSection {
+  main,
+  darkMode,
+  palettes,
+  wallpaper,
+}
+
+/// Modern Web & Media Center Theme Settings Screen.
+/// In-page sections for Dark Mode, Material Design 3 Palettes, and Wallpaper (No modals!).
 class ThemeSettingsScreen extends ConsumerStatefulWidget {
   final bool isEmbedded;
   const ThemeSettingsScreen({super.key, this.isEmbedded = false});
 
   @override
-  ConsumerState<ThemeSettingsScreen> createState() =>
-      _ThemeSettingsScreenState();
+  ConsumerState<ThemeSettingsScreen> createState() => _ThemeSettingsScreenState();
 }
 
 class _ThemeSettingsScreenState extends ConsumerState<ThemeSettingsScreen> {
-  bool _showCommunityPalettes = false;
+  ThemeSubSection _currentSection = ThemeSubSection.main;
 
   @override
   Widget build(BuildContext context) {
@@ -32,430 +43,110 @@ class _ThemeSettingsScreenState extends ConsumerState<ThemeSettingsScreen> {
     final iconPackNotifier = ref.read(iconPackProvider.notifier);
     final colors = context.themeColors;
     final l10n = ref.watch(translationsProvider);
-    final theme = Theme.of(context);
 
-    final bool isOledSelected = themeSettings.isOled;
-    final bool isDarkSelected =
-        !themeSettings.isOled && themeSettings.themeMode == AppThemeMode.dark;
-    final bool isLightSelected =
-        !themeSettings.isOled && themeSettings.themeMode == AppThemeMode.light;
-
-    return PixelSubpageScaffold(
-      title: l10n.themeAndColors,
-      isEmbedded: widget.isEmbedded,
-      children: [
-        // ─── 1. TEMA (Oscuro, Claro, OLED) ────────────────────────
-        SettingsSectionHeader(title: l10n.themeMode),
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            _buildVisualThemeCard(
-              label: l10n.themeDark,
-              isSelected: isDarkSelected,
-              mode: AppThemeMode.dark,
-              isOled: false,
-              iconPack: iconPack,
-              colors: colors,
-              theme: theme,
-              onTap: () async {
-                await themeNotifier.setOled(false);
-                await themeNotifier.setThemeMode(AppThemeMode.dark);
-                final curId = themeSettings.paletteId;
-                if (curId == AppPalettes.oledBlackId) {
-                  await themeNotifier.setPaletteId(
-                    AppPalettes.materialPurpleId,
-                    resetCustomAccent: false,
-                  );
-                } else {
-                  final matchingId =
-                      AppPalettes.getMatchingVariant(curId, true);
-                  await themeNotifier.setPaletteId(
-                    matchingId,
-                    resetCustomAccent: false,
-                  );
-                }
-              },
-            ),
-            const SizedBox(width: 10),
-            _buildVisualThemeCard(
-              label: l10n.themeLight,
-              isSelected: isLightSelected,
-              mode: AppThemeMode.light,
-              isOled: false,
-              iconPack: iconPack,
-              colors: colors,
-              theme: theme,
-              onTap: () async {
-                await themeNotifier.setOled(false);
-                await themeNotifier.setThemeMode(AppThemeMode.light);
-                final curId = themeSettings.paletteId;
-                if (curId == AppPalettes.oledBlackId) {
-                  await themeNotifier.setPaletteId(
-                    AppPalettes.materialPurpleId,
-                    resetCustomAccent: false,
-                  );
-                } else {
-                  final matchingId =
-                      AppPalettes.getMatchingVariant(curId, false);
-                  await themeNotifier.setPaletteId(
-                    matchingId,
-                    resetCustomAccent: false,
-                  );
-                }
-              },
-            ),
-            const SizedBox(width: 10),
-            _buildVisualThemeCard(
-              label: l10n.themeOled,
-              isSelected: isOledSelected,
-              mode: AppThemeMode.dark,
-              isOled: true,
-              iconPack: iconPack,
-              colors: colors,
-              theme: theme,
-              onTap: () async {
-                await themeNotifier.setThemeMode(AppThemeMode.dark);
-                await themeNotifier.setOled(true);
-              },
-            ),
-          ],
-        ),
-        const SizedBox(height: 24),
-
-        // ─── 2. PALETAS MATERIAL DESIGN (MATERIAL YOU) ───────────
-        SettingsSectionHeader(title: l10n.materialDesignPalettes),
-        const SizedBox(height: 4),
-        Text(
-          l10n.materialDesignPalettesDesc,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-        ),
-        const SizedBox(height: 12),
-        _buildMaterialPalettesGrid(
-          themeSettings: themeSettings,
-          themeNotifier: themeNotifier,
-          iconPack: iconPack,
-          theme: theme,
-          l10n: l10n,
-        ),
-        const SizedBox(height: 24),
-
-        // ─── 3. COLOR DE ACENTO (SEMILLA TONAL M3) ───────────────
-        SettingsSectionHeader(title: l10n.accentColorPalette),
-        const SizedBox(height: 10),
-        _buildAccentColorPicker(
-          themeSettings,
-          themeNotifier,
-          iconPack,
-          colors,
-          l10n,
-        ),
-        const SizedBox(height: 24),
-
-        // ─── 4. PALETAS DE LA COMUNIDAD (OPCIONAL) ───────────────
-        _buildCommunityPalettesSection(
-          themeSettings: themeSettings,
-          themeNotifier: themeNotifier,
-          iconPack: iconPack,
-          theme: theme,
-          colors: colors,
-          l10n: l10n,
-        ),
-        const SizedBox(height: 24),
-
-        // ─── 3. ICON PACK ─────────────────────────────────────────
-        SettingsSectionHeader(title: l10n.iconPack),
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            Expanded(
-              child: _buildIconPackCard(
-                title: 'Lucide Web',
-                isSelected: iconPack == AppIconPack.lucide,
-                iconPack: iconPack,
-                icons: const [
-                  LucideIcons.home,
-                  LucideIcons.compass,
-                  LucideIcons.bookOpen,
-                  LucideIcons.settings,
-                ],
-                colors: colors,
-                onTap: () => iconPackNotifier.setIconPack(AppIconPack.lucide),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _buildIconPackCard(
-                title: 'Material Symbols',
-                isSelected: iconPack == AppIconPack.material,
-                iconPack: iconPack,
-                icons: const [
-                  Icons.home_rounded,
-                  Icons.explore_rounded,
-                  Icons.menu_book_rounded,
-                  Icons.settings_rounded,
-                ],
-                colors: colors,
-                onTap: () => iconPackNotifier.setIconPack(AppIconPack.material),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 24),
-
-        // ─── 4. TEMA DINÁMICO DE ANIME ────────────────────────────
-        SettingsSectionHeader(title: l10n.appearanceAndDisplay),
-        const SizedBox(height: 10),
-        PixelSettingsGroupCard(
-          children: [
-            PixelSwitchTile(
-              icon: AppIcons.sparkles(iconPack),
-              title: l10n.animeDynamicTheme,
-              subtitle: l10n.animeDynamicThemeDesc,
-              value: themeSettings.animeDynamicTheme,
-              onChanged: (val) => themeNotifier.setAnimeDynamicTheme(val),
-            ),
-          ],
-        ),
-        const SizedBox(height: 24),
-
-        // ─── 5. ESQUINAS Y BORDES DE LA APP ───────────────────────
-        SettingsSectionHeader(title: l10n.cornerAndBorders),
-        const SizedBox(height: 10),
-        _ThemeSettingsRadiusSection(colors: colors),
-      ],
-    );
-  }
-
-  Widget _buildVisualThemeCard({
-    required String label,
-    required bool isSelected,
-    required AppThemeMode mode,
-    required bool isOled,
-    required AppIconPack iconPack,
-    required AppThemeColors colors,
-    required ThemeData theme,
-    required VoidCallback onTap,
-  }) {
-    return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.all(7),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? colors.accent.withValues(alpha: 0.12)
-                : colors.surfaceElevated.withValues(alpha: 0.35),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: isSelected
-                  ? colors.accent
-                  : colors.border.withValues(alpha: 0.45),
-              width: isSelected ? 1.8 : 1.0,
-            ),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Mini graphical window mockup
-              Container(
-                height: 58,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: isSelected
-                        ? colors.accent.withValues(alpha: 0.35)
-                        : colors.border.withValues(alpha: 0.3),
-                    width: 1,
-                  ),
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: _buildThemeGraphic(
-                  mode,
-                  isOled,
-                  iconPack,
-                  colors,
-                  isSelected,
-                ),
-              ),
-              const SizedBox(height: 7),
-              // Mode label + indicator
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    isOled
-                        ? AppIcons.tv(iconPack)
-                        : (mode == AppThemeMode.dark
-                              ? AppIcons.darkMode(iconPack)
-                              : AppIcons.lightMode(iconPack)),
-                    size: 13,
-                    color: isSelected
-                        ? colors.accent
-                        : theme.colorScheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: 5),
-                  Flexible(
-                    child: Text(
-                      label,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: isSelected
-                            ? FontWeight.bold
-                            : FontWeight.w500,
-                        color: isSelected
-                            ? colors.accent
-                            : theme.colorScheme.onSurface,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildThemeGraphic(
-    AppThemeMode mode,
-    bool isOled,
-    AppIconPack iconPack,
-    AppThemeColors colors,
-    bool isSelected,
-  ) {
-    final isDark = mode == AppThemeMode.dark;
-    final winBg = isOled
-        ? Colors.black
-        : (isDark ? const Color(0xFF13151F) : const Color(0xFFF6F7FB));
-    final cardBg = isOled
-        ? const Color(0xFF0D0D11)
-        : (isDark ? const Color(0xFF1C1F2E) : Colors.white);
-    final dotColor = isOled
-        ? const Color(0xFF2E2E38)
-        : (isDark ? const Color(0xFF3B4054) : const Color(0xFFCBD0DC));
-    final lineTitle = isOled
-        ? const Color(0xFF22222B)
-        : (isDark ? const Color(0xFF262A3B) : const Color(0xFFDFE2EC));
-    final lineMuted = isOled
-        ? const Color(0xFF1E1E26)
-        : (isDark ? const Color(0xFF2E3347) : const Color(0xFFE5E8F0));
-    final borderColor = isOled
-        ? const Color(0xFF262630)
-        : (isDark ? const Color(0xFF2E3347) : const Color(0xFFE2E5EE));
-
-    return Container(
-      color: winBg,
-      padding: const EdgeInsets.all(5),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return PopScope(
+      canPop: _currentSection == ThemeSubSection.main,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) {
+          setState(() => _currentSection = ThemeSubSection.main);
+        }
+      },
+      child: PixelSubpageScaffold(
+        title: _currentSection == ThemeSubSection.main
+            ? l10n.themeAndColors
+            : (_currentSection == ThemeSubSection.darkMode
+                ? l10n.darkMode
+                : (_currentSection == ThemeSubSection.palettes
+                    ? l10n.themeAndColors
+                    : l10n.customWallpaper)),
+        isEmbedded: widget.isEmbedded,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 4.5,
-                height: 4.5,
-                decoration: BoxDecoration(
-                  color: dotColor,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 3),
-              Container(
-                width: 16,
-                height: 3,
-                decoration: BoxDecoration(
-                  color: lineTitle,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ],
-          ),
-          const Spacer(),
-          Expanded(
-            flex: 3,
-            child: Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: cardBg.withValues(alpha: isOled ? 1.0 : 0.6),
-                borderRadius: BorderRadius.circular(4),
-                border: Border.all(color: borderColor, width: 0.8),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 14,
-                    height: double.infinity,
-                    decoration: BoxDecoration(
-                      color: isOled
-                          ? const Color(0xFF16161D)
-                          : (isDark
-                                ? const Color(0xFF25293D)
-                                : const Color(0xFFECEFF6)),
-                      borderRadius: BorderRadius.circular(2.5),
-                    ),
-                  ),
-                  const SizedBox(width: 5),
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 5,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: cardBg,
-                        borderRadius: BorderRadius.circular(3.5),
-                        border: Border.all(color: borderColor, width: 0.8),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                width: 5.0,
-                                height: 5.0,
-                                decoration: BoxDecoration(
-                                  color: colors.accent,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                              const SizedBox(width: 3.5),
-                              Expanded(
-                                child: Container(
-                                  height: 2.0,
-                                  decoration: BoxDecoration(
-                                    color: lineMuted,
-                                    borderRadius: BorderRadius.circular(1.5),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 2),
-                          Container(
-                            width: 18,
-                            height: 2,
-                            decoration: BoxDecoration(
-                              color: lineMuted.withValues(alpha: 0.6),
-                              borderRadius: BorderRadius.circular(1),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+          if (_currentSection == ThemeSubSection.darkMode)
+            ThemeDarkModeView(
+              onBack: () => setState(() => _currentSection = ThemeSubSection.main),
+            )
+          else if (_currentSection == ThemeSubSection.palettes)
+            ThemeMaterialPalettesView(
+              onBack: () => setState(() => _currentSection = ThemeSubSection.main),
+            )
+          else if (_currentSection == ThemeSubSection.wallpaper &&
+              FeatureFlags.customWallpaper)
+            ThemeWallpaperAdjustView(
+              onBack: () => setState(() => _currentSection = ThemeSubSection.main),
+            )
+          else ...[
+            // ─── 1. CABECERA APARIENCIA (WALLPAPER + TOGGLE + MODOS) ───
+            ThemeAppearanceHeaderCard(
+              onOpenDarkMode: () => setState(() => _currentSection = ThemeSubSection.darkMode),
+              onOpenPalettes: () => setState(() => _currentSection = ThemeSubSection.palettes),
+              onOpenWallpaper: () {
+                if (!FeatureFlags.customWallpaper) return;
+                setState(() => _currentSection = ThemeSubSection.wallpaper);
+              },
             ),
-          ),
+            const SizedBox(height: 24),
+
+            // ─── 2. ICON PACK ─────────────────────────────────────────
+            SettingsSectionHeader(title: l10n.iconPack),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildIconPackCard(
+                    title: 'Lucide Web',
+                    isSelected: iconPack == AppIconPack.lucide,
+                    iconPack: iconPack,
+                    icons: const [
+                      LucideIcons.home,
+                      LucideIcons.compass,
+                      LucideIcons.bookOpen,
+                      LucideIcons.settings,
+                    ],
+                    colors: colors,
+                    onTap: () => iconPackNotifier.setIconPack(AppIconPack.lucide),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _buildIconPackCard(
+                    title: 'Material Symbols',
+                    isSelected: iconPack == AppIconPack.material,
+                    iconPack: iconPack,
+                    icons: const [
+                      Icons.home_rounded,
+                      Icons.explore_rounded,
+                      Icons.menu_book_rounded,
+                      Icons.settings_rounded,
+                    ],
+                    colors: colors,
+                    onTap: () => iconPackNotifier.setIconPack(AppIconPack.material),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            // ─── 3. TEMA DINÁMICO DE ANIME ────────────────────────────
+            SettingsSectionHeader(title: l10n.appearanceAndDisplay),
+            const SizedBox(height: 10),
+            PixelSettingsGroupCard(
+              children: [
+                PixelSwitchTile(
+                  icon: AppIcons.sparkles(iconPack),
+                  title: l10n.animeDynamicTheme,
+                  subtitle: l10n.animeDynamicThemeDesc,
+                  value: themeSettings.animeDynamicTheme,
+                  onChanged: (val) => themeNotifier.setAnimeDynamicTheme(val),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            // ─── 4. ESQUINAS Y BORDES DE LA APP ───────────────────────
+            SettingsSectionHeader(title: l10n.cornerAndBorders),
+            const SizedBox(height: 10),
+            _ThemeSettingsRadiusSection(colors: colors),
+          ],
         ],
       ),
     );
@@ -471,20 +162,20 @@ class _ThemeSettingsScreenState extends ConsumerState<ThemeSettingsScreen> {
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(16),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         decoration: BoxDecoration(
           color: isSelected
-              ? colors.accent.withValues(alpha: 0.12)
+              ? colors.accent.withValues(alpha: 0.14)
               : colors.surfaceElevated.withValues(alpha: 0.40),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected
                 ? colors.accent
-                : colors.border.withValues(alpha: 0.45),
-            width: 1.8,
+                : colors.border.withValues(alpha: 0.35),
+            width: isSelected ? 1.6 : 1.0,
           ),
         ),
         child: Column(
@@ -496,10 +187,8 @@ class _ThemeSettingsScreenState extends ConsumerState<ThemeSettingsScreen> {
                   child: Text(
                     title,
                     style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: isSelected
-                          ? FontWeight.bold
-                          : FontWeight.w600,
+                      fontSize: 13.5,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
                       color: isSelected ? colors.accent : colors.textPrimary,
                     ),
                     maxLines: 1,
@@ -510,18 +199,18 @@ class _ThemeSettingsScreenState extends ConsumerState<ThemeSettingsScreen> {
                   Icon(
                     AppIcons.checkCircle(iconPack),
                     color: colors.accent,
-                    size: 16,
+                    size: 17,
                   ),
               ],
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: icons
                   .map(
                     (ic) => Icon(
                       ic,
-                      size: 18,
+                      size: 20,
                       color: isSelected ? colors.accent : colors.textSecondary,
                     ),
                   )
@@ -532,418 +221,8 @@ class _ThemeSettingsScreenState extends ConsumerState<ThemeSettingsScreen> {
       ),
     );
   }
-
-  Widget _buildAccentColorPicker(
-    ThemeSettings themeSettings,
-    ThemeNotifier themeNotifier,
-    AppIconPack iconPack,
-    AppThemeColors colors,
-    AppTranslations l10n,
-  ) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: [
-          // Theme default accent
-          Tooltip(
-            message: l10n.themeAccentDefault,
-            child: InkWell(
-              onTap: () => themeNotifier.setAccentColor(null),
-              borderRadius: BorderRadius.circular(20),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
-                width: 36,
-                height: 36,
-                margin: const EdgeInsets.only(right: 10),
-                decoration: BoxDecoration(
-                  color: themeSettings.currentPalette.accent,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: themeSettings.customAccentIndex == null
-                        ? colors.textPrimary
-                        : Colors.transparent,
-                    width: 2.5,
-                  ),
-                  boxShadow: themeSettings.customAccentIndex == null
-                      ? [
-                          BoxShadow(
-                            color: themeSettings.currentPalette.accent
-                                .withValues(alpha: 0.5),
-                            blurRadius: 8,
-                          ),
-                        ]
-                      : null,
-                ),
-                child: Center(
-                  child: Icon(
-                    themeSettings.customAccentIndex == null
-                        ? AppIcons.check(iconPack)
-                        : AppIcons.sparkles(iconPack),
-                    color: themeSettings.currentPalette.isDark
-                        ? Colors.black
-                        : Colors.white,
-                    size: 16,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          // Custom material accent swatches
-          ...List.generate(kMaterialAccents.length, (index) {
-            final item = kMaterialAccents[index];
-            final isSelected = themeSettings.customAccentIndex == index;
-
-            return Tooltip(
-              message: item.localizedName(l10n),
-              child: InkWell(
-                onTap: () => themeNotifier.setAccentColor(index),
-                borderRadius: BorderRadius.circular(20),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 180),
-                  width: 36,
-                  height: 36,
-                  margin: const EdgeInsets.only(right: 10),
-                  decoration: BoxDecoration(
-                    color: item.color,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: isSelected
-                          ? colors.textPrimary
-                          : Colors.transparent,
-                      width: 2.5,
-                    ),
-                    boxShadow: isSelected
-                        ? [
-                            BoxShadow(
-                              color: item.color.withValues(alpha: 0.5),
-                              blurRadius: 8,
-                            ),
-                          ]
-                        : null,
-                  ),
-                  child: isSelected
-                      ? Center(
-                          child: Icon(
-                            AppIcons.check(iconPack),
-                            color: item.color.computeLuminance() > 0.5
-                                ? Colors.black
-                                : Colors.white,
-                            size: 16,
-                          ),
-                        )
-                      : null,
-                ),
-              ),
-            );
-          }),
-        ],
-      ),
-    );
-  }
-
-  String? _localizedMaterialName(String id, AppTranslations l10n) {
-    switch (id) {
-      case AppPalettes.materialPurpleId:
-        return l10n.materialPurpleName;
-      case AppPalettes.materialBlueId:
-        return l10n.materialBlueName;
-      case AppPalettes.materialGreenId:
-        return l10n.materialGreenName;
-      case AppPalettes.materialOrangeId:
-        return l10n.materialOrangeName;
-      case AppPalettes.materialCrimsonId:
-        return l10n.materialCrimsonName;
-      case AppPalettes.materialTealId:
-        return l10n.materialTealName;
-      default:
-        return null;
-    }
-  }
-
-  Widget _buildMaterialPalettesGrid({
-    required ThemeSettings themeSettings,
-    required ThemeNotifier themeNotifier,
-    required AppIconPack iconPack,
-    required ThemeData theme,
-    required AppTranslations l10n,
-  }) {
-    final systemPalette = AppPalettes.detectSystemPalette();
-    final items = AppPalettes.materialPalettesInfo;
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isWide = constraints.maxWidth >= 480;
-        final crossAxisCount = isWide ? 2 : 1;
-
-        return GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: items.length + (systemPalette != null ? 1 : 0),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: crossAxisCount,
-            mainAxisSpacing: 8,
-            crossAxisSpacing: 8,
-            childAspectRatio: isWide ? 3.4 : 4.4,
-          ),
-          itemBuilder: (context, index) {
-            if (systemPalette != null && index == items.length) {
-              final isSelected = themeSettings.paletteId == AppPalettes.systemId &&
-                  themeSettings.customAccentIndex == null;
-              return _buildPaletteTile(
-                title: l10n.paletteSystem,
-                subtitle: systemPalette.description,
-                primaryColor: systemPalette.accent,
-                containerColor: systemPalette.surfaceElevated,
-                isSelected: isSelected,
-                iconPack: iconPack,
-                theme: theme,
-                onTap: () async {
-                  await themeNotifier.setPaletteId(
-                    AppPalettes.systemId,
-                    resetCustomAccent: true,
-                  );
-                },
-              );
-            }
-
-            final info = items[index];
-            final isSelected = themeSettings.paletteId == info.id &&
-                themeSettings.customAccentIndex == null;
-            final itemScheme = ColorScheme.fromSeed(
-              seedColor: info.seed,
-              brightness: theme.brightness,
-            );
-
-            return _buildPaletteTile(
-              title: _localizedMaterialName(info.id, l10n) ?? info.name,
-              subtitle: info.description,
-              primaryColor: itemScheme.primary,
-              containerColor: itemScheme.primaryContainer,
-              isSelected: isSelected,
-              iconPack: iconPack,
-              theme: theme,
-              onTap: () async {
-                await themeNotifier.setPaletteId(
-                  info.id,
-                  resetCustomAccent: true,
-                );
-              },
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildPaletteTile({
-    required String title,
-    required String subtitle,
-    required Color primaryColor,
-    required Color containerColor,
-    required bool isSelected,
-    required AppIconPack iconPack,
-    required ThemeData theme,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? primaryColor.withValues(alpha: 0.14)
-              : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: isSelected
-                ? primaryColor
-                : theme.colorScheme.outlineVariant.withValues(alpha: 0.20),
-            width: isSelected ? 1.8 : 1.0,
-          ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: primaryColor,
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Container(
-                  width: 14,
-                  height: 14,
-                  decoration: BoxDecoration(
-                    color: containerColor,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                      color: isSelected ? primaryColor : theme.colorScheme.onSurface,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.75),
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-            if (isSelected)
-              Icon(
-                AppIcons.checkCircle(iconPack),
-                size: 18,
-                color: primaryColor,
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCommunityPalettesSection({
-    required ThemeSettings themeSettings,
-    required ThemeNotifier themeNotifier,
-    required AppIconPack iconPack,
-    required ThemeData theme,
-    required AppThemeColors colors,
-    required AppTranslations l10n,
-  }) {
-    final communityPalettes = themeSettings.themeMode == AppThemeMode.light
-        ? AppPalettes.getLightPresets()
-        : AppPalettes.getDarkPresets();
-
-    return PixelSettingsGroupCard(
-      children: [
-        InkWell(
-          onTap: () => setState(() => _showCommunityPalettes = !_showCommunityPalettes),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            child: Row(
-              children: [
-                Icon(
-                  AppIcons.palette(iconPack),
-                  size: 20,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        l10n.themePresets,
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: theme.colorScheme.onSurface,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        l10n.themePresetsDesc,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Icon(
-                  _showCommunityPalettes
-                      ? Icons.keyboard_arrow_up_rounded
-                      : Icons.keyboard_arrow_down_rounded,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ],
-            ),
-          ),
-        ),
-        if (_showCommunityPalettes) ...[
-          const Divider(height: 1),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: communityPalettes.map((p) {
-                final isSelected = themeSettings.paletteId == p.id;
-                return InkWell(
-                  onTap: () async {
-                    await themeNotifier.setPaletteId(p.id, resetCustomAccent: false);
-                  },
-                  borderRadius: BorderRadius.circular(12),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 180),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? p.accent.withValues(alpha: 0.18)
-                          : p.surfaceElevated.withValues(alpha: 0.4),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: isSelected ? p.accent : p.border.withValues(alpha: 0.5),
-                        width: isSelected ? 1.5 : 1.0,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 12,
-                          height: 12,
-                          decoration: BoxDecoration(
-                            color: p.accent,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          p.localizedName(l10n),
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                            color: isSelected ? p.accent : theme.colorScheme.onSurface,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
-        ],
-      ],
-    );
-  }
 }
 
-/// Slider for app corner radius adjustment with Material 3 Expressive shapes.
 class _ThemeSettingsRadiusSection extends ConsumerStatefulWidget {
   final AppThemeColors colors;
   const _ThemeSettingsRadiusSection({required this.colors});
@@ -955,8 +234,8 @@ class _ThemeSettingsRadiusSection extends ConsumerStatefulWidget {
 
 class _ThemeSettingsRadiusSectionState
     extends ConsumerState<_ThemeSettingsRadiusSection> {
-  late double _localRadius;
-  double? _lastBroadcastRadius;
+  double _localRadius = 10.0;
+  bool _isDragging = false;
 
   @override
   void initState() {
@@ -964,26 +243,21 @@ class _ThemeSettingsRadiusSectionState
     _localRadius = ref.read(themeProvider).borderRadius;
   }
 
-  void _onSliderChanged(double val) {
-    setState(() => _localRadius = val);
-    final rounded = val.roundToDouble();
-    if (_lastBroadcastRadius != rounded) {
-      _lastBroadcastRadius = rounded;
-      ref.read(themeProvider.notifier).setPreviewBorderRadius(rounded);
-    }
+  void _onSliderChanged(double value) {
+    setState(() {
+      _isDragging = true;
+      _localRadius = value;
+    });
   }
 
-  void _onSliderEnd(double val) {
-    final rounded = val.roundToDouble();
-    setState(() => _localRadius = rounded);
-    _lastBroadcastRadius = rounded;
-    ref.read(themeProvider.notifier).setBorderRadius(rounded);
+  void _onSliderEnd(double value) {
+    setState(() => _isDragging = false);
+    ref.read(themeProvider.notifier).setBorderRadius(value);
   }
 
-  void _onChipSelected(double val) {
-    setState(() => _localRadius = val);
-    _lastBroadcastRadius = val;
-    ref.read(themeProvider.notifier).setBorderRadius(val);
+  void _selectPreset(double value) {
+    setState(() => _localRadius = value);
+    ref.read(themeProvider.notifier).setBorderRadius(value);
   }
 
   @override
@@ -991,17 +265,12 @@ class _ThemeSettingsRadiusSectionState
     final colors = widget.colors;
     final l10n = ref.watch(translationsProvider);
 
-    ref.listen<double>(themeProvider.select((s) => s.borderRadius), (
-      prev,
-      next,
-    ) {
-      if ((next - _localRadius).abs() > 0.01) {
-        setState(() {
-          _localRadius = next;
-          _lastBroadcastRadius = next.roundToDouble();
-        });
+    if (!_isDragging) {
+      final current = ref.watch(themeProvider.select((s) => s.borderRadius));
+      if (_localRadius != current) {
+        _localRadius = current;
       }
-    });
+    }
 
     return PixelCardContainer(
       child: Column(
@@ -1010,39 +279,18 @@ class _ThemeSettingsRadiusSectionState
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.rounded_corner_rounded,
-                    size: 20,
-                    color: colors.textSecondary,
+              Expanded(
+                child: Text(
+                  l10n.cornerRadius,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
                   ),
-                  const SizedBox(width: 12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        l10n.cornerRadius,
-                        style: TextStyle(
-                          fontSize: 14.5,
-                          fontWeight: FontWeight.bold,
-                          color: colors.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        l10n.adjustCornerRadiusDesc,
-                        style: TextStyle(fontSize: 12, color: colors.textMuted),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
                 ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: colors.accent.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(10),
@@ -1090,45 +338,20 @@ class _ThemeSettingsRadiusSectionState
               onChangeEnd: _onSliderEnd,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                _buildRadiusChip(
-                  l10n.cornerRadiusSquare,
-                  0.0,
-                  _localRadius,
-                  colors,
-                ),
+                _buildRadiusChip(l10n.cornerRadiusSquare, 0.0, _localRadius, colors),
                 const SizedBox(width: 6),
-                _buildRadiusChip(
-                  l10n.cornerRadiusSubtle,
-                  6.0,
-                  _localRadius,
-                  colors,
-                ),
+                _buildRadiusChip(l10n.cornerRadiusSubtle, 6.0, _localRadius, colors),
                 const SizedBox(width: 6),
-                _buildRadiusChip(
-                  l10n.cornerRadiusNormal,
-                  10.0,
-                  _localRadius,
-                  colors,
-                ),
+                _buildRadiusChip(l10n.cornerRadiusNormal, 10.0, _localRadius, colors),
                 const SizedBox(width: 6),
-                _buildRadiusChip(
-                  l10n.cornerRadiusRound,
-                  16.0,
-                  _localRadius,
-                  colors,
-                ),
+                _buildRadiusChip(l10n.cornerRadiusRound, 16.0, _localRadius, colors),
                 const SizedBox(width: 6),
-                _buildRadiusChip(
-                  l10n.cornerRadiusCurved,
-                  22.0,
-                  _localRadius,
-                  colors,
-                ),
+                _buildRadiusChip(l10n.cornerRadiusCurved, 22.0, _localRadius, colors),
               ],
             ),
           ),
@@ -1140,34 +363,37 @@ class _ThemeSettingsRadiusSectionState
   Widget _buildRadiusChip(
     String label,
     double value,
-    double currentRadius,
+    double current,
     AppThemeColors colors,
   ) {
-    final isSelected = (currentRadius.round() == value.round());
-    return InkWell(
-      onTap: () => _onChipSelected(value),
-      borderRadius: BorderRadius.circular(14),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 140),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? colors.accent.withValues(alpha: 0.18)
-              : colors.surfaceElevated.withValues(alpha: 0.35),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
+    final isSelected = (current - value).abs() < 1.0;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _selectPreset(value),
+        borderRadius: BorderRadius.circular(8),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
             color: isSelected
-                ? colors.accent
-                : colors.border.withValues(alpha: 0.3),
-            width: isSelected ? 1.2 : 1.0,
+                ? colors.accent.withValues(alpha: 0.2)
+                : colors.surfaceElevated.withValues(alpha: 0.4),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: isSelected
+                  ? colors.accent.withValues(alpha: 0.6)
+                  : Colors.transparent,
+              width: 1,
+            ),
           ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-            color: isSelected ? colors.accent : colors.textSecondary,
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 11.5,
+              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+              color: isSelected ? colors.accent : colors.textSecondary,
+            ),
           ),
         ),
       ),

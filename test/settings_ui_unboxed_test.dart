@@ -5,6 +5,8 @@ import 'package:seanime_app/core/server/server_manager.dart';
 import 'package:seanime_app/data/models/server_status.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/screens/settings/settings_screen.dart';
+import 'package:seanime_app/presentation/screens/settings/widgets/expressive/expressive_settings_category_tile.dart';
+import 'package:seanime_app/presentation/screens/settings/widgets/expressive/expressive_settings_sidebar.dart';
 import 'package:seanime_app/presentation/screens/settings/widgets/pixel_settings_widgets.dart';
 
 class MockRunningServerNotifier extends ServerNotifier {
@@ -18,7 +20,7 @@ class MockRunningServerNotifier extends ServerNotifier {
 }
 
 void main() {
-  testWidgets('SettingsScreen renders unboxed items with titles only, separated by sections', (tester) async {
+  testWidgets('SettingsScreen renders ExpressiveSettingsSidebar with categories and detail panel on desktop', (tester) async {
     tester.view.physicalSize = const Size(1200, 1600);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -35,29 +37,71 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Verify section headers exist
-    expect(find.byType(SettingsSectionHeader), findsWidgets);
+    // Verify ExpressiveSettingsSidebar and category tiles exist
+    expect(find.byType(ExpressiveSettingsSidebar), findsOneWidget);
+    expect(find.byType(ExpressiveSettingsCategoryTile), findsWidgets);
 
-    // Verify tiles have titles rendered
-    expect(find.descendant(of: find.byType(SettingsTile), matching: find.text('Tema y Colores')), findsOneWidget);
-    expect(find.descendant(of: find.byType(SettingsTile), matching: find.text('Apariencia e Interfaz')), findsOneWidget);
-    expect(find.descendant(of: find.byType(SettingsTile), matching: find.text('Extensiones')), findsOneWidget);
-    expect(find.descendant(of: find.byType(SettingsTile), matching: find.text('Reproductor de Video')), findsOneWidget);
-    expect(find.descendant(of: find.byType(SettingsTile), matching: find.text('Lector de Manga')), findsOneWidget);
-    expect(find.descendant(of: find.byType(SettingsTile), matching: find.text('Servidor Seanime y Red')), findsOneWidget);
-    expect(find.descendant(of: find.byType(SettingsTile), matching: find.text('Acerca de Aniting')), findsOneWidget);
+    // On desktop, the first tile (theme) is selected
+    final tiles = tester.widgetList<ExpressiveSettingsCategoryTile>(
+      find.byType(ExpressiveSettingsCategoryTile),
+    ).toList();
+    expect(tiles.first.isSelected, isTrue);
+    expect(tiles.first.showChevron, isFalse);
+  });
 
-    // Verify old descriptions are NOT present
-    expect(find.text('Modo oscuro, colores de acento y tema de anime'), findsNothing);
-    expect(find.text('Idioma, tipografía y estilo de visualización'), findsNothing);
-    expect(find.text('Modo Webtoon, paginado, gestos y status bar'), findsNothing);
+  testWidgets('SettingsScreen on mobile has no pre-selected option and shows chevrons', (tester) async {
+    tester.view.physicalSize = const Size(400, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          serverNotifierProvider.overrideWith(MockRunningServerNotifier.new),
+        ],
+        child: const MaterialApp(
+          home: SettingsScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
 
-    // Verify SettingsTile is unboxed (not wrapped in heavy BoxDecoration borders)
-    final tileFinders = find.byType(SettingsTile);
-    expect(tileFinders, findsWidgets);
+    expect(find.byType(ExpressiveSettingsSidebar), findsOneWidget);
+    final tiles = tester.widgetList<ExpressiveSettingsCategoryTile>(
+      find.byType(ExpressiveSettingsCategoryTile),
+    ).toList();
 
-    final firstTile = tester.widget<SettingsTile>(tileFinders.first);
-    expect(firstTile.subtitle, isNull);
+    // On mobile, NO option is selected and all show chevrons
+    for (final tile in tiles) {
+      expect(tile.isSelected, isFalse);
+      expect(tile.showChevron, isTrue);
+    }
+  });
+
+  testWidgets('Mouse click does not show D-pad focus ring, only selects category', (tester) async {
+    tester.view.physicalSize = const Size(1200, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          serverNotifierProvider.overrideWith(MockRunningServerNotifier.new),
+        ],
+        child: const MaterialApp(
+          home: SettingsScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final tiles = find.byType(ExpressiveSettingsCategoryTile);
+    await tester.tap(tiles.at(1));
+    await tester.pumpAndSettle();
+
+    final updatedTiles = tester.widgetList<ExpressiveSettingsCategoryTile>(tiles).toList();
+    expect(updatedTiles[1].isSelected, isTrue);
+    expect(updatedTiles[1].isDpadFocused, isFalse);
   });
 
   testWidgets('PixelSettingsGroupCard and PixelCardContainer are unboxed', (tester) async {

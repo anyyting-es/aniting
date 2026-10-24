@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:g1455/g1455.dart';
 import 'package:seanime_app/core/preferences/glass_theme_provider.dart';
+import 'package:seanime_app/core/constants/feature_flags.dart';
+import 'package:seanime_app/core/preferences/wallpaper_preferences_provider.dart';
 import 'package:seanime_app/presentation/widgets/desktop_sidebar.dart';
 
 /// A Material Design 3 floating navigation dock with fluid animated pill expansion
@@ -97,6 +99,9 @@ class _FloatingDockPillState extends ConsumerState<FloatingDockPill> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final glassEnabled = ref.watch(glassEffectsEnabledProvider);
+    final wallpaper = ref.watch(wallpaperPreferencesProvider);
+    final hasWallpaper =
+        FeatureFlags.customWallpaper && wallpaper.hasValidWallpaper;
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -126,9 +131,13 @@ class _FloatingDockPillState extends ConsumerState<FloatingDockPill> {
               height: widget.height,
               decoration: BoxDecoration(
                 color: glassEnabled
-                    ? (isDark
-                        ? theme.colorScheme.surfaceContainer.withValues(alpha: 0.35)
-                        : theme.colorScheme.surfaceContainer.withValues(alpha: 0.48))
+                    ? (hasWallpaper
+                        ? (isDark
+                            ? theme.colorScheme.surfaceContainer.withValues(alpha: 0.16)
+                            : theme.colorScheme.surfaceContainer.withValues(alpha: 0.22))
+                        : (isDark
+                            ? theme.colorScheme.surfaceContainer.withValues(alpha: 0.35)
+                            : theme.colorScheme.surfaceContainer.withValues(alpha: 0.48)))
                     : theme.colorScheme.surfaceContainer,
                 borderRadius: widget.borderRadius,
                 border: Border.all(

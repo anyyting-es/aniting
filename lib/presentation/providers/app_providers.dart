@@ -893,6 +893,20 @@ final tmdbServiceProvider = Provider<TmdbService>((ref) {
   return TmdbService(apiKey: apiKey);
 });
 
+/// Póster de un show/película de TMDB, memoizado por id y tipo.
+///
+/// Evita que cada rebuild de una tarjeta vuelva a lanzar la petición (lo que
+/// provocaba tormentas de peticiones y microframes al abrir la Biblioteca
+/// local con muchos shows de TMDB sin carátula).
+final tmdbShowPosterProvider = FutureProvider.family<String?, ({int id, bool isMovie})>(
+  (ref, arg) async {
+    final details = await ref
+        .watch(tmdbServiceProvider)
+        .getShowDetails(arg.id, isMovie: arg.isMovie);
+    return details?.posterUrl;
+  },
+);
+
 /// Series y películas TMDB en tendencia (Trending)
 final tmdbTrendingShowsProvider = FutureProvider<List<AnimeEntry>>((ref) async {
   final service = ref.watch(tmdbServiceProvider);

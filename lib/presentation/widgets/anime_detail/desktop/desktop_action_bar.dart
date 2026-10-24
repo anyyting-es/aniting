@@ -16,7 +16,7 @@ enum _DesktopSourceMode {
   torrent,
 }
 
-class DesktopActionBar extends ConsumerWidget {
+class DesktopActionBar extends ConsumerStatefulWidget {
   final int mediaId;
   final String title;
   final int progress;
@@ -66,53 +66,26 @@ class DesktopActionBar extends ConsumerWidget {
     this.onModeChanged,
   });
 
+  @override
+  ConsumerState<DesktopActionBar> createState() => _DesktopActionBarState();
+}
+
+class _DesktopActionBarState extends ConsumerState<DesktopActionBar> {
+  bool _isExpanded = false;
+
   Future<void> _launchTmdb(int mediaId) async {
     try {
       await launchUrlString(
-        'https://www.themoviedb.org/${isMovie ? "movie" : "tv"}/$mediaId',
+        'https://www.themoviedb.org/${widget.isMovie ? "movie" : "tv"}/$mediaId',
         mode: LaunchMode.externalApplication,
       );
     } catch (_) {}
-  }
-
-  Future<void> _launchAnilist(int mediaId) async {
-    try {
-      await launchUrlString(
-        'https://anilist.co/anime/$mediaId',
-        mode: LaunchMode.externalApplication,
-      );
-    } catch (_) {}
-  }
-
-  Future<void> _launchMal(int idMal) async {
-    try {
-      await launchUrlString(
-        'https://myanimelist.net/anime/$idMal',
-        mode: LaunchMode.externalApplication,
-      );
-    } catch (_) {}
-  }
-
-  Future<void> _launchTrailer() async {
-    if (trailerId == null || trailerId!.isEmpty) return;
-    String url = '';
-    final site = trailerSite?.toLowerCase();
-    if (site == 'youtube' || site == null) {
-      url = 'https://www.youtube.com/watch?v=$trailerId';
-    } else if (site == 'dailymotion') {
-      url = 'https://www.dailymotion.com/video/$trailerId';
-    }
-    if (url.isNotEmpty) {
-      try {
-        await launchUrlString(url, mode: LaunchMode.externalApplication);
-      } catch (_) {}
-    }
   }
 
   void _shareAnime(BuildContext context, String title, AppTranslations l10n) {
-    final shareUrl = isTmdb
-        ? 'https://www.themoviedb.org/${isMovie ? "movie" : "tv"}/$mediaId'
-        : 'https://anilist.co/anime/$mediaId';
+    final shareUrl = widget.isTmdb
+        ? 'https://www.themoviedb.org/${widget.isMovie ? "movie" : "tv"}/${widget.mediaId}'
+        : 'https://anilist.co/anime/${widget.mediaId}';
     Clipboard.setData(ClipboardData(text: shareUrl));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -124,7 +97,6 @@ class DesktopActionBar extends ConsumerWidget {
 
   Future<void> _updateStatus(
     BuildContext context,
-    WidgetRef ref,
     String newStatus,
   ) async {
     final repo = ref.read(repositoryProvider);
@@ -132,22 +104,22 @@ class DesktopActionBar extends ConsumerWidget {
     final isLoggedIn = serverState.status?.isLoggedIn ?? false;
     final l10n = ref.read(translationsProvider);
 
-    if (isLoggedIn && !isTmdb) {
+    if (isLoggedIn && !widget.isTmdb) {
       await repo.editAnilistListEntry(
-        mediaId: mediaId,
+        mediaId: widget.mediaId,
         type: 'anime',
         status: newStatus,
-        progress: progress,
+        progress: widget.progress,
       );
     }
 
     await OfflineLibraryService.instance.saveAnimeEntryFromEdit(
-      mediaId: mediaId,
-      title: title,
+      mediaId: widget.mediaId,
+      title: widget.title,
       status: newStatus,
-      progress: progress,
-      totalCount: totalEpisodes,
-      isTmdb: isTmdb,
+      progress: widget.progress,
+      totalCount: widget.totalEpisodes,
+      isTmdb: widget.isTmdb,
     );
 
     if (context.mounted) {
@@ -164,7 +136,7 @@ class DesktopActionBar extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final iconPack = ref.watch(iconPackProvider);
@@ -172,10 +144,10 @@ class DesktopActionBar extends ConsumerWidget {
 
     // Dynamic Reactive Play Label
     final String playLabel;
-    if (userStatus == 'COMPLETED') {
+    if (widget.userStatus == 'COMPLETED') {
       playLabel = l10n.rewatch;
-    } else if (progress > 0) {
-      final nextEp = (progress + 1).clamp(1, totalEpisodes ?? (progress + 1));
+    } else if (widget.progress > 0) {
+      final nextEp = (widget.progress + 1).clamp(1, widget.totalEpisodes ?? (widget.progress + 1));
       playLabel = l10n.continueEpisodeNumbered(nextEp);
     } else {
       playLabel = l10n.watchEpisodeOne;
@@ -183,41 +155,58 @@ class DesktopActionBar extends ConsumerWidget {
 
     return Row(
       children: [
-        // Expanded Reactive Play Button with M3 Expressive motion & morphing
-        M3EButton.icon(
-          style: M3EButtonStyle.filled,
-          size: M3EButtonSize.sm,
-          shape: M3EButtonShape.round,
-          icon: Icon(AppIcons.play(iconPack), size: 18),
-          label: Text(
-            playLabel,
-            style: const TextStyle(
-              fontSize: 13.5,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.2,
-            ),
-          ),
-          onPressed: isTmdb
-              ? () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Row(
-                        children: [
-                          Icon(AppIcons.info(iconPack),
-                              color: Colors.white, size: 18),
-                          const SizedBox(width: 8),
-                          Expanded(child: Text(l10n.streamingComingSoon)),
-                        ],
+        Expanded(
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Reactive Play Button (Same standard height as all buttons, contracts horizontally on expand)
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 240),
+                  curve: Curves.easeOutCubic,
+                  constraints: BoxConstraints(
+                    minWidth: _isExpanded ? 130 : 200,
+                    maxWidth: _isExpanded ? 165 : 240,
+                  ),
+                  child: M3EButton.icon(
+                    style: M3EButtonStyle.filled,
+                    size: M3EButtonSize.sm,
+                    shape: M3EButtonShape.round,
+                    icon: Icon(AppIcons.play(iconPack), size: 18),
+                    label: Text(
+                      playLabel,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.2,
                       ),
-                      behavior: SnackBarBehavior.floating,
                     ),
-                  );
-                }
-              : onPlayNext,
-        ),
-        const SizedBox(width: 10),
+                    onPressed: widget.isTmdb
+                        ? () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Row(
+                                  children: [
+                                    Icon(AppIcons.info(iconPack),
+                                        color: Colors.white, size: 18),
+                                    const SizedBox(width: 8),
+                                    Expanded(child: Text(l10n.streamingComingSoon)),
+                                  ],
+                                ),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          }
+                        : widget.onPlayNext,
+                  ),
+                ),
+                const SizedBox(width: 8),
 
-        // Edit Entry Pencil Button (GlassMenuAnchor with fluid detachment)
+        // Quick Action 1: Status / Bookmark Dropdown (Always visible)
         GlassMenuAnchor(
           width: 210,
           items: [
@@ -228,7 +217,7 @@ class DesktopActionBar extends ConsumerWidget {
                 size: 18,
                 color: const Color(0xFF10B981),
               ),
-              onPressed: () => _updateStatus(context, ref, 'CURRENT'),
+              onPressed: () => _updateStatus(context, 'CURRENT'),
             ),
             GlassMenuItem(
               label: l10n.statusPlanning,
@@ -237,7 +226,7 @@ class DesktopActionBar extends ConsumerWidget {
                 size: 18,
                 color: const Color(0xFF3B82F6),
               ),
-              onPressed: () => _updateStatus(context, ref, 'PLANNING'),
+              onPressed: () => _updateStatus(context, 'PLANNING'),
             ),
             GlassMenuItem(
               label: l10n.statusCompleted,
@@ -246,7 +235,7 @@ class DesktopActionBar extends ConsumerWidget {
                 size: 18,
                 color: const Color(0xFF8B5CF6),
               ),
-              onPressed: () => _updateStatus(context, ref, 'COMPLETED'),
+              onPressed: () => _updateStatus(context, 'COMPLETED'),
             ),
             GlassMenuItem(
               label: l10n.statusPaused,
@@ -255,7 +244,7 @@ class DesktopActionBar extends ConsumerWidget {
                 size: 18,
                 color: const Color(0xFFF59E0B),
               ),
-              onPressed: () => _updateStatus(context, ref, 'PAUSED'),
+              onPressed: () => _updateStatus(context, 'PAUSED'),
             ),
             GlassMenuItem(
               label: l10n.statusDropped,
@@ -264,134 +253,116 @@ class DesktopActionBar extends ConsumerWidget {
                 size: 18,
                 color: const Color(0xFFEF4444),
               ),
-              onPressed: () => _updateStatus(context, ref, 'DROPPED'),
+              onPressed: () => _updateStatus(context, 'DROPPED'),
             ),
-            if (!isTmdb)
+            if (!widget.isTmdb)
               GlassMenuItem(
                 label: l10n.editDetails,
                 icon: Icon(
                   AppIcons.edit(iconPack),
                   size: 18,
                 ),
-                onPressed: () => onOpenEditEntryModal(title),
+                onPressed: () => widget.onOpenEditEntryModal(widget.title),
               ),
           ],
           builder: (context, controller) {
             return M3EIconButton(
-              tooltip: isTmdb ? l10n.editDetails : l10n.editInAnilist,
+              tooltip: widget.isTmdb ? l10n.editDetails : l10n.editInAnilist,
               icon: Icon(AppIcons.edit(iconPack), size: 18),
-              variant: M3EIconButtonVariant.standard,
+              variant: M3EIconButtonVariant.tonal,
               size: M3EIconButtonSize.sm,
               onPressed: controller.open,
             );
           },
         ),
-        const SizedBox(width: 6),
+        const SizedBox(width: 8),
 
-        // Share Button (M3E Icon Button)
-        M3EIconButton(
-          tooltip: l10n.share,
-          icon: Icon(AppIcons.share(iconPack), size: 18),
-          variant: M3EIconButtonVariant.standard,
-          size: M3EIconButtonSize.sm,
-          onPressed: () => _shareAnime(context, title, l10n),
+        // Quick Action 2: Expand / Collapse Toggle Button
+        Tooltip(
+          message: _isExpanded ? l10n.collapse : l10n.moreOptions,
+          child: M3EIconButton(
+            icon: AnimatedRotation(
+              turns: _isExpanded ? 0.5 : 0.0,
+              duration: const Duration(milliseconds: 220),
+              child: Icon(
+                _isExpanded ? AppIcons.chevronLeft(iconPack) : AppIcons.moreHoriz(iconPack),
+                size: 18,
+              ),
+            ),
+            variant: _isExpanded ? M3EIconButtonVariant.filled : M3EIconButtonVariant.tonal,
+            size: M3EIconButtonSize.sm,
+            onPressed: () => setState(() => _isExpanded = !_isExpanded),
+          ),
         ),
-        const SizedBox(width: 6),
 
-        // Watch Trailer Button (M3E Icon Button)
-        if (hasTrailer) ...[
-          M3EIconButton(
-            tooltip: l10n.watchTrailer,
-            icon: Icon(AppIcons.video(iconPack), size: 18),
-            variant: M3EIconButtonVariant.standard,
-            size: M3EIconButtonSize.sm,
-            onPressed: _launchTrailer,
-          ),
-          const SizedBox(width: 6),
-        ],
+        // ─── Collapsible Secondary Actions (Smoothly reveals on expand) ───
+        AnimatedSize(
+          duration: const Duration(milliseconds: 240),
+          curve: Curves.easeOutCubic,
+          child: _isExpanded
+              ? Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(width: 8),
 
-        // Download Button (Torrents modal - Anime only)
-        if (!isTmdb && onDownload != null) ...[
-          M3EIconButton(
-            tooltip: l10n.downloadWithTorrentClient,
-            icon: Icon(AppIcons.download(iconPack), size: 20),
-            variant: M3EIconButtonVariant.standard,
-            size: M3EIconButtonSize.sm,
-            onPressed: onDownload!,
-          ),
-          const SizedBox(width: 6),
-        ],
+                    // Share Button
+                    M3EIconButton(
+                      tooltip: l10n.share,
+                      icon: Icon(AppIcons.share(iconPack), size: 18),
+                      variant: M3EIconButtonVariant.tonal,
+                      size: M3EIconButtonSize.sm,
+                      onPressed: () => _shareAnime(context, widget.title, l10n),
+                    ),
 
-        // External Link (TMDB)
-        if (isTmdb) ...[
-          Tooltip(
-            message: 'The Movie Database (TMDB)',
-            child: M3EIconButton(
-              icon: Icon(AppIcons.openInNew(iconPack), size: 18),
-              variant: M3EIconButtonVariant.standard,
-              size: M3EIconButtonSize.sm,
-              onPressed: () => _launchTmdb(mediaId),
+                    // Download Button (Torrents modal - Anime only)
+                    if (!widget.isTmdb && widget.onDownload != null) ...[
+                      const SizedBox(width: 8),
+                      M3EIconButton(
+                        tooltip: l10n.downloadWithTorrentClient,
+                        icon: Icon(AppIcons.download(iconPack), size: 18),
+                        variant: M3EIconButtonVariant.tonal,
+                        size: M3EIconButtonSize.sm,
+                        onPressed: widget.onDownload!,
+                      ),
+                    ],
+
+                    // External Link (TMDB)
+                    if (widget.isTmdb) ...[
+                      const SizedBox(width: 8),
+                      Tooltip(
+                        message: 'The Movie Database (TMDB)',
+                        child: M3EIconButton(
+                          icon: Icon(AppIcons.openInNew(iconPack), size: 18),
+                          variant: M3EIconButtonVariant.tonal,
+                          size: M3EIconButtonSize.sm,
+                          onPressed: () => _launchTmdb(widget.mediaId),
+                        ),
+                      ),
+                    ],
+                  ],
+                )
+              : const SizedBox.shrink(),
+        ),
+              ],
             ),
           ),
-          const SizedBox(width: 6),
-        ] else ...[
-          // AniList External Tracker Link (M3E Icon Button)
-          Tooltip(
-            message: l10n.viewOnAnilist,
-            child: M3EIconButton(
-              icon: ClipOval(
-                child: Image.asset(
-                  'assets/icons/AniList_logo.png',
-                  width: 20,
-                  height: 20,
-                  fit: BoxFit.contain,
-                ),
-              ),
-              variant: M3EIconButtonVariant.standard,
-              size: M3EIconButtonSize.sm,
-              onPressed: () => _launchAnilist(mediaId),
-            ),
-          ),
-          const SizedBox(width: 6),
-
-          // MAL External Tracker Link (M3E Icon Button)
-          if (idMal != null) ...[
-            Tooltip(
-              message: l10n.viewOnMal,
-              child: M3EIconButton(
-                icon: ClipOval(
-                  child: Image.asset(
-                    'assets/icons/MyAnimeList_Logo.png',
-                    width: 20,
-                    height: 20,
-                    fit: BoxFit.contain,
-                  ),
-                ),
-                variant: M3EIconButtonVariant.standard,
-                size: M3EIconButtonSize.sm,
-                onPressed: () => _launchMal(idMal!),
-              ),
-            ),
-            const SizedBox(width: 6),
-          ],
-        ],
-
-        const Spacer(),
+        ),
 
         // Source Mode Toggle (Local / Online / Torrent) with GlassSegmentedControl (Anime only)
-        if (!isTmdb) ...[
+        if (!widget.isTmdb) ...[
+          const SizedBox(width: 12),
           () {
             final availableModes = <_DesktopSourceMode>[
-              if (hasLocalFiles) _DesktopSourceMode.local,
-              if (onlineEnabled) _DesktopSourceMode.online,
-              if (torrentEnabled) _DesktopSourceMode.torrent,
+              if (widget.hasLocalFiles) _DesktopSourceMode.local,
+              if (widget.onlineEnabled) _DesktopSourceMode.online,
+              if (widget.torrentEnabled) _DesktopSourceMode.torrent,
             ];
 
             if (availableModes.length < 2) return const SizedBox.shrink();
 
-            final _DesktopSourceMode activeMode = isLocalMode
+            final _DesktopSourceMode activeMode = widget.isLocalMode
                 ? _DesktopSourceMode.local
-                : (currentTab == AnimeDetailTab.online
+                : (widget.currentTab == AnimeDetailTab.online
                     ? _DesktopSourceMode.online
                     : _DesktopSourceMode.torrent);
             final rawIndex = availableModes.indexOf(activeMode);
@@ -405,20 +376,20 @@ class DesktopActionBar extends ConsumerWidget {
                 selectedIndex: selectedIndex,
                 onSelected: (index) {
                   final mode = availableModes[index];
-                  if (onModeChanged != null) {
-                    onModeChanged!(mode.name);
+                  if (widget.onModeChanged != null) {
+                    widget.onModeChanged!(mode.name);
                   } else {
                     switch (mode) {
                       case _DesktopSourceMode.local:
-                        if (!isLocalMode) onToggleLocalMode?.call();
+                        if (!widget.isLocalMode) widget.onToggleLocalMode?.call();
                         break;
                       case _DesktopSourceMode.online:
-                        if (isLocalMode) onToggleLocalMode?.call();
-                        onTabChanged(AnimeDetailTab.online);
+                        if (widget.isLocalMode) widget.onToggleLocalMode?.call();
+                        widget.onTabChanged(AnimeDetailTab.online);
                         break;
                       case _DesktopSourceMode.torrent:
-                        if (isLocalMode) onToggleLocalMode?.call();
-                        onTabChanged(AnimeDetailTab.torrent);
+                        if (widget.isLocalMode) widget.onToggleLocalMode?.call();
+                        widget.onTabChanged(AnimeDetailTab.torrent);
                         break;
                     }
                   }

@@ -1240,6 +1240,7 @@ class SeanimeRepository {
           final fallbackNative = details.nativeTitle ?? initialEntry.nativeTitle;
           final fallbackCover = details.coverImage ?? initialEntry.coverImage;
           final fallbackBanner = details.bannerImage ?? initialEntry.bannerImage;
+          final fallbackCoverColor = details.coverColor ?? initialEntry.coverColor;
 
           details = details.copyWith(
             title: fallbackTitle,
@@ -1248,6 +1249,7 @@ class SeanimeRepository {
             nativeTitle: fallbackNative,
             coverImage: fallbackCover,
             bannerImage: fallbackBanner,
+            coverColor: fallbackCoverColor,
           );
         }
 

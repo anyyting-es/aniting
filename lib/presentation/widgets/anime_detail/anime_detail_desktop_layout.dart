@@ -7,21 +7,27 @@ import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/preferences/playback_progress_preferences_provider.dart';
 import 'package:seanime_app/core/preferences/streaming_preferences_provider.dart';
 import 'package:seanime_app/core/preferences/title_language_provider.dart';
+import 'package:seanime_app/core/preferences/tmdb_preferences_provider.dart';
 import 'package:seanime_app/data/models/anime_details.dart';
 import 'package:seanime_app/data/models/anime_entry.dart';
 import 'package:seanime_app/data/models/anizip_data.dart';
 import 'package:seanime_app/data/models/library_entry_details.dart';
 import 'package:seanime_app/data/models/onlinestream_models.dart';
+import 'package:seanime_app/data/services/tmdb_service.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
 import 'package:seanime_app/presentation/screens/video_player_screen.dart';
 import 'package:seanime_app/core/theme/smooth_scroll_controller.dart';
 
+import 'package:url_launcher/url_launcher_string.dart';
+import 'package:seanime_app/core/theme/theme_provider.dart';
+
 import 'desktop/desktop_action_bar.dart';
+import 'desktop/desktop_cast_row.dart';
 import 'desktop/desktop_episodes_tab.dart';
 import 'desktop/desktop_header.dart';
 import 'desktop/desktop_hero_banner.dart';
-import 'desktop/desktop_sidebar.dart';
+import 'desktop/desktop_trailers_section.dart';
 import 'package:seanime_app/presentation/widgets/episodes/episodes_view.dart';
 import 'package:seanime_app/presentation/widgets/episodes/episode_batch_action_bar.dart';
 
@@ -30,6 +36,7 @@ class AnimeDetailDesktopLayout extends ConsumerStatefulWidget {
   final AnimeEntry? initialEntry;
   final AnimeDetails? details;
   final AniZipData? aniZipData;
+  final String? resolvedLogoUrl;
   final bool isLoading;
   final bool isLoadingAniZip;
   final bool isLocalMode;
@@ -58,6 +65,7 @@ class AnimeDetailDesktopLayout extends ConsumerStatefulWidget {
     this.heroTag,
     required this.details,
     required this.aniZipData,
+    this.resolvedLogoUrl,
     required this.isLoading,
     required this.isLoadingAniZip,
     required this.isLocalMode,
@@ -89,11 +97,13 @@ class _AnimeDetailDesktopLayoutState
   List<OnlinestreamEpisode> _onlineEpisodes = [];
   bool _isLoadingOnlineEpisodes = false;
   final int? _loadingEpisodeNumber = null;
+  String? _tmdbLogoUrl;
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    _resolveLogo();
 
     final isTmdb = widget.details?.isTmdb ?? widget.initialEntry?.isTmdb ?? false;
     if (!isTmdb) {
@@ -137,6 +147,35 @@ class _AnimeDetailDesktopLayoutState
         !_isLoadingOnlineEpisodes) {
       _loadOnlineEpisodes();
     }
+    if (widget.aniZipData != oldWidget.aniZipData ||
+        widget.details != oldWidget.details) {
+      _resolveLogo();
+    }
+  }
+
+  void _resolveLogo() {
+    final existingLogo = widget.aniZipData?.clearlogoUrl ?? widget.details?.aniZipData?.clearlogoUrl;
+    if (existingLogo != null && existingLogo.isNotEmpty) return;
+
+    final aniZip = widget.aniZipData ?? widget.details?.aniZipData;
+    final parsedTmdbId = int.tryParse(aniZip?.mappings?.themoviedbId ?? '');
+    final tvdbId = aniZip?.mappings?.thetvdbId;
+    final isTmdb = widget.details?.isTmdb ?? widget.initialEntry?.isTmdb ?? false;
+    final effectiveTmdbId = parsedTmdbId ?? (isTmdb ? widget.mediaId : null);
+
+    if (effectiveTmdbId == null && tvdbId == null) return;
+
+    final apiKey = ref.read(tmdbApiKeyProvider);
+    final tmdbService = TmdbService(apiKey: apiKey);
+    tmdbService.getLogo(
+      tmdbId: effectiveTmdbId,
+      tvdbId: tvdbId,
+      isMovie: widget.details?.format?.toUpperCase() == 'MOVIE',
+    ).then((logo) {
+      if (mounted && logo != null && logo.isNotEmpty) {
+        setState(() => _tmdbLogoUrl = logo);
+      }
+    });
   }
 
   @override
@@ -381,7 +420,6 @@ class _AnimeDetailDesktopLayoutState
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     final iconPack = ref.watch(iconPackProvider);
     final l10n = ref.watch(translationsProvider);
     final titleLang = ref.watch(titleLanguageProvider);
@@ -401,8 +439,16 @@ class _AnimeDetailDesktopLayoutState
 
     final coverUrl =
         widget.initialEntry?.coverImage ?? widget.details?.coverImage;
+    final clearLogo = widget.resolvedLogoUrl ??
+        widget.aniZipData?.clearlogoUrl ??
+        widget.details?.aniZipData?.clearlogoUrl ??
+        _tmdbLogoUrl;
     final aniZipFanart = widget.aniZipData?.fanartUrl ?? widget.details?.aniZipData?.fanartUrl;
-    final hasAniZipFanart = !isTmdb && aniZipFanart != null && aniZipFanart.isNotEmpty;
+    final aniZipBanner = widget.aniZipData?.bannerUrl ?? widget.details?.aniZipData?.bannerUrl;
+    final aniZipBg = (aniZipFanart != null && aniZipFanart.isNotEmpty)
+        ? aniZipFanart
+        : ((aniZipBanner != null && aniZipBanner.isNotEmpty) ? aniZipBanner : null);
+    final hasAniZipBg = !isTmdb && aniZipBg != null && aniZipBg.isNotEmpty;
     final hasRealBanner = (widget.details?.bannerImage != null &&
             widget.details!.bannerImage!.isNotEmpty) ||
         (widget.initialEntry?.bannerImage != null &&
@@ -413,13 +459,13 @@ class _AnimeDetailDesktopLayoutState
           ? (widget.details?.bannerImage ?? widget.initialEntry?.bannerImage)
           : coverUrl;
     } else {
-      bannerUrl = hasAniZipFanart
-          ? aniZipFanart
+      bannerUrl = hasAniZipBg
+          ? aniZipBg
           : (hasRealBanner
               ? (widget.details?.bannerImage ?? widget.initialEntry?.bannerImage)
-              : (widget.aniZipData?.bannerUrl ?? coverUrl));
+              : coverUrl);
     }
-    final isBlurredCover = !hasAniZipFanart && !hasRealBanner && coverUrl != null;
+    final isBlurredCover = !hasAniZipBg && !hasRealBanner && coverUrl != null;
 
     final score = widget.details?.score ?? widget.initialEntry?.score;
     final format = widget.details?.format ?? widget.initialEntry?.format ?? 'TV';
@@ -491,11 +537,13 @@ class _AnimeDetailDesktopLayoutState
         ? widget.aniZipData!.episodes.map((e) => e.episodeNumber).toList()
         : List.generate(totalEpisodes ?? 0, (i) => i + 1);
 
+    final dominantColor = parseHexColor(widget.details?.coverColor ?? widget.initialEntry?.coverColor) ?? theme.colorScheme.primary;
+
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: Stack(
         children: [
-          // ─── 1. Panoramic Top Hero Backdrop ───
+          // ─── 1. Full-Page Cinematic Backdrop ───
           ValueListenableBuilder<double>(
             valueListenable: _scrollProgressNotifier,
             builder: (context, scrollProgress, _) {
@@ -504,173 +552,205 @@ class _AnimeDetailDesktopLayoutState
                 isBlurredCover: isBlurredCover,
                 scrollProgress: scrollProgress,
                 scaffoldBackgroundColor: theme.scaffoldBackgroundColor,
+                dominantColor: dominantColor,
+                isFullPage: true,
               );
             },
           ),
 
-          // ─── 2. Main Scrollable Container (Full width, minimal side margins) ───
+          // ─── 2. Main Scrollable Container (Full width, pushed down to showcase fanart) ───
           Positioned.fill(
-            child: SingleChildScrollView(
-              controller: _scrollController,
-              padding: const EdgeInsets.fromLTRB(32, 0, 32, 64),
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Back button (Material 3 Expressive)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 42, bottom: 24),
-                      child: M3EIconButton(
-                        variant: M3EIconButtonVariant.standard,
-                        size: M3EIconButtonSize.sm,
-                        icon: Icon(
-                          AppIcons.arrowLeft(iconPack),
-                          color: bannerUrl != null ? Colors.white : (isDark ? Colors.white : theme.colorScheme.onSurface),
-                          size: 20,
-                          shadows: bannerUrl != null
-                              ? const [
-                                  Shadow(
-                                    color: Colors.black54,
-                                    blurRadius: 4,
-                                    offset: Offset(0, 1),
-                                  ),
-                                ]
-                              : null,
-                        ),
-                        tooltip: MaterialLocalizations.of(context).backButtonTooltip,
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                    ),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final topSpacing = (constraints.maxHeight * 0.08).clamp(32.0, 96.0);
 
-                    // Breathing space so top hero fanart/backdrop is widely visible
-                    const SizedBox(height: 72),
-
-                    // ─── Top Poster & Metadata Section (Settled at bottom with poster) ───
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
+                return SingleChildScrollView(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.fromLTRB(40, 0, 40, 48),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Left: Cover Poster Only (Clean, no bottom metadata pushing layout down)
-                        DesktopSidebar(
-                          mediaId: widget.mediaId,
-                          coverUrl: coverUrl,
-                          heroTag: widget.heroTag,
-                        ),
-
-                        const SizedBox(width: 32),
-
-                        // Right: Title, Badges (Format, Status, Score, Studio) & Synopsis
-                        Expanded(
-                          child: AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 240),
-                            child: widget.isLoading &&
-                                    (widget.details == null ||
-                                        (widget.details!.genres.isEmpty &&
-                                            (widget.details!.description?.isEmpty ?? true)))
-                                ? _buildHeaderSkeleton(isDark)
-                                : DesktopHeader(
-                                    key: const ValueKey('desktop_header_ready'),
-                                    seasonYearStr: seasonYearStr,
-                                    dateSeasonStr: dateSeasonStr,
-                                    title: title,
-                                    subtitle: subtitle,
-                                    genres: widget.details?.genres ?? widget.initialEntry?.genres ?? [],
-                                    description: description,
-                                    format: format,
-                                    status: status,
-                                    userStatus: userStatus,
-                                    progress: progress,
-                                    score: score,
-                                    studio: studio,
-                                    totalEpisodes: totalEpisodes,
-                                    duration: duration,
-                                    onEditStatus: () => widget.onOpenEditEntryModal(title),
-                                  ),
+                        // Top Navigation Bar (Back button)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 36, bottom: 20),
+                          child: M3EIconButton(
+                            variant: M3EIconButtonVariant.tonal,
+                            size: M3EIconButtonSize.sm,
+                            icon: Icon(
+                              AppIcons.arrowLeft(iconPack),
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                            tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+                            onPressed: () => Navigator.pop(context),
                           ),
                         ),
+
+                        // Breathing space pushing hero header, actions, and episode row down
+                        SizedBox(height: topSpacing),
+
+                        if (widget.isLoading || widget.details == null)
+                          Padding(
+                            padding: EdgeInsets.only(top: (constraints.maxHeight * 0.22).clamp(60.0, 180.0)),
+                            child: Center(
+                              child: M3ELoadingIndicator(
+                                variant: M3ELoadingIndicatorVariant.contained,
+                                size: 48,
+                                color: theme.colorScheme.tertiary,
+                              ),
+                            ),
+                          )
+                        else ...[
+                          // ─── Top Hero Section (Matching Image 2: Logo, Badges, Genres, Synopsis) ───
+                          DesktopHeader(
+                            key: const ValueKey('desktop_header_ready'),
+                            clearlogoUrl: clearLogo,
+                            isTmdb: isTmdb,
+                            seasonYearStr: seasonYearStr,
+                            dateSeasonStr: dateSeasonStr,
+                            title: title,
+                            subtitle: subtitle,
+                            genres: widget.details?.genres ?? widget.initialEntry?.genres ?? [],
+                            description: description,
+                            format: format,
+                            status: status,
+                            userStatus: userStatus,
+                            progress: progress,
+                            score: score,
+                            studio: studio,
+                            totalEpisodes: totalEpisodes,
+                            duration: duration,
+                            onEditStatus: () => widget.onOpenEditEntryModal(title),
+                          ),
+
+                        const SizedBox(height: 20),
+
+                        // ─── Action Bar (Play, Edit, Share, Trailer, Links & Online/Torrent Toggle) ───
+                        DesktopActionBar(
+                          mediaId: widget.mediaId,
+                          title: title,
+                          progress: progress,
+                          idMal: idMal,
+                          trailerId: trailerId,
+                          trailerSite: trailerSite,
+                          hasTrailer: hasTrailer,
+                          currentTab: widget.currentTab,
+                          onlineEnabled: onlineEnabled,
+                          torrentEnabled: torrentEnabled,
+                          isTmdb: isTmdb,
+                          userStatus: userStatus,
+                          totalEpisodes: totalEpisodes,
+                          onPlayNext: () => _handlePlayNext(progress),
+                          onOpenEditEntryModal: widget.onOpenEditEntryModal,
+                          onTabChanged: widget.onTabChanged,
+                          isLocalMode: widget.isLocalMode,
+                          hasLocalFiles: effectiveHasLocal,
+                          onToggleLocalMode: widget.onToggleLocalMode,
+                          onModeChanged: widget.onModeChanged,
+                          onDownload: () {
+                            final totalEps = widget.details?.totalEpisodes ?? widget.initialEntry?.totalEpisodes;
+                            final nextEp = (progress + 1).clamp(1, totalEps ?? (progress + 1));
+                            final defaultEpTitle = l10n.episodeNumber(nextEp);
+                            widget.onOpenTorrentSelector(
+                              episodeNumber: nextEp,
+                              episodeTitle: defaultEpTitle,
+                            );
+                          },
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        // ─── Episodes Section (Single horizontal row directly underneath actions) ───
+                        if (isTmdb)
+                          EpisodesView(
+                            mediaId: widget.mediaId,
+                            isTmdb: true,
+                            isHorizontal: true,
+                            animeDetails: widget.details,
+                            onOpenTorrentSelector: widget.onOpenTorrentSelector,
+                          )
+                        else
+                          DesktopEpisodesTab(
+                            mediaId: widget.mediaId,
+                            details: widget.details,
+                            aniZipData: widget.aniZipData,
+                            isLoadingAniZip: widget.isLoadingAniZip,
+                            progress: progress,
+                            isLocalMode: widget.isLocalMode,
+                            currentTab: widget.currentTab,
+                            providers: _providers,
+                            selectedProvider: _selectedProvider,
+                            isDubbed: _isDubbed,
+                            onlineEpisodes: _onlineEpisodes,
+                            isLoadingOnlineEpisodes: _isLoadingOnlineEpisodes,
+                            loadingEpisodeNumber: _loadingEpisodeNumber,
+                            fallbackCoverImage: coverUrl,
+                            onProviderChanged: (p) {
+                              if (p != null) {
+                                setState(() => _selectedProvider = p);
+                                SharedPreferences.getInstance().then(
+                                    (prefs) => prefs.setString(_prefLastProviderKey, p.id));
+                                _loadOnlineEpisodes();
+                              }
+                            },
+                            onToggleDubbed: () {
+                              setState(() => _isDubbed = !_isDubbed);
+                              _loadOnlineEpisodes();
+                            },
+                            onEpisodeClicked: _onEpisodeClicked,
+                            onToggleLocalMode: widget.onToggleLocalMode,
+                            onTabChanged: widget.onTabChanged,
+                            onOpenTorrentSelector: widget.onOpenTorrentSelector,
+                          ),
+
+                        // ─── Cast / Characters Section (Directly underneath episodes) ───
+                        () {
+                          final charList = widget.details?.characters ??
+                              (widget.details?.rawMedia?['credits']?['cast'] as List<dynamic>?) ??
+                              const [];
+                          if (charList.isEmpty) return const SizedBox.shrink();
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 16),
+                            child: DesktopCastRow(
+                              characters: charList,
+                              isTmdb: isTmdb,
+                            ),
+                          );
+                        }(),
+
+                        // ─── Trailers & Videos Section (Directly underneath cast) ───
+                        if (hasTrailer)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 24),
+                            child: DesktopTrailersSection(
+                              trailerId: trailerId,
+                              trailerSite: trailerSite,
+                              onTap: () async {
+                                String url = '';
+                                final site = trailerSite?.toLowerCase();
+                                if (site == 'youtube' || site == null) {
+                                  url = 'https://www.youtube.com/watch?v=$trailerId';
+                                } else if (site == 'dailymotion') {
+                                  url = 'https://www.dailymotion.com/video/$trailerId';
+                                }
+                                if (url.isNotEmpty) {
+                                  try {
+                                    await launchUrlString(url, mode: LaunchMode.externalApplication);
+                                  } catch (_) {}
+                                }
+                              },
+                            ),
+                          ),
                       ],
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // ─── Action Bar (Play, Edit, Share, Trailer, Links & Online/Torrent Toggle) ───
-                    DesktopActionBar(
-                      mediaId: widget.mediaId,
-                      title: title,
-                      progress: progress,
-                      idMal: idMal,
-                      trailerId: trailerId,
-                      trailerSite: trailerSite,
-                      hasTrailer: hasTrailer,
-                      currentTab: widget.currentTab,
-                      onlineEnabled: onlineEnabled,
-                      torrentEnabled: torrentEnabled,
-                      isTmdb: isTmdb,
-                      userStatus: userStatus,
-                      totalEpisodes: totalEpisodes,
-                      onPlayNext: () => _handlePlayNext(progress),
-                      onOpenEditEntryModal: widget.onOpenEditEntryModal,
-                      onTabChanged: widget.onTabChanged,
-                      isLocalMode: widget.isLocalMode,
-                      hasLocalFiles: effectiveHasLocal,
-                      onToggleLocalMode: widget.onToggleLocalMode,
-                      onModeChanged: widget.onModeChanged,
-                      onDownload: () {
-                        final totalEps = widget.details?.totalEpisodes ?? widget.initialEntry?.totalEpisodes;
-                        final nextEp = (progress + 1).clamp(1, totalEps ?? (progress + 1));
-                        final defaultEpTitle = l10n.episodeNumber(nextEp);
-                        widget.onOpenTorrentSelector(
-                          episodeNumber: nextEp,
-                          episodeTitle: defaultEpTitle,
-                        );
-                      },
-                    ),
-
-                    const SizedBox(height: 28),
-
-                    // ─── Episodes Section (Full Width, without redundant header title) ───
-                    if (isTmdb)
-                      EpisodesView(
-                        mediaId: widget.mediaId,
-                        isTmdb: true,
-                        animeDetails: widget.details,
-                        onOpenTorrentSelector: widget.onOpenTorrentSelector,
-                      )
-                    else
-                      DesktopEpisodesTab(
-                        mediaId: widget.mediaId,
-                        details: widget.details,
-                        aniZipData: widget.aniZipData,
-                        isLoadingAniZip: widget.isLoadingAniZip,
-                        progress: progress,
-                        isLocalMode: widget.isLocalMode,
-                        currentTab: widget.currentTab,
-                        providers: _providers,
-                        selectedProvider: _selectedProvider,
-                        isDubbed: _isDubbed,
-                        onlineEpisodes: _onlineEpisodes,
-                        isLoadingOnlineEpisodes: _isLoadingOnlineEpisodes,
-                        loadingEpisodeNumber: _loadingEpisodeNumber,
-                        fallbackCoverImage: coverUrl,
-                        onProviderChanged: (p) {
-                          if (p != null) {
-                            setState(() => _selectedProvider = p);
-                            SharedPreferences.getInstance().then(
-                                (prefs) => prefs.setString(_prefLastProviderKey, p.id));
-                            _loadOnlineEpisodes();
-                          }
-                        },
-                        onToggleDubbed: () {
-                          setState(() => _isDubbed = !_isDubbed);
-                          _loadOnlineEpisodes();
-                        },
-                        onEpisodeClicked: _onEpisodeClicked,
-                        onToggleLocalMode: widget.onToggleLocalMode,
-                        onTabChanged: widget.onTabChanged,
-                        onOpenTorrentSelector: widget.onOpenTorrentSelector,
-                      ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
+              );
+              },
             ),
+          ),
             // ─── 4. Floating Batch Action Bar ───
             Positioned(
               bottom: 24,
@@ -703,87 +783,5 @@ class _AnimeDetailDesktopLayoutState
           ],
         ),
       );
-  }
-
-  Widget _buildHeaderSkeleton(bool isDark) {
-    final blockColor = isDark
-        ? Colors.white.withValues(alpha: 0.08)
-        : Colors.black.withValues(alpha: 0.06);
-
-    return Column(
-      key: const ValueKey('desktop_header_skeleton'),
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisAlignment: MainAxisAlignment.end,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Title Bar Skeleton
-        Container(
-          width: 380,
-          height: 32,
-          decoration: BoxDecoration(
-            color: blockColor,
-            borderRadius: BorderRadius.circular(6),
-          ),
-        ),
-        const SizedBox(height: 10),
-        // Subtitle Bar Skeleton
-        Container(
-          width: 220,
-          height: 16,
-          decoration: BoxDecoration(
-            color: blockColor,
-            borderRadius: BorderRadius.circular(4),
-          ),
-        ),
-        const SizedBox(height: 16),
-        // Row 1 Badges Skeleton
-        Container(
-          width: 280,
-          height: 24,
-          decoration: BoxDecoration(
-            color: blockColor,
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-        const SizedBox(height: 12),
-        // Row 2 Badges Skeleton
-        Container(
-          width: 340,
-          height: 24,
-          decoration: BoxDecoration(
-            color: blockColor,
-            borderRadius: BorderRadius.circular(6),
-          ),
-        ),
-        const SizedBox(height: 18),
-        // Synopsis 3 Lines Skeleton
-        Container(
-          width: 680,
-          height: 14,
-          decoration: BoxDecoration(
-            color: blockColor,
-            borderRadius: BorderRadius.circular(4),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          width: 620,
-          height: 14,
-          decoration: BoxDecoration(
-            color: blockColor,
-            borderRadius: BorderRadius.circular(4),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          width: 440,
-          height: 14,
-          decoration: BoxDecoration(
-            color: blockColor,
-            borderRadius: BorderRadius.circular(4),
-          ),
-        ),
-      ],
-    );
   }
 }

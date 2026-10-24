@@ -10,19 +10,37 @@ import 'package:seanime_app/presentation/screens/settings/widgets/local_library/
 import 'package:seanime_app/presentation/screens/settings/widgets/pixel_settings_widgets.dart';
 import 'package:seanime_app/presentation/screens/settings/widgets/pixel_subpage_scaffold.dart';
 
-class LocalLibrarySettingsScreen extends ConsumerWidget {
+class LocalLibrarySettingsScreen extends ConsumerStatefulWidget {
   final bool isEmbedded;
 
   const LocalLibrarySettingsScreen({super.key, this.isEmbedded = false});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<LocalLibrarySettingsScreen> createState() =>
+      _LocalLibrarySettingsScreenState();
+}
+
+class _LocalLibrarySettingsScreenState
+    extends ConsumerState<LocalLibrarySettingsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Refresco en segundo plano solo si los datos están viejos: si el usuario
+    // entra y sale de la página, se reutiliza el estado ya cargado.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(localLibraryProvider.notifier).refreshIfStale();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = ref.watch(translationsProvider);
     final state = ref.watch(localLibraryProvider);
 
     return PixelSubpageScaffold(
       title: l10n.localLibrarySettingsTitle,
-      isEmbedded: isEmbedded,
+      isEmbedded: widget.isEmbedded,
       children: [
         // ─── 1. BANNER INFORMATIVO ───────────────────────────────
         PixelInfoBanner(

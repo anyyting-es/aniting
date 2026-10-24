@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -110,6 +111,46 @@ void main() {
 
       expect(tappedIndex, -1);
       expect(controller.offset, greaterThan(50.0));
+    });
+  });
+  group('Overscroll indicator per platform', () {
+    Future<void> pumpBoundedList(WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          scrollBehavior: const AppScrollBehavior(),
+          home: Scaffold(
+            body: ListView.builder(
+              itemCount: 40,
+              itemBuilder: (context, i) => SizedBox(
+                height: 50,
+                child: Text('Item $i'),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    testWidgets('Desktop does not apply the stretch effect (no deformed icons)', (
+      tester,
+    ) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+      try {
+        await pumpBoundedList(tester);
+        expect(find.byType(StretchingOverscrollIndicator), findsNothing);
+      } finally {
+        debugDefaultTargetPlatformOverride = null;
+      }
+    });
+
+    testWidgets('Android keeps the native stretch effect', (tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      try {
+        await pumpBoundedList(tester);
+        expect(find.byType(StretchingOverscrollIndicator), findsOneWidget);
+      } finally {
+        debugDefaultTargetPlatformOverride = null;
+      }
     });
   });
 }

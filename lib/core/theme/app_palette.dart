@@ -77,6 +77,8 @@ class AppThemePalette {
   /// Returns the localized name of the palette if available, or the raw name.
   String localizedName(AppTranslations l10n) {
     switch (id) {
+      case AppPalettes.materialWallpaperId:
+        return l10n.materialWallpaperName;
       case AppPalettes.materialPurpleId:
         return l10n.materialPurpleName;
       case AppPalettes.materialBlueId:
@@ -210,6 +212,8 @@ class AppPalettes {
   static const String cleanSlateId = 'clean_slate';
 
   // Material Design 3 palette IDs
+  static const String materialWallpaperId = 'material_wallpaper';
+  static Color? wallpaperSeedColor;
   static const String materialPurpleId = 'material_purple';
   static const String materialBlueId = 'material_blue';
   static const String materialGreenId = 'material_green';
@@ -670,6 +674,16 @@ class AppPalettes {
   }
 
   static AppThemePalette getById(String id, {bool isDark = true}) {
+    if (id == materialWallpaperId) {
+      return createMaterialPalette(
+        id: materialWallpaperId,
+        name: 'Material You Fondo',
+        description: 'Diseño Material 3 dinámico generado a partir de tu fondo de pantalla',
+        seedColor: wallpaperSeedColor ?? const Color(0xFF6750A4),
+        isDark: isDark,
+      );
+    }
+
     for (final info in materialPalettesInfo) {
       if (info.id == id) {
         return createMaterialPalette(
@@ -699,6 +713,7 @@ class AppPalettes {
   }
 
   static String getMatchingVariant(String id, bool toDark) {
+    if (id == materialWallpaperId) return id;
     if (materialPalettesInfo.any((m) => m.id == id)) return id;
     if (id == systemId) return id;
 

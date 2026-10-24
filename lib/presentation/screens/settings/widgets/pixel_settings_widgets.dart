@@ -35,10 +35,10 @@ class PixelSettingsGroupCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+        color: colorScheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: colorScheme.outlineVariant.withValues(alpha: 0.12),
+          color: colorScheme.outlineVariant.withValues(alpha: 0.25),
           width: 1,
         ),
       ),
@@ -65,10 +65,10 @@ class PixelCardContainer extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+        color: colorScheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: colorScheme.outlineVariant.withValues(alpha: 0.12),
+          color: colorScheme.outlineVariant.withValues(alpha: 0.25),
           width: 1,
         ),
       ),
@@ -223,7 +223,9 @@ class PixelSwitchTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return SwitchListTile(
+    return Material(
+      color: Colors.transparent,
+      child: SwitchListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       secondary: Container(
         width: 36,
@@ -263,6 +265,7 @@ class PixelSwitchTile extends StatelessWidget {
           : null,
       value: value,
       onChanged: onChanged,
+    ),
     );
   }
 }

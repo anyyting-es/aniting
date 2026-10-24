@@ -24,24 +24,18 @@ class PixelSubpageScaffold extends StatelessWidget {
         : 0.0;
     final topPadding = MediaQuery.paddingOf(context).top + extraDesktopTop;
 
-    // En pantallas grandes (PC / Tablet): centrado compacto sin estiramiento exagerado
+    // En pantallas grandes (PC / Tablet): sin constraints artificiales ni márgenes excesivos respecto a la isla
     if (isEmbedded) {
       return Scaffold(
         backgroundColor: Colors.transparent,
-        body: Align(
-          alignment: Alignment.topCenter,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 820),
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-              children: [
-                PixelPageHeader(title: title, showBackButton: false),
-                const SizedBox(height: 12),
-                ...children,
-                const SizedBox(height: 32),
-              ],
-            ),
-          ),
+        body: ListView(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          children: [
+            PixelPageHeader(title: title, showBackButton: false),
+            const SizedBox(height: 12),
+            ...children,
+            const SizedBox(height: 32),
+          ],
         ),
       );
     }
@@ -49,6 +43,7 @@ class PixelSubpageScaffold extends StatelessWidget {
     // En móvil: Cabecera colapsable fluida estilo Pixel/Material 3
     // El título se desplaza y escala continuamente hacia la derecha del botón atrás sin saltos ni solapamiento
     return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: Align(
         alignment: Alignment.topCenter,
         child: ConstrainedBox(

@@ -260,24 +260,20 @@ void main() {
         ),
       );
 
-      // First page: Episodes 1 through 20 are present
+      // Horizontal list renders initial visible episodes (e.g. EP 1)
       expect(find.textContaining('EP 1.'), findsOneWidget);
-      expect(find.textContaining('EP 20.'), findsOneWidget);
-      // Episode 21 should NOT be on page 1
-      expect(find.textContaining('EP 21.'), findsNothing);
 
-      // Pagination indicators
-      expect(find.byIcon(AppIcons.chevronRight(AppIconPack.lucide)), findsOneWidget);
-      expect(find.byIcon(AppIcons.chevronLeft(AppIconPack.lucide)), findsOneWidget);
+      // Verify horizontal scroll view is present
+      final listFinder = find.byType(ListView);
+      expect(listFinder, findsOneWidget);
+      final listView = tester.widget<ListView>(listFinder);
+      expect(listView.scrollDirection, Axis.horizontal);
 
-      // Tap next icon
-      await tester.tap(find.byIcon(AppIcons.chevronRight(AppIconPack.lucide)));
+      // Scroll horizontally to reach later episodes
+      await tester.drag(listFinder, const Offset(-2000, 0));
       await tester.pumpAndSettle();
 
-      // Now on page 2: Episodes 21 to 35 should be visible
-      expect(find.textContaining('EP 21.'), findsOneWidget);
-      expect(find.textContaining('EP 35.'), findsOneWidget);
-      expect(find.textContaining('EP 1.'), findsNothing);
+      expect(find.textContaining('EP 10.'), findsOneWidget);
     });
 
     testWidgets('DesktopEpisodesTab filters out specials, openings, endings, recaps and duplicate episode numbers', (tester) async {

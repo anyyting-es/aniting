@@ -306,14 +306,19 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
     final isDesktop = MediaQuery.of(context).size.width >= 720;
     final cardWidth = isDesktop ? 215.0 : 155.0;
-    final carouselHeight = isDesktop ? 375.0 : 290.0;
     final carouselSpacing = isDesktop ? 14.0 : 10.0;
+    // Alto real de la tarjeta (póster 2:3 + 2 líneas de título) más un pequeño
+    // margen para la sombra del hover. Antes se usaba una altura fija
+    // (375/290) bastante mayor que la tarjeta, así que el hueco sobrante se
+    // sumaba a la separación entre carruseles.
+    final cardHeight = ((cardWidth - 8.0) / 0.72) + 52.0;
+    final carouselHeight = cardHeight + (isDesktop ? 6.0 : 4.0);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 2),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -364,10 +369,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           const CuratedSectionRowSkeleton(isAnimated: true)
         else
           SizedBox(
-            height: carouselHeight + 16,
+            height: carouselHeight + 4,
             child: ListView.separated(
               clipBehavior: Clip.none,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
               scrollDirection: Axis.horizontal,
               cacheExtent: 350,
               itemCount: entries.length,
@@ -388,7 +393,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               },
             ),
           ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 4),
       ],
     );
   }
@@ -406,14 +411,19 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
     final isDesktop = MediaQuery.of(context).size.width >= 720;
     final cardWidth = isDesktop ? 215.0 : 155.0;
-    final carouselHeight = isDesktop ? 375.0 : 290.0;
     final carouselSpacing = isDesktop ? 14.0 : 10.0;
+    // Alto real de la tarjeta (póster 2:3 + 2 líneas de título + la fila
+    // "año • estado") más un pequeño margen para la sombra del hover. Antes se
+    // usaba una altura fija (375/290) bastante mayor que la tarjeta, así que el
+    // hueco sobrante se sumaba a la separación entre carruseles.
+    final cardHeight = ((cardWidth - 8.0) / 0.72) + 71.0;
+    final carouselHeight = cardHeight + (isDesktop ? 6.0 : 4.0);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 2),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -464,10 +474,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           const CuratedSectionRowSkeleton(isAnimated: true)
         else
           SizedBox(
-            height: carouselHeight + 16,
+            height: carouselHeight + 4,
             child: ListView.separated(
               clipBehavior: Clip.none,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
               scrollDirection: Axis.horizontal,
               cacheExtent: 350,
               itemCount: entries.length,
@@ -488,7 +498,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               },
             ),
           ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 4),
       ],
     );
   }

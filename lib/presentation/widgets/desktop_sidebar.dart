@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/preferences/resume_bar_preferences_provider.dart';
+import 'package:seanime_app/core/theme/app_dpad_navigator.dart';
 import 'package:seanime_app/core/theme/app_theme_colors.dart';
 import 'package:seanime_app/presentation/widgets/floating_resume_bar.dart';
 
@@ -93,6 +94,8 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
       child: FocusTraversalGroup(
         policy: WidgetOrderTraversalPolicy(),
         child: Focus(
+          canRequestFocus: false,
+          skipTraversal: true,
           onKeyEvent: (node, event) {
             if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
               return KeyEventResult.ignored;
@@ -101,7 +104,26 @@ class _DesktopSidebarState extends ConsumerState<DesktopSidebar> {
               return KeyEventResult.handled;
             }
             if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
-              FocusScope.of(context).focusInDirection(TraversalDirection.right);
+              // The sidebar owns its own FocusScope. Use the global navigator
+              // so the right arrow can actually reach the content area.
+              final primary = FocusManager.instance.primaryFocus;
+              if (primary != null) {
+                AppDpadNavigator.moveFocus(primary, TraversalDirection.right);
+              }
+              return KeyEventResult.handled;
+            }
+            if (event.logicalKey == LogicalKeyboardKey.arrowUp ||
+                event.logicalKey == LogicalKeyboardKey.arrowDown) {
+              // Keep vertical navigation inside the rail. At the edges the key
+              // is consumed instead of jumping sideways into the content.
+              final primary = FocusManager.instance.primaryFocus;
+              if (primary != null) {
+                if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+                  primary.nextFocus();
+                } else {
+                  primary.previousFocus();
+                }
+              }
               return KeyEventResult.handled;
             }
             return KeyEventResult.ignored;

@@ -56,7 +56,7 @@ Widget buildWebPageTransition({
 
   final secondaryFade = Tween<double>(
     begin: 1.0,
-    end: 0.0,
+    end: 0.90,
   ).animate(curvedSecondary);
 
   return FadeTransition(
