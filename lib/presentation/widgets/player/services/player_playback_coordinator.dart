@@ -1,20 +1,20 @@
 import 'dart:async';
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
-import 'package:seanime_app/core/player/mpv/mpv.dart' as mpv;
+import 'package:media_kit/media_kit.dart' as media_kit;
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/player/exo_player_service.dart';
-import 'package:seanime_app/core/player/mpv_player_service.dart';
+import 'package:seanime_app/core/player/media_kit_player_service.dart';
 import 'package:seanime_app/core/preferences/subtitle_style_preferences_provider.dart';
 import 'package:seanime_app/presentation/widgets/player/models/player_types.dart';
 import 'package:seanime_app/presentation/widgets/player/services/player_shader_service.dart';
 
-/// Coordinates dual-engine video playback (ExoPlayer on Android, libmpv on desktop & fallback).
+/// Coordinates playback with ExoPlayer on Android and media_kit elsewhere.
 /// Encapsulates stream listening, track parsing, subtitle auto-selection, and automatic fallback.
 class PlayerPlaybackCoordinator {
   bool isUsingExoPlayer;
   ExoPlayerService? exoService;
-  MpvPlayerService? mpvService;
+  MediaKitPlayerService? mediaKitService;
   SubtitleStylePrefs? currentSubtitleStyle;
 
   String? get videoUrl => _videoUrl;
@@ -31,7 +31,7 @@ class PlayerPlaybackCoordinator {
   final VoidCallback onEnded;
   final void Function(List<UiTrack> audio, List<UiTrack> subtitles, String? selectedAudioId, String? selectedSubId) onTracks;
   final ValueChanged<String> onCues;
-  final void Function(String? reason, Duration currentPos) onFallbackToMpv;
+  final void Function(String? reason, Duration currentPos) onFallbackToMediaKit;
   final ValueChanged<List<PlayerChapter>>? onChapters;
   final String Function(String url, Map<String, String>? headers)? buildProxyUrl;
 
@@ -47,14 +47,13 @@ class PlayerPlaybackCoordinator {
   StreamSubscription? _exoCuesSub;
   StreamSubscription? _exoChaptersSub;
 
-  StreamSubscription? _mpvPosSub;
-  StreamSubscription? _mpvDurSub;
-  StreamSubscription? _mpvBufSub;
-  StreamSubscription? _mpvPlayingSub;
-  StreamSubscription? _mpvBufferingSub;
-  StreamSubscription? _mpvTracksSub;
-  StreamSubscription? _mpvTrackSub;
-  StreamSubscription? _mpvEndedSub;
+  StreamSubscription? _mediaKitPosSub;
+  StreamSubscription? _mediaKitDurSub;
+  StreamSubscription? _mediaKitBufSub;
+  StreamSubscription? _mediaKitPlayingSub;
+  StreamSubscription? _mediaKitBufferingSub;
+  StreamSubscription? _mediaKitTracksSub;
+  StreamSubscription? _mediaKitEndedSub;
 
   Duration _currentPos = Duration.zero;
 
@@ -133,7 +132,7 @@ class PlayerPlaybackCoordinator {
     required this.onEnded,
     required this.onTracks,
     required this.onCues,
-    required this.onFallbackToMpv,
+    required this.onFallbackToMediaKit,
     this.onChapters,
     this.buildProxyUrl,
   });
@@ -174,7 +173,7 @@ class PlayerPlaybackCoordinator {
         initialSurfaceHeight: initialSurfaceHeight,
       );
     } else {
-      _initMpv(
+      _initMediaKit(
         videoUrl: videoUrl,
         title: title,
         episodeTitle: episodeTitle,
@@ -299,7 +298,7 @@ class PlayerPlaybackCoordinator {
 
     _exoErrorSub = exo.errorStream.listen((err) {
       debugPrint('[PlayerCoordinator] ExoPlayer error: ${err.message} (code: ${err.errorCode})');
-      triggerFallbackToMpv(err.message);
+      triggerFallbackToMediaKit(err.message);
     });
 
     final mime = mimeType ?? _detectMimeType(videoUrl);
@@ -329,7 +328,7 @@ class PlayerPlaybackCoordinator {
     });
   }
 
-  void _initMpv({
+  void _initMediaKit({
     required String videoUrl,
     required String title,
     String? episodeTitle,
@@ -339,26 +338,26 @@ class PlayerPlaybackCoordinator {
     ShaderPreset activeShaderPreset = ShaderPreset.none,
     bool isOnlineStream = false,
   }) {
-    _cancelMpvSubs();
-    final service = MpvPlayerService();
-    mpvService = service;
+    _cancelMediaKitSubs();
+    final service = MediaKitPlayerService();
+    mediaKitService = service;
     if (currentSubtitleStyle != null) {
       service.applySubtitleStyle(currentSubtitleStyle!);
     }
 
-    _mpvPosSub = service.player.streams.position.listen((pos) {
+    _mediaKitPosSub = service.player.stream.position.listen((pos) {
       _currentPos = pos;
       onPosition(pos);
     });
-    _mpvDurSub = service.player.streams.duration.listen(onDuration);
-    _mpvBufSub = service.player.streams.buffer.listen(onBuffer);
-    _mpvPlayingSub = service.player.streams.playing.listen(onPlaying);
-    _mpvBufferingSub = service.player.streams.buffering.listen(onBuffering);
-    _mpvEndedSub = service.player.streams.completed.listen((completed) {
+    _mediaKitDurSub = service.player.stream.duration.listen(onDuration);
+    _mediaKitBufSub = service.player.stream.buffer.listen(onBuffer);
+    _mediaKitPlayingSub = service.player.stream.playing.listen(onPlaying);
+    _mediaKitBufferingSub = service.player.stream.buffering.listen(onBuffering);
+    _mediaKitEndedSub = service.player.stream.completed.listen((completed) {
       if (completed) onEnded();
     });
 
-    _mpvTracksSub = service.player.streams.tracks.listen((tracks) {
+    _mediaKitTracksSub = service.player.stream.tracks.listen((tracks) {
       final currentSub = service.player.state.track.subtitle;
       final currentAudio = service.player.state.track.audio;
 
@@ -374,7 +373,7 @@ class PlayerPlaybackCoordinator {
                 ? l10n.automatic
                 : (e.value.title ?? e.value.language ?? '${l10n.audioTracks} #${e.value.id}'),
             language: e.value.language ?? '',
-            selected: e.value.id == currentAudio?.id,
+            selected: e.value.id == currentAudio.id,
           )).toList();
 
       final List<UiTrack> mergedSubs = [];
@@ -390,7 +389,7 @@ class PlayerPlaybackCoordinator {
           index: mergedSubs.length,
           title: subTitle,
           language: t.language ?? '',
-          selected: t.id == currentSub?.id,
+          selected: t.id == currentSub.id,
         ));
       }
 
@@ -413,11 +412,7 @@ class PlayerPlaybackCoordinator {
         }
       }
 
-      onTracks(audioList, mergedSubs, currentAudio?.id, currentSub?.id);
-    });
-
-    _mpvTrackSub = service.player.streams.track.listen((track) {
-      // Stream track updates
+      onTracks(audioList, mergedSubs, currentAudio.id, currentSub.id);
     });
 
     String effectiveVideoUrl = videoUrl;
@@ -437,7 +432,6 @@ class PlayerPlaybackCoordinator {
         episodeTitle: episodeTitle,
         startPosition: startPosition,
         httpHeaders: effectiveHeaders,
-        isOnlineStream: isOnlineStream,
       );
 
       // Auto-load default external subtitle if provided
@@ -448,7 +442,7 @@ class PlayerPlaybackCoordinator {
         final lang = _getSubLanguage(subToUse);
         final label = _getSubLabel(subToUse);
         if (url.isNotEmpty) {
-          service.setSubtitleTrack(mpv.SubtitleTrack.uri(
+          service.setSubtitleTrack(media_kit.SubtitleTrack.uri(
             url,
             title: label.isNotEmpty ? label : lang,
             language: lang,
@@ -460,10 +454,10 @@ class PlayerPlaybackCoordinator {
     shaderService.applyPreset(service, activeShaderPreset);
   }
 
-  void triggerFallbackToMpv([String? reason]) {
+  void triggerFallbackToMediaKit([String? reason]) {
     if (!isUsingExoPlayer) return;
     final fallbackPos = _currentPos > Duration.zero ? _currentPos : (_startPosition ?? Duration.zero);
-    debugPrint('[PlayerCoordinator] Triggering fallback to MPV at $fallbackPos (reason: $reason)');
+    debugPrint('[PlayerCoordinator] Triggering fallback to media_kit at $fallbackPos (reason: $reason)');
     _cancelExoSubs();
     exoService?.dispose();
     exoService = null;
@@ -471,7 +465,7 @@ class PlayerPlaybackCoordinator {
 
     // Immediately initialize and start MPV so the player continues seamlessly
     if (_videoUrl != null) {
-      _initMpv(
+      _initMediaKit(
         videoUrl: _videoUrl!,
         title: _title ?? '',
         episodeTitle: _episodeTitle,
@@ -483,7 +477,7 @@ class PlayerPlaybackCoordinator {
       );
     }
 
-    onFallbackToMpv(reason, fallbackPos);
+    onFallbackToMediaKit(reason, fallbackPos);
   }
 
   void open({
@@ -521,7 +515,7 @@ class PlayerPlaybackCoordinator {
         autoPlay: true,
         subtitles: externalSubs,
       );
-    } else if (mpvService != null) {
+    } else if (mediaKitService != null) {
       String effectiveVideoUrl = videoUrl;
       Map<String, String>? effectiveHeaders = headers;
       if (isOnlineStream && buildProxyUrl != null && videoUrl.isNotEmpty) {
@@ -532,13 +526,12 @@ class PlayerPlaybackCoordinator {
         }
       }
 
-      mpvService!.open(
+      mediaKitService!.open(
         effectiveVideoUrl,
         title: title,
         episodeTitle: episodeTitle,
         startPosition: startPosition ?? Duration.zero,
         httpHeaders: effectiveHeaders,
-        isOnlineStream: isOnlineStream,
       );
 
       if (externalSubtitles != null && externalSubtitles.isNotEmpty) {
@@ -548,7 +541,7 @@ class PlayerPlaybackCoordinator {
         final lang = _getSubLanguage(subToUse);
         final label = _getSubLabel(subToUse);
         if (url.isNotEmpty) {
-          mpvService!.setSubtitleTrack(mpv.SubtitleTrack.uri(
+          mediaKitService!.setSubtitleTrack(media_kit.SubtitleTrack.uri(
             url,
             title: label.isNotEmpty ? label : lang,
             language: lang,
@@ -562,7 +555,7 @@ class PlayerPlaybackCoordinator {
     if (isUsingExoPlayer) {
       exoService?.play();
     } else {
-      mpvService?.play();
+      mediaKitService?.play();
     }
   }
 
@@ -570,7 +563,7 @@ class PlayerPlaybackCoordinator {
     if (isUsingExoPlayer) {
       exoService?.pause();
     } else {
-      mpvService?.pause();
+      mediaKitService?.pause();
     }
   }
 
@@ -578,7 +571,7 @@ class PlayerPlaybackCoordinator {
     if (isUsingExoPlayer) {
       exoService?.stop();
     } else {
-      mpvService?.stop();
+      mediaKitService?.stop();
     }
   }
 
@@ -586,7 +579,7 @@ class PlayerPlaybackCoordinator {
     if (isUsingExoPlayer) {
       exoService?.seek(position);
     } else {
-      mpvService?.seek(position);
+      mediaKitService?.seek(position);
     }
   }
 
@@ -594,7 +587,7 @@ class PlayerPlaybackCoordinator {
     if (isUsingExoPlayer) {
       exoService?.setVolume(volume / 100.0);
     } else {
-      mpvService?.setVolume(volume);
+      mediaKitService?.setVolume(volume);
     }
   }
 
@@ -602,7 +595,7 @@ class PlayerPlaybackCoordinator {
     if (isUsingExoPlayer) {
       exoService?.setRate(rate);
     } else {
-      mpvService?.setRate(rate);
+      mediaKitService?.setRate(rate);
     }
   }
 
@@ -610,7 +603,7 @@ class PlayerPlaybackCoordinator {
     if (isUsingExoPlayer) {
       exoService?.setSubtitleDelay(ms);
     } else {
-      mpvService?.setProperty('sub-delay', '${ms / 1000.0}');
+      // media_kit does not expose backend-specific subtitle delay controls.
     }
   }
 
@@ -630,16 +623,16 @@ class PlayerPlaybackCoordinator {
         overrideAss: prefs.overrideAss,
       );
     } else {
-      mpvService?.applySubtitleStyle(prefs);
+      mediaKitService?.applySubtitleStyle(prefs);
     }
   }
 
   void setAudioDelay(int ms) {
-    mpvService?.setProperty('audio-delay', '${ms / 1000.0}');
+    // media_kit does not expose backend-specific audio delay controls.
   }
 
   void setShaderPreset(ShaderPreset preset) {
-    shaderService.applyPreset(mpvService, preset);
+    shaderService.applyPreset(mediaKitService, preset);
   }
 
   void setSurfaceBounds({required int top, required int height}) {
@@ -652,8 +645,8 @@ class PlayerPlaybackCoordinator {
     if (isUsingExoPlayer) {
       return await exoService?.getChapters() ?? [];
     }
-    if (mpvService != null) {
-      return await mpvService!.getChapters();
+    if (mediaKitService != null) {
+      return await mediaKitService!.getChapters();
     }
     return [];
   }
@@ -662,8 +655,11 @@ class PlayerPlaybackCoordinator {
     if (isUsingExoPlayer) {
       exoService?.selectAudioTrack(track.index);
     } else {
-      mpvService?.setAudioTrack(mpv.AudioTrack(id: track.id, title: track.title, language: track.language));
-      mpvService?.setProperty('aid', track.id);
+      mediaKitService?.setAudioTrack(media_kit.AudioTrack(
+        track.id,
+        track.title,
+        track.language,
+      ));
     }
   }
 
@@ -672,8 +668,7 @@ class PlayerPlaybackCoordinator {
       if (isUsingExoPlayer) {
         exoService?.selectSubtitleTrack(-1);
       } else {
-        mpvService?.setSubtitleTrack(mpv.SubtitleTrack.off);
-        mpvService?.setProperty('sid', 'no');
+        mediaKitService?.setSubtitleTrack(media_kit.SubtitleTrack.no());
       }
       return;
     }
@@ -689,7 +684,7 @@ class PlayerPlaybackCoordinator {
           final lang = _getSubLanguage(extSub);
           final label = _getSubLabel(extSub);
           if (url.isNotEmpty) {
-            mpvService?.setSubtitleTrack(mpv.SubtitleTrack.uri(
+            mediaKitService?.setSubtitleTrack(media_kit.SubtitleTrack.uri(
               url,
               title: label.isNotEmpty ? label : lang,
               language: lang,
@@ -704,11 +699,13 @@ class PlayerPlaybackCoordinator {
       exoService?.selectSubtitleTrack(track.index);
     } else {
       if (track.id == 'auto') {
-        mpvService?.setSubtitleTrack(mpv.SubtitleTrack.auto);
-        mpvService?.setProperty('sid', 'auto');
+        mediaKitService?.setSubtitleTrack(media_kit.SubtitleTrack.auto());
       } else {
-        mpvService?.setSubtitleTrack(mpv.SubtitleTrack(id: track.id, title: track.title, language: track.language));
-        mpvService?.setProperty('sid', track.id);
+        mediaKitService?.setSubtitleTrack(media_kit.SubtitleTrack(
+          track.id,
+          track.title,
+          track.language,
+        ));
       }
     }
   }
@@ -716,8 +713,6 @@ class PlayerPlaybackCoordinator {
   void setFitMode(PlayerFitMode mode) {
     if (isUsingExoPlayer) {
       exoService?.setFitMode(mode.name);
-    } else {
-      mpvService?.setBoxFit(mode);
     }
   }
 
@@ -746,30 +741,29 @@ class PlayerPlaybackCoordinator {
     _exoChaptersSub = null;
   }
 
-  void _cancelMpvSubs() {
-    _mpvPosSub?.cancel();
-    _mpvDurSub?.cancel();
-    _mpvBufSub?.cancel();
-    _mpvPlayingSub?.cancel();
-    _mpvBufferingSub?.cancel();
-    _mpvTracksSub?.cancel();
-    _mpvTrackSub?.cancel();
-    _mpvEndedSub?.cancel();
+  void _cancelMediaKitSubs() {
+    _mediaKitPosSub?.cancel();
+    _mediaKitDurSub?.cancel();
+    _mediaKitBufSub?.cancel();
+    _mediaKitPlayingSub?.cancel();
+    _mediaKitBufferingSub?.cancel();
+    _mediaKitTracksSub?.cancel();
+    _mediaKitEndedSub?.cancel();
   }
 
   void dispose() {
     _cancelExoSubs();
-    _cancelMpvSubs();
+    _cancelMediaKitSubs();
     exoService?.dispose();
-    final mpv = mpvService;
-    if (mpv != null) {
+    final mediaKit = mediaKitService;
+    if (mediaKit != null) {
       Future.microtask(() async {
         try {
-          await mpv.dispose();
+          await mediaKit.dispose();
         } catch (_) {}
       });
     }
     exoService = null;
-    mpvService = null;
+    mediaKitService = null;
   }
 }

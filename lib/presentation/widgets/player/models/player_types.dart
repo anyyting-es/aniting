@@ -35,7 +35,7 @@ class UiTrack {
   }
 }
 
-/// Shader preset definition for mpv video enhancements.
+/// Legacy shader preset definition retained for settings compatibility.
 class ShaderPreset {
   final String id;
   final String name;

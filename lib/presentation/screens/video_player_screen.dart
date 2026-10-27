@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io' show Platform;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -41,7 +42,7 @@ export 'package:seanime_app/presentation/widgets/player/models/player_types.dart
     show UiTrack, ShaderPreset, PerformanceStats, PlayerFitMode;
 
 /// Main video playback screen featuring a modern, clean UI inspired by Plezy & YouTube.
-/// Provides dual-engine playback (ExoPlayer + libmpv), YouTube-style watch page on mobile,
+/// Provides dual-engine playback (ExoPlayer + media_kit), YouTube-style watch page on mobile,
 /// collapsible right info panel on desktop, TV direct fullscreen mode, and audio/subtitle sync.
 class VideoPlayerScreen extends ConsumerStatefulWidget {
   final int? mediaId;
@@ -58,6 +59,8 @@ class VideoPlayerScreen extends ConsumerStatefulWidget {
   final bool? isTv;
   final AnimeDetails? initialAnimeDetails;
   final AniZipData? initialAniZipData;
+  final String? resolvedLoadingLogoUrl;
+  final String? resolvedLoadingBannerUrl;
   final String? onlineStreamProvider;
   final bool? onlineStreamDubbed;
   final String? onlineStreamServer;
@@ -87,6 +90,8 @@ class VideoPlayerScreen extends ConsumerStatefulWidget {
     this.isTv,
     this.initialAnimeDetails,
     this.initialAniZipData,
+    this.resolvedLoadingLogoUrl,
+    this.resolvedLoadingBannerUrl,
     this.onlineStreamProvider,
     this.onlineStreamDubbed,
     this.onlineStreamServer,
@@ -113,6 +118,8 @@ class VideoPlayerScreen extends ConsumerStatefulWidget {
     bool? isTv,
     AnimeDetails? animeDetails,
     AniZipData? aniZipData,
+    String? resolvedLoadingLogoUrl,
+    String? resolvedLoadingBannerUrl,
     String? onlineStreamProvider,
     bool? onlineStreamDubbed,
     String? onlineStreamServer,
@@ -127,31 +134,34 @@ class VideoPlayerScreen extends ConsumerStatefulWidget {
       opaque: true,
       transitionDuration: Duration.zero,
       reverseTransitionDuration: Duration.zero,
-      pageBuilder: (context, animation, secondaryAnimation) => VideoPlayerScreen(
-        mediaId: mediaId,
-        videoUrl: videoUrl,
-        title: title,
-        episodeTitle: episodeTitle,
-        episodeNumber: episodeNumber,
-        startPosition: startPosition,
-        headers: headers,
-        mimeType: mimeType,
-        videoSource: videoSource,
-        externalSubtitles: externalSubtitles,
-        onDispose: onDispose,
-        isTv: isTv,
-        initialAnimeDetails: animeDetails,
-        initialAniZipData: aniZipData,
-        onlineStreamProvider: onlineStreamProvider,
-        onlineStreamDubbed: onlineStreamDubbed,
-        onlineStreamServer: onlineStreamServer,
-        isLocalFile: isLocalFile,
-        isTmdbMedia: isTmdbMedia,
-        tmdbMediaType: tmdbMediaType,
-        tmdbSeason: tmdbSeason,
-        tmdbEnglishTitle: tmdbEnglishTitle,
-        tmdbYear: tmdbYear,
-      ),
+      pageBuilder: (context, animation, secondaryAnimation) =>
+          VideoPlayerScreen(
+            mediaId: mediaId,
+            videoUrl: videoUrl,
+            title: title,
+            episodeTitle: episodeTitle,
+            episodeNumber: episodeNumber,
+            startPosition: startPosition,
+            headers: headers,
+            mimeType: mimeType,
+            videoSource: videoSource,
+            externalSubtitles: externalSubtitles,
+            onDispose: onDispose,
+            isTv: isTv,
+            initialAnimeDetails: animeDetails,
+            initialAniZipData: aniZipData,
+            resolvedLoadingLogoUrl: resolvedLoadingLogoUrl,
+            resolvedLoadingBannerUrl: resolvedLoadingBannerUrl,
+            onlineStreamProvider: onlineStreamProvider,
+            onlineStreamDubbed: onlineStreamDubbed,
+            onlineStreamServer: onlineStreamServer,
+            isLocalFile: isLocalFile,
+            isTmdbMedia: isTmdbMedia,
+            tmdbMediaType: tmdbMediaType,
+            tmdbSeason: tmdbSeason,
+            tmdbEnglishTitle: tmdbEnglishTitle,
+            tmdbYear: tmdbYear,
+          ),
     );
   }
 
@@ -169,11 +179,18 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   Duration _position = Duration.zero;
   Duration _duration = Duration.zero;
   Duration _buffer = Duration.zero;
-  final ValueNotifier<Duration> _positionNotifier = ValueNotifier<Duration>(Duration.zero);
-  final ValueNotifier<Duration> _bufferNotifier = ValueNotifier<Duration>(Duration.zero);
+  final ValueNotifier<Duration> _positionNotifier = ValueNotifier<Duration>(
+    Duration.zero,
+  );
+  final ValueNotifier<Duration> _bufferNotifier = ValueNotifier<Duration>(
+    Duration.zero,
+  );
   bool _canSkipCurrentChapter = false;
   bool _isPlaying = false;
   bool _isBuffering = false;
+  bool _hasStartedPlayback = false;
+  bool _isSeeking = false;
+  Timer? _seekLoadingTimer;
   double _playbackRate = 1.0;
   double _volume = 100.0;
   double _lastNonZeroVolume = 100.0;
@@ -223,7 +240,8 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   // Stats overlay
   bool _isStatsVisible = false;
   PerformanceStatsService? _statsService;
-  final ValueNotifier<PerformanceStats?> _performanceStatsNotifier = ValueNotifier<PerformanceStats?>(null);
+  final ValueNotifier<PerformanceStats?> _performanceStatsNotifier =
+      ValueNotifier<PerformanceStats?>(null);
   StreamSubscription<PerformanceStats>? _statsSub;
 
   // Torrent progress overlay
@@ -277,15 +295,25 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     return '';
   }
 
-  void _applySavedOrPreferredTracks(List<UiTrack> audioList, List<UiTrack> subList) {
+  void _applySavedOrPreferredTracks(
+    List<UiTrack> audioList,
+    List<UiTrack> subList,
+  ) {
     final key = _currentVideoKey;
     final pref = ref.read(trackPreferencesProvider.notifier).getPreference(key);
 
     // 1. Audio track restoration
     if (pref?.audioTrackId != null) {
-      final target = audioList.where((t) => t.id == pref!.audioTrackId).firstOrNull ??
+      final target =
+          audioList.where((t) => t.id == pref!.audioTrackId).firstOrNull ??
           (pref?.audioLanguage != null
-              ? audioList.where((t) => t.language.toLowerCase() == pref!.audioLanguage!.toLowerCase()).firstOrNull
+              ? audioList
+                    .where(
+                      (t) =>
+                          t.language.toLowerCase() ==
+                          pref!.audioLanguage!.toLowerCase(),
+                    )
+                    .firstOrNull
               : null);
       if (target != null && target.id != _selectedAudioTrackId) {
         _selectAudioTrack(target);
@@ -297,9 +325,16 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       if (pref!.subtitleTrackId == 'off' || pref.subtitleTrackId == 'no') {
         _selectSubtitleTrack(null);
       } else {
-        final target = subList.where((t) => t.id == pref.subtitleTrackId).firstOrNull ??
+        final target =
+            subList.where((t) => t.id == pref.subtitleTrackId).firstOrNull ??
             (pref.subtitleLanguage != null
-                ? subList.where((t) => t.language.toLowerCase() == pref.subtitleLanguage!.toLowerCase()).firstOrNull
+                ? subList
+                      .where(
+                        (t) =>
+                            t.language.toLowerCase() ==
+                            pref.subtitleLanguage!.toLowerCase(),
+                      )
+                      .firstOrNull
                 : null);
         if (target != null && target.id != _selectedSubtitleTrackId) {
           _selectSubtitleTrack(target);
@@ -327,7 +362,9 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
         matchedSub = subList.where((t) {
           final l = t.language.toLowerCase();
           final title = t.title.toLowerCase();
-          return l.contains('en') || l.contains('eng') || title.contains('english');
+          return l.contains('en') ||
+              l.contains('eng') ||
+              title.contains('english');
         }).firstOrNull;
       }
 
@@ -339,10 +376,12 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
 
   // Delegated getters to modular services
   bool get _isFullscreen => _windowManager.isFullscreen;
-  bool get _isTransitioningOrientation => _windowManager.isTransitioningOrientation;
+  bool get _isTransitioningOrientation =>
+      _windowManager.isTransitioningOrientation;
   bool get _isExiting => _windowManager.isExiting;
   bool get _isResolvingSources => _sourceController.isResolvingSources;
-  List<OnlinestreamVideoSource> get _availableSources => _sourceController.availableSources;
+  List<OnlinestreamVideoSource> get _availableSources =>
+      _sourceController.availableSources;
   OnlinestreamVideoSource? get _activeSource => _sourceController.activeSource;
   String? get _sourceResolutionError => _sourceController.sourceResolutionError;
   bool get _isLoadingNextEpisode => _sourceController.isLoadingNextEpisode;
@@ -351,7 +390,8 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   /// providers/servers, so the playback card renders differently for local files
   /// and torrent streams.
   PlayerPlaybackOrigin get _playbackOrigin {
-    if (_isCurrentLocalFile || _currentVideoUrl.contains('/api/v1/mediastream')) {
+    if (_isCurrentLocalFile ||
+        _currentVideoUrl.contains('/api/v1/mediastream')) {
       return PlayerPlaybackOrigin.local;
     }
     if (_currentVideoUrl.contains('torrentstream') ||
@@ -394,7 +434,8 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
 
   bool get _isMovie =>
       _animeDetails?.format?.toUpperCase() == 'MOVIE' ||
-      (_animeDetails?.totalEpisodes == 1 && (_animeDetails?.episodes.length ?? 0) <= 1);
+      (_animeDetails?.totalEpisodes == 1 &&
+          (_animeDetails?.episodes.length ?? 0) <= 1);
 
   bool get _hasNextEpisode {
     if (_isMovie) return false;
@@ -430,7 +471,8 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     if (nextAniZipEp != null) {
       if (nextAniZipEp.airDate != null && nextAniZipEp.airDate!.isNotEmpty) {
         final airDt = DateTime.tryParse(nextAniZipEp.airDate!);
-        if (airDt != null && airDt.isAfter(DateTime.now().add(const Duration(hours: 4)))) {
+        if (airDt != null &&
+            airDt.isAfter(DateTime.now().add(const Duration(hours: 4)))) {
           return false;
         }
       }
@@ -452,7 +494,9 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     // 6. If playing a local library file
     if (_isCurrentLocalFile) {
       final eps = _animeDetails?.episodes ?? [];
-      final hasLocal = eps.any((e) => e.episodeNumber == nextNum && e.isDownloaded);
+      final hasLocal = eps.any(
+        (e) => e.episodeNumber == nextNum && e.isDownloaded,
+      );
       if (hasLocal) return true;
     }
 
@@ -472,7 +516,9 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       }
     }
 
-    if (aniZip != null && aniZip.episodeCount > 0 && nextNum > aniZip.episodeCount) {
+    if (aniZip != null &&
+        aniZip.episodeCount > 0 &&
+        nextNum > aniZip.episodeCount) {
       return false;
     }
 
@@ -482,10 +528,24 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   bool get _hasPreviousEpisode => !_isMovie && (_currentEpisodeNumber ?? 1) > 1;
 
   String? get _effectiveCharacterImage =>
-      _animeDetails?.mainCharacterImage ?? widget.initialAnimeDetails?.mainCharacterImage;
+      _animeDetails?.mainCharacterImage ??
+      widget.initialAnimeDetails?.mainCharacterImage;
 
   String? get _effectiveCoverImage =>
       _animeDetails?.coverImage ?? widget.initialAnimeDetails?.coverImage;
+
+  String? get _effectiveLoadingBackground =>
+      widget.resolvedLoadingBannerUrl ??
+      _animeDetails?.bannerImage ??
+      widget.initialAnimeDetails?.bannerImage ??
+      _aniZipData?.fanartUrl ??
+      _animeDetails?.coverImage ??
+      widget.initialAnimeDetails?.coverImage;
+
+  String? get _effectiveLoadingLogo =>
+      widget.resolvedLoadingLogoUrl ??
+      _aniZipData?.clearlogoUrl ??
+      _animeDetails?.aniZipData?.clearlogoUrl;
 
   Future<void> _fetchAnimeDetails() async {
     if (widget.mediaId != null) {
@@ -505,7 +565,8 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
         ]);
         if (mounted) {
           final details = results[0] as AnimeDetails?;
-          final aniZip = (results[1] as AniZipData?) ?? details?.aniZipData ?? _aniZipData;
+          final aniZip =
+              (results[1] as AniZipData?) ?? details?.aniZipData ?? _aniZipData;
           setState(() {
             _animeDetails = details ?? _animeDetails;
             _aniZipData = aniZip;
@@ -514,16 +575,19 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
 
           // Auto-update active session with main character image once details load
           final currentSession = ref.read(lastSessionProvider);
-          if (currentSession != null && currentSession.mediaId == widget.mediaId) {
+          if (currentSession != null &&
+              currentSession.mediaId == widget.mediaId) {
             final mc = _effectiveCharacterImage;
             final cover = _effectiveCoverImage;
             if (mc != null || cover != null) {
-              ref.read(lastSessionProvider.notifier).saveSession(
-                currentSession.copyWith(
-                  characterImage: mc ?? currentSession.characterImage,
-                  coverImage: cover ?? currentSession.coverImage,
-                ),
-              );
+              ref
+                  .read(lastSessionProvider.notifier)
+                  .saveSession(
+                    currentSession.copyWith(
+                      characterImage: mc ?? currentSession.characterImage,
+                      coverImage: cover ?? currentSession.coverImage,
+                    ),
+                  );
             }
           }
         }
@@ -555,7 +619,8 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     _initialStartPosition = widget.startPosition;
 
     _animeDetails = widget.initialAnimeDetails;
-    _aniZipData = widget.initialAniZipData ?? widget.initialAnimeDetails?.aniZipData;
+    _aniZipData =
+        widget.initialAniZipData ?? widget.initialAnimeDetails?.aniZipData;
 
     _fetchAnimeDetails();
     if (widget.mediaId != null && _currentOnlineStreamProvider != null) {
@@ -563,7 +628,8 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     }
 
     final preferredEngine = ref.read(playerEngineProvider);
-    final useExo = Platform.isAndroid && preferredEngine == PlayerEngine.exoplayer;
+    final useExo =
+        Platform.isAndroid && preferredEngine == PlayerEngine.exoplayer;
 
     _coordinator = PlayerPlaybackCoordinator(
       isUsingExoPlayer: useExo,
@@ -572,7 +638,8 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       onPosition: (pos) {
         _position = pos;
         _positionNotifier.value = pos;
-        final canSkip = _activeChapter != null && _activeChapter!.isSkippable(pos);
+        final canSkip =
+            _activeChapter != null && _activeChapter!.isSkippable(pos);
         if (canSkip != _canSkipCurrentChapter && mounted) {
           setState(() => _canSkipCurrentChapter = canSkip);
         }
@@ -591,7 +658,8 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
           _loadChapters();
           if (Platform.isLinux) {
             MprisService.instance.updateMetadata(
-              title: _currentEpisodeTitle ?? widget.episodeTitle ?? widget.title,
+              title:
+                  _currentEpisodeTitle ?? widget.episodeTitle ?? widget.title,
               artist: widget.title,
               album: widget.title,
               artUrl: _effectiveCoverImage,
@@ -601,13 +669,22 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
         }
       },
       onBuffer: (buf) {
-        final effectiveBuf =
-            _playbackOrigin == PlayerPlaybackOrigin.local ? Duration.zero : buf;
+        final effectiveBuf = _playbackOrigin == PlayerPlaybackOrigin.local
+            ? Duration.zero
+            : buf;
         _buffer = effectiveBuf;
         _bufferNotifier.value = effectiveBuf;
       },
       onPlaying: (playing) {
-        if (mounted) setState(() => _isPlaying = playing);
+        if (mounted) {
+          setState(() {
+            _isPlaying = playing;
+            if (playing) {
+              _hasStartedPlayback = true;
+              _isSeeking = false;
+            }
+          });
+        }
         if (!playing) {
           _progressManager.savePlaybackProgress();
         }
@@ -620,7 +697,12 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
         }
       },
       onBuffering: (buffering) {
-        if (mounted) setState(() => _isBuffering = buffering);
+        if (mounted) {
+          setState(() {
+            _isBuffering = buffering;
+            if (!buffering) _isSeeking = false;
+          });
+        }
       },
       onEnded: () {
         if (mounted) setState(() => _isPlaying = false);
@@ -645,11 +727,13 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
           setState(() => _currentSubtitleText = text);
         }
       },
-      onFallbackToMpv: (reason, fallbackPos) {
+      onFallbackToMediaKit: (reason, fallbackPos) {
         if (!mounted) return;
         setState(() {
           _isBuffering = true;
-          _fallbackNotice = ref.read(translationsProvider).switchingToMpvNotice;
+          _fallbackNotice = ref
+              .read(translationsProvider)
+              .switchingToMediaKitNotice;
         });
         _fallbackNoticeTimer?.cancel();
         _fallbackNoticeTimer = Timer(const Duration(seconds: 4), () {
@@ -678,15 +762,21 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     );
     final winInit = _windowManager.initWindow();
 
-    final isOnline = !widget.isLocalFile &&
-        (widget.onlineStreamProvider != null || _currentOnlineStreamProvider != null);
+    final isOnline =
+        !widget.isLocalFile &&
+        (widget.onlineStreamProvider != null ||
+            _currentOnlineStreamProvider != null);
 
     Duration? getSavedProgress([int? epNumber]) {
       final ep = epNumber ?? _currentEpisodeNumber;
       if (widget.mediaId != null && ep != null) {
-        final progress = ref.read(playbackProgressPreferencesProvider.notifier).getProgress(widget.mediaId!, ep);
+        final progress = ref
+            .read(playbackProgressPreferencesProvider.notifier)
+            .getProgress(widget.mediaId!, ep);
         if (progress != null && progress.positionMs > 0) {
-          final fraction = progress.durationMs > 0 ? progress.positionMs / progress.durationMs : 0.0;
+          final fraction = progress.durationMs > 0
+              ? progress.positionMs / progress.durationMs
+              : 0.0;
           if (fraction < 0.95) {
             return Duration(milliseconds: progress.positionMs);
           }
@@ -705,8 +795,12 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     _progressManager = PlayerProgressManager(
       repository: ref.read(repositoryProvider),
       lastSessionNotifier: ref.read(lastSessionProvider.notifier),
-      playbackProgressNotifier: ref.read(playbackProgressPreferencesProvider.notifier),
-      animePlaybackSourceNotifier: ref.read(animePlaybackSourceProvider.notifier),
+      playbackProgressNotifier: ref.read(
+        playbackProgressPreferencesProvider.notifier,
+      ),
+      animePlaybackSourceNotifier: ref.read(
+        animePlaybackSourceProvider.notifier,
+      ),
       mediaId: widget.mediaId,
       title: widget.title,
       isTmdb: _animeDetails?.isTmdb ?? false,
@@ -824,22 +918,29 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
 
       _progressManager.startTracking(initialPosition: resolvedStartPosition);
       if (widget.mediaId != null) {
-        final isLocal = _isCurrentLocalFile || _currentVideoUrl.contains('/api/v1/mediastream');
-        final isTorrent = _currentVideoUrl.contains('torrentstream') ||
+        final isLocal =
+            _isCurrentLocalFile ||
+            _currentVideoUrl.contains('/api/v1/mediastream');
+        final isTorrent =
+            _currentVideoUrl.contains('torrentstream') ||
             (_currentVideoSource?.toLowerCase().contains('torrent') ?? false);
-        final sourceType = isLocal ? 'local' : (isTorrent ? 'torrent' : 'online');
-        ref.read(animePlaybackSourceProvider.notifier).saveSource(
-          mediaId: widget.mediaId!,
-          sourceType: sourceType,
-          onlineStreamProvider: _currentOnlineStreamProvider,
-          onlineStreamDubbed: _currentOnlineStreamDubbed,
-          onlineStreamServer: _currentOnlineStreamServer,
-          videoSource: _currentVideoSource,
-          videoUrl: _currentVideoUrl,
-          headers: _currentHeaders,
-          mimeType: _currentMimeType,
-          episodeNumber: _currentEpisodeNumber,
-        );
+        final sourceType = isLocal
+            ? 'local'
+            : (isTorrent ? 'torrent' : 'online');
+        ref
+            .read(animePlaybackSourceProvider.notifier)
+            .saveSource(
+              mediaId: widget.mediaId!,
+              sourceType: sourceType,
+              onlineStreamProvider: _currentOnlineStreamProvider,
+              onlineStreamDubbed: _currentOnlineStreamDubbed,
+              onlineStreamServer: _currentOnlineStreamServer,
+              videoSource: _currentVideoSource,
+              videoUrl: _currentVideoUrl,
+              headers: _currentHeaders,
+              mimeType: _currentMimeType,
+              episodeNumber: _currentEpisodeNumber,
+            );
       }
       _initStatsService();
       _startHideTimer();
@@ -849,7 +950,9 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       if (_currentVideoUrl.isEmpty && _currentOnlineStreamProvider != null) {
         _sourceController.resolveInitialSources();
       } else if (_currentOnlineStreamProvider != null) {
-        _sourceController.fetchAvailableSourcesInBackground(currentVideoUrl: _currentVideoUrl);
+        _sourceController.fetchAvailableSourcesInBackground(
+          currentVideoUrl: _currentVideoUrl,
+        );
       }
 
       if (Platform.isLinux) {
@@ -891,12 +994,16 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     });
   }
 
-  static const _nativeChannel = MethodChannel('com.anyyting.aniting/exo_player');
+  static const _nativeChannel = MethodChannel(
+    'com.anyyting.aniting/exo_player',
+  );
 
   Future<void> _initBrightness() async {
     if (!Platform.isAndroid) return;
     try {
-      final current = await _nativeChannel.invokeMethod<double>('getBrightness');
+      final current = await _nativeChannel.invokeMethod<double>(
+        'getBrightness',
+      );
       if (current != null && mounted) {
         setState(() => _brightness = current.clamp(0.0, 1.0));
       }
@@ -923,7 +1030,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     _statsService?.dispose();
 
     _statsService = PerformanceStatsService(
-      mpvService: _coordinator.mpvService,
+      mediaKitService: _coordinator.mediaKitService,
       isUsingExoPlayer: _coordinator.isUsingExoPlayer,
       buffer: _buffer,
     );
@@ -1045,13 +1152,15 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     _hideTimer?.cancel();
     _seekFeedbackTimer?.cancel();
     _fallbackNoticeTimer?.cancel();
+    _seekLoadingTimer?.cancel();
 
     _statsSub?.cancel();
     _statsService?.dispose();
 
     _coordinator.dispose();
 
-    final isTorrent = _currentVideoUrl.contains('torrentstream') ||
+    final isTorrent =
+        _currentVideoUrl.contains('torrentstream') ||
         widget.videoUrl.contains('torrentstream') ||
         _hasActiveTorrentStream;
     if (isTorrent && _pauseTorrentStreamOnExit) {
@@ -1194,10 +1303,13 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     final target = _position + Duration(seconds: seconds);
     final clamped = target < Duration.zero
         ? Duration.zero
-        : (target > _duration && _duration > Duration.zero ? _duration : target);
+        : (target > _duration && _duration > Duration.zero
+              ? _duration
+              : target);
 
     _position = clamped;
     _positionNotifier.value = clamped;
+    _markSeeking();
     _coordinator.seek(clamped);
 
     setState(() {
@@ -1214,8 +1326,18 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   void _seekTo(Duration target) {
     _position = target;
     _positionNotifier.value = target;
+    _markSeeking();
     _coordinator.seek(target);
     _startHideTimer();
+  }
+
+  void _markSeeking() {
+    _seekLoadingTimer?.cancel();
+    if (!mounted) return;
+    setState(() => _isSeeking = true);
+    _seekLoadingTimer = Timer(const Duration(seconds: 4), () {
+      if (mounted) setState(() => _isSeeking = false);
+    });
   }
 
   void _playOrPause() {
@@ -1241,28 +1363,36 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   void _selectAudioTrack(UiTrack track) {
     setState(() {
       _selectedAudioTrackId = track.id;
-      _audioTracks = _audioTracks.map((t) => t.copyWith(selected: t.id == track.id)).toList();
+      _audioTracks = _audioTracks
+          .map((t) => t.copyWith(selected: t.id == track.id))
+          .toList();
     });
     _coordinator.selectAudioTrack(track);
-    ref.read(trackPreferencesProvider.notifier).saveAudioTrack(
-      _currentVideoKey,
-      id: track.id,
-      language: track.language,
-    );
+    ref
+        .read(trackPreferencesProvider.notifier)
+        .saveAudioTrack(
+          _currentVideoKey,
+          id: track.id,
+          language: track.language,
+        );
   }
 
   void _selectSubtitleTrack(UiTrack? track) {
     setState(() {
       _selectedSubtitleTrackId = track?.id;
       _currentSubtitleText = '';
-      _subtitleTracks = _subtitleTracks.map((t) => t.copyWith(selected: t.id == track?.id)).toList();
+      _subtitleTracks = _subtitleTracks
+          .map((t) => t.copyWith(selected: t.id == track?.id))
+          .toList();
     });
     _coordinator.selectSubtitleTrack(track, _currentExternalSubtitles);
-    ref.read(trackPreferencesProvider.notifier).saveSubtitleTrack(
-      _currentVideoKey,
-      id: track?.id,
-      language: track?.language,
-    );
+    ref
+        .read(trackPreferencesProvider.notifier)
+        .saveSubtitleTrack(
+          _currentVideoKey,
+          id: track?.id,
+          language: track?.language,
+        );
   }
 
   void _setSubtitleDelay(int ms) {
@@ -1296,7 +1426,9 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
 
   void _toggleTorrentProgressVisibility(bool visible) {
     setState(() => _isTorrentProgressVisible = visible);
-    ref.read(torrentProgressOverlayEnabledProvider.notifier).setEnabled(visible);
+    ref
+        .read(torrentProgressOverlayEnabledProvider.notifier)
+        .setEnabled(visible);
   }
 
   void _toggleFullscreen() {
@@ -1317,7 +1449,8 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     if (widget.videoSource != null && widget.videoSource!.isNotEmpty) {
       return widget.videoSource;
     }
-    if (_currentVideoUrl.startsWith('http://') || _currentVideoUrl.startsWith('https://')) {
+    if (_currentVideoUrl.startsWith('http://') ||
+        _currentVideoUrl.startsWith('https://')) {
       try {
         final uri = Uri.parse(_currentVideoUrl);
         return uri.host;
@@ -1391,7 +1524,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   }) {
     return PlayerViewport(
       isUsingExoPlayer: _coordinator.isUsingExoPlayer,
-      mpvPlayerService: _coordinator.mpvService,
+      mediaKitPlayerService: _coordinator.mediaKitService,
       fitMode: _fitMode,
       selectedSubtitleTrackId: _selectedSubtitleTrackId,
       currentSubtitleText: _currentSubtitleText,
@@ -1428,6 +1561,29 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       onBrightnessChanged: _setBrightness,
       isBuffering: _isBuffering,
       isLoadingNextEpisode: _isLoadingNextEpisode || _isResolvingSources,
+      showLoadingOverlay:
+          !_hasStartedPlayback &&
+          !_isSeeking &&
+          _playbackOrigin != PlayerPlaybackOrigin.local &&
+          (_isBuffering || _isLoadingNextEpisode || _isResolvingSources),
+      loadingMessage: switch (_playbackOrigin) {
+        PlayerPlaybackOrigin.online =>
+          _isBuffering
+              ? ref.read(translationsProvider).bufferingVideo
+              : ref.read(translationsProvider).loadingVideo,
+        PlayerPlaybackOrigin.torrent =>
+          ref.read(translationsProvider).downloadingMetadata,
+        PlayerPlaybackOrigin.local => '',
+      },
+      loadingTitle:
+          _currentEpisodeTitle ??
+          (_currentEpisodeNumber != null
+              ? ref
+                    .read(translationsProvider)
+                    .episodeNumber(_currentEpisodeNumber!)
+              : widget.title),
+      loadingBackgroundImage: _effectiveLoadingBackground,
+      loadingLogoImage: _effectiveLoadingLogo,
       seekFeedback: _seekFeedback,
       seekFeedbackKey: _seekFeedbackKey,
       fallbackNotice: _fallbackNotice,
@@ -1474,8 +1630,9 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
 
     // Keep dispose() safe: cache the values it needs while the widget is alive.
     _hasActiveTorrentStream = ref.watch(torrentStreamStatusProvider) != null;
-    _pauseTorrentStreamOnExit =
-        ref.watch(streamingPreferencesProvider).pauseTorrentStreamOnExit;
+    _pauseTorrentStreamOnExit = ref
+        .watch(streamingPreferencesProvider)
+        .pauseTorrentStreamOnExit;
 
     final mq = MediaQuery.of(context);
     final isPhysicalLandscape = mq.orientation == Orientation.landscape;
@@ -1485,22 +1642,27 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     // frames where device rotation is still animating. Rendering fullscreen player viewport until
     // physical portrait orientation actually arrives prevents the 16:9 AspectRatio Column from
     // overflowing the landscape display bounds and violently disrupting controls layout.
-    final bool effectiveFullscreen = isFullscreen || (!isDesktop && isPhysicalLandscape);
+    final bool effectiveFullscreen =
+        isFullscreen || (!isDesktop && isPhysicalLandscape);
 
     // Keep Android ExoPlayer surface layout perfectly synchronized with Flutter's container
     if (Platform.isAndroid && _coordinator.isUsingExoPlayer) {
-      _windowManager.updateExoSurfaceBounds(context, effectiveFullscreen: effectiveFullscreen);
+      _windowManager.updateExoSurfaceBounds(
+        context,
+        effectiveFullscreen: effectiveFullscreen,
+      );
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          _windowManager.updateExoSurfaceBounds(context, effectiveFullscreen: effectiveFullscreen);
+          _windowManager.updateExoSurfaceBounds(
+            context,
+            effectiveFullscreen: effectiveFullscreen,
+          );
         }
       });
     }
 
-    // All player backends (Android ExoPlayer via SurfaceView, Linux MPV via Wayland wl_subsurface,
-    // and Windows MPV via child HWND) place the native video surface BEHIND the Flutter window.
-    // Therefore, the Flutter Scaffold and viewport must remain transparent so the video is visible.
-    const scaffoldBg = Colors.transparent;
+    // media_kit renders into Flutter's texture, so the player route must stay opaque.
+    final scaffoldBg = theme.colorScheme.surface;
 
     final isThemeDark = theme.brightness == Brightness.dark;
     final statusBarIconBrightness = (effectiveFullscreen || isThemeDark)
@@ -1531,119 +1693,154 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
           backgroundColor: _isExiting ? Colors.black : scaffoldBg,
           body: _isExiting
               ? const ColoredBox(color: Colors.black, child: SizedBox.expand())
-            : Focus(
-                focusNode: _focusNode,
-                autofocus: true,
-                onKeyEvent: _handleKeyEvent,
-                child: MouseRegion(
-                  cursor: (!isDesktop || _areControlsVisible || !_isMouseInside)
-                      ? SystemMouseCursors.basic
-                      : SystemMouseCursors.none,
-                  onEnter: isDesktop ? (_) => _onMouseEnter() : null,
-                  onHover: isDesktop ? (_) => _onMouseMove() : null,
-                  onExit: isDesktop ? (_) => _onMouseExit() : null,
-                  child: isDesktop
-                      ? PlayerDesktopLayout(
-                          playerViewport: _buildPlayerViewport(
-                            context,
-                            isFullscreen: effectiveFullscreen,
-                            isDesktop: true,
-                          ),
-                          sidePanel: PlayerInfoPanel(
-                            mediaId: widget.mediaId,
-                            animeTitle: widget.title,
-                            episodeNumber: _currentEpisodeNumber,
-                            episodeTitle: _currentEpisodeTitle,
-                            animeDetails: _animeDetails,
-                            aniZipData: _aniZipData ?? _animeDetails?.aniZipData,
-                            isLoading: _isLoadingDetails,
-                            isDesktop: true,
-                            onCollapse: () => setState(() => _isSidePanelCollapsed = true),
-                            chapters: _chapters,
-                            activeChapter: _activeChapter,
-                            onSeekToChapter: _seekTo,
-                            hasNextEpisode: _hasNextEpisode,
-                            onPlayNextEpisode: (_hasNextEpisode && !_isLoadingNextEpisode)
-                                ? () => _sourceController.playEpisode(
-                                    targetEpNum: (_currentEpisodeNumber ?? 1) + 1,
-                                    onEpisodeTransitionStarted: _onEpisodeTransitionStarted,
-                                  )
-                                : null,
-                            onPlayPreviousEpisode: (_hasPreviousEpisode && !_isLoadingNextEpisode)
-                                ? () => _sourceController.playEpisode(
-                                    targetEpNum: (_currentEpisodeNumber ?? 1) - 1,
-                                    onEpisodeTransitionStarted: _onEpisodeTransitionStarted,
-                                  )
-                                : null,
-                            sourceController: _sourceController,
-                            playbackOrigin: _playbackOrigin,
-                            isResolvingSources: _isResolvingSources,
-                            availableSources: _availableSources,
-                            activeSource: _activeSource,
-                            sourceResolutionError: _sourceResolutionError,
-                            onlineStreamProvider: _currentOnlineStreamProvider,
-                            isDubbed: _currentOnlineStreamDubbed ?? false,
-                            onToggleDubbed: _toggleOnlineStreamDubbed,
-                            onReloadSources: () => _sourceController.resolveInitialSources(preservePosition: true),
-                            onSelectSource: _sourceController.selectSource,
-                            onSelectProvider: _switchOnlineStreamProvider,
-                          ),
-                          isSidePanelCollapsed: effectiveFullscreen || _isSidePanelCollapsed,
-                        )
-                      : (effectiveFullscreen
-                          ? _buildPlayerViewport(
+              : Focus(
+                  focusNode: _focusNode,
+                  autofocus: true,
+                  onKeyEvent: _handleKeyEvent,
+                  child: MouseRegion(
+                    cursor:
+                        (!isDesktop || _areControlsVisible || !_isMouseInside)
+                        ? SystemMouseCursors.basic
+                        : SystemMouseCursors.none,
+                    onEnter: isDesktop ? (_) => _onMouseEnter() : null,
+                    onHover: isDesktop ? (_) => _onMouseMove() : null,
+                    onExit: isDesktop ? (_) => _onMouseExit() : null,
+                    child: isDesktop
+                        ? PlayerDesktopLayout(
+                            playerViewport: _buildPlayerViewport(
                               context,
-                              isFullscreen: true,
-                              isDesktop: false,
-                            )
-                          : PlayerMobileLayout(
-                              playerViewport: _buildPlayerViewport(
-                                context,
-                                isFullscreen: false,
-                                isDesktop: false,
-                              ),
-                              infoPanel: PlayerInfoPanel(
-                                mediaId: widget.mediaId,
-                                animeTitle: widget.title,
-                                episodeNumber: _currentEpisodeNumber,
-                                episodeTitle: _currentEpisodeTitle,
-                                animeDetails: _animeDetails,
-                                aniZipData: _aniZipData ?? _animeDetails?.aniZipData,
-                                isLoading: _isLoadingDetails,
-                                isDesktop: false,
-                                chapters: _chapters,
-                                activeChapter: _activeChapter,
-                                onSeekToChapter: _seekTo,
-                                hasNextEpisode: _hasNextEpisode,
-                                onPlayNextEpisode: (_hasNextEpisode && !_isLoadingNextEpisode)
-                                    ? () => _sourceController.playEpisode(
-                                        targetEpNum: (_currentEpisodeNumber ?? 1) + 1,
-                                        onEpisodeTransitionStarted: _onEpisodeTransitionStarted,
-                                      )
-                                    : null,
-                                onPlayPreviousEpisode: (_hasPreviousEpisode && !_isLoadingNextEpisode)
-                                    ? () => _sourceController.playEpisode(
-                                        targetEpNum: (_currentEpisodeNumber ?? 1) - 1,
-                                        onEpisodeTransitionStarted: _onEpisodeTransitionStarted,
-                                      )
-                                    : null,
-                                sourceController: _sourceController,
-                                playbackOrigin: _playbackOrigin,
-                                isResolvingSources: _isResolvingSources,
-                                availableSources: _availableSources,
-                                activeSource: _activeSource,
-                                sourceResolutionError: _sourceResolutionError,
-                                onlineStreamProvider: _currentOnlineStreamProvider,
-                                isDubbed: _currentOnlineStreamDubbed ?? false,
-                                onToggleDubbed: _toggleOnlineStreamDubbed,
-                                onReloadSources: () => _sourceController.resolveInitialSources(preservePosition: true),
-                                onSelectSource: _sourceController.selectSource,
-                                onSelectProvider: _switchOnlineStreamProvider,
-                              ),
-                            )),
+                              isFullscreen: effectiveFullscreen,
+                              isDesktop: true,
+                            ),
+                            sidePanel: PlayerInfoPanel(
+                              mediaId: widget.mediaId,
+                              animeTitle: widget.title,
+                              episodeNumber: _currentEpisodeNumber,
+                              episodeTitle: _currentEpisodeTitle,
+                              animeDetails: _animeDetails,
+                              aniZipData:
+                                  _aniZipData ?? _animeDetails?.aniZipData,
+                              isLoading: _isLoadingDetails,
+                              isDesktop: true,
+                              onCollapse: () =>
+                                  setState(() => _isSidePanelCollapsed = true),
+                              chapters: _chapters,
+                              activeChapter: _activeChapter,
+                              onSeekToChapter: _seekTo,
+                              hasNextEpisode: _hasNextEpisode,
+                              onPlayNextEpisode:
+                                  (_hasNextEpisode && !_isLoadingNextEpisode)
+                                  ? () => _sourceController.playEpisode(
+                                      targetEpNum:
+                                          (_currentEpisodeNumber ?? 1) + 1,
+                                      onEpisodeTransitionStarted:
+                                          _onEpisodeTransitionStarted,
+                                    )
+                                  : null,
+                              onPlayPreviousEpisode:
+                                  (_hasPreviousEpisode &&
+                                      !_isLoadingNextEpisode)
+                                  ? () => _sourceController.playEpisode(
+                                      targetEpNum:
+                                          (_currentEpisodeNumber ?? 1) - 1,
+                                      onEpisodeTransitionStarted:
+                                          _onEpisodeTransitionStarted,
+                                    )
+                                  : null,
+                              sourceController: _sourceController,
+                              playbackOrigin: _playbackOrigin,
+                              isResolvingSources: _isResolvingSources,
+                              availableSources: _availableSources,
+                              activeSource: _activeSource,
+                              sourceResolutionError: _sourceResolutionError,
+                              onlineStreamProvider:
+                                  _currentOnlineStreamProvider,
+                              isDubbed: _currentOnlineStreamDubbed ?? false,
+                              onToggleDubbed: _toggleOnlineStreamDubbed,
+                              onReloadSources: () =>
+                                  _sourceController.resolveInitialSources(
+                                    preservePosition: true,
+                                  ),
+                              onSelectSource: _sourceController.selectSource,
+                              onSelectProvider: _switchOnlineStreamProvider,
+                            ),
+                            isSidePanelCollapsed:
+                                effectiveFullscreen || _isSidePanelCollapsed,
+                          )
+                        : (effectiveFullscreen
+                              ? _buildPlayerViewport(
+                                  context,
+                                  isFullscreen: true,
+                                  isDesktop: false,
+                                )
+                              : PlayerMobileLayout(
+                                  playerViewport: _buildPlayerViewport(
+                                    context,
+                                    isFullscreen: false,
+                                    isDesktop: false,
+                                  ),
+                                  infoPanel: PlayerInfoPanel(
+                                    mediaId: widget.mediaId,
+                                    animeTitle: widget.title,
+                                    episodeNumber: _currentEpisodeNumber,
+                                    episodeTitle: _currentEpisodeTitle,
+                                    animeDetails: _animeDetails,
+                                    aniZipData:
+                                        _aniZipData ??
+                                        _animeDetails?.aniZipData,
+                                    isLoading: _isLoadingDetails,
+                                    isDesktop: false,
+                                    chapters: _chapters,
+                                    activeChapter: _activeChapter,
+                                    onSeekToChapter: _seekTo,
+                                    hasNextEpisode: _hasNextEpisode,
+                                    onPlayNextEpisode:
+                                        (_hasNextEpisode &&
+                                            !_isLoadingNextEpisode)
+                                        ? () => _sourceController.playEpisode(
+                                            targetEpNum:
+                                                (_currentEpisodeNumber ?? 1) +
+                                                1,
+                                            onEpisodeTransitionStarted:
+                                                _onEpisodeTransitionStarted,
+                                          )
+                                        : null,
+                                    onPlayPreviousEpisode:
+                                        (_hasPreviousEpisode &&
+                                            !_isLoadingNextEpisode)
+                                        ? () => _sourceController.playEpisode(
+                                            targetEpNum:
+                                                (_currentEpisodeNumber ?? 1) -
+                                                1,
+                                            onEpisodeTransitionStarted:
+                                                _onEpisodeTransitionStarted,
+                                          )
+                                        : null,
+                                    sourceController: _sourceController,
+                                    playbackOrigin: _playbackOrigin,
+                                    isResolvingSources: _isResolvingSources,
+                                    availableSources: _availableSources,
+                                    activeSource: _activeSource,
+                                    sourceResolutionError:
+                                        _sourceResolutionError,
+                                    onlineStreamProvider:
+                                        _currentOnlineStreamProvider,
+                                    isDubbed:
+                                        _currentOnlineStreamDubbed ?? false,
+                                    onToggleDubbed: _toggleOnlineStreamDubbed,
+                                    onReloadSources: () =>
+                                        _sourceController.resolveInitialSources(
+                                          preservePosition: true,
+                                        ),
+                                    onSelectSource:
+                                        _sourceController.selectSource,
+                                    onSelectProvider:
+                                        _switchOnlineStreamProvider,
+                                  ),
+                                )),
+                  ),
                 ),
-              ),
-            ),
+        ),
       ),
     );
   }

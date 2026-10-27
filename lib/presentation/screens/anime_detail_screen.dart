@@ -1,4 +1,5 @@
 import 'dart:ui';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -82,8 +83,10 @@ class AnimeDetailScreen extends ConsumerStatefulWidget {
 class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
   AnimeDetails? _details;
   AniZipData? _aniZipData;
+
   /// The final resolved logo URL – set once when all data is ready, never changed.
   String? _resolvedLogoUrl;
+
   /// The final resolved banner/backdrop URL – set once, never changed.
   String? _resolvedBannerUrl;
   bool _isLoading = true;
@@ -127,7 +130,8 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
         _isLoading = true;
       }
     } else {
-      final initialHasLocal = widget.initialLocalMode ||
+      final initialHasLocal =
+          widget.initialLocalMode ||
           (widget.initialEntry?.hasLocalFiles ?? false) ||
           ((widget.initialEntry?.mainFileCount ?? 0) > 0);
       _hasLocalFiles = initialHasLocal;
@@ -147,9 +151,11 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
         }
       }
       if (!_hasLocalFiles) {
-        final collection = ref.read(animeCollectionProvider).asData?.value ?? [];
-        final collEntry =
-            collection.where((e) => e.mediaId == widget.mediaId).firstOrNull;
+        final collection =
+            ref.read(animeCollectionProvider).asData?.value ?? [];
+        final collEntry = collection
+            .where((e) => e.mediaId == widget.mediaId)
+            .firstOrNull;
         if (collEntry != null &&
             (collEntry.hasLocalFiles || collEntry.mainFileCount > 0)) {
           _hasLocalFiles = true;
@@ -172,10 +178,12 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
 
       if (!_hasLocalFiles) {
         final history = ref.read(downloadHistoryProvider);
-        if (history.any((item) =>
-            item.mediaId == widget.mediaId &&
-            item.filePath != null &&
-            item.filePath!.isNotEmpty)) {
+        if (history.any(
+          (item) =>
+              item.mediaId == widget.mediaId &&
+              item.filePath != null &&
+              item.filePath!.isNotEmpty,
+        )) {
           _hasLocalFiles = true;
           if (widget.initialLocalMode) {
             _isLocalMode = true;
@@ -186,11 +194,14 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
       // Synchronously restore saved mode from memory cache on frame 0
       final prefs = AnimeDetailScreen._cachedPrefs;
       if (prefs != null) {
-        final perMediaSaved = prefs.getString('$_prefModePrefix${widget.mediaId}');
+        final perMediaSaved = prefs.getString(
+          '$_prefModePrefix${widget.mediaId}',
+        );
         final globalSaved = prefs.getString(_prefGlobalLastMode);
         if (perMediaSaved != null) {
           _userManuallyChangedMode = true;
-          if (perMediaSaved == 'local' && (_hasLocalFiles || widget.initialLocalMode)) {
+          if (perMediaSaved == 'local' &&
+              (_hasLocalFiles || widget.initialLocalMode)) {
             _isLocalMode = true;
           } else if (perMediaSaved == 'torrent') {
             _isLocalMode = false;
@@ -244,7 +255,8 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
         if (customAssets.logo != null && customAssets.logo!.isNotEmpty) {
           _resolvedLogoUrl = customAssets.logo;
         }
-        if (customAssets.background != null && customAssets.background!.isNotEmpty) {
+        if (customAssets.background != null &&
+            customAssets.background!.isNotEmpty) {
           _resolvedBannerUrl = customAssets.background;
         }
       }
@@ -254,14 +266,22 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
         _aniZipData = cachedAniZip;
         _isLoadingAniZip = false;
         final mapping = TmdbMappingService.getMapping(widget.mediaId);
-        final isTmdbMedia = widget.isTmdb ?? widget.initialEntry?.isTmdb ?? false;
-        final parsedTmdb = int.tryParse(cachedAniZip.mappings?.themoviedbId ?? '');
+        final isTmdbMedia =
+            widget.isTmdb ?? widget.initialEntry?.isTmdb ?? false;
+        final parsedTmdb = int.tryParse(
+          cachedAniZip.mappings?.themoviedbId ?? '',
+        );
         final tvdb = (mapping?.tvdbId != null && mapping!.tvdbId > 0)
             ? mapping.tvdbId
             : cachedAniZip.mappings?.thetvdbId;
-        final tmdbId = mapping?.tmdbId ?? parsedTmdb ?? (isTmdbMedia ? widget.mediaId : null);
-        if ((_resolvedLogoUrl == null || _resolvedBannerUrl == null) && (tmdbId != null || tvdb != null)) {
-          final isMovie = mapping?.isMovie ??
+        final tmdbId =
+            mapping?.tmdbId ??
+            parsedTmdb ??
+            (isTmdbMedia ? widget.mediaId : null);
+        if ((_resolvedLogoUrl == null || _resolvedBannerUrl == null) &&
+            (tmdbId != null || tvdb != null)) {
+          final isMovie =
+              mapping?.isMovie ??
               ((widget.initialEntry?.format?.toUpperCase() == 'MOVIE') ||
                   (cachedDetails?.format?.toUpperCase() == 'MOVIE'));
           final currentLang = ref.read(appLanguageProvider).code;
@@ -271,10 +291,14 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
             tvdbId: tvdb,
             language: currentLang,
           );
-          if (_resolvedLogoUrl == null && cachedAssets?.logoUrl != null && cachedAssets!.logoUrl!.isNotEmpty) {
+          if (_resolvedLogoUrl == null &&
+              cachedAssets?.logoUrl != null &&
+              cachedAssets!.logoUrl!.isNotEmpty) {
             _resolvedLogoUrl = cachedAssets.logoUrl;
           }
-          if (_resolvedBannerUrl == null && cachedAssets?.backdropUrl != null && cachedAssets!.backdropUrl!.isNotEmpty) {
+          if (_resolvedBannerUrl == null &&
+              cachedAssets?.backdropUrl != null &&
+              cachedAssets!.backdropUrl!.isNotEmpty) {
             _resolvedBannerUrl = cachedAssets.backdropUrl;
           }
         }
@@ -289,14 +313,17 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
     try {
       final prefs = await SharedPreferences.getInstance();
       AnimeDetailScreen._cachedPrefs = prefs;
-      final perMediaSaved = prefs.getString('$_prefModePrefix${widget.mediaId}');
+      final perMediaSaved = prefs.getString(
+        '$_prefModePrefix${widget.mediaId}',
+      );
       final globalSaved = prefs.getString(_prefGlobalLastMode);
 
       if (mounted) {
         setState(() {
           if (perMediaSaved != null) {
             _userManuallyChangedMode = true;
-            if (perMediaSaved == 'local' && (_hasLocalFiles || widget.initialLocalMode)) {
+            if (perMediaSaved == 'local' &&
+                (_hasLocalFiles || widget.initialLocalMode)) {
               _isLocalMode = true;
             } else if (perMediaSaved == 'torrent') {
               _isLocalMode = false;
@@ -375,7 +402,9 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
     if (isTmdb) {
       final isSpanish = ref.read(appLanguageProvider) == AppLanguage.es;
       final lang = isSpanish ? 'es-ES' : 'en-US';
-      final isMovie = (widget.initialEntry?.format == 'MOVIE') || (_details?.format == 'MOVIE');
+      final isMovie =
+          (widget.initialEntry?.format == 'MOVIE') ||
+          (_details?.format == 'MOVIE');
       final tmdbService = ref.read(tmdbServiceProvider);
       final results = await Future.wait([
         tmdbService.getShowDetails(
@@ -394,8 +423,12 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
 
       String? logo = assets?.logoUrl;
       String? banner = assets?.backdropUrl;
-      banner ??= showDetails?.backdropPath != null ? 'https://image.tmdb.org/t/p/w1280${showDetails!.backdropPath}' : null;
-      banner ??= showDetails?.posterPath != null ? 'https://image.tmdb.org/t/p/w500${showDetails!.posterPath}' : null;
+      banner ??= showDetails?.backdropPath != null
+          ? 'https://image.tmdb.org/t/p/w1280${showDetails!.backdropPath}'
+          : null;
+      banner ??= showDetails?.posterPath != null
+          ? 'https://image.tmdb.org/t/p/w500${showDetails!.posterPath}'
+          : null;
 
       if (!mounted) return;
       if (logo != null && logo.isNotEmpty) {
@@ -413,14 +446,14 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
       }
       if (!mounted) return;
       setState(() {
-          if (showDetails != null) {
-            _details = showDetails.toAnimeDetails();
-          }
-          if (logo != null && logo.isNotEmpty) _resolvedLogoUrl = logo;
-          if (banner != null && banner.isNotEmpty) _resolvedBannerUrl = banner;
-          _isLoading = false;
-          _isLoadingAniZip = false;
-        });
+        if (showDetails != null) {
+          _details = showDetails.toAnimeDetails();
+        }
+        if (logo != null && logo.isNotEmpty) _resolvedLogoUrl = logo;
+        if (banner != null && banner.isNotEmpty) _resolvedBannerUrl = banner;
+        _isLoading = false;
+        _isLoadingAniZip = false;
+      });
       return;
     }
     final repo = ref.read(repositoryProvider);
@@ -429,10 +462,7 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
 
     // Fetch details, aniZip, and library entry in parallel to avoid staggered state updates
     final results = await Future.wait([
-      repo.getAnimeDetails(
-        widget.mediaId,
-        initialEntry: widget.initialEntry,
-      ),
+      repo.getAnimeDetails(widget.mediaId, initialEntry: widget.initialEntry),
       _aniZipData != null
           ? Future.value(_aniZipData)
           : repo.getAniZipData(widget.mediaId).catchError((_) => null),
@@ -449,14 +479,18 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
 
     final effectiveAniZip = aniZip ?? details?.aniZipData;
     final mapping = TmdbMappingService.getMapping(widget.mediaId);
-    final isMovie = mapping?.isMovie ??
+    final isMovie =
+        mapping?.isMovie ??
         ((details?.format?.toUpperCase() == 'MOVIE') ||
             (widget.initialEntry?.format?.toUpperCase() == 'MOVIE'));
-    final parsedTmdbId = int.tryParse(effectiveAniZip?.mappings?.themoviedbId ?? '');
+    final parsedTmdbId = int.tryParse(
+      effectiveAniZip?.mappings?.themoviedbId ?? '',
+    );
     final tvdbId = (mapping?.tvdbId != null && mapping!.tvdbId > 0)
         ? mapping.tvdbId
         : effectiveAniZip?.mappings?.thetvdbId;
-    final effectiveTmdbId = mapping?.tmdbId ?? parsedTmdbId ?? (isTmdb ? widget.mediaId : null);
+    final effectiveTmdbId =
+        mapping?.tmdbId ?? parsedTmdbId ?? (isTmdb ? widget.mediaId : null);
 
     if (parsedTmdbId != null && parsedTmdbId > 0) {
       TmdbMappingService.registerMapping(
@@ -476,13 +510,15 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
       if (customAssets.logo != null && customAssets.logo!.isNotEmpty) {
         resolvedLogo = customAssets.logo;
       }
-      if (customAssets.background != null && customAssets.background!.isNotEmpty) {
+      if (customAssets.background != null &&
+          customAssets.background!.isNotEmpty) {
         resolvedBanner = customAssets.background;
       }
     }
 
     // Resolve TMDB assets (logo + backdrop) if not already resolved by custom database
-    if ((resolvedLogo == null || resolvedBanner == null) && (effectiveTmdbId != null || tvdbId != null)) {
+    if ((resolvedLogo == null || resolvedBanner == null) &&
+        (effectiveTmdbId != null || tvdbId != null)) {
       try {
         final apiKey = ref.read(tmdbApiKeyProvider);
         final currentLang = ref.read(appLanguageProvider).code;
@@ -494,10 +530,14 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
           language: currentLang,
         );
         if (assets != null) {
-          if (resolvedLogo == null && assets.logoUrl != null && assets.logoUrl!.isNotEmpty) {
+          if (resolvedLogo == null &&
+              assets.logoUrl != null &&
+              assets.logoUrl!.isNotEmpty) {
             resolvedLogo = assets.logoUrl;
           }
-          if (resolvedBanner == null && assets.backdropUrl != null && assets.backdropUrl!.isNotEmpty) {
+          if (resolvedBanner == null &&
+              assets.backdropUrl != null &&
+              assets.backdropUrl!.isNotEmpty) {
             resolvedBanner = assets.backdropUrl;
           }
         }
@@ -509,7 +549,8 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
 
     // Fallback banner: AniZip fanart → banner → AniList banner → cover
     if (resolvedBanner == null) {
-      final isTmdbEntry = details?.isTmdb ?? widget.initialEntry?.isTmdb ?? false;
+      final isTmdbEntry =
+          details?.isTmdb ?? widget.initialEntry?.isTmdb ?? false;
       if (!isTmdbEntry) {
         final fanart = effectiveAniZip?.fanartUrl;
         final azBanner = effectiveAniZip?.bannerUrl;
@@ -519,11 +560,13 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
           resolvedBanner = azBanner;
         }
       }
-      resolvedBanner ??= details?.bannerImage ?? widget.initialEntry?.bannerImage;
+      resolvedBanner ??=
+          details?.bannerImage ?? widget.initialEntry?.bannerImage;
       resolvedBanner ??= details?.coverImage ?? widget.initialEntry?.coverImage;
     }
 
-    final hasDownloadedFiles = libEntry != null &&
+    final hasDownloadedFiles =
+        libEntry != null &&
         (libEntry.hasLibraryData ||
             libEntry.episodes.any((e) => e.isDownloaded));
 
@@ -536,21 +579,24 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
     if (!mounted) return;
     if (resolvedBanner != null && resolvedBanner.isNotEmpty) {
       try {
-        await precacheImage(CachedNetworkImageProvider(resolvedBanner), context);
+        await precacheImage(
+          CachedNetworkImageProvider(resolvedBanner),
+          context,
+        );
       } catch (_) {}
     }
     if (!mounted) return;
     setState(() {
-        _details = details;
-        _aniZipData = aniZip ?? details?.aniZipData;
-        _resolvedLogoUrl = resolvedLogo;
-        _resolvedBannerUrl = resolvedBanner;
-        _isLoading = false;
-        _isLoadingAniZip = false;
-        if (hasDownloadedFiles) {
-          _hasLocalFiles = true;
-        }
-      });
+      _details = details;
+      _aniZipData = aniZip ?? details?.aniZipData;
+      _resolvedLogoUrl = resolvedLogo;
+      _resolvedBannerUrl = resolvedBanner;
+      _isLoading = false;
+      _isLoadingAniZip = false;
+      if (hasDownloadedFiles) {
+        _hasLocalFiles = true;
+      }
+    });
   }
 
   Future<void> _retryAniZip() async {
@@ -569,10 +615,11 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
 
   void _openEditEntryModal(String title) {
     if (isTmdb) return;
-    final liveEntry = ref.read(animeCollectionProvider).whenOrNull(
-          data: (entries) => entries
-              .where((e) => e.mediaId == widget.mediaId)
-              .firstOrNull,
+    final liveEntry = ref
+        .read(animeCollectionProvider)
+        .whenOrNull(
+          data: (entries) =>
+              entries.where((e) => e.mediaId == widget.mediaId).firstOrNull,
         );
     final entry = liveEntry ?? widget.initialEntry;
 
@@ -624,7 +671,10 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
             barrierColor: Colors.black.withValues(alpha: 0.75),
             builder: (ctx) => Dialog(
               backgroundColor: Colors.transparent,
-              insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+              insetPadding: const EdgeInsets.symmetric(
+                horizontal: 24,
+                vertical: 24,
+              ),
               child: TorrentSelectorSheet(
                 mediaId: widget.mediaId,
                 episodeNumber: episodeNumber,
@@ -698,10 +748,15 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
     final layoutPref = ref.watch(layoutModeProvider);
     final effectiveLayout = LayoutModeNotifier.resolve(context, layoutPref);
 
-    final libraryEntryAsync = ref.watch(animeLibraryEntryProvider(widget.mediaId));
-    final hasLibFiles = libraryEntryAsync.asData?.value != null &&
+    final libraryEntryAsync = ref.watch(
+      animeLibraryEntryProvider(widget.mediaId),
+    );
+    final hasLibFiles =
+        libraryEntryAsync.asData?.value != null &&
         (libraryEntryAsync.asData!.value!.hasLibraryData ||
-            libraryEntryAsync.asData!.value!.episodes.any((e) => e.isDownloaded));
+            libraryEntryAsync.asData!.value!.episodes.any(
+              (e) => e.isDownloaded,
+            ));
     final effectiveHasLocal = _hasLocalFiles || hasLibFiles;
 
     if (hasLibFiles && !_hasLocalFiles) {
@@ -726,14 +781,19 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
         child: Builder(
           builder: (context) {
             final repo = ref.read(repositoryProvider);
-            final hexColor = _details?.coverColor ??
+            final hexColor =
+                _details?.coverColor ??
                 widget.initialEntry?.coverColor ??
                 repo.getCachedAnimeDetails(widget.mediaId)?.coverColor ??
-                ref.read(animeCollectionProvider).asData?.value
+                ref
+                    .read(animeCollectionProvider)
+                    .asData
+                    ?.value
                     .where((e) => e.mediaId == widget.mediaId)
                     .firstOrNull
                     ?.coverColor;
-            final animeAccentColor = parseHexColor(hexColor) ?? effectiveTheme.colorScheme.primary;
+            final animeAccentColor =
+                parseHexColor(hexColor) ?? effectiveTheme.colorScheme.primary;
 
             return ColoredBox(
               color: effectiveTheme.scaffoldBackgroundColor,
@@ -743,10 +803,7 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
                 switchInCurve: Curves.easeOutCubic,
                 switchOutCurve: Curves.easeInCubic,
                 transitionBuilder: (child, animation) {
-                  return FadeTransition(
-                    opacity: animation,
-                    child: child,
-                  );
+                  return FadeTransition(opacity: animation, child: child);
                 },
                 child: _isLoading
                     ? _buildLoadingGate(effectiveTheme, animeAccentColor)
@@ -761,10 +818,14 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
 
   Widget _buildLoadingGate(ThemeData effectiveTheme, Color animeAccentColor) {
     final repo = ref.read(repositoryProvider);
-    final posterUrl = widget.initialEntry?.coverImage ??
+    final posterUrl =
+        widget.initialEntry?.coverImage ??
         _details?.coverImage ??
         repo.getCachedAnimeDetails(widget.mediaId)?.coverImage ??
-        ref.read(animeCollectionProvider).asData?.value
+        ref
+            .read(animeCollectionProvider)
+            .asData
+            ?.value
             .where((e) => e.mediaId == widget.mediaId)
             .firstOrNull
             ?.coverImage;
@@ -798,8 +859,11 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
           // ─── 2. Darkness & Tint Overlay for Contrast ───
           Positioned.fill(
             child: Container(
-              color: (isDark ? Colors.black : effectiveTheme.scaffoldBackgroundColor)
-                  .withValues(alpha: isDark ? 0.65 : 0.50),
+              color:
+                  (isDark
+                          ? Colors.black
+                          : effectiveTheme.scaffoldBackgroundColor)
+                      .withValues(alpha: isDark ? 0.65 : 0.50),
             ),
           ),
 
@@ -814,14 +878,32 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
 
           // ─── 4. Top-Left Back Button (Always allow exiting during load) ───
           Positioned(
-            top: MediaQuery.of(context).padding.top + 16,
-            left: 24,
+            top: 24,
+            left: 40,
             child: Focus(
               skipTraversal: true,
               canRequestFocus: false,
               descendantsAreFocusable: false,
               child: M3EIconButton(
-                variant: M3EIconButtonVariant.tonal,
+                decoration: M3EIconButtonDecoration(
+                  backgroundColor: WidgetStateProperty.resolveWith((states) {
+                    if (states.contains(WidgetState.pressed)) {
+                      return Colors.white.withValues(alpha: 0.24);
+                    }
+                    if (states.contains(WidgetState.hovered) ||
+                        states.contains(WidgetState.focused)) {
+                      return Colors.white.withValues(alpha: 0.18);
+                    }
+                    return Colors.white.withValues(alpha: 0.10);
+                  }),
+                  foregroundColor: WidgetStateProperty.all(Colors.white),
+                  side: WidgetStateProperty.all(
+                    BorderSide(
+                      color: Colors.white.withValues(alpha: 0.18),
+                      width: 1.0,
+                    ),
+                  ),
+                ),
                 size: M3EIconButtonSize.sm,
                 tooltip: MaterialLocalizations.of(context).backButtonTooltip,
                 icon: Icon(

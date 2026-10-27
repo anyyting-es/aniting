@@ -60,8 +60,8 @@ class PlayerSettingsScreen extends ConsumerWidget {
                       icon: Icon(Icons.rocket_launch_rounded),
                     ),
                     ButtonSegment(
-                      value: PlayerEngine.mpv,
-                      label: Text('libmpv'),
+                      value: PlayerEngine.mediaKit,
+                      label: Text('media_kit'),
                       icon: Icon(Icons.play_circle_outline_rounded),
                     ),
                   ],

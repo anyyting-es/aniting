@@ -9,10 +9,8 @@
 #endif
 
 #include "flutter/generated_plugin_registrant.h"
-#include "mpv/mpv_plugin.h"
 
-// Configures RGBA visual on Wayland and composited X11 so that both Flutter
-// transparency (compositor blur) and mpv video planes (wl_subsurface) work properly.
+// Configures RGBA visual on Wayland and composited X11 for Flutter transparency.
 static void setup_window_transparency_and_visual(GtkWindow* window, FlView* view) {
   GdkScreen* screen = gtk_widget_get_screen(GTK_WIDGET(window));
   GdkVisual* visual = gdk_screen_get_rgba_visual(screen);
@@ -227,14 +225,6 @@ static void my_application_activate(GApplication* application) {
   gtk_widget_realize(GTK_WIDGET(view));
 
   fl_register_plugins(FL_PLUGIN_REGISTRY(view));
-
-  FlPluginRegistrar* registrar =
-      fl_plugin_registry_get_registrar_for_plugin(FL_PLUGIN_REGISTRY(view), "MpvPlugin");
-  mpv_plugin_register_with_registrar(registrar);
-
-  FlPluginRegistrar* audio_registrar =
-      fl_plugin_registry_get_registrar_for_plugin(FL_PLUGIN_REGISTRY(view), "MpvAudioPlugin");
-  mpv_audio_plugin_register_with_registrar(audio_registrar);
 
   gtk_widget_grab_focus(GTK_WIDGET(view));
 }

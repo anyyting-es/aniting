@@ -38,7 +38,7 @@ This document provides in-depth architectural specifications and implementation 
 
 ### 2.1. Dual-Engine Pipeline (`PlayerPlaybackCoordinator`)
 - **Android Native Engine**: Media3 **ExoPlayer** + `libass-android` (`exo_player_service.dart`, `AssSubtitleSurfaceView`).
-- **Desktop & Fallback Engine**: **libmpv** via `media_kit` and `media_kit_video` (`mpv_player_service.dart`).
+- **Desktop & Fallback Engine**: Direct `media_kit` and `media_kit_video` integration (`media_kit_player_service.dart`).
 - **Automatic Fallback Execution**: If ExoPlayer encounters an unrecoverable format or codec error on Android, `triggerFallbackToMpv` seamlessly transitions to `MpvPlayerService` at the exact same playback position without interrupting the user.
 
 ### 2.2. Plezy-Inspired Controls & Micro-Optimizations

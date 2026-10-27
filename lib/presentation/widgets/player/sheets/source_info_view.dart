@@ -135,7 +135,7 @@ class SourceInfoView extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  isUsingExoPlayer ? 'ExoPlayer' : 'libmpv',
+                  isUsingExoPlayer ? 'ExoPlayer' : 'media_kit',
                   style: TextStyle(
                     color: theme.colorScheme.onSurface,
                     fontSize: 11,

@@ -574,7 +574,8 @@ class _PlayerSettingsSheetState extends ConsumerState<PlayerSettingsSheet> {
             ),
             Divider(color: dividerColor, height: 1),
 
-            // 8. Shaders GLSL (Anime4K / NVScaler / ArtCNN) - Only supported on MPV
+            // 8. Shader presets remain visible for compatibility, but are
+            // not applied by the direct media_kit backend.
             if (!widget.isUsingExoPlayer) ...[
               _buildMenuItem(
                 icon: AppIcons.sparkles(iconPack),
@@ -1044,4 +1045,3 @@ class _PlayerSettingsSheetState extends ConsumerState<PlayerSettingsSheet> {
     );
   }
 }
-

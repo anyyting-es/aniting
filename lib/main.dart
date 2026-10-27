@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:media_kit/media_kit.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:seanime_app/core/constants/feature_flags.dart';
@@ -49,6 +51,7 @@ import 'package:seanime_app/data/services/custom_anime_assets_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  MediaKit.ensureInitialized();
   AppFocusCoordinator.initialize();
   DeepLinkService.instance.initialize();
   unawaited(TmdbMappingService.init());
@@ -74,7 +77,8 @@ void main() async {
       for (final dir in candidates) {
         if (dir.existsSync()) {
           for (final entity in dir.listSync()) {
-            if (entity is File && entity.path.contains('NativeReferenceHolder')) {
+            if (entity is File &&
+                entity.path.contains('NativeReferenceHolder')) {
               try {
                 entity.deleteSync();
               } catch (_) {}
@@ -132,11 +136,7 @@ void main() async {
     AnimeDetailScreen.setCachedPrefs(prefs);
     TmdbService.setCachedPrefs(prefs);
   } catch (_) {}
-  runApp(
-    const ProviderScope(
-      child: AnitingFlutterApp(),
-    ),
-  );
+  runApp(const ProviderScope(child: AnitingFlutterApp()));
 }
 
 class AnitingFlutterApp extends ConsumerStatefulWidget {
@@ -146,7 +146,8 @@ class AnitingFlutterApp extends ConsumerStatefulWidget {
   ConsumerState<AnitingFlutterApp> createState() => _AnitingFlutterAppState();
 }
 
-class _AnitingFlutterAppState extends ConsumerState<AnitingFlutterApp> with WidgetsBindingObserver {
+class _AnitingFlutterAppState extends ConsumerState<AnitingFlutterApp>
+    with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
@@ -220,26 +221,41 @@ class _AnitingFlutterAppState extends ConsumerState<AnitingFlutterApp> with Widg
         borderRadius: initialRadius,
       ),
       themeMode: mode,
-      home: ref.watch(onboardingProvider) ? const AppWarmUpGate() : const WelcomeScreen(),
+      home: ref.watch(onboardingProvider)
+          ? const AppWarmUpGate()
+          : const WelcomeScreen(),
       builder: (context, child) {
         return Consumer(
           builder: (context, ref, _) {
-            final currentRadius = ref.watch(themeProvider.select((s) => s.borderRadius));
+            final currentRadius = ref.watch(
+              themeProvider.select((s) => s.borderRadius),
+            );
             final windowTrans = ref.watch(desktopWindowTransparencyProvider);
             final wallpaperState = ref.watch(wallpaperPreferencesProvider);
             final hasWallpaper =
-                FeatureFlags.customWallpaper && wallpaperState.hasValidWallpaper;
-            final isDesktop = !kIsWeb && (Platform.isLinux || Platform.isWindows || Platform.isMacOS);
+                FeatureFlags.customWallpaper &&
+                wallpaperState.hasValidWallpaper;
+            final isDesktop =
+                !kIsWeb &&
+                (Platform.isLinux || Platform.isWindows || Platform.isMacOS);
             final isVideoPlayerActive = ref.watch(isVideoPlayerActiveProvider);
-            final effectiveWindowTransparency = (FeatureFlags.desktopWindowTransparency &&
-                isDesktop &&
-                windowTrans.enabled) || isVideoPlayerActive;
+            final effectiveWindowTransparency =
+                !isVideoPlayerActive &&
+                (FeatureFlags.desktopWindowTransparency &&
+                    isDesktop &&
+                    windowTrans.enabled);
 
             final baseTheme = Theme.of(context);
-            final baseColors = baseTheme.extension<AppThemeColors>() ??
-                AppThemeColors.fromPalette(palette, borderRadius: currentRadius);
+            final baseColors =
+                baseTheme.extension<AppThemeColors>() ??
+                AppThemeColors.fromPalette(
+                  palette,
+                  borderRadius: currentRadius,
+                );
 
-            final effectiveScaffoldBg = (effectiveWindowTransparency || hasWallpaper)
+            final effectiveScaffoldBg =
+                (effectiveWindowTransparency ||
+                    (hasWallpaper && !isVideoPlayerActive))
                 ? Colors.transparent
                 : baseTheme.scaffoldBackgroundColor;
 
@@ -248,7 +264,10 @@ class _AnitingFlutterAppState extends ConsumerState<AnitingFlutterApp> with Widg
               cardTheme: baseTheme.cardTheme.copyWith(
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(currentRadius),
-                  side: (baseTheme.cardTheme.shape as RoundedRectangleBorder?)?.side ?? BorderSide.none,
+                  side:
+                      (baseTheme.cardTheme.shape as RoundedRectangleBorder?)
+                          ?.side ??
+                      BorderSide.none,
                 ),
               ),
               dialogTheme: baseTheme.dialogTheme.copyWith(
@@ -261,18 +280,20 @@ class _AnitingFlutterAppState extends ConsumerState<AnitingFlutterApp> with Widg
                   borderRadius: BorderRadius.circular(currentRadius),
                 ),
               ),
-              extensions: [
-                baseColors.copyWith(borderRadius: currentRadius),
-              ],
+              extensions: [baseColors.copyWith(borderRadius: currentRadius)],
             );
 
             final isDark = updatedTheme.brightness == Brightness.dark;
             final overlayStyle = SystemUiOverlayStyle(
               statusBarColor: Colors.transparent,
-              statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+              statusBarIconBrightness: isDark
+                  ? Brightness.light
+                  : Brightness.dark,
               statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
               systemNavigationBarColor: updatedTheme.scaffoldBackgroundColor,
-              systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+              systemNavigationBarIconBrightness: isDark
+                  ? Brightness.light
+                  : Brightness.dark,
               systemNavigationBarDividerColor: Colors.transparent,
             );
 
@@ -286,12 +307,20 @@ class _AnitingFlutterAppState extends ConsumerState<AnitingFlutterApp> with Widg
                 ),
                 child: M3ETheme(
                   data: isDark
-                      ? M3EThemeData.dark(seedColor: updatedTheme.colorScheme.primary)
-                      : M3EThemeData.light(seedColor: updatedTheme.colorScheme.primary),
+                      ? M3EThemeData.dark(
+                          seedColor: updatedTheme.colorScheme.primary,
+                        )
+                      : M3EThemeData.light(
+                          seedColor: updatedTheme.colorScheme.primary,
+                        ),
                   child: GlassHost(
                     richBackdrop: true,
-                    finish: isDark ? GlassFinish.regularDark : GlassFinish.regularLight,
-                    backdrop: (effectiveWindowTransparency || hasWallpaper)
+                    finish: isDark
+                        ? GlassFinish.regularDark
+                        : GlassFinish.regularLight,
+                    backdrop:
+                        (effectiveWindowTransparency ||
+                            (hasWallpaper && !isVideoPlayerActive))
                         ? Colors.transparent
                         : baseTheme.scaffoldBackgroundColor,
                     tier: GlassTierChoice(
@@ -302,20 +331,22 @@ class _AnitingFlutterAppState extends ConsumerState<AnitingFlutterApp> with Widg
                       child: Stack(
                         fit: StackFit.expand,
                         children: [
-                          if (isVideoPlayerActive)
-                            const SizedBox.shrink()
-                          else if (effectiveWindowTransparency)
+                          if (effectiveWindowTransparency)
                             Positioned.fill(
                               child: IgnorePointer(
                                 child: ColoredBox(
-                                  color: (isOled && isDark
-                                          ? Colors.black
-                                          : baseTheme.scaffoldBackgroundColor)
-                                      .withValues(alpha: windowTrans.opacity),
+                                  color:
+                                      (isOled && isDark
+                                              ? Colors.black
+                                              : baseTheme
+                                                    .scaffoldBackgroundColor)
+                                          .withValues(
+                                            alpha: windowTrans.opacity,
+                                          ),
                                 ),
                               ),
                             )
-                          else if (hasWallpaper)
+                          else if (hasWallpaper && !isVideoPlayerActive)
                             AppWallpaperBackground(wallpaper: wallpaperState)
                           else
                             Positioned.fill(
@@ -342,4 +373,3 @@ class _AnitingFlutterAppState extends ConsumerState<AnitingFlutterApp> with Widg
     );
   }
 }
-

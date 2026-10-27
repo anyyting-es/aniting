@@ -6,13 +6,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 enum PlayerEngine {
   exoplayer(
     'ExoPlayer (Media3)',
-    'Aceleración por hardware nativa, menor consumo de batería, soporte .ass con libass y respaldo a libmpv.',
+    'Aceleración por hardware nativa, menor consumo de batería y soporte .ass con libass.',
     'exoplayer',
   ),
-  mpv(
-    'libmpv',
-    'Motor universal con soporte integral para todos los codecs, subtítulos y filtros.',
-    'mpv',
+  mediaKit(
+    'media_kit',
+    'Motor universal con soporte integral para todos los codecs y subtítulos.',
+    'media_kit',
   );
 
   final String label;
@@ -25,8 +25,8 @@ enum PlayerEngine {
     switch (this) {
       case PlayerEngine.exoplayer:
         return l10n.exoplayerDesc;
-      case PlayerEngine.mpv:
-        return l10n.mpvDesc;
+      case PlayerEngine.mediaKit:
+        return l10n.mediaKitDesc;
     }
   }
 
@@ -34,15 +34,16 @@ enum PlayerEngine {
     if (Platform.isAndroid) {
       return PlayerEngine.exoplayer;
     }
-    return PlayerEngine.mpv;
+    return PlayerEngine.mediaKit;
   }
 
   static PlayerEngine fromKey(String? key) {
     switch (key) {
       case 'exoplayer':
         return PlayerEngine.exoplayer;
+      case 'media_kit':
       case 'mpv':
-        return PlayerEngine.mpv;
+        return PlayerEngine.mediaKit;
       default:
         return PlayerEngine.defaultEngine;
     }

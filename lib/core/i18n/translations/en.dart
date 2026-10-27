@@ -293,7 +293,7 @@ class EnglishTranslations implements AppTranslations {
   String get defaultEngine => 'Default Engine';
   @override
   String get defaultEngineDesc =>
-      'ExoPlayer is optimized for Android with direct hardware acceleration and libass for .ass subtitles. Automatically falls back to libmpv if needed.';
+      'ExoPlayer is optimized for Android with direct hardware acceleration and libass for .ass subtitles. Automatically falls back to media_kit if needed.';
   @override
   String get appLanguage => 'App Language';
   @override
@@ -417,10 +417,10 @@ class EnglishTranslations implements AppTranslations {
       'Routes online streams through the local Go server to prevent CORS, TLS, and header loss issues in MPV.';
   @override
   String get exoplayerDesc =>
-      'Native hardware acceleration, lower battery usage, .ass support via libass, and libmpv fallback.';
+      'Native hardware acceleration, lower battery usage, and .ass support via libass.';
   @override
-  String get mpvDesc =>
-      'Universal engine with comprehensive codec, subtitle, and filter support.';
+  String get mediaKitDesc =>
+      'Universal engine with comprehensive codec and subtitle support.';
 
   // Streaming Sources Settings
   @override
@@ -798,6 +798,12 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get playingFromTorrentDesc => 'Live P2P stream';
   @override
+  String get loadingVideo => 'Loading video...';
+  @override
+  String get bufferingVideo => 'Buffering...';
+  @override
+  String get downloadingMetadata => 'Downloading metadata...';
+  @override
   String get aspectRatio => 'Screen Fit';
   @override
   String get screenFit => 'Screen Fit';
@@ -819,6 +825,9 @@ class EnglishTranslations implements AppTranslations {
   String get remainingTime => 'Remaining';
   @override
   String get completed => 'Completed';
+  @override
+  String get switchingToMediaKitNotice =>
+      'Switching to media_kit for format compatibility...';
   @override
   String get switchingToMpvNotice =>
       'Switching to libmpv for format compatibility...';
@@ -897,7 +906,8 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get sourceUrlLabel => 'Source Link / URL:';
   @override
-  String get shadersRequireMpv => 'GLSL shaders require the libmpv engine.';
+  String get shadersRequireMpv =>
+      'GLSL shaders are unavailable with media_kit.';
   @override
   String get subtitleSyncDesc =>
       'Adjust delay to advance or delay subtitles relative to the video.';
@@ -1596,23 +1606,27 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get welcomeTvConnectServer => 'Connect to Server';
   @override
-  String get welcomeTvConnectServerDesc => 'Sync your catalog and extensions from your PC or mobile';
+  String get welcomeTvConnectServerDesc =>
+      'Sync your catalog and extensions from your PC or mobile';
   @override
   String get welcomeTvScanQrTitle => 'Pair with Mobile';
   @override
-  String get welcomeTvScanQrDesc => 'Scan this QR code with the Aniting app or mobile camera to use your phone as a server';
+  String get welcomeTvScanQrDesc =>
+      'Scan this QR code with the Aniting app or mobile camera to use your phone as a server';
   @override
   String get welcomeTvDeviceIp => 'TV IP Address';
   @override
   String get welcomeTvDiscoveredServers => 'Local Servers Found';
   @override
-  String get welcomeTvSearchingServers => 'Searching for local servers on your Wi-Fi...';
+  String get welcomeTvSearchingServers =>
+      'Searching for local servers on your Wi-Fi...';
   @override
   String get welcomeTvNoServersFound => 'No local servers found yet';
   @override
   String get welcomeTvManualIp => 'Enter IP Manually';
   @override
-  String get welcomeTvManualIpDesc => 'Type the Seanime / Aniting server address and port';
+  String get welcomeTvManualIpDesc =>
+      'Type the Seanime / Aniting server address and port';
   @override
   String get welcomeTvServerHost => 'IP Address or Host';
   @override
@@ -1624,7 +1638,8 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get welcomeTvConnected => 'Connected successfully!';
   @override
-  String get welcomeTvConnectionFailed => 'Connection failed. Check host and port.';
+  String get welcomeTvConnectionFailed =>
+      'Connection failed. Check host and port.';
   @override
   String get welcomeTvSkipServer => 'Continue without Server (Skip)';
   @override
@@ -1633,7 +1648,8 @@ class EnglishTranslations implements AppTranslations {
   String get welcomeTvUseLocalServerDesc =>
       'Run the local server on this device and set up default sources';
   @override
-  String get welcomeTvLocalServerActive => 'Integrated server active • Continue';
+  String get welcomeTvLocalServerActive =>
+      'Integrated server active • Continue';
   @override
   String get noProvidersInstalled => 'No streaming sources installed';
   @override
@@ -1650,7 +1666,8 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get tvPairingTitle => 'Pair with Smart TV';
   @override
-  String get tvPairingSubtitle => 'Configuring your phone as a local media server for your TV';
+  String get tvPairingSubtitle =>
+      'Configuring your phone as a local media server for your TV';
   @override
   String get tvPairingStartingServer => 'Starting local server...';
   @override
@@ -1658,9 +1675,11 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get tvPairingSendingBeacon => 'Sending connection beacon to TV...';
   @override
-  String get tvPairingSuccess => 'TV paired successfully! Your library is now shared with your Smart TV.';
+  String get tvPairingSuccess =>
+      'TV paired successfully! Your library is now shared with your Smart TV.';
   @override
-  String get tvPairingAutoConnecting => 'Mobile device detected! Connecting automatically...';
+  String get tvPairingAutoConnecting =>
+      'Mobile device detected! Connecting automatically...';
   @override
   String get tvPairingManualButton => 'Pair with TV by IP';
   @override

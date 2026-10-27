@@ -218,7 +218,7 @@ abstract class AppTranslations {
   String get onlineStreamProxy;
   String get onlineStreamProxyDesc;
   String get exoplayerDesc;
-  String get mpvDesc;
+  String get mediaKitDesc;
 
   // Streaming Sources Settings
   String get playbackMethods;
@@ -406,6 +406,9 @@ abstract class AppTranslations {
   String get playingLocallyDesc;
   String get playingFromTorrent;
   String get playingFromTorrentDesc;
+  String get loadingVideo;
+  String get bufferingVideo;
+  String get downloadingMetadata;
   String get aspectRatio;
   String get screenFit;
   String get videoSource;
@@ -417,6 +420,7 @@ abstract class AppTranslations {
   String get seedersPeers;
   String get remainingTime;
   String get completed;
+  String get switchingToMediaKitNotice;
   String get switchingToMpvNotice;
   String get noChapters;
   String get noAudioTracks;

@@ -3,8 +3,6 @@
 #include <optional>
 
 #include "flutter/generated_plugin_registrant.h"
-#include "mpv/display_mode_manager.h"
-#include "mpv/mpv_plugin.h"
 
 static constexpr wchar_t kWindowPlacementKey[] = L"Software\\Aniting";
 static constexpr wchar_t kWindowPlacementValue[] = L"WindowPlacement";
@@ -160,10 +158,6 @@ bool FlutterWindow::OnCreate() {
   }
   RegisterPlugins(flutter_controller_->engine());
 
-  MpvPlayerPluginRegisterWithRegistrar(flutter_controller_->engine()->GetRegistrarForPlugin("MpvPlayerPlugin"));
-  MpvAudioPlayerPluginRegisterWithRegistrar(
-      flutter_controller_->engine()->GetRegistrarForPlugin("MpvAudioPlayerPlugin"));
-
   RegisterWindowChannel();
 
   SetChildContent(flutter_controller_->view()->GetNativeWindow());
@@ -217,10 +211,6 @@ FlutterWindow::MessageHandler(HWND hwnd, UINT const message, WPARAM const wparam
   }
 
   switch (message) {
-    case WM_DISPLAYCHANGE:
-      // One bounded, serialized retry for a display that may have reconnected.
-      mpv::DisplayModeManager::RecoverIfNeeded();
-      break;
     case WM_FONTCHANGE:
       if (flutter_controller_) {
         flutter_controller_->engine()->ReloadSystemFonts();

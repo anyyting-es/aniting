@@ -3,15 +3,12 @@
 #include <windows.h>
 
 #include "flutter_window.h"
-#include "mpv/display_mode_manager.h"
 #include "utils.h"
 
 int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
                       _In_ wchar_t *command_line, _In_ int show_command) {
   // Presents the Flutter UI on a topmost DirectComposition visual when
-  // FLUTTER_WINDOWS_DCOMP is set. The mpv video window is then a plain child
-  // composed beneath the UI in the same HWND so controls overlay correctly
-  // and window capture (Discord/OBS) works.
+  // FLUTTER_WINDOWS_DCOMP is set.
   ::SetEnvironmentVariableW(L"FLUTTER_WINDOWS_DCOMP", L"1");
 
   // Single instance enforcement
@@ -48,12 +45,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   flutter::DartProject project(L"data");
   project.set_ui_thread_policy(flutter::UIThreadPolicy::RunOnSeparateThread);
 
-  // Keep rendering with Skia. Flutter 3.47 made Impeller the default Windows
-  // renderer, but the DirectComposition presentation is only correct when the
-  // frame's per-pixel alpha is exact: DWM blends the UI visual over the mpv
-  // video child, so a frame that presents opaque where it should be translucent
-  // hides the video outright (controls scrim blocking video). Skia handles this
-  // compositing correctly.
+  // Keep rendering with Skia for stable transparent window compositing.
   project.set_impeller_switch(flutter::ImpellerSwitch::Disabled);
 
   std::vector<std::string> command_line_arguments =
@@ -68,9 +60,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
     return EXIT_FAILURE;
   }
   window.SetQuitOnClose(true);
-
-  // Recover display mode if a prior crash left it changed.
-  mpv::DisplayModeManager::RecoverIfNeeded();
 
   ::MSG msg;
   while (::GetMessage(&msg, nullptr, 0, 0)) {

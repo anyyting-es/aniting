@@ -294,7 +294,7 @@ class SpanishTranslations implements AppTranslations {
   String get defaultEngine => 'Motor Predeterminado';
   @override
   String get defaultEngineDesc =>
-      'ExoPlayer está optimizado para Android con aceleración directa y libass para subtítulos complejos (.ass). Si un formato o códec no es compatible, conmuta automáticamente a libmpv.';
+      'ExoPlayer está optimizado para Android con aceleración directa y libass para subtítulos complejos (.ass). Si un formato o códec no es compatible, conmuta automáticamente a media_kit.';
   @override
   String get appLanguage => 'Idioma de la Aplicación';
   @override
@@ -418,10 +418,10 @@ class SpanishTranslations implements AppTranslations {
       'Enruta las fuentes online a través del servidor Go local para resolver headers (Referer/User-Agent) y HLS sin fallos en MPV.';
   @override
   String get exoplayerDesc =>
-      'Aceleración por hardware nativa, menor consumo de batería, soporte .ass con libass y respaldo a libmpv.';
+      'Aceleración por hardware nativa, menor consumo de batería y soporte .ass con libass.';
   @override
-  String get mpvDesc =>
-      'Motor universal con soporte integral para todos los codecs, subtítulos y filtros.';
+  String get mediaKitDesc =>
+      'Motor universal con soporte integral para todos los codecs y subtítulos.';
 
   // Streaming Sources Settings
   @override
@@ -803,6 +803,12 @@ class SpanishTranslations implements AppTranslations {
   @override
   String get playingFromTorrentDesc => 'Transmisión P2P en directo';
   @override
+  String get loadingVideo => 'Cargando video...';
+  @override
+  String get bufferingVideo => 'Buffering...';
+  @override
+  String get downloadingMetadata => 'Descargando metadatos...';
+  @override
   String get aspectRatio => 'Ajuste de Pantalla';
   @override
   String get screenFit => 'Ajuste de Pantalla';
@@ -824,6 +830,9 @@ class SpanishTranslations implements AppTranslations {
   String get remainingTime => 'Faltan';
   @override
   String get completed => 'Completado';
+  @override
+  String get switchingToMediaKitNotice =>
+      'Conmutando a media_kit por compatibilidad de formato...';
   @override
   String get switchingToMpvNotice =>
       'Conmutando a libmpv por compatibilidad de formato...';
@@ -902,7 +911,8 @@ class SpanishTranslations implements AppTranslations {
   @override
   String get sourceUrlLabel => 'Enlace / URL de origen:';
   @override
-  String get shadersRequireMpv => 'Los shaders GLSL requieren el motor libmpv.';
+  String get shadersRequireMpv =>
+      'Los shaders GLSL no están disponibles con media_kit.';
   @override
   String get subtitleSyncDesc =>
       'Ajusta el retardo para adelantar o retrasar los subtítulos respecto al video.';
@@ -1613,23 +1623,28 @@ class SpanishTranslations implements AppTranslations {
   @override
   String get welcomeTvConnectServer => 'Conectar al Servidor';
   @override
-  String get welcomeTvConnectServerDesc => 'Sincroniza tus fuentes, extensiones y catálogo desde tu PC o móvil';
+  String get welcomeTvConnectServerDesc =>
+      'Sincroniza tus fuentes, extensiones y catálogo desde tu PC o móvil';
   @override
   String get welcomeTvScanQrTitle => 'Vincular con tu móvil';
   @override
-  String get welcomeTvScanQrDesc => 'Escanea este código con la app Aniting o la cámara de tu móvil para activarlo como servidor';
+  String get welcomeTvScanQrDesc =>
+      'Escanea este código con la app Aniting o la cámara de tu móvil para activarlo como servidor';
   @override
   String get welcomeTvDeviceIp => 'IP de esta TV';
   @override
   String get welcomeTvDiscoveredServers => 'Servidores locales detectados';
   @override
-  String get welcomeTvSearchingServers => 'Buscando servidores en tu red Wi-Fi...';
+  String get welcomeTvSearchingServers =>
+      'Buscando servidores en tu red Wi-Fi...';
   @override
-  String get welcomeTvNoServersFound => 'Buscando servidores en la red local...';
+  String get welcomeTvNoServersFound =>
+      'Buscando servidores en la red local...';
   @override
   String get welcomeTvManualIp => 'Ingresar IP manualmente';
   @override
-  String get welcomeTvManualIpDesc => 'Escribe la dirección IP y puerto del servidor Seanime / Aniting';
+  String get welcomeTvManualIpDesc =>
+      'Escribe la dirección IP y puerto del servidor Seanime / Aniting';
   @override
   String get welcomeTvServerHost => 'Dirección IP o Host';
   @override
@@ -1641,7 +1656,8 @@ class SpanishTranslations implements AppTranslations {
   @override
   String get welcomeTvConnected => '¡Conexión establecida con éxito!';
   @override
-  String get welcomeTvConnectionFailed => 'No se pudo conectar. Verifica la IP y el puerto.';
+  String get welcomeTvConnectionFailed =>
+      'No se pudo conectar. Verifica la IP y el puerto.';
   @override
   String get welcomeTvSkipServer => 'Continuar sin servidor (Omitir)';
   @override
@@ -1650,7 +1666,8 @@ class SpanishTranslations implements AppTranslations {
   String get welcomeTvUseLocalServerDesc =>
       'Ejecutar el servidor local en este dispositivo y configurar fuentes';
   @override
-  String get welcomeTvLocalServerActive => 'Servidor integrado activo • Continuar';
+  String get welcomeTvLocalServerActive =>
+      'Servidor integrado activo • Continuar';
   @override
   String get noProvidersInstalled => 'Sin fuentes de streaming instaladas';
   @override
@@ -1667,7 +1684,8 @@ class SpanishTranslations implements AppTranslations {
   @override
   String get tvPairingTitle => 'Vincular con Smart TV';
   @override
-  String get tvPairingSubtitle => 'Configurando tu móvil como servidor multimedia para tu TV';
+  String get tvPairingSubtitle =>
+      'Configurando tu móvil como servidor multimedia para tu TV';
   @override
   String get tvPairingStartingServer => 'Iniciando servidor local...';
   @override
@@ -1675,9 +1693,11 @@ class SpanishTranslations implements AppTranslations {
   @override
   String get tvPairingSendingBeacon => 'Enviando señal de conexión a la TV...';
   @override
-  String get tvPairingSuccess => '¡TV vinculada con éxito! Tu biblioteca ahora está compartida con tu Smart TV.';
+  String get tvPairingSuccess =>
+      '¡TV vinculada con éxito! Tu biblioteca ahora está compartida con tu Smart TV.';
   @override
-  String get tvPairingAutoConnecting => '¡Dispositivo móvil detectado! Conectando automáticamente...';
+  String get tvPairingAutoConnecting =>
+      '¡Dispositivo móvil detectado! Conectando automáticamente...';
   @override
   String get tvPairingManualButton => 'Vincular con TV por IP';
   @override

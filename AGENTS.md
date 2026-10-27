@@ -52,8 +52,8 @@
 - **State Management**: `flutter_riverpod` (Providers, Notifiers, StateNotifiers).
 - **Networking**: `dio` (REST API), `web_socket_channel` (real-time server events).
 - **Video Playback**:
-  - **Android**: Native Android Media3 **ExoPlayer** + `libass-android` via platform channels (`exo_player_service.dart`), with automatic fallback to **libmpv**.
-  - **Desktop / Fallback**: **libmpv** via `media_kit` and `media_kit_video` (`mpv_player_service.dart`).
+  - **Android**: Native Android Media3 **ExoPlayer** + `libass-android` via platform channels (`exo_player_service.dart`), with automatic fallback to **media_kit**.
+  - **Desktop / Fallback**: Direct `media_kit` and `media_kit_video` integration (`media_kit_player_service.dart`).
 - **Desktop Media Controls**: Linux MPRIS via `package:dbus` (`mpris_service.dart`).
 - **Backend**: Go embedded companion server (`backend/`) using `echo/v4`, GORM SQLite, Goja (JS extensions), and libtorrent.
 - **Icons**: `lucide_icons_flutter` and Material Symbols (`AppIcons`, `iconPackProvider`).
@@ -101,13 +101,13 @@ Use this directory to quickly locate any screen, widget, provider, or subsystem:
 | Component | Path | Description |
 | :--- | :--- | :--- |
 | **Player Viewport** | [`video_player_screen.dart`](file:///home/anthony/Documents/Eris/aniting/lib/presentation/screens/video_player_screen.dart) | Main video player view, orientation, gesture overlay |
-| **Playback Coordinator**| [`player_playback_coordinator.dart`](file:///home/anthony/Documents/Eris/aniting/lib/presentation/widgets/player/services/player_playback_coordinator.dart) | Dual-engine manager (ExoPlayer + libmpv auto fallback) |
+| **Playback Coordinator**| [`player_playback_coordinator.dart`](file:///home/anthony/Documents/Eris/aniting/lib/presentation/widgets/player/services/player_playback_coordinator.dart) | Dual-engine manager (ExoPlayer + media_kit auto fallback) |
 | **Progress Manager** | [`player_progress_manager.dart`](file:///home/anthony/Documents/Eris/aniting/lib/presentation/widgets/player/services/player_progress_manager.dart) | Playback continuity, LastSession, AniList watch sync |
 | **Window Manager** | [`player_window_manager.dart`](file:///home/anthony/Documents/Eris/aniting/lib/presentation/widgets/player/services/player_window_manager.dart) | Fullscreen, window resizing, ExoPlayer surface bounds sync |
 | **Source Controller** | [`player_source_controller.dart`](file:///home/anthony/Documents/Eris/aniting/lib/presentation/widgets/player/services/player_source_controller.dart) | Online stream source discovery, auto-stream, live switcher |
 | **MPRIS Service** | [`mpris_service.dart`](file:///home/anthony/Documents/Eris/aniting/lib/core/player/mpris_service.dart) | Linux D-Bus `org.mpris.MediaPlayer2` media controls & metadata |
 | **ExoPlayer Bridge** | [`exo_player_service.dart`](file:///home/anthony/Documents/Eris/aniting/lib/core/player/exo_player_service.dart) | Android native Media3 + libass platform channels |
-| **MPV Player Service** | [`mpv_player_service.dart`](file:///home/anthony/Documents/Eris/aniting/lib/core/player/mpv_player_service.dart) | libmpv / media_kit engine with Plezy performance tweaks |
+| **media_kit Player Service** | [`media_kit_player_service.dart`](file:///home/anthony/Documents/Eris/aniting/lib/core/player/media_kit_player_service.dart) | Direct media_kit player and video controller integration |
 | **Shader Presets** | [`player_shader_service.dart`](file:///home/anthony/Documents/Eris/aniting/lib/presentation/widgets/player/services/player_shader_service.dart) | Real-time GLSL anime shaders (Anime4K, FSR, deband) |
 
 ### 4.3. Anime & Shows Details Subsystem
