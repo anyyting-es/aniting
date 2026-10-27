@@ -45,12 +45,14 @@ import 'package:seanime_app/core/theme/app_focus_coordinator.dart';
 import 'package:seanime_app/core/services/deep_link_service.dart';
 import 'package:seanime_app/data/services/tmdb_mapping_service.dart';
 import 'package:seanime_app/data/services/tmdb_service.dart';
+import 'package:seanime_app/data/services/custom_anime_assets_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   AppFocusCoordinator.initialize();
   DeepLinkService.instance.initialize();
   unawaited(TmdbMappingService.init());
+  unawaited(CustomAnimeAssetsService.init());
   try {
     await GlassHost.precache();
   } catch (_) {}
@@ -228,9 +230,10 @@ class _AnitingFlutterAppState extends ConsumerState<AnitingFlutterApp> with Widg
             final hasWallpaper =
                 FeatureFlags.customWallpaper && wallpaperState.hasValidWallpaper;
             final isDesktop = !kIsWeb && (Platform.isLinux || Platform.isWindows || Platform.isMacOS);
-            final effectiveWindowTransparency = FeatureFlags.desktopWindowTransparency &&
+            final isVideoPlayerActive = ref.watch(isVideoPlayerActiveProvider);
+            final effectiveWindowTransparency = (FeatureFlags.desktopWindowTransparency &&
                 isDesktop &&
-                windowTrans.enabled;
+                windowTrans.enabled) || isVideoPlayerActive;
 
             final baseTheme = Theme.of(context);
             final baseColors = baseTheme.extension<AppThemeColors>() ??
@@ -299,8 +302,31 @@ class _AnitingFlutterAppState extends ConsumerState<AnitingFlutterApp> with Widg
                       child: Stack(
                         fit: StackFit.expand,
                         children: [
-                          if (hasWallpaper)
-                            AppWallpaperBackground(wallpaper: wallpaperState),
+                          if (isVideoPlayerActive)
+                            const SizedBox.shrink()
+                          else if (effectiveWindowTransparency)
+                            Positioned.fill(
+                              child: IgnorePointer(
+                                child: ColoredBox(
+                                  color: (isOled && isDark
+                                          ? Colors.black
+                                          : baseTheme.scaffoldBackgroundColor)
+                                      .withValues(alpha: windowTrans.opacity),
+                                ),
+                              ),
+                            )
+                          else if (hasWallpaper)
+                            AppWallpaperBackground(wallpaper: wallpaperState)
+                          else
+                            Positioned.fill(
+                              child: IgnorePointer(
+                                child: ColoredBox(
+                                  color: isOled && isDark
+                                      ? Colors.black
+                                      : baseTheme.scaffoldBackgroundColor,
+                                ),
+                              ),
+                            ),
                           child ?? const SizedBox.shrink(),
                           const AppToastHost(),
                         ],

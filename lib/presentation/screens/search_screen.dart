@@ -4,8 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:g1455/g1455.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
+import 'package:seanime_app/core/preferences/desktop_nav_style_provider.dart';
 import 'package:seanime_app/core/preferences/title_language_provider.dart';
 import 'package:seanime_app/core/preferences/section_visibility_provider.dart';
+import 'package:seanime_app/core/preferences/tv_mode_provider.dart';
 import 'package:seanime_app/core/theme/custom_route_transitions.dart';
 import 'package:seanime_app/data/models/anime_entry.dart';
 import 'package:seanime_app/data/models/manga_entry.dart';
@@ -305,7 +307,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     if (entries.isEmpty && !isLoading) return const SizedBox.shrink();
 
     final isDesktop = MediaQuery.of(context).size.width >= 720;
-    final cardWidth = isDesktop ? 215.0 : 155.0;
+    final isTv = ref.watch(tvModeProvider);
+    final compactExplore = isTv;
+    final cardWidth = compactExplore ? 150.0 : (isDesktop ? 215.0 : 155.0);
     final carouselSpacing = isDesktop ? 14.0 : 10.0;
     // Alto real de la tarjeta (póster 2:3 + 2 líneas de título) más un pequeño
     // margen para la sombra del hover. Antes se usaba una altura fija
@@ -324,7 +328,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             children: [
               Text(
                 title,
-                style: theme.textTheme.titleMedium?.copyWith(
+                style: (compactExplore ? theme.textTheme.titleSmall : theme.textTheme.titleMedium)?.copyWith(
                   fontWeight: FontWeight.bold,
                   letterSpacing: -0.2,
                 ),
@@ -351,7 +355,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       Text(
                         l10n.seeMore,
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: compactExplore ? 11 : 12,
                           color: theme.colorScheme.primary,
                           fontWeight: FontWeight.w600,
                         ),
@@ -366,7 +370,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           ),
         ),
         if (isLoading && entries.isEmpty)
-          const CuratedSectionRowSkeleton(isAnimated: true)
+          CuratedSectionRowSkeleton(isAnimated: true, isTv: compactExplore)
         else
           SizedBox(
             height: carouselHeight + 4,
@@ -410,7 +414,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     if (entries.isEmpty && !isLoading) return const SizedBox.shrink();
 
     final isDesktop = MediaQuery.of(context).size.width >= 720;
-    final cardWidth = isDesktop ? 215.0 : 155.0;
+    final isTv = ref.watch(tvModeProvider);
+    final compactExplore = isTv;
+    final cardWidth = compactExplore ? 150.0 : (isDesktop ? 215.0 : 155.0);
     final carouselSpacing = isDesktop ? 14.0 : 10.0;
     // Alto real de la tarjeta (póster 2:3 + 2 líneas de título + la fila
     // "año • estado") más un pequeño margen para la sombra del hover. Antes se
@@ -429,7 +435,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             children: [
               Text(
                 title,
-                style: theme.textTheme.titleMedium?.copyWith(
+                style: (compactExplore ? theme.textTheme.titleSmall : theme.textTheme.titleMedium)?.copyWith(
                   fontWeight: FontWeight.bold,
                   letterSpacing: -0.2,
                 ),
@@ -456,7 +462,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       Text(
                         l10n.seeMore,
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: compactExplore ? 11 : 12,
                           color: theme.colorScheme.primary,
                           fontWeight: FontWeight.w600,
                         ),
@@ -471,7 +477,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           ),
         ),
         if (isLoading && entries.isEmpty)
-          const CuratedSectionRowSkeleton(isAnimated: true)
+          CuratedSectionRowSkeleton(isAnimated: true, isTv: compactExplore)
         else
           SizedBox(
             height: carouselHeight + 4,
@@ -592,6 +598,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final showsEnabled = ref.watch(showsSectionEnabledProvider);
     final mangaEnabled = ref.watch(mangaSectionEnabledProvider);
     final titleLang = ref.watch(titleLanguageProvider);
+    final isDesktop = MediaQuery.of(context).size.width >= 720;
+    final desktopNavStyle = ref.watch(desktopNavStyleProvider);
+    final isSidebarMode = isDesktop && desktopNavStyle == DesktopNavStyle.sidebar;
+    final isTv = ref.watch(tvModeProvider);
+    final compactExplore = isTv;
+    final sidebarInset = isSidebarMode ? (isTv ? 56.0 : 72.0) : 0.0;
 
     // Trending & Featured providers for Explore Hero Carousel
     final featuredAnimeConfig = isAnime ? ref.watch(exploreCarouselNotifierProvider) : null;
@@ -627,24 +639,27 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         child: Scaffold(
           body: SafeArea(
             bottom: false,
-            child: CatalogSearchView(
-              searchController: _searchController,
-              searchFocusNode: _searchFocusNode,
-              onSearchChanged: _onSearchChanged,
-              filterState: _filterState,
-              onFilterChanged: (newState) {
-                setState(() => _filterState = newState);
-                _fetchResults(reset: true);
-              },
-              onResetFilters: _clearAllFilters,
-              onBack: _exitSearch,
-              onOpenFilterSheet: _openFilterSheet,
-              animeResults: _animeResults,
-              mangaResults: _mangaResults,
-              isLoading: _isLoading,
-              isLoadingMore: _isLoadingMore,
-              hasMore: _hasMore,
-              onLoadMore: _loadMore,
+            child: Padding(
+              padding: EdgeInsets.only(left: sidebarInset),
+              child: CatalogSearchView(
+                searchController: _searchController,
+                searchFocusNode: _searchFocusNode,
+                onSearchChanged: _onSearchChanged,
+                filterState: _filterState,
+                onFilterChanged: (newState) {
+                  setState(() => _filterState = newState);
+                  _fetchResults(reset: true);
+                },
+                onResetFilters: _clearAllFilters,
+                onBack: _exitSearch,
+                onOpenFilterSheet: _openFilterSheet,
+                animeResults: _animeResults,
+                mangaResults: _mangaResults,
+                isLoading: _isLoading,
+                isLoadingMore: _isLoadingMore,
+                hasMore: _hasMore,
+                onLoadMore: _loadMore,
+              ),
             ),
           ),
         ),
@@ -684,30 +699,29 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 if ((isAnime && (featuredAnimeConfig == null || featuredAnimeConfig.items.isEmpty) && (trendingAnimeAsync == null || trendingAnimeAsync.isLoading)) ||
                     (isShows && (trendingShowsAsync == null || trendingShowsAsync.isLoading)) ||
                     (!isAnime && !isShows && (trendingMangaAsync == null || trendingMangaAsync.isLoading)))
-                  const SliverToBoxAdapter(
-                    child: ExploreSkeleton(),
+                  SliverToBoxAdapter(
+                    child: ExploreSkeleton(isTv: compactExplore),
                   )
                 else if (isAnime)
                   Builder(builder: (context) {
                     final config = featuredAnimeConfig;
                     final List<ExploreCarouselItem> carouselItems;
-                    if (config != null && config.items.isNotEmpty) {
+                    final trendingItems = trendingAnimeAsync?.asData?.value;
+                    if (trendingItems != null && trendingItems.isNotEmpty) {
+                      carouselItems = trendingItems
+                          .take(8)
+                          .map((e) => ExploreCarouselItem.fromAnime(e, context, titleLang))
+                          .toList();
+                    } else if (config != null && config.items.isNotEmpty) {
                       carouselItems = config.items
                           .map((e) => ExploreCarouselItem.fromFeatured(e, context))
-                          .toList();
-                    } else if (trendingAnimeAsync != null && trendingAnimeAsync.asData != null) {
-                      final items = trendingAnimeAsync.asData!.value;
-                      if (items.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
-                      carouselItems = items
-                          .take(6)
-                          .map((e) => ExploreCarouselItem.fromAnime(e, context, titleLang))
                           .toList();
                     } else {
                       return const SliverToBoxAdapter(child: SizedBox.shrink());
                     }
                     return SliverToBoxAdapter(
                       child: ExploreHeroCarousel(
-                        key: ValueKey('explore_hero_anime_v${config?.version ?? 0}_${carouselItems.length}'),
+                        key: ValueKey('explore_hero_anime_v4_${carouselItems.map((e) => e.mediaId).join('_')}'),
                         items: carouselItems,
                         scrollController: _scrollController,
                       ),
@@ -749,9 +763,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   }),
 
                 // Media Type Toggle (Anime / Shows / Manga) & Action Icons placed below the hero carousel
+                if (!compactExplore)
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                    padding: EdgeInsets.fromLTRB(16 + sidebarInset, 12, 16, 8),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
@@ -779,7 +794,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   child: SizedBox(height: 6),
                 ),
 
-                    SliverToBoxAdapter(
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.only(left: sidebarInset),
                     child: AnimatedSwitcher(
                       duration: const Duration(milliseconds: 280),
                       switchInCurve: Curves.easeOutCubic,
@@ -1000,6 +1017,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       ),
                     ),
                   ),
+                ),
 
                   const SliverToBoxAdapter(
                     child: SizedBox(height: 90),

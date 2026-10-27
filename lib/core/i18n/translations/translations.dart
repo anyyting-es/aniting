@@ -215,6 +215,8 @@ abstract class AppTranslations {
   String get audioAndGestures;
   String get volumeBoost;
   String get volumeBoostDesc;
+  String get onlineStreamProxy;
+  String get onlineStreamProxyDesc;
   String get exoplayerDesc;
   String get mpvDesc;
 
@@ -340,6 +342,8 @@ abstract class AppTranslations {
   String get all;
   String get local;
   String get unwatched;
+  String get showAllEpisodes;
+  String get hideWatchedEpisodes;
 
   // Online Stream & Torrent Selector
   String get onlineProvider;
@@ -787,6 +791,13 @@ abstract class AppTranslations {
   String get welcomeTvConnected;
   String get welcomeTvConnectionFailed;
   String get welcomeTvSkipServer;
+  String get welcomeTvUseLocalServer;
+  String get welcomeTvUseLocalServerDesc;
+  String get welcomeTvLocalServerActive;
+  String get noProvidersInstalled;
+  String get noProvidersInstalledDesc;
+  String get installRecommendedSources;
+  String get installingRecommendedSources;
   String get welcomeTvSwitchToTv;
   String get welcomeTvSwitchToStandard;
   String get tvPairingTitle;

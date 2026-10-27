@@ -110,7 +110,11 @@ class AppDpadNavigator {
       if (_overlapsBand(fromRect, rect, direction)) {
         inBand.add(scored);
       } else {
-        outOfBand.add(scored);
+        // Horizontal navigation (left/right) must strictly stay within the same
+        // row/band and never jump across vertically separated rows.
+        if (direction == TraversalDirection.up || direction == TraversalDirection.down) {
+          outOfBand.add(scored);
+        }
       }
     }
 

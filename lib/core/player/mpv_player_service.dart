@@ -51,11 +51,9 @@ class MpvPlayerService {
       _safeSetProperty('tone-mapping', 'auto');
       _safeSetProperty('gamut-mapping-mode', 'auto');
       _safeSetProperty('hdr-compute-peak', 'no');
-      if (!Platform.isLinux) {
-        _safeSetProperty('video-sync', 'display-resample');
-      } else {
-        _safeSetProperty('video-sync', 'audio');
-      }
+      // Use display-resample to eliminate periodic A/V clock drift judder and frame drops
+      _safeSetProperty('video-sync', 'display-resample');
+      _safeSetProperty('video-sync-max-factor', '5');
       _safeSetProperty('interpolation', 'no');
 
       // Demuxer caching
@@ -68,11 +66,14 @@ class MpvPlayerService {
         _safeSetProperty('demuxer-cache-unlink-files', 'immediate');
       } catch (_) {}
 
-      _safeSetProperty('demuxer-max-bytes', '33554432'); // 32 MB in RAM
-      _safeSetProperty('demuxer-max-back-bytes', '10485760'); // 10 MB in RAM
-      _safeSetProperty('demuxer-readahead-secs', '15');
+      _safeSetProperty('demuxer-max-bytes', '134217728'); // 128 MB in RAM
+      _safeSetProperty('demuxer-max-back-bytes', '33554432'); // 32 MB in RAM
+      _safeSetProperty('demuxer-readahead-secs', '30');
       _safeSetProperty('cache', 'yes');
-      _safeSetProperty('cache-secs', '25');
+      _safeSetProperty('cache-secs', '45');
+      _safeSetProperty('cache-pause', 'yes');
+      _safeSetProperty('cache-pause-wait', '3'); // Wait 3 seconds of buffer if starved
+      _safeSetProperty('cache-pause-initial', 'yes');
 
       // Network & HLS stream reconnection resilience
       _safeSetProperty('network-timeout', '15');
@@ -205,12 +206,33 @@ class MpvPlayerService {
         url.contains('/torrent') ||
         (url.contains('127.0.0.1') && url.contains('torrent'));
 
-    final bool effectiveOnlineStream = !isTorrentStream && (isOnlineStream ||
+    final bool isProxyStream = url.contains('/api/v1/proxy');
+
+    final bool effectiveOnlineStream = !isTorrentStream && !isProxyStream && (isOnlineStream ||
         ((url.startsWith('http://') || url.startsWith('https://')) &&
             !url.contains('127.0.0.1') &&
             !url.contains('localhost')));
 
-    if (effectiveOnlineStream) {
+    if (isProxyStream) {
+      // Local/Server reverse proxy stream: Go resolves upstream headers, HLS segments,
+      // and CDN redirects. MPV connects cleanly with responsive buffer and seeking.
+      _safeSetProperty('demuxer-lavf-probesize', '131072');
+      _safeSetProperty('demuxer-lavf-analyzeduration', '0.5');
+      _safeSetProperty('demuxer-lavf-buffersize', '524288');
+      _safeSetProperty(
+        'stream-lavf-o',
+        'reconnect=1,reconnect_streamed=1,reconnect_delay_max=5',
+      );
+      _safeSetProperty('network-timeout', '20');
+      _safeSetProperty('tls-verify', 'no');
+      _safeSetProperty('hr-seek', 'yes');
+      _safeSetProperty('hr-seek-framedrop', 'yes');
+      _safeSetProperty('demuxer-readahead-secs', '30');
+      _safeSetProperty('cache-secs', '45');
+      _safeSetProperty('demuxer-max-bytes', '134217728');
+      _safeSetProperty('cache-pause', 'yes');
+      _safeSetProperty('cache-pause-wait', '2');
+    } else if (effectiveOnlineStream) {
       _safeSetProperty('demuxer-lavf-probesize', '65536');
       _safeSetProperty('demuxer-lavf-analyzeduration', '0.5');
       _safeSetProperty('demuxer-lavf-buffersize', '524288');
@@ -218,36 +240,41 @@ class MpvPlayerService {
         'stream-lavf-o',
         'reconnect=1,reconnect_streamed=1,reconnect_delay_max=5,multiple_requests=1,http_persistent=1',
       );
-      _safeSetProperty('network-timeout', '10');
+      _safeSetProperty('network-timeout', '15');
       _safeSetProperty('tls-verify', 'no');
       _safeSetProperty('hr-seek', 'no');
       _safeSetProperty('hr-seek-framedrop', 'yes');
-      _safeSetProperty('demuxer-readahead-secs', '10');
-      _safeSetProperty('cache-secs', '15');
-      _safeSetProperty('demuxer-max-bytes', '67108864');
+      _safeSetProperty('demuxer-readahead-secs', '30');
+      _safeSetProperty('cache-secs', '45');
+      _safeSetProperty('demuxer-max-bytes', '134217728');
+      _safeSetProperty('cache-pause', 'yes');
+      _safeSetProperty('cache-pause-wait', '3');
     } else if (isTorrentStream) {
       _safeSetProperty('demuxer-lavf-probesize', '1048576');
       _safeSetProperty('demuxer-lavf-analyzeduration', '2.0');
-      _safeSetProperty('demuxer-lavf-buffersize', '65536');
+      _safeSetProperty('demuxer-lavf-buffersize', '1048576'); // 1MB buffer for fast sequential reads
       _safeSetProperty('stream-lavf-o', 'reconnect=1,reconnect_streamed=1,reconnect_delay_max=5');
       _safeSetProperty('network-timeout', '60');
       _safeSetProperty('hr-seek', 'no');
       _safeSetProperty('hr-seek-framedrop', 'yes');
-      _safeSetProperty('demuxer-readahead-secs', '20');
-      _safeSetProperty('cache-secs', '30');
-      _safeSetProperty('demuxer-max-bytes', '67108864');
+      _safeSetProperty('demuxer-readahead-secs', '60'); // 60s readahead
+      _safeSetProperty('cache-secs', '60');
+      _safeSetProperty('demuxer-max-bytes', '268435456'); // 256MB in RAM
+      _safeSetProperty('cache-pause', 'yes');
+      _safeSetProperty('cache-pause-wait', '3'); // Wait 3s of buffer if starved
+      _safeSetProperty('cache-pause-initial', 'yes');
     } else {
-      _safeSetProperty('demuxer-lavf-probesize', '1048576');
+      _safeSetProperty('demuxer-lavf-probesize', '2097152');
       _safeSetProperty('demuxer-lavf-analyzeduration', '1.0');
-      _safeSetProperty('demuxer-lavf-buffersize', '131072');
+      _safeSetProperty('demuxer-lavf-buffersize', '524288');
       _safeSetProperty('stream-lavf-o', 'reconnect=1,reconnect_streamed=1,reconnect_delay_max=5');
       _safeSetProperty('network-timeout', '15');
       _safeSetProperty('tls-verify', 'yes');
       _safeSetProperty('hr-seek', 'yes');
       _safeSetProperty('hr-seek-framedrop', 'yes');
-      _safeSetProperty('demuxer-readahead-secs', '15');
-      _safeSetProperty('cache-secs', '25');
-      _safeSetProperty('demuxer-max-bytes', '33554432');
+      _safeSetProperty('demuxer-readahead-secs', '30');
+      _safeSetProperty('cache-secs', '45');
+      _safeSetProperty('demuxer-max-bytes', '134217728');
     }
 
     if (httpHeaders != null && httpHeaders.isNotEmpty) {

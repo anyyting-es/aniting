@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:seanime_app/core/constants/app_constants.dart';
 
@@ -71,7 +72,34 @@ class ApiClient {
   }
 
   String get baseUrl => _baseUrl;
+  String? get token => _token;
   Dio get dio => _dio;
+
+  /// Generates a local/server streaming proxy URL for the given [targetUrl].
+  /// The Go backend handles upstream requests, injecting [headers], bypassing
+  /// CORS/TLS/header-loss quirks in libmpv, and rewriting HLS playlists.
+  String buildVideoProxyUrl(String targetUrl, {Map<String, String>? headers}) {
+    if (targetUrl.isEmpty) return targetUrl;
+    // Don't proxy local or already proxied URLs
+    if (targetUrl.contains('/api/v1/proxy') ||
+        targetUrl.contains('127.0.0.1') ||
+        targetUrl.contains('localhost')) {
+      return targetUrl;
+    }
+
+    final queryParams = <String, String>{
+      'url': targetUrl,
+    };
+    if (headers != null && headers.isNotEmpty) {
+      queryParams['headers'] = jsonEncode(headers);
+    }
+    if (_token != null && _token!.isNotEmpty) {
+      queryParams['token'] = _token!;
+    }
+
+    final uri = Uri.parse('$_baseUrl/proxy').replace(queryParameters: queryParams);
+    return uri.toString();
+  }
 
   Future<Response<T>> get<T>(
     String path, {

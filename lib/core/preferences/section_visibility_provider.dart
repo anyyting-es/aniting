@@ -72,15 +72,15 @@ class ShowsSectionEnabledNotifier extends Notifier<bool> {
   @override
   bool build() {
     if (_cachedPrefs != null) {
-      return _cachedPrefs!.getBool(_key) ?? true;
+      return _cachedPrefs!.getBool(_key) ?? false;
     }
     _loadFromPrefs();
-    return true;
+    return false;
   }
 
   Future<void> _loadFromPrefs() async {
     final prefs = await SharedPreferences.getInstance();
-    final enabled = prefs.getBool(_key) ?? true;
+    final enabled = prefs.getBool(_key) ?? false;
     state = enabled;
   }
 

@@ -22,6 +22,8 @@ class DesktopEpisodeMenuButton extends ConsumerWidget {
     required int episodeNumber,
     required String episodeTitle,
     String? aniDBEpisode,
+    bool isDownloadMode,
+    List<int>? initialSelectedEpisodes,
   })? onOpenTorrentSelector;
   final VoidCallback? onDownloadOnline;
   final VoidCallback? onRefreshLocal;
@@ -154,6 +156,7 @@ class DesktopEpisodeMenuButton extends ConsumerWidget {
             episodeNumber: ep.number,
             episodeTitle: ep.title,
             aniDBEpisode: ep.aniDBEpisode,
+            isDownloadMode: true,
           ),
         ),
     ];
@@ -199,32 +202,38 @@ class _EpisodeThreeDotsButtonState extends State<_EpisodeThreeDotsButton> {
     final theme = Theme.of(context);
     final isHoveredOrOpen = _isHovered || widget.isOpen;
 
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: widget.onTap,
-          borderRadius: BorderRadius.circular(16),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 140),
-            padding: const EdgeInsets.all(5),
-            decoration: BoxDecoration(
-              color: isHoveredOrOpen
-                  ? (widget.isDark
-                      ? Colors.white.withValues(alpha: 0.12)
-                      : Colors.black.withValues(alpha: 0.08))
-                  : Colors.transparent,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Icon(
-              widget.icon,
-              size: 19,
-              color: isHoveredOrOpen
-                  ? theme.colorScheme.primary
-                  : (widget.isDark ? Colors.white70 : Colors.black54),
+    return Focus(
+      skipTraversal: true,
+      canRequestFocus: false,
+      descendantsAreFocusable: false,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        onEnter: (_) => setState(() => _isHovered = true),
+        onExit: (_) => setState(() => _isHovered = false),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            canRequestFocus: false,
+            onTap: widget.onTap,
+            borderRadius: BorderRadius.circular(16),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 140),
+              padding: const EdgeInsets.all(5),
+              decoration: BoxDecoration(
+                color: isHoveredOrOpen
+                    ? (widget.isDark
+                        ? Colors.white.withValues(alpha: 0.12)
+                        : Colors.black.withValues(alpha: 0.08))
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(
+                widget.icon,
+                size: 19,
+                color: isHoveredOrOpen
+                    ? theme.colorScheme.primary
+                    : (widget.isDark ? Colors.white70 : Colors.black54),
+              ),
             ),
           ),
         ),

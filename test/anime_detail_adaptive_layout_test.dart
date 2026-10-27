@@ -15,7 +15,6 @@ import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
 import 'package:seanime_app/presentation/widgets/anime_detail/anime_detail_desktop_layout.dart';
 import 'package:seanime_app/presentation/widgets/anime_detail/anime_detail_mobile_layout.dart';
-import 'package:seanime_app/presentation/widgets/anime_detail/anime_detail_tv_layout.dart';
 import 'package:seanime_app/presentation/widgets/anime_detail/desktop/desktop_action_bar.dart';
 import 'package:seanime_app/presentation/widgets/anime_detail/desktop/desktop_episodes_tab.dart';
 import 'package:shared_preferences/shared_preferences.dart';

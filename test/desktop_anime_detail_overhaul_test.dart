@@ -108,8 +108,8 @@ void main() {
       );
 
       expect(find.text('SPRING 2026'), findsOneWidget);
-      // When no clearlogo is present, no title is rendered as per user specification
-      expect(find.text('Test Anime'), findsNothing);
+      // When no clearlogo is present, text title is rendered as clean fallback
+      expect(find.text('Test Anime'), findsOneWidget);
       expect(find.text('TV'), findsOneWidget);
       expect(find.text('Finalizado'), findsOneWidget);
       expect(find.text('Madhouse'), findsOneWidget);

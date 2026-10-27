@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/preferences/playback_progress_preferences_provider.dart';
 import 'package:seanime_app/presentation/providers/episode_selection_provider.dart';
-import 'package:seanime_app/core/theme/theme_provider.dart';
 import 'package:seanime_app/core/theme/app_focus_coordinator.dart';
 import 'desktop_episode_models.dart';
 
@@ -18,6 +17,9 @@ class DesktopGridEpisodeCard extends ConsumerStatefulWidget {
   final String? coverColor;
   final VoidCallback onTap;
   final Widget? trailingActions;
+  final VoidCallback? onArrowUp;
+  final bool isFirst;
+  final bool isLast;
 
   const DesktopGridEpisodeCard({
     super.key,
@@ -29,6 +31,9 @@ class DesktopGridEpisodeCard extends ConsumerStatefulWidget {
     this.coverColor,
     required this.onTap,
     this.trailingActions,
+    this.onArrowUp,
+    this.isFirst = false,
+    this.isLast = false,
   });
 
   @override
@@ -36,22 +41,35 @@ class DesktopGridEpisodeCard extends ConsumerStatefulWidget {
 }
 
 class _DesktopGridEpisodeCardState extends ConsumerState<DesktopGridEpisodeCard> {
+  late final FocusNode _focusNode;
+  bool _isFocused = false;
   bool _isHovered = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode = FocusNode(debugLabel: 'desktop_ep_${widget.ep.number}');
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final iconPack = ref.watch(iconPackProvider);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final dynamicColor = parseHexColor(widget.coverColor) ?? theme.colorScheme.primary;
     final titleColor = isDark ? Colors.white : theme.colorScheme.onSurface;
-    final double cardOpacity = widget.ep.isWatched ? (_isHovered ? 0.75 : 0.45) : 1.0;
 
-    final selection = widget.mediaId != null
-        ? ref.watch(episodeSelectionProvider(widget.mediaId!))
-        : null;
-    final isSelectionMode = selection?.isSelectionMode ?? false;
-    final isSelected = selection?.isSelected(widget.ep.number) ?? false;
+    final isSelectionMode = widget.mediaId != null
+        ? ref.watch(episodeSelectionProvider(widget.mediaId!).select((s) => s.isSelectionMode))
+        : false;
+    final isSelected = widget.mediaId != null
+        ? ref.watch(episodeSelectionProvider(widget.mediaId!).select((s) => s.isSelected(widget.ep.number)))
+        : false;
 
     void toggleSelection() {
       if (widget.mediaId != null) {
@@ -60,106 +78,164 @@ class _DesktopGridEpisodeCardState extends ConsumerState<DesktopGridEpisodeCard>
       }
     }
 
-    final playbackMap = ref.watch(playbackProgressPreferencesProvider);
-    final epKey = '${widget.mediaId}_${widget.ep.number}';
-    final mediaProgress = widget.mediaId != null ? playbackMap[widget.mediaId.toString()] : null;
-    final localProgress = widget.mediaId != null
-        ? (playbackMap[epKey] ??
-            (mediaProgress != null && mediaProgress.episodeNumber == widget.ep.number ? mediaProgress : null))
-        : null;
-    final double? progressFraction = (localProgress != null &&
-            localProgress.durationMs > 0 &&
-            localProgress.positionMs > 0)
-        ? (localProgress.positionMs / localProgress.durationMs).clamp(0.0, 1.0)
+    final double? progressFraction = widget.mediaId != null
+        ? ref.watch(playbackProgressPreferencesProvider.select((playbackMap) {
+            final mediaProgress = playbackMap[widget.mediaId.toString()];
+            final epKey = '${widget.mediaId}_${widget.ep.number}';
+            final localProgress = playbackMap[epKey] ??
+                (mediaProgress != null && mediaProgress.episodeNumber == widget.ep.number ? mediaProgress : null);
+            if (localProgress != null &&
+                localProgress.durationMs > 0 &&
+                localProgress.positionMs > 0) {
+              return (localProgress.positionMs / localProgress.durationMs).clamp(0.0, 1.0);
+            }
+            return null;
+          }))
         : null;
 
     return RepaintBoundary(
-      child: MouseRegion(
-        cursor: widget.isLoading ? SystemMouseCursors.basic : SystemMouseCursors.click,
-        onEnter: (_) {
-          AppFocusCoordinator.onPointerEntered();
-          setState(() => _isHovered = true);
+      child: Focus(
+        focusNode: _focusNode,
+        onFocusChange: (val) {
+          if (val) {
+            AppFocusCoordinator.onNodeFocused(_focusNode);
+            if (mounted) {
+              Scrollable.ensureVisible(
+                context,
+                alignment: 0.35,
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeOutCubic,
+              );
+            }
+          }
+          setState(() => _isFocused = val);
         },
-        onExit: (_) => setState(() => _isHovered = false),
-        child: AnimatedOpacity(
-        opacity: cardOpacity,
-        duration: const Duration(milliseconds: 240),
-        curve: Curves.easeInOut,
-        child: InkWell(
-          onTap: widget.isLoading
-              ? null
-              : (isSelectionMode ? toggleSelection : widget.onTap),
-          onLongPress: widget.isLoading ? null : toggleSelection,
-          onSecondaryTap: widget.isLoading ? null : toggleSelection,
-          borderRadius: BorderRadius.circular(14),
-          hoverColor: Colors.transparent,
-          splashColor: Colors.transparent,
-          highlightColor: Colors.transparent,
-          child: Stack(
-            children: [
-              // Ambient color background with inside-out expansion animation (No borders on hover)
-              Positioned.fill(
-                child: isSelected
-                    ? Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(14),
-                          color: theme.colorScheme.primaryContainer.withValues(alpha: isDark ? 0.28 : 0.42),
-                          border: Border.all(
-                            color: theme.colorScheme.primary.withValues(alpha: 0.85),
-                            width: 1.5,
-                          ),
-                        ),
-                      )
-                    : AnimatedScale(
-                        scale: _isHovered ? 1.0 : 0.85,
-                        duration: const Duration(milliseconds: 220),
-                        curve: _isHovered ? Curves.easeOutCubic : Curves.easeInCubic,
-                        alignment: Alignment.center,
-                        child: AnimatedOpacity(
-                          opacity: _isHovered ? 1.0 : 0.0,
-                          duration: const Duration(milliseconds: 200),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(14),
-                              color: dynamicColor.withValues(alpha: isDark ? 0.16 : 0.10),
-                            ),
-                          ),
-                        ),
-                      ),
-              ),
+        onKeyEvent: (node, event) {
+          if (event is KeyDownEvent || event is KeyRepeatEvent) {
+            final key = event.logicalKey;
+            // Lock focus at the horizontal boundaries: do not jump across rows on Left/Right
+            if (widget.isFirst && key == LogicalKeyboardKey.arrowLeft) {
+              return KeyEventResult.handled;
+            }
+            if (widget.isLast && key == LogicalKeyboardKey.arrowRight) {
+              return KeyEventResult.handled;
+            }
+            if (key == LogicalKeyboardKey.arrowUp && widget.onArrowUp != null) {
+              widget.onArrowUp!();
+              return KeyEventResult.handled;
+            }
+            if (key == LogicalKeyboardKey.select ||
+                key == LogicalKeyboardKey.enter ||
+                key == LogicalKeyboardKey.space ||
+                key == LogicalKeyboardKey.gameButtonA) {
+              if (widget.isLoading) return KeyEventResult.handled;
+              if (isSelectionMode) {
+                toggleSelection();
+              } else {
+                widget.onTap();
+              }
+              return KeyEventResult.handled;
+            }
+          }
+          return KeyEventResult.ignored;
+        },
+        child: ValueListenableBuilder<AppInputMode>(
+          valueListenable: AppFocusCoordinator.inputMode,
+          builder: (context, inputMode, _) {
+            final isDpad = inputMode == AppInputMode.dpad;
+            final isActive = (inputMode == AppInputMode.mouse && _isHovered) || (isDpad && _isFocused);
+            final double cardOpacity = widget.ep.isWatched ? (isActive ? 0.75 : 0.45) : 1.0;
 
-              // Foreground Content
-              Padding(
-                padding: const EdgeInsets.all(8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 16:9 Thumbnail with Box Expansion on hover (No play icon)
-                    AspectRatio(
-                      aspectRatio: 16 / 9,
-                      child: AnimatedScale(
-                        scale: isSelected ? 0.97 : (_isHovered ? 1.015 : 1.0),
-                        duration: const Duration(milliseconds: 180),
-                        curve: Curves.easeOutCubic,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: isSelected
-                                  ? theme.colorScheme.primary
-                                  : (isSelectionMode
-                                      ? theme.colorScheme.outlineVariant.withValues(alpha: 0.3)
-                                      : Colors.white.withValues(alpha: 0.08)),
-                              width: isSelected ? 2.0 : 1.0,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: _isHovered ? 0.35 : 0.25),
-                                blurRadius: _isHovered ? 10 : 6,
-                                offset: Offset(0, _isHovered ? 3 : 2),
+            return MouseRegion(
+              cursor: widget.isLoading ? SystemMouseCursors.basic : SystemMouseCursors.click,
+              onEnter: (_) {
+                AppFocusCoordinator.switchToMouse(_focusNode);
+                setState(() => _isHovered = true);
+              },
+              onExit: (_) {
+                if (AppFocusCoordinator.lastHoveredNode == _focusNode) {
+                  AppFocusCoordinator.lastHoveredNode = null;
+                }
+                setState(() => _isHovered = false);
+              },
+              child: AnimatedOpacity(
+                opacity: cardOpacity,
+                duration: const Duration(milliseconds: 240),
+                curve: Curves.easeInOut,
+                child: InkWell(
+                  canRequestFocus: false,
+                  onTap: widget.isLoading
+                      ? null
+                      : (isSelectionMode ? toggleSelection : widget.onTap),
+                  onLongPress: widget.isLoading ? null : toggleSelection,
+                  onSecondaryTap: widget.isLoading ? null : toggleSelection,
+                  borderRadius: BorderRadius.circular(14),
+                  hoverColor: Colors.transparent,
+                  splashColor: Colors.transparent,
+                  highlightColor: Colors.transparent,
+                  child: Stack(
+                    children: [
+                      // Ambient white translucent highlight on hover / D-pad focus
+                      Positioned.fill(
+                        child: isSelected
+                            ? Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(14),
+                                  color: Colors.white.withValues(alpha: isDark ? 0.20 : 0.28),
+                                  border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.85),
+                                    width: 1.5,
+                                  ),
+                                ),
+                              )
+                            : AnimatedScale(
+                                scale: isActive ? 1.0 : 0.85,
+                                duration: const Duration(milliseconds: 220),
+                                curve: isActive ? Curves.easeOutCubic : Curves.easeInCubic,
+                                alignment: Alignment.center,
+                                child: AnimatedOpacity(
+                                  opacity: isActive ? 1.0 : 0.0,
+                                  duration: const Duration(milliseconds: 200),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(14),
+                                      color: Colors.white.withValues(alpha: isDark ? 0.12 : 0.08),
+                                    ),
+                                  ),
+                                ),
                               ),
-                            ],
-                          ),
+                      ),
+
+                      // Foreground Content
+                      Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // 16:9 Thumbnail with Box Expansion on hover / D-pad focus
+                            AspectRatio(
+                              aspectRatio: 16 / 9,
+                              child: AnimatedScale(
+                                scale: isSelected ? 0.97 : (isActive ? 1.025 : 1.0),
+                                duration: const Duration(milliseconds: 180),
+                                curve: Curves.easeOutCubic,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: isSelected
+                                        ? Border.all(
+                                            color: theme.colorScheme.primary,
+                                            width: 2.0,
+                                          )
+                                        : null,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(alpha: isActive ? 0.35 : 0.20),
+                                        blurRadius: isActive ? 10 : 4,
+                                        offset: Offset(0, isActive ? 3 : 2),
+                                      ),
+                                    ],
+                                  ),
                           clipBehavior: Clip.antiAlias,
                       child: Stack(
                         fit: StackFit.expand,
@@ -189,11 +265,11 @@ class _DesktopGridEpisodeCardState extends ConsumerState<DesktopGridEpisodeCard>
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   color: isSelected
-                                      ? theme.colorScheme.primary
+                                      ? Colors.white
                                       : Colors.black.withValues(alpha: 0.55),
                                   border: Border.all(
                                     color: isSelected
-                                        ? theme.colorScheme.primary
+                                        ? Colors.white
                                         : Colors.white.withValues(alpha: 0.7),
                                     width: 2.0,
                                   ),
@@ -203,7 +279,7 @@ class _DesktopGridEpisodeCardState extends ConsumerState<DesktopGridEpisodeCard>
                                         child: Icon(
                                           Icons.check_rounded,
                                           size: 15,
-                                          color: Colors.white,
+                                          color: Colors.black,
                                         ),
                                       )
                                     : null,
@@ -222,7 +298,7 @@ class _DesktopGridEpisodeCardState extends ConsumerState<DesktopGridEpisodeCard>
                                 color: Colors.black.withValues(alpha: 0.85),
                                 borderRadius: BorderRadius.circular(6),
                                 border: Border.all(
-                                  color: theme.colorScheme.primary.withValues(alpha: 0.7),
+                                  color: Colors.white.withValues(alpha: 0.7),
                                   width: 0.9,
                                 ),
                               ),
@@ -238,10 +314,10 @@ class _DesktopGridEpisodeCardState extends ConsumerState<DesktopGridEpisodeCard>
                                               widget.ep.downloadProgress! > 0)
                                           ? widget.ep.downloadProgress
                                           : null,
-                                      valueColor: AlwaysStoppedAnimation(theme.colorScheme.primary),
+                                      valueColor: const AlwaysStoppedAnimation(Colors.white),
                                       backgroundColor: (widget.ep.downloadProgress != null &&
                                               widget.ep.downloadProgress! > 0)
-                                          ? theme.colorScheme.primary.withValues(alpha: 0.25)
+                                          ? Colors.white.withValues(alpha: 0.25)
                                           : null,
                                     ),
                                   ),
@@ -251,8 +327,8 @@ class _DesktopGridEpisodeCardState extends ConsumerState<DesktopGridEpisodeCard>
                                             widget.ep.downloadProgress! > 0
                                         ? '${(widget.ep.downloadProgress! * 100).toInt()}%'
                                         : '...',
-                                    style: TextStyle(
-                                      color: theme.colorScheme.primary,
+                                    style: const TextStyle(
+                                      color: Colors.white,
                                       fontSize: 9,
                                       fontWeight: FontWeight.w800,
                                       letterSpacing: 0.3,
@@ -272,7 +348,7 @@ class _DesktopGridEpisodeCardState extends ConsumerState<DesktopGridEpisodeCard>
                           child: LinearProgressIndicator(
                             value: progressFraction,
                             backgroundColor: Colors.black.withValues(alpha: 0.35),
-                            valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
+                            valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
                             minHeight: 3.0,
                           ),
                         ),
@@ -334,13 +410,16 @@ class _DesktopGridEpisodeCardState extends ConsumerState<DesktopGridEpisodeCard>
             ),
           ],
         ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
       ),
-    ],
-  ),
-),
-),
-),
-);
+    );
   }
 
   Widget _buildPlaceholder() {

@@ -746,6 +746,14 @@ class SeanimeRepository {
           enrichedItem['currentEpisode'] = resolvedEp;
         }
 
+        // Pre-seed 16:9 episode screencap immediately from cached AniZip if available
+        final cachedAniZip = FeedCacheService.instance.getAniZipData(mediaId);
+        final epTarget = resolvedEp ?? (((item['progress'] as num?)?.toInt() ?? 0) + 1);
+        final cachedEp = cachedAniZip?.getEpisode(epTarget);
+        if (cachedEp?.image != null && cachedEp!.image!.trim().isNotEmpty) {
+          enrichedItem['episodeThumbnail'] ??= cachedEp.image!.trim();
+        }
+
         if (hasLocalFiles == true || enrichedItem['hasLocalFiles'] == true) {
           enrichedItem['hasLocalFiles'] = true;
         }

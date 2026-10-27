@@ -3,7 +3,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/preferences/show_scores_provider.dart';
 import 'package:seanime_app/core/preferences/title_language_provider.dart';
 import 'package:seanime_app/core/theme/app_focus_coordinator.dart';
@@ -74,7 +73,6 @@ class _MangaCardState extends ConsumerState<MangaCard> {
     final theme = Theme.of(context);
     final colors = context.themeColors;
     final titleLang = ref.watch(titleLanguageProvider);
-    final l10n = ref.watch(translationsProvider);
     final showScores = ref.watch(showScoresProvider);
     final displayTitle = widget.entry.displayTitle(titleLang);
 
@@ -330,25 +328,6 @@ class _MangaCardState extends ConsumerState<MangaCard> {
                                 fontFamilyFallback: kJapaneseFontFallbacks,
                               ),
                             ),
-                            if (widget.entry.year != null || widget.entry.status.isNotEmpty) ...[
-                              SizedBox(height: isCompact ? 2.0 : 3.0),
-                              Text(
-                                [
-                                  if (widget.entry.year != null) '${widget.entry.year}',
-                                  widget.entry.status.isNotEmpty
-                                      ? l10n.formatStatus(widget.entry.status)
-                                      : l10n.manga,
-                                ].join(' • '),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  color: colors.textSecondary,
-                                  fontSize: isCompact ? 10.5 : 11.5,
-                                  fontWeight: FontWeight.w600,
-                                  letterSpacing: 0.1,
-                                ),
-                              ),
-                            ],
                           ],
                         ),
                       ),

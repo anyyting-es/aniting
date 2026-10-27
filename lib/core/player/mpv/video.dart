@@ -56,7 +56,7 @@ class _VideoState extends State<Video> {
   @override
   void initState() {
     super.initState();
-    _hasFirstFrame = widget.hasFirstFrame?.value ?? false;
+    _hasFirstFrame = widget.hasFirstFrame?.value ?? widget.player.state.hasRenderedFrame;
     widget.hasFirstFrame?.addListener(_syncExternalFirstFrame);
     _listenForPlaybackRestart();
   }

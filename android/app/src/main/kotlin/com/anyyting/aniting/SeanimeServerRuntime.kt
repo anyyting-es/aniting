@@ -119,9 +119,10 @@ builtintorrentclient = true
         try {
             val content = cfg.readText()
             val dataDirPath = dataDir(context).absolutePath
+            val targetHost = if (host == "0.0.0.0") defaultHost else host
             var patched = content.replace(
                 Regex("""host\s*=\s*'[^']*'"""),
-                "host = '$host'"
+                "host = '$targetHost'"
             )
 
             // Replace any unresolved environment variables with the actual dataDir path

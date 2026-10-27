@@ -24,7 +24,12 @@ This document records solutions to complex platform-specific bugs, hardware deco
 ### 1.4. In-Player Controls Continuous Rebuilds
 - **Symptom**: GPU/CPU usage remained high while watching full-screen video even when controls were hidden.
 - **Root Cause**: Invisible controls remained mounted in the widget tree, and active `ValueListenableBuilder` listeners rebuilt bottom bar widgets 60 times per second on every position tick.
-- **Solution**: Wrapped controls in `_ControlsOverlay` that completely unmounts the controls subtree when `AnimatedOpacity` reaches `0.0`. Position and buffer listeners are strictly scoped to the timeline slider and time label, not the buttons row.
+- **Solution**: Wrapped controls in _ControlsOverlay that completely unmounts the controls subtree when AnimatedOpacity reaches 0.0. Position and buffer listeners are strictly scoped to the timeline slider and time label, not the buttons row.
+
+### 1.5. Black Video Viewport on Linux Wayland & Windows Subsurfaces
+- **Symptom**: On Linux (Wayland/X11) and Windows, audio and hardware decoding (VA-API/NVDEC) worked normally, but the video viewport remained solid black.
+- **Root Cause**: Plezy's `PlayerLinux` renders via a native Wayland `wl_subsurface` placed *below* the Flutter surface (`wl_subsurface_place_below`), and `PlayerWindows` renders to a child HWND below the Flutter window. `VideoPlayerScreen` and `PlayerViewport` unconditionally painted opaque `Colors.black` backgrounds when `!Platform.isAndroid`, occluding the underlying video plane.
+- **Solution**: Set the Flutter Scaffold and `PlayerViewport` root backgrounds to `Colors.transparent` so the hardware-accelerated subsurface renders cleanly through Flutter's RGBA window visual.
 
 ---
 

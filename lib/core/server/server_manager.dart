@@ -55,6 +55,12 @@ class ServerManager {
     _state = ServerState.starting;
     _lastError = null;
 
+    if (AppConstants.isNoBackend) {
+      _state = ServerState.error;
+      _lastError = 'Modo cliente activo: backend embebido deshabilitado.';
+      return false;
+    }
+
     if (Platform.isAndroid) {
       final res = await _androidChannel.startServer(port: port, host: host);
       if (res != null) {

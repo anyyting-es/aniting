@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -51,6 +52,43 @@ void main() {
       // Verify NO play button icon exists
       expect(find.byIcon(Icons.play_arrow_rounded), findsNothing);
       expect(find.byIcon(Icons.play_arrow), findsNothing);
+    });
+
+    testWidgets('ContinueWatchingCard prioritizes episode screencap without flashing AniList banner', (tester) async {
+      final entry = AnimeEntry(
+        id: 2,
+        mediaId: 2,
+        title: 'Mushoku Tensei',
+        bannerImage: 'https://example.com/anilist_banner.jpg',
+        coverImage: 'https://example.com/anilist_cover.jpg',
+        episodeThumbnail: 'https://example.com/episode_screencap.jpg',
+        progress: 3,
+        totalEpisodes: 12,
+        status: 'CURRENT',
+        currentEpisode: 4,
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            aniZipDataProvider(2).overrideWith((ref) => null),
+          ],
+          child: MaterialApp(
+            home: Scaffold(
+              body: ContinueWatchingCard(
+                entry: entry,
+                onTap: () {},
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // Verify CachedNetworkImage uses episode_screencap directly
+      final imageFinder = find.byType(CachedNetworkImage);
+      expect(imageFinder, findsOneWidget);
+      final cachedImage = tester.widget<CachedNetworkImage>(imageFinder);
+      expect(cachedImage.imageUrl, 'https://example.com/episode_screencap.jpg');
     });
 
     test('AnimeEntry parse updatedAt, airDate, and lastWatchedTime correctly', () {

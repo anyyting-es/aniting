@@ -180,19 +180,34 @@ class _MainShellState extends ConsumerState<MainShell> {
 
     final activeIndex = availableSections.indexOf(_activeSection);
 
+    final isSidebarActive = isDesktop && desktopNavStyle == DesktopNavStyle.sidebar;
+
     final availablePages = availableSections.map<Widget>((s) {
+      final Widget page;
       switch (s) {
         case ShellSection.anime:
-          return _pages[0];
+          page = _pages[0];
+          break;
         case ShellSection.manga:
-          return _pages[1];
+          page = _pages[1];
+          break;
         case ShellSection.explore:
-          return _pages[2];
+          page = _pages[2];
+          break;
         case ShellSection.calendar:
-          return _pages[3];
+          page = _pages[3];
+          break;
         case ShellSection.profile:
-          return _pages[4];
+          page = _pages[4];
+          break;
       }
+      if (isSidebarActive && s != ShellSection.explore) {
+        return Padding(
+          padding: const EdgeInsets.only(left: 72),
+          child: page,
+        );
+      }
+      return page;
     }).toList();
 
     final sidebarItems = <DesktopSidebarItem>[];
@@ -297,26 +312,10 @@ class _MainShellState extends ConsumerState<MainShell> {
         return wrapWithSystemOverlay(
           Scaffold(
             backgroundColor: theme.scaffoldBackgroundColor,
-            body: Row(
+            body: Stack(
               children: [
-                // Vertical Desktop Sidebar Rail
-                DesktopSidebar(
-                  selectedIndex: activeIndex,
-                  isSearchActive: _activeSection == ShellSection.explore,
-                  onDestinationSelected: (idx) {
-                    if (idx >= 0 && idx < availableSections.length) {
-                      setState(() => _activeSection = availableSections[idx]);
-                    }
-                  },
-                  onSearchPressed: () {
-                    setState(() => _activeSection = ShellSection.explore);
-                  },
-                  onSettingsPressed: _openSettings,
-                  items: desktopSidebarItems,
-                ),
-
                 // Full-width Main Content Area for Desktop & TV with Smooth Animation
-                Expanded(
+                Positioned.fill(
                   child: Theme(
                     data: theme.copyWith(scaffoldBackgroundColor: Colors.transparent),
                     child: Visibility(
@@ -327,6 +326,27 @@ class _MainShellState extends ConsumerState<MainShell> {
                         children: availablePages,
                       ),
                     ),
+                  ),
+                ),
+
+                // Floating Vertical Desktop Sidebar Rail (Transparent, Overlaying Canvas)
+                Positioned(
+                  left: 0,
+                  top: 0,
+                  bottom: 0,
+                  child: DesktopSidebar(
+                    selectedIndex: activeIndex,
+                    isSearchActive: _activeSection == ShellSection.explore,
+                    onDestinationSelected: (idx) {
+                      if (idx >= 0 && idx < availableSections.length) {
+                        setState(() => _activeSection = availableSections[idx]);
+                      }
+                    },
+                    onSearchPressed: () {
+                      setState(() => _activeSection = ShellSection.explore);
+                    },
+                    onSettingsPressed: _openSettings,
+                    items: desktopSidebarItems,
                   ),
                 ),
               ],

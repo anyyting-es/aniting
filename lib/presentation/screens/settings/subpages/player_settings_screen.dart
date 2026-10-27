@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/preferences/player_engine_provider.dart';
 import 'package:seanime_app/core/preferences/volume_boost_provider.dart';
+import 'package:seanime_app/core/preferences/online_stream_proxy_provider.dart';
 import 'package:seanime_app/presentation/screens/settings/widgets/pixel_settings_widgets.dart';
 import 'package:seanime_app/presentation/screens/settings/widgets/pixel_subpage_scaffold.dart';
 import 'package:seanime_app/presentation/widgets/player/sheets/subtitle_style_view.dart';
@@ -93,6 +94,14 @@ class PlayerSettingsScreen extends ConsumerWidget {
               value: ref.watch(volumeBoostProvider),
               onChanged: (val) =>
                   ref.read(volumeBoostProvider.notifier).setEnabled(val),
+            ),
+            PixelSwitchTile(
+              icon: Icons.cloud_sync_rounded,
+              title: l10n.onlineStreamProxy,
+              subtitle: l10n.onlineStreamProxyDesc,
+              value: ref.watch(onlineStreamProxyProvider),
+              onChanged: (val) =>
+                  ref.read(onlineStreamProxyProvider.notifier).setEnabled(val),
             ),
           ],
         ),

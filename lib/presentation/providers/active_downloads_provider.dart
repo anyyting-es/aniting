@@ -257,6 +257,26 @@ class DownloadingEpisodesState {
   bool get isNotEmpty => episodes.isNotEmpty;
   int get length => episodes.length;
   Iterable<String> get keys => episodes.keys;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! DownloadingEpisodesState) return false;
+    if (episodes.length != other.episodes.length) return false;
+    for (final entry in episodes.entries) {
+      final otherVal = other.episodes[entry.key];
+      if (otherVal == null) return false;
+      if (entry.value.progress != otherVal.progress ||
+          entry.value.status != otherVal.status ||
+          entry.value.speed != otherVal.speed) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  @override
+  int get hashCode => episodes.length.hashCode;
 }
 
 class DownloadingEpisodesNotifier extends Notifier<DownloadingEpisodesState> {

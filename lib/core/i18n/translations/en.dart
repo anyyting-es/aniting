@@ -411,6 +411,11 @@ class EnglishTranslations implements AppTranslations {
   String get volumeBoostDesc =>
       'Allows increasing volume up to 200% via on-screen gestures with native audio boost.';
   @override
+  String get onlineStreamProxy => 'Local Stream Proxy (Go)';
+  @override
+  String get onlineStreamProxyDesc =>
+      'Routes online streams through the local Go server to prevent CORS, TLS, and header loss issues in MPV.';
+  @override
   String get exoplayerDesc =>
       'Native hardware acceleration, lower battery usage, .ass support via libass, and libmpv fallback.';
   @override
@@ -645,6 +650,10 @@ class EnglishTranslations implements AppTranslations {
   String get local => 'Local';
   @override
   String get unwatched => 'Unwatched';
+  @override
+  String get showAllEpisodes => 'Show all episodes';
+  @override
+  String get hideWatchedEpisodes => 'Show from next up';
   @override
   String get switchToGrid => 'Switch to grid';
   @override
@@ -1618,6 +1627,22 @@ class EnglishTranslations implements AppTranslations {
   String get welcomeTvConnectionFailed => 'Connection failed. Check host and port.';
   @override
   String get welcomeTvSkipServer => 'Continue without Server (Skip)';
+  @override
+  String get welcomeTvUseLocalServer => 'Use Integrated Server';
+  @override
+  String get welcomeTvUseLocalServerDesc =>
+      'Run the local server on this device and set up default sources';
+  @override
+  String get welcomeTvLocalServerActive => 'Integrated server active • Continue';
+  @override
+  String get noProvidersInstalled => 'No streaming sources installed';
+  @override
+  String get noProvidersInstalledDesc =>
+      'Install recommended extensions to search and watch episodes online.';
+  @override
+  String get installRecommendedSources => 'Install Recommended Sources';
+  @override
+  String get installingRecommendedSources => 'Installing sources...';
   @override
   String get welcomeTvSwitchToTv => 'Switch to TV Mode';
   @override

@@ -412,6 +412,11 @@ class SpanishTranslations implements AppTranslations {
   String get volumeBoostDesc =>
       'Permite subir el volumen hasta 200% mediante gestos en pantalla con refuerzo de audio nativo.';
   @override
+  String get onlineStreamProxy => 'Proxy de streaming local (Go)';
+  @override
+  String get onlineStreamProxyDesc =>
+      'Enruta las fuentes online a través del servidor Go local para resolver headers (Referer/User-Agent) y HLS sin fallos en MPV.';
+  @override
   String get exoplayerDesc =>
       'Aceleración por hardware nativa, menor consumo de batería, soporte .ass con libass y respaldo a libmpv.';
   @override
@@ -647,6 +652,10 @@ class SpanishTranslations implements AppTranslations {
   String get local => 'Local';
   @override
   String get unwatched => 'No vistos';
+  @override
+  String get showAllEpisodes => 'Mostrar todos los episodios';
+  @override
+  String get hideWatchedEpisodes => 'Mostrar desde el siguiente';
   @override
   String get switchToGrid => 'Cambiar a cuadrícula';
   @override
@@ -1635,6 +1644,22 @@ class SpanishTranslations implements AppTranslations {
   String get welcomeTvConnectionFailed => 'No se pudo conectar. Verifica la IP y el puerto.';
   @override
   String get welcomeTvSkipServer => 'Continuar sin servidor (Omitir)';
+  @override
+  String get welcomeTvUseLocalServer => 'Usar Servidor Integrado';
+  @override
+  String get welcomeTvUseLocalServerDesc =>
+      'Ejecutar el servidor local en este dispositivo y configurar fuentes';
+  @override
+  String get welcomeTvLocalServerActive => 'Servidor integrado activo • Continuar';
+  @override
+  String get noProvidersInstalled => 'Sin fuentes de streaming instaladas';
+  @override
+  String get noProvidersInstalledDesc =>
+      'Instala las extensiones recomendadas para buscar y ver episodios online.';
+  @override
+  String get installRecommendedSources => 'Instalar fuentes recomendadas';
+  @override
+  String get installingRecommendedSources => 'Instalando fuentes...';
   @override
   String get welcomeTvSwitchToTv => 'Cambiar a Modo TV';
   @override

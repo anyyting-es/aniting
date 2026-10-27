@@ -42,6 +42,10 @@ func (h *Handler) OptionalAuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc
 		// Check HMAC token in query parameter
 		token := req.URL.Query().Get("token")
 		if token != "" {
+			if token == h.App.ServerPasswordHash {
+				authFailureRateLimits.reset(authKey)
+				return next(c)
+			}
 			hmacAuth := h.App.GetServerPasswordHMACAuth()
 			_, err := hmacAuth.ValidateToken(token, path)
 			if err == nil {

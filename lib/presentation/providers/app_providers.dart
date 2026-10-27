@@ -174,6 +174,14 @@ class ServerNotifier extends Notifier<ServerStateModel> {
     }
 
     // 2. Not running: auto-start local server
+    if (AppConstants.isNoBackend) {
+      state = ServerStateModel(
+        state: ServerState.stopped,
+        errorMessage: 'Modo cliente activo (sin servidor embebido)',
+      );
+      return;
+    }
+
     String bindHost = '127.0.0.1';
     try {
       final isSharing = ref.read(lanSharingProvider);
@@ -996,4 +1004,19 @@ final showsCollectionProvider = FutureProvider<ShowCollectionItem?>((ref) async 
   final repo = ref.watch(repositoryProvider);
   return repo.getShowsCollection();
 });
+
+/// Indica si la pantalla de reproducción de video está activa actualmente.
+/// Permite que la capa raíz de la aplicación vuelva el canvas transparente en Wayland/Linux
+/// para que el subsurfacie de video nativo de MPV no quede tapado por fondos sólidos.
+class VideoPlayerActiveNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void setActive(bool active) {
+    state = active;
+  }
+}
+
+final isVideoPlayerActiveProvider =
+    NotifierProvider<VideoPlayerActiveNotifier, bool>(VideoPlayerActiveNotifier.new);
 

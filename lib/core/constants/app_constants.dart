@@ -10,4 +10,8 @@ class AppConstants {
   static const String keyServerPort = 'aniting_server_port';
   static const String keyServerPassword = 'aniting_server_password';
   static const String keyIsLocalServer = 'aniting_is_local_server';
+
+  /// Whether the app was built or launched without the embedded Go backend
+  static const bool isNoBackend =
+      bool.fromEnvironment('NO_BACKEND', defaultValue: false);
 }

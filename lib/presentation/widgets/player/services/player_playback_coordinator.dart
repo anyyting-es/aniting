@@ -33,6 +33,7 @@ class PlayerPlaybackCoordinator {
   final ValueChanged<String> onCues;
   final void Function(String? reason, Duration currentPos) onFallbackToMpv;
   final ValueChanged<List<PlayerChapter>>? onChapters;
+  final String Function(String url, Map<String, String>? headers)? buildProxyUrl;
 
   // Subscriptions
   StreamSubscription? _exoPosSub;
@@ -134,6 +135,7 @@ class PlayerPlaybackCoordinator {
     required this.onCues,
     required this.onFallbackToMpv,
     this.onChapters,
+    this.buildProxyUrl,
   });
 
   /// Initialize the chosen engine and start playback
@@ -418,13 +420,23 @@ class PlayerPlaybackCoordinator {
       // Stream track updates
     });
 
-    if (videoUrl.isNotEmpty) {
+    String effectiveVideoUrl = videoUrl;
+    Map<String, String>? effectiveHeaders = headers;
+    if (isOnlineStream && buildProxyUrl != null && videoUrl.isNotEmpty) {
+      final proxied = buildProxyUrl!(videoUrl, headers);
+      if (proxied != videoUrl) {
+        effectiveVideoUrl = proxied;
+        effectiveHeaders = null;
+      }
+    }
+
+    if (effectiveVideoUrl.isNotEmpty) {
       service.open(
-        videoUrl,
+        effectiveVideoUrl,
         title: title,
         episodeTitle: episodeTitle,
         startPosition: startPosition,
-        httpHeaders: headers,
+        httpHeaders: effectiveHeaders,
         isOnlineStream: isOnlineStream,
       );
 
@@ -510,12 +522,22 @@ class PlayerPlaybackCoordinator {
         subtitles: externalSubs,
       );
     } else if (mpvService != null) {
+      String effectiveVideoUrl = videoUrl;
+      Map<String, String>? effectiveHeaders = headers;
+      if (isOnlineStream && buildProxyUrl != null && videoUrl.isNotEmpty) {
+        final proxied = buildProxyUrl!(videoUrl, headers);
+        if (proxied != videoUrl) {
+          effectiveVideoUrl = proxied;
+          effectiveHeaders = null;
+        }
+      }
+
       mpvService!.open(
-        videoUrl,
+        effectiveVideoUrl,
         title: title,
         episodeTitle: episodeTitle,
         startPosition: startPosition ?? Duration.zero,
-        httpHeaders: headers,
+        httpHeaders: effectiveHeaders,
         isOnlineStream: isOnlineStream,
       );
 

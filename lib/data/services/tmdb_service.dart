@@ -271,15 +271,16 @@ class TmdbService {
   static final Map<String, TmdbMediaAssets?> _assetsCache = {};
 
   /// Synchronously returns cached assets if already fetched in this session or stored in persistent preferences.
-  static TmdbMediaAssets? getCachedAssets(int tmdbId, bool isMovie, {int? tvdbId}) {
+  static TmdbMediaAssets? getCachedAssets(int tmdbId, bool isMovie, {int? tvdbId, String language = 'es'}) {
+    final key0 = '$tmdbId-$tvdbId-$isMovie-$language';
     final key1 = '$tmdbId-$tvdbId-$isMovie';
     final key2 = '$tmdbId-0-$isMovie';
     final key3 = '$tmdbId-null-$isMovie';
-    final inMem = _assetsCache[key1] ?? _assetsCache[key2] ?? _assetsCache[key3];
+    final inMem = _assetsCache[key0] ?? _assetsCache[key1] ?? _assetsCache[key2] ?? _assetsCache[key3];
     if (inMem != null) return inMem;
 
     if (_prefs != null) {
-      for (final key in [key1, key2, key3]) {
+      for (final key in [key0, key1, key2, key3]) {
         final raw = _prefs!.getString('tmdb_assets_$key');
         if (raw != null && raw.isNotEmpty) {
           final parts = raw.split('|||');
@@ -294,14 +295,15 @@ class TmdbService {
     return null;
   }
 
-  /// Fetches transparent PNG logo and official backdrop for a show or movie from TMDB.
+  /// Fetches transparent PNG or SVG logo and official backdrop for a show or movie from TMDB.
   /// Resolves via tmdbId directly, or via tvdbId using TMDB's /find endpoint.
   Future<TmdbMediaAssets?> getMediaAssets({
     int? tmdbId,
     int? tvdbId,
     bool isMovie = false,
+    String language = 'es',
   }) async {
-    final cacheKey = '$tmdbId-$tvdbId-$isMovie';
+    final cacheKey = '$tmdbId-$tvdbId-$isMovie-$language';
     if (_assetsCache.containsKey(cacheKey)) {
       return _assetsCache[cacheKey];
     }
@@ -359,10 +361,28 @@ class TmdbService {
 
       String? logoUrl;
       if (logos.isNotEmpty) {
-        final selectedLogo = logos.firstWhere(
-          (l) => l['iso_639_1'] == 'en' || l['iso_639_1'] == 'es',
-          orElse: () => logos.first,
-        );
+        final isEs = language.toLowerCase().startsWith('es');
+        final primaryLang = isEs ? 'es' : 'en';
+        final secondaryLang = isEs ? 'en' : 'es';
+
+        Map<String, dynamic>? findBestLogo(String lang) {
+          final matching = logos.where((l) => l['iso_639_1'] == lang).toList();
+          if (matching.isEmpty) return null;
+          // Prefer PNG over SVG for faster decode/caching, but accept SVG if only SVG exists
+          final png = matching.firstWhere(
+            (l) => (l['file_path'] as String? ?? '').toLowerCase().endsWith('.png'),
+            orElse: () => matching.first,
+          );
+          return png;
+        }
+
+        final selectedLogo = findBestLogo(primaryLang) ??
+            findBestLogo(secondaryLang) ??
+            logos.firstWhere(
+              (l) => (l['file_path'] as String? ?? '').toLowerCase().endsWith('.png'),
+              orElse: () => logos.first,
+            );
+
         final filePath = selectedLogo['file_path'] as String?;
         if (filePath != null && filePath.isNotEmpty) {
           logoUrl = '$imageBaseUrl$filePath';

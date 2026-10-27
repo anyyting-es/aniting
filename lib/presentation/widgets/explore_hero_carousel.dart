@@ -4,13 +4,18 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
+import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/preferences/desktop_nav_style_provider.dart';
 import 'package:seanime_app/core/preferences/title_language_provider.dart';
+import 'package:seanime_app/core/preferences/tv_mode_provider.dart';
 import 'package:seanime_app/data/models/anime_details.dart';
 import 'package:seanime_app/data/models/anime_entry.dart';
+import 'package:seanime_app/data/models/anizip_data.dart';
 import 'package:seanime_app/data/models/explore_carousel_config.dart';
 import 'package:seanime_app/data/models/manga_entry.dart';
+import 'package:seanime_app/data/services/custom_anime_assets_service.dart';
 import 'package:seanime_app/data/services/explore_carousel_service.dart' show optimizeTmdbImageUrl;
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
@@ -21,6 +26,14 @@ bool get _isInTest => !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST'
 final animeDetailsFamilyProvider = FutureProvider.family<AnimeDetails?, int>((ref, mediaId) async {
   if (mediaId <= 0) return null;
   return ref.watch(repositoryProvider).getAnimeDetails(mediaId).catchError((_) => null);
+});
+
+final carouselAniZipProvider = FutureProvider.family<AniZipData?, int>((ref, mediaId) async {
+  if (mediaId <= 0) return null;
+  final repo = ref.watch(repositoryProvider);
+  final cached = repo.getCachedAniZipData(mediaId);
+  if (cached != null) return cached;
+  return repo.getAniZipData(mediaId).catchError((_) => null);
 });
 
 class ExploreCarouselItem {
@@ -227,25 +240,33 @@ class _ExploreHeroCarouselState extends ConsumerState<ExploreHeroCarousel> {
     }
 
     final isDesktop = MediaQuery.of(context).size.width >= 720;
+    final isTv = ref.watch(tvModeProvider);
     final desktopNavStyle = ref.watch(desktopNavStyleProvider);
     final isSidebarMode = isDesktop && desktopNavStyle == DesktopNavStyle.sidebar;
+    final isCompactLayout = isTv;
     final screenHeight = MediaQuery.of(context).size.height;
     final topPadding = MediaQuery.of(context).padding.top;
-    // Generous, expansive cinematic height:
-    // On Desktop: ~70% of screen height (clamped between 620.0 and 760.0) + topPadding
-    // On Mobile: ~58% of screen height (clamped between 470.0 and 580.0) + topPadding
-    final defaultHeight = (isDesktop
-        ? (screenHeight * 0.70).clamp(620.0, 760.0) + topPadding
-        : (screenHeight * 0.58).clamp(470.0, 580.0) + topPadding).roundToDouble();
+    // Responsive cinematic height:
+    // On TV: ~48% clamped [340, 460]
+    // On Desktop: ~68% clamped [480, 720]
+    // On Mobile: ~56% clamped [420, 560]
+    final defaultHeight = (isCompactLayout
+            ? (screenHeight * 0.48).clamp(340.0, 460.0) + topPadding
+            : (isDesktop
+                ? (screenHeight * 0.68).clamp(480.0, 720.0) + topPadding
+                : (screenHeight * 0.56).clamp(420.0, 560.0) + topPadding))
+        .toDouble();
     final carouselHeight = widget.height ?? defaultHeight;
     final theme = Theme.of(context);
     final l10n = ref.watch(translationsProvider);
+
+    final bgColor = theme.scaffoldBackgroundColor;
 
     return SizedBox(
       height: carouselHeight,
       width: double.infinity,
       child: ColoredBox(
-        color: theme.scaffoldBackgroundColor,
+        color: bgColor,
         child: ClipRect(
           child: MouseRegion(
             onEnter: (_) => _pauseAutoPlay(),
@@ -255,167 +276,53 @@ class _ExploreHeroCarouselState extends ConsumerState<ExploreHeroCarousel> {
               onPointerUp: (_) => _resumeAutoPlay(),
               onPointerCancel: (_) => _resumeAutoPlay(),
               child: Stack(
+                fit: StackFit.expand,
                 children: [
-                  // 1. Edge-to-edge In-Place Crossfade Dissolve (No page-slide motion, infinite forward loop)
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      final width = constraints.maxWidth;
-                      return PageView.builder(
-                        controller: _pageController,
-                        itemCount: widget.items.length > 1 ? null : widget.items.length,
-                        onPageChanged: (index) {
-                          setState(() => _currentPage = index);
-                        },
-                        itemBuilder: (context, index) {
-                          final itemIndex = (index % widget.items.length + widget.items.length) % widget.items.length;
-                          final item = widget.items[itemIndex];
-                          return AnimatedBuilder(
-                            animation: _pageController,
-                            builder: (context, child) {
-                              double page = _currentPage.toDouble();
-                              if (_pageController.hasClients && _pageController.position.haveDimensions) {
-                                page = _pageController.page ?? _currentPage.toDouble();
-                              }
-
-                              final double pageOffset = page - index;
-                              if (pageOffset.abs() >= 1.0) {
-                                return const SizedBox.shrink();
-                              }
-                              final double absOffset = pageOffset.abs().clamp(0.0, 1.0);
-                              final double opacity = (1.0 - absOffset).clamp(0.0, 1.0);
-                              if (opacity <= 0.005) {
-                                return const SizedBox.shrink();
-                              }
-                              final double smoothOpacity = Curves.easeInOut.transform(opacity);
-
-                              // Counteract PageView's horizontal translation completely:
-                              // PageView positions child at (index - page) * width.
-                              // By translating by + (page - index) * width, the net position is strictly 0.0.
-                              // The content dissolves strictly in-place without page-sliding motion.
-                              final double counterOffset = pageOffset * width;
-
-                              return IgnorePointer(
-                                ignoring: absOffset > 0.5,
-                                child: Opacity(
-                                  opacity: smoothOpacity,
-                                  child: Transform.translate(
-                                    offset: Offset(counterOffset, 0),
-                                    child: child,
-                                  ),
-                                ),
-                              );
-                            },
-                            child: RepaintBoundary(
-                              child: _HeroBannerSlide(
-                                key: ValueKey('hero_slide_${item.mediaId}_$index'),
-                                item: item,
-                                theme: theme,
-                                l10n: l10n,
-                                isDesktop: isDesktop,
-                                isSidebarMode: isSidebarMode,
-                                scrollController: widget.scrollController,
-                              ),
-                            ),
-                          );
-                        },
-                      );
-                    },
+                  // 1. Edge-to-edge Horizontal Sliding Carousel
+                  Positioned.fill(
+                    child: PageView.builder(
+                      controller: _pageController,
+                      physics: const BouncingScrollPhysics(),
+                      itemCount: widget.items.length > 1 ? null : widget.items.length,
+                      onPageChanged: (index) {
+                        setState(() => _currentPage = index);
+                      },
+                      itemBuilder: (context, index) {
+                        final itemIndex = (index % widget.items.length + widget.items.length) % widget.items.length;
+                        final item = widget.items[itemIndex];
+                        return RepaintBoundary(
+                          child: _HeroBannerSlide(
+                            key: ValueKey('hero_slide_v4_${item.mediaId}_$index'),
+                            item: item,
+                            theme: theme,
+                            l10n: l10n,
+                            isDesktop: isDesktop,
+                            isTv: isCompactLayout,
+                            isSidebarMode: isSidebarMode,
+                            scrollController: widget.scrollController,
+                          ),
+                        );
+                      },
+                    ),
                   ),
 
-                  // 2. Persistent Static Viewport Bottom Blend
-                  // Anchors the seam between carousel and following content with minimal footprint,
-                  // guaranteeing zero gap while never covering or dimming the action buttons above.
+                  // 2. Subpixel Seam Guard at absolute bottom edge
                   Positioned(
                     left: 0,
                     right: 0,
                     bottom: 0,
-                    height: isDesktop ? 16.0 : 10.0,
+                    height: 2.0,
                     child: IgnorePointer(
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              theme.scaffoldBackgroundColor.withValues(alpha: 0.0),
-                              theme.scaffoldBackgroundColor,
-                            ],
-                          ),
-                        ),
-                      ),
+                      child: ColoredBox(color: bgColor),
                     ),
                   ),
 
-                  // 2b. Subpixel Seam Bridge
-                  // Eliminates any fractional floating-point rasterization seams on Windows high-DPI scaling.
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    bottom: -1,
-                    height: 2.5,
-                    child: IgnorePointer(
-                      child: ColoredBox(color: theme.scaffoldBackgroundColor),
-                    ),
-                  ),
-
-                  // 3. Desktop Navigation Arrows (Prev / Next)
-                  if (isDesktop && widget.items.length > 1) ...[
-                    Positioned(
-                      left: 16,
-                      top: 0,
-                      bottom: 0,
-                      child: Center(
-                        child: Material(
-                          color: Colors.black.withValues(alpha: 0.35),
-                          shape: const CircleBorder(),
-                          child: InkWell(
-                            customBorder: const CircleBorder(),
-                            onTap: () {
-                              _pageController.previousPage(
-                                duration: const Duration(milliseconds: 600),
-                                curve: Curves.easeOutCubic,
-                              );
-                            },
-                            child: const Padding(
-                              padding: EdgeInsets.all(8),
-                              child: Icon(Icons.chevron_left_rounded, size: 28, color: Colors.white),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      right: 16,
-                      top: 0,
-                      bottom: 0,
-                      child: Center(
-                        child: Material(
-                          color: Colors.black.withValues(alpha: 0.35),
-                          shape: const CircleBorder(),
-                          child: InkWell(
-                            customBorder: const CircleBorder(),
-                            onTap: () {
-                              _pageController.nextPage(
-                                duration: const Duration(milliseconds: 600),
-                                curve: Curves.easeOutCubic,
-                              );
-                            },
-                            child: const Padding(
-                              padding: EdgeInsets.all(8),
-                              child: Icon(Icons.chevron_right_rounded, size: 28, color: Colors.white),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-
-                  // 4. Indicator Dots near bottom
+                  // 3. Indicator Dots near bottom: on desktop aligned neatly to bottom-right; centered on mobile/TV
                   if (widget.items.length > 1)
                     Positioned(
-                      bottom: 12,
-                      left: 0,
-                      right: 0,
+                      bottom: 16,
+                      left: isDesktop ? null : 0,
+                      right: isDesktop ? 36.0 : 0,
                       child: _buildIndicatorRow(theme),
                     ),
                 ],
@@ -460,6 +367,7 @@ class _HeroBannerSlide extends ConsumerWidget {
   final ThemeData theme;
   final AppTranslations l10n;
   final bool isDesktop;
+  final bool isTv;
   final bool isSidebarMode;
   final ScrollController? scrollController;
 
@@ -469,6 +377,7 @@ class _HeroBannerSlide extends ConsumerWidget {
     required this.theme,
     required this.l10n,
     required this.isDesktop,
+    this.isTv = false,
     this.isSidebarMode = false,
     this.scrollController,
   });
@@ -489,32 +398,42 @@ class _HeroBannerSlide extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final bgColor = theme.scaffoldBackgroundColor;
     final topPadding = MediaQuery.of(context).padding.top;
+    final iconPack = ref.watch(iconPackProvider);
+
+    // Dynamic AniList + AniZip + CustomAnimeAssets Resolution
+    final customAssets = CustomAnimeAssetsService.getAssets(item.mediaId);
+    final aniZip = ref.watch(carouselAniZipProvider(item.mediaId)).asData?.value;
 
     final String rawImageUrl;
     if (isDesktop) {
-      rawImageUrl = item.horizontalBackground ??
+      rawImageUrl = customAssets?.background ??
+          aniZip?.fanartUrl ??
+          item.horizontalBackground ??
+          aniZip?.bannerUrl ??
           item.bannerImage ??
           item.verticalBackground ??
           item.coverImage ??
           '';
     } else {
-      rawImageUrl = item.verticalBackground ??
+      rawImageUrl = customAssets?.poster ??
+          aniZip?.fanartUrl ??
+          item.verticalBackground ??
+          customAssets?.background ??
           item.horizontalBackground ??
+          aniZip?.bannerUrl ??
           item.bannerImage ??
           item.coverImage ??
           '';
     }
     final imageUrl = optimizeTmdbImageUrl(rawImageUrl, isDesktop: isDesktop, isLogo: false);
 
+    final resolvedLogoUrl = customAssets?.logo ?? aniZip?.clearlogoUrl ?? item.logoImage;
+    final hasLogo = resolvedLogoUrl != null && resolvedLogoUrl.trim().isNotEmpty;
+
     final scoreVal = item.score != null
         ? (item.score! > 10 ? (item.score! / 10).toStringAsFixed(1) : item.score!.toStringAsFixed(1))
         : null;
-
-    final hasLogo = item.logoImage != null && item.logoImage!.isNotEmpty;
-    // Generous bottom shadow height on desktop, subtle lower shadow on mobile
-    final bottomShadowHeight = isDesktop ? 320.0 : 175.0;
 
     String? rawDesc = item.description;
     if ((rawDesc == null || rawDesc.isEmpty) && isSidebarMode && !_isInTest) {
@@ -522,6 +441,42 @@ class _HeroBannerSlide extends ConsumerWidget {
       rawDesc = detailsAsync.asData?.value?.description;
     }
     final description = _cleanHtml(rawDesc);
+    final metadataRow = SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (item.year != null) ...[
+            Text('${item.year}', style: _metadataStyle(isTv)),
+            _buildBullet(),
+          ],
+          if (item.format != null && item.format!.isNotEmpty) ...[
+            Text(item.format!.replaceAll('_', ' '), style: _metadataStyle(isTv)),
+            if (scoreVal != null || item.genres.isNotEmpty) _buildBullet(),
+          ],
+          if (scoreVal != null) ...[
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.star_rounded, size: isTv ? 12 : 14, color: Colors.amber),
+                const SizedBox(width: 2),
+                Text(
+                  scoreVal,
+                  style: _metadataStyle(isTv).copyWith(color: Colors.amber, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            if (item.genres.isNotEmpty) _buildBullet(),
+          ],
+          if (item.genres.isNotEmpty)
+            Text(
+              item.genres.take(2).join(' • '),
+              style: _metadataStyle(isTv).copyWith(color: Colors.white.withValues(alpha: 0.85)),
+            ),
+        ],
+      ),
+    );
 
     return ClipRect(
       child: Material(
@@ -531,7 +486,7 @@ class _HeroBannerSlide extends ConsumerWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              // 1. Dynamic Banner Background Image with breathing overscroll & depth contraction
+              // 1. Dynamic Banner Background Image with subtle zoom on scroll
               if (imageUrl.isNotEmpty)
                 AnimatedBuilder(
                   animation: scrollController ?? const AlwaysStoppedAnimation(0),
@@ -539,22 +494,18 @@ class _HeroBannerSlide extends ConsumerWidget {
                     final scrollOffset = (scrollController != null && scrollController!.hasClients)
                         ? scrollController!.offset
                         : 0.0;
+                    // When scrolling down, subtly zoom the banner background (from 1.0 up to 1.15)
+                    // When pulling down (overscroll < 0), expand smoothly.
                     final double bgScale;
-                    final double bgTranslateY;
                     if (scrollOffset < 0) {
-                      final pull = -scrollOffset;
-                      bgScale = 1.0 + (pull / 320.0).clamp(0.0, 0.45);
-                      bgTranslateY = -pull * 0.12;
+                      bgScale = 1.0 + (-scrollOffset / 320.0).clamp(0.0, 0.40);
                     } else {
-                      bgScale = (1.0 - (scrollOffset / 1400.0)).clamp(0.90, 1.0);
-                      bgTranslateY = scrollOffset * 0.42;
+                      bgScale = 1.0 + (scrollOffset / 1200.0).clamp(0.0, 0.15);
                     }
 
-                    return Transform(
+                    return Transform.scale(
+                      scale: bgScale,
                       alignment: Alignment.center,
-                      transform: Matrix4.identity()
-                        ..translate(0.0, bgTranslateY)
-                        ..scale(bgScale, bgScale),
                       child: child,
                     );
                   },
@@ -603,61 +554,43 @@ class _HeroBannerSlide extends ConsumerWidget {
                 ),
               ),
 
-              // 2b. Desktop Horizontal Vignette Scrim (Left-to-Right contrast protection for logo & text, preserving art vibrance)
-              // In sidebar mode, seamlessly blends into the sidebar background color with progressive alpha stops
-              if (isDesktop)
-                Positioned.fill(
-                  child: IgnorePointer(
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.centerLeft,
-                          end: Alignment.centerRight,
-                          stops: isSidebarMode
-                              ? const [0.0, 0.22, 0.44, 0.68, 0.88, 1.0]
-                              : const [0.0, 0.30, 0.65, 1.0],
-                          colors: isSidebarMode
-                              ? [
-                                  bgColor,
-                                  bgColor.withValues(alpha: 0.94),
-                                  bgColor.withValues(alpha: 0.74),
-                                  bgColor.withValues(alpha: 0.38),
-                                  bgColor.withValues(alpha: 0.10),
-                                  Colors.transparent,
-                                ]
-                              : [
-                                  Colors.black.withValues(alpha: 0.65),
-                                  Colors.black.withValues(alpha: 0.30),
-                                  Colors.black.withValues(alpha: 0.05),
-                                  Colors.transparent,
-                                ],
-                        ),
+              // 2b. Left-to-right contrast protection (guarantees text/logo clarity and seamless sidebar blend)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                        stops: const [0.0, 0.32, 0.65, 1.0],
+                        colors: [
+                          theme.scaffoldBackgroundColor.withValues(alpha: isDesktop ? 0.88 : 0.60),
+                          theme.scaffoldBackgroundColor.withValues(alpha: isDesktop ? 0.55 : 0.25),
+                          theme.scaffoldBackgroundColor.withValues(alpha: 0.12),
+                          Colors.transparent,
+                        ],
                       ),
                     ),
                   ),
                 ),
+              ),
 
-              // 3. Compact Eased Bottom Shadow (Ultra-smooth cubic feather, zero harsh cuts or solid block look)
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                height: bottomShadowHeight,
+              // 2c. Full-height Eased Bottom Blend (Non-linear feather fading 100% into scaffoldBackgroundColor at bottom edge)
+              Positioned.fill(
                 child: IgnorePointer(
                   child: DecoratedBox(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
-                        stops: const [0.0, 0.22, 0.45, 0.68, 0.85, 0.94, 1.0],
+                        stops: const [0.0, 0.25, 0.50, 0.72, 0.88, 1.0],
                         colors: [
-                          bgColor.withValues(alpha: 0.0),
-                          bgColor.withValues(alpha: 0.04),
-                          bgColor.withValues(alpha: 0.16),
-                          bgColor.withValues(alpha: 0.46),
-                          bgColor.withValues(alpha: 0.82),
-                          bgColor,
-                          bgColor,
+                          Colors.transparent,
+                          Colors.transparent,
+                          theme.scaffoldBackgroundColor.withValues(alpha: 0.25),
+                          theme.scaffoldBackgroundColor.withValues(alpha: 0.75),
+                          theme.scaffoldBackgroundColor,
+                          theme.scaffoldBackgroundColor,
                         ],
                       ),
                     ),
@@ -666,9 +599,9 @@ class _HeroBannerSlide extends ConsumerWidget {
               ),
 
             Positioned(
-              left: isDesktop ? 36 : 16,
-              right: isDesktop ? 36 : 16,
-              bottom: isDesktop ? 34 : 20,
+              left: isDesktop ? (isSidebarMode ? (isTv ? 76.0 : 96.0) : 36.0) : 16.0,
+              right: isDesktop ? 36.0 : 16.0,
+              bottom: isTv ? 44.0 : (isDesktop ? 36.0 : 26.0),
               child: AnimatedBuilder(
                 animation: scrollController ?? const AlwaysStoppedAnimation(0),
                 builder: (context, child) {
@@ -690,164 +623,91 @@ class _HeroBannerSlide extends ConsumerWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Padding(
-                    padding: EdgeInsets.only(bottom: isDesktop ? 10 : 6),
+                    padding: EdgeInsets.only(bottom: isTv ? 45 : (isDesktop ? 12 : 6)),
                     child: SizedBox(
-                      height: isDesktop ? (isSidebarMode ? 100 : 120) : 52,
+                      height: isTv ? 92 : (isDesktop ? (isSidebarMode ? 105 : 120) : 52),
                       child: Align(
                         alignment: isDesktop ? Alignment.bottomLeft : Alignment.bottomCenter,
                         child: hasLogo
-                            ? CachedNetworkImage(
-                                imageUrl: optimizeTmdbImageUrl(item.logoImage!, isDesktop: isDesktop, isLogo: true),
-                                fit: BoxFit.contain,
-                                alignment: isDesktop ? Alignment.bottomLeft : Alignment.bottomCenter,
-                                fadeInDuration: Duration.zero,
-                                memCacheHeight: isDesktop ? 240 : 120,
-                                maxHeightDiskCache: isDesktop ? 240 : 120,
-                                placeholder: (context, url) => const SizedBox.shrink(),
-                                errorWidget: (context, url, error) => _buildTitleText(item.title, isDesktop),
-                              )
+                            ? _buildLogoImage(resolvedLogoUrl, isDesktop)
                             : _buildTitleText(item.title, isDesktop),
                       ),
                     ),
                   ),
 
+                  if (isTv) metadataRow,
+
                   // Description under logo/title in desktop sidebar mode
-                  if (isSidebarMode && description.isNotEmpty) ...[
+                  if ((isSidebarMode || isTv) && description.isNotEmpty) ...[
                     ConstrainedBox(
                       constraints: BoxConstraints(
-                        maxWidth: (MediaQuery.of(context).size.width * 0.45).clamp(380.0, 560.0),
+                        maxWidth: (MediaQuery.of(context).size.width * 0.44).clamp(360.0, 520.0),
                       ),
                       child: Text(
                         description,
-                        maxLines: 3,
+                        maxLines: isTv ? 4 : 3,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.90),
-                          fontSize: 13.5,
-                          height: 1.45,
+                          color: Colors.white.withValues(alpha: 0.92),
+                          fontSize: isTv ? 16.0 : 13.5,
+                          height: isTv ? 1.25 : 1.45,
                           letterSpacing: -0.1,
                           fontWeight: FontWeight.w400,
                           shadows: const [
                             Shadow(
                               offset: Offset(0, 1),
-                              blurRadius: 4,
+                              blurRadius: 5,
                               color: Colors.black87,
                             ),
                           ],
                         ),
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: isTv ? 4 : 14),
                   ],
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    physics: const BouncingScrollPhysics(),
-                    child: Row(
-                      mainAxisAlignment: isDesktop ? MainAxisAlignment.start : MainAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (item.year != null) ...[
-                          Text(
-                            '${item.year}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              shadows: [Shadow(color: Colors.black54, blurRadius: 2)],
-                            ),
-                          ),
-                          _buildBullet(),
-                        ],
-                        if (item.format != null && item.format!.isNotEmpty) ...[
-                          Text(
-                            item.format!.replaceAll('_', ' '),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              shadows: [Shadow(color: Colors.black54, blurRadius: 2)],
-                            ),
-                          ),
-                          if (scoreVal != null || item.genres.isNotEmpty)
-                            _buildBullet(),
-                        ],
-                        if (scoreVal != null) ...[
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.star_rounded,
-                                size: 14,
-                                color: Colors.amber,
-                              ),
-                              const SizedBox(width: 2),
-                              Text(
-                                scoreVal,
-                                style: const TextStyle(
-                                  color: Colors.amber,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  shadows: [Shadow(color: Colors.black54, blurRadius: 2)],
-                                ),
-                              ),
-                            ],
-                          ),
-                          if (item.genres.isNotEmpty)
-                            _buildBullet(),
-                        ],
-                        if (item.genres.isNotEmpty) ...[
-                          Text(
-                            item.genres.take(2).join(' • '),
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.85),
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              shadows: const [Shadow(color: Colors.black54, blurRadius: 2)],
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
+                  if (!isTv) metadataRow,
 
-                  SizedBox(height: isDesktop ? 12 : 8),
+                  if (!isTv) SizedBox(height: isDesktop ? 12 : 8),
 
-                  // Action Pill Button (Ver detalles)
-                  Builder(
+                  // Refined, balanced Action Button (Ver detalles)
+                  if (!isTv) Builder(
                     builder: (context) {
                       final isDark = theme.brightness == Brightness.dark;
                       final btnBgColor = isDark ? Colors.white : theme.colorScheme.onSurface;
                       final btnFgColor = isDark ? const Color(0xFF141414) : theme.colorScheme.surface;
 
-                      return Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          FilledButton.icon(
-                            onPressed: item.onTap,
-                            icon: Icon(Icons.info_outline_rounded, size: 16, color: btnFgColor),
-                            label: Text(
-                              l10n.details,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: isDesktop ? 13 : 12,
-                                color: btnFgColor,
-                              ),
+                      return Material(
+                        color: btnBgColor,
+                        borderRadius: BorderRadius.circular(18),
+                        elevation: 1,
+                        shadowColor: Colors.black45,
+                        child: InkWell(
+                          onTap: item.onTap,
+                          borderRadius: BorderRadius.circular(18),
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: isDesktop ? 16 : 14,
+                              vertical: isDesktop ? 8 : 7,
                             ),
-                            style: FilledButton.styleFrom(
-                              backgroundColor: btnBgColor,
-                              foregroundColor: btnFgColor,
-                              elevation: 2,
-                              visualDensity: VisualDensity.compact,
-                              padding: EdgeInsets.symmetric(
-                                horizontal: isDesktop ? 18 : 14,
-                                vertical: isDesktop ? 10 : 6,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(AppIcons.info(iconPack), size: isDesktop ? 15 : 14, color: btnFgColor),
+                                const SizedBox(width: 6),
+                                Text(
+                                  l10n.details,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: isDesktop ? 12.5 : 12.0,
+                                    color: btnFgColor,
+                                    letterSpacing: 0.1,
+                                    height: 1.15,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                        ],
+                        ),
                       );
                     },
                   ),
@@ -861,6 +721,33 @@ class _HeroBannerSlide extends ConsumerWidget {
     ),
   );
 }
+
+  Widget _buildLogoImage(String logoUrl, bool isDesktop) {
+    final isSvg = logoUrl.toLowerCase().endsWith('.svg');
+    final alignment = isDesktop ? Alignment.bottomLeft : Alignment.bottomCenter;
+    final maxDiskHeight = isDesktop ? 260 : 130;
+
+    if (isSvg) {
+      return SvgPicture.network(
+        logoUrl,
+        fit: BoxFit.contain,
+        alignment: alignment,
+        placeholderBuilder: (_) => const SizedBox.shrink(),
+      );
+    }
+
+    final optimizedUrl = optimizeTmdbImageUrl(logoUrl, isDesktop: isDesktop, isLogo: true);
+    return CachedNetworkImage(
+      imageUrl: optimizedUrl,
+      fit: BoxFit.contain,
+      alignment: alignment,
+      fadeInDuration: Duration.zero,
+      memCacheHeight: maxDiskHeight,
+      maxHeightDiskCache: maxDiskHeight,
+      placeholder: (context, url) => const SizedBox.shrink(),
+      errorWidget: (context, url, error) => _buildTitleText(item.title, isDesktop),
+    );
+  }
 
   Widget _buildBullet() {
     return Padding(
@@ -876,6 +763,13 @@ class _HeroBannerSlide extends ConsumerWidget {
     );
   }
 
+  TextStyle _metadataStyle(bool isTv) => TextStyle(
+        color: Colors.white,
+        fontSize: isTv ? 14.5 : 12,
+        fontWeight: FontWeight.w600,
+        shadows: const [Shadow(color: Colors.black54, blurRadius: 2)],
+      );
+
   Widget _buildTitleText(String title, bool isDesktop) {
     return Text(
       title,
@@ -885,7 +779,7 @@ class _HeroBannerSlide extends ConsumerWidget {
       style: TextStyle(
         color: Colors.white,
         fontWeight: FontWeight.w800,
-        fontSize: isDesktop ? 24 : 19,
+        fontSize: isTv ? 38 : (isDesktop ? 24 : 19),
         letterSpacing: -0.3,
         height: 1.15,
         shadows: const [

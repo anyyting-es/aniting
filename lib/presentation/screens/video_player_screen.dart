@@ -12,6 +12,7 @@ import 'package:seanime_app/core/preferences/resume_bar_preferences_provider.dar
 import 'package:seanime_app/core/preferences/track_preferences_provider.dart';
 import 'package:seanime_app/core/preferences/tv_mode_provider.dart';
 import 'package:seanime_app/core/preferences/volume_boost_provider.dart';
+import 'package:seanime_app/core/preferences/online_stream_proxy_provider.dart';
 import 'package:seanime_app/core/preferences/streaming_preferences_provider.dart';
 import 'package:seanime_app/data/models/anime_details.dart';
 import 'package:seanime_app/data/models/anizip_data.dart';
@@ -661,6 +662,12 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
           setState(() => _chapters = chs);
         }
       },
+      buildProxyUrl: (url, headers) {
+        final proxyEnabled = ref.read(onlineStreamProxyProvider);
+        if (!proxyEnabled) return url;
+        final client = ref.read(apiClientProvider);
+        return client.buildVideoProxyUrl(url, headers: headers);
+      },
     );
     _coordinator.applySubtitleStyle(ref.read(subtitleStylePreferencesProvider));
 
@@ -796,6 +803,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || _isPlayerDisposed) return;
+      ref.read(isVideoPlayerActiveProvider.notifier).setActive(true);
       _focusNode.requestFocus();
 
       _coordinator.init(
@@ -1028,6 +1036,9 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   @override
   void dispose() {
     _isPlayerDisposed = true;
+    try {
+      ref.read(isVideoPlayerActiveProvider.notifier).setActive(false);
+    } catch (_) {}
     _sourceController.dispose();
     _progressManager.dispose();
 
@@ -1486,11 +1497,10 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       });
     }
 
-    final isNativePlayerActive =
-        _coordinator.isUsingExoPlayer || _coordinator.mpvService != null;
-    final scaffoldBg = isNativePlayerActive
-        ? Colors.transparent
-        : (effectiveFullscreen ? Colors.black : theme.scaffoldBackgroundColor);
+    // All player backends (Android ExoPlayer via SurfaceView, Linux MPV via Wayland wl_subsurface,
+    // and Windows MPV via child HWND) place the native video surface BEHIND the Flutter window.
+    // Therefore, the Flutter Scaffold and viewport must remain transparent so the video is visible.
+    const scaffoldBg = Colors.transparent;
 
     final isThemeDark = theme.brightness == Brightness.dark;
     final statusBarIconBrightness = (effectiveFullscreen || isThemeDark)

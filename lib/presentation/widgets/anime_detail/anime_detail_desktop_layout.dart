@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
@@ -18,10 +19,10 @@ import 'package:seanime_app/presentation/screens/video_player_screen.dart';
 import 'package:seanime_app/core/theme/smooth_scroll_controller.dart';
 
 import 'package:url_launcher/url_launcher_string.dart';
-import 'package:seanime_app/core/theme/theme_provider.dart';
 
 import 'desktop/desktop_action_bar.dart';
 import 'desktop/desktop_cast_row.dart';
+import 'desktop/desktop_episode_source_dialog.dart';
 import 'desktop/desktop_episodes_tab.dart';
 import 'desktop/desktop_header.dart';
 import 'desktop/desktop_hero_banner.dart';
@@ -94,6 +95,7 @@ class _AnimeDetailDesktopLayoutState
   static const String _prefLastProviderKey = 'last_selected_online_provider';
   final ScrollController _scrollController = SmoothScrollController();
   final ValueNotifier<double> _scrollProgressNotifier = ValueNotifier<double>(0.0);
+  late final FocusNode _playFocusNode;
 
   List<OnlinestreamProvider> _providers = [];
   OnlinestreamProvider? _selectedProvider;
@@ -101,10 +103,38 @@ class _AnimeDetailDesktopLayoutState
   List<OnlinestreamEpisode> _onlineEpisodes = [];
   bool _isLoadingOnlineEpisodes = false;
   final int? _loadingEpisodeNumber = null;
+  bool _isSynopsisExpanded = false;
+
+  String? _lastSynopsisText;
+  double? _cachedExtraSynopsisHeight;
+
+  double _calculateExtraSynopsisHeight(String text, double maxWidth) {
+    if (text.isEmpty) return 0.0;
+    if (_lastSynopsisText == text && _cachedExtraSynopsisHeight != null) {
+      return _cachedExtraSynopsisHeight!;
+    }
+    const style = TextStyle(fontSize: 14.5, height: 1.40);
+    final collapsedPainter = TextPainter(
+      text: TextSpan(text: text, style: style),
+      textDirection: TextDirection.ltr,
+      maxLines: 3,
+    )..layout(maxWidth: maxWidth);
+
+    final expandedPainter = TextPainter(
+      text: TextSpan(text: text, style: style),
+      textDirection: TextDirection.ltr,
+    )..layout(maxWidth: maxWidth);
+
+    final diff = expandedPainter.height - collapsedPainter.height;
+    _lastSynopsisText = text;
+    _cachedExtraSynopsisHeight = diff > 0 ? diff : 0.0;
+    return _cachedExtraSynopsisHeight!;
+  }
 
   @override
   void initState() {
     super.initState();
+    _playFocusNode = FocusNode(debugLabel: 'desktop_play_button');
     _scrollController.addListener(_onScroll);
 
     final isTmdb = widget.details?.isTmdb ?? widget.initialEntry?.isTmdb ?? false;
@@ -131,10 +161,10 @@ class _AnimeDetailDesktopLayoutState
   void _onScroll() {
     if (!_scrollController.hasClients) return;
     final offset = _scrollController.offset;
-    final progress = (offset / 200.0).clamp(0.0, 1.0);
+    final progress = (offset / 320.0).clamp(0.0, 1.0);
     if ((progress - _scrollProgressNotifier.value).abs() > 0.02 ||
         (offset <= 0 && _scrollProgressNotifier.value > 0) ||
-        (offset >= 200 && _scrollProgressNotifier.value < 1.0)) {
+        (offset >= 320 && _scrollProgressNotifier.value < 1.0)) {
       _scrollProgressNotifier.value = progress;
     }
   }
@@ -152,6 +182,7 @@ class _AnimeDetailDesktopLayoutState
 
   @override
   void dispose() {
+    _playFocusNode.dispose();
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     _scrollProgressNotifier.dispose();
@@ -261,58 +292,88 @@ class _AnimeDetailDesktopLayoutState
     });
   }
 
-  void _onEpisodeClicked(DesktopEpisodeItemData ep) {
-    if (widget.isLocalMode || ep.isDownloaded) {
-      final serverManager = ref.read(serverManagerProvider);
-      final l10n = ref.read(translationsProvider);
-      final titleLang = ref.read(titleLanguageProvider);
-      final animeTitle = widget.details?.displayTitle(titleLang) ?? 'Anime';
-      final streamUrl = ep.localFilePath != null && ep.localFilePath!.isNotEmpty
-          ? 'http://${serverManager.host}:${serverManager.port}/api/v1/mediastream/file?path=${Uri.encodeComponent(ep.localFilePath!)}'
-          : 'http://${serverManager.host}:${serverManager.port}/api/v1/mediastream?mediaId=${widget.mediaId}&episodeNumber=${ep.number}';
-      final fileName = ep.localFilePath != null && ep.localFilePath!.isNotEmpty
-          ? ep.localFilePath!.split(RegExp(r'[/\\]')).last
-          : null;
-      final sourceDesc = fileName != null ? 'Local • $fileName' : l10n.localLibrary;
+  void _playLocalEpisode(DesktopEpisodeItemData ep, {String? filePath}) {
+    final serverManager = ref.read(serverManagerProvider);
+    final l10n = ref.read(translationsProvider);
+    final titleLang = ref.read(titleLanguageProvider);
+    final animeTitle = widget.details?.displayTitle(titleLang) ?? 'Anime';
+    final targetPath = filePath ?? ep.localFilePath;
+    final streamUrl = targetPath != null && targetPath.isNotEmpty
+        ? 'http://${serverManager.host}:${serverManager.port}/api/v1/mediastream/file?path=${Uri.encodeComponent(targetPath)}'
+        : 'http://${serverManager.host}:${serverManager.port}/api/v1/mediastream?mediaId=${widget.mediaId}&episodeNumber=${ep.number}';
+    final fileName = targetPath != null && targetPath.isNotEmpty
+        ? targetPath.split(RegExp(r'[/\\]')).last
+        : null;
+    final sourceDesc = fileName != null ? 'Local • $fileName' : l10n.localLibrary;
 
-      final savedProgress = ref.read(playbackProgressPreferencesProvider.notifier).getProgress(widget.mediaId, ep.number);
-      Duration? startPos;
-      if (savedProgress != null && savedProgress.positionMs > 0) {
-        final fraction = savedProgress.durationMs > 0 ? savedProgress.positionMs / savedProgress.durationMs : 0.0;
-        if (fraction < 0.95) {
-          startPos = Duration(milliseconds: savedProgress.positionMs);
-        }
+    final savedProgress = ref.read(playbackProgressPreferencesProvider.notifier).getProgress(widget.mediaId, ep.number);
+    Duration? startPos;
+    if (savedProgress != null && savedProgress.positionMs > 0) {
+      final fraction = savedProgress.durationMs > 0 ? savedProgress.positionMs / savedProgress.durationMs : 0.0;
+      if (fraction < 0.95) {
+        startPos = Duration(milliseconds: savedProgress.positionMs);
       }
-
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        Navigator.of(context, rootNavigator: true).push(
-          VideoPlayerScreen.route(
-            mediaId: widget.mediaId,
-            videoUrl: streamUrl,
-            title: animeTitle,
-            episodeTitle: ep.title,
-            episodeNumber: ep.number,
-            videoSource: sourceDesc,
-            startPosition: startPos,
-            isLocalFile: true,
-            animeDetails: widget.details,
-            aniZipData: widget.aniZipData ?? widget.details?.aniZipData,
-          ),
-        );
-      });
-      return;
     }
 
-    if (widget.currentTab == AnimeDetailTab.torrent) {
-      widget.onOpenTorrentSelector(
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Navigator.of(context, rootNavigator: true).push(
+        VideoPlayerScreen.route(
+          mediaId: widget.mediaId,
+          videoUrl: streamUrl,
+          title: animeTitle,
+          episodeTitle: ep.title,
+          episodeNumber: ep.number,
+          videoSource: sourceDesc,
+          startPosition: startPos,
+          isLocalFile: true,
+          animeDetails: widget.details,
+          aniZipData: widget.aniZipData ?? widget.details?.aniZipData,
+        ),
+      );
+    });
+  }
+
+  void _onEpisodeClicked(DesktopEpisodeItemData ep) {
+    final titleLang = ref.read(titleLanguageProvider);
+    final animeTitle = widget.details?.displayTitle(titleLang) ?? 'Anime';
+
+    final repo = ref.read(repositoryProvider);
+    final cachedEntry = repo.getCachedAnimeLibraryEntry(widget.mediaId);
+    final localEp = cachedEntry?.episodes.cast<LibraryEpisode?>().firstWhere(
+          (e) => e?.episodeNumber == ep.number,
+          orElse: () => null,
+        );
+    final localPath = ep.localFilePath ?? localEp?.localFilePath;
+    final hasLocal = ep.isDownloaded || (localPath != null && localPath.isNotEmpty);
+
+    showDesktopEpisodeSourceDialog(
+      context,
+      episode: localPath != null ? ep.copyWith(localFilePath: localPath, isDownloaded: true) : ep,
+      animeTitle: animeTitle,
+      providers: _providers,
+      selectedProvider: _selectedProvider,
+      isDubbed: _isDubbed,
+      onProviderChanged: (p) {
+        if (p != null) {
+          setState(() => _selectedProvider = p);
+          SharedPreferences.getInstance().then(
+              (prefs) => prefs.setString(_prefLastProviderKey, p.id));
+          _loadOnlineEpisodes();
+        }
+      },
+      onToggleDubbed: () {
+        setState(() => _isDubbed = !_isDubbed);
+        _loadOnlineEpisodes();
+      },
+      onPlayOnline: () => _playOnlineEpisode(ep.number, ep.title),
+      onPlayTorrent: () => widget.onOpenTorrentSelector(
         episodeNumber: ep.number,
         episodeTitle: ep.title,
         aniDBEpisode: ep.aniDBEpisode,
-      );
-    } else {
-      _playOnlineEpisode(ep.number, ep.title);
-    }
+      ),
+      onPlayLocal: hasLocal ? () => _playLocalEpisode(ep, filePath: localPath) : null,
+    );
   }
 
   Future<void> _handlePlayNext(int progress) async {
@@ -379,13 +440,19 @@ class _AnimeDetailDesktopLayoutState
   String _cleanHtml(String? html) {
     if (html == null) return '';
     return html
-        .replaceAll(RegExp(r'<br\s*/?>'), '\n')
-        .replaceAll(RegExp(r'</?i>'), '')
-        .replaceAll(RegExp(r'</?b>'), '')
-        .replaceAll(RegExp(r'</?p>'), '\n\n')
+        .replaceAll(RegExp(r'<br\s*/?>\s*<br\s*/?>', caseSensitive: false), '\n\n')
+        .replaceAll(RegExp(r'<br\s*/?>', caseSensitive: false), '\n')
+        .replaceAll(RegExp(r'</?p>', caseSensitive: false), '\n\n')
+        .replaceAll(RegExp(r'</?[a-zA-Z0-9]+[^>]*>'), '')
         .replaceAll(RegExp(r'&quot;'), '"')
         .replaceAll(RegExp(r'&amp;'), '&')
         .replaceAll(RegExp(r'&#039;'), "'")
+        .replaceAll(RegExp(r'&lt;'), '<')
+        .replaceAll(RegExp(r'&gt;'), '>')
+        .replaceAll(RegExp(r'(\r?\n\s*){2,}'), '\n\n')
+        .split('\n')
+        .map((line) => line.trimRight())
+        .join('\n')
         .trim();
   }
 
@@ -395,9 +462,8 @@ class _AnimeDetailDesktopLayoutState
     final iconPack = ref.watch(iconPackProvider);
     final l10n = ref.watch(translationsProvider);
     final titleLang = ref.watch(titleLanguageProvider);
-    final streamingPrefs = ref.watch(streamingPreferencesProvider);
-    final torrentEnabled = streamingPrefs.torrentStreamingEnabled;
-    final onlineEnabled = streamingPrefs.onlineStreamingEnabled;
+    final torrentEnabled = ref.watch(streamingPreferencesProvider.select((s) => s.torrentStreamingEnabled));
+    final onlineEnabled = ref.watch(streamingPreferencesProvider.select((s) => s.onlineStreamingEnabled));
     final isTmdb = widget.details?.isTmdb ?? widget.initialEntry?.isTmdb ?? false;
 
     final title = widget.details?.displayTitle(titleLang) ??
@@ -421,6 +487,7 @@ class _AnimeDetailDesktopLayoutState
 
     final score = widget.details?.score ?? widget.initialEntry?.score;
     final format = widget.details?.format ?? widget.initialEntry?.format ?? 'TV';
+    final isMovie = format.toUpperCase() == 'MOVIE';
     final status = widget.details?.status ?? widget.initialEntry?.status;
 
     final year = widget.details?.seasonYear ??
@@ -452,10 +519,10 @@ class _AnimeDetailDesktopLayoutState
             ? english
             : ((native != null && native.isNotEmpty && native != title) ? native : null));
 
-    final liveCollectionEntry = ref.watch(animeCollectionProvider).whenOrNull(
+    final liveCollectionEntry = ref.watch(animeCollectionProvider.select((asyncVal) => asyncVal.whenOrNull(
           data: (entries) =>
               entries.where((e) => e.mediaId == widget.mediaId).firstOrNull,
-        );
+        )));
 
     final userStatus = liveCollectionEntry?.status ?? widget.details?.userStatus;
 
@@ -489,25 +556,17 @@ class _AnimeDetailDesktopLayoutState
         ? widget.aniZipData!.episodes.map((e) => e.episodeNumber).toList()
         : List.generate(totalEpisodes ?? 0, (i) => i + 1);
 
-    final dominantColor = parseHexColor(widget.details?.coverColor ?? widget.initialEntry?.coverColor) ?? theme.colorScheme.primary;
-
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: Stack(
         children: [
           // ─── 1. Full-Page Cinematic Backdrop ───
-          ValueListenableBuilder<double>(
-            valueListenable: _scrollProgressNotifier,
-            builder: (context, scrollProgress, _) {
-              return DesktopHeroBanner(
-                bannerUrl: bannerUrl,
-                isBlurredCover: isBlurredCover,
-                scrollProgress: scrollProgress,
-                scaffoldBackgroundColor: theme.scaffoldBackgroundColor,
-                dominantColor: dominantColor,
-                isFullPage: true,
-              );
-            },
+          DesktopHeroBanner(
+            bannerUrl: bannerUrl,
+            isBlurredCover: isBlurredCover,
+            scrollProgressListenable: _scrollProgressNotifier,
+            scaffoldBackgroundColor: theme.scaffoldBackgroundColor,
+            isFullPage: true,
           ),
 
           // ─── 2. Main Scrollable Container (Full width, pushed down to showcase fanart) ───
@@ -518,7 +577,11 @@ class _AnimeDetailDesktopLayoutState
                 // Aligns the bottom edge of the Episode cards row directly with
                 // the bottom line of the app window on the initial fold, giving the top
                 // fanart breathing room and keeping Cast strictly off-screen until scrolled.
-                final topSpacing = (constraints.maxHeight - 660.0).clamp(40.0, 380.0);
+                final baseTopSpacing = (constraints.maxHeight - 610.0).clamp(40.0, 380.0);
+                final extraHeight = _isSynopsisExpanded
+                    ? _calculateExtraSynopsisHeight(description, 740.0)
+                    : 0.0;
+                final effectiveTopSpacing = math.max(16.0, baseTopSpacing - extraHeight);
 
                 return SingleChildScrollView(
                   controller: _scrollController,
@@ -532,7 +595,22 @@ class _AnimeDetailDesktopLayoutState
                         Padding(
                           padding: const EdgeInsets.only(top: 24, bottom: 12),
                           child: M3EIconButton(
-                            variant: M3EIconButtonVariant.tonal,
+                            decoration: M3EIconButtonDecoration(
+                              backgroundColor: WidgetStateProperty.resolveWith((states) {
+                                if (states.contains(WidgetState.pressed)) return Colors.white.withValues(alpha: 0.24);
+                                if (states.contains(WidgetState.hovered) || states.contains(WidgetState.focused)) {
+                                  return Colors.white.withValues(alpha: 0.18);
+                                }
+                                return Colors.white.withValues(alpha: 0.10);
+                              }),
+                              foregroundColor: WidgetStateProperty.all(Colors.white),
+                              side: WidgetStateProperty.all(
+                                BorderSide(
+                                  color: Colors.white.withValues(alpha: 0.18),
+                                  width: 1.0,
+                                ),
+                              ),
+                            ),
                             size: M3EIconButtonSize.sm,
                             icon: Icon(
                               AppIcons.arrowLeft(iconPack),
@@ -545,7 +623,12 @@ class _AnimeDetailDesktopLayoutState
                         ),
 
                         // Breathing space pushing hero header, actions, and episode row down
-                        SizedBox(height: topSpacing),
+                        // Smoothly decreases when synopsis expands so that header flows upwards instead of pushing actions down
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 320),
+                          curve: Curves.easeOutCubic,
+                          height: effectiveTopSpacing,
+                        ),
 
                         // ─── Top Hero Section (Logo, Badges, Genres, Synopsis) ───
                         DesktopHeader(
@@ -553,26 +636,29 @@ class _AnimeDetailDesktopLayoutState
                           clearlogoUrl: clearLogo,
                           isTmdb: isTmdb,
                           seasonYearStr: seasonYearStr,
-                            dateSeasonStr: dateSeasonStr,
-                            title: title,
-                            subtitle: subtitle,
-                            genres: widget.details?.genres ?? widget.initialEntry?.genres ?? [],
-                            description: description,
-                            format: format,
-                            status: status,
-                            userStatus: userStatus,
-                            progress: progress,
-                            score: score,
-                            studio: studio,
-                            totalEpisodes: totalEpisodes,
-                            duration: duration,
-                            onEditStatus: () => widget.onOpenEditEntryModal(title),
-                          ),
+                          dateSeasonStr: dateSeasonStr,
+                          title: title,
+                          subtitle: subtitle,
+                          genres: widget.details?.genres ?? widget.initialEntry?.genres ?? [],
+                          description: description,
+                          isSynopsisExpanded: _isSynopsisExpanded,
+                          onToggleSynopsisExpanded: (val) => setState(() => _isSynopsisExpanded = val),
+                          format: format,
+                          status: status,
+                          userStatus: userStatus,
+                          progress: progress,
+                          score: score,
+                          studio: studio,
+                          totalEpisodes: totalEpisodes,
+                          duration: duration,
+                          onEditStatus: () => widget.onOpenEditEntryModal(title),
+                        ),
 
                         const SizedBox(height: 14),
 
                         // ─── Action Bar (Play, Edit, Share, Trailer, Links & Online/Torrent Toggle) ───
                         DesktopActionBar(
+                          playFocusNode: _playFocusNode,
                           mediaId: widget.mediaId,
                           title: title,
                           progress: progress,
@@ -584,6 +670,7 @@ class _AnimeDetailDesktopLayoutState
                           onlineEnabled: onlineEnabled,
                           torrentEnabled: torrentEnabled,
                           isTmdb: isTmdb,
+                          isMovie: isMovie,
                           userStatus: userStatus,
                           totalEpisodes: totalEpisodes,
                           onPlayNext: () => _handlePlayNext(progress),
@@ -593,6 +680,15 @@ class _AnimeDetailDesktopLayoutState
                           hasLocalFiles: effectiveHasLocal,
                           onToggleLocalMode: widget.onToggleLocalMode,
                           onModeChanged: widget.onModeChanged,
+                          onPlayFocused: () {
+                            if (_scrollController.hasClients && _scrollController.offset > 0) {
+                              _scrollController.animateTo(
+                                0.0,
+                                duration: const Duration(milliseconds: 320),
+                                curve: Curves.easeOutCubic,
+                              );
+                            }
+                          },
                           onDownload: () {
                             final totalEps = widget.details?.totalEpisodes ?? widget.initialEntry?.totalEpisodes;
                             final nextEp = (progress + 1).clamp(1, totalEps ?? (progress + 1));
@@ -600,54 +696,57 @@ class _AnimeDetailDesktopLayoutState
                             widget.onOpenTorrentSelector(
                               episodeNumber: nextEp,
                               episodeTitle: defaultEpTitle,
+                              isDownloadMode: true,
                             );
                           },
                         ),
 
-                        const SizedBox(height: 16),
-
-                        // ─── Episodes Section (Single horizontal row directly underneath actions) ───
-                        if (isTmdb)
-                          EpisodesView(
-                            mediaId: widget.mediaId,
-                            isTmdb: true,
-                            isHorizontal: true,
-                            animeDetails: widget.details,
-                            onOpenTorrentSelector: widget.onOpenTorrentSelector,
-                          )
-                        else
-                          DesktopEpisodesTab(
-                            mediaId: widget.mediaId,
-                            details: widget.details,
-                            aniZipData: widget.aniZipData,
-                            isLoadingAniZip: widget.isLoadingAniZip,
-                            progress: progress,
-                            isLocalMode: widget.isLocalMode,
-                            currentTab: widget.currentTab,
-                            providers: _providers,
-                            selectedProvider: _selectedProvider,
-                            isDubbed: _isDubbed,
-                            onlineEpisodes: _onlineEpisodes,
-                            isLoadingOnlineEpisodes: _isLoadingOnlineEpisodes,
-                            loadingEpisodeNumber: _loadingEpisodeNumber,
-                            fallbackCoverImage: coverUrl,
-                            onProviderChanged: (p) {
-                              if (p != null) {
-                                setState(() => _selectedProvider = p);
-                                SharedPreferences.getInstance().then(
-                                    (prefs) => prefs.setString(_prefLastProviderKey, p.id));
+                        // ─── Episodes Section (Single horizontal row directly underneath actions, skipped for movies) ───
+                        if (!isMovie) ...[
+                          const SizedBox(height: 16),
+                          if (isTmdb)
+                            EpisodesView(
+                              mediaId: widget.mediaId,
+                              isTmdb: true,
+                              isHorizontal: true,
+                              animeDetails: widget.details,
+                              onOpenTorrentSelector: widget.onOpenTorrentSelector,
+                            )
+                          else
+                            DesktopEpisodesTab(
+                              mediaId: widget.mediaId,
+                              details: widget.details,
+                              aniZipData: widget.aniZipData,
+                              isLoadingAniZip: widget.isLoadingAniZip,
+                              progress: progress,
+                              isLocalMode: widget.isLocalMode,
+                              currentTab: widget.currentTab,
+                              providers: _providers,
+                              selectedProvider: _selectedProvider,
+                              isDubbed: _isDubbed,
+                              onlineEpisodes: _onlineEpisodes,
+                              isLoadingOnlineEpisodes: _isLoadingOnlineEpisodes,
+                              loadingEpisodeNumber: _loadingEpisodeNumber,
+                              fallbackCoverImage: coverUrl,
+                              onProviderChanged: (p) {
+                                if (p != null) {
+                                  setState(() => _selectedProvider = p);
+                                  SharedPreferences.getInstance().then(
+                                      (prefs) => prefs.setString(_prefLastProviderKey, p.id));
+                                  _loadOnlineEpisodes();
+                                }
+                              },
+                              onToggleDubbed: () {
+                                setState(() => _isDubbed = !_isDubbed);
                                 _loadOnlineEpisodes();
-                              }
-                            },
-                            onToggleDubbed: () {
-                              setState(() => _isDubbed = !_isDubbed);
-                              _loadOnlineEpisodes();
-                            },
-                            onEpisodeClicked: _onEpisodeClicked,
-                            onToggleLocalMode: widget.onToggleLocalMode,
-                            onTabChanged: widget.onTabChanged,
-                            onOpenTorrentSelector: widget.onOpenTorrentSelector,
-                          ),
+                              },
+                              onEpisodeClicked: _onEpisodeClicked,
+                              onToggleLocalMode: widget.onToggleLocalMode,
+                              onTabChanged: widget.onTabChanged,
+                              onMoveUpToPlay: () => _playFocusNode.requestFocus(),
+                              onOpenTorrentSelector: widget.onOpenTorrentSelector,
+                            ),
+                        ],
 
                         // ─── Cast / Characters Section (Directly underneath episodes) ───
                         () {
@@ -656,7 +755,7 @@ class _AnimeDetailDesktopLayoutState
                               const [];
                           if (charList.isEmpty) return const SizedBox.shrink();
                           return Padding(
-                            padding: const EdgeInsets.only(top: 48),
+                            padding: const EdgeInsets.only(top: 20),
                             child: DesktopCastRow(
                               characters: charList,
                               isTmdb: isTmdb,

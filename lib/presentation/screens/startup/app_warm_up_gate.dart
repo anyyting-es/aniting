@@ -161,19 +161,22 @@ class _AppWarmUpGateState extends ConsumerState<AppWarmUpGate>
     final theme = Theme.of(context);
     final l10n = ref.watch(translationsProvider);
 
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 350),
-      switchInCurve: Curves.easeOutCubic,
-      switchOutCurve: Curves.easeInCubic,
-      transitionBuilder: (child, animation) {
-        return FadeTransition(
-          opacity: animation,
-          child: child,
-        );
-      },
-      child: _isWarmedUp
-          ? const MainShell(key: ValueKey('main_shell_warmed'))
-          : _buildSplash(context, theme, l10n),
+    return ColoredBox(
+      color: theme.scaffoldBackgroundColor,
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 350),
+        switchInCurve: Curves.easeOutCubic,
+        switchOutCurve: Curves.easeInCubic,
+        transitionBuilder: (child, animation) {
+          return FadeTransition(
+            opacity: animation,
+            child: child,
+          );
+        },
+        child: _isWarmedUp
+            ? const MainShell(key: ValueKey('main_shell_warmed'))
+            : _buildSplash(context, theme, l10n),
+      ),
     );
   }
 

@@ -74,6 +74,8 @@ class SeanimeServerService : Service() {
 
     override fun onDestroy() {
         releaseWakeLock()
+        lanForwarder?.stop()
+        lanForwarder = null
         super.onDestroy()
     }
 

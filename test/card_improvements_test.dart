@@ -87,8 +87,8 @@ void main() {
     });
   });
 
-  group('MangaCard Status and Year Tests', () {
-    testWidgets('displays formatted status and year with high contrast', (tester) async {
+  group('MangaCard Clean Title-Only Tests', () {
+    testWidgets('displays title cleanly without year or status clutter', (tester) async {
       final entry = MangaEntry(
         id: 10,
         mediaId: 501,
@@ -111,9 +111,9 @@ void main() {
       await tester.pump();
 
       expect(find.text('Chainsaw Man'), findsOneWidget);
-      // Formatted status instead of raw uppercase RELEASING
-      expect(find.textContaining('En emisión'), findsOneWidget);
-      expect(find.textContaining('2018'), findsOneWidget);
+      // Clean title-only style: year and status removed
+      expect(find.textContaining('En emisión'), findsNothing);
+      expect(find.textContaining('2018'), findsNothing);
     });
   });
 

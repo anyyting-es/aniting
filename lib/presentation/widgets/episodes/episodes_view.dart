@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
+import 'package:seanime_app/core/preferences/playback_progress_preferences_provider.dart';
 import 'package:seanime_app/data/models/anime_details.dart';
 import 'package:seanime_app/data/models/anizip_data.dart';
 import 'package:seanime_app/data/models/tmdb_models.dart';
@@ -39,6 +40,9 @@ class EpisodesView extends ConsumerStatefulWidget {
 }
 
 class _EpisodesViewState extends ConsumerState<EpisodesView> {
+  final ScrollController _horizontalScrollController = ScrollController();
+  bool _hasAutoScrolled = false;
+
   @override
   void initState() {
     super.initState();
@@ -48,13 +52,78 @@ class _EpisodesViewState extends ConsumerState<EpisodesView> {
   }
 
   @override
+  void dispose() {
+    _horizontalScrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   void didUpdateWidget(covariant EpisodesView oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.mediaId != widget.mediaId) {
+      _hasAutoScrolled = false;
+    }
     if (oldWidget.mediaId != widget.mediaId ||
         oldWidget.animeDetails != widget.animeDetails ||
         oldWidget.aniZipData != widget.aniZipData ||
         oldWidget.tmdbDetails != widget.tmdbDetails) {
       _triggerLoad();
+    }
+  }
+
+  void _scheduleAutoScrollToTarget(
+    List<dynamic> episodes,
+    Map<String, EpisodePlaybackProgress> playbackMap,
+  ) {
+    if (_hasAutoScrolled || episodes.isEmpty || !widget.isHorizontal) return;
+
+    final mediaProgress = playbackMap[widget.mediaId.toString()];
+    int targetNumber = 1;
+
+    if (mediaProgress != null &&
+        mediaProgress.durationMs > 0 &&
+        mediaProgress.positionMs > 0) {
+      final fraction = mediaProgress.positionMs / mediaProgress.durationMs;
+      if (fraction > 0.02 && fraction < 0.95) {
+        targetNumber = mediaProgress.episodeNumber;
+      } else if (fraction >= 0.95) {
+        targetNumber = mediaProgress.episodeNumber + 1;
+      }
+    }
+
+    final totalCount = episodes.length;
+    if (targetNumber > totalCount) {
+      targetNumber = 1;
+    }
+
+    int targetIndex = episodes.indexWhere((e) {
+      final num = (e is Map ? e['episode_number'] : (e as dynamic).number) as int?;
+      return num == targetNumber;
+    });
+
+    if (targetIndex < 0) {
+      targetIndex = 0;
+    }
+
+    _hasAutoScrolled = true;
+    if (targetIndex > 0) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !_horizontalScrollController.hasClients) return;
+        const cardWidth = 365.0;
+        const separatorWidth = 18.0;
+        const step = cardWidth + separatorWidth;
+        final targetOffset = targetIndex * step;
+        final maxOffset = _horizontalScrollController.position.maxScrollExtent;
+        final finalOffset = targetOffset.clamp(0.0, maxOffset);
+
+        if (finalOffset > 0 && mounted && _horizontalScrollController.hasClients) {
+          _horizontalScrollController.animateTo(
+            finalOffset,
+            duration: const Duration(milliseconds: 650),
+            curve: Curves.easeOutCubic,
+          );
+        }
+      });
     }
   }
 
@@ -248,9 +317,13 @@ class _EpisodesViewState extends ConsumerState<EpisodesView> {
     List<dynamic> episodes,
     EpisodesNotifier controller,
   ) {
+    final playbackMap = ref.watch(playbackProgressPreferencesProvider);
+    _scheduleAutoScrollToTarget(episodes, playbackMap);
+
     return SizedBox(
       height: 272,
       child: ListView.separated(
+        controller: _horizontalScrollController,
         scrollDirection: Axis.horizontal,
         physics: const BouncingScrollPhysics(),
         itemCount: episodes.length,

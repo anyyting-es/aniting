@@ -79,8 +79,9 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	useCompletedFile := false
 	downloadDir := h.repository.GetDownloadDir()
 	torrent := h.repository.client.currentTorrent.MustGet()
+	var completedPath string
 	if downloadDir != "" && torrent != nil && file.Length() > 0 {
-		completedPath := filepath.Join(downloadDir, torrent.InfoHash().HexString(), filepath.FromSlash(file.Path()))
+		completedPath = filepath.Join(downloadDir, torrent.InfoHash().HexString(), filepath.FromSlash(file.Path()))
 		if info, err := os.Stat(completedPath); err == nil && !info.IsDir() && info.Size() == file.Length() {
 			if reader, err := os.Open(completedPath); err == nil {
 				tr = reader
@@ -93,6 +94,9 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if !useCompletedFile {
 		h.repository.logger.Trace().Str("file", file.DisplayPath()).Msg("torrentstream: New reader")
 		reader := torrentutil.NewReadSeeker(torrent, file, h.repository.logger)
+		if completedPath != "" {
+			reader.SetCompletedPath(completedPath)
+		}
 		reader.SetContext(r.Context())
 		tr = reader
 

@@ -1,7 +1,9 @@
+import 'dart:ui';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
+import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:seanime_app/core/preferences/layout_mode_provider.dart';
 import 'package:seanime_app/core/theme/custom_route_transitions.dart';
@@ -16,6 +18,7 @@ import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/preferences/tmdb_preferences_provider.dart';
 import 'package:seanime_app/data/services/tmdb_service.dart';
 import 'package:seanime_app/data/services/tmdb_mapping_service.dart';
+import 'package:seanime_app/data/services/custom_anime_assets_service.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/providers/download_history_provider.dart';
 import 'package:seanime_app/presentation/screens/video_player_screen.dart';
@@ -161,7 +164,9 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
             (libEntryCache.hasLibraryData ||
                 libEntryCache.episodes.any((e) => e.isDownloaded))) {
           _hasLocalFiles = true;
-          _isLocalMode = true;
+          if (widget.initialLocalMode) {
+            _isLocalMode = true;
+          }
         }
       }
 
@@ -172,7 +177,9 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
             item.filePath != null &&
             item.filePath!.isNotEmpty)) {
           _hasLocalFiles = true;
-          _isLocalMode = true;
+          if (widget.initialLocalMode) {
+            _isLocalMode = true;
+          }
         }
       }
 
@@ -192,7 +199,7 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
             _isLocalMode = false;
             _currentTab = AnimeDetailTab.online;
           }
-        } else if (_hasLocalFiles || widget.initialLocalMode) {
+        } else if (widget.initialLocalMode) {
           _isLocalMode = true;
         } else if (globalSaved != null) {
           if (globalSaved == 'torrent') {
@@ -232,6 +239,16 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
       }
       _isLoading = true;
 
+      final customAssets = CustomAnimeAssetsService.getAssets(widget.mediaId);
+      if (customAssets != null) {
+        if (customAssets.logo != null && customAssets.logo!.isNotEmpty) {
+          _resolvedLogoUrl = customAssets.logo;
+        }
+        if (customAssets.background != null && customAssets.background!.isNotEmpty) {
+          _resolvedBannerUrl = customAssets.background;
+        }
+      }
+
       final cachedAniZip = repo.getCachedAniZipData(widget.mediaId);
       if (cachedAniZip != null) {
         _aniZipData = cachedAniZip;
@@ -243,15 +260,21 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
             ? mapping.tvdbId
             : cachedAniZip.mappings?.thetvdbId;
         final tmdbId = mapping?.tmdbId ?? parsedTmdb ?? (isTmdbMedia ? widget.mediaId : null);
-        if (tmdbId != null || tvdb != null) {
+        if ((_resolvedLogoUrl == null || _resolvedBannerUrl == null) && (tmdbId != null || tvdb != null)) {
           final isMovie = mapping?.isMovie ??
               ((widget.initialEntry?.format?.toUpperCase() == 'MOVIE') ||
                   (cachedDetails?.format?.toUpperCase() == 'MOVIE'));
-          final cachedAssets = TmdbService.getCachedAssets(tmdbId ?? 0, isMovie, tvdbId: tvdb);
-          if (cachedAssets?.logoUrl != null && cachedAssets!.logoUrl!.isNotEmpty) {
+          final currentLang = ref.read(appLanguageProvider).code;
+          final cachedAssets = TmdbService.getCachedAssets(
+            tmdbId ?? 0,
+            isMovie,
+            tvdbId: tvdb,
+            language: currentLang,
+          );
+          if (_resolvedLogoUrl == null && cachedAssets?.logoUrl != null && cachedAssets!.logoUrl!.isNotEmpty) {
             _resolvedLogoUrl = cachedAssets.logoUrl;
           }
-          if (cachedAssets?.backdropUrl != null && cachedAssets!.backdropUrl!.isNotEmpty) {
+          if (_resolvedBannerUrl == null && cachedAssets?.backdropUrl != null && cachedAssets!.backdropUrl!.isNotEmpty) {
             _resolvedBannerUrl = cachedAssets.backdropUrl;
           }
         }
@@ -282,7 +305,7 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
               _isLocalMode = false;
               _currentTab = AnimeDetailTab.online;
             }
-          } else if (_hasLocalFiles || widget.initialLocalMode) {
+          } else if (widget.initialLocalMode) {
             _isLocalMode = true;
           } else if (globalSaved != null) {
             if (globalSaved == 'torrent') {
@@ -363,6 +386,7 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
         tmdbService.getMediaAssets(
           tmdbId: widget.mediaId,
           isMovie: isMovie,
+          language: lang,
         ),
       ]);
       final showDetails = results[0] as TmdbShowDetails?;
@@ -376,7 +400,9 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
       if (!mounted) return;
       if (logo != null && logo.isNotEmpty) {
         try {
-          await precacheImage(CachedNetworkImageProvider(logo), context);
+          if (!logo.toLowerCase().contains('.svg')) {
+            await precacheImage(CachedNetworkImageProvider(logo), context);
+          }
         } catch (_) {}
       }
       if (!mounted) return;
@@ -444,21 +470,34 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
     String? resolvedLogo;
     String? resolvedBanner;
 
-    // Resolve TMDB assets (logo + backdrop) all at once BEFORE setState – zero visual updates after paint.
-    if (effectiveTmdbId != null || tvdbId != null) {
+    // 0. Curated Local MiniDB assets (highest priority, season-accurate)
+    final customAssets = CustomAnimeAssetsService.getAssets(widget.mediaId);
+    if (customAssets != null) {
+      if (customAssets.logo != null && customAssets.logo!.isNotEmpty) {
+        resolvedLogo = customAssets.logo;
+      }
+      if (customAssets.background != null && customAssets.background!.isNotEmpty) {
+        resolvedBanner = customAssets.background;
+      }
+    }
+
+    // Resolve TMDB assets (logo + backdrop) if not already resolved by custom database
+    if ((resolvedLogo == null || resolvedBanner == null) && (effectiveTmdbId != null || tvdbId != null)) {
       try {
         final apiKey = ref.read(tmdbApiKeyProvider);
+        final currentLang = ref.read(appLanguageProvider).code;
         final tmdbService = TmdbService(apiKey: apiKey);
         final assets = await tmdbService.getMediaAssets(
           tmdbId: effectiveTmdbId,
           tvdbId: tvdbId,
           isMovie: isMovie,
+          language: currentLang,
         );
         if (assets != null) {
-          if (assets.logoUrl != null && assets.logoUrl!.isNotEmpty) {
+          if (resolvedLogo == null && assets.logoUrl != null && assets.logoUrl!.isNotEmpty) {
             resolvedLogo = assets.logoUrl;
           }
-          if (assets.backdropUrl != null && assets.backdropUrl!.isNotEmpty) {
+          if (resolvedBanner == null && assets.backdropUrl != null && assets.backdropUrl!.isNotEmpty) {
             resolvedBanner = assets.backdropUrl;
           }
         }
@@ -510,9 +549,6 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
         _isLoadingAniZip = false;
         if (hasDownloadedFiles) {
           _hasLocalFiles = true;
-          if (!_userManuallyChangedMode && !_isLocalMode && _currentTab == AnimeDetailTab.online) {
-            _isLocalMode = true;
-          }
         }
       });
   }
@@ -688,77 +724,174 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
             ? M3EThemeData.dark(seedColor: effectiveTheme.colorScheme.primary)
             : M3EThemeData.light(seedColor: effectiveTheme.colorScheme.primary),
         child: Builder(
-        builder: (context) {
-          // ─── Full-screen loading gate ───────────────────────────────────────
-          // Show the spinner until ALL async data (details + logo + banner) is
-          // fully resolved. The layout renders ONCE with complete data – zero
-          // image swaps or position jumps after the first frame.
-          if (_isLoading) {
-            return Scaffold(
-              backgroundColor: effectiveTheme.scaffoldBackgroundColor,
-              body: Center(
-                child: M3ELoadingIndicator(
-                  variant: M3ELoadingIndicatorVariant.contained,
-                  size: 48,
-                  color: effectiveTheme.colorScheme.tertiary,
-                ),
+          builder: (context) {
+            final repo = ref.read(repositoryProvider);
+            final hexColor = _details?.coverColor ??
+                widget.initialEntry?.coverColor ??
+                repo.getCachedAnimeDetails(widget.mediaId)?.coverColor ??
+                ref.read(animeCollectionProvider).asData?.value
+                    .where((e) => e.mediaId == widget.mediaId)
+                    .firstOrNull
+                    ?.coverColor;
+            final animeAccentColor = parseHexColor(hexColor) ?? effectiveTheme.colorScheme.primary;
+
+            return ColoredBox(
+              color: effectiveTheme.scaffoldBackgroundColor,
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 450),
+                reverseDuration: const Duration(milliseconds: 380),
+                switchInCurve: Curves.easeOutCubic,
+                switchOutCurve: Curves.easeInCubic,
+                transitionBuilder: (child, animation) {
+                  return FadeTransition(
+                    opacity: animation,
+                    child: child,
+                  );
+                },
+                child: _isLoading
+                    ? _buildLoadingGate(effectiveTheme, animeAccentColor)
+                    : _buildContent(effectiveLayout, effectiveHasLocal),
               ),
             );
-          }
-
-          switch (effectiveLayout) {
-            case LayoutMode.desktop:
-            case LayoutMode.tv:
-              return AnimeDetailDesktopLayout(
-                mediaId: widget.mediaId,
-                initialEntry: widget.initialEntry,
-                heroTag: widget.heroTag,
-                details: _details,
-                aniZipData: _aniZipData,
-                resolvedLogoUrl: _resolvedLogoUrl,
-                resolvedBannerUrl: _resolvedBannerUrl,
-                isLoading: false,
-                isLoadingAniZip: _isLoadingAniZip,
-                isLocalMode: _isLocalMode,
-                hasLocalFiles: effectiveHasLocal,
-                currentTab: _currentTab,
-                onToggleLocalMode: _toggleLocalMode,
-                onTabChanged: _changeTab,
-                onModeChanged: _selectMode,
-                onOpenEditEntryModal: _openEditEntryModal,
-                onRetryAniZip: _retryAniZip,
-                onOpenTorrentSelector: _openTorrentSelector,
-                onOpenDetailsModal: _openDetailsModal,
-              );
-
-            case LayoutMode.auto:
-            case LayoutMode.mobile:
-              return Scaffold(
-                extendBodyBehindAppBar: true,
-                body: AnimeDetailMobileLayout(
-                  mediaId: widget.mediaId,
-                  initialEntry: widget.initialEntry,
-                  heroTag: widget.heroTag,
-                  details: _details,
-                  aniZipData: _aniZipData,
-                  isLoading: false,
-                  isLoadingAniZip: _isLoadingAniZip,
-                  isLocalMode: _isLocalMode,
-                  hasLocalFiles: effectiveHasLocal,
-                  currentTab: _currentTab,
-                  scrollController: _scrollController,
-                  onToggleLocalMode: _toggleLocalMode,
-                  onTabChanged: _changeTab,
-                  onOpenEditEntryModal: _openEditEntryModal,
-                  onRetryAniZip: _retryAniZip,
-                  onOpenTorrentSelector: _openTorrentSelector,
-                  onOpenDetailsModal: _openDetailsModal,
-                ),
-              );
-          }
-        },
-      ),
+          },
+        ),
       ),
     );
+  }
+
+  Widget _buildLoadingGate(ThemeData effectiveTheme, Color animeAccentColor) {
+    final repo = ref.read(repositoryProvider);
+    final posterUrl = widget.initialEntry?.coverImage ??
+        _details?.coverImage ??
+        repo.getCachedAnimeDetails(widget.mediaId)?.coverImage ??
+        ref.read(animeCollectionProvider).asData?.value
+            .where((e) => e.mediaId == widget.mediaId)
+            .firstOrNull
+            ?.coverImage;
+
+    final isDark = effectiveTheme.brightness == Brightness.dark;
+
+    return Scaffold(
+      key: const ValueKey('anime_loading_gate'),
+      backgroundColor: effectiveTheme.scaffoldBackgroundColor,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          // ─── 1. Full-screen Blurred Poster Backdrop ───
+          if (posterUrl != null && posterUrl.isNotEmpty)
+            Positioned.fill(
+              child: ImageFiltered(
+                imageFilter: ImageFilter.blur(sigmaX: 45.0, sigmaY: 45.0),
+                child: Transform.scale(
+                  scale: 1.15, // Prevents edge blur vignetting
+                  child: CachedNetworkImage(
+                    imageUrl: posterUrl,
+                    fit: BoxFit.cover,
+                    fadeInDuration: const Duration(milliseconds: 200),
+                    fadeOutDuration: Duration.zero,
+                    errorWidget: (_, _, _) => const SizedBox.shrink(),
+                  ),
+                ),
+              ),
+            ),
+
+          // ─── 2. Darkness & Tint Overlay for Contrast ───
+          Positioned.fill(
+            child: Container(
+              color: (isDark ? Colors.black : effectiveTheme.scaffoldBackgroundColor)
+                  .withValues(alpha: isDark ? 0.65 : 0.50),
+            ),
+          ),
+
+          // ─── 3. Center Spinner with AniList dynamic anime theme color ───
+          Center(
+            child: M3ELoadingIndicator(
+              variant: M3ELoadingIndicatorVariant.contained,
+              size: 52,
+              color: animeAccentColor,
+            ),
+          ),
+
+          // ─── 4. Top-Left Back Button (Always allow exiting during load) ───
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 16,
+            left: 24,
+            child: Focus(
+              skipTraversal: true,
+              canRequestFocus: false,
+              descendantsAreFocusable: false,
+              child: M3EIconButton(
+                variant: M3EIconButtonVariant.tonal,
+                size: M3EIconButtonSize.sm,
+                tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+                icon: Icon(
+                  AppIcons.arrowLeft(ref.watch(iconPackProvider)),
+                  color: Colors.white,
+                  size: 20,
+                ),
+                onPressed: () => Navigator.maybePop(context),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContent(LayoutMode effectiveLayout, bool effectiveHasLocal) {
+    switch (effectiveLayout) {
+      case LayoutMode.desktop:
+      case LayoutMode.tv:
+        return KeyedSubtree(
+          key: const ValueKey('anime_detail_content_desktop'),
+          child: AnimeDetailDesktopLayout(
+            mediaId: widget.mediaId,
+            initialEntry: widget.initialEntry,
+            heroTag: widget.heroTag,
+            details: _details,
+            aniZipData: _aniZipData,
+            resolvedLogoUrl: _resolvedLogoUrl,
+            resolvedBannerUrl: _resolvedBannerUrl,
+            isLoading: false,
+            isLoadingAniZip: _isLoadingAniZip,
+            isLocalMode: _isLocalMode,
+            hasLocalFiles: effectiveHasLocal,
+            currentTab: _currentTab,
+            onToggleLocalMode: _toggleLocalMode,
+            onTabChanged: _changeTab,
+            onModeChanged: _selectMode,
+            onOpenEditEntryModal: _openEditEntryModal,
+            onRetryAniZip: _retryAniZip,
+            onOpenTorrentSelector: _openTorrentSelector,
+            onOpenDetailsModal: _openDetailsModal,
+          ),
+        );
+
+      case LayoutMode.auto:
+      case LayoutMode.mobile:
+        return Scaffold(
+          key: const ValueKey('anime_detail_content_mobile'),
+          extendBodyBehindAppBar: true,
+          body: AnimeDetailMobileLayout(
+            mediaId: widget.mediaId,
+            initialEntry: widget.initialEntry,
+            heroTag: widget.heroTag,
+            details: _details,
+            aniZipData: _aniZipData,
+            isLoading: false,
+            isLoadingAniZip: _isLoadingAniZip,
+            isLocalMode: _isLocalMode,
+            hasLocalFiles: effectiveHasLocal,
+            currentTab: _currentTab,
+            scrollController: _scrollController,
+            onToggleLocalMode: _toggleLocalMode,
+            onTabChanged: _changeTab,
+            onOpenEditEntryModal: _openEditEntryModal,
+            onRetryAniZip: _retryAniZip,
+            onOpenTorrentSelector: _openTorrentSelector,
+            onOpenDetailsModal: _openDetailsModal,
+          ),
+        );
+    }
   }
 }

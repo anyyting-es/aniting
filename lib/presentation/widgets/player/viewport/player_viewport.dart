@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:seanime_app/core/player/mpv/mpv.dart' as mpv;
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
@@ -139,9 +140,8 @@ class PlayerViewport extends ConsumerWidget {
     final iconPack = ref.watch(iconPackProvider);
     final subStyle = ref.watch(subtitleStylePreferencesProvider);
 
-    final isNativePlayer = isUsingExoPlayer || mpvPlayerService != null;
     return ColoredBox(
-      color: isNativePlayer ? Colors.transparent : Colors.black,
+      color: Colors.transparent,
       child: Stack(
         fit: StackFit.expand,
         children: [
@@ -154,6 +154,7 @@ class PlayerViewport extends ConsumerWidget {
                         child: RepaintBoundary(
                           child: mpv.Video(
                             player: mpvPlayerService!.player,
+                            backgroundColor: Colors.transparent,
                           ),
                         ),
                       )
@@ -185,12 +186,13 @@ class PlayerViewport extends ConsumerWidget {
             ),
           ),
 
-          // 3. Center Buffering / Next Episode Loading Indicator
+          // 3. Center Buffering / Next Episode Loading Indicator (Material 3 Expressive Morphing Indicator)
           if (isBuffering || isLoadingNextEpisode)
             Center(
-              child: CircularProgressIndicator(
-                color: primaryColor,
-                strokeWidth: 3.5,
+              child: M3ELoadingIndicator(
+                variant: M3ELoadingIndicatorVariant.contained,
+                size: 52,
+                color: theme.colorScheme.tertiary,
               ),
             ),
 

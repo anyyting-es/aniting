@@ -274,6 +274,8 @@ class _TorrentSelectorDialogState extends ConsumerState<TorrentSelectorDialog> {
       if (!success) {
         ref.read(downloadingEpisodesProvider.notifier).remove(widget.mediaId, epNum);
         AppToast.error(l10n.error);
+      } else {
+        AppToast.success(l10n.downloadStarted);
       }
     } catch (e) {
       ref.read(downloadingEpisodesProvider.notifier).remove(widget.mediaId, epNum);

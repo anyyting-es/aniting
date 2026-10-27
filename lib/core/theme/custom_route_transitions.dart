@@ -144,7 +144,7 @@ class WebPageRoute<T> extends PageRouteBuilder<T> {
   WebPageRoute({
     required this.child,
     super.settings,
-    super.opaque,
+    super.opaque = true,
   }) : super(
           pageBuilder: (context, animation, secondaryAnimation) => child,
           transitionDuration: kM3EnterDuration,
@@ -165,7 +165,7 @@ class SmoothPageRoute<T> extends WebPageRoute<T> {
   SmoothPageRoute({
     required super.child,
     super.settings,
-    super.opaque,
+    super.opaque = true,
   });
 }
 
@@ -177,7 +177,7 @@ class SlideRightToLeftPageRoute<T> extends PageRouteBuilder<T> {
   SlideRightToLeftPageRoute({
     required this.child,
     super.settings,
-    super.opaque,
+    super.opaque = true,
   }) : super(
           pageBuilder: (context, animation, secondaryAnimation) => child,
           transitionDuration: const Duration(milliseconds: 280),

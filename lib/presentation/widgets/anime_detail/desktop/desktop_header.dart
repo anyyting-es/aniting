@@ -1,7 +1,9 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
+import 'package:seanime_app/core/icons/app_icons.dart';
 
 class DesktopHeader extends ConsumerStatefulWidget {
   final String? clearlogoUrl;
@@ -11,6 +13,8 @@ class DesktopHeader extends ConsumerStatefulWidget {
   final String? subtitle;
   final List<String> genres;
   final String description;
+  final bool? isSynopsisExpanded;
+  final ValueChanged<bool>? onToggleSynopsisExpanded;
   final String? format;
   final String? status;
   final String? userStatus;
@@ -31,6 +35,8 @@ class DesktopHeader extends ConsumerStatefulWidget {
     this.subtitle,
     required this.genres,
     required this.description,
+    this.isSynopsisExpanded,
+    this.onToggleSynopsisExpanded,
     this.format,
     this.status,
     this.userStatus,
@@ -49,12 +55,67 @@ class DesktopHeader extends ConsumerStatefulWidget {
 
 class _DesktopHeaderState extends ConsumerState<DesktopHeader> {
   bool _isSynopsisExpanded = false;
+  bool _logoLoadFailed = false;
+
+  @override
+  void didUpdateWidget(covariant DesktopHeader oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.clearlogoUrl != widget.clearlogoUrl) {
+      _logoLoadFailed = false;
+    }
+  }
+
+  Widget _buildLogo(String url) {
+    final isSvg = url.toLowerCase().contains('.svg');
+    if (isSvg) {
+      return SvgPicture.network(
+        url,
+        fit: BoxFit.contain,
+        alignment: Alignment.bottomLeft,
+        placeholderBuilder: (_) => const SizedBox.shrink(),
+        errorBuilder: (context, error, stackTrace) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted && !_logoLoadFailed) {
+              setState(() => _logoLoadFailed = true);
+            }
+          });
+          return const SizedBox.shrink();
+        },
+      );
+    }
+
+    return CachedNetworkImage(
+      imageUrl: url,
+      fit: BoxFit.contain,
+      alignment: Alignment.bottomLeft,
+      fadeInDuration: Duration.zero,
+      fadeOutDuration: Duration.zero,
+      placeholderFadeInDuration: Duration.zero,
+      memCacheHeight: 240,
+      maxHeightDiskCache: 240,
+      placeholder: (_, _) => const SizedBox.shrink(),
+      errorWidget: (_, _, _) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && !_logoLoadFailed) {
+            setState(() => _logoLoadFailed = true);
+          }
+        });
+        return const SizedBox.shrink();
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final l10n = ref.watch(translationsProvider);
+    final iconPack = ref.watch(iconPackProvider);
+
+    final effectiveExpanded = widget.isSynopsisExpanded ?? _isSynopsisExpanded;
+    final cleanDesc = widget.description
+        .replaceAll(RegExp(r'(\r?\n\s*){2,}'), '\n\n')
+        .trim();
 
     final metaColor = isDark ? Colors.white.withValues(alpha: 0.85) : theme.colorScheme.onSurface;
     final descColor = isDark ? Colors.white.withValues(alpha: 0.75) : theme.colorScheme.onSurfaceVariant;
@@ -93,7 +154,7 @@ class _DesktopHeaderState extends ConsumerState<DesktopHeader> {
         ? (widget.score! > 10 ? '${widget.score!.round()}%' : widget.score!.toStringAsFixed(1))
         : null;
 
-    final hasClearLogo = widget.clearlogoUrl != null && widget.clearlogoUrl!.isNotEmpty;
+    final showLogo = !_logoLoadFailed && widget.clearlogoUrl != null && widget.clearlogoUrl!.isNotEmpty;
 
     return SizedBox(
       width: double.infinity,
@@ -103,7 +164,7 @@ class _DesktopHeaderState extends ConsumerState<DesktopHeader> {
         mainAxisSize: MainAxisSize.min,
         children: [
           // ─── 1. Clear Logo or Text Title ───
-          if (hasClearLogo) ...[
+          if (showLogo) ...[
             SizedBox(
               height: 120,
               child: Align(
@@ -113,18 +174,7 @@ class _DesktopHeaderState extends ConsumerState<DesktopHeader> {
                     maxHeight: 120,
                     maxWidth: 480,
                   ),
-                  child: CachedNetworkImage(
-                    imageUrl: widget.clearlogoUrl!,
-                    fit: BoxFit.contain,
-                    alignment: Alignment.bottomLeft,
-                    fadeInDuration: Duration.zero,
-                    fadeOutDuration: Duration.zero,
-                    placeholderFadeInDuration: Duration.zero,
-                    memCacheHeight: 240,
-                    maxHeightDiskCache: 240,
-                    placeholder: (_, _) => const SizedBox.shrink(),
-                    errorWidget: (_, _, _) => const SizedBox.shrink(),
-                  ),
+                  child: _buildLogo(widget.clearlogoUrl!),
                 ),
               ),
             ),
@@ -320,37 +370,68 @@ class _DesktopHeaderState extends ConsumerState<DesktopHeader> {
         ],
 
         // ─── 4. Expandable Synopsis ───
-        if (widget.description.isNotEmpty) ...[
+        if (cleanDesc.isNotEmpty) ...[
           const SizedBox(height: 14),
           ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 740),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  widget.description,
-                  maxLines: _isSynopsisExpanded ? null : 3,
-                  overflow: _isSynopsisExpanded ? TextOverflow.visible : TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 14.5,
-                    height: 1.45,
-                    color: descColor,
-                    shadows: textShadows,
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 320),
+                  curve: Curves.easeOutCubic,
+                  alignment: Alignment.topLeft,
+                  child: Text(
+                    cleanDesc,
+                    maxLines: effectiveExpanded ? null : 3,
+                    overflow: effectiveExpanded ? TextOverflow.visible : TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 14.5,
+                      height: 1.40,
+                      color: descColor,
+                      shadows: textShadows,
+                    ),
                   ),
                 ),
-                if (widget.description.length > 160) ...[
-                  const SizedBox(height: 4),
-                  InkWell(
-                    onTap: () => setState(() => _isSynopsisExpanded = !_isSynopsisExpanded),
-                    borderRadius: BorderRadius.circular(4),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 2),
-                      child: Text(
-                        _isSynopsisExpanded ? '${l10n.synopsisLess} ▲' : '${l10n.synopsisMore} ▼',
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white.withValues(alpha: 0.65),
+                if (cleanDesc.length > 160) ...[
+                  const SizedBox(height: 6),
+                  Focus(
+                    skipTraversal: true,
+                    canRequestFocus: false,
+                    descendantsAreFocusable: false,
+                    child: InkWell(
+                      canRequestFocus: false,
+                      onTap: () {
+                        if (widget.onToggleSynopsisExpanded != null) {
+                          widget.onToggleSynopsisExpanded!(!effectiveExpanded);
+                        } else {
+                          setState(() => _isSynopsisExpanded = !_isSynopsisExpanded);
+                        }
+                      },
+                      borderRadius: BorderRadius.circular(4),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Text(
+                              effectiveExpanded ? l10n.synopsisLess : l10n.synopsisMore,
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white.withValues(alpha: 0.75),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Icon(
+                              effectiveExpanded
+                                  ? AppIcons.chevronUp(iconPack)
+                                  : AppIcons.chevronDown(iconPack),
+                              size: 15,
+                              color: Colors.white.withValues(alpha: 0.75),
+                            ),
+                          ],
                         ),
                       ),
                     ),

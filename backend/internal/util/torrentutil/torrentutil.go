@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	httputil "seanime/internal/util/http"
 	"sync"
 	"sync/atomic"
@@ -170,6 +171,11 @@ func (pm *priorityManager) unregisterReader(readerID string) {
 // updatePriorities recalculates piece priorities based on all active readers
 func (pm *priorityManager) updatePriorities() {
 	if pm.torrent == nil || pm.file == nil || pm.torrent.Info() == nil {
+		return
+	}
+
+	// If the entire file is already completed, no need to waste cycles prioritizing
+	if pm.file.Length() > 0 && pm.file.BytesCompleted() >= pm.file.Length() {
 		return
 	}
 
@@ -369,6 +375,8 @@ type ReadSeeker struct {
 	mu              sync.Mutex
 	closeOnce       sync.Once
 	closeErr        error
+	completedPath   string
+	diskReader      *os.File
 }
 
 var _ io.ReadSeekCloser = &ReadSeeker{}
@@ -407,12 +415,52 @@ func NewReadSeeker(t *torrent.Torrent, file *torrent.File, logger ...*zerolog.Lo
 	return rs
 }
 
+func (rs *ReadSeeker) SetCompletedPath(path string) {
+	rs.mu.Lock()
+	defer rs.mu.Unlock()
+	rs.completedPath = path
+	rs.tryPromoteToDiskReaderLocked()
+}
+
+func (rs *ReadSeeker) tryPromoteToDiskReaderLocked() {
+	if rs.diskReader != nil || rs.completedPath == "" || rs.file == nil {
+		return
+	}
+	if rs.file.Length() <= 0 || rs.file.BytesCompleted() < rs.file.Length() {
+		return
+	}
+	if info, err := os.Stat(rs.completedPath); err == nil && !info.IsDir() && info.Size() == rs.file.Length() {
+		if f, err := os.Open(rs.completedPath); err == nil {
+			curPos := rs.position.Load()
+			if _, err := f.Seek(curPos, io.SeekStart); err == nil {
+				rs.diskReader = f
+				if rs.logger != nil {
+					rs.logger.Debug().Str("path", rs.completedPath).Msg("torrentutil: Promoted stream to direct disk file I/O")
+				}
+			} else {
+				_ = f.Close()
+			}
+		}
+	}
+}
+
 func (rs *ReadSeeker) SetContext(ctx context.Context) {
 	rs.reader.SetContext(ctx)
 }
 
 func (rs *ReadSeeker) Read(p []byte) (n int, err error) {
 	rs.mu.Lock()
+	if rs.diskReader == nil {
+		rs.tryPromoteToDiskReaderLocked()
+	}
+	if rs.diskReader != nil {
+		n, err = rs.diskReader.Read(p)
+		rs.mu.Unlock()
+		if n > 0 {
+			rs.position.Add(int64(n))
+		}
+		return n, err
+	}
 	n, err = rs.reader.Read(p)
 	rs.mu.Unlock()
 	if n > 0 {
@@ -429,8 +477,23 @@ func (rs *ReadSeeker) Read(p []byte) (n int, err error) {
 
 func (rs *ReadSeeker) Seek(offset int64, whence int) (int64, error) {
 	rs.mu.Lock()
+	defer rs.mu.Unlock()
+	if rs.diskReader == nil {
+		rs.tryPromoteToDiskReaderLocked()
+	}
+	if rs.diskReader != nil {
+		newOffset, err := rs.diskReader.Seek(offset, whence)
+		if err != nil {
+			if rs.logger != nil {
+				rs.logger.Error().Err(err).Int64("offset", offset).Int("whence", whence).Msg("torrentutil: DiskReader seek error")
+			}
+			return newOffset, err
+		}
+		rs.position.Store(newOffset)
+		return newOffset, nil
+	}
+
 	newOffset, err := rs.reader.Seek(offset, whence)
-	rs.mu.Unlock()
 	if err != nil {
 		if rs.logger != nil {
 			rs.logger.Error().Err(err).Int64("offset", offset).Int("whence", whence).Msg("torrentutil: ReadSeeker seek error")
@@ -447,6 +510,9 @@ func (rs *ReadSeeker) Seek(offset int64, whence int) (int64, error) {
 }
 
 func (rs *ReadSeeker) shouldRefreshPriority(offset int64) bool {
+	if rs.file != nil && rs.file.Length() > 0 && rs.file.BytesCompleted() >= rs.file.Length() {
+		return false
+	}
 	lastOffset := rs.lastPriorityPos.Load()
 	if offset < lastOffset {
 		return true
@@ -471,11 +537,15 @@ func getPriorityUpdateStride(t *torrent.Torrent) int64 {
 // This makes ReadSeeker implement io.ReadSeekCloser.
 func (rs *ReadSeeker) Close() error {
 	rs.closeOnce.Do(func() {
-		if rs.reader != nil {
-			rs.mu.Lock()
-			rs.closeErr = rs.reader.Close()
-			rs.mu.Unlock()
+		rs.mu.Lock()
+		if rs.diskReader != nil {
+			_ = rs.diskReader.Close()
+			rs.diskReader = nil
 		}
+		if rs.reader != nil {
+			rs.closeErr = rs.reader.Close()
+		}
+		rs.mu.Unlock()
 		rs.priorityManager.unregisterReader(rs.id)
 	})
 	return rs.closeErr

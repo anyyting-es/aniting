@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:seanime_app/core/api/api_client.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/data/models/anizip_data.dart';
 import 'package:seanime_app/data/models/library_entry_details.dart';
 import 'package:seanime_app/data/models/onlinestream_models.dart';
@@ -141,7 +140,7 @@ void main() {
       expect(find.textContaining('Online Stream Ep 10'), findsNothing);
     });
 
-    testWidgets('Online mode uses selected provider online episodes list', (tester) async {
+    testWidgets('DesktopEpisodesTab always uses AniZip episodes list even in online tab', (tester) async {
       final aniZipData = AniZipData.fromJson({
         'titles': {'en': 'Test Anime'},
         'episodes': {
@@ -200,9 +199,8 @@ void main() {
         ),
       );
 
-      // In Online mode, it should display the provider's episodes
-      expect(find.textContaining('Special Provider Cut 1'), findsOneWidget);
-      expect(find.textContaining('Special Provider Cut 2'), findsOneWidget);
+      // In Desktop, it should always display AniZip episodes
+      expect(find.textContaining('AniZip Ep 1'), findsOneWidget);
     });
 
     testWidgets('Pagination renders at most 20 episodes and navigates with Siguiente', (tester) async {
@@ -269,8 +267,13 @@ void main() {
       final listView = tester.widget<ListView>(listFinder);
       expect(listView.scrollDirection, Axis.horizontal);
 
-      // Scroll horizontally to reach later episodes
-      await tester.drag(listFinder, const Offset(-2000, 0));
+      // Scroll horizontally until EP 10 is visible
+      final scrollableFinder = find.byType(Scrollable).last;
+      await tester.scrollUntilVisible(
+        find.textContaining('EP 10.'),
+        500,
+        scrollable: scrollableFinder,
+      );
       await tester.pumpAndSettle();
 
       expect(find.textContaining('EP 10.'), findsOneWidget);
@@ -353,6 +356,70 @@ void main() {
       expect(find.textContaining('Creditless Opening'), findsNothing);
       expect(find.textContaining('Creditless Ending'), findsNothing);
       expect(find.textContaining('Web Teaser'), findsNothing);
+    });
+
+    testWidgets('Starts directly at next unwatched episode (progress + 1) aligned at left edge', (tester) async {
+      final Map<String, dynamic> epMap = {};
+      for (int i = 1; i <= 10; i++) {
+        epMap['$i'] = {
+          'episode': '$i',
+          'episodeNumber': i,
+          'title': {'en': 'Episode $i Title'},
+        };
+      }
+      final aniZipData = AniZipData.fromJson({
+        'titles': {'en': 'Test Anime'},
+        'episodes': epMap,
+      });
+
+      tester.view.physicalSize = const Size(1280, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            repositoryProvider.overrideWithValue(FakeEpisodesRepo()),
+          ],
+          child: MaterialApp(
+            home: Scaffold(
+              body: DesktopEpisodesTab(
+                mediaId: 10,
+                details: null,
+                aniZipData: aniZipData,
+                progress: 3, // Episodes 1, 2, 3 watched. Next is 4.
+                isLocalMode: false,
+                currentTab: AnimeDetailTab.torrent,
+                providers: const [],
+                selectedProvider: null,
+                isDubbed: false,
+                onlineEpisodes: const [],
+                loadingEpisodeNumber: null,
+                fallbackCoverImage: null,
+                onProviderChanged: (_) {},
+                onToggleDubbed: () {},
+                onEpisodeClicked: (_) {},
+                onToggleLocalMode: () {},
+                onTabChanged: (_) {},
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // Advance frames
+      await tester.pump(const Duration(milliseconds: 150));
+      await tester.pump(const Duration(milliseconds: 700));
+      await tester.pumpAndSettle();
+
+      // Auto-scroll positioned at episode 4
+      expect(find.textContaining('EP 4.'), findsOneWidget);
+      final listFinder = find.byType(ListView);
+      final scrollable = tester.state<ScrollableState>(find.descendant(of: listFinder, matching: find.byType(Scrollable)));
+      expect(scrollable.position.pixels, greaterThan(0));
     });
   });
 }

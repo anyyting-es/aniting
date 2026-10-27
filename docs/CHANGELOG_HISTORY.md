@@ -6,6 +6,87 @@
 > - **ALWAYS** summarize improvements at a high, user-facing level with clear, direct bullet points (e.g., *"Mejoras de UI y navegación en el calendario de emisión"*, *"Nueva pantalla y gestión de estado sin conexión"*, *"Optimizaciones en la caché de seguir viendo"*).
 > - Keep it punchy, professional, and easy to skim.
 
+## 8.01. Proxy de Streaming Local en Go y Corrección de Video en Linux Desktop (2026-10-26)
+- **Proxy Inverso de Streaming Local en Go**:
+  - Enrutamiento automático de fuentes online scrapeadas a través del servidor local de Go (`/api/v1/proxy`), evitando problemas de pérdida de cabeceras HTTP (`Referer`/`User-Agent`), TLS o bloqueos de CORS en MPV.
+  - Reescritura al vuelo de listas de reproducción HLS (`.m3u8`) y segmentos `.ts` para una reproducción continua e instantánea.
+  - Nuevo control en los ajustes del reproductor para alternar el proxy local de streaming según la preferencia del usuario.
+- **Corrección de Pantalla Negra en Linux Desktop (Wayland / X11)**:
+  - Eliminación de fondos opacos superpuestos en Flutter que bloqueaban la visibilidad del plano de video acelerado por hardware (`wl_subsurface`).
+
+## 8.00. Rediseño del Carrusel de Explorar e Integración AniList / AniZip (2026-10-25)
+- **Carrusel Dinámico de Explorar con AniList y AniZip**:
+  - El carrusel principal de la pestaña Explorar ahora carga directamente el catálogo en tendencia de AniList y resuelve de forma inteligente fondos de alta resolución, logotipos vectoriales (SVG/PNG) y descripciones enriquecidas mediante AniZip y `CustomAnimeAssetsService`.
+- **Transición Fluida y Eliminación de Vacíos Negros**:
+  - Reemplazo del sistema anterior por un `PageView.builder` continuo con física de rebote que elimina los parpadeos y fondos negros durante el desplazamiento horizontal.
+- **Integración Visual y Sombreado para Barra Lateral**:
+  - Eliminación de la sombra flotante y de la línea de corte rígida inferior, sustituyéndolas por una degradación suave y continua que se funde con el fondo de la pantalla.
+  - Sombreado lateral mejorado en escritorio para garantizar el contraste y legibilidad óptima de los iconos de la barra lateral flotante sobre artes brillantes.
+- **Botón de Detalles Expresivo y Eliminación de Flechas Redundantes**:
+  - Retiro de las flechas circulares de navegación para una experiencia limpia y centrada en gestos / auto-avance.
+  - Botón de "Ver detalles" ampliado con Material 3 Expressive (`M3EButton`) con físicas de respuesta táctil y proporciones equilibradas.
+
+## 7.99. Visualización de Lista de Episodios desde AniZip en Desktop (2026-10-25)
+- **Lista Canónica de Episodios desde AniZip en Desktop**:
+  - En la vista de escritorio (`DesktopEpisodesTab`), el listado de episodios ahora se construye y muestra siempre desde la base canónica de AniZip.
+  - Se eliminan los bloqueos por carga y la dependencia del scraper o proveedor online para renderizar los episodios, garantizando títulos oficiales en el idioma seleccionado, capturas 16:9 de alta resolución y descripciones precisas de inmediato.
+  - La selección de fuente (Transmisión Online, Torrent o Local) se realiza de forma limpia e independiente al hacer clic en cualquier episodio.
+
+## 7.98. Barra Lateral Flotante en PC, Cards Limpias de Manga y Desactivación de TMDB Shows (2026-10-24)
+- **Barra Lateral Flotante Transparente y Despliegue con D-PAD en Modo TV**:
+  - En modo escritorio (`DesktopSidebar`), la barra lateral ahora es totalmente transparente y flota sobre el lienzo de la app sin desplazar ni mover el contenido inferior.
+  - **Despliegue condicional por Modo TV (`isTv`)**: la auto-expansión al recibir foco con D-PAD está vinculada al modo TV (`tvModeProvider`), desplegando nombres sobre sombra degradada en televisores o mandos a distancia, y permaneciendo desactivada en PC estándar para una experiencia de escritorio limpia y fija a 72px.
+  - Con el cursor del ratón se preserva el formato compacto de 72px sin desplegarse, evitando expansiones accidentales por hover.
+  - Distribución vertical equilibrada: icono de búsqueda anclado en la parte superior, ajustes en la parte inferior y destinos de navegación centrados verticalmente en la pantalla.
+  - Alineación inteligente del contenido en las pestañas principales y del contenido inferior de Explorar para evitar solapamientos con la barra.
+- **Tarjetas de Manga Minimalistas (Title-Only)**:
+  - Eliminación de año y estado en las tarjetas de manga (`MangaCard`), adoptando la misma estética visual limpia y uniforme de las tarjetas de anime centrada únicamente en la portada y título.
+- **Desactivación de Series y Películas TMDB por Defecto**:
+  - La sección de shows de TMDB queda desactivada por defecto en la configuración de visibilidad.
+
+## 7.97. Renderizado Vectorial de Logos, Fondo Sólido de Reproductor y Vista Enfocada de Episodios (2026-10-24)
+- **MiniDB Curada de Assets y Sincronización en Vivo**:
+  - Nuevo servicio `CustomAnimeAssetsService` para asociar fondos, logos transparentes y pósters específicos a nivel de AniList ID en tiempo 0 (frame inicial), resolviendo la limitación de TMDB y AniZip donde temporadas distintas comparten artes idénticos.
+  - Sincronización directa y en vivo en tiempo de ejecución: los cambios guardados desde la herramienta `Aniting-art` se reflejan instantáneamente en la app sin requerir reinicios, combinando lectura en caliente de disco, caché persistente local y sincronización remota en segundo plano.
+- **Soporte para Logotipos Vectoriales SVG y Fallback Automático**:
+  - Soporte completo para renderizado nativo de logotipos en formato `.svg` y mapas de bits `.png` desde TMDB y AniZip con selección priorizada por idioma.
+  - Conmutación automática a título en texto estilizado si la imagen remota presenta fallas de red o decodificación.
+- **Fondo Negro Sólido en el Reproductor de Video en Desktop**:
+  - Eliminación de la transparencia accidental de ventana en Linux y sistemas de escritorio mientras el reproductor carga el medio.
+- **Indicador de Carga Material 3 Expressive en el Reproductor**:
+  - Reemplazo del spinner tradicional por `M3ELoadingIndicator` con morphing continuo de formas para una experiencia visual consistente con la pantalla de detalles.
+- **Modo Película Simplificado**:
+  - Para producciones en formato de película, se omite el listado de episodios redundante y se presenta directamente el botón de reproducción cinemática.
+- **Comienzo Directo en el Episodio por Ver**:
+  - La fila de episodios se alinea desde el inicio con el episodio pendiente a ver, tocando el borde izquierdo sin elementos previos y con opción interactiva para desplegar todos.
+- **Estabilidad Visual en la Fila de "Seguir Viendo"**:
+  - Eliminado el parpadeo e intercambio visual donde se mostraba la portada/banner de AniList antes de cargar la captura del episodio. La captura 16:9 real del episodio tiene prioridad absoluta y los artes generales se reservan estrictamente como respaldo ante errores de carga.
+
+## 7.96. Servidor Integrado y Compatibilidad Completa con Waydroid / Android TV (2026-10-24)
+- **Ejecución y Gestión del Servidor Integrado en Waydroid**:
+  - Corrección en la vinculación de red interna (`patchConfigFile` y `LanTcpForwarder`) para evitar colisiones de puertos y garantizar la ejecución estable del servidor Go en contenedores Waydroid y emuladores x86_64.
+  - Opción directa en el asistente de bienvenida para TV para iniciar y usar el servidor local integrado con un solo clic.
+  - Auto-instalación de fuentes y extensiones recomendadas al configurar el servidor local en TV.
+  - Botón de instalación rápida de fuentes recomendadas en la pestaña de episodios cuando no hay extensiones instaladas.
+  - Nuevos scripts de compilación completa `build_apk_full.sh` y `build_apk_full.bat` para empaquetar APKs con el backend Go embebido.
+
+## 7.95. Selector Universal de Fuente de Episodio y Perfeccionamiento D-PAD / TV (2026-10-24)
+- **Auto-Desplazamiento Inteligente al Episodio por Continuar**:
+  - Al abrir los detalles de un anime o serie, la fila horizontal de episodios se desplaza suavemente hacia la derecha ocultando los episodios vistos y posicionando al inicio de la vista el episodio que continúa (ya sea uno a medio ver o el siguiente no visto).
+  - Los episodios anteriores permanecen completamente accesibles desplazándose hacia la izquierda; si la serie ya está finalizada o no se ha empezado, se muestra por defecto desde el episodio 1.
+- **Selector Universal de Fuentes al Clicar Episodio**:
+  - Modal flotante con soporte para TV y control remoto al seleccionar un episodio para elegir entre Transmisión Online, Torrents P2P o Archivo Local en un solo lugar.
+  - Eliminación de selectores de proveedores redundantes y del botón de orden ascendente/descendente en la cabecera para una interfaz minimalista y limpia.
+- **Acciones Secundarias con Despliegue hacia la Izquierda y Foco D-PAD**:
+  - Las herramientas secundarias se despliegan fluidamente hacia la izquierda empujando el botón hacia la derecha.
+  - Espaciado uniforme y armónico de 10px entre todos los botones de la barra de acciones al expandirse y contraerse.
+  - El botón conmutador de herramientas ahora es totalmente navegable con mando a distancia / D-PAD.
+  - Mapeo direccional determinista en la barra de acciones: al pulsar Izquierda desde el botón de desplegar, el foco pasa de inmediato al botón expandido contiguo sin saltar al botón de editar (lápiz).
+- **Navegación Fluida D-PAD / TV**:
+  - Pulsar Arriba desde cualquier tarjeta de episodio enfoca directamente el botón de reproducción con un solo clic y desplaza la vista a la cima.
+  - Alineación superior y margen vertical adaptativo para evitar recortes en la parte superior de las imágenes de personajes al recibir foco.
+  - Confinamiento horizontal estricto de navegación D-PAD para evitar saltos no deseados de fila.
+
 ## 7.94. Optimización Integral de Carga de Detalles y Pre-cacheo de Assets (2026-10-24)
 - **Pre-cacheo en Memoria y Cero Brincos de Logotipos y Fondos**:
   - Pre-decodificación en memoria GPU de logotipos y fondos antes de revelar la pantalla de detalles, eliminando cualquier salto de posición horizontal o sustitución tardía de imágenes.

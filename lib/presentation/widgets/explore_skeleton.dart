@@ -5,7 +5,9 @@ import 'package:flutter/material.dart';
 bool get _isInTest => !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST');
 
 class ExploreSkeleton extends StatefulWidget {
-  const ExploreSkeleton({super.key});
+  final bool isTv;
+
+  const ExploreSkeleton({super.key, this.isTv = false});
 
   @override
   State<ExploreSkeleton> createState() => _ExploreSkeletonState();
@@ -35,8 +37,12 @@ class _ExploreSkeletonState extends State<ExploreSkeleton> with SingleTickerProv
   @override
   Widget build(BuildContext context) {
     final isDesktop = MediaQuery.of(context).size.width >= 720;
+    final isTv = widget.isTv;
     final topPadding = MediaQuery.of(context).padding.top;
-    final carouselHeight = (isDesktop ? 340.0 : 260.0) + topPadding;
+    final carouselHeight = (isTv
+            ? (MediaQuery.of(context).size.height * 0.48).clamp(340.0, 460.0)
+            : (isDesktop ? 340.0 : 260.0)) +
+        topPadding;
     
     final theme = Theme.of(context);
     final color = theme.colorScheme.surfaceContainerHighest;
@@ -112,7 +118,8 @@ class _ExploreSkeletonState extends State<ExploreSkeleton> with SingleTickerProv
               ),
             ),
             
-            // Header controls placeholder
+            // Header controls are omitted in the compact sidebar / TV layout.
+            if (!isTv) ...[
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 6, 16, 8),
               child: Row(
@@ -180,13 +187,14 @@ class _ExploreSkeletonState extends State<ExploreSkeleton> with SingleTickerProv
                 ),
               ),
             ),
+            ],
             
             const SizedBox(height: 6),
             
             // Curated sections placeholder
-            const _FullCuratedSectionSkeletonBody(),
-            const _FullCuratedSectionSkeletonBody(),
-            const _FullCuratedSectionSkeletonBody(),
+            _FullCuratedSectionSkeletonBody(isTv: isTv),
+            _FullCuratedSectionSkeletonBody(isTv: isTv),
+            _FullCuratedSectionSkeletonBody(isTv: isTv),
           ],
         ),
       ),
@@ -195,7 +203,9 @@ class _ExploreSkeletonState extends State<ExploreSkeleton> with SingleTickerProv
 }
 
 class _FullCuratedSectionSkeletonBody extends StatelessWidget {
-  const _FullCuratedSectionSkeletonBody();
+  final bool isTv;
+
+  const _FullCuratedSectionSkeletonBody({required this.isTv});
 
   @override
   Widget build(BuildContext context) {
@@ -229,7 +239,7 @@ class _FullCuratedSectionSkeletonBody extends StatelessWidget {
             ],
           ),
         ),
-        const CuratedSectionRowSkeleton(isAnimated: false),
+        CuratedSectionRowSkeleton(isAnimated: false, isTv: isTv),
       ],
     );
   }
@@ -237,10 +247,12 @@ class _FullCuratedSectionSkeletonBody extends StatelessWidget {
 
 class CuratedSectionRowSkeleton extends StatefulWidget {
   final bool isAnimated;
+  final bool isTv;
   
   const CuratedSectionRowSkeleton({
     super.key,
     this.isAnimated = true,
+    this.isTv = false,
   });
 
   @override
@@ -273,7 +285,7 @@ class _CuratedSectionRowSkeletonState extends State<CuratedSectionRowSkeleton> w
   @override
   Widget build(BuildContext context) {
     if (!widget.isAnimated) {
-      return const _CuratedSectionRowBody();
+      return _CuratedSectionRowBody(isTv: widget.isTv);
     }
     
     return RepaintBoundary(
@@ -286,14 +298,16 @@ class _CuratedSectionRowSkeletonState extends State<CuratedSectionRowSkeleton> w
             child: child,
           );
         },
-        child: const _CuratedSectionRowBody(),
+        child: _CuratedSectionRowBody(isTv: widget.isTv),
       ),
     );
   }
 }
 
 class _CuratedSectionRowBody extends StatelessWidget {
-  const _CuratedSectionRowBody();
+  final bool isTv;
+
+  const _CuratedSectionRowBody({required this.isTv});
 
   @override
   Widget build(BuildContext context) {
@@ -303,7 +317,7 @@ class _CuratedSectionRowBody extends StatelessWidget {
     final isDesktop = MediaQuery.of(context).size.width >= 720;
     // Misma geometría que las secciones reales de Explorar para que el
     // esqueleto no dé un salto de tamaño al llegar los datos.
-    final cardWidth = isDesktop ? 215.0 : 155.0;
+    final cardWidth = isTv ? 150.0 : (isDesktop ? 215.0 : 155.0);
     final carouselSpacing = isDesktop ? 14.0 : 10.0;
     final cardHeight = ((cardWidth - 8.0) / 0.72) + 71.0;
     final carouselHeight = cardHeight + (isDesktop ? 6.0 : 4.0);

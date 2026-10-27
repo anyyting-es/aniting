@@ -162,6 +162,29 @@ Use this directory to quickly locate any screen, widget, provider, or subsystem:
 
 ## 5. Maintenance & Build Commands
 
+Consulte la guía detallada en [`docs/BUILD_AND_RUN_GUIDE.md`](file:///home/anthony/Documents/Eris/aniting/docs/BUILD_AND_RUN_GUIDE.md).
+
+- **Ejecución en Debug (Con servidor Go)**:
+  ```bash
+  ./run_debug_server.sh
+  # Opcional con dispositivo: ./run_debug_server.sh -d <device>
+  ```
+- **Ejecución en Debug (Sin servidor / Cliente remoto)**:
+  ```bash
+  ./run_debug_client.sh
+  ```
+- **Compilación de APK Completo (Con servidor Go Release)**:
+  ```bash
+  ./build_apk_full.sh
+  ```
+- **Compilación de APK Cliente (Sin servidor Go Release)**:
+  ```bash
+  ./build_apk_client.sh
+  ```
+- **Compilación Servidor Linux Desktop**:
+  ```bash
+  ./build_server.sh
+  ```
 - **Code Analysis**:
   ```bash
   flutter analyze lib/
@@ -171,10 +194,6 @@ Use this directory to quickly locate any screen, widget, provider, or subsystem:
   flutter test
   # Unit tests for Go shows parser:
   cd backend && go test -v ./internal/library/shows/...
-  ```
-- **Backend Compilation (Linux)**:
-  ```bash
-  ./backend/build_linux.sh
   ```
 - **Run Application (Desktop Linux)**:
   ```bash

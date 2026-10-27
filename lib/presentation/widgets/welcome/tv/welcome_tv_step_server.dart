@@ -6,6 +6,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/i18n/i18n_provider.dart';
 import '../../../../core/server/lan_discovery_service.dart';
+import '../../../../data/services/default_extensions_service.dart';
 import '../../../providers/app_providers.dart';
 import 'tv_audio_feedback.dart';
 import 'welcome_tv_focus_tile.dart';
@@ -29,6 +30,7 @@ class _WelcomeTvStepServerState extends ConsumerState<WelcomeTvStepServer> {
   String? _tvIp;
   String? _connectingServerAddress;
   bool _hasAutoConnected = false;
+  bool _isStartingLocal = false;
 
   @override
   void initState() {
@@ -40,6 +42,46 @@ class _WelcomeTvStepServerState extends ConsumerState<WelcomeTvStepServer> {
     final ip = await LanDiscoveryService.getLocalIpAddress();
     if (mounted) {
       setState(() => _tvIp = ip);
+    }
+  }
+
+  Future<void> _startAndUseLocalServer() async {
+    final l10n = ref.read(translationsProvider);
+    setState(() => _isStartingLocal = true);
+    try {
+      final notifier = ref.read(serverNotifierProvider.notifier);
+      await notifier.startLocal();
+
+      // Poll until online or timeout
+      for (int i = 0; i < 20; i++) {
+        final current = ref.read(serverNotifierProvider);
+        if (current.isOnline) break;
+        await Future.delayed(const Duration(milliseconds: 400));
+      }
+
+      final finalState = ref.read(serverNotifierProvider);
+      if (finalState.isOnline) {
+        // Auto-install recommended extensions so streaming works immediately
+        final repo = ref.read(repositoryProvider);
+        final lang = ref.read(appLanguageProvider);
+        await DefaultExtensionsService.installRecommended(repo, language: lang);
+
+        TvAudioFeedback.playSuccess();
+        widget.onFinished();
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(finalState.errorMessage ?? l10n.welcomeTvConnectionFailed),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isStartingLocal = false);
+      }
     }
   }
 
@@ -74,6 +116,7 @@ class _WelcomeTvStepServerState extends ConsumerState<WelcomeTvStepServer> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = ref.watch(translationsProvider);
+    final serverState = ref.watch(serverNotifierProvider);
 
     final discoveredAsync = ref.watch(discoveredServersProvider);
     final discoveredList = discoveredAsync.value ?? [];
@@ -174,6 +217,44 @@ class _WelcomeTvStepServerState extends ConsumerState<WelcomeTvStepServer> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // ─── Local Embedded Server Option ───────────────────
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: WelcomeTvFocusTile(
+                      borderRadius: 12,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      leading: const Icon(LucideIcons.cpu, size: 20, color: Colors.white),
+                      title: Text(l10n.welcomeTvUseLocalServer),
+                      subtitle: Text(
+                        serverState.isOnline
+                            ? l10n.welcomeTvLocalServerActive
+                            : l10n.welcomeTvUseLocalServerDesc,
+                      ),
+                      trailing: _isStartingLocal
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            )
+                          : Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                serverState.isOnline ? l10n.welcomeNext : l10n.startServer,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                      onTap: _startAndUseLocalServer,
+                    ),
+                  ),
+
                   // Discovered local servers header
                   Row(
                     children: [

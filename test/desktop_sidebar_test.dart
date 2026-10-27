@@ -204,4 +204,66 @@ void main() {
     expect(iconWidget.color, isNot(Colors.white));
     expect(iconWidget.color, const Color(0xFF1F2430));
   });
+
+  testWidgets('DesktopSidebar stays compact when isTv is false, expands only when isTv is true on DPAD focus', (tester) async {
+    // 1. Desktop PC mode (isTv: false)
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          home: Scaffold(
+            body: DesktopSidebar(
+              selectedIndex: 0,
+              onDestinationSelected: (_) {},
+              onSearchPressed: () {},
+              items: testItems,
+              isTv: false,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    // Initial state: width is 72.0
+    expect(tester.getSize(find.byType(DesktopSidebar)).width, 72.0);
+
+    // Mouse hover over an item does NOT expand the sidebar
+    final homeIconFinder = find.byIcon(Icons.home_rounded);
+    final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    await gesture.addPointer(location: Offset.zero);
+    addTearDown(gesture.removePointer);
+    await gesture.moveTo(tester.getCenter(homeIconFinder));
+    await tester.pumpAndSettle();
+
+    // Still 72.0 wide after mouse hover
+    expect(tester.getSize(find.byType(DesktopSidebar)).width, 72.0);
+
+    // Focus with DPAD / keyboard in PC mode (isTv: false)
+    FocusManager.instance.primaryFocus?.nextFocus();
+    await tester.pumpAndSettle();
+
+    // Since isTv is false, sidebar stays compact at 72.0
+    expect(tester.getSize(find.byType(DesktopSidebar)).width, 72.0);
+
+    // 2. TV mode (isTv: true)
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          home: Scaffold(
+            body: DesktopSidebar(
+              selectedIndex: 0,
+              onDestinationSelected: (_) {},
+              onSearchPressed: () {},
+              items: testItems,
+              isTv: true,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    // When isTv: true and focused with DPAD, sidebar expands to 228.0
+    FocusManager.instance.primaryFocus?.nextFocus();
+    await tester.pumpAndSettle();
+    expect(tester.getSize(find.byType(DesktopSidebar)).width, 228.0);
+  });
 }
