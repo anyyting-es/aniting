@@ -5,14 +5,13 @@ import 'package:g1455/g1455.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/data/models/onlinestream_models.dart';
+import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/widgets/player/models/player_types.dart';
-import 'package:seanime_app/presentation/widgets/player/panels/player_source_selector_sheet.dart';
 import 'package:seanime_app/presentation/widgets/player/services/player_source_controller.dart';
 
-/// Compact, polished playback source card rendered in the player's info panel.
-/// Adheres to Apple iOS Liquid Glass design standards (g1455 GlassCard/GlassSurface),
-/// displaying the active server/quality, handling reload on demand, and opening
-/// the liquid glass source selector sheet to switch stream providers or servers.
+/// Compact playback source card rendered in the player's watch content.
+/// Tapping it opens a small web-style dropdown (g1455 GlassMenuAnchor) listing
+/// the available servers so the user can switch without a full-screen modal.
 class PlayerSourceCard extends ConsumerWidget {
   final PlayerSourceController? controller;
   final PlayerPlaybackOrigin playbackOrigin;
@@ -47,23 +46,28 @@ class PlayerSourceCard extends ConsumerWidget {
     this.onSelectProvider,
   });
 
-  void _showSourcesModal(BuildContext context) {
-    HapticFeedback.lightImpact();
-    PlayerSourceSelectorSheet.show(
-      context: context,
-      controller: controller,
-      availableSources: controller?.availableSources ?? availableSources,
-      activeSource: controller?.activeSource ?? activeSource,
-      isResolvingSources: controller?.isResolvingSources ?? isResolvingSources,
-      sourceResolutionError: controller?.sourceResolutionError ?? sourceResolutionError,
-      providerName: providerName,
-      episodeNumber: episodeNumber,
-      isDubbed: isDubbed,
-      onToggleDubbed: onToggleDubbed,
-      onReloadSources: onReloadSources,
-      onSelectSource: onSelectSource,
-      onSelectProvider: onSelectProvider,
-    );
+  String _serverLabel(OnlinestreamVideoSource src) {
+    var name = src.server;
+    const tags = [
+      '[Latino]', '(Latino)', '[Castellano]', '(Castellano)',
+      '[English Dub]', '(English Dub)', '[Dub]', '[DUB]', '(Dub)',
+      '[Sub (Multi)]', '[SUB]', '[Sub]', '(Sub)',
+    ];
+    for (final tag in tags) {
+      name = name.replaceAll(tag, '');
+    }
+    name = name.trim();
+    final label = name.isEmpty ? src.server : name;
+    final quality = (src.quality.isNotEmpty && src.quality != 'auto')
+        ? ' • ${src.quality}'
+        : '';
+    return '$label$quality';
+  }
+
+  bool _isActive(OnlinestreamVideoSource src, OnlinestreamVideoSource? active) {
+    if (active == null) return false;
+    return active.url == src.url ||
+        (active.server == src.server && active.quality == src.quality);
   }
 
   @override
@@ -71,13 +75,111 @@ class PlayerSourceCard extends ConsumerWidget {
     if (controller != null) {
       return ListenableBuilder(
         listenable: controller!,
-        builder: (ctx, _) => _buildCard(ctx, ref),
+        builder: (ctx, _) => _buildWithMenu(ctx, ref),
       );
     }
-    return _buildCard(context, ref);
+    return _buildWithMenu(context, ref);
   }
 
-  Widget _buildCard(BuildContext context, WidgetRef ref) {
+  Widget _buildWithMenu(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final l10n = ref.watch(translationsProvider);
+    final iconPack = ref.watch(iconPackProvider);
+
+    final isOnline = playbackOrigin.isSwitchable;
+    final sources = controller?.availableSources ?? availableSources;
+    final active = controller?.activeSource ?? activeSource;
+
+    if (!isOnline) {
+      return _buildCardSurface(context, ref);
+    }
+
+    final providers = onSelectProvider == null
+        ? const <OnlinestreamProvider>[]
+        : ref.watch(onlinestreamProvidersProvider).maybeWhen(
+              data: (p) => p,
+              orElse: () => const <OnlinestreamProvider>[],
+            );
+
+    if (sources.isEmpty && providers.length <= 1) {
+      return _buildCardSurface(context, ref, onTap: onReloadSources);
+    }
+
+    return MenuAnchor(
+      menuChildren: [
+        if (providers.length > 1) ...[
+          for (final p in providers)
+            MenuItemButton(
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                final isSel = providerName != null &&
+                    (providerName!.toLowerCase() == p.id.toLowerCase() ||
+                        providerName!.toLowerCase() == p.name.toLowerCase());
+                if (!isSel) onSelectProvider!.call(p.id);
+              },
+              leadingIcon: Icon(
+                _isProviderSelected(p)
+                    ? AppIcons.check(iconPack)
+                    : AppIcons.stream(iconPack),
+                size: 18,
+              ),
+              child: Text(p.name.isNotEmpty ? p.name : p.id),
+            ),
+          const Divider(height: 1),
+        ],
+        for (final src in sources)
+          MenuItemButton(
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              if (!_isActive(src, active)) onSelectSource?.call(src);
+            },
+            leadingIcon: Icon(
+              _isActive(src, active)
+                  ? AppIcons.check(iconPack)
+                  : AppIcons.stream(iconPack),
+              size: 18,
+              color: _isActive(src, active) ? theme.colorScheme.primary : null,
+            ),
+            child: Text(_serverLabel(src)),
+          ),
+        if (onReloadSources != null)
+          MenuItemButton(
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              onReloadSources!.call();
+            },
+            leadingIcon: Icon(AppIcons.refresh(iconPack), size: 18),
+            child: Text(l10n.reloadSourcesTooltip),
+          ),
+        if (onToggleDubbed != null)
+          MenuItemButton(
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              onToggleDubbed!.call();
+            },
+            leadingIcon: Icon(AppIcons.audio(iconPack), size: 18),
+            child: Text(isDubbed ? l10n.audioDubbed : l10n.audioSubtitled),
+          ),
+      ],
+      builder: (ctx, menu, child) => _buildCardSurface(
+        ctx,
+        ref,
+        onTap: () => menu.isOpen ? menu.close() : menu.open(),
+      ),
+    );
+  }
+
+  bool _isProviderSelected(OnlinestreamProvider p) {
+    final current = providerName?.toLowerCase();
+    if (current == null) return false;
+    return current == p.id.toLowerCase() || current == p.name.toLowerCase();
+  }
+
+  Widget _buildCardSurface(
+    BuildContext context,
+    WidgetRef ref, {
+    VoidCallback? onTap,
+  }) {
     final theme = Theme.of(context);
     final l10n = ref.watch(translationsProvider);
     final iconPack = ref.watch(iconPackProvider);
@@ -106,7 +208,7 @@ class PlayerSourceCard extends ConsumerWidget {
             : theme.colorScheme.outlineVariant.withValues(alpha: 0.28));
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 4),
       child: GlassCard(
         padding: EdgeInsets.zero,
         borderRadius: BorderRadius.circular(16),
@@ -124,7 +226,7 @@ class PlayerSourceCard extends ConsumerWidget {
               color: Colors.transparent,
               child: InkWell(
                 borderRadius: BorderRadius.circular(16),
-                onTap: isOnline ? () => _showSourcesModal(context) : null,
+                onTap: onTap,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   child: Row(
@@ -306,10 +408,10 @@ class PlayerSourceCard extends ConsumerWidget {
                                   onReloadSources?.call();
                                 },
                         ),
-                      if (isOnline) ...[
+                      if (isOnline && onTap != null) ...[
                         const SizedBox(width: 4),
                         Icon(
-                          AppIcons.chevronRight(iconPack),
+                          AppIcons.chevronDown(iconPack),
                           size: 20,
                           color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
                         ),

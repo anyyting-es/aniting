@@ -396,8 +396,11 @@ abstract class AppTranslations {
   String get showInfo;
   String get collapsePanel;
   String get chat;
+  String get comments;
   String get chatUnavailable;
   String get chatLoadError;
+  String get chatNoConnection;
+  String get chatServerError;
   String get chatLoginRequired;
   String get chatLoginWithAnilist;
   String get noChatComments;
@@ -455,6 +458,8 @@ abstract class AppTranslations {
   String get pause;
   String get fullScreen;
   String get exitFullScreen;
+  String get theaterMode;
+  String get exitTheaterMode;
   String get reduceToModal;
   String get watching;
   String get onlyWatching;

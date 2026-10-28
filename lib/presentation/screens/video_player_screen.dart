@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
+import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/preferences/anime_playback_source_provider.dart';
 import 'package:seanime_app/core/preferences/player_engine_provider.dart';
 import 'package:seanime_app/core/preferences/player_gesture_provider.dart';
@@ -27,6 +28,9 @@ import 'package:seanime_app/presentation/widgets/player/layouts/player_desktop_l
 import 'package:seanime_app/presentation/widgets/player/layouts/player_mobile_layout.dart';
 import 'package:seanime_app/presentation/widgets/player/models/player_types.dart';
 import 'package:seanime_app/presentation/widgets/player/panels/player_info_panel.dart';
+import 'package:seanime_app/presentation/widgets/player/panels/watch/player_episodes_rail.dart';
+import 'package:seanime_app/presentation/widgets/player/panels/watch/player_header_controls.dart';
+import 'package:seanime_app/presentation/widgets/player/panels/watch/player_watch_content.dart';
 import 'package:seanime_app/presentation/widgets/player/services/performance_stats_service.dart';
 import 'package:seanime_app/presentation/widgets/player/services/player_playback_coordinator.dart';
 import 'package:seanime_app/presentation/widgets/player/services/player_progress_manager.dart';
@@ -196,8 +200,8 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   double _lastNonZeroVolume = 100.0;
   final FocusNode _focusNode = FocusNode();
 
-  // YouTube-style watch page & TV mode state (hidden/collapsed by default on desktop)
-  bool _isSidePanelCollapsed = !Platform.isAndroid && !Platform.isIOS;
+  // YouTube-style watch page & TV mode state
+  bool _isTheaterMode = false;
   AnimeDetails? _animeDetails;
   AniZipData? _aniZipData;
   bool _isLoadingDetails = false;
@@ -1271,7 +1275,15 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     _startHideTimer();
   }
 
+  bool _isEditingText() {
+    final ctx = FocusManager.instance.primaryFocus?.context;
+    if (ctx == null) return false;
+    return ctx.widget is EditableText ||
+        ctx.findAncestorWidgetOfExactType<EditableText>() != null;
+  }
+
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+    if (_isEditingText()) return KeyEventResult.ignored;
     final handler = PlayerKeyboardHandler(
       onPlayPause: _playOrPause,
       onToggleFullscreen: _toggleFullscreen,
@@ -1434,11 +1446,39 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   void _toggleFullscreen() {
     _windowManager.toggleFullscreen(
       onUpdateUi: () {
-        if (mounted) setState(() {});
+        if (mounted) {
+          if ((_isFullscreen || _isTvActive) && _isTheaterMode) {
+            _isTheaterMode = false;
+          }
+          setState(() {});
+        }
       },
       onOrientationTransitionStarted: () {
         _areControlsVisible = false;
       },
+    );
+  }
+
+  void _toggleTheaterMode() {
+    if (_isFullscreen) {
+      _toggleFullscreen();
+    }
+    setState(() => _isTheaterMode = !_isTheaterMode);
+  }
+
+  /// Episode list for the desktop right rail (falls back to 1..total).
+  List<AnimeEpisode> get _railEpisodes {
+    final eps = _animeDetails?.episodes ?? const <AnimeEpisode>[];
+    if (eps.isNotEmpty) return eps;
+    final total = _animeDetails?.totalEpisodes ?? 0;
+    if (total <= 0) return const [];
+    final l10n = ref.read(translationsProvider);
+    return List.generate(
+      total,
+      (i) => AnimeEpisode(
+        episodeNumber: i + 1,
+        title: l10n.episodeNumber(i + 1),
+      ),
     );
   }
 
@@ -1473,7 +1513,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     PlayerSettingsLauncher.show(
       context: context,
       isFullscreen: isFullscreen,
-      isSidePanelCollapsed: _isSidePanelCollapsed,
+      isSidePanelCollapsed: _isTheaterMode,
       chapters: _chapters,
       currentPosition: _position,
       onChapterSelected: (chapter) => _seekTo(chapter.start),
@@ -1604,10 +1644,8 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       videoUrl: _currentVideoUrl,
       onBack: _handleExit,
       onOpenSettings: _openSettingsModal,
-      onToggleSidePanel: (isDesktop && !isFullscreen)
-          ? () => setState(() => _isSidePanelCollapsed = !_isSidePanelCollapsed)
-          : null,
-      isSidePanelCollapsed: _isSidePanelCollapsed,
+      onToggleTheaterMode: (isDesktop && !isFullscreen) ? _toggleTheaterMode : null,
+      isTheaterMode: _isTheaterMode,
       positionNotifier: _positionNotifier,
       bufferNotifier: _bufferNotifier,
       duration: _duration,
@@ -1619,6 +1657,40 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
               onEpisodeTransitionStarted: _onEpisodeTransitionStarted,
             )
           : null,
+    );
+  }
+
+  Widget _buildDesktopPageHeader(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = ref.watch(translationsProvider);
+    final iconPack = ref.watch(iconPackProvider);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 14, 12, 6),
+      child: Row(
+        children: [
+          IconButton(
+            style: IconButton.styleFrom(
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              padding: const EdgeInsets.all(6),
+              hoverColor: theme.colorScheme.onSurface.withValues(alpha: 0.06),
+            ),
+            icon: Icon(AppIcons.arrowLeft(iconPack), size: 22),
+            tooltip: l10n.back,
+            onPressed: _handleExit,
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              widget.title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -1698,75 +1770,96 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                   autofocus: true,
                   onKeyEvent: _handleKeyEvent,
                   child: MouseRegion(
-                    cursor:
-                        (!isDesktop || _areControlsVisible || !_isMouseInside)
-                        ? SystemMouseCursors.basic
-                        : SystemMouseCursors.none,
-                    onEnter: isDesktop ? (_) => _onMouseEnter() : null,
-                    onHover: isDesktop ? (_) => _onMouseMove() : null,
-                    onExit: isDesktop ? (_) => _onMouseExit() : null,
+                    cursor: (isDesktop &&
+                            effectiveFullscreen &&
+                            !_areControlsVisible &&
+                            _isMouseInside)
+                        ? SystemMouseCursors.none
+                        : SystemMouseCursors.basic,
+                    onEnter: (isDesktop && effectiveFullscreen) ? (_) => _onMouseEnter() : null,
+                    onHover: (isDesktop && effectiveFullscreen) ? (_) => _onMouseMove() : null,
+                    onExit: (isDesktop && effectiveFullscreen) ? (_) => _onMouseExit() : null,
                     child: isDesktop
-                        ? PlayerDesktopLayout(
-                            playerViewport: _buildPlayerViewport(
-                              context,
-                              isFullscreen: effectiveFullscreen,
-                              isDesktop: true,
-                            ),
-                            sidePanel: PlayerInfoPanel(
-                              mediaId: widget.mediaId,
-                              animeTitle: widget.title,
-                              episodeNumber: _currentEpisodeNumber,
-                              episodeTitle: _currentEpisodeTitle,
-                              animeDetails: _animeDetails,
-                              aniZipData:
-                                  _aniZipData ?? _animeDetails?.aniZipData,
-                              isLoading: _isLoadingDetails,
-                              isDesktop: true,
-                              onCollapse: () =>
-                                  setState(() => _isSidePanelCollapsed = true),
-                              chapters: _chapters,
-                              activeChapter: _activeChapter,
-                              onSeekToChapter: _seekTo,
-                              hasNextEpisode: _hasNextEpisode,
-                              onPlayNextEpisode:
-                                  (_hasNextEpisode && !_isLoadingNextEpisode)
-                                  ? () => _sourceController.playEpisode(
-                                      targetEpNum:
-                                          (_currentEpisodeNumber ?? 1) + 1,
-                                      onEpisodeTransitionStarted:
-                                          _onEpisodeTransitionStarted,
-                                    )
-                                  : null,
-                              onPlayPreviousEpisode:
-                                  (_hasPreviousEpisode &&
-                                      !_isLoadingNextEpisode)
-                                  ? () => _sourceController.playEpisode(
-                                      targetEpNum:
-                                          (_currentEpisodeNumber ?? 1) - 1,
-                                      onEpisodeTransitionStarted:
-                                          _onEpisodeTransitionStarted,
-                                    )
-                                  : null,
-                              sourceController: _sourceController,
-                              playbackOrigin: _playbackOrigin,
-                              isResolvingSources: _isResolvingSources,
-                              availableSources: _availableSources,
-                              activeSource: _activeSource,
-                              sourceResolutionError: _sourceResolutionError,
-                              onlineStreamProvider:
-                                  _currentOnlineStreamProvider,
-                              isDubbed: _currentOnlineStreamDubbed ?? false,
-                              onToggleDubbed: _toggleOnlineStreamDubbed,
-                              onReloadSources: () =>
-                                  _sourceController.resolveInitialSources(
-                                    preservePosition: true,
+                        ? (effectiveFullscreen
+                              ? _buildPlayerViewport(
+                                  context,
+                                  isFullscreen: true,
+                                  isDesktop: true,
+                                )
+                              : PlayerDesktopLayout(
+                                  pageHeader: _buildDesktopPageHeader(context),
+                                  viewport: _buildPlayerViewport(
+                                    context,
+                                    isFullscreen: false,
+                                    isDesktop: true,
                                   ),
-                              onSelectSource: _sourceController.selectSource,
-                              onSelectProvider: _switchOnlineStreamProvider,
-                            ),
-                            isSidePanelCollapsed:
-                                effectiveFullscreen || _isSidePanelCollapsed,
-                          )
+                                  watchContent: PlayerWatchContent(
+                                    mediaId: widget.mediaId,
+                                    animeTitle: widget.title,
+                                    episodeNumber: _currentEpisodeNumber,
+                                    episodeTitle: _currentEpisodeTitle,
+                                    animeDetails: _animeDetails,
+                                    aniZipData:
+                                        _aniZipData ??
+                                        _animeDetails?.aniZipData,
+                                    chapters: _chapters,
+                                    activeChapter: _activeChapter,
+                                    onSeekToChapter: _seekTo,
+                                    headerTrailing: PlayerHeaderControls(
+                                      showSource: _playbackOrigin.isSwitchable,
+                                      sources: _availableSources,
+                                      activeSource: _activeSource,
+                                      isResolvingSources: _isResolvingSources,
+                                      providerName:
+                                          _currentOnlineStreamProvider,
+                                      isDubbed:
+                                          _currentOnlineStreamDubbed ?? false,
+                                      onToggleDubbed:
+                                          _toggleOnlineStreamDubbed,
+                                      onReloadSources: () => _sourceController
+                                          .resolveInitialSources(
+                                            preservePosition: true,
+                                          ),
+                                      onSelectSource:
+                                          _sourceController.selectSource,
+                                      onSelectProvider:
+                                          _switchOnlineStreamProvider,
+                                      audioTracks: _audioTracks,
+                                      subtitleTracks: _subtitleTracks,
+                                      selectedAudioTrackId:
+                                          _selectedAudioTrackId,
+                                      selectedSubtitleTrackId:
+                                          _selectedSubtitleTrackId,
+                                      onAudioTrackSelected: _selectAudioTrack,
+                                      onSubtitleTrackSelected:
+                                          _selectSubtitleTrack,
+                                    ),
+                                  ),
+                                  episodesRail: PlayerEpisodesRail(
+                                    animeTitle: widget.title,
+                                    mediaId: widget.mediaId,
+                                    episodes: _railEpisodes,
+                                    aniZipData:
+                                        _aniZipData ??
+                                        _animeDetails?.aniZipData,
+                                    currentEpisodeNumber: _currentEpisodeNumber,
+                                    isMovie: _isMovie,
+                                    onSelectEpisode: (n) {
+                                      if (n == _currentEpisodeNumber) return;
+                                      _sourceController.playEpisode(
+                                        targetEpNum: n,
+                                        onEpisodeTransitionStarted:
+                                            _onEpisodeTransitionStarted,
+                                      );
+                                    },
+                                  ),
+                                  isTheaterMode: _isTheaterMode,
+                                  hideCursorOnVideo:
+                                      !_areControlsVisible && _isMouseInside,
+                                  onVideoEnter: _onMouseEnter,
+                                  onVideoHover: _onMouseMove,
+                                  onVideoExit: _onMouseExit,
+                                ))
                         : (effectiveFullscreen
                               ? _buildPlayerViewport(
                                   context,

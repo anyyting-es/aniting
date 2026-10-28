@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/presentation/widgets/m3_expressive_slider.dart';
 
 /// Volume control widget providing a sleek M3 Expressive vertical popover on hover
 /// for desktop (with scroll wheel support) and a mute/unmute icon for mobile.
@@ -120,15 +119,13 @@ class _VolumeSliderState extends ConsumerState<VolumeSlider>
 
   Widget _buildVolumePopup(BuildContext context, Color primaryColor, AppIconPack iconPack) {
     final normalizedVolume = (widget.volume / 100.0).clamp(0.0, 1.0);
-    final isMaterial = iconPack == AppIconPack.material;
-    final double volumeIconSize = isMaterial ? 24 : 22;
 
     return CompositedTransformFollower(
       link: _layerLink,
       showWhenUnlinked: false,
-      targetAnchor: Alignment.bottomCenter,
+      targetAnchor: Alignment.topCenter,
       followerAnchor: Alignment.bottomCenter,
-      offset: const Offset(0, 4),
+      offset: const Offset(0, -6),
       child: UnconstrainedBox(
         alignment: Alignment.bottomCenter,
         child: FadeTransition(
@@ -150,83 +147,66 @@ class _VolumeSliderState extends ConsumerState<VolumeSlider>
                 child: Material(
                   color: Colors.transparent,
                   child: Container(
-                    width: 42,
-                    padding: const EdgeInsets.fromLTRB(4, 10, 4, 3),
+                    width: 200,
+                    height: 44,
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
                     decoration: BoxDecoration(
                       color: const Color(0xF216151E),
-                      borderRadius: BorderRadius.circular(21),
+                      borderRadius: BorderRadius.circular(14),
                       border: Border.all(
                         color: Colors.white.withValues(alpha: 0.14),
                         width: 1.0,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.6),
-                          blurRadius: 16,
-                          spreadRadius: 1,
+                          color: Colors.black.withValues(alpha: 0.5),
+                          blurRadius: 14,
                           offset: const Offset(0, 4),
                         ),
                       ],
                     ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
+                    child: Row(
                       children: [
-                        // Porcentaje superior: sin "%", número más visible
-                        Text(
-                          '${widget.volume.round()}',
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                            letterSpacing: -0.2,
+                        Icon(
+                          _getVolumeIcon(iconPack),
+                          size: 18,
+                          color: widget.volume == 0 ? Colors.white38 : Colors.white70,
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: SliderTheme(
+                            data: SliderThemeData(
+                              trackHeight: 4,
+                              activeTrackColor: primaryColor,
+                              inactiveTrackColor: Colors.white.withValues(alpha: 0.20),
+                              thumbColor: primaryColor,
+                              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                              overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
+                            ),
+                            child: Slider(
+                              value: normalizedVolume,
+                              onChangeStart: (_) {
+                                _isDragging = true;
+                                _startHover();
+                              },
+                              onChanged: (newVal) =>
+                                  widget.onVolumeChanged(newVal * 100.0),
+                              onChangeEnd: (_) {
+                                _isDragging = false;
+                                _startHover();
+                              },
+                            ),
                           ),
                         ),
-                        const SizedBox(height: 8),
-
-                        // Slider vertical Material 3 Expressive compacto sin palito
-                        M3ExpressiveVerticalSlider(
-                          value: normalizedVolume,
-                          height: 100,
-                          trackWidth: 16,
-                          showThumb: false,
-                          activeColor: primaryColor,
-                          inactiveColor: Colors.white.withValues(alpha: 0.18),
-                          onChanged: (newVal) =>
-                              widget.onVolumeChanged(newVal * 100.0),
-                          onChangeStart: () {
-                            _isDragging = true;
-                            _startHover();
-                          },
-                          onChangeEnd: () {
-                            _isDragging = false;
-                            _startHover();
-                          },
-                        ),
-
-                        const SizedBox(height: 4),
-
-                        // Icono de volumen integrado dentro del recuadro
-                        GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onTap: () {
-                            _startHover();
-                            if (widget.volume > 0) {
-                              widget.onVolumeChanged(0.0);
-                            } else {
-                              widget.onVolumeChanged(100.0);
-                            }
-                          },
-                          child: SizedBox(
-                            width: 36,
-                            height: 36,
-                            child: Center(
-                              child: Icon(
-                                _getVolumeIcon(iconPack),
-                                size: volumeIconSize,
-                                color: widget.volume == 0
-                                    ? Colors.white38
-                                    : primaryColor,
-                              ),
+                        SizedBox(
+                          width: 30,
+                          child: Text(
+                            '${widget.volume.round()}',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
@@ -287,7 +267,7 @@ class _VolumeSliderState extends ConsumerState<VolumeSlider>
           onExit: (_) => _scheduleHide(),
           child: Listener(
             onPointerSignal: (event) {
-              if (event is PointerScrollEvent && !_portalController.isShowing) {
+              if (event is PointerScrollEvent) {
                 _handleScroll(event);
               }
             },
@@ -301,9 +281,13 @@ class _VolumeSliderState extends ConsumerState<VolumeSlider>
                   widget.onVolumeChanged(100.0);
                 }
               },
-              child: SizedBox(
+              child: Container(
                 width: 36,
                 height: 36,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.black.withValues(alpha: 0.45),
+                ),
                 child: Center(
                   child: Icon(
                     _getVolumeIcon(iconPack),

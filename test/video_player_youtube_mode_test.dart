@@ -181,48 +181,34 @@ void main() {
       // 3. Next episode card is positioned ABOVE previous episode button (if visible) or next episode exists
       expect(find.byType(NextEpisodeCard), findsOneWidget);
     });
-    testWidgets('PlayerTopBar renders sidebar collapse/expand toggle and calls callback', (tester) async {
-      bool toggleCalled = false;
-      bool isCollapsed = false;
+    testWidgets('PlayerTopBar renders theater mode toggle and calls callback', (tester) async {
+      bool theaterToggled = false;
 
       await tester.pumpWidget(
         ProviderScope(
           child: MaterialApp(
             home: Scaffold(
-              body: StatefulBuilder(
-                builder: (context, setState) {
-                  return PlayerTopBar(
-                    title: 'DanDaDan',
-                    episodeTitle: 'Episodio 1',
-                    onBack: () {},
-                    onOpenSettings: () {},
-                    onToggleSidePanel: () {
-                      toggleCalled = true;
-                      setState(() => isCollapsed = !isCollapsed);
-                    },
-                    isSidePanelCollapsed: isCollapsed,
-                  );
-                },
+              body: PlayerTopBar(
+                title: 'DanDaDan',
+                episodeTitle: 'Episodio 1',
+                onBack: () {},
+                onOpenSettings: () {},
+                onToggleTheaterMode: () => theaterToggled = true,
               ),
             ),
           ),
         ),
       );
 
-      // Initially expanded: should show sidebar
-      expect(find.byIcon(AppIcons.sidebar(AppIconPack.lucide)), findsOneWidget);
-      expect(find.byIcon(AppIcons.sidebarOutline(AppIconPack.lucide)), findsNothing);
+      expect(find.byIcon(AppIcons.theater(AppIconPack.lucide)), findsOneWidget);
 
-      // Tap toggle
-      await tester.tap(find.byIcon(AppIcons.sidebar(AppIconPack.lucide)));
+      await tester.tap(find.byIcon(AppIcons.theater(AppIconPack.lucide)));
       await tester.pump();
 
-      expect(toggleCalled, isTrue);
-      // Now collapsed: should show sidebarOutline
-      expect(find.byIcon(AppIcons.sidebarOutline(AppIconPack.lucide)), findsOneWidget);
+      expect(theaterToggled, isTrue);
     });
 
-    testWidgets('PlayerTopBar does not render sidebar toggle when onToggleSidePanel is null', (tester) async {
+    testWidgets('PlayerTopBar does not render the theater toggle when callback is null', (tester) async {
       await tester.pumpWidget(
         ProviderScope(
           child: MaterialApp(
@@ -231,15 +217,13 @@ void main() {
                 title: 'DanDaDan',
                 onBack: () {},
                 onOpenSettings: () {},
-                onToggleSidePanel: null,
               ),
             ),
           ),
         ),
       );
 
-      expect(find.byIcon(AppIcons.sidebar(AppIconPack.lucide)), findsNothing);
-      expect(find.byIcon(AppIcons.sidebarOutline(AppIconPack.lucide)), findsNothing);
+      expect(find.byIcon(AppIcons.theater(AppIconPack.lucide)), findsNothing);
     });
 
     testWidgets('PlayerBottomBar renders fullscreen toggle button on all platforms', (tester) async {

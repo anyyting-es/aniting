@@ -17,10 +17,11 @@ class PlayerTopBar extends ConsumerWidget {
   final String? videoUrl;
   final VoidCallback onBack;
   final VoidCallback onOpenSettings;
-  final VoidCallback? onToggleSidePanel;
-  final bool isSidePanelCollapsed;
   final bool isFullscreen;
   final bool showTitle;
+  final bool showBackButton;
+  final VoidCallback? onToggleTheaterMode;
+  final bool isTheaterMode;
 
   const PlayerTopBar({
     super.key,
@@ -30,10 +31,11 @@ class PlayerTopBar extends ConsumerWidget {
     this.videoUrl,
     required this.onBack,
     required this.onOpenSettings,
-    this.onToggleSidePanel,
-    this.isSidePanelCollapsed = false,
     this.isFullscreen = true,
     this.showTitle = true,
+    this.showBackButton = true,
+    this.onToggleTheaterMode,
+    this.isTheaterMode = false,
   });
 
   Widget _buildTorrentIndicator(TorrentStreamStatus? status, AppIconPack iconPack) {
@@ -171,6 +173,23 @@ class PlayerTopBar extends ConsumerWidget {
         ? (isMaterial ? 28.0 : 24.0)
         : (isMaterial ? 24.0 : 21.0);
 
+    final buttonStyle = IconButton.styleFrom(
+      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      padding: const EdgeInsets.all(2),
+      backgroundColor: Colors.black.withValues(alpha: 0.45),
+      hoverColor: Colors.white.withValues(alpha: 0.12),
+      highlightColor: Colors.white.withValues(alpha: 0.18),
+      shape: const CircleBorder(),
+    );
+    final activeButtonStyle = IconButton.styleFrom(
+      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      padding: const EdgeInsets.all(2),
+      backgroundColor: Colors.white.withValues(alpha: 0.24),
+      hoverColor: Colors.white.withValues(alpha: 0.20),
+      highlightColor: Colors.white.withValues(alpha: 0.26),
+      shape: const CircleBorder(),
+    );
+
     return SafeArea(
       top: isFullscreen,
       bottom: false,
@@ -178,9 +197,9 @@ class PlayerTopBar extends ConsumerWidget {
       right: false,
       child: Padding(
         padding: const EdgeInsets.only(
-          left: 16,
-          right: 16,
-          top: 12,
+          left: 12,
+          right: 12,
+          top: 10,
           bottom: 2,
         ),
         child: SizedBox(
@@ -192,24 +211,22 @@ class PlayerTopBar extends ConsumerWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Back button
-                  IconButton(
-                    style: IconButton.styleFrom(
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      padding: const EdgeInsets.all(2),
+                  // Back button (hidden on desktop windowed: it lives in the page header)
+                  if (showBackButton)
+                    IconButton(
+                      style: buttonStyle,
+                      constraints: const BoxConstraints(
+                        minWidth: 36,
+                        minHeight: 36,
+                      ),
+                      icon: Icon(
+                        AppIcons.arrowLeft(iconPack),
+                        color: Colors.white,
+                        size: backIconSize,
+                      ),
+                      tooltip: l10n.back,
+                      onPressed: onBack,
                     ),
-                    constraints: const BoxConstraints(
-                      minWidth: 36,
-                      minHeight: 36,
-                    ),
-                    icon: Icon(
-                      AppIcons.arrowLeft(iconPack),
-                      color: Colors.white,
-                      size: backIconSize,
-                    ),
-                    tooltip: l10n.back,
-                    onPressed: onBack,
-                  ),
 
                 // Title, Episode Title & Source Badge (only when showTitle is true)
                 if (showTitle) ...[
@@ -248,36 +265,29 @@ class PlayerTopBar extends ConsumerWidget {
                 ] else
                   const Spacer(),
 
-                // Side panel collapse / expand toggle (PC / Desktop)
-                if (onToggleSidePanel != null) ...[
+                // Theater mode toggle (desktop only)
+                if (onToggleTheaterMode != null) ...[
                   IconButton(
-                    style: IconButton.styleFrom(
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      padding: const EdgeInsets.all(2),
-                    ),
+                    style: isTheaterMode ? activeButtonStyle : buttonStyle,
                     constraints: const BoxConstraints(
                       minWidth: 36,
                       minHeight: 36,
                     ),
                     icon: Icon(
-                      isSidePanelCollapsed
-                          ? AppIcons.sidebarOutline(iconPack)
-                          : AppIcons.sidebar(iconPack),
+                      AppIcons.theater(iconPack),
                       color: Colors.white,
                       size: sidebarIconSize,
                     ),
-                    tooltip: isSidePanelCollapsed ? l10n.showInfo : l10n.collapsePanel,
-                    onPressed: onToggleSidePanel,
+                    tooltip:
+                        isTheaterMode ? l10n.exitTheaterMode : l10n.theaterMode,
+                    onPressed: onToggleTheaterMode,
                   ),
                   const SizedBox(width: 6),
                 ],
 
                 // Settings button (always pinned to the far right!)
                 IconButton(
-                  style: IconButton.styleFrom(
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    padding: const EdgeInsets.all(2),
-                  ),
+                  style: buttonStyle,
                   constraints: const BoxConstraints(
                     minWidth: 36,
                     minHeight: 36,

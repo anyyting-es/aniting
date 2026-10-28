@@ -88,6 +88,15 @@ class PlayerBottomBar extends ConsumerWidget {
         ? (isMaterial ? 28.0 : 23.0)
         : (isMaterial ? 24.0 : 21.0);
 
+    final buttonStyle = IconButton.styleFrom(
+      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      padding: const EdgeInsets.all(2),
+      backgroundColor: Colors.black.withValues(alpha: 0.45),
+      hoverColor: Colors.white.withValues(alpha: 0.12),
+      highlightColor: Colors.white.withValues(alpha: 0.18),
+      shape: const CircleBorder(),
+    );
+
     // Compact single-line layout for mobile in portrait / mini view
     if (_isSmallMobile) {
       final double smallSkipNextSize = isMaterial ? 28 : 24;
@@ -148,10 +157,7 @@ class PlayerBottomBar extends ConsumerWidget {
                 children: [
                   // Play / Pause Button
                   IconButton(
-                    style: IconButton.styleFrom(
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      padding: const EdgeInsets.all(4),
-                    ),
+                    style: buttonStyle,
                     constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                     iconSize: 28,
                     icon: Icon(
@@ -168,10 +174,7 @@ class PlayerBottomBar extends ConsumerWidget {
                   if (onNextEpisode != null) ...[
                     const SizedBox(width: 2),
                     IconButton(
-                      style: IconButton.styleFrom(
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        padding: const EdgeInsets.all(4),
-                      ),
+                      style: buttonStyle,
                       constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                       iconSize: smallSkipNextSize,
                       icon: Icon(
@@ -211,10 +214,7 @@ class PlayerBottomBar extends ConsumerWidget {
                   // Fullscreen toggle button
                   if (onToggleFullscreen != null)
                     IconButton(
-                      style: IconButton.styleFrom(
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        padding: const EdgeInsets.all(4),
-                      ),
+                      style: buttonStyle,
                       constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                       iconSize: smallFullscreenSize,
                       icon: Icon(
@@ -272,10 +272,7 @@ class PlayerBottomBar extends ConsumerWidget {
                 children: [
                   // Play / Pause Button
                   IconButton(
-                    style: IconButton.styleFrom(
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      padding: const EdgeInsets.all(2),
-                    ),
+                    style: buttonStyle,
                     constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
                     icon: Icon(
                       isPlaying
@@ -292,10 +289,7 @@ class PlayerBottomBar extends ConsumerWidget {
                   if (onNextEpisode != null) ...[
                     const SizedBox(width: 4),
                     IconButton(
-                      style: IconButton.styleFrom(
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        padding: const EdgeInsets.all(2),
-                      ),
+                      style: buttonStyle,
                       constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
                       icon: Icon(
                         AppIcons.skipNext(iconPack),
@@ -360,12 +354,7 @@ class PlayerBottomBar extends ConsumerWidget {
                   // Fullscreen toggle (Desktop and Mobile)
                   if (onToggleFullscreen != null)
                     IconButton(
-                      style: IconButton.styleFrom(
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        padding: const EdgeInsets.all(2),
-                        hoverColor: Colors.white.withValues(alpha: 0.12),
-                        highlightColor: Colors.white.withValues(alpha: 0.20),
-                      ),
+                      style: buttonStyle,
                       constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
                       icon: AnimatedSwitcher(
                         duration: const Duration(milliseconds: 180),
@@ -398,3 +387,4 @@ class PlayerBottomBar extends ConsumerWidget {
     );
   }
 }
+

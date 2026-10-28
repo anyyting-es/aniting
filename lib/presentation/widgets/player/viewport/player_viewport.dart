@@ -77,8 +77,8 @@ class PlayerViewport extends ConsumerWidget {
   final String videoUrl;
   final VoidCallback onBack;
   final VoidCallback onOpenSettings;
-  final VoidCallback? onToggleSidePanel;
-  final bool isSidePanelCollapsed;
+  final VoidCallback? onToggleTheaterMode;
+  final bool isTheaterMode;
 
   // Bottom Bar info
   final ValueNotifier<Duration> positionNotifier;
@@ -133,8 +133,8 @@ class PlayerViewport extends ConsumerWidget {
     required this.videoUrl,
     required this.onBack,
     required this.onOpenSettings,
-    this.onToggleSidePanel,
-    required this.isSidePanelCollapsed,
+    this.onToggleTheaterMode,
+    this.isTheaterMode = false,
     required this.positionNotifier,
     required this.bufferNotifier,
     required this.duration,
@@ -408,32 +408,18 @@ class PlayerViewport extends ConsumerWidget {
                   left: 0,
                   right: 0,
                   child: RepaintBoundary(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.black.withValues(alpha: 0.85),
-                            Colors.black.withValues(alpha: 0.35),
-                            Colors.transparent,
-                          ],
-                          stops: const [0.0, 0.65, 1.0],
-                        ),
-                      ),
-                      child: PlayerTopBar(
-                        title: title,
-                        episodeTitle: episodeTitle,
-                        videoSource: videoSource,
-                        videoUrl: videoUrl,
-                        onBack: onBack,
-                        onOpenSettings: onOpenSettings,
-                        onToggleSidePanel: onToggleSidePanel,
-                        isSidePanelCollapsed: isSidePanelCollapsed,
-                        isFullscreen: isFullscreen,
-                        showTitle:
-                            isFullscreen || (isDesktop && isSidePanelCollapsed),
-                      ),
+                    child: PlayerTopBar(
+                      title: title,
+                      episodeTitle: episodeTitle,
+                      videoSource: videoSource,
+                      videoUrl: videoUrl,
+                      onBack: onBack,
+                      onOpenSettings: onOpenSettings,
+                      isFullscreen: isFullscreen,
+                      onToggleTheaterMode: onToggleTheaterMode,
+                      isTheaterMode: isTheaterMode,
+                      showBackButton: isTheaterMode || !(isDesktop && !isFullscreen),
+                      showTitle: isFullscreen,
                     ),
                   ),
                 ),
@@ -442,38 +428,24 @@ class PlayerViewport extends ConsumerWidget {
                   left: 0,
                   right: 0,
                   child: RepaintBoundary(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.bottomCenter,
-                          end: Alignment.topCenter,
-                          colors: [
-                            Colors.black.withValues(alpha: 0.9),
-                            Colors.black.withValues(alpha: 0.45),
-                            Colors.transparent,
-                          ],
-                          stops: const [0.0, 0.7, 1.0],
-                        ),
-                      ),
-                      child: PlayerBottomBar(
-                        positionNotifier: positionNotifier,
-                        duration: duration,
-                        bufferNotifier: bufferNotifier,
-                        isPlaying: isPlaying,
-                        volume: volume,
-                        chapters: chapters,
-                        currentChapterTitle: activeChapter?.title,
-                        onSeek: onSeekTo,
-                        onPlayPause: onPlayOrPause,
-                        onSeekBackward: () => onSeekRelative(-10),
-                        onSeekForward: () => onSeekRelative(10),
-                        onVolumeChanged: onVolumeChanged,
-                        onVolumeHoverChanged: onVolumeHoverChanged,
-                        onToggleFullscreen: onToggleFullscreen,
-                        onNextEpisode: onNextEpisode,
-                        isFullscreen: isFullscreen,
-                        isDesktopOverride: isDesktop,
-                      ),
+                    child: PlayerBottomBar(
+                      positionNotifier: positionNotifier,
+                      duration: duration,
+                      bufferNotifier: bufferNotifier,
+                      isPlaying: isPlaying,
+                      volume: volume,
+                      chapters: chapters,
+                      currentChapterTitle: activeChapter?.title,
+                      onSeek: onSeekTo,
+                      onPlayPause: onPlayOrPause,
+                      onSeekBackward: () => onSeekRelative(-10),
+                      onSeekForward: () => onSeekRelative(10),
+                      onVolumeChanged: onVolumeChanged,
+                      onVolumeHoverChanged: onVolumeHoverChanged,
+                      onToggleFullscreen: onToggleFullscreen,
+                      onNextEpisode: onNextEpisode,
+                      isFullscreen: isFullscreen,
+                      isDesktopOverride: isDesktop,
                     ),
                   ),
                 ),

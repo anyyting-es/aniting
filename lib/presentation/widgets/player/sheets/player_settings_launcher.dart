@@ -43,7 +43,7 @@ class PlayerSettingsLauncher {
   }) {
     final isDesktop = !Platform.isAndroid && !Platform.isIOS;
     final isMobilePortrait = !isDesktop && !isFullscreen;
-    final rightOffset = (isDesktop && !isFullscreen && !isSidePanelCollapsed) ? 380.0 : 0.0;
+    final rightOffset = (isDesktop && !isFullscreen && !isSidePanelCollapsed) ? 360.0 : 0.0;
 
     return PlayerSettingsSheet.show(
       context: context,

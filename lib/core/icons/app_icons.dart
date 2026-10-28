@@ -306,6 +306,9 @@ class AppIcons {
   static IconData fullscreenExit([AppIconPack? pack]) =>
       _isLucide(pack) ? LucideIcons.minimize2 : Icons.fullscreen_exit_rounded;
 
+  static IconData theater([AppIconPack? pack]) =>
+      _isLucide(pack) ? LucideIcons.monitor : Icons.theaters_rounded;
+
   static IconData volumeDown([AppIconPack? pack]) =>
       _isLucide(pack) ? LucideIcons.volume1 : Icons.volume_down_rounded;
 

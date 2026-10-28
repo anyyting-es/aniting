@@ -16,6 +16,8 @@ class EpisodeCard extends ConsumerStatefulWidget {
   final String? fallbackImageUrl;
   final String? coverColor;
   final bool isGridView;
+  final bool isActive;
+  final double listThumbnailWidth;
   final VoidCallback? onTap;
   final VoidCallback? onOpenTorrent;
   final bool isLoading;
@@ -27,6 +29,8 @@ class EpisodeCard extends ConsumerStatefulWidget {
     this.fallbackImageUrl,
     this.coverColor,
     this.isGridView = true,
+    this.isActive = false,
+    this.listThumbnailWidth = 130,
     this.onTap,
     this.onOpenTorrent,
     this.isLoading = false,
@@ -232,7 +236,7 @@ class _EpisodeCardState extends ConsumerState<EpisodeCard> {
   ) {
     final dynamicColor = parseHexColor(widget.coverColor) ?? theme.colorScheme.primary;
 
-    return MouseRegion(
+    final Widget card = MouseRegion(
       cursor: widget.isLoading ? SystemMouseCursors.basic : SystemMouseCursors.click,
       onEnter: (_) {
         AppFocusCoordinator.onPointerEntered();
@@ -274,7 +278,7 @@ class _EpisodeCardState extends ConsumerState<EpisodeCard> {
                 children: [
                   // 16:9 Left Thumbnail
                   SizedBox(
-                    width: 130,
+                    width: widget.listThumbnailWidth,
                     child: AspectRatio(
                       aspectRatio: 16 / 9,
                       child: AnimatedContainer(
@@ -316,7 +320,7 @@ class _EpisodeCardState extends ConsumerState<EpisodeCard> {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            fontSize: 13.5,
+                            fontSize: 14.5,
                             fontWeight: FontWeight.w600,
                             color: isDark ? Colors.white : theme.colorScheme.onSurface,
                           ),
@@ -329,7 +333,7 @@ class _EpisodeCardState extends ConsumerState<EpisodeCard> {
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                fontSize: 11.5,
+                                fontSize: 12.5,
                                 height: 1.3,
                                 color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.75),
                               ),
@@ -351,6 +355,21 @@ class _EpisodeCardState extends ConsumerState<EpisodeCard> {
           ],
         ),
       ),
+    );
+
+    if (!widget.isActive) return card;
+
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(10),
+        color: theme.colorScheme.primary.withValues(alpha: isDark ? 0.14 : 0.10),
+        border: Border.all(
+          color: theme.colorScheme.primary.withValues(alpha: 0.6),
+          width: 1.2,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: card,
     );
   }
 

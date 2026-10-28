@@ -97,7 +97,7 @@ void main() {
     expect(reloaded, isTrue);
   });
 
-  testWidgets('Tapping PlayerSourceCard opens modal and selects different source', (tester) async {
+  testWidgets('Tapping PlayerSourceCard opens the source dropdown and selects a different source', (tester) async {
     OnlinestreamVideoSource? selectedSource;
 
     await tester.pumpWidget(
@@ -115,25 +115,26 @@ void main() {
     );
     await tester.pump();
 
-    // Tap the card to open modal sheet
+    // Tap the card to open the dropdown
     await tester.tap(find.byType(PlayerSourceCard));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
 
-    // Check modal contents
-    expect(find.text('3 opciones'), findsOneWidget);
-    expect(find.text('VIDSTREAMING'), findsOneWidget);
-    expect(find.text('STREAMWISH'), findsOneWidget);
+    // Dropdown lists the available servers
+    expect(find.textContaining('vidstreaming'), findsOneWidget);
+    expect(find.textContaining('streamwish'), findsOneWidget);
 
-    // Select the second source (VIDSTREAMING)
-    await tester.tap(find.text('VIDSTREAMING'));
-    await tester.pumpAndSettle();
+    // Select the second source (vidstreaming)
+    await tester.tap(find.textContaining('vidstreaming'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
 
     expect(selectedSource, isNotNull);
     expect(selectedSource!.server, 'vidstreaming');
     expect(selectedSource!.quality, '720p');
   });
 
-  testWidgets('PlayerSourceCard displays error message and opens modal with retry', (tester) async {
+  testWidgets('PlayerSourceCard displays error state and reloads when tapped without sources', (tester) async {
     bool reloaded = false;
 
     await tester.pumpWidget(
@@ -150,17 +151,13 @@ void main() {
     );
     await tester.pump();
 
-    // Tapping card opens modal with retry and error message
+    // With no sources the card acts as a retry surface
     await tester.tap(find.byType(PlayerSourceCard));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Error de conexión con el proveedor'), findsOneWidget);
-    expect(find.text('Reintentar'), findsOneWidget);
-    await tester.tap(find.text('Reintentar'));
+    await tester.pump();
     expect(reloaded, isTrue);
   });
 
-  testWidgets('PlayerSourceCard allows changing provider inside modal', (tester) async {
+  testWidgets('PlayerSourceCard allows changing provider from the dropdown', (tester) async {
     String? switchedProvider;
 
     await tester.pumpWidget(
@@ -172,7 +169,8 @@ void main() {
           ]),
         ],
         child: PlayerSourceCard(
-          isResolvingSources: true,
+          isResolvingSources: false,
+          availableSources: sampleSources,
           providerName: 'gogoanime',
           episodeNumber: 1,
           onSelectProvider: (newProv) {
@@ -184,15 +182,15 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
-    // Tap card while resolving to open modal and switch provider
+    // Open the dropdown and switch provider
     await tester.tap(find.byType(PlayerSourceCard));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump(const Duration(milliseconds: 400));
 
     expect(find.text('AnimeFLV'), findsOneWidget);
     await tester.tap(find.text('AnimeFLV'));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump(const Duration(milliseconds: 400));
 
     expect(switchedProvider, 'animeflv');
   });

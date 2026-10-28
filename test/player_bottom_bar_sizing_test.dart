@@ -177,7 +177,6 @@ void main() {
     testWidgets('PlayerTopBar icons have harmonized sizes and reduced padding', (tester) async {
       bool backed = false;
       bool settingsOpened = false;
-      bool sidebarToggled = false;
 
       await tester.pumpWidget(
         ProviderScope(
@@ -191,7 +190,6 @@ void main() {
                 episodeTitle: 'Episodio 1',
                 onBack: () => backed = true,
                 onOpenSettings: () => settingsOpened = true,
-                onToggleSidePanel: () => sidebarToggled = true,
                 isFullscreen: true,
               ),
             ),
@@ -211,12 +209,6 @@ void main() {
       final Icon settingsIcon = tester.widget(settingsIconFinder);
       expect(settingsIcon.size, equals(29.0));
 
-      // Sidebar icon
-      final sidebarIconFinder = find.byIcon(Icons.view_sidebar_rounded);
-      expect(sidebarIconFinder, findsOneWidget);
-      final Icon sidebarIcon = tester.widget(sidebarIconFinder);
-      expect(sidebarIcon.size, equals(28.0));
-
       // Verify buttons have compact padding (all(2))
       final iconButtons = tester.widgetList<IconButton>(find.byType(IconButton)).toList();
       for (final btn in iconButtons) {
@@ -228,9 +220,6 @@ void main() {
 
       await tester.tap(settingsIconFinder);
       expect(settingsOpened, isTrue);
-
-      await tester.tap(sidebarIconFinder);
-      expect(sidebarToggled, isTrue);
     });
   });
 }

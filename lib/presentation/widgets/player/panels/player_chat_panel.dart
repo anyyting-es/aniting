@@ -14,11 +14,13 @@ import 'package:seanime_app/data/services/dantotsu_comments_service.dart';
 class PlayerChatPanel extends ConsumerStatefulWidget {
   final int? mediaId;
   final int? episodeNumber;
+  final bool embedded;
 
   const PlayerChatPanel({
     super.key,
     required this.mediaId,
     required this.episodeNumber,
+    this.embedded = false,
   });
 
   @override
@@ -60,6 +62,23 @@ class _PlayerChatPanelState extends ConsumerState<PlayerChatPanel> {
     _scrollController.dispose();
     _commentController.dispose();
     super.dispose();
+  }
+
+  String _errorSummary() {
+    final raw = (_error ?? '').replaceAll(RegExp(r'\s+'), ' ').trim();
+    if (raw.isEmpty) return '';
+    return raw.length > 200 ? '${raw.substring(0, 200)}…' : raw;
+  }
+
+  String _errorText(AppTranslations l10n) {
+    final err = (_error ?? '').toLowerCase();
+    final isNetwork = err.contains('socketexception') ||
+        err.contains('connection error') ||
+        err.contains('connectionerror') ||
+        err.contains('timeout') ||
+        err.contains('failed host lookup') ||
+        err.contains('network is unreachable');
+    return isNetwork ? l10n.chatNoConnection : l10n.chatServerError;
   }
 
   Future<void> _loadComments({bool refresh = false}) async {
@@ -200,64 +219,63 @@ class _PlayerChatPanelState extends ConsumerState<PlayerChatPanel> {
     final replyingTo = _replyingTo;
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-      child: GlassCard(
-        borderRadius: BorderRadius.circular(22),
-        padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (replyingTo != null)
-              Padding(
-                padding: const EdgeInsets.only(left: 4, bottom: 4),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.reply_rounded,
-                      size: 14,
-                      color: theme.colorScheme.primary,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (replyingTo != null)
+            Padding(
+              padding: const EdgeInsets.only(left: 6, bottom: 6),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.reply_rounded,
+                    size: 14,
+                    color: theme.colorScheme.primary,
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      '${l10n.chatReplyingTo} ${replyingTo.username}',
+                      style: theme.textTheme.labelSmall,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        '${l10n.chatReplyingTo} ${replyingTo.username}',
-                        style: theme.textTheme.labelSmall,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                  ),
+                  IconButton(
+                    onPressed: () => setState(() => _replyingTo = null),
+                    icon: const Icon(Icons.close, size: 16),
+                    tooltip: l10n.cancel,
+                    visualDensity: VisualDensity.compact,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(
+                      minWidth: 28,
+                      minHeight: 28,
                     ),
-                    GlassButton(
-                      onPressed: () => setState(() => _replyingTo = null),
-                      padding: EdgeInsets.zero,
-                      minSize: const Size(28, 28),
-                      semanticLabel: l10n.cancel,
-                      child: const Icon(Icons.close, size: 15),
-                    ),
-                  ],
-                ),
-              ),
-            GlassTextField(
-              controller: _commentController,
-              placeholder: replyingTo == null
-                  ? l10n.chatWriteComment
-                  : l10n.chatWriteReply,
-              textInputAction: TextInputAction.send,
-              onSubmitted: (_) => _submitComment(),
-              trailing: GlassButton(
-                onPressed: _isSubmitting ? null : _submitComment,
-                padding: EdgeInsets.zero,
-                minSize: const Size(38, 38),
-                semanticLabel: l10n.chatSend,
-                child: _isSubmitting
-                    ? const SizedBox(
-                        width: 17,
-                        height: 17,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.arrow_upward_rounded, size: 19),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
+          GlassTextField(
+            controller: _commentController,
+            placeholder: replyingTo == null
+                ? l10n.chatWriteComment
+                : l10n.chatWriteReply,
+            textInputAction: TextInputAction.send,
+            onSubmitted: (_) => _submitComment(),
+            trailing: IconButton(
+              onPressed: _isSubmitting ? null : _submitComment,
+              icon: _isSubmitting
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.arrow_upward_rounded, size: 20),
+              tooltip: l10n.chatSend,
+              visualDensity: VisualDensity.compact,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -269,6 +287,10 @@ class _PlayerChatPanelState extends ConsumerState<PlayerChatPanel> {
     final iconPack = ref.watch(iconPackProvider);
     final isLoggedIn =
         ref.watch(serverNotifierProvider).status?.isLoggedIn ?? false;
+
+    if (widget.embedded) {
+      return _buildEmbedded(l10n, theme, iconPack, isLoggedIn);
+    }
 
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
@@ -297,7 +319,7 @@ class _PlayerChatPanelState extends ConsumerState<PlayerChatPanel> {
                   : AppIcons.refresh(iconPack),
               message: requiresLogin
                   ? l10n.chatLoginRequired
-                  : l10n.chatLoadError,
+                  : '${_errorText(l10n)}\n\n${_errorSummary()}',
               actionLabel: requiresLogin
                   ? l10n.chatLoginWithAnilist
                   : l10n.retry,
@@ -372,6 +394,106 @@ class _PlayerChatPanelState extends ConsumerState<PlayerChatPanel> {
           ),
         ),
         _buildComposer(l10n, theme),
+      ],
+    );
+  }
+
+  /// Non-scrolling variant used inside the desktop watch content column, so the
+  /// comments flow within the page scroll instead of owning their own viewport.
+  Widget _buildEmbedded(
+    AppTranslations l10n,
+    ThemeData theme,
+    AppIconPack iconPack,
+    bool isLoggedIn,
+  ) {
+    if (_isLoading) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 28),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (widget.mediaId == null || widget.mediaId! <= 0) {
+      return _EmptyChatState(
+        icon: AppIcons.chatBubble(iconPack),
+        message: l10n.chatUnavailable,
+        actionLabel: l10n.refresh,
+        onPressed: () => _loadComments(refresh: true),
+      );
+    }
+    if (!isLoggedIn) {
+      return _EmptyChatState(
+        icon: AppIcons.profile(iconPack),
+        message: l10n.chatLoginRequired,
+        actionLabel: l10n.chatLoginWithAnilist,
+        onPressed: _openLogin,
+      );
+    }
+    if (_error != null) {
+      final requiresLogin = _error!.toLowerCase().contains('anilist account') ||
+          _error!.toLowerCase().contains('unauthorized');
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildComposer(l10n, theme),
+          _EmptyChatState(
+            icon: requiresLogin ? AppIcons.profile(iconPack) : AppIcons.refresh(iconPack),
+            message: requiresLogin ? l10n.chatLoginRequired : '${_errorText(l10n)}\n\n${_errorSummary()}',
+            actionLabel: requiresLogin ? l10n.chatLoginWithAnilist : l10n.retry,
+            onPressed: requiresLogin ? _openLogin : () => _loadComments(refresh: true),
+          ),
+        ],
+      );
+    }
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _buildComposer(l10n, theme),
+        const SizedBox(height: 4),
+        if (_comments.isEmpty)
+          _EmptyChatState(
+            icon: AppIcons.chatBubble(iconPack),
+            message: l10n.chatBeFirst,
+            actionLabel: l10n.refresh,
+            onPressed: () => _loadComments(refresh: true),
+          )
+        else ...[
+          for (int index = 0; index < _comments.length; index++)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: _CommentCard(
+                comment: _comments[index],
+                theme: theme,
+                l10n: l10n,
+                onReply: () => setState(() => _replyingTo = _comments[index]),
+                onCopy: () async {
+                  final messenger = ScaffoldMessenger.of(context);
+                  await Clipboard.setData(
+                    ClipboardData(text: _comments[index].content),
+                  );
+                  if (mounted) {
+                    messenger.showSnackBar(
+                      SnackBar(content: Text(l10n.chatCopied)),
+                    );
+                  }
+                },
+                onVote: (voteType) => _vote(_comments[index], voteType),
+              ),
+            ),
+          if (_hasMorePages)
+            TextButton(
+              onPressed: _isLoadingMore ? null : _loadMore,
+              child: _isLoadingMore
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(l10n.loadMore),
+            ),
+        ],
       ],
     );
   }

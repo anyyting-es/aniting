@@ -33,14 +33,13 @@ class DantotsuCommentsService {
         ? Map<String, dynamic>.from(rawResponse!['data'] as Map)
         : rawResponse;
     if (data == null) {
-      throw const FormatException('Dantotsu returned an empty response');
+      return const DantotsuCommentsPage(comments: [], totalPages: 1);
     }
 
     final rawComments = data['comments'];
     if (rawComments is! List) {
-      throw const FormatException(
-        'Dantotsu returned an invalid comments payload',
-      );
+      // No comment thread yet: the backend may omit the list entirely.
+      return const DantotsuCommentsPage(comments: [], totalPages: 1);
     }
 
     return DantotsuCommentsPage(

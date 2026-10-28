@@ -20,6 +20,16 @@ const (
 
 var dantotsuHTTPClient = &http.Client{Timeout: 25 * time.Second}
 
+// dantotsuStatusError carries the upstream HTTP status when Dantotsu returns a
+// non-2xx response, so callers can special-case "no comments" style errors.
+type dantotsuStatusError struct {
+	status int
+	err    error
+}
+
+func (e *dantotsuStatusError) Error() string { return e.err.Error() }
+func (e *dantotsuStatusError) Unwrap() error { return e.err }
+
 func (h *Handler) dantotsuAuthToken() (string, error) {
 	h.dantotsuMu.Lock()
 	defer h.dantotsuMu.Unlock()
@@ -103,8 +113,12 @@ func (h *Handler) dantotsuRequest(method, path string, query url.Values, form ur
 		return nil, errors.New("dantotsu session expired; please retry")
 	}
 	if res.StatusCode < 200 || res.StatusCode >= 300 {
+		status := res.StatusCode
 		res.Body.Close()
-		return nil, fmt.Errorf("dantotsu request failed with status %d", res.StatusCode)
+		return nil, &dantotsuStatusError{
+			status: status,
+			err:    fmt.Errorf("dantotsu request failed with status %d", status),
+		}
 	}
 	return res, nil
 }
@@ -129,6 +143,16 @@ func (h *Handler) HandleDantotsuComments(c echo.Context) error {
 		nil,
 	)
 	if err != nil {
+		// Dantotsu returns an error status when a media/episode has no comment
+		// thread yet; surface that as an empty list so the UI shows
+		// "be the first to comment" instead of an error.
+		var statusErr *dantotsuStatusError
+		if errors.As(err, &statusErr) {
+			return h.RespondWithData(c, map[string]any{
+				"comments":   []any{},
+				"totalPages": 0,
+			})
+		}
 		return h.RespondWithError(c, err)
 	}
 	defer res.Body.Close()

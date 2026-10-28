@@ -782,10 +782,16 @@ class SpanishTranslations implements AppTranslations {
   @override
   String get chat => 'Chat';
   @override
+  String get comments => 'Comentarios';
+  @override
   String get chatUnavailable =>
       'El chat no está disponible para este contenido';
   @override
   String get chatLoadError => 'No se pudo cargar el chat';
+  @override
+  String get chatNoConnection => 'Sin conexión a internet';
+  @override
+  String get chatServerError => 'Error del servidor, reintenta más tarde';
   @override
   String get chatLoginRequired => 'Inicia sesión con AniList para entrar al chat';
   @override
@@ -901,6 +907,10 @@ class SpanishTranslations implements AppTranslations {
   String get fullScreen => 'Pantalla completa';
   @override
   String get exitFullScreen => 'Salir de pantalla completa';
+  @override
+  String get theaterMode => 'Modo cine';
+  @override
+  String get exitTheaterMode => 'Salir del modo cine';
   @override
   String get reduceToModal => 'Reducir a modal';
   @override

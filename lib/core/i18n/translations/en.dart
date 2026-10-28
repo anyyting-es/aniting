@@ -777,9 +777,15 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get chat => 'Chat';
   @override
+  String get comments => 'Comments';
+  @override
   String get chatUnavailable => 'Chat is unavailable for this media';
   @override
   String get chatLoadError => 'Could not load the chat';
+  @override
+  String get chatNoConnection => 'No internet connection';
+  @override
+  String get chatServerError => 'Server error, try again later';
   @override
   String get chatLoginRequired => 'Sign in with AniList to join the chat';
   @override
@@ -895,6 +901,10 @@ class EnglishTranslations implements AppTranslations {
   String get fullScreen => 'Fullscreen';
   @override
   String get exitFullScreen => 'Exit Fullscreen';
+  @override
+  String get theaterMode => 'Theater mode';
+  @override
+  String get exitTheaterMode => 'Exit theater mode';
   @override
   String get reduceToModal => 'Reduce to modal';
   @override
