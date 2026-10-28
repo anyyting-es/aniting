@@ -8,7 +8,6 @@ import 'package:seanime_app/core/preferences/section_visibility_provider.dart';
 import 'package:seanime_app/core/server/server_manager.dart';
 import 'package:seanime_app/data/models/anime_entry.dart';
 import 'package:seanime_app/data/models/manga_entry.dart';
-import 'package:seanime_app/data/services/explore_carousel_service.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/screens/main_shell.dart';
 
@@ -95,7 +94,6 @@ class _AppWarmUpGateState extends ConsumerState<AppWarmUpGate>
           ref.read(continueWatchingProvider.future).catchError((_) => <AnimeEntry>[]),
           ref.read(downloadedAnimeProvider.future).catchError((_) => <AnimeEntry>[]),
           ref.read(animeCollectionProvider.future).catchError((_) => <AnimeEntry>[]),
-          ref.read(exploreCarouselNotifierProvider.notifier).syncOnStartup().catchError((_) => null),
         ];
 
         if (mangaEnabled) {

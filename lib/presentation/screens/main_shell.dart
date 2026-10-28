@@ -22,7 +22,6 @@ import 'package:seanime_app/presentation/widgets/mobile_floating_nav.dart';
 import 'package:seanime_app/presentation/providers/app_update_provider.dart';
 import 'package:seanime_app/presentation/widgets/shell_animated_indexed_stack.dart';
 import 'package:seanime_app/presentation/widgets/update/app_update_dialog.dart';
-import 'package:seanime_app/data/services/explore_carousel_service.dart';
 
 enum ShellSection {
   anime,
@@ -71,7 +70,6 @@ class _MainShellState extends ConsumerState<MainShell> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkAutoUpdate();
-      ref.read(exploreCarouselNotifierProvider.notifier).syncOnStartup();
     });
   }
 

@@ -5,7 +5,6 @@ import 'package:g1455/g1455.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/preferences/desktop_nav_style_provider.dart';
-import 'package:seanime_app/core/preferences/title_language_provider.dart';
 import 'package:seanime_app/core/preferences/section_visibility_provider.dart';
 import 'package:seanime_app/core/preferences/tv_mode_provider.dart';
 import 'package:seanime_app/core/theme/custom_route_transitions.dart';
@@ -20,8 +19,6 @@ import 'package:seanime_app/presentation/screens/manga_detail_screen.dart';
 import 'package:seanime_app/presentation/widgets/anime_card.dart';
 import 'package:seanime_app/presentation/widgets/catalog_search/catalog_search_view.dart';
 import 'package:seanime_app/presentation/widgets/discover_filter_sheet.dart';
-import 'package:seanime_app/presentation/widgets/explore_hero_carousel.dart';
-import 'package:seanime_app/data/services/explore_carousel_service.dart';
 import 'package:seanime_app/core/theme/smooth_scroll_controller.dart';
 import 'package:seanime_app/presentation/widgets/manga_card.dart';
 import 'package:seanime_app/presentation/widgets/media_type_toggle.dart';
@@ -597,7 +594,6 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final animeEnabled = ref.watch(animeSectionEnabledProvider);
     final showsEnabled = ref.watch(showsSectionEnabledProvider);
     final mangaEnabled = ref.watch(mangaSectionEnabledProvider);
-    final titleLang = ref.watch(titleLanguageProvider);
     final isDesktop = MediaQuery.of(context).size.width >= 720;
     final desktopNavStyle = ref.watch(desktopNavStyleProvider);
     final isSidebarMode = isDesktop && desktopNavStyle == DesktopNavStyle.sidebar;
@@ -605,8 +601,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final compactExplore = isTv;
     final sidebarInset = isSidebarMode ? (isTv ? 56.0 : 72.0) : 0.0;
 
-    // Trending & Featured providers for Explore Hero Carousel
-    final featuredAnimeConfig = isAnime ? ref.watch(exploreCarouselNotifierProvider) : null;
+    // Trending providers for the Explore curated sections
     final trendingAnimeAsync = isAnime ? ref.watch(trendingAnimeProvider) : null;
     final trendingShowsAsync = isShows ? ref.watch(tmdbTrendingShowsProvider) : null;
     final popularShowsAsync = isShows && !_showSearchBar ? ref.watch(tmdbPopularShowsProvider) : null;
@@ -679,7 +674,6 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 ref.invalidate(curatedSciFiAnimeProvider);
                 ref.invalidate(curatedRomanceAnimeProvider);
                 ref.invalidate(curatedComedyAnimeProvider);
-                ref.read(exploreCarouselNotifierProvider.notifier).refresh();
               } else if (isShows) {
                 ref.invalidate(tmdbTrendingShowsProvider);
                 ref.invalidate(tmdbPopularShowsProvider);
@@ -696,73 +690,14 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             child: CustomScrollView(
               controller: _scrollController,
               slivers: [
-                if ((isAnime && (featuredAnimeConfig == null || featuredAnimeConfig.items.isEmpty) && (trendingAnimeAsync == null || trendingAnimeAsync.isLoading)) ||
-                    (isShows && (trendingShowsAsync == null || trendingShowsAsync.isLoading)) ||
-                    (!isAnime && !isShows && (trendingMangaAsync == null || trendingMangaAsync.isLoading)))
-                  SliverToBoxAdapter(
-                    child: ExploreSkeleton(isTv: compactExplore),
-                  )
-                else if (isAnime)
-                  Builder(builder: (context) {
-                    final config = featuredAnimeConfig;
-                    final List<ExploreCarouselItem> carouselItems;
-                    final trendingItems = trendingAnimeAsync?.asData?.value;
-                    if (trendingItems != null && trendingItems.isNotEmpty) {
-                      carouselItems = trendingItems
-                          .take(8)
-                          .map((e) => ExploreCarouselItem.fromAnime(e, context, titleLang))
-                          .toList();
-                    } else if (config != null && config.items.isNotEmpty) {
-                      carouselItems = config.items
-                          .map((e) => ExploreCarouselItem.fromFeatured(e, context))
-                          .toList();
-                    } else {
-                      return const SliverToBoxAdapter(child: SizedBox.shrink());
-                    }
-                    return SliverToBoxAdapter(
-                      child: ExploreHeroCarousel(
-                        key: ValueKey('explore_hero_anime_v4_${carouselItems.map((e) => e.mediaId).join('_')}'),
-                        items: carouselItems,
-                        scrollController: _scrollController,
-                      ),
-                    );
-                  })
-                else if (isShows)
-                  Builder(builder: (context) {
-                    final items = trendingShowsAsync?.asData?.value ?? [];
-                    if (items.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
-                    final carouselItems = items
-                        .take(6)
-                        .map((e) => ExploreCarouselItem.fromAnime(e, context, titleLang))
-                        .toList();
-                    return SliverToBoxAdapter(
-                      child: ExploreHeroCarousel(
-                        key: ValueKey('explore_hero_shows_${carouselItems.length}'),
-                        items: carouselItems,
-                        scrollController: _scrollController,
-                      ),
-                    );
-                  })
-                else if (!isAnime && !isShows)
-                  Builder(builder: (context) {
-                    final trendingItems = trendingMangaAsync?.asData?.value ?? [];
-                    final popularItems = ref.watch(popularMangaProvider).asData?.value ?? [];
-                    final items = trendingItems.isNotEmpty ? trendingItems : popularItems;
-                    if (items.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
-                    final carouselItems = items
-                        .take(6)
-                        .map((e) => ExploreCarouselItem.fromManga(e, context, titleLang))
-                        .toList();
-                    return SliverToBoxAdapter(
-                      child: ExploreHeroCarousel(
-                        key: ValueKey('explore_hero_manga_${carouselItems.length}'),
-                        items: carouselItems,
-                        scrollController: _scrollController,
-                      ),
-                    );
-                  }),
+                // Top safe-area spacing (the hero carousel was removed).
+                SliverToBoxAdapter(
+                  child: SizedBox(
+                    height: MediaQuery.of(context).padding.top + 12,
+                  ),
+                ),
 
-                // Media Type Toggle (Anime / Shows / Manga) & Action Icons placed below the hero carousel
+                // Media Type Toggle (Anime / Shows / Manga) & Action Icons
                 if (!compactExplore)
                 SliverToBoxAdapter(
                   child: Padding(

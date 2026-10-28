@@ -79,6 +79,7 @@ class PlayerViewport extends ConsumerWidget {
   final VoidCallback onOpenSettings;
   final VoidCallback? onToggleTheaterMode;
   final bool isTheaterMode;
+  final GlobalKey? captureKey;
 
   // Bottom Bar info
   final ValueNotifier<Duration> positionNotifier;
@@ -135,6 +136,7 @@ class PlayerViewport extends ConsumerWidget {
     required this.onOpenSettings,
     this.onToggleTheaterMode,
     this.isTheaterMode = false,
+    this.captureKey,
     required this.positionNotifier,
     required this.bufferNotifier,
     required this.duration,
@@ -165,6 +167,7 @@ class PlayerViewport extends ConsumerWidget {
                 : (mediaKitPlayerService != null
                       ? SizedBox.expand(
                           child: RepaintBoundary(
+                            key: captureKey,
                             child: Video(
                               controller:
                                   mediaKitPlayerService!.videoController,

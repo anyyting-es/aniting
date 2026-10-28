@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:seanime_app/core/server/server_manager.dart';
-import 'package:seanime_app/data/models/explore_carousel_config.dart';
-import 'package:seanime_app/data/services/explore_carousel_service.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/screens/feed_screen.dart';
 import 'package:seanime_app/presentation/screens/library_screen.dart';
@@ -14,11 +12,6 @@ import 'package:seanime_app/presentation/widgets/top_status_bar_glass.dart';
 class MockServerNotifier extends ServerNotifier {
   @override
   ServerStateModel build() => const ServerStateModel(state: ServerState.stopped);
-}
-
-class MockExploreCarouselNotifier extends ExploreCarouselNotifier {
-  @override
-  ExploreCarouselConfig build() => ExploreCarouselNotifier.defaultFallbackConfig;
 }
 
 void main() {
@@ -117,7 +110,6 @@ void main() {
         ProviderScope(
           overrides: [
             serverNotifierProvider.overrideWith(MockServerNotifier.new),
-            exploreCarouselNotifierProvider.overrideWith(MockExploreCarouselNotifier.new),
           ],
           child: const MaterialApp(
             home: SearchScreen(),

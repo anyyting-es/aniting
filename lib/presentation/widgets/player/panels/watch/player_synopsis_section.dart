@@ -28,10 +28,10 @@ class _PlayerSynopsisSectionState extends ConsumerState<PlayerSynopsisSection> {
       builder: (context, constraints) {
         final textStyle = theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
-              fontSize: 12.5,
+              fontSize: 14,
               height: 1.45,
             ) ??
-            const TextStyle(fontSize: 12.5, height: 1.45);
+            const TextStyle(fontSize: 14, height: 1.45);
 
         final textSpan = TextSpan(text: widget.synopsis, style: textStyle);
         final textPainter = TextPainter(
@@ -57,7 +57,7 @@ class _PlayerSynopsisSectionState extends ConsumerState<PlayerSynopsisSection> {
                       l10n.synopsis,
                       style: theme.textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.bold,
-                        fontSize: 13,
+                        fontSize: 15,
                       ),
                     ),
                     if (canExpand)
@@ -66,7 +66,7 @@ class _PlayerSynopsisSectionState extends ConsumerState<PlayerSynopsisSection> {
                         style: TextStyle(
                           color: theme.colorScheme.primary,
                           fontWeight: FontWeight.w600,
-                          fontSize: 12,
+                          fontSize: 13.5,
                         ),
                       ),
                   ],

@@ -112,13 +112,13 @@ class PlayerWatchContent extends ConsumerWidget {
         const SizedBox(height: 36),
         Row(
           children: [
-            Icon(AppIcons.chatBubble(iconPack), size: 18, color: theme.colorScheme.primary),
+            Icon(AppIcons.chatBubble(iconPack), size: 20, color: theme.colorScheme.primary),
             const SizedBox(width: 8),
             Text(
               l10n.comments,
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
-                fontSize: 15,
+                fontSize: 17,
               ),
             ),
           ],

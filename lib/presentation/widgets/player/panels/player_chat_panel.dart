@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:g1455/g1455.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
@@ -43,6 +42,8 @@ class _PlayerChatPanelState extends ConsumerState<PlayerChatPanel> {
   int _totalPages = 1;
   bool _hasMorePages = false;
   final _commentController = TextEditingController();
+  final _commentFocus = FocusNode();
+  final List<String> _attachments = [];
   bool _isSubmitting = false;
   bool _isUploadingImage = false;
   DantotsuComment? _replyingTo;
@@ -67,6 +68,7 @@ class _PlayerChatPanelState extends ConsumerState<PlayerChatPanel> {
   void dispose() {
     _scrollController.dispose();
     _commentController.dispose();
+    _commentFocus.dispose();
     super.dispose();
   }
 
@@ -74,6 +76,15 @@ class _PlayerChatPanelState extends ConsumerState<PlayerChatPanel> {
     final raw = (_error ?? '').replaceAll(RegExp(r'\s+'), ' ').trim();
     if (raw.isEmpty) return '';
     return raw.length > 200 ? '${raw.substring(0, 200)}…' : raw;
+  }
+
+  static int _byVotesDesc(DantotsuComment a, DantotsuComment b) {
+    final av = a.upvotes - a.downvotes;
+    final bv = b.upvotes - b.downvotes;
+    if (av != bv) return bv.compareTo(av);
+    final at = a.timestamp?.millisecondsSinceEpoch ?? 0;
+    final bt = b.timestamp?.millisecondsSinceEpoch ?? 0;
+    return bt.compareTo(at);
   }
 
   String _errorText(AppTranslations l10n) {
@@ -108,7 +119,7 @@ class _PlayerChatPanelState extends ConsumerState<PlayerChatPanel> {
       selection: TextSelection.collapsed(offset: start + text.length),
       composing: TextRange.empty,
     );
-    setState(() {});
+    _commentFocus.requestFocus();
   }
 
   void _insertTimestamp() {
@@ -127,7 +138,7 @@ class _PlayerChatPanelState extends ConsumerState<PlayerChatPanel> {
       }
       final url = await _service.uploadImage(bytes);
       if (!mounted) return;
-      _insertText('$url ');
+      setState(() => _attachments.add(url));
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -174,7 +185,7 @@ class _PlayerChatPanelState extends ConsumerState<PlayerChatPanel> {
       );
       if (!mounted) return;
       setState(() {
-        _comments = result.comments;
+        _comments = [...result.comments]..sort(_byVotesDesc);
         _page = 1;
         _totalPages = result.totalPages;
         _hasMorePages = result.comments.isNotEmpty && result.totalPages > 1;
@@ -207,7 +218,7 @@ class _PlayerChatPanelState extends ConsumerState<PlayerChatPanel> {
       if (!mounted) return;
       setState(() {
         if (result.comments.isNotEmpty) {
-          _comments = [..._comments, ...result.comments];
+          _comments = [..._comments, ...result.comments]..sort(_byVotesDesc);
           _page++;
         }
         _totalPages = result.totalPages;
@@ -232,8 +243,16 @@ class _PlayerChatPanelState extends ConsumerState<PlayerChatPanel> {
   }
 
   Future<void> _submitComment() async {
-    final content = _commentController.text.trim();
-    if (content.isEmpty || widget.mediaId == null || _isSubmitting) return;
+    final text = _commentController.text.trim();
+    if ((text.isEmpty && _attachments.isEmpty) ||
+        widget.mediaId == null ||
+        _isSubmitting) {
+      return;
+    }
+    final content = [
+      if (text.isNotEmpty) text,
+      if (_attachments.isNotEmpty) _attachments.join('\n'),
+    ].join('\n\n');
     setState(() => _isSubmitting = true);
     try {
       await _service.postComment(
@@ -244,7 +263,10 @@ class _PlayerChatPanelState extends ConsumerState<PlayerChatPanel> {
       );
       if (!mounted) return;
       _commentController.clear();
-      setState(() => _replyingTo = null);
+      setState(() {
+        _replyingTo = null;
+        _attachments.clear();
+      });
       await _loadComments(refresh: true);
     } catch (error) {
       if (!mounted) return;
@@ -286,6 +308,7 @@ class _PlayerChatPanelState extends ConsumerState<PlayerChatPanel> {
       message: tooltip,
       child: InkWell(
         borderRadius: BorderRadius.circular(8),
+        canRequestFocus: false,
         onTap: loading ? null : onTap,
         child: Padding(
           padding: const EdgeInsets.all(6),
@@ -301,10 +324,56 @@ class _PlayerChatPanelState extends ConsumerState<PlayerChatPanel> {
     );
   }
 
+  Widget _attachmentThumb(int index, ThemeData theme) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: CachedNetworkImage(
+            imageUrl: _attachments[index],
+            width: 160,
+            height: 90,
+            fit: BoxFit.cover,
+            placeholder: (_, _) => Container(
+              width: 160,
+              height: 90,
+              color: theme.colorScheme.surfaceContainerHighest,
+            ),
+            errorWidget: (_, _, _) => Container(
+              width: 160,
+              height: 90,
+              color: theme.colorScheme.surfaceContainerHighest,
+              child: const Icon(Icons.broken_image_outlined, size: 22),
+            ),
+          ),
+        ),
+        Positioned(
+          top: -6,
+          right: -6,
+          child: GestureDetector(
+            onTap: () => setState(() => _attachments.removeAt(index)),
+            child: Container(
+              padding: const EdgeInsets.all(2),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface,
+                shape: BoxShape.circle,
+                border: Border.all(color: theme.colorScheme.outlineVariant),
+              ),
+              child: const Icon(Icons.close, size: 14),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildComposer(AppTranslations l10n, ThemeData theme) {
     final replyingTo = _replyingTo;
+    final iconPack = ref.watch(iconPackProvider);
+    final horizontalInset = widget.embedded ? 0.0 : 12.0;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+      padding: EdgeInsets.fromLTRB(horizontalInset, 8, horizontalInset, 12),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -329,7 +398,7 @@ class _PlayerChatPanelState extends ConsumerState<PlayerChatPanel> {
                   ),
                   IconButton(
                     onPressed: () => setState(() => _replyingTo = null),
-                    icon: const Icon(Icons.close, size: 16),
+                    icon: Icon(AppIcons.close(iconPack), size: 16),
                     tooltip: l10n.cancel,
                     visualDensity: VisualDensity.compact,
                     padding: EdgeInsets.zero,
@@ -341,44 +410,93 @@ class _PlayerChatPanelState extends ConsumerState<PlayerChatPanel> {
                 ],
               ),
             ),
-          Row(
-            children: [
-              if (widget.positionNotifier != null)
-                _composerAction(
-                  icon: Icons.schedule_rounded,
-                  tooltip: l10n.chatPutTimestamp,
-                  onTap: _insertTimestamp,
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+              ),
+              color: theme.colorScheme.surfaceContainerHighest
+                  .withValues(alpha: 0.35),
+            ),
+            padding: const EdgeInsets.fromLTRB(12, 2, 6, 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _commentController,
+                        focusNode: _commentFocus,
+                        minLines: 1,
+                        maxLines: 5,
+                        textInputAction: TextInputAction.send,
+                        onSubmitted: (_) => _submitComment(),
+                        style: theme.textTheme.bodyMedium,
+                        decoration: InputDecoration(
+                          isDense: true,
+                          border: InputBorder.none,
+                          hintText: replyingTo == null
+                              ? l10n.chatWriteComment
+                              : l10n.chatWriteReply,
+                          hintStyle: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant
+                                .withValues(alpha: 0.6),
+                          ),
+                          contentPadding:
+                              const EdgeInsets.symmetric(vertical: 10),
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: _isSubmitting ? null : _submitComment,
+                      icon: _isSubmitting
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : Icon(AppIcons.arrowUp(iconPack), size: 20),
+                      tooltip: l10n.chatSend,
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ],
                 ),
-              if (widget.captureFrame != null) ...[
-                if (widget.positionNotifier != null) const SizedBox(width: 4),
-                _composerAction(
-                  icon: Icons.add_photo_alternate_outlined,
-                  tooltip: l10n.chatPutImage,
-                  loading: _isUploadingImage,
-                  onTap: _insertFrame,
+                if (_attachments.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        for (var i = 0; i < _attachments.length; i++)
+                          _attachmentThumb(i, theme),
+                      ],
+                    ),
+                  ),
+                Row(
+                  children: [
+                    if (widget.positionNotifier != null)
+                      _composerAction(
+                        icon: AppIcons.timer(iconPack),
+                        tooltip: l10n.chatPutTimestamp,
+                        onTap: _insertTimestamp,
+                      ),
+                    if (widget.captureFrame != null) ...[
+                      const SizedBox(width: 4),
+                      _composerAction(
+                        icon: AppIcons.image(iconPack),
+                        tooltip: l10n.chatPutImage,
+                        loading: _isUploadingImage,
+                        onTap: _insertFrame,
+                      ),
+                    ],
+                  ],
                 ),
               ],
-            ],
-          ),
-          const SizedBox(height: 6),
-          GlassTextField(
-            controller: _commentController,
-            placeholder: replyingTo == null
-                ? l10n.chatWriteComment
-                : l10n.chatWriteReply,
-            textInputAction: TextInputAction.send,
-            onSubmitted: (_) => _submitComment(),
-            trailing: IconButton(
-              onPressed: _isSubmitting ? null : _submitComment,
-              icon: _isSubmitting
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.arrow_upward_rounded, size: 20),
-              tooltip: l10n.chatSend,
-              visualDensity: VisualDensity.compact,
             ),
           ),
         ],

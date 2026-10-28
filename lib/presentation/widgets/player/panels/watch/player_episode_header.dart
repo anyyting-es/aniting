@@ -130,16 +130,16 @@ class PlayerEpisodeHeader extends ConsumerWidget {
           currentEpHeading,
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.bold,
-            fontSize: 16,
+            fontSize: 18,
           ),
         ),
-        const SizedBox(height: 3),
+        const SizedBox(height: 4),
         Text(
           animeTitle,
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
             fontWeight: FontWeight.w500,
-            fontSize: 13.5,
+            fontSize: 15,
           ),
         ),
         if (ratingScore != null || episodeDuration != null || episodeAirDate != null) ...[
@@ -147,38 +147,38 @@ class PlayerEpisodeHeader extends ConsumerWidget {
           Row(
             children: [
               if (ratingScore != null) ...[
-                Icon(AppIcons.star(iconPack), size: 16, color: theme.colorScheme.primary),
+                Icon(AppIcons.star(iconPack), size: 18, color: theme.colorScheme.primary),
                 const SizedBox(width: 4),
                 Text(
                   ratingScore,
                   style: TextStyle(
                     color: theme.colorScheme.primary,
                     fontWeight: FontWeight.bold,
-                    fontSize: 12.5,
+                    fontSize: 14,
                   ),
                 ),
                 const SizedBox(width: 12),
               ],
               if (episodeDuration != null) ...[
-                Icon(AppIcons.clock(iconPack), size: 14, color: theme.colorScheme.onSurfaceVariant),
+                Icon(AppIcons.clock(iconPack), size: 16, color: theme.colorScheme.onSurfaceVariant),
                 const SizedBox(width: 4),
                 Text(
                   episodeDuration,
                   style: TextStyle(
                     color: theme.colorScheme.onSurfaceVariant,
-                    fontSize: 12,
+                    fontSize: 13.5,
                   ),
                 ),
                 const SizedBox(width: 12),
               ],
               if (episodeAirDate != null) ...[
-                Icon(AppIcons.calendar(iconPack), size: 13, color: theme.colorScheme.onSurfaceVariant),
+                Icon(AppIcons.calendar(iconPack), size: 15, color: theme.colorScheme.onSurfaceVariant),
                 const SizedBox(width: 4),
                 Text(
                   episodeAirDate,
                   style: TextStyle(
                     color: theme.colorScheme.onSurfaceVariant,
-                    fontSize: 12,
+                    fontSize: 13.5,
                   ),
                 ),
               ],

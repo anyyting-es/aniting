@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:seanime_app/core/theme/smooth_scroll_controller.dart';
 
 /// YouTube-style desktop watch page.
 ///
-/// - Normal: the whole page (header, player, watch content and episodes rail)
-///   is constrained to a max width and centered as a single unit.
+/// - Normal: a centered page with a single smooth-scrolling column (header +
+///   player + watch content) and a right rail with the episode list.
 /// - Theater mode: an immersive full-bleed player that fills the whole window,
 ///   with the video fitted (black bars where the aspect ratio differs).
-class PlayerDesktopLayout extends StatelessWidget {
+class PlayerDesktopLayout extends StatefulWidget {
   final Widget pageHeader;
   final Widget viewport;
   final Widget watchContent;
@@ -17,7 +18,7 @@ class PlayerDesktopLayout extends StatelessWidget {
   final VoidCallback? onVideoHover;
   final VoidCallback? onVideoExit;
 
-  static const double railWidth = 400;
+  static const double railWidth = 520;
   static const double _pageMaxWidth = 2200;
 
   const PlayerDesktopLayout({
@@ -33,14 +34,30 @@ class PlayerDesktopLayout extends StatelessWidget {
     this.onVideoExit,
   });
 
+  @override
+  State<PlayerDesktopLayout> createState() => _PlayerDesktopLayoutState();
+}
+
+class _PlayerDesktopLayoutState extends State<PlayerDesktopLayout> {
+  final ScrollController _scrollController =
+      SmoothScrollController(smoothingFactor: 16.0);
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
   Widget _videoRegion(Widget child) {
     return MouseRegion(
-      cursor: hideCursorOnVideo
+      cursor: widget.hideCursorOnVideo
           ? SystemMouseCursors.none
           : SystemMouseCursors.basic,
-      onEnter: onVideoEnter == null ? null : (_) => onVideoEnter!(),
-      onHover: onVideoHover == null ? null : (_) => onVideoHover!(),
-      onExit: onVideoExit == null ? null : (_) => onVideoExit!(),
+      onEnter:
+          widget.onVideoEnter == null ? null : (_) => widget.onVideoEnter!(),
+      onHover:
+          widget.onVideoHover == null ? null : (_) => widget.onVideoHover!(),
+      onExit: widget.onVideoExit == null ? null : (_) => widget.onVideoExit!(),
       child: child,
     );
   }
@@ -50,12 +67,12 @@ class PlayerDesktopLayout extends StatelessWidget {
     final scrollConfig =
         ScrollConfiguration.of(context).copyWith(scrollbars: false);
 
-    if (isTheaterMode) {
+    if (widget.isTheaterMode) {
       return ScrollConfiguration(
         behavior: scrollConfig,
         child: ColoredBox(
           color: Colors.black,
-          child: SizedBox.expand(child: _videoRegion(viewport)),
+          child: SizedBox.expand(child: _videoRegion(widget.viewport)),
         ),
       );
     }
@@ -64,42 +81,42 @@ class PlayerDesktopLayout extends StatelessWidget {
       behavior: scrollConfig,
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: _pageMaxWidth),
-          child: Column(
+          constraints:
+              const BoxConstraints(maxWidth: PlayerDesktopLayout._pageMaxWidth),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              pageHeader,
               Expanded(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: ListView(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.fromLTRB(12, 0, 12, 48),
                   children: [
-                    Expanded(
-                      child: ListView(
-                        padding: const EdgeInsets.fromLTRB(12, 8, 12, 48),
-                        children: [
-                          _videoRegion(
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(20),
-                              child: AspectRatio(
-                                aspectRatio: 16 / 9,
-                                child: viewport,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          watchContent,
-                        ],
+                    widget.pageHeader,
+                    _videoRegion(
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: AspectRatio(
+                          aspectRatio: 16 / 9,
+                          child: widget.viewport,
+                        ),
                       ),
                     ),
-                    SizedBox(
-                      width: railWidth,
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(0, 8, 12, 24),
-                        child: episodesRail,
-                      ),
+                    const SizedBox(height: 24),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 6),
+                      child: widget.watchContent,
                     ),
                   ],
                 ),
               ),
+              if (!widget.isTheaterMode)
+                SizedBox(
+                  width: PlayerDesktopLayout.railWidth,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(0, 8, 12, 24),
+                    child: widget.episodesRail,
+                  ),
+                ),
             ],
           ),
         ),

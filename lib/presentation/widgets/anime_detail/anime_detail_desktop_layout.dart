@@ -19,7 +19,7 @@ import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
 import 'package:seanime_app/presentation/screens/video_player_screen.dart';
 import 'package:seanime_app/core/theme/smooth_scroll_controller.dart';
 
-import 'package:url_launcher/url_launcher_string.dart';
+import 'package:seanime_app/presentation/widgets/trailer_player_dialog.dart';
 
 import 'desktop/desktop_action_bar.dart';
 import 'desktop/desktop_cast_row.dart';
@@ -889,25 +889,12 @@ class _AnimeDetailDesktopLayoutState
                             child: DesktopTrailersSection(
                               trailerId: trailerId,
                               trailerSite: trailerSite,
-                              onTap: () async {
-                                String url = '';
-                                final site = trailerSite?.toLowerCase();
-                                if (site == 'youtube' || site == null) {
-                                  url =
-                                      'https://www.youtube.com/watch?v=$trailerId';
-                                } else if (site == 'dailymotion') {
-                                  url =
-                                      'https://www.dailymotion.com/video/$trailerId';
-                                }
-                                if (url.isNotEmpty) {
-                                  try {
-                                    await launchUrlString(
-                                      url,
-                                      mode: LaunchMode.externalApplication,
-                                    );
-                                  } catch (_) {}
-                                }
-                              },
+                              onTap: () => TrailerPlayerDialog.show(
+                                context,
+                                trailerId: trailerId,
+                                trailerSite: trailerSite,
+                                title: title,
+                              ),
                             ),
                           ),
                       ],

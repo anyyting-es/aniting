@@ -375,6 +375,9 @@ class AppIcons {
   static IconData brokenImage([AppIconPack? pack]) =>
       _isLucide(pack) ? LucideIcons.imageOff : Icons.broken_image_rounded;
 
+  static IconData image([AppIconPack? pack]) =>
+      _isLucide(pack) ? LucideIcons.image : Icons.image_rounded;
+
   static IconData listOrdered([AppIconPack? pack]) =>
       _isLucide(pack) ? LucideIcons.listOrdered : Icons.format_list_numbered_rounded;
 

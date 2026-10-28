@@ -10,7 +10,7 @@ This document provides in-depth architectural specifications and implementation 
 - **Main Views (5 Tabs)**:
   0. **Inicio (`feed_screen.dart`)**: 100% User Library anime feed (in-page search, Continue Watching with local video playback progress, Currently Watching, Missed Sequels full uncapped list, anime recommendations).
   1. **Manga (`manga_feed_screen.dart`)**: 100% User Library manga feed (in-page search, Continue Reading with chapters progress bar & `Capítulo X - Total` format, Completed Manga, manga recommendations).
-  2. **Explorar (`search_screen.dart`)**: Comprehensive exploration hub with hero banner carousel, genre chips, non-wrapping media type toggle (Anime/Manga/Shows), filters (season, year, sort), genres hub.
+  2. **Explorar (`search_screen.dart`)**: Comprehensive exploration hub with genre chips, non-wrapping media type toggle (Anime/Manga/Shows), filters (season, year, sort), genres hub.
   3. **Calendario (`airing_calendar_screen.dart`)**: Dedicated airing calendar page tracking upcoming broadcast schedules and episode countdowns.
   4. **Perfil (`library_screen.dart`)**: User profile stats, AniList account, collection lists.
 
@@ -20,7 +20,7 @@ This document provides in-depth architectural specifications and implementation 
   - A guard ensures at least one media section remains enabled.
 - **TMDB Service & Clean Model Mapping (`tmdb_service.dart`)**:
   - Leverages The Movie Database API to query `trending/tv/week`, `tv/popular`, `tv/top_rated`, and `search/tv`.
-  - Maps TMDB records seamlessly into the universal `AnimeEntry` model (`mediaId: tmdbId`, localized titles, `w500` cover images, `w1280` backdrop banner images, scaled 0-100 score, `TV`/`MOVIE` format), allowing complete reuse of existing UI components (`AnimeCard`, `ExploreHeroCarousel`).
+  - Maps TMDB records seamlessly into the universal `AnimeEntry` model (`mediaId: tmdbId`, localized titles, `w500` cover images, `w1280` backdrop banner images, scaled 0-100 score, `TV`/`MOVIE` format), allowing complete reuse of existing UI components (`AnimeCard`).
 - **TMDB Details & Season / Episode View (`widgets/anime_detail/tmdb/`)**:
   - `TmdbSeasonSelector`: Horizontal chip selector supporting Season 1..N and Specials (Season 0) with episode count badges.
   - `TmdbSeasonPostersView`: Horizontal season poster carousel with 2:3 cover thumbnails, active season highlight, and episode count badges.

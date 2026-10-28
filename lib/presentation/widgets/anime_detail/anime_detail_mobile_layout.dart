@@ -24,7 +24,7 @@ import 'package:seanime_app/presentation/screens/video_player_screen.dart';
 import 'package:seanime_app/presentation/widgets/anizip_episode_list.dart';
 import 'package:seanime_app/presentation/widgets/local_library_view.dart';
 import 'package:seanime_app/presentation/widgets/online_stream_view.dart';
-import 'package:url_launcher/url_launcher_string.dart';
+import 'package:seanime_app/presentation/widgets/trailer_player_dialog.dart';
 import 'package:seanime_app/core/preferences/anime_favorites_provider.dart';
 
 import 'package:g1455/g1455.dart';
@@ -312,19 +312,12 @@ class _AnimeDetailMobileLayoutState
   }
 
   Future<void> _launchTrailer(String? trailerId, String? trailerSite) async {
-    if (trailerId == null || trailerId.isEmpty) return;
-    String url = '';
-    final site = trailerSite?.toLowerCase();
-    if (site == 'youtube' || site == null) {
-      url = 'https://www.youtube.com/watch?v=$trailerId';
-    } else if (site == 'dailymotion') {
-      url = 'https://www.dailymotion.com/video/$trailerId';
-    }
-    if (url.isNotEmpty) {
-      try {
-        await launchUrlString(url, mode: LaunchMode.externalApplication);
-      } catch (_) {}
-    }
+    await TrailerPlayerDialog.show(
+      context,
+      trailerId: trailerId,
+      trailerSite: trailerSite,
+      title: widget.details?.title,
+    );
   }
 
   Future<void> _updateStatus(

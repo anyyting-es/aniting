@@ -28,7 +28,6 @@ import 'package:seanime_app/core/theme/theme_provider.dart';
 import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
 import 'package:seanime_app/presentation/screens/startup/app_warm_up_gate.dart';
 import 'package:seanime_app/presentation/screens/welcome_screen.dart';
-import 'package:seanime_app/data/services/explore_carousel_service.dart';
 import 'package:seanime_app/data/services/feed_cache_service.dart';
 import 'package:seanime_app/data/services/offline_library_service.dart';
 import 'package:seanime_app/data/services/offline_sync_service.dart';
@@ -127,7 +126,6 @@ void main() async {
     OnboardingNotifier.setCachedPrefs(prefs);
     AnimeSectionEnabledNotifier.setCachedPrefs(prefs);
     MangaSectionEnabledNotifier.setCachedPrefs(prefs);
-    ExploreCarouselNotifier.setCachedPrefs(prefs);
     DesktopNavStyleNotifier.setCachedPrefs(prefs);
     DesktopWindowTransparencyNotifier.setCachedPrefs(prefs);
     GlassEffectsEnabledNotifier.setCachedPrefs(prefs);

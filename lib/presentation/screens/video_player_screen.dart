@@ -1,7 +1,10 @@
 import 'dart:async';
 import 'dart:io' show Platform;
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:media_kit/media_kit.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
@@ -199,6 +202,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   double _volume = 100.0;
   double _lastNonZeroVolume = 100.0;
   final FocusNode _focusNode = FocusNode();
+  final GlobalKey _videoCaptureKey = GlobalKey();
 
   // YouTube-style watch page & TV mode state
   bool _isTheaterMode = false;
@@ -1466,15 +1470,35 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     setState(() => _isTheaterMode = !_isTheaterMode);
   }
 
-  /// Captures the current video frame (media_kit) as JPEG bytes for comments.
+  /// Captures the current video frame as image bytes for comments.
   Future<Uint8List?> _captureFrame() async {
     final service = _coordinator.mediaKitService;
     if (service == null) return null;
+
+    // Prefer a software screenshot so hardware decoding doesn't break it.
     try {
-      return await service.player.screenshot(format: 'image/jpeg');
-    } catch (_) {
-      return null;
-    }
+      final platform = service.player.platform;
+      if (platform is NativePlayer) {
+        await platform.setProperty('screenshot-sw', 'yes');
+      }
+    } catch (_) {}
+
+    try {
+      final bytes = await service.player.screenshot(format: 'image/jpeg');
+      if (bytes != null && bytes.isNotEmpty) return bytes;
+    } catch (_) {}
+
+    // Fallback: capture the rendered video widget layer.
+    try {
+      final boundary = _videoCaptureKey.currentContext?.findRenderObject();
+      if (boundary is RenderRepaintBoundary) {
+        final image = await boundary.toImage(pixelRatio: 1.5);
+        final data = await image.toByteData(format: ui.ImageByteFormat.png);
+        return data?.buffer.asUint8List();
+      }
+    } catch (_) {}
+
+    return null;
   }
 
   /// Episode list for the desktop right rail (falls back to 1..total).
@@ -1657,6 +1681,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       onOpenSettings: _openSettingsModal,
       onToggleTheaterMode: (isDesktop && !isFullscreen) ? _toggleTheaterMode : null,
       isTheaterMode: _isTheaterMode,
+      captureKey: _videoCaptureKey,
       positionNotifier: _positionNotifier,
       bufferNotifier: _bufferNotifier,
       duration: _duration,
@@ -1676,7 +1701,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     final l10n = ref.watch(translationsProvider);
     final iconPack = ref.watch(iconPackProvider);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 14, 12, 6),
+      padding: const EdgeInsets.fromLTRB(0, 8, 0, 10),
       child: Row(
         children: [
           IconButton(
