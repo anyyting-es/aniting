@@ -811,6 +811,10 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get chatSend => 'Send';
   @override
+  String get chatPutTimestamp => 'Insert current time';
+  @override
+  String get chatPutImage => 'Attach video screenshot';
+  @override
   String get chatReplyingTo => 'Replying to';
   @override
   String get chatCopied => 'Comment copied';

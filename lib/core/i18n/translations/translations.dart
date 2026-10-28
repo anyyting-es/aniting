@@ -413,6 +413,8 @@ abstract class AppTranslations {
   String get chatWriteComment;
   String get chatWriteReply;
   String get chatSend;
+  String get chatPutTimestamp;
+  String get chatPutImage;
   String get chatReplyingTo;
   String get chatCopied;
   String get chatActionError;

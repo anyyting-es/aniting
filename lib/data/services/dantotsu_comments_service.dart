@@ -1,3 +1,6 @@
+import 'dart:typed_data';
+
+import 'package:dio/dio.dart';
 import 'package:seanime_app/core/api/api_client.dart';
 import 'package:seanime_app/data/models/dantotsu_comment.dart';
 
@@ -77,5 +80,30 @@ class DantotsuCommentsService {
 
   Future<void> vote({required int commentId, required int voteType}) async {
     await _apiClient.post('/dantotsu/comments/vote/$commentId/$voteType');
+  }
+
+  /// Uploads an image to a public host (catbox.moe) and returns its URL, since
+  /// Dantotsu comments render images from external URLs.
+  Future<String> uploadImage(
+    Uint8List bytes, {
+    String filename = 'frame.jpg',
+  }) async {
+    final form = FormData.fromMap({
+      'reqtype': 'fileupload',
+      'fileToUpload': MultipartFile.fromBytes(bytes, filename: filename),
+    });
+    final response = await _apiClient.post<String>(
+      'https://catbox.moe/user/api.php',
+      data: form,
+      options: Options(
+        responseType: ResponseType.plain,
+        headers: {'User-Agent': 'Aniting/1.0 (Flutter)'},
+      ),
+    );
+    final url = (response.data ?? '').trim();
+    if (!url.startsWith('http')) {
+      throw const FormatException('Image upload failed');
+    }
+    return url;
   }
 }

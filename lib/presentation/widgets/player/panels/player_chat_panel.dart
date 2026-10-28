@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,12 +16,16 @@ class PlayerChatPanel extends ConsumerStatefulWidget {
   final int? mediaId;
   final int? episodeNumber;
   final bool embedded;
+  final ValueListenable<Duration>? positionNotifier;
+  final Future<Uint8List?> Function()? captureFrame;
 
   const PlayerChatPanel({
     super.key,
     required this.mediaId,
     required this.episodeNumber,
     this.embedded = false,
+    this.positionNotifier,
+    this.captureFrame,
   });
 
   @override
@@ -39,6 +44,7 @@ class _PlayerChatPanelState extends ConsumerState<PlayerChatPanel> {
   bool _hasMorePages = false;
   final _commentController = TextEditingController();
   bool _isSubmitting = false;
+  bool _isUploadingImage = false;
   DantotsuComment? _replyingTo;
 
   @override
@@ -79,6 +85,61 @@ class _PlayerChatPanelState extends ConsumerState<PlayerChatPanel> {
         err.contains('failed host lookup') ||
         err.contains('network is unreachable');
     return isNetwork ? l10n.chatNoConnection : l10n.chatServerError;
+  }
+
+  String _formatTime(Duration d) {
+    final h = d.inHours;
+    final m = d.inMinutes.remainder(60);
+    final s = d.inSeconds.remainder(60);
+    if (h > 0) {
+      return '$h:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+    }
+    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+  }
+
+  void _insertText(String text) {
+    final value = _commentController.value;
+    final selection = value.selection;
+    final start = selection.isValid ? selection.start : value.text.length;
+    final end = selection.isValid ? selection.end : value.text.length;
+    final newText = value.text.replaceRange(start, end, text);
+    _commentController.value = value.copyWith(
+      text: newText,
+      selection: TextSelection.collapsed(offset: start + text.length),
+      composing: TextRange.empty,
+    );
+    setState(() {});
+  }
+
+  void _insertTimestamp() {
+    final position = widget.positionNotifier?.value ?? Duration.zero;
+    _insertText('[${_formatTime(position)}] ');
+  }
+
+  Future<void> _insertFrame() async {
+    final capture = widget.captureFrame;
+    if (capture == null || _isUploadingImage) return;
+    setState(() => _isUploadingImage = true);
+    try {
+      final bytes = await capture();
+      if (bytes == null || bytes.isEmpty) {
+        throw Exception('no frame');
+      }
+      final url = await _service.uploadImage(bytes);
+      if (!mounted) return;
+      _insertText('$url ');
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '${ref.read(translationsProvider).chatActionError}: $error',
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isUploadingImage = false);
+    }
   }
 
   Future<void> _loadComments({bool refresh = false}) async {
@@ -215,6 +276,31 @@ class _PlayerChatPanelState extends ConsumerState<PlayerChatPanel> {
     }
   }
 
+  Widget _composerAction({
+    required IconData icon,
+    required String tooltip,
+    required VoidCallback onTap,
+    bool loading = false,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: loading ? null : onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(6),
+          child: loading
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : Icon(icon, size: 18),
+        ),
+      ),
+    );
+  }
+
   Widget _buildComposer(AppTranslations l10n, ThemeData theme) {
     final replyingTo = _replyingTo;
     return Padding(
@@ -255,6 +341,26 @@ class _PlayerChatPanelState extends ConsumerState<PlayerChatPanel> {
                 ],
               ),
             ),
+          Row(
+            children: [
+              if (widget.positionNotifier != null)
+                _composerAction(
+                  icon: Icons.schedule_rounded,
+                  tooltip: l10n.chatPutTimestamp,
+                  onTap: _insertTimestamp,
+                ),
+              if (widget.captureFrame != null) ...[
+                if (widget.positionNotifier != null) const SizedBox(width: 4),
+                _composerAction(
+                  icon: Icons.add_photo_alternate_outlined,
+                  tooltip: l10n.chatPutImage,
+                  loading: _isUploadingImage,
+                  onTap: _insertFrame,
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 6),
           GlassTextField(
             controller: _commentController,
             placeholder: replyingTo == null

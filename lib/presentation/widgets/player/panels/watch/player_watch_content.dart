@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
@@ -25,6 +26,8 @@ class PlayerWatchContent extends ConsumerWidget {
   final PlayerChapter? activeChapter;
   final ValueChanged<Duration> onSeekToChapter;
   final Widget? headerTrailing;
+  final ValueListenable<Duration>? positionNotifier;
+  final Future<Uint8List?> Function()? captureFrame;
 
   const PlayerWatchContent({
     super.key,
@@ -38,6 +41,8 @@ class PlayerWatchContent extends ConsumerWidget {
     this.activeChapter,
     required this.onSeekToChapter,
     this.headerTrailing,
+    this.positionNotifier,
+    this.captureFrame,
   });
 
   String _resolveSynopsis() {
@@ -123,6 +128,8 @@ class PlayerWatchContent extends ConsumerWidget {
           mediaId: mediaId,
           episodeNumber: episodeNumber,
           embedded: true,
+          positionNotifier: positionNotifier,
+          captureFrame: captureFrame,
         ),
       ],
     );

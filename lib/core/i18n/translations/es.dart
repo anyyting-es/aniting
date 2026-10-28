@@ -817,6 +817,10 @@ class SpanishTranslations implements AppTranslations {
   @override
   String get chatSend => 'Enviar';
   @override
+  String get chatPutTimestamp => 'Insertar tiempo actual';
+  @override
+  String get chatPutImage => 'Adjuntar captura del video';
+  @override
   String get chatReplyingTo => 'Respondiendo a';
   @override
   String get chatCopied => 'Comentario copiado';

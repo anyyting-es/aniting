@@ -1466,6 +1466,17 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     setState(() => _isTheaterMode = !_isTheaterMode);
   }
 
+  /// Captures the current video frame (media_kit) as JPEG bytes for comments.
+  Future<Uint8List?> _captureFrame() async {
+    final service = _coordinator.mediaKitService;
+    if (service == null) return null;
+    try {
+      return await service.player.screenshot(format: 'image/jpeg');
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Episode list for the desktop right rail (falls back to 1..total).
   List<AnimeEpisode> get _railEpisodes {
     final eps = _animeDetails?.episodes ?? const <AnimeEpisode>[];
@@ -1805,6 +1816,11 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                                     chapters: _chapters,
                                     activeChapter: _activeChapter,
                                     onSeekToChapter: _seekTo,
+                                    positionNotifier: _positionNotifier,
+                                    captureFrame:
+                                        _coordinator.mediaKitService != null
+                                        ? _captureFrame
+                                        : null,
                                     headerTrailing: PlayerHeaderControls(
                                       showSource: _playbackOrigin.isSwitchable,
                                       sources: _availableSources,
