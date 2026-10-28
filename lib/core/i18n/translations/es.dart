@@ -780,6 +780,47 @@ class SpanishTranslations implements AppTranslations {
   @override
   String get collapsePanel => 'Colapsar panel';
   @override
+  String get chat => 'Chat';
+  @override
+  String get chatUnavailable =>
+      'El chat no está disponible para este contenido';
+  @override
+  String get chatLoadError => 'No se pudo cargar el chat';
+  @override
+  String get chatLoginRequired => 'Inicia sesión con AniList para entrar al chat';
+  @override
+  String get chatLoginWithAnilist => 'Iniciar sesión con AniList';
+  @override
+  String get noChatComments => 'Todavía no hay comentarios para este episodio';
+  @override
+  String get loadMore => 'Cargar más';
+  @override
+  String get chatVote => 'voto';
+  @override
+  String get chatVotes => 'votos';
+  @override
+  String get chatReply => 'respuesta';
+  @override
+  String get chatReplies => 'respuestas';
+  @override
+  String get chatBeFirst => 'Sé el primero en comentar este episodio';
+  @override
+  String get chatWriteComment => 'Escribe un comentario...';
+  @override
+  String get chatWriteReply => 'Escribe una respuesta...';
+  @override
+  String get chatSend => 'Enviar';
+  @override
+  String get chatReplyingTo => 'Respondiendo a';
+  @override
+  String get chatCopied => 'Comentario copiado';
+  @override
+  String get chatActionError => 'No se pudo completar la acción';
+  @override
+  String get chatUpvote => 'Votar positivo';
+  @override
+  String get chatDownvote => 'Votar negativo';
+  @override
   String get playbackSources => 'Opciones de reproducción';
   @override
   String get searchingSources => 'Buscando opciones...';

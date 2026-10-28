@@ -9,6 +9,7 @@ import 'package:seanime_app/presentation/widgets/anime_details_modal_sheet.dart'
 import 'package:seanime_app/presentation/widgets/player/models/player_types.dart';
 import 'package:seanime_app/presentation/widgets/player/panels/next_episode_card.dart';
 import 'package:seanime_app/presentation/widgets/player/panels/player_source_card.dart';
+import 'package:seanime_app/presentation/widgets/player/panels/player_chat_panel.dart';
 
 import 'package:seanime_app/presentation/widgets/player/services/player_source_controller.dart';
 
@@ -80,6 +81,7 @@ class PlayerInfoPanel extends ConsumerStatefulWidget {
 
 class _PlayerInfoPanelState extends ConsumerState<PlayerInfoPanel> {
   bool _isSynopsisExpanded = false;
+  bool _showChat = false;
 
   String _formatDuration(Duration d) {
     final hours = d.inHours;
@@ -268,22 +270,35 @@ class _PlayerInfoPanelState extends ConsumerState<PlayerInfoPanel> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Desktop panel header with close button
-          if (widget.isDesktop)
-            Padding(
+          // Panel header with close button on desktop
+          Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 8, 8),
               child: Row(
                 children: [
-                  Icon(AppIcons.info(iconPack), size: 18),
-                  const SizedBox(width: 8),
-                  Text(
-                    l10n.informationTitle,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
+                  Expanded(
+                    child: SegmentedButton<bool>(
+                      segments: [
+                        ButtonSegment(
+                          value: false,
+                          icon: Icon(AppIcons.info(iconPack), size: 16),
+                          label: Text(l10n.informationTitle),
+                        ),
+                        ButtonSegment(
+                          value: true,
+                          icon: Icon(AppIcons.chatBubble(iconPack), size: 16),
+                          label: Text(l10n.chat),
+                        ),
+                      ],
+                      selected: {_showChat},
+                      onSelectionChanged: (selection) {
+                        setState(() => _showChat = selection.first);
+                      },
+                      style: const ButtonStyle(
+                        visualDensity: VisualDensity.compact,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
                     ),
                   ),
-                  const Spacer(),
                   if (widget.onCollapse != null)
                     IconButton(
                       icon: Icon(AppIcons.close(iconPack), size: 20),
@@ -302,7 +317,12 @@ class _PlayerInfoPanelState extends ConsumerState<PlayerInfoPanel> {
             ),
 
           Expanded(
-            child: ListView(
+            child: _showChat
+                ? PlayerChatPanel(
+                    mediaId: widget.mediaId,
+                    episodeNumber: widget.episodeNumber,
+                  )
+                : ListView(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
               children: [
                 // 1. Current Episode Title & Number FIRST (Prominent)
@@ -311,7 +331,7 @@ class _PlayerInfoPanelState extends ConsumerState<PlayerInfoPanel> {
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
-                  ),
+                      ),
                 ),
                 const SizedBox(height: 3),
 

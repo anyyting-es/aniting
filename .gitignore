@@ -1,3 +1,6 @@
+# Agent config
+.commandcode/
+
 # Miscellaneous
 *.class
 *.log

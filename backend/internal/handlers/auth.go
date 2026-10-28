@@ -13,6 +13,10 @@ import (
 //	@route /api/v1/auth/login [POST]
 //	@returns handlers.Status
 func (h *Handler) HandleLogin(c echo.Context) error {
+	h.dantotsuMu.Lock()
+	h.dantotsuToken = ""
+	h.dantotsuUserID = ""
+	h.dantotsuMu.Unlock()
 
 	type body struct {
 		Token string `json:"token"`
@@ -45,6 +49,10 @@ func (h *Handler) HandleLogin(c echo.Context) error {
 //	@returns handlers.Status
 func (h *Handler) HandleLogout(c echo.Context) error {
 	h.App.LogoutFromAnilist()
+	h.dantotsuMu.Lock()
+	h.dantotsuToken = ""
+	h.dantotsuUserID = ""
+	h.dantotsuMu.Unlock()
 
 	status := h.NewStatus(c)
 	return h.RespondWithData(c, status)

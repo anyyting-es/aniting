@@ -7,6 +7,7 @@ import (
 	"seanime/internal/core"
 	util "seanime/internal/util/proxies"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -18,6 +19,10 @@ import (
 
 type Handler struct {
 	App *core.App
+
+	dantotsuMu     sync.Mutex
+	dantotsuToken  string
+	dantotsuUserID string
 }
 
 func InitRoutes(app *core.App, e *echo.Echo) {
@@ -155,6 +160,11 @@ func InitRoutes(app *core.App, e *echo.Echo) {
 	// Auth
 	v1.POST("/auth/login", h.HandleLogin)
 	v1.POST("/auth/logout", h.HandleLogout)
+
+	// Dantotsu community chat
+	v1.GET("/dantotsu/comments/:mediaId/:page", h.HandleDantotsuComments)
+	v1.POST("/dantotsu/comments", h.HandleDantotsuCreateComment)
+	v1.POST("/dantotsu/comments/vote/:commentId/:voteType", h.HandleDantotsuVote)
 
 	// Settings
 	v1.GET("/settings", h.HandleGetSettings)

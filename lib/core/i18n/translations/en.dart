@@ -775,6 +775,46 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get collapsePanel => 'Collapse panel';
   @override
+  String get chat => 'Chat';
+  @override
+  String get chatUnavailable => 'Chat is unavailable for this media';
+  @override
+  String get chatLoadError => 'Could not load the chat';
+  @override
+  String get chatLoginRequired => 'Sign in with AniList to join the chat';
+  @override
+  String get chatLoginWithAnilist => 'Login with AniList';
+  @override
+  String get noChatComments => 'No comments for this episode yet';
+  @override
+  String get loadMore => 'Load more';
+  @override
+  String get chatVote => 'vote';
+  @override
+  String get chatVotes => 'votes';
+  @override
+  String get chatReply => 'reply';
+  @override
+  String get chatReplies => 'replies';
+  @override
+  String get chatBeFirst => 'Be the first to comment on this episode';
+  @override
+  String get chatWriteComment => 'Write a comment...';
+  @override
+  String get chatWriteReply => 'Write a reply...';
+  @override
+  String get chatSend => 'Send';
+  @override
+  String get chatReplyingTo => 'Replying to';
+  @override
+  String get chatCopied => 'Comment copied';
+  @override
+  String get chatActionError => 'Chat action failed';
+  @override
+  String get chatUpvote => 'Upvote';
+  @override
+  String get chatDownvote => 'Downvote';
+  @override
   String get playbackSources => 'Playback options';
   @override
   String get searchingSources => 'Searching options...';
