@@ -33,7 +33,7 @@ void main() {
       expect(currentVolume, 0.0);
     });
 
-    testWidgets('VolumeSlider opens vertical popup on hover and triggers onHoverChanged(true)', (tester) async {
+    testWidgets('VolumeSlider expands the inline slider on hover and triggers onHoverChanged(true)', (tester) async {
       double currentVolume = 50.0;
       bool isHovered = false;
 
@@ -54,8 +54,6 @@ void main() {
         ),
       );
 
-      // Initially popup is not open (no volume text)
-      expect(find.text('50'), findsNothing);
       expect(isHovered, isFalse);
 
       // Hover over volume button
@@ -68,8 +66,6 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 200));
 
-      // Popover is now showing with volume number
-      expect(find.text('50'), findsOneWidget);
       expect(isHovered, isTrue);
 
       // Moving mouse away triggers grace period then closes
