@@ -18,6 +18,8 @@ class EpisodeCard extends ConsumerStatefulWidget {
   final bool isGridView;
   final bool isActive;
   final double listThumbnailWidth;
+  final double listTitleFontSize;
+  final int listSynopsisMaxLines;
   final VoidCallback? onTap;
   final VoidCallback? onOpenTorrent;
   final bool isLoading;
@@ -31,6 +33,8 @@ class EpisodeCard extends ConsumerStatefulWidget {
     this.isGridView = true,
     this.isActive = false,
     this.listThumbnailWidth = 130,
+    this.listTitleFontSize = 14.5,
+    this.listSynopsisMaxLines = 2,
     this.onTap,
     this.onOpenTorrent,
     this.isLoading = false,
@@ -320,7 +324,7 @@ class _EpisodeCardState extends ConsumerState<EpisodeCard> {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            fontSize: 14.5,
+                            fontSize: widget.listTitleFontSize,
                             fontWeight: FontWeight.w600,
                             color: isDark ? Colors.white : theme.colorScheme.onSurface,
                           ),
@@ -330,7 +334,7 @@ class _EpisodeCardState extends ConsumerState<EpisodeCard> {
                             padding: const EdgeInsets.only(top: 3),
                             child: Text(
                               widget.episode.synopsis!,
-                              maxLines: 2,
+                              maxLines: widget.listSynopsisMaxLines,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 fontSize: 12.5,

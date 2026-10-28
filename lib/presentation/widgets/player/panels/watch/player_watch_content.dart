@@ -5,6 +5,7 @@ import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/data/models/anime_details.dart';
 import 'package:seanime_app/data/models/anizip_data.dart';
+import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
 import 'package:seanime_app/presentation/widgets/player/models/player_types.dart';
 import 'package:seanime_app/presentation/widgets/player/panels/player_chat_panel.dart';
 import 'package:seanime_app/presentation/widgets/player/panels/watch/player_chapters_strip.dart';
@@ -89,6 +90,13 @@ class PlayerWatchContent extends ConsumerWidget {
                 episodeTitle: episodeTitle,
                 animeDetails: animeDetails,
                 aniZipData: aniZipData,
+                onTitleTap: mediaId != null
+                    ? () => AnimeDetailScreen.navigate(
+                          context,
+                          mediaId: mediaId!,
+                          isTmdb: animeDetails?.isTmdb,
+                        )
+                    : null,
               ),
             ),
             if (headerTrailing != null) ...[

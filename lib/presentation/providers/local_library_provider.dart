@@ -162,6 +162,16 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
     ref.invalidate(tmdbTrendingShowsProvider);
   }
 
+  /// The `/library/remove-folder` endpoint both updates settings and purges the
+  /// removed folder's indexed files. When it is unavailable we fall back to a
+  /// settings-only patch, so we must force a re-scan to drop the stale entries
+  /// (otherwise the DB keeps local files that settings no longer reference and
+  /// they keep showing up in the feed).
+  void _purgeIndexedFilesAfterFallback() {
+    _repository.scanShows().ignore();
+    _repository.scanLibrary().ignore();
+  }
+
   void _listenToEvents() {
     _wsSubscription?.cancel();
     _wsSubscription = _webSocketService.eventStream.listen((event) {
@@ -531,6 +541,7 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
       ok = await _repository.removeLibraryFolder(state.mainPath, isMain: true);
       if (!ok) {
         ok = await _repository.patchServerSetting('library.libraryPath', '');
+        if (ok) _purgeIndexedFilesAfterFallback();
       }
     } else {
       ok = await _repository.patchServerSetting('library.libraryPath', trimmed);
@@ -577,6 +588,7 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
     bool ok = await _repository.removeLibraryFolder(pathToRemove, isMain: false);
     if (!ok) {
       ok = await _repository.patchServerSetting('library.libraryPaths', next);
+      if (ok) _purgeIndexedFilesAfterFallback();
     }
     if (ok) {
       final nextTypes = Map<String, String>.from(state.folderTypes)..remove(pathToRemove);
@@ -593,7 +605,17 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
   /// Unlinks all configured folders and clears local library metadata
   Future<bool> unlinkAllFolders() async {
     state = state.copyWith(isLoading: true);
-    final ok = await _repository.removeLibraryFolder('*', isMain: true);
+    var ok = await _repository.removeLibraryFolder('*', isMain: true);
+    if (!ok) {
+      final patchedMain =
+          await _repository.patchServerSetting('library.libraryPath', '');
+      final patchedAdditional =
+          await _repository.patchServerSetting('library.libraryPaths', <String>[]);
+      if (patchedMain && patchedAdditional) {
+        _purgeIndexedFilesAfterFallback();
+        ok = true;
+      }
+    }
     if (ok) {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_kFolderTypesPrefKey);

@@ -13,6 +13,7 @@ class PlayerEpisodeHeader extends ConsumerWidget {
   final String? episodeTitle;
   final AnimeDetails? animeDetails;
   final AniZipData? aniZipData;
+  final VoidCallback? onTitleTap;
 
   const PlayerEpisodeHeader({
     super.key,
@@ -21,6 +22,7 @@ class PlayerEpisodeHeader extends ConsumerWidget {
     this.episodeTitle,
     this.animeDetails,
     this.aniZipData,
+    this.onTitleTap,
   });
 
   static bool isGenericTitle(String? title, int epNum) {
@@ -123,6 +125,15 @@ class PlayerEpisodeHeader extends ConsumerWidget {
     final episodeDuration = currentAniZipEp?.formattedDuration;
     final episodeAirDate = currentAniZipEp?.formattedAirDate;
 
+    final animeTitleText = Text(
+      animeTitle,
+      style: theme.textTheme.bodyMedium?.copyWith(
+        color: theme.colorScheme.onSurfaceVariant,
+        fontWeight: FontWeight.w500,
+        fontSize: 15,
+      ),
+    );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -134,14 +145,20 @@ class PlayerEpisodeHeader extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 4),
-        Text(
-          animeTitle,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-            fontWeight: FontWeight.w500,
-            fontSize: 15,
-          ),
-        ),
+        if (onTitleTap != null)
+          MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: InkWell(
+              onTap: onTitleTap,
+              borderRadius: BorderRadius.circular(6),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                child: animeTitleText,
+              ),
+            ),
+          )
+        else
+          animeTitleText,
         if (ratingScore != null || episodeDuration != null || episodeAirDate != null) ...[
           const SizedBox(height: 8),
           Row(

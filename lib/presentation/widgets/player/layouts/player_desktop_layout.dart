@@ -83,40 +83,43 @@ class _PlayerDesktopLayoutState extends State<PlayerDesktopLayout> {
         child: ConstrainedBox(
           constraints:
               const BoxConstraints(maxWidth: PlayerDesktopLayout._pageMaxWidth),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: ListView(
+            controller: _scrollController,
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 48),
             children: [
-              Expanded(
-                child: ListView(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.fromLTRB(12, 0, 12, 48),
-                  children: [
-                    widget.pageHeader,
-                    _videoRegion(
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(20),
-                        child: AspectRatio(
-                          aspectRatio: 16 / 9,
-                          child: widget.viewport,
+              widget.pageHeader,
+              const SizedBox(height: 8),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _videoRegion(
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: AspectRatio(
+                              aspectRatio: 16 / 9,
+                              child: widget.viewport,
+                            ),
+                          ),
                         ),
-                      ),
+                        const SizedBox(height: 24),
+                        Padding(
+                          padding: const EdgeInsets.only(left: 6),
+                          child: widget.watchContent,
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 24),
-                    Padding(
-                      padding: const EdgeInsets.only(left: 6),
-                      child: widget.watchContent,
-                    ),
-                  ],
-                ),
-              ),
-              if (!widget.isTheaterMode)
-                SizedBox(
-                  width: PlayerDesktopLayout.railWidth,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(0, 8, 12, 24),
+                  ),
+                  const SizedBox(width: 24),
+                  SizedBox(
+                    width: PlayerDesktopLayout.railWidth,
                     child: widget.episodesRail,
                   ),
-                ),
+                ],
+              ),
             ],
           ),
         ),
