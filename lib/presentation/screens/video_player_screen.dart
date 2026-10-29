@@ -194,6 +194,11 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   );
   bool _canSkipCurrentChapter = false;
   bool _isPlaying = false;
+
+  /// Drives the play/pause control only. Keeping it out of [setState] avoids
+  /// rebuilding the whole player page (video, watch content and episode rail)
+  /// on every play/pause, which caused a visible UI stall when pausing.
+  final ValueNotifier<bool> _isPlayingNotifier = ValueNotifier<bool>(false);
   bool _isBuffering = false;
   bool _hasStartedPlayback = false;
   bool _isSeeking = false;
@@ -684,14 +689,18 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
         _bufferNotifier.value = effectiveBuf;
       },
       onPlaying: (playing) {
-        if (mounted) {
-          setState(() {
-            _isPlaying = playing;
-            if (playing) {
-              _hasStartedPlayback = true;
-              _isSeeking = false;
-            }
-          });
+        final wasStarted = _hasStartedPlayback;
+        final wasSeeking = _isSeeking;
+        _isPlaying = playing;
+        _isPlayingNotifier.value = playing;
+        if (playing) {
+          _hasStartedPlayback = true;
+          _isSeeking = false;
+        }
+        // Only the loading overlay depends on these flags, so rebuild solely
+        // for that transition instead of on every play/pause.
+        if (mounted && playing && (!wasStarted || wasSeeking)) {
+          setState(() {});
         }
         if (!playing) {
           _progressManager.savePlaybackProgress();
@@ -713,7 +722,8 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
         }
       },
       onEnded: () {
-        if (mounted) setState(() => _isPlaying = false);
+        _isPlaying = false;
+        _isPlayingNotifier.value = false;
       },
       onTracks: (audio, subs, selectedAudio, selectedSub) {
         if (!mounted) return;
@@ -1185,6 +1195,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       MprisService.instance.reset();
     }
 
+    _isPlayingNotifier.dispose();
     _focusNode.dispose();
     super.dispose();
   }
@@ -1357,10 +1368,15 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   }
 
   void _playOrPause() {
-    if (_isPlaying) {
-      _coordinator.pause();
-    } else {
+    final shouldPlay = !_isPlaying;
+    // Optimistic UI: flip the control right away so the tap responds
+    // instantly, then let the player stream confirm the real state.
+    _isPlaying = shouldPlay;
+    _isPlayingNotifier.value = shouldPlay;
+    if (shouldPlay) {
       _coordinator.play();
+    } else {
+      _coordinator.pause();
     }
     _startHideTimer();
   }
@@ -1685,7 +1701,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       positionNotifier: _positionNotifier,
       bufferNotifier: _bufferNotifier,
       duration: _duration,
-      isPlaying: _isPlaying,
+      isPlaying: _isPlayingNotifier,
       hasNextEpisode: _hasNextEpisode && !_isLoadingNextEpisode,
       onNextEpisode: (_hasNextEpisode && !_isLoadingNextEpisode)
           ? () => _sourceController.playEpisode(

@@ -949,7 +949,15 @@ final tmdbRecommendationsProvider = FutureProvider<List<AnimeEntry>>((ref) async
   final cw = ref.watch(continueWatchingProvider).asData?.value ?? [];
   final collection = ref.watch(animeCollectionProvider).asData?.value ?? [];
   final offline = OfflineLibraryService.instance.getAnimeCollection();
-  final lastSession = ref.watch(lastSessionProvider);
+  // Subscribe only to the TMDB identity of the last session, not to its
+  // constantly-updated playback position, so this provider does not refetch
+  // recommendations every time progress is saved.
+  final lastSessionTmdb = ref.watch(
+    lastSessionProvider.select((session) =>
+        (session != null && session.isTmdb)
+            ? (session.mediaId, session.title)
+            : null),
+  );
 
   AnimeEntry? activeTmdbShow;
   for (final e in cw) {
@@ -974,11 +982,11 @@ final tmdbRecommendationsProvider = FutureProvider<List<AnimeEntry>>((ref) async
       }
     }
   }
-  if (activeTmdbShow == null && lastSession != null && lastSession.isTmdb) {
+  if (activeTmdbShow == null && lastSessionTmdb != null) {
     activeTmdbShow = AnimeEntry(
-      id: lastSession.mediaId,
-      mediaId: lastSession.mediaId,
-      title: lastSession.title,
+      id: lastSessionTmdb.$1,
+      mediaId: lastSessionTmdb.$1,
+      title: lastSessionTmdb.$2,
       progress: 0,
       status: 'CURRENT',
       isTmdb: true,

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -85,7 +86,7 @@ class PlayerViewport extends ConsumerWidget {
   final ValueNotifier<Duration> positionNotifier;
   final ValueNotifier<Duration> bufferNotifier;
   final Duration duration;
-  final bool isPlaying;
+  final ValueListenable<bool> isPlaying;
   final bool hasNextEpisode;
   final VoidCallback? onNextEpisode;
 
@@ -431,24 +432,29 @@ class PlayerViewport extends ConsumerWidget {
                   left: 0,
                   right: 0,
                   child: RepaintBoundary(
-                    child: PlayerBottomBar(
-                      positionNotifier: positionNotifier,
-                      duration: duration,
-                      bufferNotifier: bufferNotifier,
-                      isPlaying: isPlaying,
-                      volume: volume,
-                      chapters: chapters,
-                      currentChapterTitle: activeChapter?.title,
-                      onSeek: onSeekTo,
-                      onPlayPause: onPlayOrPause,
-                      onSeekBackward: () => onSeekRelative(-10),
-                      onSeekForward: () => onSeekRelative(10),
-                      onVolumeChanged: onVolumeChanged,
-                      onVolumeHoverChanged: onVolumeHoverChanged,
-                      onToggleFullscreen: onToggleFullscreen,
-                      onNextEpisode: onNextEpisode,
-                      isFullscreen: isFullscreen,
-                      isDesktopOverride: isDesktop,
+                    child: ValueListenableBuilder<bool>(
+                      valueListenable: isPlaying,
+                      builder: (context, playing, _) {
+                        return PlayerBottomBar(
+                          positionNotifier: positionNotifier,
+                          duration: duration,
+                          bufferNotifier: bufferNotifier,
+                          isPlaying: playing,
+                          volume: volume,
+                          chapters: chapters,
+                          currentChapterTitle: activeChapter?.title,
+                          onSeek: onSeekTo,
+                          onPlayPause: onPlayOrPause,
+                          onSeekBackward: () => onSeekRelative(-10),
+                          onSeekForward: () => onSeekRelative(10),
+                          onVolumeChanged: onVolumeChanged,
+                          onVolumeHoverChanged: onVolumeHoverChanged,
+                          onToggleFullscreen: onToggleFullscreen,
+                          onNextEpisode: onNextEpisode,
+                          isFullscreen: isFullscreen,
+                          isDesktopOverride: isDesktop,
+                        );
+                      },
                     ),
                   ),
                 ),

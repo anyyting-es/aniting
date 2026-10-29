@@ -96,7 +96,7 @@ class _VolumeSliderState extends ConsumerState<VolumeSlider> {
     final isMaterial = iconPack == AppIconPack.material;
     final double volumeIconSize = widget.iconSize ??
         (_isDesktop
-            ? (isMaterial ? 28.0 : 23.0)
+            ? (isMaterial ? 22.0 : 17.0)
             : (isMaterial ? 24.0 : 21.0));
 
     if (!_isDesktop) {
@@ -115,7 +115,14 @@ class _VolumeSliderState extends ConsumerState<VolumeSlider> {
 
     final normalizedVolume = (widget.volume / 100.0).clamp(0.0, 1.0);
 
-    // Desktop: icon + inline horizontal slider that expands to the right.
+    // The dark backdrop keeps the same footprint as the other control circles;
+    // only the icon inside is optically smaller.
+    const double controlSize = 36;
+    const double sliderWidth = 104;
+    const double expandedWidth = controlSize + sliderWidth;
+
+    // Desktop: a single pill that grows in width, carrying the slider inside
+    // so the dark backdrop expands together with the control.
     return MouseRegion(
       opaque: true,
       onEnter: (_) => _startHover(),
@@ -127,44 +134,46 @@ class _VolumeSliderState extends ConsumerState<VolumeSlider> {
             _handleScroll(event);
           }
         },
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () {
-                _startHover();
-                _toggleMute();
-              },
-              child: Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.black.withValues(alpha: 0.45),
-                ),
-                child: Center(
-                  child: Icon(
-                    _getVolumeIcon(iconPack),
-                    color: Colors.white,
-                    size: volumeIconSize,
-                  ),
-                ),
-              ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(controlSize / 2),
+          clipBehavior: Clip.antiAlias,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOutCubic,
+            width: _isHovering ? expandedWidth : controlSize,
+            height: controlSize,
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.45),
+              borderRadius: BorderRadius.circular(controlSize / 2),
             ),
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              curve: Curves.easeOutCubic,
-              width: _isHovering ? 104 : 0,
-              height: 36,
-              child: ClipRect(
-                child: OverflowBox(
-                  alignment: Alignment.centerLeft,
-                  minWidth: 104,
-                  maxWidth: 104,
-                  child: SizedBox(
-                    width: 104,
-                    height: 32,
+            child: OverflowBox(
+              alignment: Alignment.centerLeft,
+              minWidth: expandedWidth,
+              maxWidth: expandedWidth,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      _startHover();
+                      _toggleMute();
+                    },
+                    child: SizedBox(
+                      width: controlSize,
+                      height: controlSize,
+                      child: Center(
+                        child: Icon(
+                          _getVolumeIcon(iconPack),
+                          color: Colors.white,
+                          size: volumeIconSize,
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(
+                    width: sliderWidth,
+                    height: controlSize,
                     child: SliderTheme(
                       data: SliderThemeData(
                         trackHeight: 3,
@@ -189,10 +198,10 @@ class _VolumeSliderState extends ConsumerState<VolumeSlider> {
                       ),
                     ),
                   ),
-                ),
+                ],
               ),
             ),
-          ],
+          ),
         ),
       ),
     );

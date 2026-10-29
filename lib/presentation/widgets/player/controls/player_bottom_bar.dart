@@ -74,18 +74,18 @@ class PlayerBottomBar extends ConsumerWidget {
     // Optical icon sizing: Material icons have internal glyph padding
     // and need proportional optical scaling so skipNext, volume,
     // and fullscreen feel harmonious and not miniature.
-    // Calibrated relative delta proportions: SkipNext +2, Volume -4, Play/Fullscreen equal.
+    // Calibrated relative delta proportions: SkipNext +1, Volume -2, Play/Fullscreen equal.
     final double playPauseSize = _isDesktop
-        ? (isMaterial ? 32.0 : 28.0)
+        ? (isMaterial ? 24.0 : 20.0)
         : (isMaterial ? 28.0 : 25.0);
     final double skipNextSize = _isDesktop
-        ? (isMaterial ? 34.0 : 26.0)
+        ? (isMaterial ? 25.0 : 19.0)
         : (isMaterial ? 30.0 : 23.0);
     final double fullscreenSize = _isDesktop
-        ? (isMaterial ? 32.0 : 27.0)
+        ? (isMaterial ? 24.0 : 19.0)
         : (isMaterial ? 28.0 : 24.0);
     final double volumeSize = _isDesktop
-        ? (isMaterial ? 28.0 : 23.0)
+        ? (isMaterial ? 22.0 : 17.0)
         : (isMaterial ? 24.0 : 21.0);
 
     final buttonStyle = IconButton.styleFrom(

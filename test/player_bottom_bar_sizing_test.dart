@@ -49,36 +49,36 @@ void main() {
         ),
       );
 
-      // Verify Play/Pause icon (Icons.pause_rounded) is sized to 32
+      // Verify Play/Pause icon (Icons.pause_rounded) is sized to 24
       final pauseIconFinder = find.byIcon(Icons.pause_rounded);
       expect(pauseIconFinder, findsOneWidget);
       final Icon pauseIcon = tester.widget(pauseIconFinder);
-      expect(pauseIcon.size, equals(32.0));
+      expect(pauseIcon.size, equals(24.0));
 
-      // Verify Skip Next icon (Icons.skip_next_rounded) is sized to 34 (preserving +2 delta)
+      // Verify Skip Next icon (Icons.skip_next_rounded) is sized to 25 (preserving +1 delta)
       final skipNextFinder = find.byIcon(Icons.skip_next_rounded);
       expect(skipNextFinder, findsOneWidget);
       final Icon skipNextIcon = tester.widget(skipNextFinder);
-      expect(skipNextIcon.size, equals(34.0));
+      expect(skipNextIcon.size, equals(25.0));
 
-      // Verify Fullscreen icon (Icons.fullscreen_rounded) is sized to 32 (equal to play/pause)
+      // Verify Fullscreen icon (Icons.fullscreen_rounded) is sized to 24 (equal to play/pause)
       final fullscreenFinder = find.byIcon(Icons.fullscreen_rounded);
       expect(fullscreenFinder, findsOneWidget);
       final Icon fullscreenIcon = tester.widget(fullscreenFinder);
-      expect(fullscreenIcon.size, equals(32.0));
+      expect(fullscreenIcon.size, equals(24.0));
 
-      // Verify Volume icon (Icons.volume_up_rounded) is sized to 28 (preserving -4 delta)
+      // Verify Volume icon (Icons.volume_up_rounded) is sized to 22 (preserving -2 delta)
       final volumeFinder = find.byIcon(Icons.volume_up_rounded);
       expect(volumeFinder, findsOneWidget);
       final Icon volumeIcon = tester.widget(volumeFinder);
-      expect(volumeIcon.size, equals(28.0));
+      expect(volumeIcon.size, equals(22.0));
 
       // Verify mathematical delta preservation:
-      // skipNext - playPause == 2
-      // playPause - volume == 4
+      // skipNext - playPause == 1
+      // playPause - volume == 2
       // playPause == fullscreen
-      expect(skipNextIcon.size! - pauseIcon.size!, equals(2.0));
-      expect(pauseIcon.size! - volumeIcon.size!, equals(4.0));
+      expect(skipNextIcon.size! - pauseIcon.size!, equals(1.0));
+      expect(pauseIcon.size! - volumeIcon.size!, equals(2.0));
       expect(pauseIcon.size!, equals(fullscreenIcon.size!));
 
       // Verify reduced padding on IconButtons (all(2))
@@ -128,25 +128,25 @@ void main() {
       final playIconFinder = find.byIcon(AppIcons.play(AppIconPack.lucide));
       expect(playIconFinder, findsOneWidget);
       final Icon playIcon = tester.widget(playIconFinder);
-      expect(playIcon.size, equals(28.0));
+      expect(playIcon.size, equals(20.0));
 
       // Skip next icon in Lucide
       final skipNextFinder = find.byIcon(AppIcons.skipNext(AppIconPack.lucide));
       expect(skipNextFinder, findsOneWidget);
       final Icon skipNextIcon = tester.widget(skipNextFinder);
-      expect(skipNextIcon.size, equals(26.0));
+      expect(skipNextIcon.size, equals(19.0));
 
       // Fullscreen icon in Lucide
       final fullscreenFinder = find.byIcon(AppIcons.fullscreen(AppIconPack.lucide));
       expect(fullscreenFinder, findsOneWidget);
       final Icon fullscreenIcon = tester.widget(fullscreenFinder);
-      expect(fullscreenIcon.size, equals(27.0));
+      expect(fullscreenIcon.size, equals(19.0));
 
       // Volume icon in Lucide
       final volumeFinder = find.byIcon(AppIcons.volume(AppIconPack.lucide));
       expect(volumeFinder, findsOneWidget);
       final Icon volumeIcon = tester.widget(volumeFinder);
-      expect(volumeIcon.size, equals(23.0));
+      expect(volumeIcon.size, equals(17.0));
     });
 
     testWidgets('TimelineSlider has 6dp track height and black background track', (tester) async {
@@ -201,13 +201,13 @@ void main() {
       final backIconFinder = find.byIcon(Icons.arrow_back_rounded);
       expect(backIconFinder, findsOneWidget);
       final Icon backIcon = tester.widget(backIconFinder);
-      expect(backIcon.size, equals(30.0));
+      expect(backIcon.size, equals(24.0));
 
       // Settings icon
       final settingsIconFinder = find.byIcon(Icons.settings_rounded);
       expect(settingsIconFinder, findsOneWidget);
       final Icon settingsIcon = tester.widget(settingsIconFinder);
-      expect(settingsIcon.size, equals(29.0));
+      expect(settingsIcon.size, equals(23.0));
 
       // Verify buttons have compact padding (all(2))
       final iconButtons = tester.widgetList<IconButton>(find.byType(IconButton)).toList();

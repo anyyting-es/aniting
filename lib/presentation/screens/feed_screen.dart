@@ -336,13 +336,17 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     final showFeedSkeleton = !_hasCompletedInitialLoad;
 
     final showsSectionEnabled = ref.watch(showsSectionEnabledProvider);
-    final lastSession = ref.watch(lastSessionProvider);
+    // Only the TMDB flag matters here; subscribing to the whole session would
+    // rebuild the feed every time playback progress is saved.
+    final lastSessionIsTmdb = ref.watch(
+      lastSessionProvider.select((session) => session?.isTmdb ?? false),
+    );
 
     final isWatchingTmdb = showsSectionEnabled && (
       continueWatchingEntries.any((e) => e.isTmdb) ||
       allCollection.any((e) => e.isTmdb && (e.status.toUpperCase() == 'CURRENT' || e.status.toUpperCase() == 'WATCHING' || e.progress > 0)) ||
       offlineCollection.any((e) => e.isTmdb && (e.status.toUpperCase() == 'CURRENT' || e.status.toUpperCase() == 'WATCHING' || e.progress > 0)) ||
-      (lastSession?.isTmdb ?? false)
+      lastSessionIsTmdb
     );
 
     final tmdbRecsAsync = isWatchingTmdb ? ref.watch(tmdbRecommendationsProvider) : null;

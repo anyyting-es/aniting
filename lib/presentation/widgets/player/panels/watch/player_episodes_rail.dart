@@ -37,6 +37,45 @@ class PlayerEpisodesRail extends ConsumerStatefulWidget {
 class _PlayerEpisodesRailState extends ConsumerState<PlayerEpisodesRail> {
   final GlobalKey _activeItemKey = GlobalKey();
 
+  // Cards are cached so rebuilds of the parent page (buffering, subtitles,
+  // controls visibility, play/pause, etc.) do not rebuild every episode card.
+  List<Widget>? _cards;
+  List<AnimeEpisode>? _cardsEpisodes;
+  int? _cardsCurrentEpisode;
+  AniZipData? _cardsAniZipData;
+  int? _cardsMediaId;
+  bool _cardsIsMovie = false;
+
+  bool get _cardsAreStale {
+    if (_cards == null) return true;
+    if (widget.currentEpisodeNumber != _cardsCurrentEpisode) return true;
+    if (widget.mediaId != _cardsMediaId) return true;
+    if (widget.isMovie != _cardsIsMovie) return true;
+    if (!identical(widget.aniZipData, _cardsAniZipData)) return true;
+    final previous = _cardsEpisodes;
+    if (previous == null || previous.length != widget.episodes.length) {
+      return true;
+    }
+    if (!identical(previous, widget.episodes)) {
+      for (var i = 0; i < previous.length; i++) {
+        if (!identical(previous[i], widget.episodes[i])) return true;
+      }
+    }
+    return false;
+  }
+
+  void _refreshCards() {
+    _cards = [
+      for (var index = 0; index < widget.episodes.length; index++)
+        _buildCard(index),
+    ];
+    _cardsEpisodes = widget.episodes;
+    _cardsCurrentEpisode = widget.currentEpisodeNumber;
+    _cardsAniZipData = widget.aniZipData;
+    _cardsMediaId = widget.mediaId;
+    _cardsIsMovie = widget.isMovie;
+  }
+
   @override
   void didUpdateWidget(covariant PlayerEpisodesRail oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -85,6 +124,8 @@ class _PlayerEpisodesRailState extends ConsumerState<PlayerEpisodesRail> {
     final theme = Theme.of(context);
 
     if (widget.isMovie || widget.episodes.isEmpty) {
+      _cards = null;
+      _cardsEpisodes = null;
       return Padding(
         padding: const EdgeInsets.all(24),
         child: Text(
@@ -96,6 +137,8 @@ class _PlayerEpisodesRailState extends ConsumerState<PlayerEpisodesRail> {
         ),
       );
     }
+
+    if (_cardsAreStale) _refreshCards();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -111,8 +154,7 @@ class _PlayerEpisodesRailState extends ConsumerState<PlayerEpisodesRail> {
             overflow: TextOverflow.ellipsis,
           ),
         ),
-        for (var index = 0; index < widget.episodes.length; index++)
-          _buildCard(index),
+        ..._cards!,
       ],
     );
   }

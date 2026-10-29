@@ -69,13 +69,19 @@ class _EpisodeCardState extends ConsumerState<EpisodeCard> {
     final isDark = theme.brightness == Brightness.dark;
     final l10n = ref.watch(translationsProvider);
 
-    // Watch playback progress map for real-time continuity bar
-    final playbackMap = ref.watch(playbackProgressPreferencesProvider);
+    // Watch only this episode's entry: saving progress for the episode being
+    // watched must not rebuild every other card in the list.
     final epKey = '${widget.mediaId}_${widget.episode.number}';
-    final mediaProgress = widget.mediaId != null ? playbackMap[widget.mediaId.toString()] : null;
     final localProgress = widget.mediaId != null
-        ? (playbackMap[epKey] ??
-            (mediaProgress != null && mediaProgress.episodeNumber == widget.episode.number ? mediaProgress : null))
+        ? ref.watch(playbackProgressPreferencesProvider.select((map) {
+            final direct = map[epKey];
+            if (direct != null) return direct;
+            final mediaProgress = map[widget.mediaId.toString()];
+            return (mediaProgress != null &&
+                    mediaProgress.episodeNumber == widget.episode.number)
+                ? mediaProgress
+                : null;
+          }))
         : null;
 
     final double? progressFraction = (localProgress != null &&

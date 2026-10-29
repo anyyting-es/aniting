@@ -162,15 +162,15 @@ class PlayerTopBar extends ConsumerWidget {
     final isDesktop = !Platform.isAndroid && !Platform.isIOS;
     final isMaterial = iconPack == AppIconPack.material;
 
-    // Optical icon sizing: harmonized with bottom bar controls
+    // Optical icon sizing: harmonized with the compact bottom bar controls
     final double backIconSize = isDesktop
-        ? (isMaterial ? 30.0 : 26.0)
+        ? (isMaterial ? 24.0 : 20.0)
         : (isMaterial ? 26.0 : 23.0);
     final double settingsIconSize = isDesktop
-        ? (isMaterial ? 29.0 : 25.0)
+        ? (isMaterial ? 23.0 : 19.0)
         : (isMaterial ? 26.0 : 23.0);
     final double sidebarIconSize = isDesktop
-        ? (isMaterial ? 28.0 : 24.0)
+        ? (isMaterial ? 22.0 : 18.0)
         : (isMaterial ? 24.0 : 21.0);
 
     final buttonStyle = IconButton.styleFrom(
