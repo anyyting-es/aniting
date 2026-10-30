@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:seanime_app/core/i18n/translations/translations.dart';
+import 'package:seanime_app/presentation/widgets/player/panels/watch/player_episode_header.dart';
 import 'package:seanime_app/core/server/server_manager.dart';
 import 'package:seanime_app/data/models/anime_details.dart';
 import 'package:seanime_app/data/models/anizip_data.dart';
@@ -151,7 +152,7 @@ class PlayerSourceController extends ChangeNotifier {
       );
 
       final providerName = provider;
-      final serverPart = chosenSource.server.isNotEmpty ? ' • ${chosenSource.server.toUpperCase()}' : '';
+      final serverPart = chosenSource.server.isNotEmpty ? ' â€¢ ${chosenSource.server.toUpperCase()}' : '';
       final qualityPart = chosenSource.quality.isNotEmpty ? ' (${chosenSource.quality})' : '';
       final sourceDesc = '$providerName$serverPart$qualityPart';
 
@@ -251,7 +252,7 @@ class PlayerSourceController extends ChangeNotifier {
 
     final currentPos = getPosition();
     final providerName = getOnlineStreamProvider() ?? 'Online';
-    final serverPart = newSource.server.isNotEmpty ? ' • ${newSource.server.toUpperCase()}' : '';
+    final serverPart = newSource.server.isNotEmpty ? ' â€¢ ${newSource.server.toUpperCase()}' : '';
     final qualityPart = newSource.quality.isNotEmpty ? ' (${newSource.quality})' : '';
     final sourceDesc = '$providerName$serverPart$qualityPart';
 
@@ -294,10 +295,24 @@ class PlayerSourceController extends ChangeNotifier {
     coordinator.stop();
 
     final aniZip = getAniZipData() ?? getAnimeDetails()?.aniZipData;
+    final animeDetails = getAnimeDetails();
     final targetAniZipEp = aniZip?.getEpisode(targetEpNum);
-    final targetEpTitle = targetAniZipEp?.displayTitle.isNotEmpty == true
-        ? targetAniZipEp!.displayTitle
-        : getL10n().episodeNumber(targetEpNum);
+    final eps = animeDetails?.episodes; final targetDetailsEp = eps?.where((e) => e.episodeNumber == targetEpNum).firstOrNull;
+
+    final String targetEpTitle;
+    if (targetAniZipEp != null &&
+        !PlayerEpisodeHeader.isGenericTitle(targetAniZipEp.displayTitle, targetEpNum)) {
+      targetEpTitle = targetAniZipEp.displayTitle;
+    } else if (targetDetailsEp != null &&
+        !PlayerEpisodeHeader.isGenericTitle(targetDetailsEp.title, targetEpNum)) {
+      targetEpTitle = targetDetailsEp.title;
+    } else if (targetAniZipEp?.displayTitle.isNotEmpty == true) {
+      targetEpTitle = targetAniZipEp!.displayTitle;
+    } else if (targetDetailsEp?.title.isNotEmpty == true) {
+      targetEpTitle = targetDetailsEp!.title;
+    } else {
+      targetEpTitle = getL10n().episodeNumber(targetEpNum);
+    }
 
     isLoadingNextEpisode = true;
     isResolvingSources = !getIsLocalFile() && getOnlineStreamProvider() != null;

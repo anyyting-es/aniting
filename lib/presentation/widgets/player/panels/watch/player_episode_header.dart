@@ -66,15 +66,19 @@ class PlayerEpisodeHeader extends ConsumerWidget {
 
     final aniZip = aniZipData ?? animeDetails?.aniZipData;
     final currentAniZipEp = aniZip?.getEpisode(currentEpNum);
+    final currentDetailsEp = episodes.where((e) => e.episodeNumber == currentEpNum).firstOrNull;
 
     final String? currentEpRawTitle;
-    if (episodeTitle != null && !isGenericTitle(episodeTitle, currentEpNum)) {
-      currentEpRawTitle = episodeTitle;
-    } else if (currentAniZipEp != null &&
+    if (currentAniZipEp != null &&
         !isGenericTitle(currentAniZipEp.displayTitle, currentEpNum)) {
       currentEpRawTitle = currentAniZipEp.displayTitle;
+    } else if (currentDetailsEp != null &&
+        !isGenericTitle(currentDetailsEp.title, currentEpNum)) {
+      currentEpRawTitle = currentDetailsEp.title;
+    } else if (episodeTitle != null && !isGenericTitle(episodeTitle, currentEpNum)) {
+      currentEpRawTitle = episodeTitle;
     } else {
-      currentEpRawTitle = episodeTitle ?? currentAniZipEp?.displayTitle;
+      currentEpRawTitle = currentAniZipEp?.displayTitle ?? currentDetailsEp?.title ?? episodeTitle;
     }
 
     final String currentEpHeading;

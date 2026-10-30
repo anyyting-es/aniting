@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:seanime_app/core/i18n/translations/translations.dart';
 import 'package:seanime_app/core/preferences/wallpaper_preferences_provider.dart';
 import 'package:seanime_app/presentation/widgets/m3_expressive_slider.dart';
+import '../settings_dpad_focus.dart';
 
 /// Inline Expressive sliders for Wallpaper Opacity and Blur, visible directly
 /// in the Appearance settings header when custom wallpaper is enabled.
@@ -86,14 +87,16 @@ class ThemeWallpaperInlineControls extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          SliderTheme(
-            data: sliderTheme,
-            child: Slider(
-              min: 0.05,
-              max: 0.85,
-              divisions: 16,
-              value: wallpaper.opacity.clamp(0.05, 0.85),
-              onChanged: (val) => notifier.setOpacity(val),
+          SettingsDpadSlider(
+            child: SliderTheme(
+              data: sliderTheme,
+              child: Slider(
+                min: 0.05,
+                max: 0.85,
+                divisions: 16,
+                value: wallpaper.opacity.clamp(0.05, 0.85),
+                onChanged: (val) => notifier.setOpacity(val),
+              ),
             ),
           ),
           const SizedBox(height: 14),
@@ -128,14 +131,16 @@ class ThemeWallpaperInlineControls extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          SliderTheme(
-            data: sliderTheme,
-            child: Slider(
-              min: 0.0,
-              max: 30.0,
-              divisions: 30,
-              value: wallpaper.blur.clamp(0.0, 30.0),
-              onChanged: (val) => notifier.setBlur(val),
+          SettingsDpadSlider(
+            child: SliderTheme(
+              data: sliderTheme,
+              child: Slider(
+                min: 0.0,
+                max: 30.0,
+                divisions: 30,
+                value: wallpaper.blur.clamp(0.0, 30.0),
+                onChanged: (val) => notifier.setBlur(val),
+              ),
             ),
           ),
           const SizedBox(height: 12),

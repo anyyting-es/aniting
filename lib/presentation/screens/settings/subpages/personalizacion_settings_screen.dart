@@ -380,20 +380,22 @@ class PersonalizacionSettingsScreen extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(height: 4),
-                  Slider(
-                    value: ref.watch(
-                      desktopWindowTransparencyProvider.select(
-                        (s) => s.opacity,
+                  SettingsDpadSlider(
+                    child: Slider(
+                      value: ref.watch(
+                        desktopWindowTransparencyProvider.select(
+                          (s) => s.opacity,
+                        ),
                       ),
+                      min: 0.40,
+                      max: 0.98,
+                      divisions: 58,
+                      onChanged: (val) {
+                        ref
+                            .read(desktopWindowTransparencyProvider.notifier)
+                            .setOpacity(val);
+                      },
                     ),
-                    min: 0.40,
-                    max: 0.98,
-                    divisions: 58,
-                    onChanged: (val) {
-                      ref
-                          .read(desktopWindowTransparencyProvider.notifier)
-                          .setOpacity(val);
-                    },
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -1006,32 +1008,34 @@ class _PersonalizacionRadiusSectionState
             ],
           ),
           const SizedBox(height: 14),
-          SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              trackHeight: 24.0,
-              activeTrackColor: theme.colorScheme.primary,
-              inactiveTrackColor: theme.colorScheme.surfaceContainerHighest,
-              thumbColor: theme.colorScheme.primary,
-              overlayShape: SliderComponentShape.noOverlay,
-              trackShape: const M3ExpressiveTrackShape(
+          SettingsDpadSlider(
+            child: SliderTheme(
+              data: SliderTheme.of(context).copyWith(
                 trackHeight: 24.0,
-                gap: 4.0,
-                outerRadius: 12.0,
-                innerRadius: 2.5,
+                activeTrackColor: theme.colorScheme.primary,
+                inactiveTrackColor: theme.colorScheme.surfaceContainerHighest,
+                thumbColor: theme.colorScheme.primary,
+                overlayShape: SliderComponentShape.noOverlay,
+                trackShape: const M3ExpressiveTrackShape(
+                  trackHeight: 24.0,
+                  gap: 4.0,
+                  outerRadius: 12.0,
+                  innerRadius: 2.5,
+                ),
+                thumbShape: const VerticalBarThumbShape(
+                  width: 4.0,
+                  height: 32.0,
+                  radius: 2.0,
+                ),
               ),
-              thumbShape: const VerticalBarThumbShape(
-                width: 4.0,
-                height: 32.0,
-                radius: 2.0,
+              child: Slider(
+                min: 0.0,
+                max: 24.0,
+                divisions: 24,
+                value: _localRadius.clamp(0.0, 24.0),
+                onChanged: _onSliderChanged,
+                onChangeEnd: _onSliderEnd,
               ),
-            ),
-            child: Slider(
-              min: 0.0,
-              max: 24.0,
-              divisions: 24,
-              value: _localRadius.clamp(0.0, 24.0),
-              onChanged: _onSliderChanged,
-              onChangeEnd: _onSliderEnd,
             ),
           ),
           const SizedBox(height: 8),

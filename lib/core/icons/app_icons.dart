@@ -309,6 +309,15 @@ class AppIcons {
   static IconData theater([AppIconPack? pack]) =>
       _isLucide(pack) ? LucideIcons.monitor : Icons.theaters_rounded;
 
+  /// Watch page with the video on the left and the episode rail on the right.
+  static IconData layoutNormal([AppIconPack? pack]) =>
+      _isLucide(pack) ? LucideIcons.layoutPanelLeft : Icons.view_column_rounded;
+
+  /// Full-width video with the content stacked below it.
+  static IconData layoutWide([AppIconPack? pack]) =>
+      _isLucide(pack) ? LucideIcons.layoutPanelTop : Icons.view_stream_rounded;
+
+
   static IconData volumeDown([AppIconPack? pack]) =>
       _isLucide(pack) ? LucideIcons.volume1 : Icons.volume_down_rounded;
 

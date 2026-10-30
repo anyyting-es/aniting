@@ -313,6 +313,13 @@ abstract class AppTranslations {
   String get anilistMean;
   String get format;
   String get episodes;
+  String get playerLayoutNormal;
+  String get playerLayoutWide;
+  String get playerLayoutCinema;
+  String get hideEpisodeList;
+  String get showEpisodeList;
+  String get compactEpisodeList;
+  String get detailedEpisodeList;
   String get durationPerEp;
   String get status;
   String get season;

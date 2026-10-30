@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
+import 'package:seanime_app/core/icons/app_icons.dart';
+import 'package:seanime_app/core/preferences/player_desktop_view_provider.dart';
 import 'package:seanime_app/data/models/anime_details.dart';
 import 'package:seanime_app/data/models/anizip_data.dart';
 import 'package:seanime_app/data/models/episode_item.dart';
 import 'package:seanime_app/presentation/widgets/episodes/episode_card.dart';
 import 'package:seanime_app/presentation/widgets/player/panels/watch/player_episode_header.dart';
+import 'package:seanime_app/presentation/widgets/player/panels/watch/player_episodes_compact_grid.dart';
 
 /// Episode list rendered inside the desktop watch page. It has no scroll of its
 /// own: the whole page scrolls as one, so the list simply grows with the rest of
@@ -19,6 +22,9 @@ class PlayerEpisodesRail extends ConsumerStatefulWidget {
   final bool isMovie;
   final ValueChanged<int> onSelectEpisode;
 
+  /// Hides the rail entirely (the page then opens it from the header again).
+  final VoidCallback? onHide;
+
   const PlayerEpisodesRail({
     super.key,
     required this.animeTitle,
@@ -28,6 +34,7 @@ class PlayerEpisodesRail extends ConsumerStatefulWidget {
     this.currentEpisodeNumber,
     this.isMovie = false,
     required this.onSelectEpisode,
+    this.onHide,
   });
 
   @override
@@ -127,15 +134,17 @@ class _PlayerEpisodesRailState extends ConsumerState<PlayerEpisodesRail> {
   @override
   Widget build(BuildContext context) {
     final l10n = ref.watch(translationsProvider);
+    final iconPack = ref.watch(iconPackProvider);
     final theme = Theme.of(context);
+    final isCompact = ref.watch(playerEpisodeListCompactProvider);
 
-    if (widget.isMovie || widget.episodes.isEmpty) {
+    if (widget.episodes.isEmpty) {
       _cards = null;
       _cardsEpisodes = null;
       return Padding(
         padding: const EdgeInsets.all(24),
         child: Text(
-          widget.isMovie ? widget.animeTitle : l10n.noEpisodesFound,
+          l10n.noEpisodesFound,
           textAlign: TextAlign.center,
           style: theme.textTheme.bodySmall?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
@@ -152,7 +161,8 @@ class _PlayerEpisodesRailState extends ConsumerState<PlayerEpisodesRail> {
         final titleFont = (thumbWidth * 0.073).clamp(12.5, 16.0);
         final synopsisLines = thumbWidth >= 180 ? 4 : 2;
 
-        if (_cardsAreStale || thumbWidth != _cardsThumbWidth) {
+        if (!isCompact &&
+            (_cardsAreStale || thumbWidth != _cardsThumbWidth)) {
           _refreshCards(thumbWidth, titleFont, synopsisLines);
         }
 
@@ -160,17 +170,70 @@ class _PlayerEpisodesRailState extends ConsumerState<PlayerEpisodesRail> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(4, 2, 4, 12),
-              child: Text(
-                '${l10n.episodes} (${widget.episodes.length})',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+              padding: const EdgeInsets.fromLTRB(4, 0, 0, 10),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      '${l10n.episodes} (${widget.episodes.length})',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  _RailHeaderButton(
+                    icon: isCompact
+                        ? AppIcons.list(iconPack)
+                        : AppIcons.grid(iconPack),
+                    tooltip: isCompact
+                        ? l10n.detailedEpisodeList
+                        : l10n.compactEpisodeList,
+                    onPressed: () =>
+                        ref.read(playerEpisodeListCompactProvider.notifier).toggle(),
+                  ),
+                  if (widget.onHide != null)
+                    _RailHeaderButton(
+                      icon: AppIcons.sidebarOutline(iconPack),
+                      tooltip: l10n.hideEpisodeList,
+                      onPressed: widget.onHide!,
+                    ),
+                ],
               ),
             ),
-            ..._cards!,
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 220),
+              switchInCurve: Curves.easeOutCubic,
+              switchOutCurve: Curves.easeInCubic,
+              layoutBuilder: (currentChild, previousChildren) => Stack(
+                alignment: Alignment.topCenter,
+                children: [...previousChildren, ?currentChild],
+              ),
+              transitionBuilder: (child, animation) => FadeTransition(
+                opacity: animation,
+                child: SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(0, 0.02),
+                    end: Offset.zero,
+                  ).animate(animation),
+                  child: child,
+                ),
+              ),
+              child: isCompact
+                  ? PlayerEpisodesCompactGrid(
+                      key: const ValueKey('compact-episodes'),
+                      mediaId: widget.mediaId,
+                      episodes: widget.episodes,
+                      currentEpisodeNumber: widget.currentEpisodeNumber,
+                      onSelectEpisode: widget.onSelectEpisode,
+                    )
+                  : Column(
+                      key: const ValueKey('detailed-episodes'),
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [...?_cards],
+                    ),
+            ),
           ],
         );
       },
@@ -196,5 +259,37 @@ class _PlayerEpisodesRailState extends ConsumerState<PlayerEpisodesRail> {
     );
     if (!isActive) return card;
     return KeyedSubtree(key: _activeItemKey, child: card);
+  }
+}
+
+/// Small ghost icon button used in the rail header (view toggle / hide rail).
+class _RailHeaderButton extends StatelessWidget {
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onPressed;
+
+  const _RailHeaderButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return IconButton(
+      tooltip: tooltip,
+      onPressed: onPressed,
+      iconSize: 18,
+      padding: const EdgeInsets.all(6),
+      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+      visualDensity: VisualDensity.compact,
+      style: IconButton.styleFrom(
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        hoverColor: theme.colorScheme.onSurface.withValues(alpha: 0.06),
+        foregroundColor: theme.colorScheme.onSurfaceVariant,
+      ),
+      icon: Icon(icon),
+    );
   }
 }

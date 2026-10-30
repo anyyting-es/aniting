@@ -5,6 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/preferences/wallpaper_preferences_provider.dart';
 import 'package:seanime_app/presentation/widgets/m3_expressive_slider.dart';
+import '../settings_dpad_focus.dart';
 
 /// In-page section view for adjusting wallpaper opacity, blur, and selecting/removing image.
 class ThemeWallpaperAdjustView extends ConsumerWidget {
@@ -201,31 +202,33 @@ class ThemeWallpaperAdjustView extends ConsumerWidget {
                   ],
                 ),
                 const SizedBox(height: 12),
-                SliderTheme(
-                  data: SliderTheme.of(context).copyWith(
-                    trackHeight: 24.0,
-                    activeTrackColor: colorScheme.primary,
-                    inactiveTrackColor: colorScheme.surfaceContainerHighest,
-                    thumbColor: colorScheme.primary,
-                    overlayShape: SliderComponentShape.noOverlay,
-                    trackShape: const M3ExpressiveTrackShape(
+                SettingsDpadSlider(
+                  child: SliderTheme(
+                    data: SliderTheme.of(context).copyWith(
                       trackHeight: 24.0,
-                      gap: 4.0,
-                      outerRadius: 12.0,
-                      innerRadius: 2.5,
+                      activeTrackColor: colorScheme.primary,
+                      inactiveTrackColor: colorScheme.surfaceContainerHighest,
+                      thumbColor: colorScheme.primary,
+                      overlayShape: SliderComponentShape.noOverlay,
+                      trackShape: const M3ExpressiveTrackShape(
+                        trackHeight: 24.0,
+                        gap: 4.0,
+                        outerRadius: 12.0,
+                        innerRadius: 2.5,
+                      ),
+                      thumbShape: const VerticalBarThumbShape(
+                        width: 4.0,
+                        height: 32.0,
+                        radius: 2.0,
+                      ),
                     ),
-                    thumbShape: const VerticalBarThumbShape(
-                      width: 4.0,
-                      height: 32.0,
-                      radius: 2.0,
+                    child: Slider(
+                      min: 0.05,
+                      max: 0.85,
+                      divisions: 16,
+                      value: wallpaper.opacity.clamp(0.05, 0.85),
+                      onChanged: (val) => wallpaperNotifier.setOpacity(val),
                     ),
-                  ),
-                  child: Slider(
-                    min: 0.05,
-                    max: 0.85,
-                    divisions: 16,
-                    value: wallpaper.opacity.clamp(0.05, 0.85),
-                    onChanged: (val) => wallpaperNotifier.setOpacity(val),
                   ),
                 ),
                 const SizedBox(height: 18),
@@ -278,31 +281,33 @@ class ThemeWallpaperAdjustView extends ConsumerWidget {
                   ],
                 ),
                 const SizedBox(height: 12),
-                SliderTheme(
-                  data: SliderTheme.of(context).copyWith(
-                    trackHeight: 24.0,
-                    activeTrackColor: colorScheme.primary,
-                    inactiveTrackColor: colorScheme.surfaceContainerHighest,
-                    thumbColor: colorScheme.primary,
-                    overlayShape: SliderComponentShape.noOverlay,
-                    trackShape: const M3ExpressiveTrackShape(
+                SettingsDpadSlider(
+                  child: SliderTheme(
+                    data: SliderTheme.of(context).copyWith(
                       trackHeight: 24.0,
-                      gap: 4.0,
-                      outerRadius: 12.0,
-                      innerRadius: 2.5,
+                      activeTrackColor: colorScheme.primary,
+                      inactiveTrackColor: colorScheme.surfaceContainerHighest,
+                      thumbColor: colorScheme.primary,
+                      overlayShape: SliderComponentShape.noOverlay,
+                      trackShape: const M3ExpressiveTrackShape(
+                        trackHeight: 24.0,
+                        gap: 4.0,
+                        outerRadius: 12.0,
+                        innerRadius: 2.5,
+                      ),
+                      thumbShape: const VerticalBarThumbShape(
+                        width: 4.0,
+                        height: 32.0,
+                        radius: 2.0,
+                      ),
                     ),
-                    thumbShape: const VerticalBarThumbShape(
-                      width: 4.0,
-                      height: 32.0,
-                      radius: 2.0,
+                    child: Slider(
+                      min: 0.0,
+                      max: 30.0,
+                      divisions: 30,
+                      value: wallpaper.blur.clamp(0.0, 30.0),
+                      onChanged: (val) => wallpaperNotifier.setBlur(val),
                     ),
-                  ),
-                  child: Slider(
-                    min: 0.0,
-                    max: 30.0,
-                    divisions: 30,
-                    value: wallpaper.blur.clamp(0.0, 30.0),
-                    onChanged: (val) => wallpaperNotifier.setBlur(val),
                   ),
                 ),
                 const SizedBox(height: 10),

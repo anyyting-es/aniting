@@ -122,14 +122,24 @@ class SettingsTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final effectiveRadius = switch (position) {
+      SettingsTilePosition.top =>
+        const BorderRadius.vertical(top: Radius.circular(18)),
+      SettingsTilePosition.bottom =>
+        const BorderRadius.vertical(bottom: Radius.circular(18)),
+      SettingsTilePosition.middle => BorderRadius.zero,
+      SettingsTilePosition.single => BorderRadius.circular(18),
+    };
 
     return SettingsDpadFocus(
-      borderRadius: BorderRadius.circular(0),
+      borderRadius: effectiveRadius,
       onActivate: onTap,
       child: Material(
         color: Colors.transparent,
+        borderRadius: effectiveRadius,
         child: InkWell(
           canRequestFocus: false,
+          borderRadius: effectiveRadius,
           onTap: onTap,
           splashColor: theme.colorScheme.primary.withValues(alpha: 0.1),
           hoverColor: theme.colorScheme.onSurface.withValues(alpha: 0.05),
@@ -218,6 +228,8 @@ class PixelSwitchTile extends StatelessWidget {
   final String? subtitle;
   final bool value;
   final ValueChanged<bool> onChanged;
+  final BorderRadius? borderRadius;
+  final SettingsTilePosition position;
 
   const PixelSwitchTile({
     super.key,
@@ -226,18 +238,31 @@ class PixelSwitchTile extends StatelessWidget {
     this.subtitle,
     required this.value,
     required this.onChanged,
+    this.borderRadius,
+    this.position = SettingsTilePosition.single,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final effectiveRadius = borderRadius ??
+        switch (position) {
+          SettingsTilePosition.top =>
+            const BorderRadius.vertical(top: Radius.circular(18)),
+          SettingsTilePosition.bottom =>
+            const BorderRadius.vertical(bottom: Radius.circular(18)),
+          SettingsTilePosition.middle => BorderRadius.zero,
+          SettingsTilePosition.single => BorderRadius.circular(18),
+        };
 
     return SettingsDpadFocus(
-      borderRadius: BorderRadius.circular(0),
+      borderRadius: effectiveRadius,
       onActivate: () => onChanged(!value),
       child: Material(
         color: Colors.transparent,
+        borderRadius: effectiveRadius,
         child: SwitchListTile(
+          shape: RoundedRectangleBorder(borderRadius: effectiveRadius),
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,
             vertical: 4,

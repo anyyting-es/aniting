@@ -620,6 +620,20 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get episodes => 'Episodes';
   @override
+  String get playerLayoutNormal => 'Normal';
+  @override
+  String get playerLayoutWide => 'Wide';
+  @override
+  String get playerLayoutCinema => 'Cinema';
+  @override
+  String get hideEpisodeList => 'Hide episode list';
+  @override
+  String get showEpisodeList => 'Show episode list';
+  @override
+  String get compactEpisodeList => 'Compact view';
+  @override
+  String get detailedEpisodeList => 'Detailed view';
+  @override
   String get durationPerEp => 'Duration/ep';
   @override
   String get status => 'Status';

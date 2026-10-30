@@ -322,29 +322,52 @@ class _DesktopActionBarState extends ConsumerState<DesktopActionBar> {
       foregroundColor: WidgetStateProperty.all(isDark ? Colors.black : Colors.white),
     );
 
+    // Secondary icon buttons: white-on-media in dark mode, theme surfaces in
+    // light mode (the hero banner gets a light scrim there, so white would
+    // vanish).
+    final actionIconColor = isDark
+        ? Colors.white
+        : theme.colorScheme.onSurface;
+    final iconChipBase = isDark
+        ? Colors.white
+        : theme.colorScheme.surfaceContainerHighest;
+
     final iconButtonDecoration = M3EIconButtonDecoration(
       backgroundColor: WidgetStateProperty.resolveWith((states) {
-        if (states.contains(WidgetState.pressed)) return Colors.white.withValues(alpha: 0.24);
-        if (states.contains(WidgetState.hovered) || states.contains(WidgetState.focused)) {
-          return Colors.white.withValues(alpha: 0.18);
+        if (states.contains(WidgetState.pressed)) {
+          return iconChipBase.withValues(alpha: isDark ? 0.24 : 0.95);
         }
-        return Colors.white.withValues(alpha: 0.10);
+        if (states.contains(WidgetState.hovered) ||
+            states.contains(WidgetState.focused)) {
+          return iconChipBase.withValues(alpha: isDark ? 0.18 : 0.85);
+        }
+        return iconChipBase.withValues(alpha: isDark ? 0.10 : 0.65);
       }),
-      foregroundColor: WidgetStateProperty.all(Colors.white),
+      foregroundColor: WidgetStateProperty.all(
+        isDark ? Colors.white : theme.colorScheme.onSurface,
+      ),
       side: WidgetStateProperty.all(
         BorderSide(
-          color: Colors.white.withValues(alpha: 0.18),
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.18)
+              : theme.colorScheme.outlineVariant,
           width: 1.0,
         ),
       ),
     );
 
     final activeToggleButtonDecoration = M3EIconButtonDecoration(
-      backgroundColor: WidgetStateProperty.all(Colors.white.withValues(alpha: 0.28)),
-      foregroundColor: WidgetStateProperty.all(Colors.white),
+      backgroundColor: WidgetStateProperty.all(
+        iconChipBase.withValues(alpha: isDark ? 0.28 : 0.95),
+      ),
+      foregroundColor: WidgetStateProperty.all(
+        isDark ? Colors.white : theme.colorScheme.onSurface,
+      ),
       side: WidgetStateProperty.all(
         BorderSide(
-          color: Colors.white.withValues(alpha: 0.40),
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.40)
+              : theme.colorScheme.primary.withValues(alpha: 0.6),
           width: 1.0,
         ),
       ),
@@ -484,7 +507,7 @@ class _DesktopActionBarState extends ConsumerState<DesktopActionBar> {
             return M3EIconButton(
               focusNode: _editFocusNode,
               tooltip: widget.isTmdb ? l10n.editDetails : l10n.editInAnilist,
-              icon: Icon(AppIcons.edit(iconPack), size: 21, color: Colors.white),
+              icon: Icon(AppIcons.edit(iconPack), size: 21, color: actionIconColor),
               decoration: iconButtonDecoration,
               size: M3EIconButtonSize.md,
               onPressed: controller.open,
@@ -506,7 +529,7 @@ class _DesktopActionBarState extends ConsumerState<DesktopActionBar> {
                     M3EIconButton(
                       focusNode: _shareFocusNode,
                       tooltip: l10n.share,
-                      icon: Icon(AppIcons.share(iconPack), size: 21, color: Colors.white),
+                      icon: Icon(AppIcons.share(iconPack), size: 21, color: actionIconColor),
                       decoration: iconButtonDecoration,
                       size: M3EIconButtonSize.md,
                       onPressed: () => _shareAnime(context, widget.title, l10n),
@@ -518,7 +541,7 @@ class _DesktopActionBarState extends ConsumerState<DesktopActionBar> {
                       M3EIconButton(
                         focusNode: _downloadFocusNode,
                         tooltip: l10n.downloadWithTorrentClient,
-                        icon: Icon(AppIcons.download(iconPack), size: 21, color: Colors.white),
+                        icon: Icon(AppIcons.download(iconPack), size: 21, color: actionIconColor),
                         decoration: iconButtonDecoration,
                         size: M3EIconButtonSize.md,
                         onPressed: widget.onDownload!,
@@ -532,7 +555,7 @@ class _DesktopActionBarState extends ConsumerState<DesktopActionBar> {
                         message: 'The Movie Database (TMDB)',
                         child: M3EIconButton(
                           focusNode: _tmdbFocusNode,
-                          icon: Icon(AppIcons.openInNew(iconPack), size: 21, color: Colors.white),
+                          icon: Icon(AppIcons.openInNew(iconPack), size: 21, color: actionIconColor),
                           decoration: iconButtonDecoration,
                           size: M3EIconButtonSize.md,
                           onPressed: () => _launchTmdb(widget.mediaId),
@@ -556,7 +579,7 @@ class _DesktopActionBarState extends ConsumerState<DesktopActionBar> {
               child: Icon(
                 _isExpanded ? AppIcons.chevronLeft(iconPack) : AppIcons.moreHoriz(iconPack),
                 size: 21,
-                color: Colors.white,
+                color: actionIconColor,
               ),
             ),
             decoration: _isExpanded ? activeToggleButtonDecoration : iconButtonDecoration,

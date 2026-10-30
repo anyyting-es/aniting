@@ -159,10 +159,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 elevation: 0,
                 scrolledUnderElevation: 0,
                 toolbarHeight: 48,
-                titleSpacing: 0,
+                titleSpacing: 16,
                 automaticallyImplyLeading: false,
-                leading: Navigator.canPop(context)
-                    ? IconButton(
+                title: Row(
+                  children: [
+                    if (Navigator.canPop(context)) ...[
+                      IconButton(
+                        visualDensity: VisualDensity.compact,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(
+                          minWidth: 36,
+                          minHeight: 36,
+                        ),
                         icon: Icon(
                           AppIcons.arrowLeft(iconPack),
                           color: colorScheme.onSurface,
@@ -170,15 +178,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         ),
                         tooltip: l10n.back,
                         onPressed: () => Navigator.of(context).maybePop(),
-                      )
-                    : null,
-                title: Text(
-                  l10n.settingsTitle,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: colorScheme.onSurface,
-                  ),
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                    Text(
+                      l10n.settingsTitle,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -247,10 +258,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               elevation: 0,
               scrolledUnderElevation: 0,
               toolbarHeight: 48,
-              titleSpacing: 0,
+              titleSpacing: 14,
               automaticallyImplyLeading: false,
-              leading: Navigator.canPop(context)
-                  ? IconButton(
+              title: Row(
+                children: [
+                  if (Navigator.canPop(context)) ...[
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 36,
+                        minHeight: 36,
+                      ),
                       icon: Icon(
                         AppIcons.arrowLeft(iconPack),
                         color: colorScheme.onSurface,
@@ -258,15 +277,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       ),
                       tooltip: l10n.back,
                       onPressed: () => Navigator.of(context).maybePop(),
-                    )
-                  : null,
-              title: Text(
-                l10n.settingsTitle,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: colorScheme.onSurface,
-                ),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  Text(
+                    l10n.settingsTitle,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

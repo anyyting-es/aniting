@@ -95,6 +95,7 @@ func (h *Handler) FeaturesMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 			{"/api/v1/extensions/plugin-permissions", h.App.FeatureManager.IsDisabled(core.PluginTray), UpdateMethods, Empty},
 			// proxy
 			{"/api/v1/proxy", h.App.FeatureManager.IsDisabled(core.Proxy), Empty, Empty},
+			{"/api/v1/p", h.App.FeatureManager.IsDisabled(core.Proxy), Empty, Empty},
 			{"/api/v1/image-proxy", h.App.FeatureManager.IsDisabled(core.Proxy), Empty, Empty},
 			// logs
 			{"/api/v1/log", h.App.FeatureManager.IsDisabled(core.ViewLogs), Empty, Empty},

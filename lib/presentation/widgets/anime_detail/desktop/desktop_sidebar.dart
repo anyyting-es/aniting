@@ -66,6 +66,8 @@ class _DesktopSidebarPosterState extends State<_DesktopSidebarPoster> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return RepaintBoundary(
       child: MouseRegion(
         cursor: SystemMouseCursors.basic,
@@ -83,12 +85,20 @@ class _DesktopSidebarPosterState extends State<_DesktopSidebarPoster> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: Colors.white.withValues(alpha: _isHovered ? 0.18 : 0.08),
+                color: isDark
+                    ? Colors.white.withValues(alpha: _isHovered ? 0.18 : 0.08)
+                    : theme.colorScheme.outlineVariant.withValues(
+                        alpha: _isHovered ? 0.6 : 0.35,
+                      ),
                 width: 1.0,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: _isHovered ? 0.65 : 0.45),
+                  color: Colors.black.withValues(
+                    alpha: isDark
+                        ? (_isHovered ? 0.65 : 0.45)
+                        : (_isHovered ? 0.22 : 0.12),
+                  ),
                   blurRadius: _isHovered ? 24 : 16,
                   offset: Offset(0, _isHovered ? 8 : 5),
                 ),

@@ -53,6 +53,7 @@ func InitRoutes(app *core.App, e *echo.Echo) {
 		"/api/v1/mediastream/transcode/",
 		"/api/v1/torrent-client/list",
 		"/api/v1/proxy",
+		"/api/v1/p",
 		"/api/v1/directstream/stream",
 	}
 
@@ -139,6 +140,8 @@ func InitRoutes(app *core.App, e *echo.Echo) {
 
 	v1.GET("/proxy", h.VideoProxy)
 	v1.HEAD("/proxy", h.VideoProxy)
+	v1.GET("/p", h.VideoProxy)
+	v1.HEAD("/p", h.VideoProxy)
 
 	v1.GET("/status", h.HandleGetStatus)
 	v1.GET("/status/home-items", h.HandleGetHomeItems)

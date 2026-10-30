@@ -158,7 +158,9 @@ class _DesktopListEpisodeCardState extends ConsumerState<DesktopListEpisodeCard>
                                     ? theme.colorScheme.primary
                                     : (isSelectionMode
                                         ? theme.colorScheme.outlineVariant.withValues(alpha: 0.3)
-                                        : Colors.white.withValues(alpha: 0.08)),
+                                        : (isDark
+                                            ? Colors.white.withValues(alpha: 0.08)
+                                            : theme.colorScheme.outlineVariant.withValues(alpha: 0.45))),
                                 width: isSelected ? 2.0 : 1.0,
                               ),
                               boxShadow: [

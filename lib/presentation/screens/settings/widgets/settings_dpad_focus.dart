@@ -73,6 +73,83 @@ class _SettingsFocusEnsurerState extends State<SettingsFocusEnsurer> {
   Widget build(BuildContext context) => widget.child;
 }
 
+/// Reusable D-pad focus wrapper for [Slider] controls in settings.
+///
+/// Ensures:
+/// 1. Navigation mode is set to [NavigationMode.directional], so Left and Right
+///    adjust the slider value while Up and Down navigate to previous/next controls.
+/// 2. Draws an expressive focus ring around the slider track while focused
+///    in DPAD mode, matching [SettingsDpadFocus].
+/// 3. Scrolls the slider smoothly into view on focus.
+class SettingsDpadSlider extends StatefulWidget {
+  final Widget child;
+  final BorderRadius borderRadius;
+  final EdgeInsetsGeometry padding;
+
+  const SettingsDpadSlider({
+    super.key,
+    required this.child,
+    this.borderRadius = const BorderRadius.all(Radius.circular(16)),
+    this.padding = const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+  });
+
+  @override
+  State<SettingsDpadSlider> createState() => _SettingsDpadSliderState();
+}
+
+class _SettingsDpadSliderState extends State<SettingsDpadSlider> {
+  bool _isFocused = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Focus(
+      canRequestFocus: false,
+      skipTraversal: true,
+      onFocusChange: (focused) {
+        if (_isFocused != focused) {
+          setState(() => _isFocused = focused);
+          if (focused && mounted) {
+            Scrollable.ensureVisible(
+              context,
+              alignment: 0.4,
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOutCubic,
+            );
+          }
+        }
+      },
+      child: ValueListenableBuilder<AppInputMode>(
+        valueListenable: AppFocusCoordinator.inputMode,
+        builder: (context, mode, child) {
+          final showRing = _isFocused && mode == AppInputMode.dpad;
+
+          return AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOutCubic,
+            decoration: BoxDecoration(
+              borderRadius: widget.borderRadius,
+              border: Border.all(
+                color: showRing ? colorScheme.primary : Colors.transparent,
+                width: 2,
+              ),
+            ),
+            padding: widget.padding,
+            child: child,
+          );
+        },
+        child: MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            navigationMode: NavigationMode.directional,
+          ),
+          child: widget.child,
+        ),
+      ),
+    );
+  }
+}
+
 
 /// Reusable D-pad / gamepad / keyboard focus wrapper for the settings pages.
 ///

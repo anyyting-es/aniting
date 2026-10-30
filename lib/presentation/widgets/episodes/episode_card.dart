@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/core/preferences/playback_progress_preferences_provider.dart';
 import 'package:seanime_app/core/theme/theme_provider.dart';
 import 'package:seanime_app/core/theme/app_focus_coordinator.dart';
 import 'package:seanime_app/data/models/episode_item.dart';
+import 'package:seanime_app/presentation/widgets/episodes/episode_progress_resolver.dart';
 
 /// Universal canonical episode card supporting both Grid (16:9) and List (compact row) modes.
 /// Works identically for Anime, TMDB TV Shows, and Movies.
@@ -69,26 +69,14 @@ class _EpisodeCardState extends ConsumerState<EpisodeCard> {
     final isDark = theme.brightness == Brightness.dark;
     final l10n = ref.watch(translationsProvider);
 
-    // Watch only this episode's entry: saving progress for the episode being
-    // watched must not rebuild every other card in the list.
-    final epKey = '${widget.mediaId}_${widget.episode.number}';
-    final localProgress = widget.mediaId != null
-        ? ref.watch(playbackProgressPreferencesProvider.select((map) {
-            final direct = map[epKey];
-            if (direct != null) return direct;
-            final mediaProgress = map[widget.mediaId.toString()];
-            return (mediaProgress != null &&
-                    mediaProgress.episodeNumber == widget.episode.number)
-                ? mediaProgress
-                : null;
-          }))
-        : null;
-
-    final double? progressFraction = (localProgress != null &&
-            localProgress.durationMs > 0 &&
-            localProgress.positionMs > 0)
-        ? (localProgress.positionMs / localProgress.durationMs).clamp(0.0, 1.0)
-        : (widget.episode.progress > 0 ? widget.episode.progress : null);
+    // Watches only this episode's entry, so saving progress for the episode
+    // being watched never rebuilds the rest of the list.
+    final progressFraction = resolveEpisodeProgressFraction(
+      ref,
+      mediaId: widget.mediaId,
+      episodeNumber: widget.episode.number,
+      episodeProgress: widget.episode.progress,
+    );
 
     final imageUrl = widget.episode.image ?? widget.fallbackImageUrl;
     final formattedTitle = _formatTitle();

@@ -5,22 +5,34 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../core/constants/feature_flags.dart';
 import '../../../../core/i18n/i18n_provider.dart';
 import '../../../../core/icons/app_icons.dart';
+import '../../../../core/preferences/wallpaper_preferences_provider.dart';
+import '../../../../core/theme/app_palette.dart';
 import '../../../../core/theme/app_theme_colors.dart';
 import '../../../../core/theme/theme_provider.dart';
 import '../widgets/pixel_settings_widgets.dart';
 import '../widgets/pixel_subpage_scaffold.dart';
 import '../widgets/settings_dpad_focus.dart';
 import '../widgets/theme/theme_appearance_header_card.dart';
-import '../widgets/theme/theme_dark_mode_view.dart';
-import '../widgets/theme/theme_material_palettes_view.dart';
 import '../widgets/theme/theme_wallpaper_adjust_view.dart';
 import '../../../widgets/m3_expressive_slider.dart';
 
 enum ThemeSubSection {
   main,
-  darkMode,
-  palettes,
   wallpaper,
+}
+
+class _PaletteOptionItem {
+  final String id;
+  final String name;
+  final Color seedColor;
+  final IconData? icon;
+
+  const _PaletteOptionItem({
+    required this.id,
+    required this.name,
+    required this.seedColor,
+    this.icon,
+  });
 }
 
 /// Modern Web & Media Center Theme Settings Screen.
@@ -55,31 +67,17 @@ class _ThemeSettingsScreenState extends ConsumerState<ThemeSettingsScreen> {
       child: PixelSubpageScaffold(
         title: _currentSection == ThemeSubSection.main
             ? l10n.themeAndColors
-            : (_currentSection == ThemeSubSection.darkMode
-                ? l10n.darkMode
-                : (_currentSection == ThemeSubSection.palettes
-                    ? l10n.themeAndColors
-                    : l10n.customWallpaper)),
+            : l10n.customWallpaper,
         isEmbedded: widget.isEmbedded,
         children: [
-          if (_currentSection == ThemeSubSection.darkMode)
-            ThemeDarkModeView(
-              onBack: () => setState(() => _currentSection = ThemeSubSection.main),
-            )
-          else if (_currentSection == ThemeSubSection.palettes)
-            ThemeMaterialPalettesView(
-              onBack: () => setState(() => _currentSection = ThemeSubSection.main),
-            )
-          else if (_currentSection == ThemeSubSection.wallpaper &&
+          if (_currentSection == ThemeSubSection.wallpaper &&
               FeatureFlags.customWallpaper)
             ThemeWallpaperAdjustView(
               onBack: () => setState(() => _currentSection = ThemeSubSection.main),
             )
           else ...[
-            // ─── 1. CABECERA APARIENCIA (WALLPAPER + TOGGLE + MODOS) ───
+            // ─── 1. CABECERA APARIENCIA (MODOS CLARO/OSCURO/SISTEMA + OLED + WALLPAPER) ───
             ThemeAppearanceHeaderCard(
-              onOpenDarkMode: () => setState(() => _currentSection = ThemeSubSection.darkMode),
-              onOpenPalettes: () => setState(() => _currentSection = ThemeSubSection.palettes),
               onOpenWallpaper: () {
                 if (!FeatureFlags.customWallpaper) return;
                 setState(() => _currentSection = ThemeSubSection.wallpaper);
@@ -87,7 +85,20 @@ class _ThemeSettingsScreenState extends ConsumerState<ThemeSettingsScreen> {
             ),
             const SizedBox(height: 24),
 
-            // ─── 2. ICON PACK ─────────────────────────────────────────
+            // ─── 2. PALETAS Y COLORES (LISTA HORIZONTAL) ──────────────
+            SettingsSectionHeader(title: l10n.themeAndColors),
+            const SizedBox(height: 10),
+            _buildHorizontalPalettesList(
+              context: context,
+              themeSettings: themeSettings,
+              themeNotifier: themeNotifier,
+              l10n: l10n,
+              colors: colors,
+              colorScheme: Theme.of(context).colorScheme,
+            ),
+            const SizedBox(height: 24),
+
+            // ─── 3. ICON PACK ─────────────────────────────────────────
             SettingsSectionHeader(title: l10n.iconPack),
             const SizedBox(height: 10),
             Row(
@@ -127,7 +138,7 @@ class _ThemeSettingsScreenState extends ConsumerState<ThemeSettingsScreen> {
             ),
             const SizedBox(height: 24),
 
-            // ─── 3. TEMA DINÁMICO DE ANIME ────────────────────────────
+            // ─── 4. TEMA DINÁMICO DE ANIME ────────────────────────────
             SettingsSectionHeader(title: l10n.appearanceAndDisplay),
             const SizedBox(height: 10),
             PixelSettingsGroupCard(
@@ -137,18 +148,177 @@ class _ThemeSettingsScreenState extends ConsumerState<ThemeSettingsScreen> {
                   title: l10n.animeDynamicTheme,
                   subtitle: l10n.animeDynamicThemeDesc,
                   value: themeSettings.animeDynamicTheme,
+                  borderRadius: BorderRadius.circular(18),
                   onChanged: (val) => themeNotifier.setAnimeDynamicTheme(val),
                 ),
               ],
             ),
             const SizedBox(height: 24),
 
-            // ─── 4. ESQUINAS Y BORDES DE LA APP ───────────────────────
+            // ─── 5. ESQUINAS Y BORDES DE LA APP ───────────────────────
             SettingsSectionHeader(title: l10n.cornerAndBorders),
             const SizedBox(height: 10),
             _ThemeSettingsRadiusSection(colors: colors),
           ],
         ],
+      ),
+    );
+  }
+
+  Widget _buildHorizontalPalettesList({
+    required BuildContext context,
+    required ThemeSettings themeSettings,
+    required ThemeNotifier themeNotifier,
+    required AppTranslations l10n,
+    required AppThemeColors colors,
+    required ColorScheme colorScheme,
+  }) {
+    final palettes = <_PaletteOptionItem>[];
+
+    if (FeatureFlags.customWallpaper) {
+      final wallpaper = ref.watch(wallpaperPreferencesProvider);
+      if (wallpaper.hasValidWallpaper) {
+        final wallpaperSeed = AppPalettes.wallpaperSeedColor ??
+            wallpaper.seedColor ??
+            colorScheme.primary;
+        palettes.add(
+          _PaletteOptionItem(
+            id: AppPalettes.materialWallpaperId,
+            name: l10n.materialWallpaperName,
+            seedColor: wallpaperSeed,
+            icon: LucideIcons.image,
+          ),
+        );
+      }
+    }
+
+    for (final info in AppPalettes.materialPalettesInfo) {
+      final palette = AppPalettes.getById(
+        info.id,
+        isDark: themeSettings.themeMode != AppThemeMode.light,
+      );
+      palettes.add(
+        _PaletteOptionItem(
+          id: info.id,
+          name: palette.localizedName(l10n),
+          seedColor: info.seed,
+        ),
+      );
+    }
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: palettes.map((item) {
+          final isSelected = themeSettings.paletteId == item.id;
+
+          return Padding(
+            padding: const EdgeInsets.only(right: 10),
+            child: SettingsDpadFocus(
+              borderRadius: BorderRadius.circular(16),
+              onActivate: () async {
+                if (item.id == AppPalettes.materialWallpaperId) {
+                  await themeNotifier.setOled(false);
+                  await themeNotifier.setPaletteId(
+                    item.id,
+                    resetCustomAccent: true,
+                  );
+                } else {
+                  if (themeSettings.isOled) {
+                    await themeNotifier.setOled(false);
+                  }
+                  await themeNotifier.setPaletteId(
+                    item.id,
+                    resetCustomAccent: false,
+                  );
+                }
+              },
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  canRequestFocus: false,
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: () async {
+                    if (item.id == AppPalettes.materialWallpaperId) {
+                      await themeNotifier.setOled(false);
+                      await themeNotifier.setPaletteId(
+                        item.id,
+                        resetCustomAccent: true,
+                      );
+                    } else {
+                      if (themeSettings.isOled) {
+                        await themeNotifier.setOled(false);
+                      }
+                      await themeNotifier.setPaletteId(
+                        item.id,
+                        resetCustomAccent: false,
+                      );
+                    }
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? colors.accent.withValues(alpha: 0.16)
+                          : colors.surfaceElevated.withValues(alpha: 0.40),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isSelected
+                            ? colors.accent
+                            : colors.border.withValues(alpha: 0.35),
+                        width: isSelected ? 1.8 : 1.0,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 24,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            color: item.seedColor,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: item.seedColor.withValues(alpha: 0.35),
+                                blurRadius: 4,
+                                offset: const Offset(0, 1.5),
+                              ),
+                            ],
+                          ),
+                          child: isSelected
+                              ? const Icon(
+                                  Icons.check_rounded,
+                                  size: 15,
+                                  color: Colors.white,
+                                )
+                              : null,
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          item.name,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.w600,
+                            color: isSelected
+                                ? colors.accent
+                                : colors.textPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
       ),
     );
   }
@@ -316,32 +486,34 @@ class _ThemeSettingsRadiusSectionState
             ],
           ),
           const SizedBox(height: 14),
-          SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              trackHeight: 24.0,
-              activeTrackColor: colors.accent,
-              inactiveTrackColor: colors.surfaceElevated,
-              thumbColor: colors.accent,
-              overlayShape: SliderComponentShape.noOverlay,
-              trackShape: const M3ExpressiveTrackShape(
+          SettingsDpadSlider(
+            child: SliderTheme(
+              data: SliderTheme.of(context).copyWith(
                 trackHeight: 24.0,
-                gap: 4.0,
-                outerRadius: 12.0,
-                innerRadius: 2.5,
+                activeTrackColor: colors.accent,
+                inactiveTrackColor: colors.surfaceElevated,
+                thumbColor: colors.accent,
+                overlayShape: SliderComponentShape.noOverlay,
+                trackShape: const M3ExpressiveTrackShape(
+                  trackHeight: 24.0,
+                  gap: 4.0,
+                  outerRadius: 12.0,
+                  innerRadius: 2.5,
+                ),
+                thumbShape: const VerticalBarThumbShape(
+                  width: 4.0,
+                  height: 32.0,
+                  radius: 2.0,
+                ),
               ),
-              thumbShape: const VerticalBarThumbShape(
-                width: 4.0,
-                height: 32.0,
-                radius: 2.0,
+              child: Slider(
+                min: 0.0,
+                max: 24.0,
+                divisions: 24,
+                value: _localRadius.clamp(0.0, 24.0),
+                onChanged: _onSliderChanged,
+                onChangeEnd: _onSliderEnd,
               ),
-            ),
-            child: Slider(
-              min: 0.0,
-              max: 24.0,
-              divisions: 24,
-              value: _localRadius.clamp(0.0, 24.0),
-              onChanged: _onSliderChanged,
-              onChangeEnd: _onSliderEnd,
             ),
           ),
           const SizedBox(height: 10),

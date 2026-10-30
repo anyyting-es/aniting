@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
@@ -81,61 +82,62 @@ class PlayerSettingsScreen extends ConsumerWidget {
       title: l10n.videoPlayer,
       isEmbedded: isEmbedded,
       children: [
-        // ─── MOTOR DE REPRODUCCIÓN ──────────────────────────────
-        SettingsSectionHeader(title: l10n.playbackEngine),
-        const SizedBox(height: 10),
-        PixelCardContainer(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                l10n.defaultEngine,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14.5,
+        // ─── MOTOR DE REPRODUCCIÓN (SOLO ANDROID) ───────────────
+        if (Platform.isAndroid) ...[
+          SettingsSectionHeader(title: l10n.playbackEngine),
+          const SizedBox(height: 10),
+          PixelCardContainer(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.defaultEngine,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14.5,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                l10n.defaultEngineDesc,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: theme.colorScheme.onSurfaceVariant,
+                const SizedBox(height: 4),
+                Text(
+                  l10n.defaultEngineDesc,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: SegmentedButton<PlayerEngine>(
-                  style: pixelSegmentedButtonStyle(theme),
-                  segments: const [
-                    ButtonSegment(
-                      value: PlayerEngine.exoplayer,
-                      label: Text('ExoPlayer (Media3)'),
-                      icon: Icon(Icons.rocket_launch_rounded),
-                    ),
-                    ButtonSegment(
-                      value: PlayerEngine.mediaKit,
-                      label: Text('media_kit'),
-                      icon: Icon(Icons.play_circle_outline_rounded),
-                    ),
-                  ],
-                  selected: {playerEngine},
-                  onSelectionChanged: (newSelection) {
-                    playerEngineNotifier.setEngine(newSelection.first);
-                  },
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: SegmentedButton<PlayerEngine>(
+                    style: pixelSegmentedButtonStyle(theme),
+                    segments: const [
+                      ButtonSegment(
+                        value: PlayerEngine.exoplayer,
+                        label: Text('ExoPlayer (Media3)'),
+                        icon: Icon(Icons.rocket_launch_rounded),
+                      ),
+                      ButtonSegment(
+                        value: PlayerEngine.mediaKit,
+                        label: Text('media_kit'),
+                        icon: Icon(Icons.play_circle_outline_rounded),
+                      ),
+                    ],
+                    selected: {playerEngine},
+                    onSelectionChanged: (newSelection) {
+                      playerEngineNotifier.setEngine(newSelection.first);
+                    },
+                  ),
                 ),
-              ),
-              const SizedBox(height: 14),
-              PixelInfoBanner(
-                icon: Icons.info_outline_rounded,
-                text: playerEngine.localizedDescription(l10n),
-              ),
-            ],
+                const SizedBox(height: 14),
+                PixelInfoBanner(
+                  icon: Icons.info_outline_rounded,
+                  text: playerEngine.localizedDescription(l10n),
+                ),
+              ],
+            ),
           ),
-        ),
-
-        const SizedBox(height: 24),
+          const SizedBox(height: 24),
+        ],
 
         // ─── AUDIO Y CONTROLES ─────────────────────────────────
         SettingsSectionHeader(title: l10n.audioAndGestures),

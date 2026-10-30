@@ -15,16 +15,12 @@ import 'theme_wallpaper_inline_controls.dart';
 
 /// Expressive Header Card matching the modern Appearance layout:
 /// Left: Wallpaper preview thumbnail (clean image, no filters) with hover actions and tap-to-adjust.
-/// Right: M3EButtonGroup (connected) with balanced M3 colors, plus grouped container for Dark mode & Theme & Colors.
+/// Right: 3-segment mode selector (Claro / Oscuro / Sistema), OLED toggle (only in dark mode), and custom wallpaper.
 class ThemeAppearanceHeaderCard extends ConsumerWidget {
-  final VoidCallback onOpenDarkMode;
-  final VoidCallback onOpenPalettes;
   final VoidCallback onOpenWallpaper;
 
   const ThemeAppearanceHeaderCard({
     super.key,
-    required this.onOpenDarkMode,
-    required this.onOpenPalettes,
     required this.onOpenWallpaper,
   });
 
@@ -36,8 +32,6 @@ class ThemeAppearanceHeaderCard extends ConsumerWidget {
     final themeSettings = ref.watch(themeProvider);
     final themeNotifier = ref.read(themeProvider.notifier);
     final wallpaper = ref.watch(wallpaperPreferencesProvider);
-
-    final isDarkSelected = themeSettings.themeMode == AppThemeMode.dark;
 
     return PixelCardContainer(
       child: LayoutBuilder(
@@ -51,7 +45,6 @@ class ThemeAppearanceHeaderCard extends ConsumerWidget {
             themeNotifier,
             colorScheme,
             l10n,
-            isDarkSelected,
           );
 
           if (!FeatureFlags.customWallpaper) {
@@ -96,20 +89,7 @@ class ThemeAppearanceHeaderCard extends ConsumerWidget {
     ThemeNotifier themeNotifier,
     ColorScheme colorScheme,
     AppTranslations l10n,
-    bool isDarkSelected,
   ) {
-    final palette = AppPalettes.getById(
-      themeSettings.paletteId,
-      isDark: isDarkSelected,
-    );
-    final paletteTitle = palette.localizedName(l10n);
-
-    final darkModeSubtitle = themeSettings.isOled
-        ? l10n.darkModeOled
-        : (themeSettings.themeMode == AppThemeMode.system
-            ? l10n.darkModeSystem
-            : l10n.darkModeManual);
-
     final wallpaper = ref.watch(wallpaperPreferencesProvider);
     final wallpaperNotifier = ref.read(wallpaperPreferencesProvider.notifier);
 
@@ -117,7 +97,7 @@ class ThemeAppearanceHeaderCard extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        // ─── ROW 1: M3EBUTTONGROUP CONNECTED (LIGHT / DARK) ─────────
+        // ─── ROW 1: M3EBUTTONGROUP CONNECTED (CLARO / OSCURO / SISTEMA) ───
         M3EButtonGroup(
           type: M3EButtonGroupType.connected,
           direction: Axis.horizontal,
@@ -129,13 +109,16 @@ class ThemeAppearanceHeaderCard extends ConsumerWidget {
           expandedRatio: 0.15,
           overflow: M3EButtonGroupOverflow.scroll,
           selectionRequired: true,
-          selectedIndex: isDarkSelected ? 1 : 0,
+          selectedIndex: switch (themeSettings.themeMode) {
+            AppThemeMode.light => 0,
+            AppThemeMode.dark => 1,
+            AppThemeMode.system => 2,
+          },
           decoration: M3EButtonDecoration(
             backgroundColor: WidgetStateProperty.resolveWith((states) {
               if (states.contains(WidgetState.selected)) {
                 return colorScheme.primary;
               }
-              // Unselected is a clean lighter tone from the palette, NOT dark/black!
               return colorScheme.surfaceContainerHighest;
             }),
             foregroundColor: WidgetStateProperty.resolveWith((states) {
@@ -147,21 +130,12 @@ class ThemeAppearanceHeaderCard extends ConsumerWidget {
           ),
           onSelectedIndexChanged: (int? index) async {
             if (index == null) return;
-            final toDark = index == 1;
-            await themeNotifier.setOled(false);
-            await themeNotifier.setThemeMode(toDark ? AppThemeMode.dark : AppThemeMode.light);
-            final curId = themeSettings.paletteId;
-            if (curId == AppPalettes.oledBlackId) {
-              await themeNotifier.setPaletteId(
-                AppPalettes.materialPurpleId,
-                resetCustomAccent: false,
-              );
-            } else {
-              final matchingId = AppPalettes.getMatchingVariant(curId, toDark);
-              await themeNotifier.setPaletteId(
-                matchingId,
-                resetCustomAccent: false,
-              );
+            if (index == 0) {
+              await themeNotifier.updateThemeMode(AppThemeMode.light);
+            } else if (index == 1) {
+              await themeNotifier.updateThemeMode(AppThemeMode.dark);
+            } else if (index == 2) {
+              await themeNotifier.updateThemeMode(AppThemeMode.system);
             }
           },
           actions: <M3EButtonGroupAction>[
@@ -173,58 +147,68 @@ class ThemeAppearanceHeaderCard extends ConsumerWidget {
               icon: const Icon(Icons.dark_mode_rounded, size: 16),
               label: Text(l10n.themeDark),
             ),
+            M3EButtonGroupAction(
+              icon: const Icon(Icons.settings_brightness_rounded, size: 16),
+              label: Text(l10n.themeSystem),
+            ),
           ],
         ),
-        const SizedBox(height: 12),
 
-        // ─── GROUPED CONTAINER: DARK MODE + THEME & COLORS + WALLPAPER ───
-        Container(
-          decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: colorScheme.outlineVariant.withValues(alpha: 0.35),
-              width: 1,
-            ),
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Top item: Dark mode
-              _buildSubOptionTile(
-                icon: LucideIcons.clock,
-                title: l10n.darkMode,
-                subtitle: darkModeSubtitle,
-                colorScheme: colorScheme,
-                onTap: onOpenDarkMode,
-              ),
-
-              // Thin divider line
-              Divider(
-                height: 1,
-                thickness: 1,
-                color: colorScheme.outlineVariant.withValues(alpha: 0.25),
-              ),
-
-              // Middle item: Theme & colors
-              _buildSubOptionTile(
-                icon: LucideIcons.palette,
-                title: l10n.themeAndColors,
-                subtitle: paletteTitle,
-                colorScheme: colorScheme,
-                onTap: onOpenPalettes,
-              ),
-
-              if (FeatureFlags.customWallpaper) ...[
-                // Thin divider line
-                Divider(
-                  height: 1,
-                  thickness: 1,
-                  color: colorScheme.outlineVariant.withValues(alpha: 0.25),
+        // ─── ROW 2: OLED SOLO CUANDO ESTÁ EN MODO OSCURO (CON ANIMACIÓN EXPRESIVA) ───
+        ExcludeFocus(
+          excluding: themeSettings.themeMode != AppThemeMode.dark,
+          child: AnimatedCrossFade(
+            crossFadeState: themeSettings.themeMode == AppThemeMode.dark
+                ? CrossFadeState.showFirst
+                : CrossFadeState.showSecond,
+            duration: const Duration(milliseconds: 280),
+            sizeCurve: Curves.easeOutCubic,
+            firstCurve: Curves.easeOutCubic,
+            secondCurve: Curves.easeInCubic,
+            firstChild: Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: colorScheme.outlineVariant.withValues(alpha: 0.35),
+                    width: 1,
+                  ),
                 ),
+                clipBehavior: Clip.antiAlias,
+                child: PixelSwitchTile(
+                  icon: Icons.brightness_2_rounded,
+                  title: l10n.darkModeOled,
+                  subtitle: l10n.darkModeSubtitleManual,
+                  value: themeSettings.isOled,
+                  borderRadius: BorderRadius.circular(16),
+                  onChanged: (val) async {
+                    await themeNotifier.setOled(val);
+                  },
+                ),
+              ),
+            ),
+            secondChild: const SizedBox(width: double.infinity, height: 0),
+          ),
+        ),
 
-                // Bottom item: Custom wallpaper with direct toggle switch
+        // ─── ROW 3: FONDO PERSONALIZADO INLINE (SI ESTÁ HABILITADO) ──
+        if (FeatureFlags.customWallpaper) ...[
+          const SizedBox(height: 12),
+          Container(
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: colorScheme.outlineVariant.withValues(alpha: 0.35),
+                width: 1,
+              ),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
                 _buildSubOptionTile(
                   icon: LucideIcons.image,
                   title: l10n.customWallpaper,
@@ -273,9 +257,9 @@ class ThemeAppearanceHeaderCard extends ConsumerWidget {
                   ),
                 ],
               ],
-            ],
+            ),
           ),
-        ),
+        ],
       ],
     );
   }
@@ -476,61 +460,64 @@ class _WallpaperThumbnailState extends ConsumerState<_WallpaperThumbnail> {
                 ),
 
                 // 3. Hover Overlay with interactive actions (No separate card!)
-                AnimatedOpacity(
-                  opacity: _isHovered ? 1.0 : 0.0,
-                  duration: const Duration(milliseconds: 180),
-                  child: Container(
-                    color: Colors.black.withValues(alpha: 0.65),
-                    padding: const EdgeInsets.all(12),
-                    child: Center(
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // Change / Pick Image Button
-                          FilledButton.tonalIcon(
-                            onPressed: _pickWallpaper,
-                            icon: Icon(
-                              hasImage ? LucideIcons.refreshCw : LucideIcons.folderOpen,
-                              size: 15,
-                            ),
-                            label: Text(
-                              hasImage ? l10n.changeWallpaper : l10n.pickWallpaper,
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                            ),
-                            style: FilledButton.styleFrom(
-                              backgroundColor: Colors.white.withValues(alpha: 0.2),
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                              minimumSize: const Size(0, 36),
-                            ),
-                          ),
-                          if (hasImage) ...[
-                            const SizedBox(width: 8),
-                            // Adjust Opacity & Blur Button
-                            IconButton.filledTonal(
-                              tooltip: l10n.adjustWallpaper,
-                              onPressed: widget.onOpenWallpaper,
-                              icon: const Icon(LucideIcons.sliders, size: 16),
-                              style: IconButton.styleFrom(
+                ExcludeFocus(
+                  excluding: !_isHovered,
+                  child: AnimatedOpacity(
+                    opacity: _isHovered ? 1.0 : 0.0,
+                    duration: const Duration(milliseconds: 180),
+                    child: Container(
+                      color: Colors.black.withValues(alpha: 0.65),
+                      padding: const EdgeInsets.all(12),
+                      child: Center(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Change / Pick Image Button
+                            FilledButton.tonalIcon(
+                              onPressed: _pickWallpaper,
+                              icon: Icon(
+                                hasImage ? LucideIcons.refreshCw : LucideIcons.folderOpen,
+                                size: 15,
+                              ),
+                              label: Text(
+                                hasImage ? l10n.changeWallpaper : l10n.pickWallpaper,
+                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                              ),
+                              style: FilledButton.styleFrom(
                                 backgroundColor: Colors.white.withValues(alpha: 0.2),
                                 foregroundColor: Colors.white,
-                                minimumSize: const Size(36, 36),
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                minimumSize: const Size(0, 36),
                               ),
                             ),
-                            const SizedBox(width: 8),
-                            // Remove Button
-                            IconButton.filledTonal(
-                              tooltip: l10n.removeWallpaper,
-                              onPressed: () => ref.read(wallpaperPreferencesProvider.notifier).clearWallpaper(),
-                              icon: const Icon(Icons.delete_outline_rounded, size: 17),
-                              style: IconButton.styleFrom(
-                                backgroundColor: colorScheme.error.withValues(alpha: 0.8),
-                                foregroundColor: Colors.white,
-                                minimumSize: const Size(36, 36),
+                            if (hasImage) ...[
+                              const SizedBox(width: 8),
+                              // Adjust Opacity & Blur Button
+                              IconButton.filledTonal(
+                                tooltip: l10n.adjustWallpaper,
+                                onPressed: widget.onOpenWallpaper,
+                                icon: const Icon(LucideIcons.sliders, size: 16),
+                                style: IconButton.styleFrom(
+                                  backgroundColor: Colors.white.withValues(alpha: 0.2),
+                                  foregroundColor: Colors.white,
+                                  minimumSize: const Size(36, 36),
+                                ),
                               ),
-                            ),
+                              const SizedBox(width: 8),
+                              // Remove Button
+                              IconButton.filledTonal(
+                                tooltip: l10n.removeWallpaper,
+                                onPressed: () => ref.read(wallpaperPreferencesProvider.notifier).clearWallpaper(),
+                                icon: const Icon(Icons.delete_outline_rounded, size: 17),
+                                style: IconButton.styleFrom(
+                                  backgroundColor: colorScheme.error.withValues(alpha: 0.8),
+                                  foregroundColor: Colors.white,
+                                  minimumSize: const Size(36, 36),
+                                ),
+                              ),
+                            ],
                           ],
-                        ],
+                        ),
                       ),
                     ),
                   ),
@@ -566,16 +553,18 @@ class _WallpaperThumbnailState extends ConsumerState<_WallpaperThumbnail> {
               ),
             ),
             const SizedBox(height: 10),
-            FilledButton.tonalIcon(
-              onPressed: _pickWallpaper,
-              icon: const Icon(LucideIcons.folderOpen, size: 15),
-              label: Text(
-                l10n.pickWallpaper,
-                style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold),
-              ),
-              style: FilledButton.styleFrom(
-                visualDensity: VisualDensity.compact,
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            ExcludeFocus(
+              child: FilledButton.tonalIcon(
+                onPressed: _pickWallpaper,
+                icon: const Icon(LucideIcons.folderOpen, size: 15),
+                label: Text(
+                  l10n.pickWallpaper,
+                  style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold),
+                ),
+                style: FilledButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                ),
               ),
             ),
           ],

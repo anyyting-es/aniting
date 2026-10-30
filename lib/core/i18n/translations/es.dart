@@ -622,6 +622,20 @@ class SpanishTranslations implements AppTranslations {
   @override
   String get episodes => 'Episodios';
   @override
+  String get playerLayoutNormal => 'Normal';
+  @override
+  String get playerLayoutWide => 'Amplio';
+  @override
+  String get playerLayoutCinema => 'Cine';
+  @override
+  String get hideEpisodeList => 'Ocultar episodios';
+  @override
+  String get showEpisodeList => 'Mostrar episodios';
+  @override
+  String get compactEpisodeList => 'Vista compacta';
+  @override
+  String get detailedEpisodeList => 'Vista detallada';
+  @override
   String get durationPerEp => 'Duración/ep';
   @override
   String get status => 'Estado';

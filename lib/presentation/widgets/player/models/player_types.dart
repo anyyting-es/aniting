@@ -204,6 +204,46 @@ enum PlayerFitMode {
   }
 }
 
+/// Desktop watch-page layout modes, cycled by the single cinema button.
+///
+/// - [normal]: page with the video on the left and a resizable episode rail.
+/// - [wide]: video spanning the full window width with the content and the
+///   episode rail moved below it, so a slice of content stays visible.
+/// - [cinema]: immersive video that fills the whole window.
+enum PlayerLayoutMode {
+  normal,
+  wide,
+  cinema;
+
+  PlayerLayoutMode get next => switch (this) {
+    PlayerLayoutMode.normal => PlayerLayoutMode.wide,
+    PlayerLayoutMode.wide => PlayerLayoutMode.cinema,
+    PlayerLayoutMode.cinema => PlayerLayoutMode.normal,
+  };
+
+  String localizedLabel(AppTranslations l10n) {
+    switch (this) {
+      case PlayerLayoutMode.normal:
+        return l10n.playerLayoutNormal;
+      case PlayerLayoutMode.wide:
+        return l10n.playerLayoutWide;
+      case PlayerLayoutMode.cinema:
+        return l10n.playerLayoutCinema;
+    }
+  }
+
+  IconData getIcon([AppIconPack? pack]) {
+    switch (this) {
+      case PlayerLayoutMode.normal:
+        return AppIcons.layoutNormal(pack);
+      case PlayerLayoutMode.wide:
+        return AppIcons.layoutWide(pack);
+      case PlayerLayoutMode.cinema:
+        return AppIcons.theater(pack);
+    }
+  }
+}
+
 /// Represents a chapter/segment inside a media file (MKV chapters, OP, ED, parts, etc.)
 class PlayerChapter {
   final int index;

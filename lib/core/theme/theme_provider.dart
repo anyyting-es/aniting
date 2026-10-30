@@ -342,6 +342,44 @@ class ThemeNotifier extends Notifier<ThemeSettings> {
     await prefs.setInt(_keyThemeMode, mode.index);
   }
 
+  /// Atomically updates theme mode, OLED state, and palette counterpart in a single state mutation.
+  /// This prevents multiple sequential rebuilds of MaterialApp and eliminates theme switching lag.
+  Future<void> updateThemeMode(
+    AppThemeMode mode, {
+    bool? isOled,
+  }) async {
+    final curId = state.paletteId;
+    String newPaletteId = curId;
+    bool newIsOled = isOled ?? state.isOled;
+
+    if (mode == AppThemeMode.light) {
+      newIsOled = false;
+      if (curId == AppPalettes.oledBlackId) {
+        newPaletteId = AppPalettes.materialPurpleId;
+      } else {
+        newPaletteId = AppPalettes.getMatchingVariant(curId, false);
+      }
+    } else if (mode == AppThemeMode.dark) {
+      newPaletteId = AppPalettes.getMatchingVariant(curId, true);
+    } else {
+      newIsOled = false;
+    }
+
+    state = state.copyWith(
+      themeMode: mode,
+      isOled: newIsOled,
+      paletteId: newPaletteId,
+    );
+
+    final prefs = _cachedPrefs ?? await SharedPreferences.getInstance();
+    _cachedPrefs = prefs;
+    await Future.wait([
+      prefs.setInt(_keyThemeMode, mode.index),
+      prefs.setBool(_keyIsOled, newIsOled),
+      prefs.setString(_keyPaletteId, newPaletteId),
+    ]);
+  }
+
   Future<void> setOled(bool isOled) async {
     state = state.copyWith(isOled: isOled);
     final prefs = _cachedPrefs ?? await SharedPreferences.getInstance();

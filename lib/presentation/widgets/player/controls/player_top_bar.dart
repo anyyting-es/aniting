@@ -6,6 +6,7 @@ import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/data/models/torrent_models.dart';
 import 'package:seanime_app/presentation/providers/torrent_stream_provider.dart';
+import 'package:seanime_app/presentation/widgets/player/models/player_types.dart';
 
 /// Clean, modern top bar for the video player displaying back button, titles,
 /// video source badge (extension, torrent, local file or stream),
@@ -23,6 +24,13 @@ class PlayerTopBar extends ConsumerWidget {
   final VoidCallback? onToggleTheaterMode;
   final bool isTheaterMode;
 
+  /// Drives the icon/tooltip of the layout button (normal / wide / cinema).
+  final PlayerLayoutMode layoutMode;
+
+  /// Restores a hidden episode rail from the overlay (used when there is no
+  /// page header, e.g. wide / cinema mode).
+  final VoidCallback? onShowEpisodes;
+
   const PlayerTopBar({
     super.key,
     required this.title,
@@ -36,6 +44,8 @@ class PlayerTopBar extends ConsumerWidget {
     this.showBackButton = true,
     this.onToggleTheaterMode,
     this.isTheaterMode = false,
+    this.layoutMode = PlayerLayoutMode.normal,
+    this.onShowEpisodes,
   });
 
   Widget _buildTorrentIndicator(TorrentStreamStatus? status, AppIconPack iconPack) {
@@ -265,6 +275,25 @@ class PlayerTopBar extends ConsumerWidget {
                 ] else
                   const Spacer(),
 
+                // Restore a hidden episode rail (no page header in wide mode)
+                if (onShowEpisodes != null) ...[
+                  IconButton(
+                    style: buttonStyle,
+                    constraints: const BoxConstraints(
+                      minWidth: 36,
+                      minHeight: 36,
+                    ),
+                    icon: Icon(
+                      AppIcons.sidebar(iconPack),
+                      color: Colors.white,
+                      size: sidebarIconSize,
+                    ),
+                    tooltip: l10n.showEpisodeList,
+                    onPressed: onShowEpisodes,
+                  ),
+                  const SizedBox(width: 6),
+                ],
+
                 // Theater mode toggle (desktop only)
                 if (onToggleTheaterMode != null) ...[
                   IconButton(
@@ -274,12 +303,11 @@ class PlayerTopBar extends ConsumerWidget {
                       minHeight: 36,
                     ),
                     icon: Icon(
-                      AppIcons.theater(iconPack),
+                      layoutMode.getIcon(iconPack),
                       color: Colors.white,
                       size: sidebarIconSize,
                     ),
-                    tooltip:
-                        isTheaterMode ? l10n.exitTheaterMode : l10n.theaterMode,
+                    tooltip: layoutMode.localizedLabel(l10n),
                     onPressed: onToggleTheaterMode,
                   ),
                   const SizedBox(width: 6),

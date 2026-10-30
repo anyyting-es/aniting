@@ -16,8 +16,8 @@ import 'package:seanime_app/core/preferences/desktop_nav_style_provider.dart';
 import 'package:seanime_app/core/preferences/desktop_scrollbar_provider.dart';
 import 'package:seanime_app/core/preferences/onboarding_provider.dart';
 import 'package:seanime_app/core/preferences/playback_progress_preferences_provider.dart';
+import 'package:seanime_app/core/preferences/player_desktop_view_provider.dart';
 import 'package:seanime_app/core/preferences/player_engine_provider.dart';
-import 'package:seanime_app/core/preferences/player_rail_fraction_provider.dart';
 import 'package:seanime_app/core/preferences/resume_bar_preferences_provider.dart';
 import 'package:seanime_app/core/preferences/settings_sidebar_width_provider.dart';
 import 'package:seanime_app/core/preferences/section_visibility_provider.dart';
@@ -49,20 +49,25 @@ import 'package:seanime_app/data/services/tmdb_mapping_service.dart';
 import 'package:seanime_app/data/services/tmdb_service.dart';
 import 'package:seanime_app/data/services/custom_anime_assets_service.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  MediaKit.ensureInitialized();
-  AppFocusCoordinator.initialize();
-  DeepLinkService.instance.initialize();
-  unawaited(TmdbMappingService.init());
-  unawaited(CustomAnimeAssetsService.init());
+Future<void> _cleanNativeReferenceHolders() async {
+  if (kIsWeb) return;
   try {
-    await GlassHost.precache();
+    // 1. Clean system temp directory across desktop platforms (Windows, Linux, macOS)
+    // Prevents media_kit from locating and attaching to stale native pointers from a previous isolate
+    final tempDir = Directory.systemTemp;
+    if (tempDir.existsSync()) {
+      for (final entity in tempDir.listSync()) {
+        if (entity is File && entity.path.contains('NativeReferenceHolder')) {
+          try {
+            entity.deleteSync();
+          } catch (_) {}
+        }
+      }
+    }
   } catch (_) {}
-  PaintingBinding.instance.imageCache.maximumSizeBytes = 50 << 20; // 50 MB
-  PaintingBinding.instance.imageCache.maximumSize = 250;
 
-  if (!kIsWeb && Platform.isAndroid) {
+  // 2. Clean Android-specific data directories
+  if (Platform.isAndroid) {
     try {
       final appSupport = await getApplicationSupportDirectory();
       final filesDir = Directory('${appSupport.parent.path}/files');
@@ -88,6 +93,21 @@ void main() async {
       }
     } catch (_) {}
   }
+}
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await _cleanNativeReferenceHolders();
+  MediaKit.ensureInitialized();
+  AppFocusCoordinator.initialize();
+  DeepLinkService.instance.initialize();
+  unawaited(TmdbMappingService.init());
+  unawaited(CustomAnimeAssetsService.init());
+  try {
+    await GlassHost.precache();
+  } catch (_) {}
+  PaintingBinding.instance.imageCache.maximumSizeBytes = 50 << 20; // 50 MB
+  PaintingBinding.instance.imageCache.maximumSize = 250;
 
   if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
     await windowManager.ensureInitialized();
@@ -117,7 +137,7 @@ void main() async {
     AppLanguageNotifier.setCachedPrefs(prefs);
     DesktopScrollbarNotifier.setCachedPrefs(prefs);
     SettingsSidebarWidthNotifier.setCachedPrefs(prefs);
-    PlayerRailFractionNotifier.setCachedPrefs(prefs);
+    setPlayerDesktopViewPrefs(prefs);
     AppWallpaperNotifier.setCachedPrefs(prefs);
     ThemeNotifier.setCachedPrefs(prefs);
     IconPackNotifier.setCachedPrefs(prefs);

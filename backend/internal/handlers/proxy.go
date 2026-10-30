@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"crypto/tls"
@@ -11,6 +12,7 @@ import (
 	"net"
 	"net/http"
 	url2 "net/url"
+	"regexp"
 	"seanime/internal/security"
 	"seanime/internal/util"
 	"strconv"
@@ -275,19 +277,16 @@ func (h *Handler) VideoProxy(c echo.Context) (err error) {
 	}
 
 	buffer := bytes.NewBuffer(bodyBytes)
-	playlist, listType, decodeErr := m3u8.Decode(*buffer, true)
-	if decodeErr != nil {
-		log.Warn().Err(decodeErr).Str("url", rawURL).Msg("proxy: Failed to decode M3U8 playlist, proxying raw content")
-		c.Response().Header().Set(echo.HeaderContentType, resp.Header.Get("Content-Type"))
-		c.Response().Header().Set(echo.HeaderContentLength, strconv.Itoa(len(bodyBytes)))
-		return c.Blob(resp.StatusCode, c.Response().Header().Get(echo.HeaderContentType), bodyBytes)
-	}
+	playlist, listType, decodeErr := m3u8.Decode(*buffer, false)
 
 	var modifiedPlaylistBytes []byte
 	needsRewrite := false
 	rewriter := proxy.newRewriter(parsedURL, headerMap, authToken)
 
-	if listType == m3u8.MEDIA {
+	if decodeErr != nil {
+		log.Warn().Err(decodeErr).Str("url", rawURL).Msg("proxy: Failed to decode M3U8 playlist with parser, falling back to line-by-line rewrite")
+		modifiedPlaylistBytes, needsRewrite = rewriter.rewriteM3U8Fallback(bodyBytes)
+	} else if listType == m3u8.MEDIA {
 		mediaPl := playlist.(*m3u8.MediaPlaylist)
 
 		for _, segment := range mediaPl.Segments {
@@ -536,8 +535,64 @@ func (r videoProxyRewriter) proxyURL(targetURL string, isHLSKey bool) string {
 	return "/api/v1/proxy?" + query.Encode()
 }
 
+var uriRegex = regexp.MustCompile(`URI="([^"]+)"`)
+
+func (r videoProxyRewriter) rewriteM3U8Fallback(bodyBytes []byte) ([]byte, bool) {
+	scanner := bufio.NewScanner(bytes.NewReader(bodyBytes))
+	var out bytes.Buffer
+	needsRewrite := false
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		trimmed := strings.TrimSpace(line)
+
+		if trimmed == "" {
+			out.WriteString(line + "\n")
+			continue
+		}
+
+		if strings.HasPrefix(trimmed, "#") {
+			// Rewrite URI="..." attributes in tags like #EXT-X-KEY, #EXT-X-MAP, #EXT-X-MEDIA
+			if strings.Contains(trimmed, "URI=\"") {
+				isKey := strings.HasPrefix(trimmed, "#EXT-X-KEY")
+				newLine := uriRegex.ReplaceAllStringFunc(line, func(match string) string {
+					sub := uriRegex.FindStringSubmatch(match)
+					if len(sub) > 1 {
+						uri := sub[1]
+						if r.rewriteURL(&uri, isKey) {
+							needsRewrite = true
+							return fmt.Sprintf(`URI="%s"`, uri)
+						}
+					}
+					return match
+				})
+				out.WriteString(newLine + "\n")
+				continue
+			}
+			out.WriteString(line + "\n")
+		} else {
+			// This line is a segment or variant URI
+			uri := trimmed
+			if r.rewriteURL(&uri, false) {
+				needsRewrite = true
+				out.WriteString(uri + "\n")
+			} else {
+				out.WriteString(line + "\n")
+			}
+		}
+	}
+
+	if !needsRewrite {
+		return bodyBytes, false
+	}
+	return out.Bytes(), true
+}
+
 func (r videoProxyRewriter) isProxyURL(rawURL string) bool {
-	if strings.Contains(rawURL, "/api/v1/proxy?url=") || strings.Contains(rawURL, url2.QueryEscape("/api/v1/proxy?url=")) {
+	if strings.Contains(rawURL, "/api/v1/proxy?url=") ||
+		strings.Contains(rawURL, url2.QueryEscape("/api/v1/proxy?url=")) ||
+		strings.Contains(rawURL, "/api/v1/p?url=") ||
+		strings.Contains(rawURL, url2.QueryEscape("/api/v1/p?url=")) {
 		return true
 	}
 
@@ -546,7 +601,7 @@ func (r videoProxyRewriter) isProxyURL(rawURL string) bool {
 		return false
 	}
 
-	return strings.HasSuffix(parsedURL.Path, "/api/v1/proxy") && parsedURL.Query().Has("url")
+	return (strings.HasSuffix(parsedURL.Path, "/api/v1/proxy") || strings.HasSuffix(parsedURL.Path, "/api/v1/p")) && parsedURL.Query().Has("url")
 }
 
 func (p *videoProxy) parseURL(rawURL string) (*url2.URL, error) {

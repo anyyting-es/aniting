@@ -245,14 +245,20 @@ class _DesktopEpisodeSourceDialogState
                                     ? AppIcons.checkCircleFilled(iconPack)
                                     : AppIcons.globe(iconPack),
                                 size: 18,
-                                color: isCurrent ? Colors.white : null,
+                                color: isCurrent
+                                    ? (isDark
+                                          ? Colors.white
+                                          : theme.colorScheme.primary)
+                                    : null,
                               ),
                               onPressed: () => widget.onProviderChanged(p),
                             );
                           }).toList(),
                           builder: (ctx, controller) => IconButton(
                             icon: Icon(AppIcons.chevronDown(iconPack), size: 18),
-                            color: Colors.white70,
+                            color: isDark
+                                ? Colors.white70
+                                : theme.colorScheme.onSurfaceVariant,
                             tooltip: l10n.source,
                             onPressed: controller.open,
                           ),
@@ -354,6 +360,10 @@ class _SourceActionTileState extends ConsumerState<_SourceActionTile> {
           final isDpad = inputMode == AppInputMode.dpad;
           final isActive =
               (inputMode == AppInputMode.mouse && _isHovered) || (isDpad && _isFocused);
+          final theme = Theme.of(context);
+          final onGlass = widget.isDark
+              ? Colors.white
+              : theme.colorScheme.onSurface;
 
           return MouseRegion(
             cursor: SystemMouseCursors.click,
@@ -376,13 +386,17 @@ class _SourceActionTileState extends ConsumerState<_SourceActionTile> {
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(14),
-                  color: isActive
-                      ? Colors.white.withValues(alpha: widget.isDark ? 0.18 : 0.15)
-                      : Colors.white.withValues(alpha: widget.isDark ? 0.07 : 0.05),
+                  color: widget.isDark
+                      ? Colors.white.withValues(alpha: isActive ? 0.18 : 0.07)
+                      : theme.colorScheme.onSurface.withValues(
+                          alpha: isActive ? 0.10 : 0.04,
+                        ),
                   border: Border.all(
                     color: isActive
-                        ? Colors.white
-                        : Colors.white.withValues(alpha: widget.isDark ? 0.12 : 0.15),
+                        ? (widget.isDark ? Colors.white : theme.colorScheme.primary)
+                        : (widget.isDark
+                              ? Colors.white.withValues(alpha: 0.12)
+                              : theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
                     width: isActive ? 1.8 : 1.0,
                   ),
                 ),
@@ -393,9 +407,13 @@ class _SourceActionTileState extends ConsumerState<_SourceActionTile> {
                       height: 40,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.white.withValues(alpha: isActive ? 0.22 : 0.10),
+                        color: widget.isDark
+                            ? Colors.white.withValues(alpha: isActive ? 0.22 : 0.10)
+                            : theme.colorScheme.primary.withValues(
+                                alpha: isActive ? 0.20 : 0.10,
+                              ),
                       ),
-                      child: Icon(widget.icon, size: 20, color: Colors.white),
+                      child: Icon(widget.icon, size: 20, color: onGlass),
                     ),
                     const SizedBox(width: 14),
                     Expanded(
@@ -404,10 +422,10 @@ class _SourceActionTileState extends ConsumerState<_SourceActionTile> {
                         children: [
                           Text(
                             widget.title,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
-                              color: Colors.white,
+                              color: onGlass,
                             ),
                           ),
                           const SizedBox(height: 2),
@@ -418,7 +436,9 @@ class _SourceActionTileState extends ConsumerState<_SourceActionTile> {
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
-                              color: Colors.white.withValues(alpha: 0.65),
+                              color: widget.isDark
+                                  ? Colors.white.withValues(alpha: 0.65)
+                                  : theme.colorScheme.onSurfaceVariant,
                             ),
                           ),
                         ],
@@ -429,7 +449,9 @@ class _SourceActionTileState extends ConsumerState<_SourceActionTile> {
                     Icon(
                       AppIcons.chevronRight(ref.watch(iconPackProvider)),
                       size: 18,
-                      color: Colors.white54,
+                      color: widget.isDark
+                          ? Colors.white54
+                          : theme.colorScheme.onSurfaceVariant,
                     ),
                   ],
                 ),

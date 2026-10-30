@@ -2,9 +2,43 @@
 
 > **RELEASE CHANGELOG SIMPLICITY RULE (CRITICAL - MANDATORY)**:
 > Release changelogs must **ALWAYS be simple, clean, and concise**.
-> - **NEVER** include microscopic, tedious, or trivial implementation details that end users do not care about (e.g., do **NOT** write: *"Eliminado el brillo fosforescente del indicador deslizante"*, *"Pestañas de los 7 días visibles en frame 0"*, *"Ajustado padding a 4px"*, *"Cambiado color del dot"*).
-> - **ALWAYS** summarize improvements at a high, user-facing level with clear, direct bullet points (e.g., *"Mejoras de UI y navegación en el calendario de emisión"*, *"Nueva pantalla y gestión de estado sin conexión"*, *"Optimizaciones en la caché de seguir viendo"*).
+> - **NEVER** include microscopic, tedious, or trivial implementation details that end users do not care about.
+> - **ALWAYS** summarize improvements at a high, user-facing level with clear, direct bullet points.
 > - Keep it punchy, professional, and easy to skim.
+
+## 8.05. Resplandor Ambiental Limpio en el Reproductor Desktop (2026-10-30)
+- **Corregido el Difuminado que se Superponía sobre el Video**:
+  - El resplandor con los colores del video ahora se dibuja **detrás** del reproductor en lugar de taparlo, eliminando el velo borroso y las líneas de sombra que aparecían sobre la imagen.
+  - El halo se mantiene visible y simétrico alrededor del reproductor, disolviéndose de forma progresiva hacia la página.
+- **Blur sin Distorsión**:
+  - La copia difuminada del frame ahora respeta la proporción real del video, eliminando las rayas verticales y el aspecto de caja alrededor del reproductor.
+
+## 8.04. Botón de Regreso Siempre Accesible y Resiliencia en Proxy de Streaming Online (2026-10-30)
+- **Botón de Regreso Permanente en Pantallas de Carga del Reproductor**:
+  - Incorporación de botón de retroceso flotante en la vista de carga de video (`_LoadingArtwork`), permitiendo salir inmediatamente en cualquier momento, ya sea en modo normal, ancho, cine o pantalla completa, evitando quedar atrapado si un enlace externo tarda o falla.
+- **Resiliencia Total y Reescritura Fallback en Proxy HLS (Go Backend)**:
+  - Soporte de reescritura línea por línea para listas de reproducción HLS no estándar o con etiquetas personalizadas si el parser estricto falla, garantizando que ninguna ruta relativa de segmentos quede sin resolver.
+  - Enrutamiento y alias `/p` en el servidor Go para asegurar compatibilidad total con peticiones de segmentos y evitar errores 404.
+  - Mecanismo de fallback transparente automático en Flutter (`PlayerPlaybackCoordinator`): si la reproducción a través del proxy encuentra un error, conmuta instantáneamente al flujo directo del servidor CDN sin interrumpir la experiencia.
+
+## 8.03. Estabilidad en Hot Restart de Windows y Correcciones del Reproductor Desktop (2026-10-30)
+- **Corrección de Bloqueo en Hot Restart en Windows Desktop**:
+  - Limpieza automática de punteros nativos huérfanos (`NativeReferenceHolder`) en el directorio temporal del sistema antes de inicializar el motor de video (`media_kit`), evitando deadlocks al reiniciar la aplicación en modo desarrollo.
+  - Temporizador de seguridad watchdog en la pantalla de inicio para garantizar que la transición al shell principal nunca se quede pasmada bajo ningún escenario o desconexión.
+- **Sincronización de Títulos y Metadatos en el Reproductor Desktop**:
+  - Corrección de discrepancia visual donde el título del episodio en la cabecera del reproductor no coincidía con el episodio seleccionado en el carril lateral.
+  - Refactorización del resplandor ambiental de video para eliminar cortes rectangulares en la parte superior y optimizar la composición por hardware en pantallas panorámicas.
+
+## 8.02. Mejoras de Navegación D-Pad en Ajustes y Rediseño de Temas (2026-10-30)
+- **Navegación Direccional D-Pad Fluida en Ajustes**:
+  - Corrección de la navegación horizontal entre opciones hermanas: el cursor regresa fluidamente a la opción anterior con Izquierda, saliendo a la barra lateral únicamente desde el extremo izquierdo.
+  - Aislamiento en sliders para permitir ajustes continuos de valor con Izquierda/Derecha y transferir foco vertical a los elementos adyacentes con Arriba/Abajo.
+  - Soporte bidireccional completo en el selector de modo M3E para moverse entre Claro, Oscuro y Sistema y navegar fluidamente hacia abajo sin saltos inesperados.
+- **Rediseño In-Page de la Sección de Temas y Paletas**:
+  - El selector de modo principal conserva su estilo conectado original de Material 3 Expressive (`M3EButtonGroup`) con soporte para Modo Claro, Oscuro y Sistema.
+  - Modo OLED condicional visible únicamente al encontrarse en Modo Oscuro.
+  - Integración horizontal directa de las paletas de color en la pantalla principal sin requerir subpáginas adicionales.
+  - Corrección de los anillos de enfoque D-pad en tarjetas y switches para respetar con precisión las esquinas redondeadas.
 
 ## 8.01. Proxy de Streaming Local en Go y Corrección de Video en Linux Desktop (2026-10-26)
 - **Proxy Inverso de Streaming Local en Go**:

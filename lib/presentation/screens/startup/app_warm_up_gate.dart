@@ -52,8 +52,26 @@ class _AppWarmUpGateState extends ConsumerState<AppWarmUpGate>
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOutSine),
     );
 
+    // Safety watchdog: ensure AppWarmUpGate unconditionally dismisses within 3.5s under any circumstance
+    Future.delayed(const Duration(milliseconds: 3500), () {
+      if (mounted && !_isWarmedUp) {
+        setState(() {
+          _isWarmedUp = true;
+        });
+      }
+    });
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _runWarmUp();
+      _runWarmUp().timeout(
+        const Duration(milliseconds: 3200),
+        onTimeout: () {
+          if (mounted && !_isWarmedUp) {
+            setState(() {
+              _isWarmedUp = true;
+            });
+          }
+        },
+      );
     });
   }
 

@@ -37,7 +37,8 @@ class DesktopRelationsTab extends ConsumerWidget {
               crossAxisSpacing: 14,
               mainAxisSpacing: 16,
             ),
-            itemBuilder: (context, index) => _buildSkeletonCard(),
+            itemBuilder: (context, index) =>
+                _buildSkeletonCard(Theme.of(context)),
           );
         },
       );
@@ -90,7 +91,14 @@ class DesktopRelationsTab extends ConsumerWidget {
     );
   }
 
-  Widget _buildSkeletonCard() {
+  Widget _buildSkeletonCard(ThemeData theme) {
+    final isDark = theme.brightness == Brightness.dark;
+    final blockColor = isDark
+        ? const Color(0xFF1A1D23)
+        : theme.colorScheme.surfaceContainerHighest;
+    final lineColor = isDark
+        ? const Color(0xFF22262E)
+        : theme.colorScheme.outlineVariant.withValues(alpha: 0.5);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -98,7 +106,7 @@ class DesktopRelationsTab extends ConsumerWidget {
           aspectRatio: 0.70,
           child: Container(
             decoration: BoxDecoration(
-              color: const Color(0xFF1A1D23),
+              color: blockColor,
               borderRadius: BorderRadius.circular(10),
             ),
           ),
@@ -108,7 +116,7 @@ class DesktopRelationsTab extends ConsumerWidget {
           height: 10,
           width: 50,
           decoration: BoxDecoration(
-            color: const Color(0xFF22262E),
+            color: lineColor,
             borderRadius: BorderRadius.circular(4),
           ),
         ),
@@ -117,7 +125,7 @@ class DesktopRelationsTab extends ConsumerWidget {
           height: 12,
           width: 90,
           decoration: BoxDecoration(
-            color: const Color(0xFF22262E),
+            color: lineColor,
             borderRadius: BorderRadius.circular(4),
           ),
         ),
@@ -214,7 +222,7 @@ class _DesktopRelationCardState extends State<_DesktopRelationCard> {
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
                         color: _isHovered
-                            ? Colors.white.withValues(alpha: 0.30)
+                            ? theme.colorScheme.primary.withValues(alpha: 0.5)
                             : (isDark
                                 ? Colors.white.withValues(alpha: 0.08)
                                 : theme.colorScheme.outlineVariant.withValues(alpha: 0.3)),
@@ -222,7 +230,11 @@ class _DesktopRelationCardState extends State<_DesktopRelationCard> {
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: _isHovered ? 0.35 : 0.20),
+                          color: Colors.black.withValues(
+                            alpha: isDark
+                                ? (_isHovered ? 0.35 : 0.20)
+                                : (_isHovered ? 0.14 : 0.08),
+                          ),
                           blurRadius: _isHovered ? 10 : 6,
                           offset: Offset(0, _isHovered ? 3 : 2),
                         ),
@@ -234,9 +246,11 @@ class _DesktopRelationCardState extends State<_DesktopRelationCard> {
                             imageUrl: coverUrl as String,
                             fit: BoxFit.cover,
                             memCacheWidth: 320,
-                            errorWidget: (_, _, _) => Container(color: const Color(0xFF1E2228)),
+                            errorWidget: (_, _, _) => Container(
+                              color: theme.colorScheme.surfaceContainerHighest,
+                            ),
                           )
-                        : Container(color: const Color(0xFF1E2228)),
+                        : Container(color: theme.colorScheme.surfaceContainerHighest),
                   ),
                 ),
               ),

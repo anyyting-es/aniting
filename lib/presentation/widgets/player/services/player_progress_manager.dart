@@ -47,6 +47,7 @@ class PlayerProgressManager {
   static const int kMinWatchDurationSeconds = 10;
 
   Timer? _continuityTimer;
+  Timer? _saveDebounce;
   bool _hasUpdatedAnimeProgress = false;
   Duration? _initialPosition;
 
@@ -106,8 +107,28 @@ class PlayerProgressManager {
     _continuityTimer?.cancel();
     _continuityTimer = Timer.periodic(const Duration(seconds: 20), (_) {
       if (getIsPlaying()) {
-        savePlaybackProgress();
+        // Deferred: flushing re-encodes the persisted collections and mutates
+        // several providers, so it must never land inside the frame that is
+        // rendering a play/pause or seek interaction.
+        scheduleSaveProgress();
       }
+    });
+  }
+
+  /// Defers [savePlaybackProgress] out of the current frame.
+  ///
+  /// Saving touches SharedPreferences, the offline collection JSON and a few
+  /// Riverpod providers that whole pages watch, which costs enough to be felt
+  /// as a frame drop when it runs synchronously from a player callback.
+  /// Scheduling it a few milliseconds later lets the UI (play/pause icon,
+  /// paused frame) paint first. Repeated calls are coalesced.
+  void scheduleSaveProgress({
+    Duration delay = const Duration(milliseconds: 320),
+  }) {
+    _saveDebounce?.cancel();
+    _saveDebounce = Timer(delay, () {
+      _saveDebounce = null;
+      savePlaybackProgress();
     });
   }
 
@@ -281,6 +302,8 @@ class PlayerProgressManager {
   /// Disposes timers and performs final progress flush.
   void dispose() {
     _continuityTimer?.cancel();
+    _saveDebounce?.cancel();
+    _saveDebounce = null;
     try {
       savePlaybackProgress();
     } catch (_) {}

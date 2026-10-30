@@ -54,6 +54,7 @@ class PlayerPlaybackCoordinator {
   StreamSubscription? _mediaKitBufferingSub;
   StreamSubscription? _mediaKitTracksSub;
   StreamSubscription? _mediaKitEndedSub;
+  StreamSubscription? _mediaKitErrorSub;
 
   Duration _currentPos = Duration.zero;
 
@@ -66,6 +67,7 @@ class PlayerPlaybackCoordinator {
   List<dynamic>? _externalSubtitles;
   ShaderPreset _activeShaderPreset = ShaderPreset.none;
   bool _isOnlineStream = false;
+  bool _hasRetriedDirectUrl = false;
 
   static String _getSubUrl(dynamic s) {
     if (s == null) return '';
@@ -356,6 +358,21 @@ class PlayerPlaybackCoordinator {
     _mediaKitEndedSub = service.player.stream.completed.listen((completed) {
       if (completed) onEnded();
     });
+    _mediaKitErrorSub = service.player.stream.error.listen((errorMsg) {
+      if (!_hasRetriedDirectUrl &&
+          _isOnlineStream &&
+          _videoUrl != null &&
+          _videoUrl!.isNotEmpty) {
+        _hasRetriedDirectUrl = true;
+        service.open(
+          _videoUrl!,
+          title: _title,
+          episodeTitle: _episodeTitle,
+          startPosition: _currentPos != Duration.zero ? _currentPos : (_startPosition ?? Duration.zero),
+          httpHeaders: _headers,
+        );
+      }
+    });
 
     _mediaKitTracksSub = service.player.stream.tracks.listen((tracks) {
       final currentSub = service.player.state.track.subtitle;
@@ -497,6 +514,7 @@ class PlayerPlaybackCoordinator {
     _startPosition = startPosition;
     _externalSubtitles = externalSubtitles;
     _isOnlineStream = isOnlineStream;
+    _hasRetriedDirectUrl = false;
 
     if (isUsingExoPlayer && exoService != null) {
       final mime = mimeType ?? _detectMimeType(videoUrl);
@@ -749,6 +767,7 @@ class PlayerPlaybackCoordinator {
     _mediaKitBufferingSub?.cancel();
     _mediaKitTracksSub?.cancel();
     _mediaKitEndedSub?.cancel();
+    _mediaKitErrorSub?.cancel();
   }
 
   void dispose() {

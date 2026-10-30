@@ -119,11 +119,34 @@ class _DesktopHeaderState extends ConsumerState<DesktopHeader> {
 
     final metaColor = isDark ? Colors.white.withValues(alpha: 0.85) : theme.colorScheme.onSurface;
     final descColor = isDark ? Colors.white.withValues(alpha: 0.75) : theme.colorScheme.onSurfaceVariant;
+    // Studio / genre line and the "more/less" toggle share the meta tone so they
+    // stay readable on the light hero scrim used by the light theme.
+    final softMetaColor = isDark
+        ? Colors.white.withValues(alpha: 0.90)
+        : theme.colorScheme.onSurface.withValues(alpha: 0.90);
+    final faintMetaColor = isDark
+        ? Colors.white.withValues(alpha: 0.50)
+        : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6);
+    final genreColor = isDark
+        ? Colors.white.withValues(alpha: 0.75)
+        : theme.colorScheme.onSurfaceVariant;
+    final linkColor = isDark
+        ? Colors.white.withValues(alpha: 0.75)
+        : theme.colorScheme.primary;
     final textShadows = isDark
         ? const [
             Shadow(color: Colors.black87, blurRadius: 8, offset: Offset(0, 1)),
           ]
         : null;
+    final pillBackgroundColor = isDark
+        ? Colors.white.withValues(alpha: 0.12)
+        : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.75);
+    final pillBorderColor = isDark
+        ? Colors.white.withValues(alpha: 0.28)
+        : theme.colorScheme.outlineVariant;
+    final pillTextColor = isDark
+        ? Colors.white
+        : theme.colorScheme.onSurface;
 
     final effectiveDateSeason = (widget.dateSeasonStr != null && widget.dateSeasonStr!.isNotEmpty)
         ? widget.dateSeasonStr!
@@ -245,19 +268,16 @@ class _DesktopHeaderState extends ConsumerState<DesktopHeader> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.12),
+                  color: pillBackgroundColor,
                   borderRadius: BorderRadius.circular(6),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.28),
-                    width: 1,
-                  ),
+                  border: Border.all(color: pillBorderColor, width: 1),
                 ),
                 child: Text(
                   widget.format!.toUpperCase() == 'TV' ? 'TV' : l10n.formatFormat(widget.format),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w800,
-                    color: Colors.white,
+                    color: pillTextColor,
                     letterSpacing: 0.3,
                   ),
                 ),
@@ -268,19 +288,16 @@ class _DesktopHeaderState extends ConsumerState<DesktopHeader> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.12),
+                  color: pillBackgroundColor,
                   borderRadius: BorderRadius.circular(6),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.28),
-                    width: 1,
-                  ),
+                  border: Border.all(color: pillBorderColor, width: 1),
                 ),
                 child: Text(
                   displayStatus,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w800,
-                    color: Colors.white,
+                    color: pillTextColor,
                     letterSpacing: 0.3,
                   ),
                 ),
@@ -333,7 +350,7 @@ class _DesktopHeaderState extends ConsumerState<DesktopHeader> {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
-                    color: Colors.white.withValues(alpha: 0.90),
+                    color: softMetaColor,
                     shadows: textShadows,
                   ),
                 ),
@@ -342,7 +359,7 @@ class _DesktopHeaderState extends ConsumerState<DesktopHeader> {
                     '•',
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.white.withValues(alpha: 0.50),
+                      color: faintMetaColor,
                     ),
                   ),
               ],
@@ -352,7 +369,7 @@ class _DesktopHeaderState extends ConsumerState<DesktopHeader> {
                     '•',
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.white.withValues(alpha: 0.50),
+                      color: faintMetaColor,
                     ),
                   ),
                 Text(
@@ -360,7 +377,7 @@ class _DesktopHeaderState extends ConsumerState<DesktopHeader> {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
-                    color: Colors.white.withValues(alpha: 0.75),
+                    color: genreColor,
                     shadows: textShadows,
                   ),
                 ),
@@ -420,7 +437,7 @@ class _DesktopHeaderState extends ConsumerState<DesktopHeader> {
                               style: TextStyle(
                                 fontSize: 12.5,
                                 fontWeight: FontWeight.w700,
-                                color: Colors.white.withValues(alpha: 0.75),
+                                color: linkColor,
                               ),
                             ),
                             const SizedBox(width: 4),
@@ -429,7 +446,7 @@ class _DesktopHeaderState extends ConsumerState<DesktopHeader> {
                                   ? AppIcons.chevronUp(iconPack)
                                   : AppIcons.chevronDown(iconPack),
                               size: 15,
-                              color: Colors.white.withValues(alpha: 0.75),
+                              color: linkColor,
                             ),
                           ],
                         ),

@@ -80,6 +80,18 @@ class PlayerViewport extends ConsumerWidget {
   final VoidCallback onOpenSettings;
   final VoidCallback? onToggleTheaterMode;
   final bool isTheaterMode;
+
+  /// Drives the icon/tooltip of the layout button (normal / wide / cinema).
+  final PlayerLayoutMode layoutMode;
+
+  /// Restores a hidden episode rail. Rendered in the overlay top bar (the page
+  /// header is not available in wide/cinema mode).
+  final VoidCallback? onShowEpisodes;
+
+  /// Paints a blurred copy of the frame behind the player (ambient mode), so the
+  /// letterbox bars take the colours of the video. Pass a **stable** widget
+  /// instance: rebuilding it re-creates its layers and makes the glow flash.
+  final Widget? ambientBackdrop;
   final GlobalKey? captureKey;
 
   // Bottom Bar info
@@ -137,6 +149,9 @@ class PlayerViewport extends ConsumerWidget {
     required this.onOpenSettings,
     this.onToggleTheaterMode,
     this.isTheaterMode = false,
+    this.layoutMode = PlayerLayoutMode.normal,
+    this.onShowEpisodes,
+    this.ambientBackdrop,
     this.captureKey,
     required this.positionNotifier,
     required this.bufferNotifier,
@@ -161,6 +176,14 @@ class PlayerViewport extends ConsumerWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
+          // 0. Ambient backdrop behind the frame (fills the letterbox bars with
+          //    the colours of the current video frame).
+          if (ambientBackdrop != null &&
+              !isUsingExoPlayer &&
+              !isLoadingNextEpisode &&
+              !isExiting)
+            Positioned.fill(child: ambientBackdrop!),
+
           // 1. Video Viewport (Isolated on its own composited layer)
           Positioned.fill(
             child: (isUsingExoPlayer || isLoadingNextEpisode || isExiting)
@@ -172,7 +195,11 @@ class PlayerViewport extends ConsumerWidget {
                             child: Video(
                               controller:
                                   mediaKitPlayerService!.videoController,
-                              fill: Colors.black,
+                              // Transparent when the ambient glow sits behind,
+                              // otherwise the bars would stay black.
+                              fill: ambientBackdrop != null
+                                  ? Colors.transparent
+                                  : Colors.black,
                               fit: _toBoxFit(fitMode),
                               controls: NoVideoControls,
                             ),
@@ -189,6 +216,7 @@ class PlayerViewport extends ConsumerWidget {
                 title: loadingTitle,
                 message: loadingMessage,
                 showArtwork: showLoadingArtwork,
+                onBack: onBack,
               ),
             ),
 
@@ -422,8 +450,16 @@ class PlayerViewport extends ConsumerWidget {
                       isFullscreen: isFullscreen,
                       onToggleTheaterMode: onToggleTheaterMode,
                       isTheaterMode: isTheaterMode,
-                      showBackButton: isTheaterMode || !(isDesktop && !isFullscreen),
-                      showTitle: isFullscreen,
+                      layoutMode: layoutMode,
+                      onShowEpisodes: onShowEpisodes,
+                      // Wide mode has no page header, so the overlay top bar
+                      // takes over the back button and the title there.
+                      showBackButton:
+                          isTheaterMode ||
+                          layoutMode == PlayerLayoutMode.wide ||
+                          !(isDesktop && !isFullscreen),
+                      showTitle:
+                          isFullscreen || layoutMode == PlayerLayoutMode.wide,
                     ),
                   ),
                 ),
@@ -494,12 +530,13 @@ class _ControlsOverlay extends StatefulWidget {
   State<_ControlsOverlay> createState() => _ControlsOverlayState();
 }
 
-class _LoadingArtwork extends StatefulWidget {
+class _LoadingArtwork extends ConsumerStatefulWidget {
   final String? backgroundImage;
   final String? logoImage;
   final String title;
   final String message;
   final bool showArtwork;
+  final VoidCallback? onBack;
 
   const _LoadingArtwork({
     required this.backgroundImage,
@@ -507,13 +544,14 @@ class _LoadingArtwork extends StatefulWidget {
     required this.title,
     required this.message,
     required this.showArtwork,
+    this.onBack,
   });
 
   @override
-  State<_LoadingArtwork> createState() => _LoadingArtworkState();
+  ConsumerState<_LoadingArtwork> createState() => _LoadingArtworkState();
 }
 
-class _LoadingArtworkState extends State<_LoadingArtwork>
+class _LoadingArtworkState extends ConsumerState<_LoadingArtwork>
     with SingleTickerProviderStateMixin {
   late final AnimationController _pulseController = AnimationController(
     vsync: this,
@@ -531,6 +569,9 @@ class _LoadingArtworkState extends State<_LoadingArtwork>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = ref.watch(translationsProvider);
+    final iconPack = ref.watch(iconPackProvider);
+
     return ColoredBox(
       color: theme.colorScheme.surface,
       child: Stack(
@@ -603,6 +644,34 @@ class _LoadingArtworkState extends State<_LoadingArtwork>
               ],
             ),
           ),
+          if (widget.onBack != null)
+            Positioned(
+              top: 12,
+              left: 12,
+              child: SafeArea(
+                child: IconButton(
+                  style: IconButton.styleFrom(
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    padding: const EdgeInsets.all(2),
+                    backgroundColor: Colors.black.withValues(alpha: 0.55),
+                    hoverColor: Colors.white.withValues(alpha: 0.15),
+                    highlightColor: Colors.white.withValues(alpha: 0.22),
+                    shape: const CircleBorder(),
+                  ),
+                  constraints: const BoxConstraints(
+                    minWidth: 38,
+                    minHeight: 38,
+                  ),
+                  icon: Icon(
+                    AppIcons.arrowLeft(iconPack),
+                    color: Colors.white,
+                    size: 22,
+                  ),
+                  tooltip: l10n.back,
+                  onPressed: widget.onBack,
+                ),
+              ),
+            ),
         ],
       ),
     );
