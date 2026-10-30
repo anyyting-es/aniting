@@ -40,6 +40,7 @@ import 'package:seanime_app/presentation/widgets/player/services/player_progress
 import 'package:seanime_app/presentation/widgets/player/services/player_shader_service.dart';
 import 'package:seanime_app/presentation/widgets/player/services/player_source_controller.dart';
 import 'package:seanime_app/presentation/widgets/player/services/player_window_manager.dart';
+import 'package:seanime_app/presentation/widgets/player/sheets/player_episodes_sheet.dart';
 import 'package:seanime_app/presentation/widgets/player/sheets/player_settings_launcher.dart';
 import 'package:seanime_app/core/preferences/subtitle_style_preferences_provider.dart';
 import 'package:seanime_app/core/player/mpris_service.dart';
@@ -1910,6 +1911,31 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                                       );
                                     },
                                   ),
+                                  onShowEpisodes:
+                                      (_railEpisodes.isNotEmpty && !_isMovie)
+                                      ? () => PlayerEpisodesSheet.show(
+                                          context: context,
+                                          animeTitle: widget.title,
+                                          mediaId: widget.mediaId,
+                                          episodes: _railEpisodes,
+                                          aniZipData:
+                                              _aniZipData ??
+                                              _animeDetails?.aniZipData,
+                                          currentEpisodeNumber:
+                                              _currentEpisodeNumber,
+                                          isMovie: _isMovie,
+                                          onSelectEpisode: (n) {
+                                            if (n == _currentEpisodeNumber) {
+                                              return;
+                                            }
+                                            _sourceController.playEpisode(
+                                              targetEpNum: n,
+                                              onEpisodeTransitionStarted:
+                                                  _onEpisodeTransitionStarted,
+                                            );
+                                          },
+                                        )
+                                      : null,
                                   isTheaterMode: _isTheaterMode,
                                   hideCursorOnVideo:
                                       !_areControlsVisible && _isMouseInside,

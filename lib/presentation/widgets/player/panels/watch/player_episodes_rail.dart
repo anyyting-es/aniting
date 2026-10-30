@@ -45,6 +45,9 @@ class _PlayerEpisodesRailState extends ConsumerState<PlayerEpisodesRail> {
   AniZipData? _cardsAniZipData;
   int? _cardsMediaId;
   bool _cardsIsMovie = false;
+  double _cardsThumbWidth = 0;
+  double _cardsTitleFont = 0;
+  int _cardsSynopsisLines = 4;
 
   bool get _cardsAreStale {
     if (_cards == null) return true;
@@ -64,7 +67,10 @@ class _PlayerEpisodesRailState extends ConsumerState<PlayerEpisodesRail> {
     return false;
   }
 
-  void _refreshCards() {
+  void _refreshCards(double thumbWidth, double titleFont, int synopsisLines) {
+    _cardsThumbWidth = thumbWidth;
+    _cardsTitleFont = titleFont;
+    _cardsSynopsisLines = synopsisLines;
     _cards = [
       for (var index = 0; index < widget.episodes.length; index++)
         _buildCard(index),
@@ -138,24 +144,36 @@ class _PlayerEpisodesRailState extends ConsumerState<PlayerEpisodesRail> {
       );
     }
 
-    if (_cardsAreStale) _refreshCards();
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Scale the card art and typography with the rail width so the list
+        // shrinks together with the rest of the page when the window narrows.
+        final thumbWidth = (constraints.maxWidth * 0.42).clamp(120.0, 240.0);
+        final titleFont = (thumbWidth * 0.073).clamp(12.5, 16.0);
+        final synopsisLines = thumbWidth >= 180 ? 4 : 2;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(4, 2, 4, 12),
-          child: Text(
-            '${l10n.episodes} (${widget.episodes.length})',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
+        if (_cardsAreStale || thumbWidth != _cardsThumbWidth) {
+          _refreshCards(thumbWidth, titleFont, synopsisLines);
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(4, 2, 4, 12),
+              child: Text(
+                '${l10n.episodes} (${widget.episodes.length})',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-        ..._cards!,
-      ],
+            ..._cards!,
+          ],
+        );
+      },
     );
   }
 
@@ -169,9 +187,9 @@ class _PlayerEpisodesRailState extends ConsumerState<PlayerEpisodesRail> {
         episode: _toItem(ep),
         fallbackImageUrl: ep.image,
         isGridView: false,
-        listThumbnailWidth: 220,
-        listTitleFontSize: 16,
-        listSynopsisMaxLines: 4,
+        listThumbnailWidth: _cardsThumbWidth,
+        listTitleFontSize: _cardsTitleFont,
+        listSynopsisMaxLines: _cardsSynopsisLines,
         isActive: isActive,
         onTap: () => widget.onSelectEpisode(ep.episodeNumber),
       ),

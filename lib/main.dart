@@ -17,6 +17,7 @@ import 'package:seanime_app/core/preferences/desktop_scrollbar_provider.dart';
 import 'package:seanime_app/core/preferences/onboarding_provider.dart';
 import 'package:seanime_app/core/preferences/playback_progress_preferences_provider.dart';
 import 'package:seanime_app/core/preferences/player_engine_provider.dart';
+import 'package:seanime_app/core/preferences/player_rail_fraction_provider.dart';
 import 'package:seanime_app/core/preferences/resume_bar_preferences_provider.dart';
 import 'package:seanime_app/core/preferences/settings_sidebar_width_provider.dart';
 import 'package:seanime_app/core/preferences/section_visibility_provider.dart';
@@ -116,6 +117,7 @@ void main() async {
     AppLanguageNotifier.setCachedPrefs(prefs);
     DesktopScrollbarNotifier.setCachedPrefs(prefs);
     SettingsSidebarWidthNotifier.setCachedPrefs(prefs);
+    PlayerRailFractionNotifier.setCachedPrefs(prefs);
     AppWallpaperNotifier.setCachedPrefs(prefs);
     ThemeNotifier.setCachedPrefs(prefs);
     IconPackNotifier.setCachedPrefs(prefs);
