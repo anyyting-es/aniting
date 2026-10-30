@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/theme/theme_provider.dart';
+import '../settings_dpad_focus.dart';
 
 /// In-page section view for selecting dark mode mode (standard, OLED, system).
 class ThemeDarkModeView extends ConsumerWidget {
@@ -113,45 +114,50 @@ class ThemeDarkModeView extends ConsumerWidget {
     required ColorScheme colorScheme,
     required VoidCallback onTap,
   }) {
-    return Material(
-      color: isSelected
-          ? colorScheme.primaryContainer.withValues(alpha: 0.35)
-          : Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          child: Row(
-            children: [
-              Icon(
-                icon,
-                size: 20,
-                color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant,
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                    color: colorScheme.onSurface,
+    return SettingsDpadFocus(
+      borderRadius: BorderRadius.circular(0),
+      onActivate: onTap,
+      child: Material(
+        color: isSelected
+            ? colorScheme.primaryContainer.withValues(alpha: 0.35)
+            : Colors.transparent,
+        child: InkWell(
+          canRequestFocus: false,
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              children: [
+                Icon(
+                  icon,
+                  size: 20,
+                  color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                      color: colorScheme.onSurface,
+                    ),
                   ),
                 ),
-              ),
-              if (isSelected)
-                Icon(
-                  Icons.check_circle_rounded,
-                  size: 22,
-                  color: colorScheme.primary,
-                )
-              else
-                Icon(
-                  Icons.circle_outlined,
-                  size: 20,
-                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.35),
-                ),
-            ],
+                if (isSelected)
+                  Icon(
+                    Icons.check_circle_rounded,
+                    size: 22,
+                    color: colorScheme.primary,
+                  )
+                else
+                  Icon(
+                    Icons.circle_outlined,
+                    size: 20,
+                    color: colorScheme.onSurfaceVariant.withValues(alpha: 0.35),
+                  ),
+              ],
+            ),
           ),
         ),
       ),

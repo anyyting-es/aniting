@@ -21,6 +21,7 @@ import 'package:seanime_app/core/preferences/title_language_provider.dart';
 import 'package:seanime_app/core/theme/theme_provider.dart';
 import 'package:seanime_app/presentation/screens/settings/widgets/pixel_settings_widgets.dart';
 import 'package:seanime_app/presentation/screens/settings/widgets/pixel_subpage_scaffold.dart';
+import 'package:seanime_app/presentation/screens/settings/widgets/settings_dpad_focus.dart';
 import 'package:seanime_app/presentation/widgets/m3_expressive_slider.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -54,53 +55,12 @@ class PersonalizacionSettingsScreen extends ConsumerWidget {
         // ─── IDIOMA DE LA INTERFAZ ──────────────────────────────
         SettingsSectionHeader(title: l10n.appLanguage),
         const SizedBox(height: 10),
-        PixelCardContainer(
-          child: InkWell(
-            onTap: () =>
-                _showAppLanguageDialog(context, ref, l10n, currentLanguage),
-            borderRadius: BorderRadius.circular(12),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.translate_rounded,
-                  size: 20,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        l10n.appLanguageDesc,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        currentLanguage == AppLanguage.en
-                            ? 'English'
-                            : 'Español',
-                        style: TextStyle(
-                          fontSize: 14.5,
-                          fontWeight: FontWeight.bold,
-                          color: theme.colorScheme.primary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Icon(
-                  Icons.arrow_drop_down_rounded,
-                  color: theme.colorScheme.onSurfaceVariant.withValues(
-                    alpha: 0.6,
-                  ),
-                ),
-              ],
-            ),
-          ),
+        SettingsDropdownCard(
+          icon: Icons.translate_rounded,
+          description: l10n.appLanguageDesc,
+          value: currentLanguage == AppLanguage.en ? 'English' : 'Español',
+          onTap: () =>
+              _showAppLanguageDialog(context, ref, l10n, currentLanguage),
         ),
 
         const SizedBox(height: 24),
@@ -108,51 +68,12 @@ class PersonalizacionSettingsScreen extends ConsumerWidget {
         // ─── IDIOMA PREFERIDO DE TÍTULOS ──────────────────────────
         SettingsSectionHeader(title: l10n.preferredTitleLanguage),
         const SizedBox(height: 10),
-        PixelCardContainer(
-          child: InkWell(
-            onTap: () =>
-                _showTitleLanguageDialog(context, ref, l10n, titleLang),
-            borderRadius: BorderRadius.circular(12),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.subtitles_rounded,
-                  size: 20,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        l10n.preferredTitleLanguageDesc,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        titleLang.label,
-                        style: TextStyle(
-                          fontSize: 14.5,
-                          fontWeight: FontWeight.bold,
-                          color: theme.colorScheme.primary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Icon(
-                  Icons.arrow_drop_down_rounded,
-                  color: theme.colorScheme.onSurfaceVariant.withValues(
-                    alpha: 0.6,
-                  ),
-                ),
-              ],
-            ),
-          ),
+        SettingsDropdownCard(
+          icon: Icons.subtitles_rounded,
+          description: l10n.preferredTitleLanguageDesc,
+          value: titleLang.label,
+          onTap: () =>
+              _showTitleLanguageDialog(context, ref, l10n, titleLang),
         ),
 
         const SizedBox(height: 24),
@@ -166,58 +87,19 @@ class PersonalizacionSettingsScreen extends ConsumerWidget {
               (f) => f.id == fontId,
               orElse: () => kAvailableFonts.first,
             );
-            return PixelCardContainer(
-              child: InkWell(
-                onTap: () => _showFontFamilyDialog(context, ref, l10n, fontId),
-                borderRadius: BorderRadius.circular(12),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.font_download_rounded,
-                      size: 20,
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            l10n.fontStyleDesc,
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            currentFont.localizedDisplayName(l10n),
-                            style: currentFont.textStyleBuilder != null
-                                ? currentFont.textStyleBuilder!(
-                                    textStyle: TextStyle(
-                                      fontSize: 14.5,
-                                      fontWeight: FontWeight.bold,
-                                      color: theme.colorScheme.primary,
-                                    ),
-                                  )
-                                : TextStyle(
-                                    fontSize: 14.5,
-                                    fontWeight: FontWeight.bold,
-                                    color: theme.colorScheme.primary,
-                                  ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Icon(
-                      Icons.arrow_drop_down_rounded,
-                      color: theme.colorScheme.onSurfaceVariant.withValues(
-                        alpha: 0.6,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+            final valueStyle = TextStyle(
+              fontSize: 14.5,
+              fontWeight: FontWeight.bold,
+              color: theme.colorScheme.primary,
+            );
+            return SettingsDropdownCard(
+              icon: Icons.font_download_rounded,
+              description: l10n.fontStyleDesc,
+              value: currentFont.localizedDisplayName(l10n),
+              valueStyle: currentFont.textStyleBuilder != null
+                  ? currentFont.textStyleBuilder!(textStyle: valueStyle)
+                  : valueStyle,
+              onTap: () => _showFontFamilyDialog(context, ref, l10n, fontId),
             );
           },
         ),
@@ -233,55 +115,16 @@ class PersonalizacionSettingsScreen extends ConsumerWidget {
         // ─── MODO DE VISTA DE EPISODIOS ───────────────────────────
         SettingsSectionHeader(title: l10n.episodeDisplay),
         const SizedBox(height: 10),
-        PixelCardContainer(
-          child: InkWell(
-            onTap: () =>
-                _showEpisodeDisplayDialog(context, ref, l10n, episodeViewMode),
-            borderRadius: BorderRadius.circular(12),
-            child: Row(
-              children: [
-                Icon(
-                  episodeViewMode == EpisodeViewMode.list
-                      ? Icons.view_list_rounded
-                      : Icons.grid_view_rounded,
-                  size: 20,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        l10n.episodeDisplayDesc,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        episodeViewMode == EpisodeViewMode.list
-                            ? l10n.detailedList
-                            : l10n.grid,
-                        style: TextStyle(
-                          fontSize: 14.5,
-                          fontWeight: FontWeight.bold,
-                          color: theme.colorScheme.primary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Icon(
-                  Icons.arrow_drop_down_rounded,
-                  color: theme.colorScheme.onSurfaceVariant.withValues(
-                    alpha: 0.6,
-                  ),
-                ),
-              ],
-            ),
-          ),
+        SettingsDropdownCard(
+          icon: episodeViewMode == EpisodeViewMode.list
+              ? Icons.view_list_rounded
+              : Icons.grid_view_rounded,
+          description: l10n.episodeDisplayDesc,
+          value: episodeViewMode == EpisodeViewMode.list
+              ? l10n.detailedList
+              : l10n.grid,
+          onTap: () =>
+              _showEpisodeDisplayDialog(context, ref, l10n, episodeViewMode),
         ),
 
         const SizedBox(height: 24),
@@ -289,53 +132,14 @@ class PersonalizacionSettingsScreen extends ConsumerWidget {
         // ─── ESTILO DE BARRA MÓVIL ────────────────────────────────
         SettingsSectionHeader(title: l10n.mobileNavStyle),
         const SizedBox(height: 10),
-        PixelCardContainer(
-          child: InkWell(
-            onTap: () =>
-                _showMobileNavStyleDialog(context, ref, l10n, mobileNavStyle),
-            borderRadius: BorderRadius.circular(12),
-            child: Row(
-              children: [
-                Icon(
-                  mobileNavStyle == MobileNavStyle.classic
-                      ? Icons.dock_rounded
-                      : Icons.view_sidebar_rounded,
-                  size: 20,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        l10n.mobileNavStyleDesc,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        mobileNavStyle.localizedLabel(l10n),
-                        style: TextStyle(
-                          fontSize: 14.5,
-                          fontWeight: FontWeight.bold,
-                          color: theme.colorScheme.primary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Icon(
-                  Icons.arrow_drop_down_rounded,
-                  color: theme.colorScheme.onSurfaceVariant.withValues(
-                    alpha: 0.6,
-                  ),
-                ),
-              ],
-            ),
-          ),
+        SettingsDropdownCard(
+          icon: mobileNavStyle == MobileNavStyle.classic
+              ? Icons.dock_rounded
+              : Icons.view_sidebar_rounded,
+          description: l10n.mobileNavStyleDesc,
+          value: mobileNavStyle.localizedLabel(l10n),
+          onTap: () =>
+              _showMobileNavStyleDialog(context, ref, l10n, mobileNavStyle),
         ),
 
         const SizedBox(height: 24),
@@ -343,53 +147,14 @@ class PersonalizacionSettingsScreen extends ConsumerWidget {
         // ─── ESTILO DE NAVEGACIÓN EN ESCRITORIO ──────────────────
         SettingsSectionHeader(title: l10n.desktopNavStyle),
         const SizedBox(height: 10),
-        PixelCardContainer(
-          child: InkWell(
-            onTap: () =>
-                _showDesktopNavStyleDialog(context, ref, l10n, desktopNavStyle),
-            borderRadius: BorderRadius.circular(12),
-            child: Row(
-              children: [
-                Icon(
-                  desktopNavStyle == DesktopNavStyle.sidebar
-                      ? Icons.view_sidebar_rounded
-                      : Icons.dock_rounded,
-                  size: 20,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        l10n.desktopNavStyleDesc,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        desktopNavStyle.localizedLabel(l10n),
-                        style: TextStyle(
-                          fontSize: 14.5,
-                          fontWeight: FontWeight.bold,
-                          color: theme.colorScheme.primary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Icon(
-                  Icons.arrow_drop_down_rounded,
-                  color: theme.colorScheme.onSurfaceVariant.withValues(
-                    alpha: 0.6,
-                  ),
-                ),
-              ],
-            ),
-          ),
+        SettingsDropdownCard(
+          icon: desktopNavStyle == DesktopNavStyle.sidebar
+              ? Icons.view_sidebar_rounded
+              : Icons.dock_rounded,
+          description: l10n.desktopNavStyleDesc,
+          value: desktopNavStyle.localizedLabel(l10n),
+          onTap: () =>
+              _showDesktopNavStyleDialog(context, ref, l10n, desktopNavStyle),
         ),
 
         const SizedBox(height: 24),
@@ -465,56 +230,17 @@ class PersonalizacionSettingsScreen extends ConsumerWidget {
         // ─── MODO DE INTERFAZ Y PANTALLA ──────────────────────────
         SettingsSectionHeader(title: l10n.interfaceModeTitle),
         const SizedBox(height: 10),
-        PixelCardContainer(
-          child: InkWell(
-            onTap: () => _showLayoutModeDialog(context, ref, l10n, layoutMode),
-            borderRadius: BorderRadius.circular(12),
-            child: Row(
-              children: [
-                Icon(
-                  layoutMode == LayoutMode.desktop
-                      ? Icons.desktop_windows_rounded
-                      : layoutMode == LayoutMode.tv
-                      ? Icons.tv_rounded
-                      : layoutMode == LayoutMode.mobile
-                      ? Icons.smartphone_rounded
-                      : Icons.devices_rounded,
-                  size: 20,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        l10n.interfaceModeDesc,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        layoutMode.localizedLabel(l10n),
-                        style: TextStyle(
-                          fontSize: 14.5,
-                          fontWeight: FontWeight.bold,
-                          color: theme.colorScheme.primary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Icon(
-                  Icons.arrow_drop_down_rounded,
-                  color: theme.colorScheme.onSurfaceVariant.withValues(
-                    alpha: 0.6,
-                  ),
-                ),
-              ],
-            ),
-          ),
+        SettingsDropdownCard(
+          icon: layoutMode == LayoutMode.desktop
+              ? Icons.desktop_windows_rounded
+              : layoutMode == LayoutMode.tv
+              ? Icons.tv_rounded
+              : layoutMode == LayoutMode.mobile
+              ? Icons.smartphone_rounded
+              : Icons.devices_rounded,
+          description: l10n.interfaceModeDesc,
+          value: layoutMode.localizedLabel(l10n),
+          onTap: () => _showLayoutModeDialog(context, ref, l10n, layoutMode),
         ),
 
         const SizedBox(height: 24),
@@ -1362,7 +1088,8 @@ class _PersonalizacionRadiusSectionState
     ThemeData theme,
   ) {
     final isSelected = (currentRadius.round() == value.round());
-    return InkWell(
+    final chip = InkWell(
+      canRequestFocus: false,
       onTap: () => _onChipSelected(value),
       borderRadius: BorderRadius.circular(14),
       child: AnimatedContainer(
@@ -1393,6 +1120,12 @@ class _PersonalizacionRadiusSectionState
           ),
         ),
       ),
+    );
+
+    return SettingsDpadFocus(
+      borderRadius: BorderRadius.circular(14),
+      onActivate: () => _onChipSelected(value),
+      child: chip,
     );
   }
 }

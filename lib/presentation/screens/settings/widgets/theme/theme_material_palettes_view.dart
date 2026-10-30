@@ -7,6 +7,7 @@ import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/preferences/wallpaper_preferences_provider.dart';
 import 'package:seanime_app/core/theme/app_palette.dart';
 import 'package:seanime_app/core/theme/theme_provider.dart';
+import '../settings_dpad_focus.dart';
 
 class PaletteOptionItem {
   final String id;
@@ -208,89 +209,100 @@ class ThemeMaterialPalettesView extends ConsumerWidget {
     required bool isDark,
     required VoidCallback onTap,
   }) {
-    return Material(
-      color: isSelected
-          ? colorScheme.primaryContainer.withValues(alpha: 0.35)
-          : Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-          child: Row(
-            children: [
-              // Vibrant color circle indicator
-              Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: item.seedColor,
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.25),
-                    width: 2,
+    return SettingsDpadFocus(
+      borderRadius: BorderRadius.circular(16),
+      onActivate: onTap,
+      child: Material(
+        color: isSelected
+            ? colorScheme.primaryContainer.withValues(alpha: 0.35)
+            : Colors.transparent,
+        child: InkWell(
+          canRequestFocus: false,
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+            child: Row(
+              children: [
+                // Vibrant color circle indicator
+                Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: item.seedColor,
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.25),
+                      width: 2,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: item.seedColor.withValues(alpha: 0.35),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: item.seedColor.withValues(alpha: 0.35),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+                  child: item.icon != null
+                      ? Icon(
+                          item.icon,
+                          size: 15,
+                          color:
+                              ThemeData.estimateBrightnessForColor(
+                                        item.seedColor,
+                                      ) ==
+                                      Brightness.dark
+                                  ? Colors.white
+                                  : Colors.black,
+                        )
+                      : null,
                 ),
-                child: item.icon != null
-                    ? Icon(
-                        item.icon,
-                        size: 15,
-                        color: ThemeData.estimateBrightnessForColor(item.seedColor) == Brightness.dark
-                            ? Colors.white
-                            : Colors.black,
-                      )
-                    : null,
-              ),
-              const SizedBox(width: 14),
+                const SizedBox(width: 14),
 
-              // Title and Description
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      item.name,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                        color: colorScheme.onSurface,
+                // Title and Description
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        item.name,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: isSelected
+                              ? FontWeight.bold
+                              : FontWeight.w600,
+                          color: colorScheme.onSurface,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      item.description,
-                      style: TextStyle(
-                        fontSize: 11.5,
-                        color: colorScheme.onSurfaceVariant,
+                      const SizedBox(height: 2),
+                      Text(
+                        item.description,
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
 
-              // Selection indicator
-              if (isSelected)
-                Icon(
-                  Icons.check_circle_rounded,
-                  size: 22,
-                  color: colorScheme.primary,
-                )
-              else
-                Icon(
-                  Icons.circle_outlined,
-                  size: 20,
-                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.35),
-                ),
-            ],
+                // Selection indicator
+                if (isSelected)
+                  Icon(
+                    Icons.check_circle_rounded,
+                    size: 22,
+                    color: colorScheme.primary,
+                  )
+                else
+                  Icon(
+                    Icons.circle_outlined,
+                    size: 20,
+                    color: colorScheme.onSurfaceVariant.withValues(alpha: 0.35),
+                  ),
+              ],
+            ),
           ),
         ),
       ),

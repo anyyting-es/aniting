@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'settings_dpad_focus.dart';
+
 /// Encabezado de sección con estilo Material 3 Expressive
 class SettingsSectionHeader extends StatelessWidget {
   final String title;
@@ -121,80 +123,87 @@ class SettingsTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        splashColor: theme.colorScheme.primary.withValues(alpha: 0.1),
-        hoverColor: theme.colorScheme.onSurface.withValues(alpha: 0.05),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-          child: Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? theme.colorScheme.primary.withValues(alpha: 0.2)
-                      : theme.colorScheme.surfaceContainerHighest.withValues(
-                          alpha: 0.5,
-                        ),
-                  borderRadius: BorderRadius.circular(10),
+    return SettingsDpadFocus(
+      borderRadius: BorderRadius.circular(0),
+      onActivate: onTap,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          canRequestFocus: false,
+          onTap: onTap,
+          splashColor: theme.colorScheme.primary.withValues(alpha: 0.1),
+          hoverColor: theme.colorScheme.onSurface.withValues(alpha: 0.05),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+            child: Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? theme.colorScheme.primary.withValues(alpha: 0.2)
+                        : theme.colorScheme.surfaceContainerHighest.withValues(
+                            alpha: 0.5,
+                          ),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: isSelected
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.onSurfaceVariant,
+                    size: 19,
+                  ),
                 ),
-                child: Icon(
-                  icon,
-                  color: isSelected
-                      ? theme.colorScheme.primary
-                      : theme.colorScheme.onSurfaceVariant,
-                  size: 19,
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontWeight: isSelected
-                            ? FontWeight.w700
-                            : FontWeight.w600,
-                        fontSize: 14.5,
-                        color: isSelected
-                            ? theme.colorScheme.primary
-                            : theme.colorScheme.onSurface,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    if (subtitle != null) ...[
-                      const SizedBox(height: 2),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
                       Text(
-                        subtitle!,
+                        title,
                         style: TextStyle(
-                          fontSize: 12,
-                          color: theme.colorScheme.onSurfaceVariant,
-                          height: 1.2,
+                          fontWeight: isSelected
+                              ? FontWeight.w700
+                              : FontWeight.w600,
+                          fontSize: 14.5,
+                          color: isSelected
+                              ? theme.colorScheme.primary
+                              : theme.colorScheme.onSurface,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
+                      if (subtitle != null) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          subtitle!,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: theme.colorScheme.onSurfaceVariant,
+                            height: 1.2,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Icon(
-                Icons.chevron_right_rounded,
-                size: 20,
-                color: isSelected
-                    ? theme.colorScheme.primary
-                    : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
-              ),
-            ],
+                const SizedBox(width: 8),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  size: 20,
+                  color: isSelected
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.onSurfaceVariant.withValues(
+                          alpha: 0.4,
+                        ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -223,49 +232,56 @@ class PixelSwitchTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Material(
-      color: Colors.transparent,
-      child: SwitchListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      secondary: Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-          color: value
-              ? theme.colorScheme.primary.withValues(alpha: 0.18)
-              : theme.colorScheme.surfaceContainerHighest.withValues(
-                  alpha: 0.5,
-                ),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Icon(
-          icon,
-          color: value
-              ? theme.colorScheme.primary
-              : theme.colorScheme.onSurfaceVariant,
-          size: 19,
+    return SettingsDpadFocus(
+      borderRadius: BorderRadius.circular(0),
+      onActivate: () => onChanged(!value),
+      child: Material(
+        color: Colors.transparent,
+        child: SwitchListTile(
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 4,
+          ),
+          secondary: Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: value
+                  ? theme.colorScheme.primary.withValues(alpha: 0.18)
+                  : theme.colorScheme.surfaceContainerHighest.withValues(
+                      alpha: 0.5,
+                    ),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              icon,
+              color: value
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.onSurfaceVariant,
+              size: 19,
+            ),
+          ),
+          title: Text(
+            title,
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14.5),
+          ),
+          subtitle: subtitle != null
+              ? Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Text(
+                    subtitle!,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: theme.colorScheme.onSurfaceVariant,
+                      height: 1.25,
+                    ),
+                  ),
+                )
+              : null,
+          value: value,
+          onChanged: onChanged,
         ),
       ),
-      title: Text(
-        title,
-        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14.5),
-      ),
-      subtitle: subtitle != null
-          ? Padding(
-              padding: const EdgeInsets.only(top: 2),
-              child: Text(
-                subtitle!,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: theme.colorScheme.onSurfaceVariant,
-                  height: 1.25,
-                ),
-              ),
-            )
-          : null,
-      value: value,
-      onChanged: onChanged,
-    ),
     );
   }
 }
@@ -343,7 +359,8 @@ class PixelSelectablePill extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return InkWell(
+    final pill = InkWell(
+      canRequestFocus: false,
       onTap: onTap,
       borderRadius: BorderRadius.circular(24),
       child: AnimatedContainer(
@@ -444,6 +461,86 @@ class PixelSelectablePill extends StatelessWidget {
                   : null,
             ),
           ],
+        ),
+      ),
+    );
+
+    return SettingsDpadFocus(
+      borderRadius: BorderRadius.circular(24),
+      onActivate: onTap,
+      child: pill,
+    );
+  }
+}
+
+/// Tappable card used to open a selection dialog (language, font, nav style…).
+///
+/// Consistent look across the appearance settings and, unlike a bare [InkWell],
+/// it participates in D-pad navigation with the shared focus ring.
+class SettingsDropdownCard extends StatelessWidget {
+  final IconData icon;
+  final String description;
+  final String value;
+  final TextStyle? valueStyle;
+  final VoidCallback onTap;
+
+  const SettingsDropdownCard({
+    super.key,
+    required this.icon,
+    required this.description,
+    required this.value,
+    this.valueStyle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return SettingsDpadFocus(
+      borderRadius: BorderRadius.circular(18),
+      onActivate: onTap,
+      child: PixelCardContainer(
+        child: InkWell(
+          canRequestFocus: false,
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Row(
+            children: [
+              Icon(icon, size: 20, color: theme.colorScheme.onSurfaceVariant),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      description,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      value,
+                      style:
+                          valueStyle ??
+                          TextStyle(
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.primary,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.arrow_drop_down_rounded,
+                color: theme.colorScheme.onSurfaceVariant.withValues(
+                  alpha: 0.6,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

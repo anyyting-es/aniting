@@ -10,6 +10,7 @@ import 'package:seanime_app/core/preferences/wallpaper_preferences_provider.dart
 import 'package:seanime_app/core/theme/app_palette.dart';
 import 'package:seanime_app/core/theme/theme_provider.dart';
 import 'package:seanime_app/presentation/screens/settings/widgets/pixel_settings_widgets.dart';
+import '../settings_dpad_focus.dart';
 import 'theme_wallpaper_inline_controls.dart';
 
 /// Expressive Header Card matching the modern Appearance layout:
@@ -287,64 +288,69 @@ class ThemeAppearanceHeaderCard extends ConsumerWidget {
     required VoidCallback onTap,
     Widget? trailing,
   }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-          child: Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainer,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  icon,
-                  size: 18,
-                  color: colorScheme.primary,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.onSurface,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-              trailing ??
-                  Icon(
-                    Icons.chevron_right_rounded,
-                    size: 20,
-                    color: colorScheme.onSurfaceVariant,
+    return SettingsDpadFocus(
+      borderRadius: BorderRadius.circular(16),
+      onActivate: onTap,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          canRequestFocus: false,
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+            child: Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainer,
+                    borderRadius: BorderRadius.circular(10),
                   ),
-            ],
+                  child: Icon(
+                    icon,
+                    size: 18,
+                    color: colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.onSurface,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                trailing ??
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      size: 20,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+              ],
+            ),
           ),
         ),
       ),

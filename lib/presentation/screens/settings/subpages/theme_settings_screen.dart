@@ -9,6 +9,7 @@ import '../../../../core/theme/app_theme_colors.dart';
 import '../../../../core/theme/theme_provider.dart';
 import '../widgets/pixel_settings_widgets.dart';
 import '../widgets/pixel_subpage_scaffold.dart';
+import '../widgets/settings_dpad_focus.dart';
 import '../widgets/theme/theme_appearance_header_card.dart';
 import '../widgets/theme/theme_dark_mode_view.dart';
 import '../widgets/theme/theme_material_palettes_view.dart';
@@ -160,63 +161,68 @@ class _ThemeSettingsScreenState extends ConsumerState<ThemeSettingsScreen> {
     required AppThemeColors colors,
     required VoidCallback onTap,
   }) {
-    return InkWell(
-      onTap: onTap,
+    return SettingsDpadFocus(
       borderRadius: BorderRadius.circular(16),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? colors.accent.withValues(alpha: 0.14)
-              : colors.surfaceElevated.withValues(alpha: 0.40),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
+      onActivate: onTap,
+      child: InkWell(
+        canRequestFocus: false,
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          decoration: BoxDecoration(
             color: isSelected
-                ? colors.accent
-                : colors.border.withValues(alpha: 0.35),
-            width: isSelected ? 1.6 : 1.0,
+                ? colors.accent.withValues(alpha: 0.14)
+                : colors.surfaceElevated.withValues(alpha: 0.40),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isSelected
+                  ? colors.accent
+                  : colors.border.withValues(alpha: 0.35),
+              width: isSelected ? 1.6 : 1.0,
+            ),
           ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 13.5,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                      color: isSelected ? colors.accent : colors.textPrimary,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                        color: isSelected ? colors.accent : colors.textPrimary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-                if (isSelected)
-                  Icon(
-                    AppIcons.checkCircle(iconPack),
-                    color: colors.accent,
-                    size: 17,
-                  ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: icons
-                  .map(
-                    (ic) => Icon(
-                      ic,
-                      size: 20,
-                      color: isSelected ? colors.accent : colors.textSecondary,
+                  if (isSelected)
+                    Icon(
+                      AppIcons.checkCircle(iconPack),
+                      color: colors.accent,
+                      size: 17,
                     ),
-                  )
-                  .toList(),
-            ),
-          ],
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: icons
+                    .map(
+                      (ic) => Icon(
+                        ic,
+                        size: 20,
+                        color: isSelected ? colors.accent : colors.textSecondary,
+                      ),
+                    )
+                    .toList(),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -367,32 +373,37 @@ class _ThemeSettingsRadiusSectionState
     AppThemeColors colors,
   ) {
     final isSelected = (current - value).abs() < 1.0;
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => _selectPreset(value),
-        borderRadius: BorderRadius.circular(8),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? colors.accent.withValues(alpha: 0.2)
-                : colors.surfaceElevated.withValues(alpha: 0.4),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
+    return SettingsDpadFocus(
+      borderRadius: BorderRadius.circular(8),
+      onActivate: () => _selectPreset(value),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          canRequestFocus: false,
+          onTap: () => _selectPreset(value),
+          borderRadius: BorderRadius.circular(8),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 160),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
               color: isSelected
-                  ? colors.accent.withValues(alpha: 0.6)
-                  : Colors.transparent,
-              width: 1,
+                  ? colors.accent.withValues(alpha: 0.2)
+                  : colors.surfaceElevated.withValues(alpha: 0.4),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: isSelected
+                    ? colors.accent.withValues(alpha: 0.6)
+                    : Colors.transparent,
+                width: 1,
+              ),
             ),
-          ),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 11.5,
-              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-              color: isSelected ? colors.accent : colors.textSecondary,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                color: isSelected ? colors.accent : colors.textSecondary,
+              ),
             ),
           ),
         ),

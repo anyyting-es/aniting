@@ -2,9 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../settings_screen.dart';
+import '../settings_dpad_focus.dart';
 
-/// Floating content detail panel matching the M3 Expressive dotfiles look.
-/// Renders a solid elevated island with rounded corners and smooth animated transitions.
+/// Content detail panel for the settings pages.
+///
+/// It is intentionally background-less: the pages sit directly on the app
+/// background (wallpaper / scaffold) per the transparency contract in
+/// docs/WALLPAPER_VISUAL_FIX_PLAN.md. Only a smooth page transition, the focus
+/// scope and D-pad auto-scroll remain.
 class ExpressiveSettingsDetailPanel extends StatefulWidget {
   final SettingsCategory selectedCategory;
   final Widget Function(SettingsCategory category) detailViewBuilder;
@@ -36,6 +41,17 @@ class _ExpressiveSettingsDetailPanelState
     if (event.logicalKey != LogicalKeyboardKey.arrowLeft) {
       return KeyEventResult.ignored;
     }
+
+    // Let Left move inside the current row first (icon pack cards, radius
+    // chips, side-by-side controls). Only leave the panel when there is no
+    // focusable target to the left.
+    final primary = FocusManager.instance.primaryFocus;
+    if (primary != null &&
+        primary != node &&
+        primary.focusInDirection(TraversalDirection.left)) {
+      return KeyEventResult.ignored;
+    }
+
     final exit = widget.onExitToSidebar;
     if (exit == null) {
       return KeyEventResult.ignored;
@@ -46,31 +62,16 @@ class _ExpressiveSettingsDetailPanelState
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     return FocusScope(
       node: widget.focusScopeNode,
       child: Focus(
         canRequestFocus: false,
         skipTraversal: true,
         onKeyEvent: _handleKeyEvent,
-        child: Container(
-          decoration: BoxDecoration(
-            color: colorScheme.surfaceContainer,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: colorScheme.outlineVariant.withValues(alpha: 0.15),
-              width: 1,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.18),
-                blurRadius: 18,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          clipBehavior: Clip.antiAlias,
+        // No opaque island: the settings pages sit directly on the app
+        // background (wallpaper / scaffold), per the transparency contract in
+        // docs/WALLPAPER_VISUAL_FIX_PLAN.md.
+        child: SettingsFocusEnsurer(
           child: AnimatedSwitcher(
             duration: const Duration(milliseconds: 240),
             switchInCurve: Curves.easeOutCubic,

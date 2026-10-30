@@ -13,13 +13,11 @@ class SettingsCategoryItem {
   final SettingsCategory category;
   final IconData Function(AppIconPack pack) iconBuilder;
   final String Function(AppTranslations l10n) titleBuilder;
-  final String Function(AppTranslations l10n) subtitleBuilder;
 
   const SettingsCategoryItem({
     required this.category,
     required this.iconBuilder,
     required this.titleBuilder,
-    required this.subtitleBuilder,
   });
 }
 
@@ -41,13 +39,11 @@ final List<SettingsCategoryGroup> kSettingsCategoryGroups = [
         category: SettingsCategory.theme,
         iconBuilder: (p) => AppIcons.palette(p),
         titleBuilder: (l) => l.themeAndColors,
-        subtitleBuilder: (l) => l.settingsSubtitleTheme,
       ),
       SettingsCategoryItem(
         category: SettingsCategory.appearance,
         iconBuilder: (p) => AppIcons.appearance(p),
         titleBuilder: (l) => l.appearanceAndDisplay,
-        subtitleBuilder: (l) => l.settingsSubtitleAppearance,
       ),
     ],
   ),
@@ -58,31 +54,26 @@ final List<SettingsCategoryGroup> kSettingsCategoryGroups = [
         category: SettingsCategory.player,
         iconBuilder: (p) => AppIcons.playCircle(p),
         titleBuilder: (l) => l.videoPlayer,
-        subtitleBuilder: (l) => l.settingsSubtitlePlayer,
       ),
       SettingsCategoryItem(
         category: SettingsCategory.manga,
         iconBuilder: (p) => AppIcons.manga(p),
         titleBuilder: (l) => l.mangaReader,
-        subtitleBuilder: (l) => l.settingsSubtitleManga,
       ),
       SettingsCategoryItem(
         category: SettingsCategory.streaming,
         iconBuilder: (p) => AppIcons.stream(p),
         titleBuilder: (l) => l.streamingSources,
-        subtitleBuilder: (l) => l.settingsSubtitleStreaming,
       ),
       SettingsCategoryItem(
         category: SettingsCategory.debrid,
         iconBuilder: (_) => Icons.bolt_rounded,
         titleBuilder: (l) => l.debridSettings,
-        subtitleBuilder: (l) => l.settingsSubtitleDebrid,
       ),
       SettingsCategoryItem(
         category: SettingsCategory.extensions,
         iconBuilder: (p) => AppIcons.extension(p),
         titleBuilder: (l) => l.extensionsTitle,
-        subtitleBuilder: (l) => l.settingsSubtitleExtensions,
       ),
     ],
   ),
@@ -93,19 +84,16 @@ final List<SettingsCategoryGroup> kSettingsCategoryGroups = [
         category: SettingsCategory.localLibrary,
         iconBuilder: (_) => Icons.folder_copy_outlined,
         titleBuilder: (l) => l.localLibrarySettingsTitle,
-        subtitleBuilder: (l) => l.settingsSubtitleLocalLibrary,
       ),
       SettingsCategoryItem(
         category: SettingsCategory.downloadManager,
         iconBuilder: (_) => Icons.manage_history_rounded,
         titleBuilder: (l) => l.downloadManager,
-        subtitleBuilder: (l) => l.settingsSubtitleDownloadManager,
       ),
       SettingsCategoryItem(
         category: SettingsCategory.downloads,
         iconBuilder: (p) => AppIcons.downloadOffline(p),
         titleBuilder: (l) => l.downloads,
-        subtitleBuilder: (l) => l.settingsSubtitleDownloads,
       ),
     ],
   ),
@@ -116,13 +104,11 @@ final List<SettingsCategoryGroup> kSettingsCategoryGroups = [
         category: SettingsCategory.server,
         iconBuilder: (p) => AppIcons.server(p),
         titleBuilder: (l) => l.serverAndNetwork,
-        subtitleBuilder: (l) => l.settingsSubtitleServer,
       ),
       SettingsCategoryItem(
         category: SettingsCategory.about,
         iconBuilder: (p) => AppIcons.info(p),
         titleBuilder: (l) => l.aboutApp,
-        subtitleBuilder: (l) => l.settingsSubtitleAbout,
       ),
     ],
   ),
@@ -406,8 +392,23 @@ class ExpressiveSettingsSidebarState
     for (var g = 0; g < kSettingsCategoryGroups.length; g++) {
       final group = kSettingsCategoryGroups[g];
       if (g > 0) {
-        children.add(const SizedBox(height: 12));
+        children.add(const SizedBox(height: 18));
       }
+
+      children.add(
+        Padding(
+          padding: const EdgeInsets.only(left: 10, bottom: 6),
+          child: Text(
+            group.titleBuilder(l10n),
+            style: theme.textTheme.titleSmall?.copyWith(
+              color: colorScheme.primary,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.1,
+              fontSize: 13.5,
+            ),
+          ),
+        ),
+      );
 
       for (var i = 0; i < group.items.length; i++) {
         final item = group.items[i];
@@ -418,12 +419,9 @@ class ExpressiveSettingsSidebarState
             focusNode: _focusNodes[itemIndex],
             icon: item.iconBuilder(iconPack),
             title: item.titleBuilder(l10n),
-            subtitle: item.subtitleBuilder(l10n),
             isSelected: widget.selectedCategory == item.category,
             showChevron: widget.showChevron,
             isDpadFocused: _isNavigatingWithDpad && _focusedIndex == itemIndex,
-            isFirst: i == 0,
-            isLast: i == group.items.length - 1,
             onTap: () {
               if (_isNavigatingWithDpad) {
                 setState(() => _isNavigatingWithDpad = false);
