@@ -91,6 +91,7 @@ class _CalendarMobileViewState extends State<CalendarMobileView> {
             }
           },
           isSpanish: widget.isSpanish,
+          todayLabel: widget.l10n.today,
         ),
 
         // Day-by-Day PageView
@@ -164,16 +165,9 @@ class _CalendarMobileViewState extends State<CalendarMobileView> {
 
               return RefreshIndicator(
                 onRefresh: widget.onRefresh,
-                child: ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(10, 8, 10, 100),
+                child: ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(6, 6, 6, 100),
                   itemCount: columnWidgets.length,
-                  separatorBuilder: (ctx, i) => Divider(
-                    height: 1,
-                    thickness: 0.5,
-                    color: isDark
-                        ? Colors.white.withValues(alpha: 0.04)
-                        : theme.colorScheme.outlineVariant.withValues(alpha: 0.2),
-                  ),
                   itemBuilder: (context, index) => columnWidgets[index],
                 ),
               );

@@ -38,6 +38,7 @@ abstract class AppTranslations {
   String get quickSearch;
   String get quickSearchHint;
   String get quickSearchMangaHint;
+  String get quickSearchKeyboardHint;
   String get serverNotConnected;
   String get serverNotConnectedDesc;
   String get startServer;
@@ -326,6 +327,14 @@ abstract class AppTranslations {
   String get studio;
   String get mainRole;
   String get supportingRole;
+  String get voiceActor;
+  String get japaneseVoice;
+  String get characterDetails;
+  String get characterAge;
+  String get characterGender;
+  String get characterBirthday;
+  String get characterBloodType;
+  String get noVoiceActorInfo;
   String get streamingDisabledTitle;
   String get streamingDisabledDesc;
 
@@ -438,6 +447,8 @@ abstract class AppTranslations {
   String get playingLocallyDesc;
   String get playingFromTorrent;
   String get playingFromTorrentDesc;
+  String get playingFromMediaServer;
+  String get playingFromMediaServerDesc;
   String get loadingVideo;
   String get bufferingVideo;
   String get downloadingMetadata;
@@ -590,7 +601,7 @@ abstract class AppTranslations {
   String get animeTorrents;
   String get manga;
   String get onlineStreamingTab;
-  String get customSources;
+  String get tmdbStreamingTab;
   String get searchExtensionsHint;
   String get installedCardLabel;
   String get byAuthor;
@@ -708,6 +719,11 @@ abstract class AppTranslations {
   String get curatedMovies;
   String get curatedTopRated;
   String get noAiringToday;
+  String get noAiringThisMonth;
+  String get calendarWeekView;
+  String get calendarMonthView;
+  String get previousMonth;
+  String get nextMonth;
   String get filters;
   String get applyFilters;
   String get clearFilters;
@@ -986,6 +1002,16 @@ abstract class AppTranslations {
   String get emptyAnimeFeedTitle;
   String get emptyMangaFeedDesc;
   String get emptyAnimeFeedDesc;
+  String get noInternetConnection;
+  String get noInternetConnectionDesc;
+  String get emptyFeedConnectDesc;
+  String get emptyMangaFeedConnectDesc;
+  String get serviceAniList;
+  String get servicePlex;
+  String get serviceJellyfin;
+  String get mediaType;
+  String get feedFilterAll;
+  String get feedFilterAnimeOnly;
   String get noDownloadedAnimeTitle;
   String get noDownloadedAnimeDesc;
   String get noDownloadedMangaTitle;
@@ -1039,6 +1065,7 @@ abstract class AppTranslations {
   String get cast;
   String get trailersAndVideos;
   String get officialTrailer;
+  String get expand;
   String get collapse;
   String get moreOptions;
   String get viewOnAnilist;
@@ -1131,6 +1158,9 @@ abstract class AppTranslations {
   String get animeSectionDesc;
   String get showsSection;
   String get showsSectionDesc;
+  String get tmdbTrendingTitle;
+  String get tmdbUnavailableTitle;
+  String get tmdbUnavailableDesc;
   String get mangaSection;
   String get mangaSectionDesc;
   String get cannotDisableBothSections;
@@ -1441,4 +1471,29 @@ abstract class AppTranslations {
   String get startupWarmUpStarting;
   String get startupWarmUpSyncing;
   String get startupWarmUpReady;
+
+  // Media Servers (Plex & Jellyfin)
+  String get mediaServersTitle;
+  String get mediaServersDesc;
+  String get addMediaServer;
+  String get plexLoginTitle;
+  String get plexLoginDesc;
+  String get plexPinLabel;
+  String get plexOpenBrowser;
+  String get plexWaitingAuth;
+  String get plexSelectServer;
+  String get jellyfinLoginTitle;
+  String get jellyfinServerUrl;
+  String get jellyfinUsername;
+  String get jellyfinPassword;
+  String get noMediaServersConnected;
+  String get activeServerLabel;
+  String get mediaServerOnline;
+  String get mediaServerOffline;
+  String get disconnectServer;
+  String get playFromMediaServer;
+  String get mediaServerLibraries;
+  String get mediaServerContinueWatching;
+  String get mediaServerEpisodes;
+  String get mediaServerNoItems;
 }

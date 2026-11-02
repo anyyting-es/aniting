@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/preferences/title_language_provider.dart';
 import 'package:seanime_app/core/theme/theme_provider.dart';
+import 'package:seanime_app/core/utils/synopsis_utils.dart';
 import 'package:seanime_app/data/models/anime_details.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/screens/anime_full_details_screen.dart';
@@ -66,11 +67,7 @@ class _AnimeDetailsModalSheetState extends ConsumerState<AnimeDetailsModalSheet>
   }
 
   String _cleanHtml(String? text) {
-    if (text == null) return '';
-    return text
-        .replaceAll(RegExp(r'<br\s*/?>'), '\n')
-        .replaceAll(RegExp(r'<[^>]*>'), '')
-        .trim();
+    return cleanSynopsis(text);
   }
 
   @override

@@ -189,7 +189,7 @@ class _DesktopGridEpisodeCardState extends ConsumerState<DesktopGridEpisodeCard>
                                 ),
                               )
                             : AnimatedScale(
-                                scale: isActive ? 1.0 : 0.85,
+                                scale: 1.0,
                                 duration: const Duration(milliseconds: 220),
                                 curve: isActive ? Curves.easeOutCubic : Curves.easeInCubic,
                                 alignment: Alignment.center,
@@ -216,7 +216,7 @@ class _DesktopGridEpisodeCardState extends ConsumerState<DesktopGridEpisodeCard>
                             AspectRatio(
                               aspectRatio: 16 / 9,
                               child: AnimatedScale(
-                                scale: isSelected ? 0.97 : (isActive ? 1.025 : 1.0),
+                                scale: isSelected ? 0.97 : 1.0,
                                 duration: const Duration(milliseconds: 180),
                                 curve: Curves.easeOutCubic,
                                 child: Container(
@@ -244,6 +244,7 @@ class _DesktopGridEpisodeCardState extends ConsumerState<DesktopGridEpisodeCard>
                             ? CachedNetworkImage(
                                 imageUrl: widget.ep.image!,
                                 fit: BoxFit.cover,
+                                filterQuality: FilterQuality.medium,
                                 memCacheWidth: 400,
                                 errorWidget: (_, _, _) => _buildPlaceholder(),
                               )
@@ -427,6 +428,7 @@ class _DesktopGridEpisodeCardState extends ConsumerState<DesktopGridEpisodeCard>
       return CachedNetworkImage(
         imageUrl: widget.fallbackCoverImage!,
         fit: BoxFit.cover,
+        filterQuality: FilterQuality.medium,
         errorWidget: (_, _, _) => Container(color: const Color(0xFF1E2228)),
       );
     }

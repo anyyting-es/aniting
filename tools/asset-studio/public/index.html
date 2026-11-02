@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Aniting · Asset Studio</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark">A</span>
+        <div class="brand-text">
+          <strong>Aniting</strong>
+          <span>Asset Studio</span>
+        </div>
+      </div>
+
+      <div class="search-box">
+        <span class="search-icon" aria-hidden="true">⌕</span>
+        <input
+          id="anilist-search"
+          type="search"
+          autocomplete="off"
+          spellcheck="false"
+          placeholder="Buscar anime en AniList… (ej. Frieren, Mushoku Tensei)"
+        />
+        <kbd>Enter</kbd>
+      </div>
+
+      <div class="top-actions">
+        <label class="tmdb-key" title="Se usa para consultar la API de TMDB. Se guarda solo en este navegador.">
+          <span>TMDB key</span>
+          <input id="tmdb-key" type="password" autocomplete="off" placeholder="api key" />
+        </label>
+        <a class="ghost-btn" id="download-json" href="/api/assets?download=1">Descargar JSON</a>
+        <span class="save-badge" id="save-badge">Listo</span>
+      </div>
+    </header>
+
+    <main class="layout">
+      <aside class="sidebar">
+        <div class="sidebar-head">
+          <h2>Catálogo custom</h2>
+          <span class="pill" id="catalog-count">0</span>
+        </div>
+        <input id="catalog-filter" class="catalog-filter" type="search" placeholder="Filtrar por título o ID…" autocomplete="off" />
+        <div class="sidebar-hint" id="catalog-path">assets/data/custom_anime_assets.json</div>
+        <ul class="catalog-list" id="catalog-list"></ul>
+        <div class="sidebar-foot">
+          <button class="ghost-btn" id="reload-catalog">Recargar JSON</button>
+          <span class="muted" id="catalog-foot">—</span>
+        </div>
+      </aside>
+
+      <section class="stage" id="stage">
+        <div class="empty-state">
+          <div class="empty-art">✦</div>
+          <h1>Curador de arte y metadata</h1>
+          <p>
+            Busca un anime en AniList o elige uno del catálogo. Las imágenes se sirven
+            directo al reproductor desde <code>custom_anime_assets.json</code>, sin
+            llamadas extra a TMDB.
+          </p>
+          <div class="empty-tips">
+            <span>Clic en una imagen → se guarda al instante</span>
+            <span>Poster · Background · Logo</span>
+            <span>Filtra por idioma o sin idioma</span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div class="toast" id="toast"></div>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

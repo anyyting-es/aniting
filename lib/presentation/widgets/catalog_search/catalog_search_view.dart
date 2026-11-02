@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:g1455/g1455.dart';
+import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/preferences/section_visibility_provider.dart';
+import 'package:seanime_app/core/theme/smooth_scroll_controller.dart';
 import 'package:seanime_app/data/models/anime_entry.dart';
 import 'package:seanime_app/data/models/manga_entry.dart';
 import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
 import 'package:seanime_app/presentation/screens/manga_detail_screen.dart';
 import 'package:seanime_app/presentation/widgets/anime_card.dart';
+import 'package:seanime_app/presentation/widgets/anime_preview/anime_preview_popup.dart';
 import 'package:seanime_app/presentation/widgets/catalog_search/catalog_filter_sidebar.dart';
 import 'package:seanime_app/presentation/widgets/compact_search_bar.dart';
 import 'package:seanime_app/presentation/widgets/discover_filter_sheet.dart';
@@ -69,6 +72,44 @@ class CatalogSearchView extends ConsumerWidget {
       default:
         return l10n.discoverSeries;
     }
+  }
+
+  Future<void> _openAnimePreview(BuildContext context, AnimeEntry entry) {
+    final heroTag = 'search_anime_${entry.mediaId}';
+    final route = PageRouteBuilder<void>(
+      opaque: false,
+      barrierDismissible: true,
+      barrierColor: Colors.black.withValues(alpha: 0.55),
+      barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+      transitionDuration: const Duration(milliseconds: 360),
+      reverseTransitionDuration: const Duration(milliseconds: 260),
+      pageBuilder: (pageContext, animation, secondaryAnimation) {
+        return AnimePreviewPopup(
+          entry: entry,
+          heroTag: heroTag,
+          onOpenDetails: () {
+            Navigator.of(pageContext).pop();
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!context.mounted) return;
+              AnimeDetailScreen.navigate(
+                context,
+                mediaId: entry.mediaId,
+                initialEntry: entry,
+              );
+            });
+          },
+        );
+      },
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        final curved = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutCubic,
+          reverseCurve: Curves.easeInCubic,
+        );
+        return FadeTransition(opacity: curved, child: child);
+      },
+    );
+    return Navigator.of(context).push(route);
   }
 
   @override
@@ -188,21 +229,27 @@ class CatalogSearchView extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 2. Título de sección con botón Volver (ej. "← Highest rated shows")
+          // 2. Header: Botón Explorar + Título
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              IconButton(
-                key: const ValueKey('compact_search_back_btn'),
-                icon: const Icon(Icons.arrow_back_rounded),
-                tooltip: l10n.back,
+              M3EButton(
                 onPressed: onBack,
+                style: M3EButtonStyle.tonal,
+                icon: Icon(AppIcons.explore(iconPack), size: 18),
+                label: Text(
+                  l10n.navExplore,
+                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5),
+                ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 16),
               Expanded(
                 child: Text(
                   headerTitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 26,
+                    fontSize: 24,
                     fontWeight: FontWeight.bold,
                     color: theme.colorScheme.onSurface,
                     letterSpacing: -0.4,
@@ -219,14 +266,20 @@ class CatalogSearchView extends ConsumerWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Columna izquierda: Barra lateral de filtros
-                SingleChildScrollView(
-                  child: CatalogFilterSidebar(
-                    searchController: searchController,
-                    onSearchChanged: onSearchChanged,
-                    filterState: filterState,
-                    onFilterChanged: onFilterChanged,
-                    onReset: onResetFilters,
+                // Columna izquierda: filtros Material 3 Expressive
+                SizedBox(
+                  width: 320,
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 24, bottom: 4),
+                    child: SingleChildScrollView(
+                      child: CatalogFilterSidebar(
+                        searchController: searchController,
+                        onSearchChanged: onSearchChanged,
+                        filterState: filterState,
+                        onFilterChanged: onFilterChanged,
+                        onReset: onResetFilters,
+                      ),
+                    ),
                   ),
                 ),
 
@@ -260,7 +313,13 @@ class CatalogSearchView extends ConsumerWidget {
     required int totalItems,
   }) {
     if (isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return Center(
+        child: M3ELoadingIndicator(
+          variant: M3ELoadingIndicatorVariant.contained,
+          size: 48,
+          color: theme.colorScheme.primary,
+        ),
+      );
     }
 
     if (totalItems == 0) {
@@ -292,71 +351,137 @@ class CatalogSearchView extends ConsumerWidget {
       );
     }
 
-    return GridView.builder(
-      clipBehavior: Clip.none,
-      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      padding: EdgeInsets.fromLTRB(
-        isDesktop ? 4 : 10,
-        isDesktop ? 0 : 8,
-        isDesktop ? 12 : 10,
-        90,
-      ),
-      gridDelegate: isDesktop
-          ? const SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 245,
-              childAspectRatio: 0.58,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 20,
-            )
-          : const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              childAspectRatio: 0.54,
-              crossAxisSpacing: 8,
-              mainAxisSpacing: 12,
-            ),
-      itemCount: totalItems + (hasMore ? 1 : 0),
-      itemBuilder: (context, index) {
-        if (index >= totalItems) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            onLoadMore();
-          });
-          return const Center(
-            child: Padding(
-              padding: EdgeInsets.all(16),
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
-          );
-        }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const crossSpacingDesktop = 16.0;
+        const crossSpacingMobile = 8.0;
+        final horizontalPadding = isDesktop ? 16.0 : 20.0;
+        final crossSpacing = isDesktop ? crossSpacingDesktop : crossSpacingMobile;
+        final availableWidth =
+            (constraints.maxWidth - horizontalPadding).clamp(1.0, double.infinity);
 
-        if (isAnime || filterState.mediaType == 'SHOWS') {
-          final anime = animeResults[index];
-          return AnimeCard(
-            entry: anime,
-            onTap: () {
-              searchFocusNode.unfocus();
-              FocusScope.of(context).unfocus();
-              AnimeDetailScreen.navigate(
-                context,
-                mediaId: anime.mediaId,
-                initialEntry: anime,
-              );
-            },
-          );
-        } else {
-          final manga = mangaResults[index];
-          return MangaCard(
-            entry: manga,
-            onTap: () {
-              searchFocusNode.unfocus();
-              FocusScope.of(context).unfocus();
-              MangaDetailScreen.navigate(
-                context,
-                mediaId: manga.mediaId,
-                initialEntry: manga,
-              );
-            },
-          );
-        }
+        final columns = isDesktop
+            ? ((availableWidth + crossSpacing) / (245.0 + crossSpacing))
+                .ceil()
+                .clamp(1, 8)
+                .toInt()
+            : 3;
+        final cardWidth =
+            (availableWidth - crossSpacing * (columns - 1)) / columns;
+
+        // Match the grid cell to the card's real content (poster + 2-line
+        // title) so there is no dead space between the title and the next row.
+        final compact = cardWidth < 155;
+        final cardPadding = compact ? 2.5 : 4.0;
+        final gap = compact ? 6.0 : 8.0;
+        final titleFontSize = compact ? 13.0 : 14.5;
+        final titleLineHeight =
+            MediaQuery.textScalerOf(context).scale(titleFontSize) * 1.25;
+        final metaLineHeight =
+            MediaQuery.textScalerOf(context).scale(compact ? 11.0 : 12.0) * 1.25 + 3;
+        final cellHeight = cardPadding * 2 +
+            (cardWidth - cardPadding * 2) / 0.72 +
+            gap +
+            titleLineHeight * 2 +
+            metaLineHeight +
+            4;
+        final aspectRatio = cardWidth / cellHeight;
+
+        return DynMouseScroll(
+          smoothingFactor: 22,
+          builder: (context, scrollController) {
+            return NotificationListener<ScrollNotification>(
+              onNotification: (notification) {
+                if (notification.metrics.axis == Axis.vertical &&
+                    hasMore &&
+                    !isLoadingMore &&
+                    notification.metrics.pixels >=
+                        notification.metrics.maxScrollExtent - 400) {
+                  onLoadMore();
+                }
+                return false;
+              },
+              child: CustomScrollView(
+                controller: scrollController,
+            clipBehavior: Clip.hardEdge,
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            slivers: [
+              SliverPadding(
+                padding: EdgeInsets.fromLTRB(
+                  isDesktop ? 4 : 10,
+                  isDesktop ? 0 : 8,
+                  isDesktop ? 12 : 10,
+                  0,
+                ),
+                sliver: SliverGrid(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: columns,
+                    childAspectRatio: aspectRatio,
+                    crossAxisSpacing: crossSpacing,
+                    mainAxisSpacing: isDesktop ? 10 : 8,
+                  ),
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      if (isAnime || filterState.mediaType == 'SHOWS') {
+                        final anime = animeResults[index];
+                        final heroTag = 'search_anime_${anime.mediaId}';
+                        return AnimeCard(
+                          entry: anime,
+                          showMetadata: true,
+                          animateEntry: false,
+                          heroTag: heroTag,
+                          onSecondaryTap: () => _openAnimePreview(context, anime),
+                          onTap: () {
+                            searchFocusNode.unfocus();
+                            FocusScope.of(context).unfocus();
+                            AnimeDetailScreen.navigate(
+                              context,
+                              mediaId: anime.mediaId,
+                              initialEntry: anime,
+                            );
+                          },
+                        );
+                      } else {
+                        final manga = mangaResults[index];
+                        return MangaCard(
+                          entry: manga,
+                          showMetadata: true,
+                          onTap: () {
+                            searchFocusNode.unfocus();
+                            FocusScope.of(context).unfocus();
+                            MangaDetailScreen.navigate(
+                              context,
+                              mediaId: manga.mediaId,
+                              initialEntry: manga,
+                            );
+                          },
+                        );
+                      }
+                    },
+                    childCount: totalItems,
+                    addAutomaticKeepAlives: false,
+                  ),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(0, 12, 0, 90),
+                  child: isLoadingMore
+                      ? Center(
+                          child: M3ELoadingIndicator(
+                            variant: M3ELoadingIndicatorVariant.contained,
+                            size: 36,
+                            color: theme.colorScheme.primary,
+                          ),
+                        )
+                      : const SizedBox.shrink(),
+                ),
+              ),
+            ],
+          ),
+        );
+          },
+        );
       },
     );
   }

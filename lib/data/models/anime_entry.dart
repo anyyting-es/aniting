@@ -280,13 +280,13 @@ class AnimeEntry {
     }
 
     // Standard AniList media or Library Entry
-    final media = (json['media'] is Map<String, dynamic>)
-        ? json['media'] as Map<String, dynamic>
+    final media = (json['media'] is Map)
+        ? (json['media'] as Map).cast<String, dynamic>()
         : json;
 
-    final titleObj = (media['title'] is Map<String, dynamic>)
-        ? media['title'] as Map<String, dynamic>
-        : (json['title'] is Map<String, dynamic> ? json['title'] as Map<String, dynamic> : {});
+    final titleObj = (media['title'] is Map)
+        ? (media['title'] as Map).cast<String, dynamic>()
+        : (json['title'] is Map ? (json['title'] as Map).cast<String, dynamic>() : const <String, dynamic>{});
 
     final romaji = titleObj['romaji'] as String?;
     final english = titleObj['english'] as String?;

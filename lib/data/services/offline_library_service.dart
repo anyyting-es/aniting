@@ -182,6 +182,7 @@ class OfflineLibraryService {
     int? year,
     String? englishTitle,
     String? romajiTitle,
+    bool isTmdb = false,
   }) async {
     if (mediaId <= 0) return;
 
@@ -219,6 +220,7 @@ class OfflineLibraryService {
         lastWatchedTime: now,
         updatedAt: now,
         year: year ?? existing.year,
+        isTmdb: isTmdb || existing.isTmdb,
       );
     } else {
       _animeEntries[mediaId] = AnimeEntry(
@@ -244,6 +246,7 @@ class OfflineLibraryService {
         lastWatchedTime: now,
         updatedAt: now,
         year: year,
+        isTmdb: isTmdb,
       );
     }
 
@@ -255,6 +258,7 @@ class OfflineLibraryService {
     required int mediaId,
     required int episodeNumber,
     int? totalEpisodes,
+    bool isTmdb = false,
   }) async {
     if (mediaId <= 0) return;
     final now = DateTime.now().millisecondsSinceEpoch;
@@ -272,6 +276,7 @@ class OfflineLibraryService {
       episodeNumber: nextEp,
       updatedAt: now,
       lastWatchedTime: now,
+      isTmdb: isTmdb || existing.isTmdb,
     );
 
     await _persistAnime();

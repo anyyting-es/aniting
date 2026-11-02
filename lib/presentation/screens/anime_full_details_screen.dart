@@ -5,6 +5,7 @@ import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/preferences/title_language_provider.dart';
 import 'package:seanime_app/core/theme/app_theme_colors.dart';
 import 'package:seanime_app/core/theme/theme_provider.dart';
+import 'package:seanime_app/core/utils/synopsis_utils.dart';
 import 'package:seanime_app/data/models/anime_details.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
@@ -48,11 +49,7 @@ class _AnimeFullDetailsScreenState extends ConsumerState<AnimeFullDetailsScreen>
   }
 
   String _cleanHtml(String? text) {
-    if (text == null) return '';
-    return text
-        .replaceAll(RegExp(r'<br\s*/?>'), '\n')
-        .replaceAll(RegExp(r'<[^>]*>'), '')
-        .trim();
+    return cleanSynopsis(text);
   }
 
   @override

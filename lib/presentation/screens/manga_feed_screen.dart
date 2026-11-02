@@ -11,6 +11,9 @@ import 'package:seanime_app/presentation/widgets/compact_search_bar.dart';
 import 'package:seanime_app/presentation/widgets/continue_reading_card.dart';
 import 'package:seanime_app/presentation/widgets/feed_empty_state.dart';
 import 'package:seanime_app/presentation/widgets/manga_card.dart';
+import 'package:seanime_app/core/preferences/title_language_provider.dart';
+import 'package:seanime_app/presentation/widgets/anime_preview/show_preview_data.dart';
+import 'package:seanime_app/presentation/widgets/anime_preview/show_quick_view_detector.dart';
 import 'package:seanime_app/presentation/widgets/server_status_banner.dart';
 import 'package:seanime_app/presentation/widgets/feed/smooth_focus_carousel.dart';
 import 'package:seanime_app/presentation/widgets/snapping_scroll_physics.dart';
@@ -51,6 +54,29 @@ class _MangaFeedScreenState extends ConsumerState<MangaFeedScreen> {
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+  }
+
+  /// Wraps a manga card with the immersive preview (right click / idle hover)
+  /// and shares the same hero tag between the card and the preview.
+  Widget _withMangaPreview({
+    required BuildContext context,
+    required MangaEntry entry,
+    required Object heroTag,
+    required Widget child,
+  }) {
+    return ShowQuickViewDetector(
+      heroTag: heroTag,
+      dataBuilder: () => ShowPreviewData.fromManga(
+        entry,
+        ref.read(titleLanguageProvider),
+      ),
+      onOpenDetails: () => MangaDetailScreen.navigate(
+        context,
+        mediaId: entry.mediaId,
+        initialEntry: entry,
+      ),
+      child: child,
+    );
   }
 
   @override
@@ -284,15 +310,22 @@ class _MangaFeedScreenState extends ConsumerState<MangaFeedScreen> {
                                     itemCount: _searchResults.length,
                                     itemBuilder: (context, index) {
                                       final item = _searchResults[index];
-                                      return MangaCard(
+                                      final tag = 'manga_search_${item.mediaId}';
+                                      return _withMangaPreview(
+                                        context: context,
                                         entry: item,
-                                        onTap: () {
-                                          MangaDetailScreen.navigate(
-                                            context,
-                                            mediaId: item.mediaId,
-                                            initialEntry: item,
-                                          );
-                                        },
+                                        heroTag: tag,
+                                        child: MangaCard(
+                                          entry: item,
+                                          heroTag: tag,
+                                          onTap: () {
+                                            MangaDetailScreen.navigate(
+                                              context,
+                                              mediaId: item.mediaId,
+                                              initialEntry: item,
+                                            );
+                                          },
+                                        ),
                                       );
                                     },
                                   ),
@@ -371,17 +404,24 @@ class _MangaFeedScreenState extends ConsumerState<MangaFeedScreen> {
                                             ),
                                       itemBuilder: (context, index) {
                                         final item = downloaded[index];
-                                        return MangaCard(
-                                          key: ValueKey('manga_dl_${item.mediaId}'),
+                                        final tag = 'manga_dl_${item.mediaId}';
+                                        return _withMangaPreview(
+                                          context: context,
                                           entry: item,
-                                          width: mangaCardWidth,
-                                          onTap: () {
-                                            MangaDetailScreen.navigate(
-                                              context,
-                                              mediaId: item.mediaId,
-                                              initialEntry: item,
-                                            );
-                                          },
+                                          heroTag: tag,
+                                          child: MangaCard(
+                                            key: ValueKey('manga_dl_${item.mediaId}'),
+                                            entry: item,
+                                            width: mangaCardWidth,
+                                            heroTag: tag,
+                                            onTap: () {
+                                              MangaDetailScreen.navigate(
+                                                context,
+                                                mediaId: item.mediaId,
+                                                initialEntry: item,
+                                              );
+                                            },
+                                          ),
                                         );
                                       },
                                     ),
@@ -420,10 +460,17 @@ class _MangaFeedScreenState extends ConsumerState<MangaFeedScreen> {
                                             ),
                                       itemBuilder: (context, index) {
                                         final item = completed[index];
-                                        return MangaCard(
-                                          key: ValueKey('manga_completed_${item.mediaId}'),
+                                        final tag = 'manga_completed_${item.mediaId}';
+                                        return _withMangaPreview(
+                                          context: context,
                                           entry: item,
-                                          width: mangaCardWidth,
+                                          heroTag: tag,
+                                          child: MangaCard(
+                                            key: ValueKey('manga_completed_${item.mediaId}'),
+                                            entry: item,
+                                            width: mangaCardWidth,
+                                            heroTag: tag,
+                                          ),
                                         );
                                       },
                                     ),
@@ -454,17 +501,24 @@ class _MangaFeedScreenState extends ConsumerState<MangaFeedScreen> {
                                           ),
                                     itemBuilder: (context, index) {
                                       final item = mangaRecommendationsEntries[index];
-                                      return MangaCard(
-                                        key: ValueKey('manga_rec_${item.mediaId}'),
+                                      final tag = 'manga_rec_${item.mediaId}';
+                                      return _withMangaPreview(
+                                        context: context,
                                         entry: item,
-                                        width: mangaCardWidth,
-                                        onTap: () {
-                                          MangaDetailScreen.navigate(
-                                            context,
-                                            mediaId: item.mediaId,
-                                            initialEntry: item,
-                                          );
-                                        },
+                                        heroTag: tag,
+                                        child: MangaCard(
+                                          key: ValueKey('manga_rec_${item.mediaId}'),
+                                          entry: item,
+                                          width: mangaCardWidth,
+                                          heroTag: tag,
+                                          onTap: () {
+                                            MangaDetailScreen.navigate(
+                                              context,
+                                              mediaId: item.mediaId,
+                                              initialEntry: item,
+                                            );
+                                          },
+                                        ),
                                       );
                                     },
                                   ),
@@ -524,17 +578,23 @@ class _MangaFeedScreenState extends ConsumerState<MangaFeedScreen> {
                     ),
               itemBuilder: (context, index) {
                 final item = entries[index];
-                return ContinueReadingCard(
-                  key: ValueKey('cr_${item.mediaId}'),
+                return _withMangaPreview(
+                  context: context,
                   entry: item,
-                  width: cardWidth,
-                  onTap: () {
-                    MangaDetailScreen.navigate(
-                      context,
-                      mediaId: item.mediaId,
-                      initialEntry: item,
-                    );
-                  },
+                  heroTag: 'manga_cr_${item.mediaId}',
+                  child: ContinueReadingCard(
+                    key: ValueKey('cr_${item.mediaId}'),
+                    entry: item,
+                    width: cardWidth,
+                    handleSecondaryGestures: false,
+                    onTap: () {
+                      MangaDetailScreen.navigate(
+                        context,
+                        mediaId: item.mediaId,
+                        initialEntry: item,
+                      );
+                    },
+                  ),
                 );
               },
             ),

@@ -621,7 +621,7 @@ class PlayerPlaybackCoordinator {
     if (isUsingExoPlayer) {
       exoService?.setSubtitleDelay(ms);
     } else {
-      // media_kit does not expose backend-specific subtitle delay controls.
+      mediaKitService?.setSubtitleDelay(ms);
     }
   }
 
@@ -646,7 +646,10 @@ class PlayerPlaybackCoordinator {
   }
 
   void setAudioDelay(int ms) {
-    // media_kit does not expose backend-specific audio delay controls.
+    // ExoPlayer does not expose an audio delay control; media_kit (mpv) does.
+    if (!isUsingExoPlayer) {
+      mediaKitService?.setAudioDelay(ms);
+    }
   }
 
   void setShaderPreset(ShaderPreset preset) {

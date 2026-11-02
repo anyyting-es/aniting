@@ -87,6 +87,11 @@ final List<SettingsCategoryGroup> kSettingsCategoryGroups = [
         titleBuilder: (l) => l.localLibrarySettingsTitle,
       ),
       SettingsCategoryItem(
+        category: SettingsCategory.mediaServers,
+        iconBuilder: (_) => Icons.dns_rounded,
+        titleBuilder: (l) => l.mediaServersTitle,
+      ),
+      SettingsCategoryItem(
         category: SettingsCategory.downloadManager,
         iconBuilder: (_) => Icons.manage_history_rounded,
         titleBuilder: (l) => l.downloadManager,

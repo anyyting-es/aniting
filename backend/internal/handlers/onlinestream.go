@@ -86,6 +86,8 @@ func (h *Handler) HandleGetOnlineStreamEpisodeSource(c echo.Context) error {
 		EnglishTitle string `json:"englishTitle,omitempty"`
 		Year         int    `json:"year,omitempty"`
 		Season       int    `json:"season,omitempty"`
+		ImdbId       string `json:"imdbId,omitempty"`
+		EpisodeCount int    `json:"episodeCount,omitempty"`
 	}
 
 	var b body
@@ -105,6 +107,7 @@ func (h *Handler) HandleGetOnlineStreamEpisodeSource(c echo.Context) error {
 			RomajiTitle: b.Title,
 			Status:      "FINISHED",
 			Format:      "TV",
+			ImdbId:      b.ImdbId,
 		}
 		if b.EnglishTitle != "" {
 			en := b.EnglishTitle
@@ -115,6 +118,9 @@ func (h *Handler) HandleGetOnlineStreamEpisodeSource(c echo.Context) error {
 		}
 		if b.MediaType == "movie" {
 			media.Format = "MOVIE"
+			media.EpisodeCount = 1
+		} else if b.EpisodeCount > 0 {
+			media.EpisodeCount = b.EpisodeCount
 		}
 
 		sources, err := h.App.OnlinestreamRepository.GetTmdbEpisodeSources(

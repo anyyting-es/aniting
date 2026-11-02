@@ -37,6 +37,16 @@ final serverManagerProvider = Provider<ServerManager>((ref) {
   return ServerManager(client);
 });
 
+/// Controls whether SearchScreen displays the direct search view (true) or the Explore Hub (false).
+class SearchViewActiveNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+  void setActive(bool val) => state = val;
+  @override
+  set state(bool val) => super.state = val;
+}
+final searchViewActiveProvider = NotifierProvider<SearchViewActiveNotifier, bool>(SearchViewActiveNotifier.new);
+
 final repositoryProvider = Provider<SeanimeRepository>((ref) {
   final client = ref.watch(apiClientProvider);
   return SeanimeRepository(client);
@@ -502,7 +512,21 @@ final continueWatchingProvider = FutureProvider<List<AnimeEntry>>((ref) async {
     ref: ref,
     cacheKey: FeedCacheService.kCacheContinueWatchingAnime,
     requireAuth: false,
-    fetchFresh: () => ref.read(repositoryProvider).getContinueWatching(),
+    fetchFresh: () async {
+      final remote = await ref.read(repositoryProvider).getContinueWatching();
+      // TMDB progress is local-only (backend continuity is AniList-keyed), so
+      // merge it here to keep "Continue watching" complete while online.
+      final localTmdb = OfflineLibraryService.instance
+          .getContinueWatching()
+          .where((entry) => entry.isTmdb)
+          .toList();
+      if (localTmdb.isEmpty) return remote;
+      final seen = remote.map((entry) => entry.mediaId).toSet();
+      return [
+        ...remote,
+        ...localTmdb.where((entry) => !seen.contains(entry.mediaId)),
+      ];
+    },
   );
 });
 

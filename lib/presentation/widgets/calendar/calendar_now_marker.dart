@@ -33,8 +33,11 @@ class _CalendarNowMarkerState extends State<CalendarNowMarker> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final primaryColor = theme.colorScheme.primary;
+    final isDark = theme.brightness == Brightness.dark;
     final timeStr = DateFormat('HH:mm').format(_now);
+    final markerColor = isDark
+        ? Colors.white.withValues(alpha: 0.85)
+        : theme.colorScheme.onSurface;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -42,17 +45,17 @@ class _CalendarNowMarkerState extends State<CalendarNowMarker> {
         children: [
           Icon(
             Icons.access_time_rounded,
-            size: 17,
-            color: primaryColor,
+            size: 15,
+            color: markerColor.withValues(alpha: 0.65),
           ),
           const SizedBox(width: 6),
           Text(
             timeStr,
             style: TextStyle(
-              fontSize: 13.5,
-              fontWeight: FontWeight.w800,
-              color: primaryColor,
-              letterSpacing: 0.3,
+              fontSize: 12.5,
+              fontWeight: FontWeight.w700,
+              color: markerColor,
+              letterSpacing: 0.2,
             ),
           ),
           const SizedBox(width: 10),
@@ -62,8 +65,8 @@ class _CalendarNowMarkerState extends State<CalendarNowMarker> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    primaryColor.withValues(alpha: 0.5),
-                    primaryColor.withValues(alpha: 0.0),
+                    markerColor.withValues(alpha: 0.25),
+                    markerColor.withValues(alpha: 0.0),
                   ],
                 ),
               ),

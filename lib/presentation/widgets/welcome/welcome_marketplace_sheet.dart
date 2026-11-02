@@ -57,7 +57,14 @@ class _WelcomeMarketplaceSheetState extends ConsumerState<WelcomeMarketplaceShee
     final colors = context.themeColors;
 
     final filtered = widget.marketplaceExtensions.where((ext) {
-      if (_selectedCategory != 'all' && ext.type != _selectedCategory) {
+      if (ext.type == 'plugin' || ext.type == 'custom-source') return false;
+      if (_selectedCategory == 'tmdb') {
+        if (!ext.isTmdbOnlyProvider) return false;
+      } else if (_selectedCategory == 'onlinestream-provider') {
+        if (ext.type != 'onlinestream-provider' || ext.isTmdbOnlyProvider) {
+          return false;
+        }
+      } else if (_selectedCategory != 'all' && ext.type != _selectedCategory) {
         return false;
       }
       if (_searchQuery.isNotEmpty) {
@@ -185,19 +192,19 @@ class _WelcomeMarketplaceSheetState extends ConsumerState<WelcomeMarketplaceShee
                     ),
                     const SizedBox(width: 6),
                     _buildSheetFilterChip(
+                      label: 'TMDB',
+                      isSelected: _selectedCategory == 'tmdb',
+                      theme: theme,
+                      colors: colors,
+                      onTap: () => setState(() => _selectedCategory = 'tmdb'),
+                    ),
+                    const SizedBox(width: 6),
+                    _buildSheetFilterChip(
                       label: 'Manga',
                       isSelected: _selectedCategory == 'manga-provider',
                       theme: theme,
                       colors: colors,
                       onTap: () => setState(() => _selectedCategory = 'manga-provider'),
-                    ),
-                    const SizedBox(width: 6),
-                    _buildSheetFilterChip(
-                      label: 'Custom Sources',
-                      isSelected: _selectedCategory == 'custom-source',
-                      theme: theme,
-                      colors: colors,
-                      onTap: () => setState(() => _selectedCategory = 'custom-source'),
                     ),
                   ],
                 ),

@@ -52,17 +52,24 @@ func ScanShowDirectories(opts ScannerOptions) ([]*ShowLocalFile, error) {
 		for _, fp := range filePaths {
 			normPath := filepath.ToSlash(fp)
 
-			// If file was already scanned and locked or matched, keep it
-			if existing, exists := existingMap[normPath]; exists {
-				resultMap[normPath] = existing
-				continue
-			}
-
-			// New file discovered
 			mediaType := hint
 			if mediaType == "mixed" {
 				mediaType = ""
 			}
+
+			// If file was already scanned, refresh parsed metadata while preserving manual match & lock
+			if existing, exists := existingMap[normPath]; exists {
+				newFile := NewShowLocalFile(normPath, mediaType)
+				if existing.Locked || existing.IsMatched() {
+					newFile.TmdbId = existing.TmdbId
+					newFile.Locked = existing.Locked
+				}
+				newFile.Ignored = existing.Ignored
+				resultMap[normPath] = newFile
+				continue
+			}
+
+			// New file discovered
 			newFile := NewShowLocalFile(normPath, mediaType)
 			resultMap[normPath] = newFile
 		}

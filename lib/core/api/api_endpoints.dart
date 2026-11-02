@@ -30,6 +30,7 @@ class ApiEndpoints {
 
   // Playback & Torrent
   static const String torrentstreamStart = '/torrentstream/start';
+  static const String torrentstreamStartMagnet = '/torrentstream/start-magnet';
   static const String torrentstreamStop = '/torrentstream/stop';
   static const String torrentstreamDrop = '/torrentstream/drop';
   static const String torrentstreamPause = '/torrentstream/pause';

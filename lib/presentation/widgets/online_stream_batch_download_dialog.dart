@@ -121,7 +121,9 @@ class _OnlineStreamBatchDownloadContentState
     try {
       OnlinestreamProvider? prov = widget.initialProvider;
       if (prov == null) {
-        final provList = await repo.getOnlinestreamProviders();
+        final provList = (await repo.getOnlinestreamProviders())
+            .where((p) => p.supportsAnime)
+            .toList();
         if (provList.isNotEmpty) {
           prov = provList.first;
         }

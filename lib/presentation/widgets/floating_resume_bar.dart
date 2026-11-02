@@ -27,32 +27,39 @@ class FloatingResumeBar extends ConsumerWidget {
 
       // 1. FAST-PATH: If file exists in PC local library, stream directly from disk (0ms)
       try {
-        final entry = await repo.getAnimeLibraryEntry(session.mediaId);
-        final localEp = entry?.episodes.cast<LibraryEpisode?>().firstWhere(
-          (e) => e?.episodeNumber == epNum,
-          orElse: () => null,
-        );
-        if (localEp != null) {
-          final streamUrl = localEp.localFilePath != null && localEp.localFilePath!.isNotEmpty
-              ? 'http://${serverManager.host}:${serverManager.port}/api/v1/mediastream/file?path=${Uri.encodeComponent(localEp.localFilePath!)}'
-              : 'http://${serverManager.host}:${serverManager.port}/api/v1/mediastream?mediaId=${session.mediaId}&episodeNumber=${localEp.episodeNumber}';
-          final fileName = localEp.localFilePath?.split(RegExp(r'[/\\]')).last;
-          if (context.mounted) {
-            Navigator.of(context).push(
-              VideoPlayerScreen.route(
-                mediaId: session.mediaId,
-                videoUrl: streamUrl,
-                title: session.title,
-                episodeTitle: localEp.displayTitle.isNotEmpty ? localEp.displayTitle : session.episodeTitle,
-                episodeNumber: epNum,
-                startPosition: session.positionMs != null
-                    ? Duration(milliseconds: session.positionMs!)
-                    : null,
-                videoSource: fileName != null ? 'Local • $fileName' : l10n.localLibrary,
-                isLocalFile: true,
-              ),
-            );
-            return;
+        if (!session.isTmdb) {
+          final entry = await repo.getAnimeLibraryEntry(session.mediaId);
+          final localEp = entry?.episodes.cast<LibraryEpisode?>().firstWhere(
+            (e) => e?.episodeNumber == epNum,
+            orElse: () => null,
+          );
+          if (localEp != null) {
+            final streamUrl = localEp.localFilePath != null && localEp.localFilePath!.isNotEmpty
+                ? 'http://${serverManager.host}:${serverManager.port}/api/v1/mediastream/file?path=${Uri.encodeComponent(localEp.localFilePath!)}'
+                : 'http://${serverManager.host}:${serverManager.port}/api/v1/mediastream?mediaId=${session.mediaId}&episodeNumber=${localEp.episodeNumber}';
+            final fileName = localEp.localFilePath?.split(RegExp(r'[/\\]')).last;
+            if (context.mounted) {
+              Navigator.of(context).push(
+                VideoPlayerScreen.route(
+                  mediaId: session.mediaId,
+                  videoUrl: streamUrl,
+                  title: session.title,
+                  episodeTitle: localEp.displayTitle.isNotEmpty ? localEp.displayTitle : session.episodeTitle,
+                  episodeNumber: epNum,
+                  startPosition: session.positionMs != null
+                      ? Duration(milliseconds: session.positionMs!)
+                      : null,
+                  videoSource: fileName != null ? 'Local • $fileName' : l10n.localLibrary,
+                  isLocalFile: true,
+                  isTmdbMedia: session.isTmdb,
+                  tmdbMediaType: session.tmdbMediaType,
+                  tmdbSeason: session.tmdbSeason,
+                  tmdbEnglishTitle: session.tmdbEnglishTitle,
+                  tmdbYear: session.tmdbYear,
+                ),
+              );
+              return;
+            }
           }
         }
       } catch (_) {}
@@ -61,7 +68,7 @@ class FloatingResumeBar extends ConsumerWidget {
       final isTorrent = (session.videoUrl?.contains('torrentstream') ?? false) ||
           (session.videoSource?.toLowerCase().contains('torrent') ?? false);
 
-      if (isTorrent) {
+      if (!session.isTmdb && isTorrent) {
         final success = await repo.startTorrentStream(
           mediaId: session.mediaId,
           episodeNumber: epNum,
@@ -82,13 +89,63 @@ class FloatingResumeBar extends ConsumerWidget {
                   : null,
               videoSource: session.videoSource ?? 'Torrent',
               onDispose: () => repo.stopTorrentStream(),
+              isTmdbMedia: session.isTmdb,
+              tmdbMediaType: session.tmdbMediaType,
+              tmdbSeason: session.tmdbSeason,
+              tmdbEnglishTitle: session.tmdbEnglishTitle,
+              tmdbYear: session.tmdbYear,
             ),
           );
           return;
         } else if (context.mounted) {
-          AnimeDetailScreen.navigate(context, mediaId: session.mediaId);
+          AnimeDetailScreen.navigate(
+            context,
+            mediaId: session.mediaId,
+            isTmdb: session.isTmdb,
+          );
           return;
         }
+      }
+
+      // 3. TMDB TORRENT RESUME: the torrent was dropped on exit, so resolve the
+      // provider again instead of replaying the stale torrentstream URL.
+      if (session.isTmdb && isTorrent) {
+        final provider = session.onlineStreamProvider;
+        if (provider != null &&
+            provider.isNotEmpty &&
+            context.mounted) {
+          Navigator.of(context).push(
+            VideoPlayerScreen.route(
+              mediaId: session.mediaId,
+              videoUrl: '',
+              title: session.title,
+              episodeTitle: session.episodeTitle,
+              episodeNumber: session.episodeNumber,
+              startPosition: session.positionMs != null
+                  ? Duration(milliseconds: session.positionMs!)
+                  : null,
+              videoSource: session.videoSource,
+              onlineStreamProvider: provider,
+              onlineStreamDubbed: session.onlineStreamDubbed,
+              onlineStreamServer: session.onlineStreamServer,
+              isTmdbMedia: true,
+              tmdbMediaType: session.tmdbMediaType,
+              tmdbSeason: session.tmdbSeason,
+              tmdbEnglishTitle: session.tmdbEnglishTitle,
+              tmdbYear: session.tmdbYear,
+            ),
+          );
+          return;
+        }
+
+        if (context.mounted) {
+          AnimeDetailScreen.navigate(
+            context,
+            mediaId: session.mediaId,
+            isTmdb: true,
+          );
+        }
+        return;
       }
 
       if (!context.mounted) return;
@@ -111,6 +168,11 @@ class FloatingResumeBar extends ConsumerWidget {
             onlineStreamDubbed: session.onlineStreamDubbed,
             onlineStreamServer: session.onlineStreamServer,
             isLocalFile: session.isLocalFile,
+            isTmdbMedia: session.isTmdb,
+            tmdbMediaType: session.tmdbMediaType,
+            tmdbSeason: session.tmdbSeason,
+            tmdbEnglishTitle: session.tmdbEnglishTitle,
+            tmdbYear: session.tmdbYear,
           ),
         );
       } else if (session.onlineStreamProvider != null && session.onlineStreamProvider!.isNotEmpty) {
@@ -128,12 +190,18 @@ class FloatingResumeBar extends ConsumerWidget {
             onlineStreamProvider: session.onlineStreamProvider,
             onlineStreamDubbed: session.onlineStreamDubbed,
             onlineStreamServer: session.onlineStreamServer,
+            isTmdbMedia: session.isTmdb,
+            tmdbMediaType: session.tmdbMediaType,
+            tmdbSeason: session.tmdbSeason,
+            tmdbEnglishTitle: session.tmdbEnglishTitle,
+            tmdbYear: session.tmdbYear,
           ),
         );
       } else {
         AnimeDetailScreen.navigate(
           context,
           mediaId: session.mediaId,
+          isTmdb: session.isTmdb,
         );
       }
     } else {

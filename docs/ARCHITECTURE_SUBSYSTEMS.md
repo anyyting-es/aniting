@@ -107,6 +107,8 @@ This document provides in-depth architectural specifications and implementation 
   - Connects to Seanime community extension marketplace.
   - Supports torrent providers, online stream extractors, manga providers, and anime news.
   - Sandboxed Goja JS runtime in backend executes user extension scripts.
+  - Online stream extensions declare `providerType` (`anime`, `tmdb`, `both`). Legacy extensions that only send `supportsTmdb` are treated as `both`, so Anime and TMDB pickers only offer compatible providers.
+  - Streaming providers may return **torrent sources** (`type: "torrent"`, magnet `url`, optional `infoHash` / `fileIndex`). The app starts them through `POST /torrentstream/start-magnet` and plays the local `/api/v1/torrentstream/stream/...` endpoint. Torrentio uses this path for TMDB movies and series.
   - Automatic version checks and 1-tap in-app updates for extensions.
 
 ---

@@ -62,6 +62,28 @@ class FakeSeanimeRepository extends SeanimeRepository {
         language: 'typescript',
         manifestUri: 'https://example.com/mangadex/manifest.json',
       ),
+      const ExtensionItem(
+        id: 'espanime',
+        name: 'EspAnime',
+        version: '1.0.1',
+        author: 'Aniting',
+        description: 'Spanish streaming',
+        type: 'onlinestream-provider',
+        providerType: 'anime',
+        language: 'javascript',
+        manifestUri: 'https://example.com/espanime/manifest.json',
+      ),
+      const ExtensionItem(
+        id: 'vidsrc-tmdb',
+        name: 'VidSrc TMDB',
+        version: '1.0.1',
+        author: 'Aniting',
+        description: 'Movies & series (TMDB)',
+        type: 'onlinestream-provider',
+        providerType: 'tmdb',
+        language: 'javascript',
+        manifestUri: 'https://example.com/vidsrc/manifest.json',
+      ),
     ];
   }
 }
@@ -109,14 +131,26 @@ void main() {
       expect(find.text('Plugins'), findsNothing);
       expect(find.text(l10n.animeTorrents), findsWidgets);
       expect(find.text(l10n.manga), findsWidgets);
-      expect(find.text(l10n.onlineStreamingTab), findsOneWidget);
-      expect(find.text(l10n.customSources), findsOneWidget);
+      expect(find.text(l10n.onlineStreamingTab), findsWidgets);
+      expect(find.text(l10n.tmdbStreamingTab), findsWidgets);
 
       // Dynamic extensions rendered from repository (Plugin type extensions are filtered out)
       expect(find.text('AIOStreams'), findsNothing);
       expect(find.text('aiostreams-plugin'), findsNothing);
       expect(find.text('ACG.RIP'), findsOneWidget);
       expect(find.text('mangadex-provider'), findsOneWidget);
+      expect(find.text('EspAnime'), findsOneWidget);
+      expect(find.text('VidSrc TMDB'), findsOneWidget);
+
+      // TMDB-only providers have their own section
+      await tester.tap(find.widgetWithText(FilterChip, l10n.tmdbStreamingTab));
+      await tester.pumpAndSettle();
+      expect(find.text('VidSrc TMDB'), findsOneWidget);
+      expect(find.text('EspAnime'), findsNothing);
+
+      // Reset to All Types
+      await tester.tap(find.widgetWithText(FilterChip, l10n.allTypes));
+      await tester.pumpAndSettle();
 
       // Filter by type: tap 'Anime Torrents' chip
       await tester.tap(find.widgetWithText(FilterChip, l10n.animeTorrents));

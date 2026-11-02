@@ -19,7 +19,7 @@ Future<void> showDesktopEpisodeSourceDialog(
   required ValueChanged<OnlinestreamProvider?> onProviderChanged,
   required VoidCallback onToggleDubbed,
   required VoidCallback onPlayOnline,
-  required VoidCallback onPlayTorrent,
+  VoidCallback? onPlayTorrent,
   VoidCallback? onPlayLocal,
   VoidCallback? onDownloadOnline,
   VoidCallback? onDownloadTorrent,
@@ -53,7 +53,7 @@ class DesktopEpisodeSourceDialog extends ConsumerStatefulWidget {
   final ValueChanged<OnlinestreamProvider?> onProviderChanged;
   final VoidCallback onToggleDubbed;
   final VoidCallback onPlayOnline;
-  final VoidCallback onPlayTorrent;
+  final VoidCallback? onPlayTorrent;
   final VoidCallback? onPlayLocal;
   final VoidCallback? onDownloadOnline;
   final VoidCallback? onDownloadTorrent;
@@ -68,7 +68,7 @@ class DesktopEpisodeSourceDialog extends ConsumerStatefulWidget {
     required this.onProviderChanged,
     required this.onToggleDubbed,
     required this.onPlayOnline,
-    required this.onPlayTorrent,
+    this.onPlayTorrent,
     this.onPlayLocal,
     this.onDownloadOnline,
     this.onDownloadTorrent,
@@ -81,6 +81,19 @@ class DesktopEpisodeSourceDialog extends ConsumerStatefulWidget {
 
 class _DesktopEpisodeSourceDialogState
     extends ConsumerState<DesktopEpisodeSourceDialog> {
+  late OnlinestreamProvider? _selectedProvider;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedProvider = widget.selectedProvider;
+  }
+
+  void _selectProvider(OnlinestreamProvider? provider) {
+    setState(() => _selectedProvider = provider);
+    widget.onProviderChanged(provider);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -232,14 +245,14 @@ class _DesktopEpisodeSourceDialogState
                   autofocus: !hasLocal,
                   icon: AppIcons.globe(iconPack),
                   title: l10n.onlineStreaming,
-                  subtitle: widget.selectedProvider?.name ?? l10n.source,
+                  subtitle: _selectedProvider?.name ?? l10n.source,
                   trailing: widget.providers.isNotEmpty
                       ? GlassMenuAnchor(
                           width: 220,
                           items: widget.providers.map((p) {
-                            final isCurrent = widget.selectedProvider?.id == p.id;
+                            final isCurrent = _selectedProvider?.id == p.id;
                             return GlassMenuItem(
-                              label: p.name,
+                              label: p.isBoth ? '${p.name} · TMDB' : p.name,
                               icon: Icon(
                                 isCurrent
                                     ? AppIcons.checkCircleFilled(iconPack)
@@ -251,7 +264,7 @@ class _DesktopEpisodeSourceDialogState
                                           : theme.colorScheme.primary)
                                     : null,
                               ),
-                              onPressed: () => widget.onProviderChanged(p),
+                              onPressed: () => _selectProvider(p),
                             );
                           }).toList(),
                           builder: (ctx, controller) => IconButton(
@@ -270,19 +283,21 @@ class _DesktopEpisodeSourceDialogState
                     widget.onPlayOnline();
                   },
                 ),
-                const SizedBox(height: 10),
 
-                // ─── Source 3: Torrent Streaming ───
-                _SourceActionTile(
-                  icon: AppIcons.cloudDownload(iconPack),
-                  title: l10n.torrentStreaming,
-                  subtitle: 'P2P • Buscar torrents',
-                  isDark: isDark,
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    widget.onPlayTorrent();
-                  },
-                ),
+                // ─── Source 3: Torrent Streaming (anime only) ───
+                if (widget.onPlayTorrent != null) ...[
+                  const SizedBox(height: 10),
+                  _SourceActionTile(
+                    icon: AppIcons.cloudDownload(iconPack),
+                    title: l10n.torrentStreaming,
+                    subtitle: 'P2P • Buscar torrents',
+                    isDark: isDark,
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      widget.onPlayTorrent!();
+                    },
+                  ),
+                ],
               ],
             ),
           ),

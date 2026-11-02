@@ -30,6 +30,10 @@ class PlayerWatchContent extends ConsumerWidget {
   final ValueListenable<Duration>? positionNotifier;
   final Future<Uint8List?> Function()? captureFrame;
 
+  /// Whether the comments thread is rendered. External libraries (Plex /
+  /// Jellyfin) and TMDB detail pages have no local comments.
+  final bool showComments;
+
   const PlayerWatchContent({
     super.key,
     this.mediaId,
@@ -44,6 +48,7 @@ class PlayerWatchContent extends ConsumerWidget {
     this.headerTrailing,
     this.positionNotifier,
     this.captureFrame,
+    this.showComments = true,
   });
 
   String _resolveSynopsis() {
@@ -117,28 +122,30 @@ class PlayerWatchContent extends ConsumerWidget {
             onSeekToChapter: onSeekToChapter,
           ),
         ],
-        const SizedBox(height: 36),
-        Row(
-          children: [
-            Icon(AppIcons.chatBubble(iconPack), size: 20, color: theme.colorScheme.primary),
-            const SizedBox(width: 8),
-            Text(
-              l10n.comments,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                fontSize: 17,
+        if (showComments) ...[
+          const SizedBox(height: 36),
+          Row(
+            children: [
+              Icon(AppIcons.chatBubble(iconPack), size: 20, color: theme.colorScheme.primary),
+              const SizedBox(width: 8),
+              Text(
+                l10n.comments,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 17,
+                ),
               ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        PlayerChatPanel(
-          mediaId: mediaId,
-          episodeNumber: episodeNumber,
-          embedded: true,
-          positionNotifier: positionNotifier,
-          captureFrame: captureFrame,
-        ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          PlayerChatPanel(
+            mediaId: mediaId,
+            episodeNumber: episodeNumber,
+            embedded: true,
+            positionNotifier: positionNotifier,
+            captureFrame: captureFrame,
+          ),
+        ],
       ],
     );
   }

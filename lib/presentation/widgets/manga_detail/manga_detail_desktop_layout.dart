@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:g1455/g1455.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/preferences/title_language_provider.dart';
+import 'package:seanime_app/core/utils/synopsis_utils.dart';
 import 'package:seanime_app/data/models/manga_entry.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/widgets/anime_detail/desktop/desktop_hero_banner.dart';
@@ -94,16 +95,7 @@ class _MangaDetailDesktopLayoutState extends ConsumerState<MangaDetailDesktopLay
   }
 
   String _cleanHtml(String? html) {
-    if (html == null) return '';
-    return html
-        .replaceAll(RegExp(r'<br\s*/?>'), '\n')
-        .replaceAll(RegExp(r'</?i>'), '')
-        .replaceAll(RegExp(r'</?b>'), '')
-        .replaceAll(RegExp(r'</?p>'), '\n\n')
-        .replaceAll(RegExp(r'&quot;'), '"')
-        .replaceAll(RegExp(r'&amp;'), '&')
-        .replaceAll(RegExp(r'&#039;'), "'")
-        .trim();
+    return cleanSynopsis(html);
   }
 
   @override

@@ -7,6 +7,7 @@ import 'package:seanime_app/core/preferences/playback_progress_preferences_provi
 import 'package:seanime_app/core/theme/smooth_scroll_controller.dart';
 import 'package:seanime_app/data/models/anime_details.dart';
 import 'package:seanime_app/data/models/anizip_data.dart';
+import 'package:seanime_app/data/models/episode_item.dart';
 import 'package:seanime_app/data/models/onlinestream_models.dart';
 import 'package:seanime_app/data/models/library_entry_details.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
@@ -44,6 +45,15 @@ class DesktopEpisodesTab extends ConsumerStatefulWidget {
   final VoidCallback onToggleLocalMode;
   final ValueChanged<AnimeDetailTab> onTabChanged;
   final VoidCallback? onMoveUpToPlay;
+
+  /// When the episodes come from an external source (Plex/Jellyfin) there is no
+  /// local library entry to load, so skip every local/anime library lookup.
+  final bool isExternalSource;
+
+  /// TMDB mode: render [tmdbEpisodes] with the same cards as Anime.
+  final bool isTmdb;
+  final List<EpisodeItem>? tmdbEpisodes;
+
   final Future<void> Function({
     required int episodeNumber,
     required String episodeTitle,
@@ -75,6 +85,9 @@ class DesktopEpisodesTab extends ConsumerStatefulWidget {
     required this.onToggleLocalMode,
     required this.onTabChanged,
     this.onMoveUpToPlay,
+    this.isExternalSource = false,
+    this.isTmdb = false,
+    this.tmdbEpisodes,
     this.onOpenTorrentSelector,
   });
 
@@ -109,6 +122,7 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab>
   @override
   void initState() {
     super.initState();
+    if (widget.isExternalSource || widget.isTmdb) return;
     final repo = ref.read(repositoryProvider);
     final cached =
         repo.getCachedAnimeLibraryEntry(widget.mediaId) ??
@@ -132,6 +146,7 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab>
   }
 
   Future<void> _loadLocalEntry({bool silent = false}) async {
+    if (widget.isExternalSource || widget.isTmdb) return;
     if (!mounted) return;
     if (!silent) {
       setState(() => _isLoadingLocal = true);
@@ -244,7 +259,11 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab>
         0.0,
         _horizontalScrollController.position.maxScrollExtent,
       );
-      _horizontalScrollController.jumpTo(offset);
+      _horizontalScrollController.animateTo(
+        offset,
+        duration: const Duration(milliseconds: 420),
+        curve: Curves.easeOutCubic,
+      );
     });
   }
 
@@ -339,6 +358,23 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab>
     DownloadingEpisodesState downloadingEpisodes,
     List<DownloadHistoryItem> historyItems,
   ) {
+    // TMDB episodes already come merged with local files from EpisodesNotifier.
+    if (widget.isTmdb) {
+      return (widget.tmdbEpisodes ?? const <EpisodeItem>[])
+          .map(
+            (ep) => DesktopEpisodeItemData(
+              number: ep.number,
+              title: ep.title,
+              synopsis: ep.synopsis,
+              image: ep.image,
+              isWatched: widget.progress >= ep.number,
+              isDownloaded: ep.isDownloaded,
+              localFilePath: ep.localFilePath,
+            ),
+          )
+          .toList();
+    }
+
     final aniZipData = widget.aniZipData ?? widget.details?.aniZipData;
 
     // Fast-path: return cached list instantly if no relevant dependency changed
@@ -643,6 +679,22 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab>
     );
 
     if (items.isEmpty && !_isLoadingLocal && !widget.isLoadingAniZip) {
+      if (widget.isTmdb) {
+        return SizedBox(
+          height: 290,
+          child: Center(
+            child: Text(
+              l10n.noEpisodesFound,
+              style: TextStyle(
+                fontSize: 14,
+                color: isDark
+                    ? Colors.white70
+                    : theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        );
+      }
       return _buildLocalEmptyState(theme, l10n, iconPack);
     }
 

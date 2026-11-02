@@ -208,6 +208,7 @@ class TmdbService {
         queryParameters: {
           'api_key': apiKey,
           'language': language,
+          'append_to_response': 'credits,videos,external_ids',
         },
       );
       final details = TmdbShowDetails.fromJson(
@@ -225,6 +226,7 @@ class TmdbService {
             queryParameters: {
               'api_key': apiKey,
               'language': language,
+              'append_to_response': 'credits,videos,external_ids',
             },
           );
           final details = TmdbShowDetails.fromJson(
@@ -239,13 +241,15 @@ class TmdbService {
     }
   }
 
-  /// Fetches the episodes of a specific season of a TV show
+  /// Fetches the episodes of a specific season of a TV show.
+  /// If TMDB standard /tv//season/ returns empty, queries TMDB Episode Groups
+  /// (mirroring Jellyfin's TMDbClient.GetTvEpisodeGroupsAsync / GetSeriesGroupAsync).
   Future<List<TmdbEpisode>> getSeasonEpisodes(
     int seriesId,
     int seasonNumber, {
     String language = 'es-ES',
   }) async {
-    final cacheKey = '$seriesId-s$seasonNumber-$language';
+    final cacheKey = '$seriesId-$seasonNumber-$language';
     if (_seasonEpisodesCache.containsKey(cacheKey)) {
       return _seasonEpisodesCache[cacheKey]!;
     }
@@ -261,11 +265,93 @@ class TmdbService {
       final episodes = rawList
           .map((e) => TmdbEpisode.fromJson(e as Map<String, dynamic>))
           .toList();
-      _seasonEpisodesCache[cacheKey] = episodes;
-      return episodes;
-    } catch (_) {
-      return [];
+      if (episodes.isNotEmpty) {
+        _seasonEpisodesCache[cacheKey] = episodes;
+        return episodes;
+      }
+    } catch (_) {}
+
+    // Fallback to TMDB Episode Groups (Jellyfin display ordering mechanism)
+    if (seasonNumber > 0) {
+      final groupEpisodes = await getEpisodeGroupSeasonEpisodes(seriesId, seasonNumber, language: language);
+      if (groupEpisodes.isNotEmpty) {
+        _seasonEpisodesCache[cacheKey] = groupEpisodes;
+        return groupEpisodes;
+      }
     }
+
+    return [];
+  }
+
+  /// Fetches episodes from TMDB Episode Groups (e.g. TV / Cours / DVD orders), exactly as Jellyfin does.
+  Future<List<TmdbEpisode>> getEpisodeGroupSeasonEpisodes(
+    int seriesId,
+    int seasonNumber, {
+    String language = 'es-ES',
+  }) async {
+    try {
+      final res = await _dio.get(
+        '/tv/$seriesId/episode_groups',
+        queryParameters: {
+          'api_key': apiKey,
+          'language': language,
+        },
+      );
+      final rawGroups = res.data['results'] as List<dynamic>? ?? [];
+      if (rawGroups.isEmpty) return [];
+
+      dynamic selectedGroup;
+      for (final g in rawGroups) {
+        final count = (g['group_count'] as num?)?.toInt() ?? 0;
+        if (count >= seasonNumber) {
+          selectedGroup = g;
+          final t = (g['type'] as num?)?.toInt() ?? 0;
+          if (t == 1 || t == 3) break;
+        }
+      }
+
+      if (selectedGroup == null && rawGroups.isNotEmpty) {
+        selectedGroup = rawGroups.first;
+      }
+
+      final groupId = selectedGroup?['id'] as String?;
+      if (groupId == null || groupId.isEmpty) return [];
+
+      final groupRes = await _dio.get(
+        '/tv/episode_group/$groupId',
+        queryParameters: {
+          'api_key': apiKey,
+          'language': language,
+        },
+      );
+
+      final groupsList = groupRes.data['groups'] as List<dynamic>? ?? [];
+      final matchedGroup = groupsList.firstWhere(
+        (grp) => (grp['order'] as num?)?.toInt() == seasonNumber,
+        orElse: () => null,
+      );
+
+      if (matchedGroup != null && matchedGroup['episodes'] is List) {
+        final rawEps = matchedGroup['episodes'] as List<dynamic>;
+        return rawEps.map((e) {
+          final epNum = (e['order'] as num?) != null
+              ? ((e['order'] as num).toInt() + 1)
+              : ((e['episode_number'] as num?)?.toInt() ?? 1);
+          return TmdbEpisode(
+            id: e['id'] as int? ?? 0,
+            name: (e['name'] ?? 'Episodio $epNum') as String,
+            episodeNumber: epNum,
+            seasonNumber: seasonNumber,
+            overview: e['overview'] as String?,
+            stillPath: e['still_path'] as String?,
+            airDate: e['air_date'] as String?,
+            voteAverage: (e['vote_average'] as num?)?.toDouble(),
+            runtime: (e['runtime'] as num?)?.toInt(),
+          );
+        }).toList();
+      }
+    } catch (_) {}
+    return [];
   }
 
   static final Map<String, TmdbMediaAssets?> _assetsCache = {};
@@ -361,9 +447,10 @@ class TmdbService {
 
       String? logoUrl;
       if (logos.isNotEmpty) {
-        final isEs = language.toLowerCase().startsWith('es');
-        final primaryLang = isEs ? 'es' : 'en';
-        final secondaryLang = isEs ? 'en' : 'es';
+        // Prefer the app language, then fall back to English.
+        final normalized = language.toLowerCase().split(RegExp(r'[-_]')).first;
+        final primaryLang = normalized.isEmpty ? 'en' : normalized;
+        const secondaryLang = 'en';
 
         Map<String, dynamic>? findBestLogo(String lang) {
           final matching = logos.where((l) => l['iso_639_1'] == lang).toList();
@@ -385,7 +472,8 @@ class TmdbService {
 
         final filePath = selectedLogo['file_path'] as String?;
         if (filePath != null && filePath.isNotEmpty) {
-          logoUrl = '$imageBaseUrl$filePath';
+          final isSvg = filePath.toLowerCase().endsWith('.svg');
+          logoUrl = '${isSvg ? 'https://image.tmdb.org/t/p/original' : imageBaseUrl}$filePath';
         }
       }
 
@@ -420,13 +508,38 @@ class TmdbService {
     int? tmdbId,
     int? tvdbId,
     bool isMovie = false,
+    String language = 'en',
   }) async {
     final assets = await getMediaAssets(
       tmdbId: tmdbId,
       tvdbId: tvdbId,
       isMovie: isMovie,
+      language: language,
     );
     return assets?.logoUrl;
+  }
+
+  /// Synchronous cache lookup so callers can render a cached logo on the very
+  /// first frame instead of flashing a text fallback first.
+  String? getCachedLogoUrl({
+    int? tmdbId,
+    int? tvdbId,
+    bool isMovie = false,
+    String language = 'en',
+  }) {
+    final cacheKey = '$tmdbId-$tvdbId-$isMovie-$language';
+    final memory = _assetsCache[cacheKey];
+    if (memory?.logoUrl != null && memory!.logoUrl!.isNotEmpty) {
+      return memory.logoUrl;
+    }
+    if (_prefs != null) {
+      final raw = _prefs!.getString('tmdb_assets_$cacheKey');
+      if (raw != null && raw.isNotEmpty) {
+        final parts = raw.split('|||');
+        if (parts.isNotEmpty && parts[0].isNotEmpty) return parts[0];
+      }
+    }
+    return null;
   }
 }
 

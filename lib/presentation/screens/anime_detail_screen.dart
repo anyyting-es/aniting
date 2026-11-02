@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show SystemUiOverlayStyle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
@@ -15,6 +16,8 @@ import 'package:seanime_app/data/models/anime_entry.dart';
 import 'package:seanime_app/data/models/anizip_data.dart';
 import 'package:seanime_app/data/models/library_entry_details.dart';
 import 'package:seanime_app/data/models/tmdb_models.dart';
+import 'package:seanime_app/core/media_servers/models/media_server_config.dart';
+import 'package:seanime_app/core/media_servers/models/media_server_item.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/preferences/tmdb_preferences_provider.dart';
 import 'package:seanime_app/data/services/tmdb_service.dart';
@@ -23,6 +26,8 @@ import 'package:seanime_app/data/services/custom_anime_assets_service.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/providers/download_history_provider.dart';
 import 'package:seanime_app/presentation/screens/video_player_screen.dart';
+import 'package:seanime_app/presentation/screens/media_servers/media_server_show_detail_screen.dart';
+import 'package:seanime_app/presentation/widgets/anime_detail/anime_detail_back_button.dart';
 import 'package:seanime_app/presentation/widgets/anime_detail/anime_detail_desktop_layout.dart';
 import 'package:seanime_app/presentation/widgets/anime_detail/anime_detail_mobile_layout.dart';
 import 'package:seanime_app/presentation/widgets/anime_details_modal_sheet.dart';
@@ -39,6 +44,8 @@ class AnimeDetailScreen extends ConsumerStatefulWidget {
   final bool initialLocalMode;
   final bool? isTmdb;
   final Object? heroTag;
+  final MediaServerItem? mediaServerShow;
+  final MediaServerConfig? mediaServerServer;
 
   static SharedPreferences? _cachedPrefs;
   static void setCachedPrefs(SharedPreferences prefs) => _cachedPrefs = prefs;
@@ -50,6 +57,8 @@ class AnimeDetailScreen extends ConsumerStatefulWidget {
     this.initialLocalMode = false,
     this.isTmdb,
     this.heroTag,
+    this.mediaServerShow,
+    this.mediaServerServer,
   });
 
   /// Opens the AnimeDetailScreen with a smooth, cinematic transition.
@@ -60,6 +69,8 @@ class AnimeDetailScreen extends ConsumerStatefulWidget {
     bool initialLocalMode = false,
     bool? isTmdb,
     Object? heroTag,
+    MediaServerItem? mediaServerShow,
+    MediaServerConfig? mediaServerServer,
   }) {
     final resolvedIsTmdb = isTmdb ?? (initialEntry?.isTmdb ?? false);
     return Navigator.push<T>(
@@ -71,6 +82,8 @@ class AnimeDetailScreen extends ConsumerStatefulWidget {
           initialLocalMode: initialLocalMode,
           isTmdb: resolvedIsTmdb,
           heroTag: heroTag,
+          mediaServerShow: mediaServerShow,
+          mediaServerServer: mediaServerServer,
         ),
       ),
     );
@@ -806,7 +819,11 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
                   return FadeTransition(opacity: animation, child: child);
                 },
                 child: _isLoading
-                    ? _buildLoadingGate(effectiveTheme, animeAccentColor)
+                    ? _buildLoadingGate(
+                        effectiveTheme,
+                        animeAccentColor,
+                        isMobile: effectiveLayout == LayoutMode.mobile,
+                      )
                     : _buildContent(effectiveLayout, effectiveHasLocal),
               ),
             );
@@ -816,7 +833,11 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
     );
   }
 
-  Widget _buildLoadingGate(ThemeData effectiveTheme, Color animeAccentColor) {
+  Widget _buildLoadingGate(
+    ThemeData effectiveTheme,
+    Color animeAccentColor, {
+    required bool isMobile,
+  }) {
     final repo = ref.read(repositoryProvider);
     final posterUrl =
         widget.initialEntry?.coverImage ??
@@ -835,6 +856,31 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
     return Scaffold(
       key: const ValueKey('anime_loading_gate'),
       backgroundColor: effectiveTheme.scaffoldBackgroundColor,
+      extendBodyBehindAppBar: isMobile,
+      appBar: isMobile
+          ? AppBar(
+              automaticallyImplyLeading: false,
+              backgroundColor: Colors.transparent,
+              surfaceTintColor: Colors.transparent,
+              elevation: 0,
+              scrolledUnderElevation: 0,
+              systemOverlayStyle: SystemUiOverlayStyle(
+                statusBarColor: Colors.transparent,
+                statusBarIconBrightness: Brightness.light,
+                statusBarBrightness: Brightness.dark,
+                systemNavigationBarColor: effectiveTheme.scaffoldBackgroundColor,
+                systemNavigationBarIconBrightness:
+                    isDark ? Brightness.light : Brightness.dark,
+                systemNavigationBarDividerColor: Colors.transparent,
+              ),
+              leading: Center(
+                child: AnimeDetailBackButton(
+                  color: Colors.white,
+                  onPressed: () => Navigator.maybePop(context),
+                ),
+              ),
+            )
+          : null,
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -876,45 +922,46 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
             ),
           ),
 
-          // ─── 4. Top-Left Back Button (Always allow exiting during load) ───
-          Positioned(
-            top: 24,
-            left: 40,
-            child: Focus(
-              skipTraversal: true,
-              canRequestFocus: false,
-              descendantsAreFocusable: false,
-              child: M3EIconButton(
-                decoration: M3EIconButtonDecoration(
-                  backgroundColor: WidgetStateProperty.resolveWith((states) {
-                    if (states.contains(WidgetState.pressed)) {
-                      return Colors.white.withValues(alpha: 0.24);
-                    }
-                    if (states.contains(WidgetState.hovered) ||
-                        states.contains(WidgetState.focused)) {
-                      return Colors.white.withValues(alpha: 0.18);
-                    }
-                    return Colors.white.withValues(alpha: 0.10);
-                  }),
-                  foregroundColor: WidgetStateProperty.all(Colors.white),
-                  side: WidgetStateProperty.all(
-                    BorderSide(
-                      color: Colors.white.withValues(alpha: 0.18),
-                      width: 1.0,
+          // ─── 4. Top-Left Back Button (Desktop; mobile uses the AppBar) ───
+          if (!isMobile)
+            Positioned(
+              top: 24,
+              left: 40,
+              child: Focus(
+                skipTraversal: true,
+                canRequestFocus: false,
+                descendantsAreFocusable: false,
+                child: M3EIconButton(
+                  decoration: M3EIconButtonDecoration(
+                    backgroundColor: WidgetStateProperty.resolveWith((states) {
+                      if (states.contains(WidgetState.pressed)) {
+                        return Colors.white.withValues(alpha: 0.24);
+                      }
+                      if (states.contains(WidgetState.hovered) ||
+                          states.contains(WidgetState.focused)) {
+                        return Colors.white.withValues(alpha: 0.18);
+                      }
+                      return Colors.white.withValues(alpha: 0.10);
+                    }),
+                    foregroundColor: WidgetStateProperty.all(Colors.white),
+                    side: WidgetStateProperty.all(
+                      BorderSide(
+                        color: Colors.white.withValues(alpha: 0.18),
+                        width: 1.0,
+                      ),
                     ),
                   ),
+                  size: M3EIconButtonSize.sm,
+                  tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+                  icon: Icon(
+                    AppIcons.arrowLeft(ref.watch(iconPackProvider)),
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                  onPressed: () => Navigator.maybePop(context),
                 ),
-                size: M3EIconButtonSize.sm,
-                tooltip: MaterialLocalizations.of(context).backButtonTooltip,
-                icon: Icon(
-                  AppIcons.arrowLeft(ref.watch(iconPackProvider)),
-                  color: Colors.white,
-                  size: 20,
-                ),
-                onPressed: () => Navigator.maybePop(context),
               ),
             ),
-          ),
         ],
       ),
     );
@@ -924,9 +971,10 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
     switch (effectiveLayout) {
       case LayoutMode.desktop:
       case LayoutMode.tv:
-        return KeyedSubtree(
-          key: const ValueKey('anime_detail_content_desktop'),
-          child: AnimeDetailDesktopLayout(
+        return _withMediaServerPlay(
+          KeyedSubtree(
+            key: const ValueKey('anime_detail_content_desktop'),
+            child: AnimeDetailDesktopLayout(
             mediaId: widget.mediaId,
             initialEntry: widget.initialEntry,
             heroTag: widget.heroTag,
@@ -947,33 +995,74 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
             onOpenTorrentSelector: _openTorrentSelector,
             onOpenDetailsModal: _openDetailsModal,
           ),
-        );
+        ),
+        false,
+      );
 
       case LayoutMode.auto:
       case LayoutMode.mobile:
-        return Scaffold(
-          key: const ValueKey('anime_detail_content_mobile'),
-          extendBodyBehindAppBar: true,
-          body: AnimeDetailMobileLayout(
-            mediaId: widget.mediaId,
-            initialEntry: widget.initialEntry,
-            heroTag: widget.heroTag,
-            details: _details,
-            aniZipData: _aniZipData,
-            isLoading: false,
-            isLoadingAniZip: _isLoadingAniZip,
-            isLocalMode: _isLocalMode,
-            hasLocalFiles: effectiveHasLocal,
-            currentTab: _currentTab,
-            scrollController: _scrollController,
-            onToggleLocalMode: _toggleLocalMode,
-            onTabChanged: _changeTab,
-            onOpenEditEntryModal: _openEditEntryModal,
-            onRetryAniZip: _retryAniZip,
-            onOpenTorrentSelector: _openTorrentSelector,
-            onOpenDetailsModal: _openDetailsModal,
+        return _withMediaServerPlay(
+          Scaffold(
+            key: const ValueKey('anime_detail_content_mobile'),
+            extendBodyBehindAppBar: true,
+            body: AnimeDetailMobileLayout(
+              mediaId: widget.mediaId,
+              initialEntry: widget.initialEntry,
+              heroTag: widget.heroTag,
+              details: _details,
+              aniZipData: _aniZipData,
+              isLoading: false,
+              isLoadingAniZip: _isLoadingAniZip,
+              isLocalMode: _isLocalMode,
+              hasLocalFiles: effectiveHasLocal,
+              currentTab: _currentTab,
+              scrollController: _scrollController,
+              onToggleLocalMode: _toggleLocalMode,
+              onTabChanged: _changeTab,
+              onOpenEditEntryModal: _openEditEntryModal,
+              onRetryAniZip: _retryAniZip,
+              onOpenTorrentSelector: _openTorrentSelector,
+              onOpenDetailsModal: _openDetailsModal,
+            ),
           ),
+          true,
         );
     }
+  }
+
+  Widget _withMediaServerPlay(Widget child, bool isMobile) {
+    final show = widget.mediaServerShow;
+    final server = widget.mediaServerServer;
+    if (show == null || server == null) return child;
+
+    final l10n = ref.read(translationsProvider);
+    return Stack(
+      children: [
+        Positioned.fill(child: child),
+        Positioned(
+          right: 20,
+          bottom: isMobile ? 96 : 24,
+          child: Material(
+            color: Colors.transparent,
+            child: M3EButton.icon(
+              onPressed: () {
+                Navigator.of(context).push(
+                  SmoothPageRoute(
+                    child: MediaServerShowDetailScreen(
+                      show: show,
+                      server: server,
+                    ),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.play_circle_outline_rounded, size: 20),
+              label: Text('${l10n.episodes} · ${server.name}'),
+              style: M3EButtonStyle.filled,
+              size: M3EButtonSize.sm,
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }

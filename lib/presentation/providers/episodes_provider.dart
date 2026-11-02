@@ -21,17 +21,21 @@ extension _IterableFirstWhereOrNull<T> on Iterable<T> {
   }
 }
 
-enum EpisodeFilterType {
-  all,
-  localOnly,
-  unwatched,
-}
+enum EpisodeFilterType { all, localOnly, unwatched }
 
 class EpisodesArgs {
   final int mediaId;
   final bool isTmdb;
 
-  const EpisodesArgs({required this.mediaId, required this.isTmdb});
+  /// `'movie'` or `'tv'`. Only meaningful when [isTmdb] is true: TMDB uses
+  /// different endpoints for both and the numeric ids overlap.
+  final String mediaType;
+
+  const EpisodesArgs({
+    required this.mediaId,
+    required this.isTmdb,
+    this.mediaType = 'tv',
+  });
 
   @override
   bool operator ==(Object other) =>
@@ -39,10 +43,11 @@ class EpisodesArgs {
       other is EpisodesArgs &&
           runtimeType == other.runtimeType &&
           mediaId == other.mediaId &&
-          isTmdb == other.isTmdb;
+          isTmdb == other.isTmdb &&
+          mediaType == other.mediaType;
 
   @override
-  int get hashCode => mediaId.hashCode ^ isTmdb.hashCode;
+  int get hashCode => mediaId.hashCode ^ isTmdb.hashCode ^ mediaType.hashCode;
 }
 
 class EpisodesState {
@@ -68,6 +73,11 @@ class EpisodesState {
   final bool canSearchTorrents;
   final bool hasLocalFiles;
 
+  // TMDB playback context (only used when [isTmdb] is true).
+  final String tmdbMediaType;
+  final String? tmdbEnglishTitle;
+  final int? tmdbYear;
+
   const EpisodesState({
     required this.mediaId,
     required this.isTmdb,
@@ -88,6 +98,9 @@ class EpisodesState {
     this.canStreamOnline = false,
     this.canSearchTorrents = true,
     this.hasLocalFiles = false,
+    this.tmdbMediaType = 'tv',
+    this.tmdbEnglishTitle,
+    this.tmdbYear,
   });
 
   /// Returns episodes after applying season, filter, and sorting
@@ -112,9 +125,11 @@ class EpisodesState {
     }
 
     // Sort
-    list.sort((a, b) => isSortAscending
-        ? a.number.compareTo(b.number)
-        : b.number.compareTo(a.number));
+    list.sort(
+      (a, b) => isSortAscending
+          ? a.number.compareTo(b.number)
+          : b.number.compareTo(a.number),
+    );
 
     return list;
   }
@@ -129,7 +144,8 @@ class EpisodesState {
     return list.sublist(startIndex, endIndex);
   }
 
-  int get totalPages => (visibleEpisodes.length / episodesPerPage).ceil().clamp(1, 9999);
+  int get totalPages =>
+      (visibleEpisodes.length / episodesPerPage).ceil().clamp(1, 9999);
 
   EpisodesState copyWith({
     int? mediaId,
@@ -147,10 +163,14 @@ class EpisodesState {
     EpisodeFilterType? filter,
     List<OnlinestreamProvider>? compatibleProviders,
     OnlinestreamProvider? selectedProvider,
+    bool clearSelectedProvider = false,
     bool? isDubbed,
     bool? canStreamOnline,
     bool? canSearchTorrents,
     bool? hasLocalFiles,
+    String? tmdbMediaType,
+    String? tmdbEnglishTitle,
+    int? tmdbYear,
   }) {
     return EpisodesState(
       mediaId: mediaId ?? this.mediaId,
@@ -167,11 +187,16 @@ class EpisodesState {
       episodesPerPage: episodesPerPage ?? this.episodesPerPage,
       filter: filter ?? this.filter,
       compatibleProviders: compatibleProviders ?? this.compatibleProviders,
-      selectedProvider: selectedProvider ?? this.selectedProvider,
+      selectedProvider: clearSelectedProvider
+          ? null
+          : (selectedProvider ?? this.selectedProvider),
       isDubbed: isDubbed ?? this.isDubbed,
       canStreamOnline: canStreamOnline ?? this.canStreamOnline,
       canSearchTorrents: canSearchTorrents ?? this.canSearchTorrents,
       hasLocalFiles: hasLocalFiles ?? this.hasLocalFiles,
+      tmdbMediaType: tmdbMediaType ?? this.tmdbMediaType,
+      tmdbEnglishTitle: tmdbEnglishTitle ?? this.tmdbEnglishTitle,
+      tmdbYear: tmdbYear ?? this.tmdbYear,
     );
   }
 }
@@ -186,6 +211,7 @@ class EpisodesNotifier extends Notifier<EpisodesState> {
     return EpisodesState(
       mediaId: args.mediaId,
       isTmdb: args.isTmdb,
+      tmdbMediaType: args.mediaType,
       title: '',
       isLoading: true,
     );
@@ -196,14 +222,30 @@ class EpisodesNotifier extends Notifier<EpisodesState> {
   AniZipData? _cachedAniZipData;
 
   void toggleLayout() => state = state.copyWith(isGridView: !state.isGridView);
-  void toggleSort() => state = state.copyWith(isSortAscending: !state.isSortAscending, currentPage: 0);
-  void setFilter(EpisodeFilterType filter) => state = state.copyWith(filter: filter, currentPage: 0);
+  void toggleSort() => state = state.copyWith(
+    isSortAscending: !state.isSortAscending,
+    currentPage: 0,
+  );
+  void setFilter(EpisodeFilterType filter) =>
+      state = state.copyWith(filter: filter, currentPage: 0);
   void setPage(int page) => state = state.copyWith(currentPage: page);
 
   Future<void> selectSeason(int season) async {
-    state = state.copyWith(selectedSeason: season, currentPage: 0);
-    if (state.isTmdb) {
+    if (state.selectedSeason == season) return;
+    state = state.copyWith(
+      selectedSeason: season,
+      currentPage: 0,
+      isLoading: true,
+      allEpisodes: const [],
+    );
+    if (!state.isTmdb) return;
+    try {
       await _loadTmdbEpisodes(_cachedTmdbDetails);
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: e.toString(),
+      );
     }
   }
 
@@ -223,7 +265,14 @@ class EpisodesNotifier extends Notifier<EpisodesState> {
   }) async {
     if (animeDetails != null) _cachedAnimeDetails = animeDetails;
     if (aniZipData != null) _cachedAniZipData = aniZipData;
-    if (tmdbDetails != null) _cachedTmdbDetails = tmdbDetails;
+    if (tmdbDetails != null) {
+      _cachedTmdbDetails = tmdbDetails;
+      if (state.isTmdb) {
+        state = state.copyWith(
+          tmdbMediaType: tmdbDetails.isMovie ? 'movie' : 'tv',
+        );
+      }
+    }
 
     state = state.copyWith(isLoading: true, errorMessage: null);
 
@@ -242,20 +291,67 @@ class EpisodesNotifier extends Notifier<EpisodesState> {
     final tmdbService = ref.read(tmdbServiceProvider);
     final isSpanish = ref.read(appLanguageProvider) == AppLanguage.es;
     final lang = isSpanish ? 'es-ES' : 'en-US';
+    final wantsMovie = state.tmdbMediaType.toLowerCase() == 'movie';
 
-    final resolvedDetails = details ??
-        await tmdbService.getShowDetails(state.mediaId, language: lang);
+    var resolvedDetails =
+        details ??
+        await tmdbService.getShowDetails(
+          state.mediaId,
+          language: lang,
+          isMovie: wantsMovie,
+        );
+
+    // A wrong media-type guess would query the other TMDB endpoint, and
+    // numeric TMDB ids overlap between movies and shows. Retry once with the
+    // opposite endpoint so we never show a different title.
+    resolvedDetails ??= await tmdbService.getShowDetails(
+      state.mediaId,
+      language: lang,
+      isMovie: !wantsMovie,
+    );
 
     if (resolvedDetails == null) {
-      state = state.copyWith(isLoading: false, errorMessage: 'No details found');
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'No details found',
+      );
       return;
     }
     _cachedTmdbDetails = resolvedDetails;
 
+    final tmdbMediaType = resolvedDetails.isMovie ? 'movie' : 'tv';
+    final tmdbEnglishTitle = resolvedDetails.originalName;
+    int? tmdbYear;
+    final airDate = resolvedDetails.firstAirDate;
+    if (airDate != null && airDate.length >= 4) {
+      tmdbYear = int.tryParse(airDate.substring(0, 4));
+    }
+
+    // Only providers that declare TMDB support can resolve these ids; anime
+    // providers would query AniList with the TMDB id.
+    List<OnlinestreamProvider> providers = [];
+    try {
+      providers =
+          (await ref.read(repositoryProvider).getOnlinestreamProviders())
+              .where((p) => p.supportsTmdb)
+              .toList();
+    } catch (_) {}
+    final preferredProvider = state.selectedProvider;
+    final selectedProvider = providers.isEmpty
+        ? null
+        : (preferredProvider != null &&
+                  providers.any((p) => p.id == preferredProvider.id)
+              ? preferredProvider
+              : providers.first);
+
     // Check local shows library files
     final showsCollection = ref.read(showsCollectionProvider).asData?.value;
-    final showEntry = showsCollection?.shows.firstWhereOrNull((s) => s.tmdbId == state.mediaId);
-    final hasLocal = showEntry != null && (showEntry.files.isNotEmpty || showEntry.seasons.isNotEmpty);
+    final showEntry = showsCollection?.shows.firstWhereOrNull(
+      (s) => s.tmdbId == state.mediaId,
+    );
+    final hasLocal =
+        showEntry != null &&
+        (showEntry.files.isNotEmpty || showEntry.seasons.isNotEmpty);
 
     if (resolvedDetails.isMovie) {
       final localMovie = showEntry?.files.firstOrNull;
@@ -277,20 +373,42 @@ class EpisodesNotifier extends Notifier<EpisodesState> {
         allEpisodes: [ep],
         seasons: const [],
         isLoading: false,
-        canStreamOnline: false,
+        compatibleProviders: providers,
+        selectedProvider: selectedProvider,
+        clearSelectedProvider: selectedProvider == null,
+        canStreamOnline: providers.isNotEmpty,
         canSearchTorrents: true,
         hasLocalFiles: hasLocal,
+        tmdbMediaType: tmdbMediaType,
+        tmdbEnglishTitle: tmdbEnglishTitle,
+        tmdbYear: tmdbYear,
       );
       return;
     }
 
-    // TV Series: Extract seasons
-    final seasonsList = resolvedDetails.seasons
-        .where((s) => s.seasonNumber > 0)
+    // TV Series: Extract and merge seasons from TMDB and local files
+    final localSeasons =
+        showEntry?.seasons.keys.where((s) => s >= 0).toList() ?? <int>[];
+    final tmdbSeasons = resolvedDetails.seasons
+        .where((s) => s.seasonNumber >= 0)
         .map((s) => s.seasonNumber)
         .toList();
+    final seasonsSet = <int>{...tmdbSeasons, ...localSeasons};
+    final seasonsList = seasonsSet.toList()..sort();
+    if (seasonsList.isEmpty) {
+      seasonsList.add(1);
+    }
 
-    final currentSeason = state.selectedSeason ?? (seasonsList.isNotEmpty ? seasonsList.first : 1);
+    // Prefer a regular season (1+) over specials (season 0) when opening a show.
+    var defaultSeason = seasonsList.first;
+    for (final season in seasonsList) {
+      if (season >= 1) {
+        defaultSeason = season;
+        break;
+      }
+    }
+
+    final currentSeason = state.selectedSeason ?? defaultSeason;
 
     final episodesList = await tmdbService.getSeasonEpisodes(
       state.mediaId,
@@ -298,18 +416,106 @@ class EpisodesNotifier extends Notifier<EpisodesState> {
       language: lang,
     );
 
-    final seasonFiles = showEntry?.seasons[currentSeason] ?? const <ShowLocalFileItem>[];
+    final seasonFiles =
+        showEntry?.seasons[currentSeason] ?? const <ShowLocalFileItem>[];
 
     final items = <EpisodeItem>[];
-    for (final tmdbEp in episodesList) {
-      final localMatch = seasonFiles.firstWhereOrNull((f) => f.episode == tmdbEp.episodeNumber);
+    final matchedLocalPaths = <String>{};
 
-      items.add(EpisodeItem.fromTmdb(
-        tmdbEp,
-        isDownloaded: localMatch != null,
-        localFilePath: localMatch?.path,
-      ));
+    if (episodesList.isNotEmpty) {
+      for (final tmdbEp in episodesList) {
+        final localMatch = seasonFiles.firstWhereOrNull(
+          (f) => f.episode == tmdbEp.episodeNumber,
+        );
+        if (localMatch != null) {
+          matchedLocalPaths.add(localMatch.path);
+        }
+
+        items.add(
+          EpisodeItem.fromTmdb(
+            tmdbEp,
+            isDownloaded: localMatch != null,
+            localFilePath: localMatch?.path,
+          ),
+        );
+      }
+
+      // Add any local files for this season that were not matched to a TMDB episode
+      for (final lf in seasonFiles) {
+        if (!matchedLocalPaths.contains(lf.path)) {
+          items.add(
+            EpisodeItem(
+              id: 'local_s_e_',
+              number: lf.episode,
+              seasonNumber: lf.season,
+              title: lf.parsedTitle.isNotEmpty ? lf.parsedTitle : lf.name,
+              synopsis: '',
+              isDownloaded: true,
+              localFilePath: lf.path,
+            ),
+          );
+        }
+      }
+    } else {
+      // TMDB has no episodes for this season (e.g. TMDB grouped 24 eps into Season 1, while user has Season 2)
+      // Check if TMDB Season 1 has cumulative episodes that match this season's episodes
+      List<TmdbEpisode>? tmdbS1Episodes;
+      int previousEpisodesOffset = 0;
+      if (currentSeason > 1 && showEntry != null) {
+        for (int s = 1; s < currentSeason; s++) {
+          previousEpisodesOffset += showEntry.seasons[s]?.length ?? 0;
+        }
+        if (previousEpisodesOffset > 0) {
+          tmdbS1Episodes = await tmdbService.getSeasonEpisodes(
+            state.mediaId,
+            1,
+            language: lang,
+          );
+        }
+      }
+
+      for (final lf in seasonFiles) {
+        TmdbEpisode? matchedCumulative;
+        if (tmdbS1Episodes != null && tmdbS1Episodes.isNotEmpty) {
+          final targetCumulativeEp = previousEpisodesOffset + lf.episode;
+          matchedCumulative = tmdbS1Episodes.firstWhereOrNull(
+            (e) => e.episodeNumber == targetCumulativeEp,
+          );
+        }
+
+        if (matchedCumulative != null) {
+          items.add(
+            EpisodeItem(
+              id: 'tmdb_',
+              number: lf.episode,
+              seasonNumber: currentSeason,
+              title: matchedCumulative.name,
+              synopsis: matchedCumulative.overview,
+              image: matchedCumulative.stillPath,
+              airDate: matchedCumulative.airDate,
+              durationMinutes: matchedCumulative.runtime,
+              rating: matchedCumulative.voteAverage,
+              isDownloaded: true,
+              localFilePath: lf.path,
+            ),
+          );
+        } else {
+          items.add(
+            EpisodeItem(
+              id: 'local_s_e_',
+              number: lf.episode,
+              seasonNumber: currentSeason,
+              title: lf.parsedTitle.isNotEmpty ? lf.parsedTitle : lf.name,
+              synopsis: '',
+              isDownloaded: true,
+              localFilePath: lf.path,
+            ),
+          );
+        }
+      }
     }
+
+    items.sort((a, b) => a.number.compareTo(b.number));
 
     state = state.copyWith(
       title: resolvedDetails.name,
@@ -317,13 +523,22 @@ class EpisodesNotifier extends Notifier<EpisodesState> {
       seasons: seasonsList,
       selectedSeason: currentSeason,
       isLoading: false,
-      canStreamOnline: false,
+      compatibleProviders: providers,
+      selectedProvider: selectedProvider,
+      clearSelectedProvider: selectedProvider == null,
+      canStreamOnline: providers.isNotEmpty,
       canSearchTorrents: true,
       hasLocalFiles: hasLocal,
+      tmdbMediaType: tmdbMediaType,
+      tmdbEnglishTitle: tmdbEnglishTitle,
+      tmdbYear: tmdbYear,
     );
   }
 
-  Future<void> _loadAnimeEpisodes(AnimeDetails? details, AniZipData? aniZipData) async {
+  Future<void> _loadAnimeEpisodes(
+    AnimeDetails? details,
+    AniZipData? aniZipData,
+  ) async {
     final repo = ref.read(repositoryProvider);
     final titleLang = ref.read(titleLanguageProvider);
     final animeTitle = details?.displayTitle(titleLang) ?? '';
@@ -335,32 +550,44 @@ class EpisodesNotifier extends Notifier<EpisodesState> {
     } catch (_) {}
 
     final hasLocal = libraryEntry?.episodes.any((e) => e.isDownloaded) ?? false;
-    final totalEpisodes = details?.totalEpisodes ?? details?.episodes.length ?? aniZipData?.episodeCount ?? (libraryEntry?.episodes.length ?? 0);
+    final totalEpisodes =
+        details?.totalEpisodes ??
+        details?.episodes.length ??
+        aniZipData?.episodeCount ??
+        (libraryEntry?.episodes.length ?? 0);
     final maxEp = totalEpisodes > 0 ? totalEpisodes : 24;
 
     final items = <EpisodeItem>[];
     final watchedProgress = libraryEntry?.progress ?? 0;
 
     for (int epNum = 1; epNum <= maxEp; epNum++) {
-      final zipEp = aniZipData?.episodes.firstWhereOrNull((e) => e.episodeNumber == epNum);
-      final localMatch = libraryEntry?.episodes.firstWhereOrNull((e) => e.episodeNumber == epNum);
+      final zipEp = aniZipData?.episodes.firstWhereOrNull(
+        (e) => e.episodeNumber == epNum,
+      );
+      final localMatch = libraryEntry?.episodes.firstWhereOrNull(
+        (e) => e.episodeNumber == epNum,
+      );
       final isWatched = watchedProgress >= epNum;
 
-      items.add(EpisodeItem.fromAniZip(
-        epNum,
-        zipEp,
-        fallbackTitle: localMatch?.displayTitle,
-        fallbackImage: details?.coverImage,
-        isWatched: isWatched,
-        isDownloaded: localMatch?.isDownloaded ?? false,
-        localFilePath: localMatch?.localFilePath,
-      ));
+      items.add(
+        EpisodeItem.fromAniZip(
+          epNum,
+          zipEp,
+          fallbackTitle: localMatch?.displayTitle,
+          fallbackImage: details?.coverImage,
+          isWatched: isWatched,
+          isDownloaded: localMatch?.isDownloaded ?? false,
+          localFilePath: localMatch?.localFilePath,
+        ),
+      );
     }
 
     // Load compatible anime onlinestream extensions
     List<OnlinestreamProvider> providers = [];
     try {
-      providers = await repo.getOnlinestreamProviders();
+      providers = (await repo.getOnlinestreamProviders())
+          .where((p) => p.supportsAnime)
+          .toList();
     } catch (_) {}
 
     state = state.copyWith(
@@ -368,21 +595,35 @@ class EpisodesNotifier extends Notifier<EpisodesState> {
       allEpisodes: items,
       isLoading: false,
       compatibleProviders: providers,
-      selectedProvider: providers.isNotEmpty ? (state.selectedProvider ?? providers.first) : null,
+      selectedProvider: providers.isNotEmpty
+          ? (state.selectedProvider ?? providers.first)
+          : null,
       canStreamOnline: providers.isNotEmpty,
       canSearchTorrents: true,
       hasLocalFiles: hasLocal,
     );
   }
 
-  /// Launch universal playback
-  Future<void> playEpisode(BuildContext context, EpisodeItem episode) async {
+  /// Launch universal playback.
+  ///
+  /// [provider] overrides the currently selected online provider for this
+  /// playback (used by the episode source picker).
+  Future<void> playEpisode(
+    BuildContext context,
+    EpisodeItem episode, {
+    OnlinestreamProvider? provider,
+  }) async {
     final serverManager = ref.read(serverManagerProvider);
     final title = state.title.isNotEmpty ? state.title : 'Media';
-    final episodeTitle = 'EP ${episode.number}. ${episode.title}';
+    final isTmdbMovie = state.isTmdb && state.tmdbMediaType == 'movie';
+    final episodeTitle = isTmdbMovie
+        ? (episode.title.isNotEmpty ? episode.title : title)
+        : 'EP ${episode.number}. ${episode.title}';
+    final onlineProvider = provider ?? state.selectedProvider;
 
     if (episode.isDownloaded && episode.localFilePath != null) {
-      final streamUrl = 'http://${serverManager.host}:${serverManager.port}/api/v1/mediastream/file?path=${Uri.encodeComponent(episode.localFilePath!)}';
+      final streamUrl =
+          'http://${serverManager.host}:${serverManager.port}/api/v1/mediastream/file?path=${Uri.encodeComponent(episode.localFilePath!)}';
       final fileName = episode.localFilePath!.split(RegExp(r'[/\\]')).last;
 
       Navigator.of(context, rootNavigator: true).push(
@@ -394,6 +635,14 @@ class EpisodesNotifier extends Notifier<EpisodesState> {
           episodeNumber: episode.number,
           videoSource: 'Local • $fileName',
           isLocalFile: true,
+          animeDetails: _cachedAnimeDetails,
+          aniZipData: _cachedAniZipData,
+          hideComments: state.isTmdb,
+          isTmdbMedia: state.isTmdb,
+          tmdbMediaType: state.tmdbMediaType,
+          tmdbSeason: state.selectedSeason,
+          tmdbEnglishTitle: state.tmdbEnglishTitle,
+          tmdbYear: state.tmdbYear,
         ),
       );
       return;
@@ -408,17 +657,25 @@ class EpisodesNotifier extends Notifier<EpisodesState> {
           title: title,
           episodeTitle: episodeTitle,
           episodeNumber: episode.number,
-          videoSource: state.selectedProvider?.name ?? 'Online',
-          onlineStreamProvider: state.selectedProvider?.id,
+          videoSource: onlineProvider?.name ?? 'Online',
+          onlineStreamProvider: onlineProvider?.id,
           onlineStreamDubbed: state.isDubbed,
           onlineStreamServer: null,
+          animeDetails: _cachedAnimeDetails,
+          aniZipData: _cachedAniZipData,
+          hideComments: state.isTmdb,
+          isTmdbMedia: state.isTmdb,
+          tmdbMediaType: state.tmdbMediaType,
+          tmdbSeason: state.selectedSeason,
+          tmdbEnglishTitle: state.tmdbEnglishTitle,
+          tmdbYear: state.tmdbYear,
         ),
       );
     }
   }
 }
 
-final episodesControllerProvider =
-    NotifierProvider.autoDispose.family<EpisodesNotifier, EpisodesState, EpisodesArgs>(
-  (args) => EpisodesNotifier(args),
-);
+final episodesControllerProvider = NotifierProvider.autoDispose
+    .family<EpisodesNotifier, EpisodesState, EpisodesArgs>(
+      (args) => EpisodesNotifier(args),
+    );

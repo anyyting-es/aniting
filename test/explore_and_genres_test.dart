@@ -165,8 +165,7 @@ void main() {
       await tester.pump();
 
       expect(find.text('Calendario de emisión'), findsOneWidget);
-      expect(find.text('Hoy'), findsOneWidget);
-      expect(find.byIcon(Icons.refresh_rounded), findsOneWidget);
+      expect(find.text('HOY'), findsOneWidget);
     });
   });
 }

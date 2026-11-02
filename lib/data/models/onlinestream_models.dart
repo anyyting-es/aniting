@@ -1,12 +1,17 @@
 import 'package:seanime_app/core/i18n/translations/translations.dart';
 
+/// What kind of media an onlinestream provider can resolve.
+///
+/// `anime` = AniList/AniDB ids, `tmdb` = TMDB movies/series, `both` = both.
+enum OnlinestreamProviderType { anime, tmdb, both }
+
 class OnlinestreamProvider {
   final String id;
   final String name;
   final String lang;
   final List<String> episodeServers;
   final bool supportsDub;
-  final bool supportsTmdb;
+  final OnlinestreamProviderType type;
 
   const OnlinestreamProvider({
     required this.id,
@@ -14,20 +19,62 @@ class OnlinestreamProvider {
     this.lang = 'multi',
     this.episodeServers = const [],
     this.supportsDub = false,
-    this.supportsTmdb = false,
+    this.type = OnlinestreamProviderType.anime,
   });
 
+  /// Backwards-compatible getter for callers that only need TMDB support.
+  bool get supportsTmdb => type != OnlinestreamProviderType.anime;
+
+  bool get supportsAnime => type != OnlinestreamProviderType.tmdb;
+
+  bool get isTmdbOnly => type == OnlinestreamProviderType.tmdb;
+
+  bool get isBoth => type == OnlinestreamProviderType.both;
+
+  /// Short capability label for badges: "Anime", "TMDB" or "Anime + TMDB".
+  String get capabilityLabel => switch (type) {
+        OnlinestreamProviderType.anime => 'Anime',
+        OnlinestreamProviderType.tmdb => 'TMDB',
+        OnlinestreamProviderType.both => 'Anime + TMDB',
+      };
+
   factory OnlinestreamProvider.fromJson(Map<String, dynamic> json) {
+    final legacySupportsTmdb = json['supportsTmdb'] as bool? ?? false;
+    final rawType = json['providerType']?.toString().toLowerCase();
+    final OnlinestreamProviderType type;
+    switch (rawType) {
+      case 'tmdb':
+      case 'tv':
+      case 'movie':
+        type = OnlinestreamProviderType.tmdb;
+        break;
+      case 'both':
+      case 'all':
+        type = OnlinestreamProviderType.both;
+        break;
+      case 'anime':
+      case 'anilist':
+        type = OnlinestreamProviderType.anime;
+        break;
+      default:
+        // Legacy extensions only declare supportsTmdb. Assume they also serve
+        // anime; TMDB-only extensions should send providerType: "tmdb".
+        type = legacySupportsTmdb
+            ? OnlinestreamProviderType.both
+            : OnlinestreamProviderType.anime;
+    }
+
     return OnlinestreamProvider(
       id: json['id'] as String? ?? '',
       name: json['name'] as String? ?? 'Sin nombre',
       lang: json['lang'] as String? ?? 'multi',
-      episodeServers: (json['episodeServers'] as List?)
+      episodeServers:
+          (json['episodeServers'] as List?)
               ?.map((e) => e.toString())
               .toList() ??
           const [],
       supportsDub: json['supportsDub'] as bool? ?? false,
-      supportsTmdb: json['supportsTmdb'] as bool? ?? false,
+      type: type,
     );
   }
 }
@@ -115,6 +162,15 @@ class OnlinestreamVideoSource {
   final String? label;
   final String? type;
   final List<OnlinestreamSubtitle> subtitles;
+  final String? infoHash;
+  final int? fileIndex;
+  final int? seeders;
+  final int? size;
+  final String? sizeFormatted;
+  final List<String> languages;
+  final String? codec;
+  final String? indexer;
+  final String? releaseName;
 
   const OnlinestreamVideoSource({
     required this.server,
@@ -124,13 +180,30 @@ class OnlinestreamVideoSource {
     this.label,
     this.type,
     this.subtitles = const [],
+    this.infoHash,
+    this.fileIndex,
+    this.seeders,
+    this.size,
+    this.sizeFormatted,
+    this.languages = const [],
+    this.codec,
+    this.indexer,
+    this.releaseName,
   });
 
   bool get isHls =>
-      type == 'm3u8' ||
-      url.contains('.m3u8') ||
-      url.contains('/segs/') ||
-      url.contains('/hls/');
+      type != 'torrent' &&
+      (type == 'm3u8' ||
+          url.contains('.m3u8') ||
+          url.contains('/segs/') ||
+          url.contains('/hls/'));
+
+  /// A torrent source must be resolved by the torrent engine instead of being
+  /// played directly. Torrentio and similar indexers return magnets/infoHashes.
+  bool get isTorrent =>
+      type == 'torrent' ||
+      url.startsWith('magnet:') ||
+      (url.trim().isEmpty && infoHash != null && infoHash!.isNotEmpty);
 
   factory OnlinestreamVideoSource.fromJson(Map<String, dynamic> json) {
     Map<String, String>? headersMap;
@@ -155,6 +228,17 @@ class OnlinestreamVideoSource {
       label: json['label'] as String?,
       type: json['type'] as String?,
       subtitles: subs,
+      infoHash: json['infoHash'] as String?,
+      fileIndex: (json['fileIndex'] as num?)?.toInt(),
+      seeders: (json['seeders'] as num?)?.toInt(),
+      size: (json['size'] as num?)?.toInt(),
+      sizeFormatted: json['sizeFormatted'] as String?,
+      languages:
+          (json['languages'] as List?)?.map((e) => e.toString()).toList() ??
+              const [],
+      codec: json['codec'] as String?,
+      indexer: json['indexer'] as String?,
+      releaseName: json['releaseName'] as String?,
     );
   }
 

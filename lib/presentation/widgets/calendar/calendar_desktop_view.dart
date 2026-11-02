@@ -84,7 +84,6 @@ class _CalendarDesktopViewState extends State<CalendarDesktopView> {
   }
 
   double _calculateColWidth(double totalWidth) {
-    // Generous minimum column width (290px) to prevent tiny text or cramped images
     return math.max(totalWidth / 4.5, 290.0);
   }
 
@@ -119,13 +118,11 @@ class _CalendarDesktopViewState extends State<CalendarDesktopView> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final totalWidth = constraints.maxWidth;
-        // Generous column width so elements are clearly visible without squinting
         final colWidth = _calculateColWidth(totalWidth);
         final contentWidth = colWidth * widget.days.length;
 
         return Column(
           children: [
-            // Full-width Day Tabs Header with animated sliding line indicator
             CalendarDayTabs(
               days: widget.days,
               selectedIndex: widget.selectedIndex,
@@ -134,6 +131,7 @@ class _CalendarDesktopViewState extends State<CalendarDesktopView> {
                 _scrollToSelectedDay(idx);
               },
               isSpanish: widget.isSpanish,
+              todayLabel: widget.l10n.today,
               columnWidth: colWidth,
               scrollController: _headerScrollController,
             ),
@@ -154,7 +152,6 @@ class _CalendarDesktopViewState extends State<CalendarDesktopView> {
                       final isSelected = dayIdx == widget.selectedIndex;
                       final dayItems = _getSchedulesForDay(day);
 
-                      // Build column list items including CalendarNowMarker if today
                       final columnWidgets = <Widget>[];
 
                       if (dayItems.isEmpty) {
@@ -179,7 +176,6 @@ class _CalendarDesktopViewState extends State<CalendarDesktopView> {
                         for (int i = 0; i < dayItems.length; i++) {
                           final item = dayItems[i];
 
-                          // Insert NowMarker before the first future episode if today
                           if (isToday && !markerInserted && item.airingAt > nowSeconds) {
                             columnWidgets.add(const CalendarNowMarker());
                             markerInserted = true;
@@ -193,7 +189,6 @@ class _CalendarDesktopViewState extends State<CalendarDesktopView> {
                           );
                         }
 
-                        // If all episodes are in past and today, add marker at the end
                         if (isToday && !markerInserted) {
                           columnWidgets.add(const CalendarNowMarker());
                         }
@@ -206,8 +201,8 @@ class _CalendarDesktopViewState extends State<CalendarDesktopView> {
                           color: isSelected
                               ? (isDark
                                   ? Colors.white.withValues(alpha: 0.015)
-                                  : theme.colorScheme.primary.withValues(alpha: 0.02))
-                              : Colors.transparent,
+                                  : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.15))
+                              : null,
                           border: Border(
                             right: BorderSide(
                               color: isDark
@@ -218,7 +213,7 @@ class _CalendarDesktopViewState extends State<CalendarDesktopView> {
                           ),
                         ),
                         child: ListView(
-                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+                          padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 8),
                           children: columnWidgets,
                         ),
                       );

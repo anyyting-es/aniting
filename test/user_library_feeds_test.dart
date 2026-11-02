@@ -256,9 +256,15 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.text('Conectar con AniList'), findsOneWidget);
+      // The service actions are icon tiles now (brand logos) with tooltips.
+      expect(find.byTooltip('AniList'), findsOneWidget);
+      expect(find.byTooltip('Plex'), findsOneWidget);
+      expect(find.byTooltip('Jellyfin'), findsOneWidget);
       expect(find.text('Explorar'), findsOneWidget);
-      expect(find.textContaining('conecta tu cuenta de AniList si deseas sincronizar tus listas'), findsOneWidget);
+      expect(
+        find.textContaining('conecta AniList, Plex o Jellyfin'),
+        findsOneWidget,
+      );
 
       await tester.tap(find.text('Explorar'));
       expect(explored, isTrue);

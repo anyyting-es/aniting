@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -9,10 +11,14 @@ import 'package:seanime_app/core/preferences/desktop_nav_style_provider.dart';
 import 'package:seanime_app/core/preferences/mobile_nav_style_provider.dart';
 import 'package:seanime_app/core/preferences/resume_bar_preferences_provider.dart';
 import 'package:seanime_app/core/preferences/section_visibility_provider.dart';
+import 'package:seanime_app/data/models/anime_entry.dart';
+import 'package:seanime_app/data/models/manga_entry.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/screens/airing_calendar_screen.dart';
+import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
 import 'package:seanime_app/presentation/screens/feed_screen.dart';
 import 'package:seanime_app/presentation/screens/library_screen.dart';
+import 'package:seanime_app/presentation/screens/manga_detail_screen.dart';
 import 'package:seanime_app/presentation/screens/manga_feed_screen.dart';
 import 'package:seanime_app/presentation/screens/search_screen.dart';
 import 'package:seanime_app/presentation/screens/settings_screen.dart';
@@ -20,6 +26,7 @@ import 'package:seanime_app/presentation/widgets/desktop_sidebar.dart';
 import 'package:seanime_app/presentation/widgets/floating_resume_bar.dart';
 import 'package:seanime_app/presentation/widgets/mobile_floating_nav.dart';
 import 'package:seanime_app/presentation/providers/app_update_provider.dart';
+import 'package:seanime_app/presentation/widgets/quick_search/feed_quick_search.dart';
 import 'package:seanime_app/presentation/widgets/shell_animated_indexed_stack.dart';
 import 'package:seanime_app/presentation/widgets/update/app_update_dialog.dart';
 
@@ -43,19 +50,29 @@ class _MainShellState extends ConsumerState<MainShell> {
   final ValueNotifier<bool> _isResumeExpandedNotifier = ValueNotifier<bool>(true);
   late final List<Widget> _pages;
 
+  /// Guards the command-palette shortcut while its dialog is on screen.
+  bool _isQuickSearchOpen = false;
+
   @override
   void initState() {
     super.initState();
+    _activeSection = ShellSection.anime;
     _pages = [
       RepaintBoundary(
         child: FeedScreen(
-          onOpenSearch: () => setState(() => _activeSection = ShellSection.explore),
+          onOpenSearch: () {
+            ref.read(searchViewActiveProvider.notifier).state = true;
+            setState(() => _activeSection = ShellSection.explore);
+          },
           onOpenSettings: _openSettings,
         ),
       ),
       RepaintBoundary(
         child: MangaFeedScreen(
-          onOpenSearch: () => setState(() => _activeSection = ShellSection.explore),
+          onOpenSearch: () {
+            ref.read(searchViewActiveProvider.notifier).state = true;
+            setState(() => _activeSection = ShellSection.explore);
+          },
           onOpenSettings: _openSettings,
         ),
       ),
@@ -71,6 +88,8 @@ class _MainShellState extends ConsumerState<MainShell> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkAutoUpdate();
     });
+
+    HardwareKeyboard.instance.addHandler(_handleGlobalShortcut);
   }
 
   static bool _hasCheckedForUpdatesOnStartup = false;
@@ -95,8 +114,61 @@ class _MainShellState extends ConsumerState<MainShell> {
 
   @override
   void dispose() {
+    HardwareKeyboard.instance.removeHandler(_handleGlobalShortcut);
     _isResumeExpandedNotifier.dispose();
     super.dispose();
+  }
+
+  /// Ctrl/Cmd + K opens the floating quick search from the anime and manga
+  /// feeds. Only the visible shell route reacts, so a pushed detail screen or
+  /// an open dialog keeps the shortcut to itself.
+  bool _handleGlobalShortcut(KeyEvent event) {
+    if (event is! KeyDownEvent) return false;
+    if (event.logicalKey != LogicalKeyboardKey.keyK) return false;
+
+    final keyboard = HardwareKeyboard.instance;
+    if (!keyboard.isControlPressed && !keyboard.isMetaPressed) return false;
+
+    if (_isQuickSearchOpen || _isSettingsOpen) return false;
+
+    final section = _activeSection;
+    if (section != ShellSection.anime && section != ShellSection.manga) {
+      return false;
+    }
+
+    final route = ModalRoute.of(context);
+    if (route != null && !route.isCurrent) return false;
+
+    unawaited(_openQuickSearch());
+    return true;
+  }
+
+  Future<void> _openQuickSearch() async {
+    if (_isQuickSearchOpen) return;
+    _isQuickSearchOpen = true;
+    try {
+      final selected = await showFeedQuickSearch(
+        context: context,
+        isManga: _activeSection == ShellSection.manga,
+      );
+      if (!mounted || selected == null) return;
+
+      if (selected is AnimeEntry) {
+        await AnimeDetailScreen.navigate(
+          context,
+          mediaId: selected.mediaId,
+          initialEntry: selected,
+        );
+      } else if (selected is MangaEntry) {
+        await MangaDetailScreen.navigate(
+          context,
+          mediaId: selected.mediaId,
+          initialEntry: selected,
+        );
+      }
+    } finally {
+      _isQuickSearchOpen = false;
+    }
   }
 
   bool _isSettingsOpen = false;
@@ -158,14 +230,10 @@ class _MainShellState extends ConsumerState<MainShell> {
 
     final avatarUrl = ref.watch(serverNotifierProvider.select((s) => s.status?.avatarUrl));
 
-    final animeEnabled = ref.watch(animeSectionEnabledProvider);
-    final showsEnabled = ref.watch(showsSectionEnabledProvider);
     final mangaEnabled = ref.watch(mangaSectionEnabledProvider);
 
-    final isHomeActive = animeEnabled || showsEnabled;
-
     final List<ShellSection> availableSections = [
-      if (isHomeActive) ShellSection.anime,
+      ShellSection.anime,
       if (mangaEnabled) ShellSection.manga,
       ShellSection.explore,
       ShellSection.calendar,
@@ -215,19 +283,10 @@ class _MainShellState extends ConsumerState<MainShell> {
       final s = availableSections[i];
       switch (s) {
         case ShellSection.anime:
-          final String homeLabel;
-          if (animeEnabled && !showsEnabled) {
-            homeLabel = l10n.navHome;
-          } else if (!animeEnabled && showsEnabled) {
-            homeLabel = l10n.shows;
-          } else {
-            homeLabel = l10n.navHome;
-          }
-
           final item = DesktopSidebarItem(
-            icon: (!animeEnabled && showsEnabled) ? Icons.movie_filter_rounded : AppIcons.home(iconPack),
-            selectedIcon: (!animeEnabled && showsEnabled) ? Icons.movie_filter_rounded : AppIcons.home(iconPack),
-            label: homeLabel,
+            icon: AppIcons.home(iconPack),
+            selectedIcon: AppIcons.home(iconPack),
+            label: l10n.navHome,
             targetIndex: i,
           );
           sidebarItems.add(item);
@@ -334,13 +393,18 @@ class _MainShellState extends ConsumerState<MainShell> {
                   bottom: 0,
                   child: DesktopSidebar(
                     selectedIndex: activeIndex,
-                    isSearchActive: _activeSection == ShellSection.explore,
+                    isSearchActive: _activeSection == ShellSection.explore && ref.watch(searchViewActiveProvider),
                     onDestinationSelected: (idx) {
                       if (idx >= 0 && idx < availableSections.length) {
-                        setState(() => _activeSection = availableSections[idx]);
+                        final section = availableSections[idx];
+                        if (section == ShellSection.explore) {
+                          ref.read(searchViewActiveProvider.notifier).state = false;
+                        }
+                        setState(() => _activeSection = section);
                       }
                     },
                     onSearchPressed: () {
+                      ref.read(searchViewActiveProvider.notifier).state = true;
                       setState(() => _activeSection = ShellSection.explore);
                     },
                     onSettingsPressed: _openSettings,

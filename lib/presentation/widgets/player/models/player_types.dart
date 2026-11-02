@@ -319,7 +319,8 @@ class PlayerChapter {
 enum PlayerPlaybackOrigin {
   online,
   torrent,
-  local;
+  local,
+  mediaServer;
 
   /// Whether the playback source can be switched (only online streams can).
   bool get isSwitchable => this == PlayerPlaybackOrigin.online;
@@ -330,6 +331,8 @@ enum PlayerPlaybackOrigin {
         return l10n.playingLocally;
       case PlayerPlaybackOrigin.torrent:
         return l10n.playingFromTorrent;
+      case PlayerPlaybackOrigin.mediaServer:
+        return l10n.playingFromMediaServer;
       case PlayerPlaybackOrigin.online:
         return l10n.playbackSources;
     }
@@ -341,6 +344,8 @@ enum PlayerPlaybackOrigin {
         return l10n.playingLocallyDesc;
       case PlayerPlaybackOrigin.torrent:
         return l10n.playingFromTorrentDesc;
+      case PlayerPlaybackOrigin.mediaServer:
+        return l10n.playingFromMediaServerDesc;
       case PlayerPlaybackOrigin.online:
         return l10n.tapToChangeProvider;
     }

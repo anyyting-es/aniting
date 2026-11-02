@@ -48,6 +48,15 @@ class SmoothScrollPosition extends ScrollPositionWithSingleContext {
       return;
     }
 
+    // Never fight a live user drag (touch, scrollbar thumb, etc.). The drag
+    // owns the position and expects its own notification details, so dispatching
+    // smooth-scroll updates here would trip Flutter's scroll activity asserts.
+    if (activity is DragScrollActivity) {
+      _futurePixels = pixels;
+      _stopTicker();
+      return;
+    }
+
     final double dt = _lastElapsed == Duration.zero
         ? 1.0 / 60.0
         : (elapsed - _lastElapsed).inMicroseconds / 1000000.0;
@@ -101,6 +110,13 @@ class SmoothScrollPosition extends ScrollPositionWithSingleContext {
 
   @override
   void pointerScroll(double delta) {
+    // If a drag is in progress (e.g. dragging the scrollbar thumb), cancel it
+    // before taking over with wheel smoothing so the activity is not a
+    // DragScrollActivity when our ticker dispatches updates.
+    if (activity is DragScrollActivity) {
+      goIdle();
+    }
+
     if (delta == 0.0) {
       goBallistic(0.0);
       return;

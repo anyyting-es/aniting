@@ -31,7 +31,7 @@ func (r *Repository) GetTmdbEpisodeSources(_ context.Context, provider string, m
 		return nil, fmt.Errorf("provider extension '%s' not found", provider)
 	}
 
-	if !providerExtension.GetProvider().GetSettings().SupportsTmdb {
+	if !providerExtension.GetProvider().GetSettings().SupportsTmdbMedia() {
 		return nil, fmt.Errorf("provider '%s' does not support TMDB media", provider)
 	}
 
@@ -167,6 +167,15 @@ func episodeDataToSource(episode *episodeData) *EpisodeSource {
 				Subtitles: lo.Map(vs.Subtitles, func(sub *hibikeonlinestream.VideoSubtitle, _ int) *Subtitle {
 					return subtitleFromProvider(sub)
 				}),
+				InfoHash:      vs.InfoHash,
+				FileIndex:     vs.FileIndex,
+				Seeders:       vs.Seeders,
+				Size:          vs.Size,
+				SizeFormatted: vs.SizeFormatted,
+				Languages:     vs.Languages,
+				Codec:         vs.Codec,
+				Indexer:       vs.Indexer,
+				ReleaseName:   vs.ReleaseName,
 			})
 		}
 	}

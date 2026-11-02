@@ -4,9 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
+import 'package:seanime_app/core/utils/synopsis_utils.dart';
 
 class DesktopHeader extends ConsumerStatefulWidget {
   final String? clearlogoUrl;
+
+  /// When true, the logo slot is reserved (showing the title inside it) while
+  /// the parent resolves a logo. Prevents the header from jumping later.
+  final bool isLogoPending;
   final bool isTmdb;
   final String seasonYearStr;
   final String title;
@@ -29,6 +34,7 @@ class DesktopHeader extends ConsumerStatefulWidget {
   const DesktopHeader({
     super.key,
     this.clearlogoUrl,
+    this.isLogoPending = false,
     this.isTmdb = false,
     this.seasonYearStr = '',
     required this.title,
@@ -113,9 +119,7 @@ class _DesktopHeaderState extends ConsumerState<DesktopHeader> {
     final iconPack = ref.watch(iconPackProvider);
 
     final effectiveExpanded = widget.isSynopsisExpanded ?? _isSynopsisExpanded;
-    final cleanDesc = widget.description
-        .replaceAll(RegExp(r'(\r?\n\s*){2,}'), '\n\n')
-        .trim();
+    final cleanDesc = cleanSynopsis(widget.description);
 
     final metaColor = isDark ? Colors.white.withValues(alpha: 0.85) : theme.colorScheme.onSurface;
     final descColor = isDark ? Colors.white.withValues(alpha: 0.75) : theme.colorScheme.onSurfaceVariant;
@@ -187,51 +191,91 @@ class _DesktopHeaderState extends ConsumerState<DesktopHeader> {
         mainAxisSize: MainAxisSize.min,
         children: [
           // ─── 1. Clear Logo or Text Title ───
-          if (showLogo) ...[
-            SizedBox(
-              height: 120,
-              child: Align(
-                alignment: Alignment.bottomLeft,
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    maxHeight: 120,
-                    maxWidth: 480,
+          Builder(
+            builder: (context) {
+              final titleBlock = Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    widget.title,
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -0.4,
+                      height: 1.15,
+                      color: isDark ? Colors.white : theme.colorScheme.onSurface,
+                      shadows: textShadows,
+                    ),
                   ),
-                  child: _buildLogo(widget.clearlogoUrl!),
+                  if (widget.subtitle != null &&
+                      widget.subtitle!.isNotEmpty &&
+                      widget.subtitle != widget.title) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      widget.subtitle!,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: -0.2,
+                        height: 1.25,
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.70)
+                            : theme.colorScheme.onSurfaceVariant,
+                        shadows: textShadows,
+                      ),
+                    ),
+                  ],
+                ],
+              );
+
+              final reserveLogoSlot = showLogo || widget.isLogoPending;
+
+              return AnimatedSize(
+                duration: const Duration(milliseconds: 260),
+                curve: Curves.easeOutCubic,
+                alignment: Alignment.topLeft,
+                child: SizedBox(
+                  width: double.infinity,
+                  height: reserveLogoSlot ? 120 : null,
+                  child: Align(
+                    alignment: Alignment.bottomLeft,
+                    child: reserveLogoSlot
+                        ? AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 220),
+                            switchInCurve: Curves.easeOut,
+                            switchOutCurve: Curves.easeIn,
+                            layoutBuilder: (current, previous) => Stack(
+                              alignment: Alignment.bottomLeft,
+                              children: [...previous, ?current],
+                            ),
+                            child: showLogo
+                                ? KeyedSubtree(
+                                    key: const ValueKey('header_logo'),
+                                    child: ConstrainedBox(
+                                      constraints: const BoxConstraints(
+                                        maxHeight: 120,
+                                        maxWidth: 480,
+                                      ),
+                                      child: _buildLogo(widget.clearlogoUrl!),
+                                    ),
+                                  )
+                                : widget.isLogoPending
+                                ? const SizedBox.shrink(
+                                    key: ValueKey('header_logo_pending'),
+                                  )
+                                : KeyedSubtree(
+                                    key: const ValueKey('header_title_slot'),
+                                    child: titleBlock,
+                                  ),
+                          )
+                        : titleBlock,
+                  ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 12),
-          ] else ...[
-            Text(
-              widget.title,
-              style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.w900,
-                letterSpacing: -0.4,
-                height: 1.15,
-                color: isDark ? Colors.white : theme.colorScheme.onSurface,
-                shadows: textShadows,
-              ),
-            ),
-            if (widget.subtitle != null &&
-                widget.subtitle!.isNotEmpty &&
-                widget.subtitle != widget.title) ...[
-              const SizedBox(height: 6),
-              Text(
-                widget.subtitle!,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  letterSpacing: -0.2,
-                  height: 1.25,
-                  color: isDark ? Colors.white.withValues(alpha: 0.70) : theme.colorScheme.onSurfaceVariant,
-                  shadows: textShadows,
-                ),
-              ),
-            ],
-            const SizedBox(height: 12),
-          ],
+              );
+            },
+          ),
+          const SizedBox(height: 12),
 
         // ─── 2. Metadata Row: Year • Duration • [Rating / Status Pill] • [IMDb / Score Badge] ───
         Wrap(

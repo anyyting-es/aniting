@@ -101,6 +101,12 @@ class PlayerViewport extends ConsumerWidget {
   final ValueListenable<bool> isPlaying;
   final bool hasNextEpisode;
   final VoidCallback? onNextEpisode;
+  final List<UiTrack> audioTracks;
+  final List<UiTrack> subtitleTracks;
+  final String? selectedAudioTrackId;
+  final ValueChanged<UiTrack>? onAudioTrackSelected;
+  final ValueChanged<UiTrack?>? onSubtitleTrackSelected;
+  final ValueChanged<bool>? onMenuOpenChanged;
 
   const PlayerViewport({
     super.key,
@@ -159,6 +165,12 @@ class PlayerViewport extends ConsumerWidget {
     required this.isPlaying,
     required this.hasNextEpisode,
     this.onNextEpisode,
+    this.audioTracks = const [],
+    this.subtitleTracks = const [],
+    this.selectedAudioTrackId,
+    this.onAudioTrackSelected,
+    this.onSubtitleTrackSelected,
+    this.onMenuOpenChanged,
   });
 
   @override
@@ -489,6 +501,13 @@ class PlayerViewport extends ConsumerWidget {
                           onNextEpisode: onNextEpisode,
                           isFullscreen: isFullscreen,
                           isDesktopOverride: isDesktop,
+                          audioTracks: audioTracks,
+                          subtitleTracks: subtitleTracks,
+                          selectedAudioTrackId: selectedAudioTrackId,
+                          selectedSubtitleTrackId: selectedSubtitleTrackId,
+                          onAudioTrackSelected: onAudioTrackSelected,
+                          onSubtitleTrackSelected: onSubtitleTrackSelected,
+                          onMenuOpenChanged: onMenuOpenChanged,
                         );
                       },
                     ),

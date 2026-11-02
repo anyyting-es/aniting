@@ -66,7 +66,7 @@ class PlayerDesktopLayout extends StatefulWidget {
   /// It is a fixed amount (not a fraction of the video) so the room reserved
   /// for it in the page padding can be computed up-front and is guaranteed to
   /// be enough at every window size.
-  static const double _haloBleed = 56;
+  static const double haloBleed = 56;
 
   /// Below this width the rail no longer fits and is replaced by a button.
   static const double railBreakpoint =
@@ -213,16 +213,20 @@ class _PlayerDesktopLayoutState extends State<PlayerDesktopLayout>
               //
               // The room is reserved on both sides so the halo stays perfectly
               // symmetric and never reaches the viewport edge.
-              padding: EdgeInsets.fromLTRB(
+              //
+              // It is reserved **unconditionally**, never based on whether a
+              // halo is currently available: the player only builds the halo
+              // once the first frame is on screen. Keying the padding on its
+              // presence made the video column (and the whole centered page)
+              // visibly shrink and slide sideways the instant playback
+              // started, which read as the layout "jumping" right after
+              // opening an episode.
+              padding: const EdgeInsets.fromLTRB(
                 PlayerDesktopLayout._pageHorizontalPadding +
-                    (widget.ambientHalo != null
-                        ? PlayerDesktopLayout._haloBleed
-                        : 0),
+                    PlayerDesktopLayout.haloBleed,
                 0,
                 PlayerDesktopLayout._pageHorizontalPadding +
-                    (widget.ambientHalo != null
-                        ? PlayerDesktopLayout._haloBleed
-                        : 0),
+                    PlayerDesktopLayout.haloBleed,
                 48,
               ),
               children: [
@@ -383,10 +387,10 @@ class _PlayerDesktopLayoutState extends State<PlayerDesktopLayout>
                   // Bottom layer: the blurred wash. It bleeds past the frame
                   // and dissolves into the page on all four sides.
                   Positioned(
-                    left: -PlayerDesktopLayout._haloBleed,
-                    right: -PlayerDesktopLayout._haloBleed,
-                    top: -PlayerDesktopLayout._haloBleed,
-                    bottom: -PlayerDesktopLayout._haloBleed,
+                    left: -PlayerDesktopLayout.haloBleed,
+                    right: -PlayerDesktopLayout.haloBleed,
+                    top: -PlayerDesktopLayout.haloBleed,
+                    bottom: -PlayerDesktopLayout.haloBleed,
                     child: IgnorePointer(child: halo),
                   ),
                   // The video itself, painted on top of the wash.

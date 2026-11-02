@@ -135,13 +135,16 @@ class AppDpadNavigator {
   /// area to see each other during directional navigation.
   static List<FocusNode> _collectCandidates(FocusNode from) {
     final fromContext = from.context;
-    final route = fromContext != null ? ModalRoute.of(fromContext) : null;
+    final route = (fromContext != null && fromContext.mounted)
+        ? ModalRoute.of(fromContext)
+        : null;
 
     final scopes = <FocusScopeNode>[];
     FocusScopeNode? scope = from.nearestScope;
     while (scope != null) {
-      if (route != null && scope.context != null) {
-        final scopeRoute = ModalRoute.of(scope.context!);
+      final scopeContext = scope.context;
+      if (route != null && scopeContext != null && scopeContext.mounted) {
+        final scopeRoute = ModalRoute.of(scopeContext);
         if (scopeRoute != null && scopeRoute != route) break;
       }
       scopes.add(scope);
@@ -149,8 +152,9 @@ class AppDpadNavigator {
       final parent = scope.enclosingScope;
       if (parent == null || parent == scope) break;
 
-      if (route != null && parent.context != null) {
-        final parentRoute = ModalRoute.of(parent.context!);
+      final parentContext = parent.context;
+      if (route != null && parentContext != null && parentContext.mounted) {
+        final parentRoute = ModalRoute.of(parentContext);
         if (parentRoute == null || parentRoute != route) break;
       }
       scope = parent;
@@ -166,7 +170,7 @@ class AppDpadNavigator {
         if (node == from || node.hasFocus) continue;
         if (!_isUsable(node)) continue;
 
-        if (route != null && node.context != null) {
+        if (route != null && node.context != null && node.context!.mounted) {
           final nodeRoute = ModalRoute.of(node.context!);
           if (nodeRoute != null && nodeRoute != route) continue;
         }

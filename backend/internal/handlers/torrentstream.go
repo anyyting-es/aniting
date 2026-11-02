@@ -181,6 +181,45 @@ func (h *Handler) HandleTorrentstreamStartStream(c echo.Context) error {
 	return h.RespondWithData(c, true)
 }
 
+// HandleTorrentstreamStartMagnetStream
+//
+//	@summary starts a torrent stream from a magnet link.
+//	@desc This is used by TMDB torrent sources (e.g. Torrentio), which are not
+//	@desc tied to an AniList media or episode mapping.
+//	@returns bool
+//	@route /api/v1/torrentstream/start-magnet [POST]
+func (h *Handler) HandleTorrentstreamStartMagnetStream(c echo.Context) error {
+
+	type body struct {
+		Magnet       string `json:"magnet"`
+		InfoHash     string `json:"infoHash"`
+		FileIndex    *int   `json:"fileIndex,omitempty"`
+		FileNameHint string `json:"fileNameHint,omitempty"`
+		ClientId     string `json:"clientId"`
+	}
+
+	var b body
+	if err := c.Bind(&b); err != nil {
+		return h.RespondWithError(c, err)
+	}
+
+	b.ClientId = getRequestClientId(c, b.ClientId)
+
+	err := h.App.TorrentstreamRepository.StartMagnetStream(c.Request().Context(), &torrentstream.StartMagnetStreamOptions{
+		Magnet:       b.Magnet,
+		InfoHash:     b.InfoHash,
+		FileIndex:    b.FileIndex,
+		FileNameHint: b.FileNameHint,
+		ClientId:     b.ClientId,
+		UserAgent:    c.Request().Header.Get("User-Agent"),
+	})
+	if err != nil {
+		return h.RespondWithError(c, err)
+	}
+
+	return h.RespondWithData(c, true)
+}
+
 // HandleTorrentstreamStopStream
 //
 //	@summary stop a torrent stream.

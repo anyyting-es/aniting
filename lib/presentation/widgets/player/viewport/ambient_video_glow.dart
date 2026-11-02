@@ -88,20 +88,15 @@ class AmbientVideoGlow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget core = ImageFiltered(
-      imageFilter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
-      child: _buildTexture(),
-    );
+    Widget core = _buildTexture();
 
     if (softEdges) {
       // Two linear fades multiplied together: a soft rectangle with zero alpha
       // on every edge, so no hard cut can ever show.
       //
-      // The ramps are measured in **pixels**, not as a fraction of the box:
-      // the box is much larger than the band of glow that is actually visible
-      // around the frame, so a fractional ramp would leave the visible band
-      // almost transparent. A pixel-based ramp makes the glow strong right
-      // where it meets the player and fully transparent at the outer edge.
+      // Applied before [ImageFiltered] so the mask operates on the exact
+      // texture bounds instead of punching a rectangular hole inside the
+      // expanded blur layer.
       core = ShaderMask(
         blendMode: BlendMode.dstIn,
         shaderCallback: (rect) => _edgeFade(
@@ -118,6 +113,11 @@ class AmbientVideoGlow extends StatelessWidget {
         ),
       );
     }
+
+    core = ImageFiltered(
+      imageFilter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
+      child: core,
+    );
 
     if (scrimOpacity > 0) {
       core = Stack(

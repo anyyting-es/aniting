@@ -101,6 +101,7 @@ type (
 		EpisodeServers []string `json:"episodeServers"`
 		SupportsDub    bool     `json:"supportsDub"`
 		SupportsTmdb   bool     `json:"supportsTmdb"`
+		ProviderType   string   `json:"providerType"`
 	}
 
 	AnimeTorrentProviderExtensionItem struct {
@@ -404,7 +405,8 @@ func (r *Repository) ListOnlinestreamProviderExtensions() []*OnlinestreamProvide
 			Lang:           extension.GetExtensionLang(ext.GetLang()),
 			EpisodeServers: settings.EpisodeServers,
 			SupportsDub:    settings.SupportsDub,
-			SupportsTmdb:   settings.SupportsTmdb,
+			SupportsTmdb:   settings.SupportsTmdbMedia(),
+			ProviderType:   string(settings.NormalizedProviderType()),
 		})
 		return true
 	})

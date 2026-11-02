@@ -101,6 +101,7 @@ Use this directory to quickly locate any screen, widget, provider, or subsystem:
 | Component | Path | Description |
 | :--- | :--- | :--- |
 | **Player Viewport** | [`video_player_screen.dart`](file:///home/anthony/Documents/Eris/aniting/lib/presentation/screens/video_player_screen.dart) | Main video player view, orientation, gesture overlay |
+| **Ambient Video Glow** | [`ambient_video_glow.dart`](file:///home/anthony/Documents/Eris/aniting/lib/presentation/widgets/player/viewport/ambient_video_glow.dart) | Live GPU texture ambient halo & backdrop (`ShaderMask` before `ImageFiltered`) |
 | **Playback Coordinator**| [`player_playback_coordinator.dart`](file:///home/anthony/Documents/Eris/aniting/lib/presentation/widgets/player/services/player_playback_coordinator.dart) | Dual-engine manager (ExoPlayer + media_kit auto fallback) |
 | **Progress Manager** | [`player_progress_manager.dart`](file:///home/anthony/Documents/Eris/aniting/lib/presentation/widgets/player/services/player_progress_manager.dart) | Playback continuity, LastSession, AniList watch sync |
 | **Window Manager** | [`player_window_manager.dart`](file:///home/anthony/Documents/Eris/aniting/lib/presentation/widgets/player/services/player_window_manager.dart) | Fullscreen, window resizing, ExoPlayer surface bounds sync |
@@ -119,6 +120,8 @@ Use this directory to quickly locate any screen, widget, provider, or subsystem:
 | **Desktop Episodes** | [`desktop_episodes_tab.dart`](file:///home/anthony/Documents/Eris/aniting/lib/presentation/widgets/anime_detail/desktop/desktop_episodes_tab.dart) | Episode coordinator, online/torrent/local filters, pagination |
 | **Universal Episodes**| [`episodes_view.dart`](file:///home/anthony/Documents/Eris/aniting/lib/presentation/widgets/episodes/episodes_view.dart) | Universal episodes coordinator for Anime, TMDB Shows & Movies |
 | **Universal Card**     | [`episode_card.dart`](file:///home/anthony/Documents/Eris/aniting/lib/presentation/widgets/episodes/episode_card.dart) | Canonical 16:9 Grid and compact List episode card with continuity |
+| **Feed Quick Preview** | [`immersive_show_preview.dart`](file:///home/anthony/Documents/Eris/aniting/lib/presentation/widgets/anime_preview/immersive_show_preview.dart) | Immersive right-click / idle-hover preview (hero cover, blurred cover backdrop, accent-tinted) |
+| **Cast Detail View**  | [desktop_cast_detail_view.dart](file:///c:/Users/freff/Documents/Eris/aniting/lib/presentation/widgets/anime_detail/desktop/cast/desktop_cast_detail_view.dart) | Immersive blurred-stage cast view with Hero animation, bio, and Seiyuu card |
 
 ### 4.4. Torrent Subsystem & Visor de Torrents
 | Component | Path | Description |
@@ -199,3 +202,9 @@ Consulte la guía detallada en [`docs/BUILD_AND_RUN_GUIDE.md`](file:///home/anth
   ```bash
   flutter run -d linux
   ```
+- **Curador de custom metadata (Asset Studio)**:
+  ```bash
+  node tools/asset-studio/server.mjs   # http://127.0.0.1:3333
+  ```
+  Busca en AniList, resuelve TMDB con `anilist_tmdb_map.json` y guarda
+  poster/background/logo en `assets/data/custom_anime_assets.json`.

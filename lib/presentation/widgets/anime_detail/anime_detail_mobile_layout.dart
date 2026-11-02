@@ -1,4 +1,5 @@
 import 'dart:ui';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -20,7 +21,9 @@ import 'package:seanime_app/data/models/library_entry_details.dart';
 import 'package:seanime_app/data/models/onlinestream_models.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/providers/episode_selection_provider.dart';
+import 'package:seanime_app/presentation/providers/episodes_provider.dart';
 import 'package:seanime_app/presentation/screens/video_player_screen.dart';
+import 'package:seanime_app/presentation/widgets/anime_detail/anime_detail_back_button.dart';
 import 'package:seanime_app/presentation/widgets/anizip_episode_list.dart';
 import 'package:seanime_app/presentation/widgets/local_library_view.dart';
 import 'package:seanime_app/presentation/widgets/online_stream_view.dart';
@@ -30,7 +33,9 @@ import 'package:seanime_app/core/preferences/anime_favorites_provider.dart';
 import 'package:g1455/g1455.dart';
 import 'package:seanime_app/presentation/widgets/online_stream_download_dialog.dart';
 import 'package:seanime_app/data/services/offline_library_service.dart';
+
 import 'mobile/anime_detail_advanced_sheet.dart';
+
 import 'package:seanime_app/presentation/widgets/episodes/episodes_view.dart';
 import 'package:seanime_app/presentation/widgets/episodes/episode_batch_action_bar.dart';
 
@@ -58,7 +63,8 @@ class AnimeDetailMobileLayout extends ConsumerStatefulWidget {
     String? aniDBEpisode,
     bool isDownloadMode,
     List<int>? initialSelectedEpisodes,
-  }) onOpenTorrentSelector;
+  })
+  onOpenTorrentSelector;
   final VoidCallback onOpenDetailsModal;
   final Object? heroTag;
 
@@ -99,7 +105,8 @@ class _AnimeDetailMobileLayoutState
   bool _isDubbed = false;
   bool _isHeaderScrolled = false;
 
-  bool get isTmdb => widget.details?.isTmdb ?? widget.initialEntry?.isTmdb ?? false;
+  bool get isTmdb =>
+      widget.details?.isTmdb ?? widget.initialEntry?.isTmdb ?? false;
 
   @override
   void initState() {
@@ -126,7 +133,9 @@ class _AnimeDetailMobileLayoutState
     if (isTmdb) return;
     try {
       final repo = ref.read(repositoryProvider);
-      final list = await repo.getOnlinestreamProviders();
+      final list = (await repo.getOnlinestreamProviders())
+          .where((p) => p.supportsAnime)
+          .toList();
       OnlinestreamProvider? initialProvider;
       if (list.isNotEmpty) {
         try {
@@ -147,7 +156,57 @@ class _AnimeDetailMobileLayoutState
     } catch (_) {}
   }
 
+  /// Reuses the TMDB episodes controller so the hero play button picks the
+  /// same provider, season and metadata as the episode cards.
+  Future<void> _playTmdbNext(int progress) async {
+    final isMovie =
+        (widget.details?.format ?? widget.initialEntry?.format ?? '')
+            .toUpperCase() ==
+        'MOVIE';
+    final args = EpisodesArgs(
+      mediaId: widget.mediaId,
+      isTmdb: true,
+      mediaType: isMovie ? 'movie' : 'tv',
+    );
+    final provider = episodesControllerProvider(args);
+    // Keep the auto-dispose controller alive while episodes/providers load.
+    final link = ref.listenManual(provider, (_, _) {});
+    try {
+      var state = ref.read(provider);
+      if (state.allEpisodes.isEmpty) {
+        await ref.read(provider.notifier).load(animeDetails: widget.details);
+        state = ref.read(provider);
+      }
+      if (!mounted || state.allEpisodes.isEmpty) return;
+
+      final localProgress =
+          OfflineLibraryService.instance
+              .getAnimeEntry(widget.mediaId)
+              ?.progress ??
+          0;
+      final startFrom = progress > 0 ? progress : localProgress;
+      final target = startFrom > 0 ? startFrom + 1 : 1;
+
+      var episode = state.allEpisodes.first;
+      for (final ep in state.allEpisodes) {
+        if (ep.number == target) {
+          episode = ep;
+          break;
+        }
+      }
+
+      await ref.read(provider.notifier).playEpisode(context, episode);
+    } finally {
+      link.close();
+    }
+  }
+
   Future<void> _handlePlayNext(int progress) async {
+    if (isTmdb) {
+      await _playTmdbNext(progress);
+      return;
+    }
+
     final nextEp = progress > 0 ? progress + 1 : 1;
     final l10n = ref.read(translationsProvider);
 
@@ -163,16 +222,20 @@ class _AnimeDetailMobileLayoutState
         final serverManager = ref.read(serverManagerProvider);
         final titleLang = ref.read(titleLanguageProvider);
         final animeTitle = widget.details?.displayTitle(titleLang) ?? 'Anime';
-        final streamUrl = localEp.localFilePath != null &&
-                localEp.localFilePath!.isNotEmpty
+        final streamUrl =
+            localEp.localFilePath != null && localEp.localFilePath!.isNotEmpty
             ? 'http://${serverManager.host}:${serverManager.port}/api/v1/mediastream/file?path=${Uri.encodeComponent(localEp.localFilePath!)}'
             : 'http://${serverManager.host}:${serverManager.port}/api/v1/mediastream?mediaId=${widget.mediaId}&episodeNumber=${localEp.episodeNumber}';
         final fileName = localEp.localFilePath?.split(RegExp(r'[/\\]')).last;
 
-        final savedProgress = ref.read(playbackProgressPreferencesProvider.notifier).getProgress(widget.mediaId, nextEp);
+        final savedProgress = ref
+            .read(playbackProgressPreferencesProvider.notifier)
+            .getProgress(widget.mediaId, nextEp);
         Duration? startPos;
         if (savedProgress != null && savedProgress.positionMs > 0) {
-          final fraction = savedProgress.durationMs > 0 ? savedProgress.positionMs / savedProgress.durationMs : 0.0;
+          final fraction = savedProgress.durationMs > 0
+              ? savedProgress.positionMs / savedProgress.durationMs
+              : 0.0;
           if (fraction < 0.95) {
             startPos = Duration(milliseconds: savedProgress.positionMs);
           }
@@ -211,10 +274,14 @@ class _AnimeDetailMobileLayoutState
       final animeTitle = widget.details?.displayTitle(titleLang) ?? 'Anime';
       final providerName = _selectedProvider?.name ?? 'Online';
 
-      final savedProgress = ref.read(playbackProgressPreferencesProvider.notifier).getProgress(widget.mediaId, nextEp);
+      final savedProgress = ref
+          .read(playbackProgressPreferencesProvider.notifier)
+          .getProgress(widget.mediaId, nextEp);
       Duration? startPos;
       if (savedProgress != null && savedProgress.positionMs > 0) {
-        final fraction = savedProgress.durationMs > 0 ? savedProgress.positionMs / savedProgress.durationMs : 0.0;
+        final fraction = savedProgress.durationMs > 0
+            ? savedProgress.positionMs / savedProgress.durationMs
+            : 0.0;
         if (fraction < 0.95) {
           startPos = Duration(milliseconds: savedProgress.positionMs);
         }
@@ -256,16 +323,20 @@ class _AnimeDetailMobileLayoutState
         final serverManager = ref.read(serverManagerProvider);
         final titleLang = ref.read(titleLanguageProvider);
         final animeTitle = widget.details?.displayTitle(titleLang) ?? 'Anime';
-        final streamUrl = localEp.localFilePath != null &&
-                localEp.localFilePath!.isNotEmpty
+        final streamUrl =
+            localEp.localFilePath != null && localEp.localFilePath!.isNotEmpty
             ? 'http://${serverManager.host}:${serverManager.port}/api/v1/mediastream/file?path=${Uri.encodeComponent(localEp.localFilePath!)}'
             : 'http://${serverManager.host}:${serverManager.port}/api/v1/mediastream?mediaId=${widget.mediaId}&episodeNumber=${localEp.episodeNumber}';
         final fileName = localEp.localFilePath?.split(RegExp(r'[/\\]')).last;
 
-        final savedProgress = ref.read(playbackProgressPreferencesProvider.notifier).getProgress(widget.mediaId, episodeNumber);
+        final savedProgress = ref
+            .read(playbackProgressPreferencesProvider.notifier)
+            .getProgress(widget.mediaId, episodeNumber);
         Duration? startPos;
         if (savedProgress != null && savedProgress.positionMs > 0) {
-          final fraction = savedProgress.durationMs > 0 ? savedProgress.positionMs / savedProgress.durationMs : 0.0;
+          final fraction = savedProgress.durationMs > 0
+              ? savedProgress.positionMs / savedProgress.durationMs
+              : 0.0;
           if (fraction < 0.95) {
             startPos = Duration(milliseconds: savedProgress.positionMs);
           }
@@ -300,8 +371,11 @@ class _AnimeDetailMobileLayoutState
     );
   }
 
-
-  String _formatPlayButtonLabel(int progress, int? totalEpisodes, AppTranslations l10n) {
+  String _formatPlayButtonLabel(
+    int progress,
+    int? totalEpisodes,
+    AppTranslations l10n,
+  ) {
     if (progress > 0 && totalEpisodes != null && progress >= totalEpisodes) {
       return l10n.rewatch;
     }
@@ -363,14 +437,21 @@ class _AnimeDetailMobileLayoutState
     }
   }
 
-  Widget _buildModeDropdownChip(ThemeData theme, AnimeDetailTab effectiveTab, AppIconPack iconPack) {
-    final isTorrent = !widget.isLocalMode && effectiveTab == AnimeDetailTab.torrent;
+  Widget _buildModeDropdownChip(
+    ThemeData theme,
+    AnimeDetailTab effectiveTab,
+    AppIconPack iconPack,
+  ) {
+    final isTorrent =
+        !widget.isLocalMode && effectiveTab == AnimeDetailTab.torrent;
     final isLocal = widget.isLocalMode;
     final l10n = ref.read(translationsProvider);
 
     final IconData modeIcon = isLocal
         ? AppIcons.folderFilled(iconPack)
-        : (isTorrent ? AppIcons.cloudDownload(iconPack) : AppIcons.globe(iconPack));
+        : (isTorrent
+              ? AppIcons.cloudDownload(iconPack)
+              : AppIcons.globe(iconPack));
     final String modeLabel = isLocal
         ? 'Local'
         : (isTorrent ? 'Torrent' : 'Online');
@@ -383,7 +464,8 @@ class _AnimeDetailMobileLayoutState
           icon: Icon(
             AppIcons.globe(iconPack),
             size: 18,
-            color: (!widget.isLocalMode && effectiveTab == AnimeDetailTab.online)
+            color:
+                (!widget.isLocalMode && effectiveTab == AnimeDetailTab.online)
                 ? theme.colorScheme.primary
                 : null,
           ),
@@ -398,7 +480,8 @@ class _AnimeDetailMobileLayoutState
           icon: Icon(
             AppIcons.cloudDownload(iconPack),
             size: 18,
-            color: (!widget.isLocalMode && effectiveTab == AnimeDetailTab.torrent)
+            color:
+                (!widget.isLocalMode && effectiveTab == AnimeDetailTab.torrent)
                 ? theme.colorScheme.primary
                 : null,
           ),
@@ -434,33 +517,45 @@ class _AnimeDetailMobileLayoutState
               decoration: BoxDecoration(
                 color: isDark
                     ? Colors.white.withValues(alpha: 0.08)
-                    : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+                    : theme.colorScheme.surfaceContainerHighest.withValues(
+                        alpha: 0.45,
+                      ),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
                   color: isDark
                       ? Colors.white.withValues(alpha: 0.16)
-                      : theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
+                      : theme.colorScheme.outlineVariant.withValues(
+                          alpha: 0.25,
+                        ),
                   width: 0.8,
                 ),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(modeIcon, size: 15, color: isDark ? Colors.white : theme.colorScheme.primary),
+                  Icon(
+                    modeIcon,
+                    size: 15,
+                    color: isDark ? Colors.white : theme.colorScheme.primary,
+                  ),
                   const SizedBox(width: 6),
                   Text(
                     modeLabel,
                     style: TextStyle(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w600,
-                      color: isDark ? Colors.white : theme.colorScheme.onSurface,
+                      color: isDark
+                          ? Colors.white
+                          : theme.colorScheme.onSurface,
                     ),
                   ),
                   const SizedBox(width: 4),
                   Icon(
                     AppIcons.arrowDropDown(iconPack),
                     size: 18,
-                    color: isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
+                    color: isDark
+                        ? Colors.white70
+                        : theme.colorScheme.onSurfaceVariant,
                   ),
                 ],
               ),
@@ -472,7 +567,8 @@ class _AnimeDetailMobileLayoutState
   }
 
   Widget _buildProviderDropdownChip(ThemeData theme, AppIconPack iconPack) {
-    final providerName = _selectedProvider?.name ?? ref.watch(translationsProvider).source;
+    final providerName =
+        _selectedProvider?.name ?? ref.watch(translationsProvider).source;
     final l10n = ref.read(translationsProvider);
 
     return GlassMenuAnchor(
@@ -483,16 +579,20 @@ class _AnimeDetailMobileLayoutState
           return GlassMenuItem(
             label: p.name,
             icon: Icon(
-              isCurrent ? AppIcons.checkCircleFilled(iconPack) : AppIcons.globe(iconPack),
+              isCurrent
+                  ? AppIcons.checkCircleFilled(iconPack)
+                  : AppIcons.globe(iconPack),
               size: 18,
               color: isCurrent ? theme.colorScheme.primary : null,
             ),
             onPressed: () {
               HapticFeedback.lightImpact();
               setState(() => _selectedProvider = p);
-              SharedPreferences.getInstance().then((prefs) {
-                prefs.setString(_prefLastProviderKey, p.id);
-              }).catchError((_) {});
+              SharedPreferences.getInstance()
+                  .then((prefs) {
+                    prefs.setString(_prefLastProviderKey, p.id);
+                  })
+                  .catchError((_) {});
             },
           );
         }),
@@ -510,7 +610,8 @@ class _AnimeDetailMobileLayoutState
                 selectedProvider: _selectedProvider,
                 isDubbed: _isDubbed,
                 onToggleDubbed: (isDub) => setState(() => _isDubbed = isDub),
-                onOpenManualMapping: () => _onlineStreamController.openManualMapping(context),
+                onOpenManualMapping: () =>
+                    _onlineStreamController.openManualMapping(context),
                 onRefreshCache: () => _onlineStreamController.refresh(),
               ),
             );
@@ -529,12 +630,16 @@ class _AnimeDetailMobileLayoutState
               decoration: BoxDecoration(
                 color: isDark
                     ? Colors.white.withValues(alpha: 0.08)
-                    : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+                    : theme.colorScheme.surfaceContainerHighest.withValues(
+                        alpha: 0.45,
+                      ),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
                   color: isDark
                       ? Colors.white.withValues(alpha: 0.16)
-                      : theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
+                      : theme.colorScheme.outlineVariant.withValues(
+                          alpha: 0.25,
+                        ),
                   width: 0.8,
                 ),
               ),
@@ -552,13 +657,18 @@ class _AnimeDetailMobileLayoutState
                     style: TextStyle(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w600,
-                      color: isDark ? Colors.white : theme.colorScheme.onSurface,
+                      color: isDark
+                          ? Colors.white
+                          : theme.colorScheme.onSurface,
                     ),
                   ),
                   if (_isDubbed) ...[
                     const SizedBox(width: 4),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 5,
+                        vertical: 1,
+                      ),
                       decoration: BoxDecoration(
                         color: isDark
                             ? Colors.white.withValues(alpha: 0.15)
@@ -576,7 +686,11 @@ class _AnimeDetailMobileLayoutState
                     ),
                   ],
                   const SizedBox(width: 4),
-                  Icon(AppIcons.arrowDropDown(iconPack), size: 18, color: theme.colorScheme.onSurfaceVariant),
+                  Icon(
+                    AppIcons.arrowDropDown(iconPack),
+                    size: 18,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                 ],
               ),
             ),
@@ -602,17 +716,19 @@ class _AnimeDetailMobileLayoutState
     final torrentEnabled = streamingPrefs.torrentStreamingEnabled;
     final onlineEnabled = streamingPrefs.onlineStreamingEnabled;
 
-    final effectiveTab = (widget.currentTab == AnimeDetailTab.online &&
+    final effectiveTab =
+        (widget.currentTab == AnimeDetailTab.online &&
             !onlineEnabled &&
             torrentEnabled)
         ? AnimeDetailTab.torrent
         : (widget.currentTab == AnimeDetailTab.torrent &&
-                !torrentEnabled &&
-                onlineEnabled)
-            ? AnimeDetailTab.online
-            : widget.currentTab;
+              !torrentEnabled &&
+              onlineEnabled)
+        ? AnimeDetailTab.online
+        : widget.currentTab;
 
-    final title = widget.details?.displayTitle(titleLang) ??
+    final title =
+        widget.details?.displayTitle(titleLang) ??
         widget.initialEntry?.displayTitle(titleLang) ??
         (widget.details?.title.isNotEmpty == true &&
                 widget.details?.title != l10n.noTitle
@@ -621,10 +737,14 @@ class _AnimeDetailMobileLayoutState
         widget.initialEntry?.title ??
         l10n.loading;
 
-    final coverUrl = widget.initialEntry?.coverImage ?? widget.details?.coverImage;
-    final aniZipFanart = widget.aniZipData?.fanartUrl ?? widget.details?.aniZipData?.fanartUrl;
-    final hasAniZipFanart = !isTmdb && aniZipFanart != null && aniZipFanart.isNotEmpty;
-    final hasRealBanner = (widget.details?.bannerImage != null &&
+    final coverUrl =
+        widget.initialEntry?.coverImage ?? widget.details?.coverImage;
+    final aniZipFanart =
+        widget.aniZipData?.fanartUrl ?? widget.details?.aniZipData?.fanartUrl;
+    final hasAniZipFanart =
+        !isTmdb && aniZipFanart != null && aniZipFanart.isNotEmpty;
+    final hasRealBanner =
+        (widget.details?.bannerImage != null &&
             widget.details!.bannerImage!.isNotEmpty) ||
         (widget.initialEntry?.bannerImage != null &&
             widget.initialEntry!.bannerImage!.isNotEmpty);
@@ -637,21 +757,28 @@ class _AnimeDetailMobileLayoutState
       bannerUrl = hasAniZipFanart
           ? aniZipFanart
           : (hasRealBanner
-              ? (widget.details?.bannerImage ?? widget.initialEntry?.bannerImage)
-              : (widget.aniZipData?.bannerUrl ?? coverUrl));
+                ? (widget.details?.bannerImage ??
+                      widget.initialEntry?.bannerImage)
+                : (widget.aniZipData?.bannerUrl ?? coverUrl));
     }
     final isBlurSetting = ref.watch(bannerBlurProvider);
-    final isBlurredCover = !hasAniZipFanart && !hasRealBanner && coverUrl != null;
+    final isBlurredCover =
+        !hasAniZipFanart && !hasRealBanner && coverUrl != null;
     final shouldBlur = isBlurredCover || isBlurSetting;
     final score = widget.details?.score ?? widget.initialEntry?.score;
-    final format = widget.details?.format ?? widget.initialEntry?.format ?? 'TV';
-    final episodes = widget.details?.totalEpisodes ?? widget.initialEntry?.totalEpisodes;
+    final format =
+        widget.details?.format ?? widget.initialEntry?.format ?? 'TV';
+    final episodes =
+        widget.details?.totalEpisodes ?? widget.initialEntry?.totalEpisodes;
 
     final displayScore = score != null && score > 0
-        ? (score > 10 ? (score / 10).toStringAsFixed(1) : score.toStringAsFixed(1))
+        ? (score > 10
+              ? (score / 10).toStringAsFixed(1)
+              : score.toStringAsFixed(1))
         : '8.0';
 
-    final year = widget.details?.seasonYear ??
+    final year =
+        widget.details?.seasonYear ??
         widget.details?.rawMedia?['startDate']?['year'];
     final season = widget.details?.season;
     final dateParts = <String>[];
@@ -663,7 +790,8 @@ class _AnimeDetailMobileLayoutState
       dateParts.add(l10n.formatSeason(season));
     }
     final nextAiring = widget.details?.rawMedia?['nextAiringEpisode'];
-    final nextEpNum = nextAiring?['episode'] ?? widget.initialEntry?.nextAiringEpisodeNumber;
+    final nextEpNum =
+        nextAiring?['episode'] ?? widget.initialEntry?.nextAiringEpisodeNumber;
     if (nextEpNum != null) {
       dateParts.add(l10n.episodeSoon(nextEpNum));
     }
@@ -678,13 +806,18 @@ class _AnimeDetailMobileLayoutState
     final trailerSite = trailer?['site'] as String?;
     final hasTrailer = trailerId != null && trailerId.isNotEmpty;
 
-    final isFavorite = ref.watch(animeFavoritesProvider).contains(widget.mediaId);
+    final isFavorite = ref
+        .watch(animeFavoritesProvider)
+        .contains(widget.mediaId);
 
-    final liveCollectionEntry = ref.watch(animeCollectionProvider).whenOrNull(
+    final liveCollectionEntry = ref
+        .watch(animeCollectionProvider)
+        .whenOrNull(
           data: (entries) =>
               entries.where((e) => e.mediaId == widget.mediaId).firstOrNull,
         );
-    final progress = liveCollectionEntry?.progress ??
+    final progress =
+        liveCollectionEntry?.progress ??
         widget.details?.progress ??
         widget.initialEntry?.progress ??
         0;
@@ -692,18 +825,27 @@ class _AnimeDetailMobileLayoutState
     final progressText = progress > 0
         ? '$progress/${totalEps ?? "?"}'
         : (totalEps != null ? '$totalEps eps' : format);
-    final userWatchStatus = liveCollectionEntry?.status ??
+    final userWatchStatus =
+        liveCollectionEntry?.status ??
         widget.details?.userStatus ??
         widget.initialEntry?.status;
-    final watchStatusText =
-        l10n.formatWatchStatus(userWatchStatus, progress, totalEps, format);
+    final watchStatusText = l10n.formatWatchStatus(
+      userWatchStatus,
+      progress,
+      totalEps,
+      format,
+    );
 
-    final libraryEntryAsync = ref.watch(animeLibraryEntryProvider(widget.mediaId));
+    final libraryEntryAsync = ref.watch(
+      animeLibraryEntryProvider(widget.mediaId),
+    );
     final downloadedMap = {
-      for (final ep in (libraryEntryAsync.asData?.value?.episodes ?? <LibraryEpisode>[]))
+      for (final ep
+          in (libraryEntryAsync.asData?.value?.episodes ?? <LibraryEpisode>[]))
         if (ep.isDownloaded) ep.episodeNumber: ep.localFilePath,
     };
-    final allEpNumbers = (widget.aniZipData != null && widget.aniZipData!.episodes.isNotEmpty)
+    final allEpNumbers =
+        (widget.aniZipData != null && widget.aniZipData!.episodes.isNotEmpty)
         ? widget.aniZipData!.episodes.map((e) => e.episodeNumber).toList()
         : List.generate(totalEps ?? 0, (i) => i + 1);
 
@@ -723,11 +865,18 @@ class _AnimeDetailMobileLayoutState
                   animation: widget.scrollController,
                   builder: (context, _) {
                     final scrollOffset = widget.scrollController.hasClients
-                        ? widget.scrollController.offset.clamp(0.0, double.infinity)
+                        ? widget.scrollController.offset.clamp(
+                            0.0,
+                            double.infinity,
+                          )
                         : 0.0;
-                    final parallaxTranslateY =
-                        scrollOffset > 0 ? -scrollOffset * 0.35 : 0.0;
-                    final scrollDarkening = (scrollOffset / 200.0).clamp(0.0, 1.0);
+                    final parallaxTranslateY = scrollOffset > 0
+                        ? -scrollOffset * 0.35
+                        : 0.0;
+                    final scrollDarkening = (scrollOffset / 200.0).clamp(
+                      0.0,
+                      1.0,
+                    );
 
                     return Stack(
                       fit: StackFit.expand,
@@ -739,34 +888,47 @@ class _AnimeDetailMobileLayoutState
                             duration: const Duration(milliseconds: 400),
                             switchInCurve: Curves.easeOutCubic,
                             switchOutCurve: Curves.easeInCubic,
-                            transitionBuilder: (child, animation) => FadeTransition(
-                              opacity: animation,
-                              child: child,
-                            ),
-                            layoutBuilder: (currentChild, previousChildren) => Stack(
-                              fit: StackFit.expand,
-                              children: [
-                                ...previousChildren,
-                                ?currentChild,
-                              ],
-                            ),
+                            transitionBuilder: (child, animation) =>
+                                FadeTransition(
+                                  opacity: animation,
+                                  child: child,
+                                ),
+                            layoutBuilder: (currentChild, previousChildren) =>
+                                Stack(
+                                  fit: StackFit.expand,
+                                  children: [
+                                    ...previousChildren,
+                                    ?currentChild,
+                                  ],
+                                ),
                             child: bannerUrl != null
                                 ? SizedBox.expand(
                                     key: ValueKey<String>(bannerUrl),
                                     child: shouldBlur
                                         ? ClipRect(
                                             child: ImageFiltered(
-                                              imageFilter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+                                              imageFilter: ImageFilter.blur(
+                                                sigmaX: 14,
+                                                sigmaY: 14,
+                                              ),
                                               child: Transform.scale(
                                                 scale: 1.25,
                                                 child: CachedNetworkImage(
                                                   imageUrl: bannerUrl,
                                                   fit: BoxFit.cover,
-                                                  alignment: Alignment.topCenter,
+                                                  alignment:
+                                                      Alignment.topCenter,
                                                   memCacheWidth: 1080,
-                                                  fadeInDuration: const Duration(milliseconds: 250),
-                                                  fadeOutDuration: const Duration(milliseconds: 150),
-                                                  errorWidget: (_, _, _) => const SizedBox.shrink(),
+                                                  fadeInDuration:
+                                                      const Duration(
+                                                        milliseconds: 250,
+                                                      ),
+                                                  fadeOutDuration:
+                                                      const Duration(
+                                                        milliseconds: 150,
+                                                      ),
+                                                  errorWidget: (_, _, _) =>
+                                                      const SizedBox.shrink(),
                                                 ),
                                               ),
                                             ),
@@ -776,13 +938,20 @@ class _AnimeDetailMobileLayoutState
                                             fit: BoxFit.cover,
                                             alignment: Alignment.topCenter,
                                             memCacheWidth: 1080,
-                                            fadeInDuration: const Duration(milliseconds: 250),
-                                            fadeOutDuration: const Duration(milliseconds: 150),
-                                            errorWidget: (_, _, _) => const SizedBox.shrink(),
+                                            fadeInDuration: const Duration(
+                                              milliseconds: 250,
+                                            ),
+                                            fadeOutDuration: const Duration(
+                                              milliseconds: 150,
+                                            ),
+                                            errorWidget: (_, _, _) =>
+                                                const SizedBox.shrink(),
                                           ),
                                   )
                                 : Container(
-                                    key: const ValueKey<String>('empty_mobile_banner'),
+                                    key: const ValueKey<String>(
+                                      'empty_mobile_banner',
+                                    ),
                                     color: theme.colorScheme.surfaceContainer,
                                   ),
                           ),
@@ -800,8 +969,9 @@ class _AnimeDetailMobileLayoutState
                                       Colors.black.withValues(alpha: 0.15),
                                       Colors.black.withValues(alpha: 0.45),
                                       Colors.black.withValues(alpha: 0.85),
-                                      theme.scaffoldBackgroundColor
-                                          .withValues(alpha: 0.96),
+                                      theme.scaffoldBackgroundColor.withValues(
+                                        alpha: 0.96,
+                                      ),
                                       theme.scaffoldBackgroundColor,
                                     ]
                                   : [
@@ -809,8 +979,9 @@ class _AnimeDetailMobileLayoutState
                                       Colors.white.withValues(alpha: 0.10),
                                       Colors.white.withValues(alpha: 0.50),
                                       Colors.white.withValues(alpha: 0.88),
-                                      theme.scaffoldBackgroundColor
-                                          .withValues(alpha: 0.96),
+                                      theme.scaffoldBackgroundColor.withValues(
+                                        alpha: 0.96,
+                                      ),
                                       theme.scaffoldBackgroundColor,
                                     ],
                               stops: const [0.0, 0.20, 0.45, 0.70, 0.90, 1.0],
@@ -820,7 +991,9 @@ class _AnimeDetailMobileLayoutState
 
                         // Scroll-driven darkening: seamlessly turns into active theme background
                         Container(
-                          color: theme.scaffoldBackgroundColor.withValues(alpha: scrollDarkening),
+                          color: theme.scaffoldBackgroundColor.withValues(
+                            alpha: scrollDarkening,
+                          ),
                         ),
                       ],
                     );
@@ -835,8 +1008,11 @@ class _AnimeDetailMobileLayoutState
         Builder(
           builder: (context) {
             final bottomPadding = MediaQuery.of(context).viewPadding.bottom;
-            final isBatchMode = ref.watch(episodeSelectionProvider(widget.mediaId)).isSelectionMode;
-            final effectiveBottomPadding = bottomPadding + (isBatchMode ? 96.0 : 24.0);
+            final isBatchMode = ref
+                .watch(episodeSelectionProvider(widget.mediaId))
+                .isSelectionMode;
+            final effectiveBottomPadding =
+                bottomPadding + (isBatchMode ? 96.0 : 24.0);
             return CustomScrollView(
               controller: widget.scrollController,
               physics: const ClampingScrollPhysics(),
@@ -850,35 +1026,26 @@ class _AnimeDetailMobileLayoutState
                     statusBarColor: Colors.transparent,
                     statusBarIconBrightness: isDark
                         ? Brightness.light
-                        : (_isHeaderScrolled ? Brightness.dark : Brightness.light),
+                        : (_isHeaderScrolled
+                              ? Brightness.dark
+                              : Brightness.light),
                     statusBarBrightness: isDark
                         ? Brightness.dark
-                        : (_isHeaderScrolled ? Brightness.light : Brightness.dark),
+                        : (_isHeaderScrolled
+                              ? Brightness.light
+                              : Brightness.dark),
                     systemNavigationBarColor: theme.scaffoldBackgroundColor,
-                    systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+                    systemNavigationBarIconBrightness: isDark
+                        ? Brightness.light
+                        : Brightness.dark,
                     systemNavigationBarDividerColor: Colors.transparent,
                   ),
                   leading: Center(
-                    child: M3EIconButton(
-                      variant: M3EIconButtonVariant.standard,
-                      size: M3EIconButtonSize.sm,
-                      tooltip: MaterialLocalizations.of(context).backButtonTooltip,
-                      icon: Icon(
-                        AppIcons.arrowLeft(iconPack),
-                        color: (isDark || !_isHeaderScrolled)
-                            ? Colors.white
-                            : theme.colorScheme.onSurface,
-                        size: 22,
-                        shadows: (isDark || !_isHeaderScrolled)
-                            ? const [
-                                Shadow(
-                                  color: Colors.black54,
-                                  blurRadius: 4,
-                                  offset: Offset(0, 1),
-                                ),
-                              ]
-                            : null,
-                      ),
+                    child: AnimeDetailBackButton(
+                      color: (isDark || !_isHeaderScrolled)
+                          ? Colors.white
+                          : theme.colorScheme.onSurface,
+                      showShadow: isDark || !_isHeaderScrolled,
                       onPressed: () => Navigator.pop(context),
                     ),
                   ),
@@ -900,8 +1067,8 @@ class _AnimeDetailMobileLayoutState
                               color: widget.isLocalMode
                                   ? theme.colorScheme.primary
                                   : ((isDark || !_isHeaderScrolled)
-                                      ? Colors.white
-                                      : theme.colorScheme.onSurface),
+                                        ? Colors.white
+                                        : theme.colorScheme.onSurface),
                               size: 22,
                               shadows: (isDark || !_isHeaderScrolled)
                                   ? const [
@@ -962,7 +1129,12 @@ class _AnimeDetailMobileLayoutState
 
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: EdgeInsets.fromLTRB(16, 26, 16, effectiveBottomPadding),
+                    padding: EdgeInsets.fromLTRB(
+                      16,
+                      26,
+                      16,
+                      effectiveBottomPadding,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -976,38 +1148,47 @@ class _AnimeDetailMobileLayoutState
                                   width: 125,
                                   height: 185,
                                   decoration: BoxDecoration(
-                                    borderRadius:
-                                        BorderRadius.circular(colors.borderRadius),
+                                    borderRadius: BorderRadius.circular(
+                                      colors.borderRadius,
+                                    ),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black.withValues(alpha: 0.45),
+                                        color: Colors.black.withValues(
+                                          alpha: 0.45,
+                                        ),
                                         blurRadius: 16,
                                         offset: const Offset(0, 6),
                                       ),
                                     ],
                                   ),
                                   child: ClipRRect(
-                                    borderRadius:
-                                        BorderRadius.circular(colors.borderRadius),
+                                    borderRadius: BorderRadius.circular(
+                                      colors.borderRadius,
+                                    ),
                                     child: widget.heroTag != null
                                         ? Hero(
                                             tag: widget.heroTag!,
-                                            flightShuttleBuilder: (
-                                              flightContext,
-                                              animation,
-                                              flightDirection,
-                                              fromHeroContext,
-                                              toHeroContext,
-                                            ) {
-                                              final curved = CurvedAnimation(
-                                                parent: animation,
-                                                curve: Curves.easeInOutCubicEmphasized,
-                                              );
-                                              return FadeTransition(
-                                                opacity: Tween<double>(begin: 0.85, end: 1.0).animate(curved),
-                                                child: toHeroContext.widget,
-                                              );
-                                            },
+                                            flightShuttleBuilder:
+                                                (
+                                                  flightContext,
+                                                  animation,
+                                                  flightDirection,
+                                                  fromHeroContext,
+                                                  toHeroContext,
+                                                ) {
+                                                  final curved = CurvedAnimation(
+                                                    parent: animation,
+                                                    curve: Curves
+                                                        .easeInOutCubicEmphasized,
+                                                  );
+                                                  return FadeTransition(
+                                                    opacity: Tween<double>(
+                                                      begin: 0.85,
+                                                      end: 1.0,
+                                                    ).animate(curved),
+                                                    child: toHeroContext.widget,
+                                                  );
+                                                },
                                             child: CachedNetworkImage(
                                               imageUrl: coverUrl,
                                               fit: BoxFit.cover,
@@ -1088,7 +1269,9 @@ class _AnimeDetailMobileLayoutState
                                           AppIcons.heart(iconPack),
                                           size: 14,
                                           color: isDark
-                                              ? Colors.white.withValues(alpha: 0.85)
+                                              ? Colors.white.withValues(
+                                                  alpha: 0.85,
+                                                )
                                               : theme.colorScheme.primary,
                                         ),
                                         const SizedBox(width: 4),
@@ -1119,7 +1302,8 @@ class _AnimeDetailMobileLayoutState
                                     ),
                                     const SizedBox(height: 7),
 
-                                    if (progressText.isNotEmpty || watchStatusText.isNotEmpty)
+                                    if (progressText.isNotEmpty ||
+                                        watchStatusText.isNotEmpty)
                                       GestureDetector(
                                         onTap: () =>
                                             widget.onOpenEditEntryModal(title),
@@ -1136,7 +1320,8 @@ class _AnimeDetailMobileLayoutState
                                                   fontWeight: FontWeight.bold,
                                                 ),
                                               ),
-                                            if (progressText.isNotEmpty && watchStatusText.isNotEmpty)
+                                            if (progressText.isNotEmpty &&
+                                                watchStatusText.isNotEmpty)
                                               Text(
                                                 '  •  ',
                                                 style: TextStyle(
@@ -1177,7 +1362,11 @@ class _AnimeDetailMobileLayoutState
                                   shape: M3EButtonShape.round,
                                   icon: Icon(AppIcons.play(iconPack), size: 20),
                                   label: Text(
-                                    _formatPlayButtonLabel(progress, totalEps, l10n),
+                                    _formatPlayButtonLabel(
+                                      progress,
+                                      totalEps,
+                                      l10n,
+                                    ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
@@ -1188,17 +1377,27 @@ class _AnimeDetailMobileLayoutState
                                   ),
                                   onPressed: isTmdb
                                       ? () {
-                                          ScaffoldMessenger.of(context).showSnackBar(
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
                                             SnackBar(
                                               content: Row(
                                                 children: [
-                                                  Icon(AppIcons.info(iconPack),
-                                                      color: Colors.white, size: 18),
+                                                  Icon(
+                                                    AppIcons.info(iconPack),
+                                                    color: Colors.white,
+                                                    size: 18,
+                                                  ),
                                                   const SizedBox(width: 8),
-                                                  Expanded(child: Text(l10n.streamingComingSoon)),
+                                                  Expanded(
+                                                    child: Text(
+                                                      l10n.streamingComingSoon,
+                                                    ),
+                                                  ),
                                                 ],
                                               ),
-                                              behavior: SnackBarBehavior.floating,
+                                              behavior:
+                                                  SnackBarBehavior.floating,
                                             ),
                                           );
                                         }
@@ -1214,31 +1413,47 @@ class _AnimeDetailMobileLayoutState
                                   icon: Icon(
                                     AppIcons.video(iconPack),
                                     size: 20,
-                                    color: isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
+                                    color: isDark
+                                        ? Colors.white70
+                                        : theme.colorScheme.onSurfaceVariant,
                                   ),
-                                  onPressed: () => _launchTrailer(trailerId, trailerSite),
+                                  onPressed: () =>
+                                      _launchTrailer(trailerId, trailerSite),
                                 ),
                               ],
                               const SizedBox(width: 4),
                               M3EIconButton(
                                 variant: M3EIconButtonVariant.standard,
                                 size: M3EIconButtonSize.xs,
-                                tooltip: isFavorite ? l10n.inFavorites : l10n.addToFavorites,
+                                tooltip: isFavorite
+                                    ? l10n.inFavorites
+                                    : l10n.addToFavorites,
                                 icon: Icon(
-                                  isFavorite ? AppIcons.heart(iconPack) : AppIcons.heartOutline(iconPack),
+                                  isFavorite
+                                      ? AppIcons.heart(iconPack)
+                                      : AppIcons.heartOutline(iconPack),
                                   size: 20,
-                                  color: isFavorite ? Colors.redAccent : (isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant),
+                                  color: isFavorite
+                                      ? Colors.redAccent
+                                      : (isDark
+                                            ? Colors.white70
+                                            : theme
+                                                  .colorScheme
+                                                  .onSurfaceVariant),
                                 ),
                                 onPressed: () {
                                   HapticFeedback.lightImpact();
                                   final nowFav = ref
                                       .read(animeFavoritesProvider.notifier)
                                       .toggleFavorite(widget.mediaId);
-                                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                                  ScaffoldMessenger.of(context)
+                                      .hideCurrentSnackBar();
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       content: Text(
-                                        nowFav ? l10n.addedToFavorites : l10n.removedFromFavorites,
+                                        nowFav
+                                            ? l10n.addedToFavorites
+                                            : l10n.removedFromFavorites,
                                       ),
                                       duration: const Duration(seconds: 2),
                                       behavior: SnackBarBehavior.floating,
@@ -1255,11 +1470,18 @@ class _AnimeDetailMobileLayoutState
                                   icon: Icon(
                                     AppIcons.download(iconPack),
                                     size: 20,
-                                    color: isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
+                                    color: isDark
+                                        ? Colors.white70
+                                        : theme.colorScheme.onSurfaceVariant,
                                   ),
                                   onPressed: () {
-                                    final nextEp = (progress + 1).clamp(1, totalEps ?? (progress + 1));
-                                    final defaultEpTitle = l10n.episodeNumber(nextEp);
+                                    final nextEp = (progress + 1).clamp(
+                                      1,
+                                      totalEps ?? (progress + 1),
+                                    );
+                                    final defaultEpTitle = l10n.episodeNumber(
+                                      nextEp,
+                                    );
                                     widget.onOpenTorrentSelector(
                                       episodeNumber: nextEp,
                                       episodeTitle: defaultEpTitle,
@@ -1353,18 +1575,23 @@ class _AnimeDetailMobileLayoutState
                                         AppIcons.edit(iconPack),
                                         size: 18,
                                       ),
-                                      onPressed: () => widget.onOpenEditEntryModal(title),
+                                      onPressed: () =>
+                                          widget.onOpenEditEntryModal(title),
                                     ),
                                 ],
                                 builder: (context, controller) {
                                   return M3EIconButton(
                                     variant: M3EIconButtonVariant.standard,
                                     size: M3EIconButtonSize.xs,
-                                    tooltip: isTmdb ? l10n.editDetails : l10n.editInAnilist,
+                                    tooltip: isTmdb
+                                        ? l10n.editDetails
+                                        : l10n.editInAnilist,
                                     icon: Icon(
                                       AppIcons.edit(iconPack),
                                       size: 20,
-                                      color: isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
+                                      color: isDark
+                                          ? Colors.white70
+                                          : theme.colorScheme.onSurfaceVariant,
                                     ),
                                     onPressed: controller.open,
                                   );
@@ -1384,8 +1611,14 @@ class _AnimeDetailMobileLayoutState
                               physics: const BouncingScrollPhysics(),
                               child: Row(
                                 children: [
-                                  _buildModeDropdownChip(theme, effectiveTab, iconPack),
-                                  if (!widget.isLocalMode && effectiveTab == AnimeDetailTab.online) ...[
+                                  _buildModeDropdownChip(
+                                    theme,
+                                    effectiveTab,
+                                    iconPack,
+                                  ),
+                                  if (!widget.isLocalMode &&
+                                      effectiveTab ==
+                                          AnimeDetailTab.online) ...[
                                     const SizedBox(width: 8),
                                     _buildProviderDropdownChip(theme, iconPack),
                                   ],
@@ -1409,194 +1642,225 @@ class _AnimeDetailMobileLayoutState
                             );
                           },
                           child: KeyedSubtree(
-                            key: ValueKey('mobile_mode_${isTmdb ? "tmdb" : (widget.isLocalMode ? "local" : effectiveTab.name)}'),
+                            key: ValueKey(
+                              'mobile_mode_${isTmdb ? "tmdb" : (widget.isLocalMode ? "local" : effectiveTab.name)}',
+                            ),
                             child: isTmdb
                                 ? EpisodesView(
                                     mediaId: widget.mediaId,
                                     isTmdb: true,
                                     animeDetails: widget.details,
-                                    onOpenTorrentSelector: widget.onOpenTorrentSelector,
+                                    onOpenTorrentSelector:
+                                        widget.onOpenTorrentSelector,
                                   )
                                 : widget.isLocalMode
-                                    ? LocalLibraryView(
-                                        mediaId: widget.mediaId,
-                                        animeDetails: widget.details,
-                                        progress: progress,
-                                        onSwitchToTorrent: () {
-                                          widget.onToggleLocalMode();
-                                          widget.onTabChanged(AnimeDetailTab.torrent);
-                                        },
-                                        onSwitchToOnline: () {
-                                          widget.onToggleLocalMode();
-                                          widget.onTabChanged(AnimeDetailTab.online);
-                                        },
-                                      )
-                                    : (onlineEnabled &&
-                                        effectiveTab == AnimeDetailTab.online)
-                                        ? OnlineStreamView(
-                                            mediaId: widget.mediaId,
-                                            animeDetails: widget.details,
-                                            progress: progress,
-                                            hideTopBar: true,
-                                            controller: _onlineStreamController,
-                                            selectedProvider: _selectedProvider,
-                                            isDubbed: _isDubbed,
-                                            onProvidersLoaded: (list) {
-                                              if (mounted && list.isNotEmpty) {
-                                                setState(() => _providers = list);
-                                              }
-                                            },
-                                            onProviderChanged: (p) {
-                                              if (mounted && p != null) {
-                                                setState(() => _selectedProvider = p);
-                                              }
-                                            },
-                                            onDubbedChanged: (dub) {
-                                              if (mounted) setState(() => _isDubbed = dub);
-                                            },
-                                            onDownloadEpisode: (epNum, epTitle) {
-                                              final epThumb = widget.details?.aniZipData?.episodes
-                                                  .where((e) => e.episodeNumber == epNum)
-                                                  .firstOrNull
-                                                  ?.image;
-                                              final animeTitle = widget.details?.title ?? '';
-                                              showOnlineStreamDownloadDialog(
-                                                context,
-                                                mediaId: widget.mediaId,
-                                                episodeNumber: epNum,
-                                                animeTitle: animeTitle,
-                                                episodeTitle: epTitle,
-                                                thumbnail: epThumb,
-                                                provider: _selectedProvider,
-                                                isDubbed: _isDubbed,
-                                              );
-                                            },
+                                ? LocalLibraryView(
+                                    mediaId: widget.mediaId,
+                                    animeDetails: widget.details,
+                                    progress: progress,
+                                    onSwitchToTorrent: () {
+                                      widget.onToggleLocalMode();
+                                      widget.onTabChanged(
+                                        AnimeDetailTab.torrent,
+                                      );
+                                    },
+                                    onSwitchToOnline: () {
+                                      widget.onToggleLocalMode();
+                                      widget.onTabChanged(
+                                        AnimeDetailTab.online,
+                                      );
+                                    },
+                                  )
+                                : (onlineEnabled &&
+                                      effectiveTab == AnimeDetailTab.online)
+                                ? OnlineStreamView(
+                                    mediaId: widget.mediaId,
+                                    animeDetails: widget.details,
+                                    progress: progress,
+                                    hideTopBar: true,
+                                    controller: _onlineStreamController,
+                                    selectedProvider: _selectedProvider,
+                                    isDubbed: _isDubbed,
+                                    onProvidersLoaded: (list) {
+                                      if (mounted && list.isNotEmpty) {
+                                        setState(() => _providers = list);
+                                      }
+                                    },
+                                    onProviderChanged: (p) {
+                                      if (mounted && p != null) {
+                                        setState(() => _selectedProvider = p);
+                                      }
+                                    },
+                                    onDubbedChanged: (dub) {
+                                      if (mounted) {
+                                        setState(() => _isDubbed = dub);
+                                      }
+                                    },
+                                    onDownloadEpisode: (epNum, epTitle) {
+                                      final epThumb = widget
+                                          .details
+                                          ?.aniZipData
+                                          ?.episodes
+                                          .where(
+                                            (e) => e.episodeNumber == epNum,
                                           )
-                                        : (torrentEnabled &&
-                                            effectiveTab == AnimeDetailTab.torrent)
-                                            ? AniZipEpisodeListView(
-                                                aniZipData:
-                                                    widget.aniZipData ?? widget.details?.aniZipData,
-                                                fallbackEpisodes: widget.details?.episodes ?? const [],
-                                                animeDetails: widget.details,
-                                                isLoading:
-                                                    widget.isLoading || widget.isLoadingAniZip,
-                                                progress: progress,
-                                                onRetry: widget.onRetryAniZip,
-                                                viewMode: ref.watch(episodeViewModeProvider),
-                                                onToggleViewMode: () => ref
-                                                    .read(episodeViewModeProvider.notifier)
-                                                    .toggleMode(),
-                                                onPlayEpisode: (ep) {
-                                                  _playOrOpenTorrent(
-                                                    ep.episodeNumber,
-                                                    ep.displayTitle,
-                                                    ep.episode,
-                                                  );
-                                                },
-                                                onTapEpisode: (ep) {
-                                                  _playOrOpenTorrent(
-                                                    ep.episodeNumber,
-                                                    ep.displayTitle,
-                                                    ep.episode,
-                                                  );
-                                                },
-                                                onPlayFallbackEpisode: (ep) {
-                                                  _playOrOpenTorrent(
-                                                    ep.episodeNumber,
-                                                    ep.title,
-                                                  );
-                                                },
-                                                onDownloadEpisode: (ep) {
-                                                  widget.onOpenTorrentSelector(
-                                                    episodeNumber: ep.episodeNumber,
-                                                    episodeTitle: ep.displayTitle,
-                                                    aniDBEpisode: ep.episode,
-                                                  );
-                                                },
-                                                onDownloadFallbackEpisode: (ep) {
-                                                  widget.onOpenTorrentSelector(
-                                                    episodeNumber: ep.episodeNumber,
-                                                    episodeTitle: ep.title,
-                                                  );
-                                                },
-                                              )
-                                            : onlineEnabled
-                                                ? OnlineStreamView(
-                                                    mediaId: widget.mediaId,
-                                                    animeDetails: widget.details,
-                                                    progress: progress,
-                                                    hideTopBar: true,
-                                                    controller: _onlineStreamController,
-                                                    selectedProvider: _selectedProvider,
-                                                    isDubbed: _isDubbed,
-                                                    onDownloadEpisode: (epNum, epTitle) {
-                                                      final epThumb = widget.details?.aniZipData?.episodes
-                                                          .where((e) => e.episodeNumber == epNum)
-                                                          .firstOrNull
-                                                          ?.image;
-                                                      final animeTitle = widget.details?.title ?? '';
-                                                      showOnlineStreamDownloadDialog(
-                                                        context,
-                                                        mediaId: widget.mediaId,
-                                                        episodeNumber: epNum,
-                                                        animeTitle: animeTitle,
-                                                        episodeTitle: epTitle,
-                                                        thumbnail: epThumb,
-                                                        provider: _selectedProvider,
-                                                        isDubbed: _isDubbed,
-                                                      );
-                                                    },
-                                                  )
-                                                : torrentEnabled
-                                                    ? AniZipEpisodeListView(
-                                                        aniZipData:
-                                                            widget.aniZipData ?? widget.details?.aniZipData,
-                                                        fallbackEpisodes: widget.details?.episodes ?? const [],
-                                                        animeDetails: widget.details,
-                                                        isLoading:
-                                                            widget.isLoading || widget.isLoadingAniZip,
-                                                        progress: progress,
-                                                        onRetry: widget.onRetryAniZip,
-                                                        viewMode: ref.watch(episodeViewModeProvider),
-                                                        onToggleViewMode: () => ref
-                                                            .read(episodeViewModeProvider.notifier)
-                                                            .toggleMode(),
-                                                        onPlayEpisode: (ep) {
-                                                          _playOrOpenTorrent(
-                                                            ep.episodeNumber,
-                                                            ep.displayTitle,
-                                                            ep.episode,
-                                                          );
-                                                        },
-                                                        onTapEpisode: (ep) {
-                                                          _playOrOpenTorrent(
-                                                            ep.episodeNumber,
-                                                            ep.displayTitle,
-                                                            ep.episode,
-                                                          );
-                                                        },
-                                                        onPlayFallbackEpisode: (ep) {
-                                                          _playOrOpenTorrent(
-                                                            ep.episodeNumber,
-                                                            ep.title,
-                                                          );
-                                                        },
-                                                        onDownloadEpisode: (ep) {
-                                                          widget.onOpenTorrentSelector(
-                                                            episodeNumber: ep.episodeNumber,
-                                                            episodeTitle: ep.displayTitle,
-                                                            aniDBEpisode: ep.episode,
-                                                          );
-                                                        },
-                                                        onDownloadFallbackEpisode: (ep) {
-                                                          widget.onOpenTorrentSelector(
-                                                            episodeNumber: ep.episodeNumber,
-                                                            episodeTitle: ep.title,
-                                                          );
-                                                        },
-                                                      )
-                                                    : const SizedBox(height: 40),
+                                          .firstOrNull
+                                          ?.image;
+                                      final animeTitle =
+                                          widget.details?.title ?? '';
+                                      showOnlineStreamDownloadDialog(
+                                        context,
+                                        mediaId: widget.mediaId,
+                                        episodeNumber: epNum,
+                                        animeTitle: animeTitle,
+                                        episodeTitle: epTitle,
+                                        thumbnail: epThumb,
+                                        provider: _selectedProvider,
+                                        isDubbed: _isDubbed,
+                                      );
+                                    },
+                                  )
+                                : (torrentEnabled &&
+                                      effectiveTab == AnimeDetailTab.torrent)
+                                ? AniZipEpisodeListView(
+                                    aniZipData:
+                                        widget.aniZipData ??
+                                        widget.details?.aniZipData,
+                                    fallbackEpisodes:
+                                        widget.details?.episodes ?? const [],
+                                    animeDetails: widget.details,
+                                    isLoading:
+                                        widget.isLoading ||
+                                        widget.isLoadingAniZip,
+                                    progress: progress,
+                                    onRetry: widget.onRetryAniZip,
+                                    viewMode: ref.watch(
+                                      episodeViewModeProvider,
+                                    ),
+                                    onToggleViewMode: () => ref
+                                        .read(episodeViewModeProvider.notifier)
+                                        .toggleMode(),
+                                    onPlayEpisode: (ep) {
+                                      _playOrOpenTorrent(
+                                        ep.episodeNumber,
+                                        ep.displayTitle,
+                                        ep.episode,
+                                      );
+                                    },
+                                    onTapEpisode: (ep) {
+                                      _playOrOpenTorrent(
+                                        ep.episodeNumber,
+                                        ep.displayTitle,
+                                        ep.episode,
+                                      );
+                                    },
+                                    onPlayFallbackEpisode: (ep) {
+                                      _playOrOpenTorrent(
+                                        ep.episodeNumber,
+                                        ep.title,
+                                      );
+                                    },
+                                    onDownloadEpisode: (ep) {
+                                      widget.onOpenTorrentSelector(
+                                        episodeNumber: ep.episodeNumber,
+                                        episodeTitle: ep.displayTitle,
+                                        aniDBEpisode: ep.episode,
+                                      );
+                                    },
+                                    onDownloadFallbackEpisode: (ep) {
+                                      widget.onOpenTorrentSelector(
+                                        episodeNumber: ep.episodeNumber,
+                                        episodeTitle: ep.title,
+                                      );
+                                    },
+                                  )
+                                : onlineEnabled
+                                ? OnlineStreamView(
+                                    mediaId: widget.mediaId,
+                                    animeDetails: widget.details,
+                                    progress: progress,
+                                    hideTopBar: true,
+                                    controller: _onlineStreamController,
+                                    selectedProvider: _selectedProvider,
+                                    isDubbed: _isDubbed,
+                                    onDownloadEpisode: (epNum, epTitle) {
+                                      final epThumb = widget
+                                          .details
+                                          ?.aniZipData
+                                          ?.episodes
+                                          .where(
+                                            (e) => e.episodeNumber == epNum,
+                                          )
+                                          .firstOrNull
+                                          ?.image;
+                                      final animeTitle =
+                                          widget.details?.title ?? '';
+                                      showOnlineStreamDownloadDialog(
+                                        context,
+                                        mediaId: widget.mediaId,
+                                        episodeNumber: epNum,
+                                        animeTitle: animeTitle,
+                                        episodeTitle: epTitle,
+                                        thumbnail: epThumb,
+                                        provider: _selectedProvider,
+                                        isDubbed: _isDubbed,
+                                      );
+                                    },
+                                  )
+                                : torrentEnabled
+                                ? AniZipEpisodeListView(
+                                    aniZipData:
+                                        widget.aniZipData ??
+                                        widget.details?.aniZipData,
+                                    fallbackEpisodes:
+                                        widget.details?.episodes ?? const [],
+                                    animeDetails: widget.details,
+                                    isLoading:
+                                        widget.isLoading ||
+                                        widget.isLoadingAniZip,
+                                    progress: progress,
+                                    onRetry: widget.onRetryAniZip,
+                                    viewMode: ref.watch(
+                                      episodeViewModeProvider,
+                                    ),
+                                    onToggleViewMode: () => ref
+                                        .read(episodeViewModeProvider.notifier)
+                                        .toggleMode(),
+                                    onPlayEpisode: (ep) {
+                                      _playOrOpenTorrent(
+                                        ep.episodeNumber,
+                                        ep.displayTitle,
+                                        ep.episode,
+                                      );
+                                    },
+                                    onTapEpisode: (ep) {
+                                      _playOrOpenTorrent(
+                                        ep.episodeNumber,
+                                        ep.displayTitle,
+                                        ep.episode,
+                                      );
+                                    },
+                                    onPlayFallbackEpisode: (ep) {
+                                      _playOrOpenTorrent(
+                                        ep.episodeNumber,
+                                        ep.title,
+                                      );
+                                    },
+                                    onDownloadEpisode: (ep) {
+                                      widget.onOpenTorrentSelector(
+                                        episodeNumber: ep.episodeNumber,
+                                        episodeTitle: ep.displayTitle,
+                                        aniDBEpisode: ep.episode,
+                                      );
+                                    },
+                                    onDownloadFallbackEpisode: (ep) {
+                                      widget.onOpenTorrentSelector(
+                                        episodeNumber: ep.episodeNumber,
+                                        episodeTitle: ep.title,
+                                      );
+                                    },
+                                  )
+                                : const SizedBox(height: 40),
                           ),
                         ),
                       ],

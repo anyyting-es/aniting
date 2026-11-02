@@ -178,7 +178,9 @@ void main() {
       }
     });
 
-    testWidgets('no halo means no extra page padding', (tester) async {
+    testWidgets('the halo room is reserved before the halo exists', (
+      tester,
+    ) async {
       await pumpLayout(
         tester,
         pageWidth: 1600,
@@ -189,8 +191,45 @@ void main() {
       final videoRect = videoRectOf(tester);
       final pageRect = tester.getRect(find.byType(PlayerDesktopLayout));
 
-      // Without a halo the page keeps its standard 24px padding.
-      expect(videoRect.left - pageRect.left, closeTo(24, 1.0));
+      // The player is laid out exactly like the halo-enabled page: the bleed
+      // room is reserved from the very first frame, so the video does not
+      // shrink/slide once playback starts and the halo is built.
+      expect(
+        videoRect.left - pageRect.left,
+        closeTo(
+          PlayerDesktopLayout.haloBleed + 24,
+          1.0,
+        ),
+      );
+    });
+
+    testWidgets('the video keeps its exact rect when the halo appears', (
+      tester,
+    ) async {
+      // 1100 px sits right around the rail breakpoint once the bleed room is
+      // reserved, so it also catches the rail collapsing when playback starts.
+      for (final width in [1100.0, 1280.0, 1600.0, 1920.0]) {
+        await pumpLayout(
+          tester,
+          pageWidth: width,
+          showRail: true,
+          withHalo: false,
+        );
+        final before = videoRectOf(tester);
+
+        await pumpLayout(
+          tester,
+          pageWidth: width,
+          showRail: true,
+          withHalo: true,
+        );
+        final after = videoRectOf(tester);
+
+        expect(after.left, closeTo(before.left, 0.5), reason: 'w=$width');
+        expect(after.top, closeTo(before.top, 0.5), reason: 'w=$width');
+        expect(after.width, closeTo(before.width, 0.5), reason: 'w=$width');
+        expect(after.height, closeTo(before.height, 0.5), reason: 'w=$width');
+      }
     });
   });
 }

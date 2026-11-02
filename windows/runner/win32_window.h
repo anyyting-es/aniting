@@ -60,6 +60,12 @@ class Win32Window {
   // follows the system app theme; afterwards it keeps the app's choice.
   void SetDarkMode(bool dark);
 
+  // Themes the window frame with modern Windows 11 DWM attributes (Mica, corners, caption & text colors).
+  void SetTitleBarStyle(bool dark,
+                        std::optional<COLORREF> caption_color = std::nullopt,
+                        std::optional<COLORREF> text_color = std::nullopt,
+                        bool use_mica = true);
+
  protected:
   // Processes and route salient window messages for mouse handling,
   // size change and DPI. Delegates handling of these to member overloads that
@@ -99,6 +105,10 @@ class Win32Window {
 
   // The app's frame theme; empty until SetDarkMode is first called.
   std::optional<bool> dark_mode_;
+
+  std::optional<COLORREF> caption_color_;
+  std::optional<COLORREF> text_color_;
+  bool use_mica_ = true;
 
   // window handle for top level window.
   HWND window_handle_ = nullptr;

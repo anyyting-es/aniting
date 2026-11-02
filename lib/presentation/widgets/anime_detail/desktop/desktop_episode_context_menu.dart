@@ -5,6 +5,7 @@ import 'package:g1455/g1455.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/data/models/anime_details.dart';
+import 'package:seanime_app/data/services/offline_library_service.dart';
 import 'package:seanime_app/presentation/providers/active_downloads_provider.dart';
 import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/providers/download_history_provider.dart';
@@ -41,9 +42,37 @@ class DesktopEpisodeMenuButton extends ConsumerWidget {
 
   Future<void> _toggleWatched(BuildContext context, WidgetRef ref) async {
     final l10n = ref.read(translationsProvider);
-    final repo = ref.read(repositoryProvider);
     final targetNumber =
         ep.isWatched ? (ep.number > 1 ? ep.number - 1 : 0) : ep.number;
+
+    if (details?.isTmdb == true) {
+      if (OfflineLibraryService.instance.getAnimeEntry(mediaId) == null) {
+        await OfflineLibraryService.instance.recordAnimeWatch(
+          mediaId: mediaId,
+          title: details?.title ?? '',
+          totalEpisodes: details?.totalEpisodes,
+          isTmdb: true,
+        );
+      }
+      await OfflineLibraryService.instance.updateAnimeProgress(
+        mediaId: mediaId,
+        episodeNumber: targetNumber,
+        totalEpisodes: details?.totalEpisodes,
+        isTmdb: true,
+      );
+      if (context.mounted) {
+        ref.invalidate(continueWatchingProvider);
+        AppToast.info(
+          ep.isWatched
+              ? l10n.markedAsUnwatched(ep.number)
+              : l10n.markedAsWatched(ep.number),
+          context: context,
+        );
+      }
+      return;
+    }
+
+    final repo = ref.read(repositoryProvider);
     final success = await repo.updateAnimeProgress(
       mediaId: mediaId,
       episodeNumber: targetNumber,

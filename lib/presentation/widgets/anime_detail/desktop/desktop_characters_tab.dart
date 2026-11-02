@@ -1,3 +1,4 @@
+import 'cast/desktop_cast_models.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -40,7 +41,9 @@ class DesktopCharactersTab extends ConsumerWidget {
       );
     }
 
-    if (characters.isEmpty) {
+    final validCharacters = characters.where((c) => DesktopCastItem.hasValidImage(c, isTmdb: false)).toList();
+
+    if (validCharacters.isEmpty) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 48),
         child: Center(
@@ -73,7 +76,7 @@ class DesktopCharactersTab extends ConsumerWidget {
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          itemCount: characters.length,
+          itemCount: validCharacters.length,
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: crossAxisCount,
             childAspectRatio: 0.52,
@@ -81,7 +84,7 @@ class DesktopCharactersTab extends ConsumerWidget {
             mainAxisSpacing: 16,
           ),
           itemBuilder: (context, index) {
-            final edge = characters[index] as Map<String, dynamic>?;
+            final edge = validCharacters[index] as Map<String, dynamic>?;
             return _DesktopCharacterCard(edge: edge, l10n: l10n);
           },
         );

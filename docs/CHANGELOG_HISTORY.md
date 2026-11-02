@@ -6,6 +6,142 @@
 > - **ALWAYS** summarize improvements at a high, user-facing level with clear, direct bullet points.
 > - Keep it punchy, professional, and easy to skim.
 
+## 8.15. Torrentio para Series y Películas TMDB (2026-11-02)
+- **Selector de fuente dentro del reproductor**: al entrar a un episodio o película TMDB se abre el reproductor y aparece un cuadro para elegir dónde verlo. Arriba están las extensiones instaladas (VidSrc, Torrentio…); al elegir una se cargan sus fuentes (calidades torrent, servidores, etc.) y al tocar una comienza la reproducción.
+- **Torrents con toda la información**: cada opción muestra resolución, códec, seeders, tamaño, idiomas, indexer y nombre del archivo.
+- **Reproducción de torrents más fiable**: el stream espera a tener datos listos antes de abrir el reproductor y se amplía el tiempo de espera de red, evitando que se quede cargando indefinidamente.
+- **Extensiones recién instaladas al instante**: la lista de proveedores se refresca al instalar, activar o desinstalar una extensión; VidSrc aparece sin reiniciar.
+- **Reproductor con metadatos TMDB**: la página del reproductor carga la temporada de TMDB y muestra los episodios con título, sinopsis y miniatura, además de siguiente/anterior y el selector de episodios.
+- **Sección TMDB en el Marketplace**: nueva categoría **Streaming TMDB** donde viven VidSrc y Torrentio, separada del streaming de anime. Se retiró la categoría **Fuentes Personalizadas**.
+- **Torrentio integrado en TMDB**: nueva fuente de streaming para series y películas TMDB. Aparece en el selector de proveedores junto a VidSrc.
+- **Reproducción directa con el motor de torrents**: al elegir Torrentio, la app inicia el torrent y lo reproduce al instante, sin cuenta de Debrid.
+- **Selección de calidad**: se ofrecen las versiones disponibles (1080p, 2160p, 720p, 480p) y se prioriza 1080p para el primer intento.
+- **Episodios de temporada**: los packs de temporada eligen automáticamente el archivo del episodio correcto.
+- **Repositorio de extensiones actualizado**: Torrentio ahora se instala como proveedor de streaming TMDB, no como proveedor de torrents de anime.
+
+## 8.14. Acceso Directo al Buscador desde Sidebar y Búsqueda de Manga (2026-11-02)
+- **Acceso Directo al Buscador en Desktop**:
+  - Al pulsar el botón de búsqueda en el sidebar de escritorio, se abre directamente la vista del catálogo con el campo de búsqueda activo y enfocado.
+  - Se añade un botón visible de **Explorar** en la parte superior para regresar al Hub de Exploración con un solo clic.
+- **Búsqueda y Filtros de Manga**:
+  - Integrada la búsqueda de mangas en el catálogo avanzado con soporte para cuadrícula de `MangaCard`.
+- **Selector Dinámico según Secciones Habilitadas**:
+  - El selector Anime / Shows / Manga ahora respeta estrictamente las secciones activadas en los ajustes de la aplicación, ocultando las que estén deshabilitadas y ajustando automáticamente el tipo de contenido predeterminado.
+
+## 8.13. Animación 3D de Baraja y Tarjeta Vertical del Seiyuu (2026-11-02)
+- **Transición 3D Fluida estilo Baraja**:
+  - Al cambiar de personaje, la carta activa se desliza y rota en perspectiva 3D con física de resorte (easeOutBack), como si se extrajera de una baraja real.
+  - Las cartas laterales se inclinan suavemente y reaccionan al pasar el cursor para invitar al clic.
+- **Showcase Vertical del Seiyuu**:
+  - Reubicado el Seiyuu a una tarjeta vertical prominente a la derecha con un retrato vertical de gran tamaño en la parte superior e información detallada debajo (nombre, nombre en kanji y rol de voz).
+- **Composición Equilibrada en 3 Columnas**:
+  - Baraja de cartas a la izquierda, biografía y atributos en el centro, y tarjeta vertical del seiyuu a la derecha.
+
+## 8.13. Carrusel Tipo Baraja de Cartas y Fondo Estático en Cast (2026-11-02)
+- **Fondo Estático con Desenfoque Intenso**:
+  - Eliminado cualquier desplazamiento o parpadeo del fondo, aplicando un desenfoque profundo y oscurecimiento total para máxima inmersión.
+- **Navegación Simplificada**:
+  - Sustituida la barra superior por un botón de retroceso idéntico al de la vista de detalle de anime, sin textos ni botones redundantes.
+- **Carrusel Central Tipo Baraja de Cartas**:
+  - Las cartas de los personajes asoman por la izquierda y la derecha con baja opacidad simulando una baraja que se desliza fluidamente al cambiar de personaje.
+- **Metadatos y Tarjeta del Seiyuu Totalmente Estables**:
+  - Geometría vertical fija para nombre, atributos, tarjeta del seiyuu y biografía, garantizando que el actor de voz nunca salte de posición.
+
+## 8.13. Vista Detallada de Personajes, Seiyuu y Filtro de Imagen (2026-11-02)
+- **Filtro Automático de Personajes sin Imagen**:
+  - En la fila de personajes y reparto de la vista de detalle en PC, se ocultan por defecto todas las entradas que carezcan de imagen o tengan placeholders genéricos.
+- **Vista Detallada Inmersiva con Transición Hero**:
+  - Al hacer clic en cualquier personaje, la pantalla se transforma suavemente: el contenido desaparece y el fondo original de la serie se desenfoca de forma intensa.
+  - La tarjeta del personaje vuela al centro del escenario con una animación Hero fluida.
+- **Panel Informativo Completo y Tarjeta del Seiyuu**:
+  - Se muestra al lado la información detallada del personaje (nombre japonés nativo, roles, edad, cumpleaños, grupo sanguíneo y biografía).
+  - Tarjeta destacada de vidrio líquido (g1455) para el **Seiyuu (actor de voz japonés)** con foto, nombre y rol original.
+  - Tira inferior interactiva de miniaturas para alternar instantáneamente entre los personajes del elenco y navegación con teclas (← / → y Esc para volver).
+
+## 8.12. Series y Películas TMDB Activadas (2026-11-02)
+- **La sección de Series TMDB se activa por defecto** en Explorar, con tendencias, populares, mejor valoradas y búsqueda.
+- **Reproducción completa**: temporadas, episodios y películas con proveedores compatibles con TMDB.
+- **Progreso independiente**: lo visto en TMDB ya no se mezcla con AniList.
+- **Reanudación real**: “Seguir viendo” y la barra flotante recuperan temporada, episodio y título original.
+- Nueva fila **Series en tendencia** en el feed.
+- **Corrección de episodios TMDB**: las temporadas ya cargan sus episodios (antes la ruta del API quedaba incompleta y la caché mezclaba temporadas).
+- **Episodios TMDB con la UI de Anime**: mismas cards, mismo selector de temporada y mismo orden episodios → cast → trailer. Se retiraron los filtros All/Unwatched y la temporada 0 se muestra como **Especiales**.
+- **Cambio de temporada suave**: al elegir otra temporada, la lista hace crossfade + deslizamiento, muestra el shimmer de carga y el selector aparece con altura animada, sin saltos.
+- **Extensiones con capacidad declarada**: `providerType` (`anime`, `tmdb` o `both`) permite filtrar proveedores compatibles en Anime y TMDB. Las extensiones antiguas con `supportsTmdb` se tratan como `both`. El tipo se muestra como badge en los selectores y en extensiones instaladas.
+- **Reparto y trailer TMDB**: la ficha carga créditos y vídeos de TMDB para mostrar cast y trailer como en Anime.
+- **Desactivar el catálogo de anime ya no oculta tu historial**: el inicio y “Seguir viendo” siguen disponibles; solo desaparece la pestaña de catálogo en Explorar.
+- **Buscador rápido Ctrl+K con fallback**: si AniList no está disponible o su catálogo está desactivado, busca en TMDB.
+
+## 8.11. Controles del Reproductor en Pantalla y Modularización de Arquitectura (2026-11-01)
+- **Selectores de Audio y Subtítulos con GlassPopover (`g1455`)**:
+  - Popovers flotantes con vidrio líquido real y animación de apertura fluida mediante `GlassPopoverAnchor`, anclados limpiamente a la izquierda del botón de pantalla completa.
+  - Confinamiento total del desplazamiento de la rueda del ratón dentro de la lista de pistas para evitar que mueva la página subyacente.
+- **Rediseño de Barra Inferior en PC Desktop**:
+  - Reorganización de la barra de controles: fila de controles de reproducción situada arriba y barra de progreso/timeline situada debajo.
+  - Indicador de tiempo transcurrido y capítulos rediseñado en forma de cápsula redondeada a juego con el diseño del resto de controles y fondo translúcido uniforme.
+- **Pulido Visual de Controles de Reproducción**:
+  - Barra de volumen minimalista en color blanco continuo sin perilla esférica y con distancia reducida al icono de volumen.
+  - Sombra sutil de contraste detrás de los indicadores de tiempo y capítulos para garantizar legibilidad perfecta sobre cualquier fotograma claro u oscuro.
+- **Modularización del Reproductor**:
+  - Descomposición de la lógica del reproductor (`VideoPlayerScreen`) en servicios y componentes especializados e independientes (`PlayerTrackMatcher`, `PlayerEpisodeResolver`, `PlayerDesktopHeader`, `PlayerTrackSelectors`), reduciendo complejidad y mejorando la mantenibilidad.
+
+## 8.11. Feed: Selector Inteligente y Vista Previa Inmersiva (2026-11-01)
+- **Selector de Fuentes Solo Cuando Aplica**:
+  - El selector del feed (Todo / Plex-Jellyfin / Solo anime) ya no aparece cuando solo tienes un servidor conectado, sin cuenta de AniList, descargas ni colección local.
+- **Vista Previa Inmersiva desde el Feed**:
+  - Clic derecho, pulsación larga o dejar el puntero quieto sobre una tarjeta abre una vista previa a pantalla completa.
+  - La portada vuela al centro con transición hero, el fondo se pinta con los colores de la portada y la propia portada se usa como fondo con desenfoque intenso.
+  - Los metadatos aparecen a la derecha, con acceso directo a la ficha completa.
+  - En **Seguir viendo**, la vista previa muestra la info del episodio: imagen 16:9 del episodio, número y título, sinopsis, nota (si tiene), duración y fecha de emisión.
+- **Logos Reales en el Feed Vacío**:
+  - Los accesos para conectar AniList, Plex y Jellyfin ahora usan sus logos oficiales de `assets/icons` en lugar de iconos genéricos.
+
+## 8.10. Búsqueda Rápida Flotante en los Feeds de Anime y Manga (2026-11-01)
+- **Paleta de Búsqueda Instantánea**:
+  - Atajo **Ctrl + K** (**⌘K** en macOS) en los feeds de anime y manga para abrir un buscador flotante en el centro de la pantalla.
+  - El fondo se oscurece y el campo y los resultados aparecen sobre vidrio líquido translúcido, con entrada suave y cambios de tamaño animados mientras escribes.
+  - Navegación con teclado: **↑ ↓** para moverte entre resultados, **Enter** para abrir y **Esc** para cerrar.
+  - Vista previa lateral: clic derecho (o **→**) sobre un resultado desliza la paleta a la izquierda y muestra carátula, título, nota, géneros y sinopsis del show; **←** o **Esc** la cierran.
+
+## 8.09. Reproductor Completo para Servidores Multimedia y Ajustes de Plex / Jellyfin (2026-11-01)
+- **Metadatos y Episodios de Plex / Jellyfin dentro del Reproductor**:
+  - El reproductor ahora muestra el título de la serie, el nombre y la sinopsis del episodio, su duración y su fecha de emisión cuando el video viene de Plex o Jellyfin.
+  - El carril derecho de episodios vuelve a mostrarse con los episodios de la temporada, con cambio de episodio instantáneo sin pasar por proveedores online.
+  - El progreso se reporta al servidor al salir del reproductor, manteniendo "Continuar viendo" al día.
+- **Interfaz Limpia para Fuentes Externas**:
+  - Se ocultan los comentarios y las opciones de fuentes de reproducción en videos directos de Plex, Jellyfin y TMDB, ya que no aplican a esas bibliotecas.
+- **Subtítulos ASS Nativos**:
+  - El reproductor ahora renderiza los subtítulos `.ass` con libass en escritorio: conservan sus estilos, fuentes, posiciones y efectos en lugar de mostrarse como texto plano.
+  - El estilo de subtítulos y la sincronía de subtítulos/audio de Ajustes vuelven a aplicarse en el reproductor de escritorio.
+- **Estabilidad Visual del Reproductor de Escritorio**:
+  - El video ya no se redimensiona ni se desplaza al entrar a un episodio: mantiene su tamaño y posición desde el primer frame.
+
+## 8.08. Barra de Título Nativa con Estilo Windows 11 Moderno (2026-11-01)
+- **Integración Nativa con el Diseño de Windows 11**:
+  - Sustituida la antigua barra de título negra opaca y genérica de Win32 por el material moderno Mica de Windows 11 (`DWMWA_SYSTEMBACKDROP_TYPE`), adaptándose de forma sutil y elegante al fondo de pantalla del sistema.
+  - Esquinas suavemente redondeadas (`DWMWA_WINDOW_CORNER_PREFERENCE`) según las especificaciones de diseño oficiales de Windows 11.
+  - Sincronización en tiempo real del tema: el título, los botones de ventana (minimizar, maximizar con soporte para Snap Layouts y cerrar) y el fondo de la barra se coordinan automáticamente con el modo claro, oscuro y modo OLED de la aplicación.
+
+## 8.07. Escaneo y Reconocimiento de Series Locales al Estilo Jellyfin (2026-11-01)
+- **Reconocimiento y Separación Fiel de Temporadas Locales**:
+  - Implementación completa del algoritmo de escaneo de carpetas y archivos locales de Jellyfin (`Jellyfin.Naming`), soportando carpetas numéricas (`01`, `02`), carpetas multilingües (`Temporada 2`, `Season 2`, `Staffel 3`), carpetas de especiales (`Specials`, `Extras` como Temporada 0) y etiquetas de release.
+  - Soporte para etiquetas de identificación directa de Jellyfin en los nombres de carpeta (como `[tmdbid-12345]` o `[tvdbid-12345]`).
+  - Detección precisa de archivos con numeración plana (`01.mkv`, `01 - Título.mkv`, `[ReleaseGroup] Show - 01.mkv`) dentro de carpetas de temporada, evitando falsas detecciones como película.
+- **Visualización Inteligente de Temporadas y Episodios**:
+  - Las temporadas locales ya no se pierden ni se ocultan si TMDB agrupa todos los episodios en una sola temporada de 24 episodios: la lista de temporadas ahora combina y respeta todas las temporadas físicas existentes en el disco.
+  - Sincronización inteligente de metadatos: si una serie tiene 2 temporadas de 12 episodios en disco y TMDB agrupa los 24 episodios en la Temporada 1, la Temporada 2 muestra sus 12 episodios locales con su título, descripción e imagen correspondientes calculados a partir de los episodios 13 a 24 de TMDB.
+  - Todos los episodios locales se muestran siempre como disponibles para reproducir al instante.
+
+## 8.06. Integración Modular de Servidores Multimedia (Plex y Jellyfin) (2026-10-31)
+- **Soporte para Servidores Personales Plex y Jellyfin / Emby**:
+  - Posibilidad de conectar servidores multimedia mediante inicio de sesión oficial con código PIN / QR en Plex o credenciales en Jellyfin/Emby.
+  - Nuevo panel en Ajustes para gestionar servidores conectados con verificación de estado en línea en tiempo real.
+- **Explorador y Reproducción Directa sin Fricción**:
+  - Feed híbrido responsivo: la sección de "Continuar viendo" ahora combina armónicamente los episodios en curso de AniList con los de tu servidor Plex/Jellyfin, identificando cada origen con insignias distintivas y barras de progreso.
+  - Carruseles dinámicos por biblioteca: las películas y series de tu servidor se integran directamente en la pantalla de inicio con su propio carrusel horizontal.
+  - Selector de vista integrado: filtro rápido para alternar entre "Todo mezclado", "Solo mi servidor" o "Solo anime".
+  - Reproducción instantánea: tocar cualquier contenido de tu servidor lo reproduce de inmediato en el reproductor nativo (ExoPlayer / MediaKit) con scrobbling y reporte de progreso bidireccional.
+
 ## 8.05. Resplandor Ambiental Limpio en el Reproductor Desktop (2026-10-30)
 - **Corregido el Difuminado que se Superponía sobre el Video**:
   - El resplandor con los colores del video ahora se dibuja **detrás** del reproductor en lugar de taparlo, eliminando el velo borroso y las líneas de sombra que aparecían sobre la imagen.

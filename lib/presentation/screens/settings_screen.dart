@@ -7,6 +7,7 @@ export 'settings/subpages/streaming_settings_screen.dart';
 export 'settings/subpages/server_settings_screen.dart';
 export 'settings/subpages/debrid_settings_screen.dart';
 export 'settings/subpages/local_library_settings_screen.dart';
+export 'settings/subpages/media_servers_settings_screen.dart';
 export 'settings/subpages/about_settings_screen.dart';
 export 'settings/widgets/pixel_settings_widgets.dart';
 export 'settings/widgets/pixel_subpage_scaffold.dart';

@@ -503,6 +503,7 @@ func InitRoutes(app *core.App, e *echo.Echo) {
 	v1.GET("/torrentstream/settings", h.HandleGetTorrentstreamSettings)
 	v1.PATCH("/torrentstream/settings", h.HandleSaveTorrentstreamSettings)
 	v1.POST("/torrentstream/start", h.HandleTorrentstreamStartStream)
+	v1.POST("/torrentstream/start-magnet", h.HandleTorrentstreamStartMagnetStream)
 	v1.POST("/torrentstream/stop", h.HandleTorrentstreamStopStream)
 	v1.POST("/torrentstream/drop", h.HandleTorrentstreamDropTorrent)
 	v1.POST("/torrentstream/pause", h.HandleTorrentstreamPauseStream)

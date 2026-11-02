@@ -10,6 +10,7 @@ import 'package:seanime_app/presentation/screens/extensions_marketplace_screen.d
 import 'package:seanime_app/presentation/screens/settings/subpages/about_settings_screen.dart';
 import 'package:seanime_app/presentation/screens/settings/subpages/debrid_settings_screen.dart';
 import 'package:seanime_app/presentation/screens/settings/subpages/local_library_settings_screen.dart';
+import 'package:seanime_app/presentation/screens/settings/subpages/media_servers_settings_screen.dart';
 import 'package:seanime_app/presentation/screens/settings/subpages/manga_settings_screen.dart';
 import 'package:seanime_app/presentation/screens/settings/subpages/personalizacion_settings_screen.dart';
 import 'package:seanime_app/presentation/screens/settings/subpages/player_settings_screen.dart';
@@ -34,6 +35,7 @@ enum SettingsCategory {
   downloadManager,
   downloads,
   localLibrary,
+  mediaServers,
   server,
   about,
 }
@@ -83,6 +85,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         return const DownloadsScreen(isEmbedded: true);
       case SettingsCategory.localLibrary:
         return const LocalLibrarySettingsScreen(isEmbedded: true);
+      case SettingsCategory.mediaServers:
+        return const MediaServersSettingsScreen(isEmbedded: true);
       case SettingsCategory.server:
         return const ServerSettingsScreen(isEmbedded: true);
       case SettingsCategory.about:
@@ -125,6 +129,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           break;
         case SettingsCategory.localLibrary:
           page = const LocalLibrarySettingsScreen();
+          break;
+        case SettingsCategory.mediaServers:
+          page = const MediaServersSettingsScreen();
           break;
         case SettingsCategory.server:
           page = const ServerSettingsScreen();

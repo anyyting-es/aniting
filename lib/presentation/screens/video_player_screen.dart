@@ -8,7 +8,6 @@ import 'package:media_kit/media_kit.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/preferences/anime_playback_source_provider.dart';
 import 'package:seanime_app/core/preferences/live_playback_progress_provider.dart';
 import 'package:seanime_app/core/preferences/player_desktop_view_provider.dart';
@@ -29,25 +28,31 @@ import 'package:seanime_app/presentation/providers/app_providers.dart';
 import 'package:seanime_app/presentation/providers/torrent_stream_provider.dart';
 import 'package:seanime_app/presentation/widgets/anime_details_modal_sheet.dart';
 import 'package:seanime_app/presentation/widgets/player/controls/player_keyboard_handler.dart';
+import 'package:seanime_app/presentation/widgets/player/dialogs/player_source_picker.dart';
 import 'package:seanime_app/presentation/widgets/player/layouts/player_desktop_layout.dart';
 import 'package:seanime_app/presentation/widgets/player/layouts/player_mobile_layout.dart';
 import 'package:seanime_app/presentation/widgets/player/models/player_types.dart';
+import 'package:seanime_app/presentation/widgets/player/models/player_direct_episode.dart';
 import 'package:seanime_app/presentation/widgets/player/panels/player_info_panel.dart';
 import 'package:seanime_app/presentation/widgets/player/panels/watch/player_episodes_rail.dart';
 import 'package:seanime_app/presentation/widgets/player/panels/watch/player_header_controls.dart';
 import 'package:seanime_app/presentation/widgets/player/panels/watch/player_movie_rail.dart';
 import 'package:seanime_app/presentation/widgets/player/panels/watch/player_watch_content.dart';
 import 'package:seanime_app/presentation/widgets/player/panels/watch/player_episode_header.dart';
+import 'package:seanime_app/presentation/widgets/player/panels/watch/player_desktop_header.dart';
 import 'package:seanime_app/presentation/widgets/player/services/performance_stats_service.dart';
+import 'package:seanime_app/presentation/widgets/player/services/player_episode_resolver.dart';
 import 'package:seanime_app/presentation/widgets/player/services/player_playback_coordinator.dart';
 import 'package:seanime_app/presentation/widgets/player/services/player_progress_manager.dart';
 import 'package:seanime_app/presentation/widgets/player/services/player_shader_service.dart';
 import 'package:seanime_app/presentation/widgets/player/services/player_source_controller.dart';
+import 'package:seanime_app/presentation/widgets/player/services/player_track_matcher.dart';
 import 'package:seanime_app/presentation/widgets/player/services/player_window_manager.dart';
 import 'package:seanime_app/presentation/widgets/player/viewport/ambient_video_glow.dart';
 import 'package:seanime_app/presentation/widgets/player/viewport/player_viewport.dart';
 import 'package:seanime_app/presentation/widgets/player/sheets/player_episodes_sheet.dart';
 import 'package:seanime_app/presentation/widgets/player/sheets/player_settings_launcher.dart';
+import 'package:seanime_app/presentation/widgets/toast/app_toast.dart';
 import 'package:seanime_app/core/preferences/subtitle_style_preferences_provider.dart';
 import 'package:seanime_app/core/player/mpris_service.dart';
 
@@ -79,6 +84,28 @@ class VideoPlayerScreen extends ConsumerStatefulWidget {
   final String? onlineStreamServer;
   final bool isLocalFile;
 
+  /// True when the video is a direct stream from a Plex / Jellyfin server.
+  ///
+  /// These libraries are not part of AniList: the watch page gets its metadata
+  /// and episode rail from [directEpisodes], and it must not offer online
+  /// playback-source options.
+  final bool isMediaServerMedia;
+
+  /// Episodes that can be played directly (media servers), bypassing the
+  /// AniList / online-stream resolver when the user switches episodes.
+  final List<PlayerDirectEpisode>? directEpisodes;
+
+  /// Hides the comments thread. External libraries and TMDB detail pages have
+  /// no local comments to show.
+  final bool hideComments;
+
+  /// Called right before the player is disposed with the final playback
+  /// position. Used by media-server integrations to report accurate progress
+  /// when the user leaves (the value captured when the route was opened is
+  /// stale by then). [sourceId] identifies the item that was playing.
+  final void Function(String? sourceId, Duration position, Duration duration)?
+  onPlaybackStopped;
+
   /// TMDB (movies / series): when [isTmdbMedia] is true, [mediaId] is the TMDB ID
   /// and online streaming is resolved through a TMDB-capable provider.
   final bool isTmdbMedia;
@@ -109,11 +136,15 @@ class VideoPlayerScreen extends ConsumerStatefulWidget {
     this.onlineStreamDubbed,
     this.onlineStreamServer,
     this.isLocalFile = false,
+    this.isMediaServerMedia = false,
+    this.directEpisodes,
+    this.hideComments = false,
     this.isTmdbMedia = false,
     this.tmdbMediaType,
     this.tmdbSeason,
     this.tmdbEnglishTitle,
     this.tmdbYear,
+    this.onPlaybackStopped,
   });
 
   static Route<void> route({
@@ -137,11 +168,16 @@ class VideoPlayerScreen extends ConsumerStatefulWidget {
     bool? onlineStreamDubbed,
     String? onlineStreamServer,
     bool isLocalFile = false,
+    bool isMediaServerMedia = false,
+    List<PlayerDirectEpisode>? directEpisodes,
+    bool hideComments = false,
     bool isTmdbMedia = false,
     String? tmdbMediaType,
     int? tmdbSeason,
     String? tmdbEnglishTitle,
     int? tmdbYear,
+    void Function(String? sourceId, Duration position, Duration duration)?
+    onPlaybackStopped,
   }) {
     return PageRouteBuilder(
       opaque: true,
@@ -169,11 +205,15 @@ class VideoPlayerScreen extends ConsumerStatefulWidget {
             onlineStreamDubbed: onlineStreamDubbed,
             onlineStreamServer: onlineStreamServer,
             isLocalFile: isLocalFile,
+            isMediaServerMedia: isMediaServerMedia,
+            directEpisodes: directEpisodes,
+            hideComments: hideComments,
             isTmdbMedia: isTmdbMedia,
             tmdbMediaType: tmdbMediaType,
             tmdbSeason: tmdbSeason,
             tmdbEnglishTitle: tmdbEnglishTitle,
             tmdbYear: tmdbYear,
+            onPlaybackStopped: onPlaybackStopped,
           ),
     );
   }
@@ -281,6 +321,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   // Controls UI visibility
   bool _areControlsVisible = true;
   bool _isInteractingWithVolume = false;
+  bool _isMenuOpen = false;
   Timer? _hideTimer;
 
   // Seek feedback toast
@@ -313,92 +354,36 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   bool _isPlayerDisposed = false;
   bool _hasAutoAppliedTracks = false;
 
-  String get _currentVideoKey {
-    if (widget.mediaId != null && _currentEpisodeNumber != null) {
-      return '${widget.mediaId}_$_currentEpisodeNumber';
-    }
-    if (_currentVideoUrl.isNotEmpty) {
-      return 'url_${_currentVideoUrl.hashCode}';
-    }
-    return '';
-  }
+  String get _currentVideoKey => PlayerTrackMatcher.makeVideoKey(
+    mediaId: widget.mediaId,
+    episodeNumber: _currentEpisodeNumber,
+    videoUrl: _currentVideoUrl,
+  );
 
   void _applySavedOrPreferredTracks(
     List<UiTrack> audioList,
     List<UiTrack> subList,
   ) {
-    final key = _currentVideoKey;
-    final pref = ref.read(trackPreferencesProvider.notifier).getPreference(key);
+    final pref = ref
+        .read(trackPreferencesProvider.notifier)
+        .getPreference(_currentVideoKey);
 
-    // 1. Audio track restoration
-    if (pref?.audioTrackId != null) {
-      final target =
-          audioList.where((t) => t.id == pref!.audioTrackId).firstOrNull ??
-          (pref?.audioLanguage != null
-              ? audioList
-                    .where(
-                      (t) =>
-                          t.language.toLowerCase() ==
-                          pref!.audioLanguage!.toLowerCase(),
-                    )
-                    .firstOrNull
-              : null);
-      if (target != null && target.id != _selectedAudioTrackId) {
-        _selectAudioTrack(target);
-      }
+    final targetAudio = PlayerTrackMatcher.matchAudioTrack(
+      audioList: audioList,
+      preference: pref,
+    );
+    if (targetAudio != null && targetAudio.id != _selectedAudioTrackId) {
+      _selectAudioTrack(targetAudio);
     }
 
-    // 2. Subtitle track restoration or smart default
-    if (pref?.subtitleTrackId != null) {
-      if (pref!.subtitleTrackId == 'off' || pref.subtitleTrackId == 'no') {
-        _selectSubtitleTrack(null);
-      } else {
-        final target =
-            subList.where((t) => t.id == pref.subtitleTrackId).firstOrNull ??
-            (pref.subtitleLanguage != null
-                ? subList
-                      .where(
-                        (t) =>
-                            t.language.toLowerCase() ==
-                            pref.subtitleLanguage!.toLowerCase(),
-                      )
-                      .firstOrNull
-                : null);
-        if (target != null && target.id != _selectedSubtitleTrackId) {
-          _selectSubtitleTrack(target);
-        }
-      }
-    } else if (subList.isNotEmpty && _selectedSubtitleTrackId == null) {
-      // Auto-match user's app language or fallback to first available track
-      final appLang = ref.read(appLanguageProvider);
-      final isSpanish = appLang == AppLanguage.es;
-
-      UiTrack? matchedSub;
-      if (isSpanish) {
-        matchedSub = subList.where((t) {
-          final l = t.language.toLowerCase();
-          final title = t.title.toLowerCase();
-          return l.contains('es') ||
-              l.contains('spa') ||
-              title.contains('esp') ||
-              title.contains('spanish') ||
-              title.contains('castellano') ||
-              title.contains('latino') ||
-              title.contains('español');
-        }).firstOrNull;
-      } else {
-        matchedSub = subList.where((t) {
-          final l = t.language.toLowerCase();
-          final title = t.title.toLowerCase();
-          return l.contains('en') ||
-              l.contains('eng') ||
-              title.contains('english');
-        }).firstOrNull;
-      }
-
-      // If no matching language track found, select the first available subtitle track
-      matchedSub ??= subList.first;
-      _selectSubtitleTrack(matchedSub);
+    final subResult = PlayerTrackMatcher.matchSubtitleTrack(
+      subList: subList,
+      preference: pref,
+      currentSelectedSubtitleId: _selectedSubtitleTrackId,
+      appLanguage: ref.read(appLanguageProvider),
+    );
+    if (subResult.shouldChange) {
+      _selectSubtitleTrack(subResult.track);
     }
   }
 
@@ -414,10 +399,32 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   String? get _sourceResolutionError => _sourceController.sourceResolutionError;
   bool get _isLoadingNextEpisode => _sourceController.isLoadingNextEpisode;
 
+  /// External libraries and TMDB detail pages have no local comments thread.
+  bool get _showComments =>
+      !(widget.hideComments ||
+          widget.isMediaServerMedia ||
+          widget.isTmdbMedia ||
+          (widget.initialAnimeDetails?.isTmdb ?? false) ||
+          (_animeDetails?.isTmdb ?? false));
+
+  /// Episode that is currently playing when the video comes straight from a
+  /// media server. Used to report progress back to the right item.
+  PlayerDirectEpisode? get _currentDirectEpisode {
+    final episodes = widget.directEpisodes;
+    if (episodes == null || episodes.isEmpty) return null;
+    final number = _currentEpisodeNumber;
+    if (number == null) return episodes.first;
+    return episodes.where((episode) => episode.number == number).firstOrNull ??
+        episodes.first;
+  }
+
   /// Where the current video comes from. Only online streams expose switchable
   /// providers/servers, so the playback card renders differently for local files
   /// and torrent streams.
   PlayerPlaybackOrigin get _playbackOrigin {
+    if (widget.isMediaServerMedia) {
+      return PlayerPlaybackOrigin.mediaServer;
+    }
     if (_isCurrentLocalFile ||
         _currentVideoUrl.contains('/api/v1/mediastream')) {
       return PlayerPlaybackOrigin.local;
@@ -432,6 +439,9 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   List<OnlinestreamEpisode>? _onlineEpisodes;
 
   Future<void> _fetchOnlineEpisodes() async {
+    // TMDB media uses its own season episodes; the AniList onlinestream
+    // episode endpoint would query an unrelated anime with the same id.
+    if (_isTmdbPlayback) return;
     if (widget.mediaId == null || _currentOnlineStreamProvider == null) return;
     final repo = ref.read(repositoryProvider);
     final providerId = _currentOnlineStreamProvider!;
@@ -465,95 +475,22 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       (_animeDetails?.totalEpisodes == 1 &&
           (_animeDetails?.episodes.length ?? 0) <= 1);
 
-  bool get _hasNextEpisode {
-    if (_isMovie) return false;
-    final cur = _currentEpisodeNumber;
-    if (cur == null || cur < 1) return false;
-    final nextNum = cur + 1;
+  bool get _hasNextEpisode => PlayerEpisodeResolver.hasNextEpisode(
+    isMovie: _isMovie,
+    directEpisodes: widget.directEpisodes,
+    currentEpisodeNumber: _currentEpisodeNumber,
+    animeDetails: _animeDetails,
+    aniZipData: _aniZipData ?? _animeDetails?.aniZipData,
+    onlineStreamProvider: _currentOnlineStreamProvider,
+    onlineEpisodes: _onlineEpisodes,
+    isCurrentLocalFile: _isCurrentLocalFile,
+  );
 
-    // 1. Total episodes ceiling
-    final total = _animeDetails?.totalEpisodes;
-    if (total != null && total > 0 && nextNum > total) {
-      return false;
-    }
-
-    // 2. Unreleased series status
-    final status = _animeDetails?.status?.toUpperCase();
-    if (status == 'NOT_YET_RELEASED') {
-      return false;
-    }
-
-    // 3. Airing guard via AniList nextAiringEpisode
-    final rawMedia = _animeDetails?.rawMedia;
-    final nextAiring = rawMedia?['nextAiringEpisode'] as Map<String, dynamic>?;
-    final nextAiringEpNum = (nextAiring?['episode'] as num?)?.toInt();
-    if (nextAiringEpNum != null && nextAiringEpNum > 0) {
-      if (nextNum >= nextAiringEpNum) {
-        return false;
-      }
-    }
-
-    // 4. Airing guard via AniZip episode airDate & releasing stubs
-    final aniZip = _aniZipData ?? _animeDetails?.aniZipData;
-    final nextAniZipEp = aniZip?.getEpisode(nextNum);
-    if (nextAniZipEp != null) {
-      if (nextAniZipEp.airDate != null && nextAniZipEp.airDate!.isNotEmpty) {
-        final airDt = DateTime.tryParse(nextAniZipEp.airDate!);
-        if (airDt != null &&
-            airDt.isAfter(DateTime.now().add(const Duration(hours: 4)))) {
-          return false;
-        }
-      }
-      if (status == 'RELEASING') {
-        if ((nextAniZipEp.airDate == null || nextAniZipEp.airDate!.isEmpty) &&
-            (nextAniZipEp.image == null || nextAniZipEp.image!.isEmpty)) {
-          return false;
-        }
-      }
-    }
-
-    // 5. If streaming via an online provider, check the provider's loaded catalog
-    if (_currentOnlineStreamProvider != null) {
-      if (_onlineEpisodes != null) {
-        return _onlineEpisodes!.any((e) => e.number == nextNum);
-      }
-    }
-
-    // 6. If playing a local library file
-    if (_isCurrentLocalFile) {
-      final eps = _animeDetails?.episodes ?? [];
-      final hasLocal = eps.any(
-        (e) => e.episodeNumber == nextNum && e.isDownloaded,
-      );
-      if (hasLocal) return true;
-    }
-
-    // 7. General availability fallback (AniZip or episodes metadata)
-    if (nextAniZipEp != null) {
-      return true;
-    }
-
-    final eps = _animeDetails?.episodes ?? [];
-    if (eps.any((e) => e.episodeNumber == nextNum)) {
-      return true;
-    }
-
-    if (status == 'FINISHED' || status == 'COMPLETED') {
-      if (total != null && total > 0) {
-        return nextNum <= total;
-      }
-    }
-
-    if (aniZip != null &&
-        aniZip.episodeCount > 0 &&
-        nextNum > aniZip.episodeCount) {
-      return false;
-    }
-
-    return false;
-  }
-
-  bool get _hasPreviousEpisode => !_isMovie && (_currentEpisodeNumber ?? 1) > 1;
+  bool get _hasPreviousEpisode => PlayerEpisodeResolver.hasPreviousEpisode(
+    isMovie: _isMovie,
+    directEpisodes: widget.directEpisodes,
+    currentEpisodeNumber: _currentEpisodeNumber,
+  );
 
   String? get _effectiveCharacterImage =>
       _animeDetails?.mainCharacterImage ??
@@ -575,8 +512,177 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       _aniZipData?.clearlogoUrl ??
       _animeDetails?.aniZipData?.clearlogoUrl;
 
+  bool get _isTmdbPlayback =>
+      widget.isTmdbMedia || (_animeDetails?.isTmdb ?? false);
+
+  bool _sourcePickerShown = false;
+
+  String? get _currentEpisodeImage {
+    final epNum = _currentEpisodeNumber ?? 1;
+    final detailsEp = _animeDetails?.episodes
+        .where((e) => e.episodeNumber == epNum)
+        .firstOrNull;
+    return detailsEp?.image ??
+        _aniZipData?.getEpisode(epNum)?.image ??
+        _effectiveCoverImage;
+  }
+
+  /// Shows the in-player source picker shortly after entering a TMDB episode.
+  Future<void> _openSourcePickerOnEnter() async {
+    if (_sourcePickerShown || _isPlayerDisposed) return;
+    _sourcePickerShown = true;
+    await Future<void>.delayed(const Duration(milliseconds: 320));
+    if (!mounted || _isPlayerDisposed) return;
+    await _showSourcePicker();
+  }
+
+  /// Provider tabs + sources picker. Selecting a source starts playback.
+  Future<void> _showSourcePicker() async {
+    final l10n = ref.read(translationsProvider);
+
+    List<OnlinestreamProvider> providers = const [];
+    try {
+      providers = (await ref
+              .read(repositoryProvider)
+              .getOnlinestreamProviders(forceRefresh: true))
+          .where((p) => _isTmdbPlayback ? p.supportsTmdb : true)
+          .toList();
+    } catch (_) {}
+
+    if (!mounted) return;
+    if (providers.isEmpty) {
+      AppToast.warning(
+        l10n.noOnlineExtensionsInstalled,
+        context: context,
+      );
+      return;
+    }
+
+    final initialProviderId =
+        providers.any((p) => p.id == _currentOnlineStreamProvider)
+            ? _currentOnlineStreamProvider
+            : providers.first.id;
+
+    await showPlayerSourcePicker(
+      context,
+      title: widget.title,
+      episodeTitle: _currentEpisodeTitle ?? widget.episodeTitle ?? widget.title,
+      imageUrl: _currentEpisodeImage,
+      providers: providers,
+      initialProviderId: initialProviderId,
+      loadSources: (providerId) async {
+        final sources = await _sourceController.fetchSourcesForProvider(
+          providerId,
+        );
+        _sourceController.setAvailableSources(sources);
+        if (mounted && _currentOnlineStreamProvider != providerId) {
+          setState(() => _currentOnlineStreamProvider = providerId);
+        }
+        return sources;
+      },
+      onSourceSelected: (provider, source) async {
+        if (!mounted) return;
+        if (_currentOnlineStreamProvider != provider.id) {
+          setState(() => _currentOnlineStreamProvider = provider.id);
+        }
+        await _sourceController.selectSource(source);
+      },
+    );
+  }
+
+  /// Loads TMDB metadata + season episodes for the player.
+  ///
+  /// The detail page already provides most of the metadata through
+  /// [VideoPlayerScreen.initialAnimeDetails]; this only fills the gaps (e.g.
+  /// when resuming from "Continue watching") and builds the season episode list
+  /// used by the rail, next-episode logic and episode picker.
+  Future<void> _fetchTmdbDetails() async {
+    final mediaId = widget.mediaId;
+    if (mediaId == null) return;
+
+    final l10n = ref.read(translationsProvider);
+    final lang = ref.read(appLanguageProvider) == AppLanguage.es
+        ? 'es-ES'
+        : 'en-US';
+    final mediaType =
+        (widget.tmdbMediaType ?? _animeDetails?.format ?? 'tv').toLowerCase();
+    final isMovie = mediaType == 'movie' ||
+        (_animeDetails?.format?.toUpperCase() == 'MOVIE');
+    final season = widget.tmdbSeason ?? 1;
+
+    var details = _animeDetails;
+    var tmdbEpisodes = const <AnimeEpisode>[];
+
+    if (details == null && mounted) {
+      setState(() => _isLoadingDetails = true);
+    }
+
+    try {
+      final tmdb = ref.read(tmdbServiceProvider);
+      if (details == null) {
+        final tmdbDetails = await tmdb.getShowDetails(
+          mediaId,
+          language: lang,
+          isMovie: isMovie,
+        );
+        details = tmdbDetails?.toAnimeDetails();
+      }
+
+      if (!isMovie) {
+        final eps = await tmdb.getSeasonEpisodes(
+          mediaId,
+          season,
+          language: lang,
+        );
+        tmdbEpisodes = eps
+            .map(
+              (e) => AnimeEpisode(
+                episodeNumber: e.episodeNumber,
+                title: e.name.isNotEmpty
+                    ? e.name
+                    : l10n.episodeNumber(e.episodeNumber),
+                description: e.overview,
+                image: e.stillUrl,
+              ),
+            )
+            .toList();
+      }
+    } catch (e) {
+      debugPrint('[VideoPlayerScreen] Error loading TMDB metadata: $e');
+    }
+
+    if (!mounted) return;
+
+    setState(() {
+      if (details != null) {
+        _animeDetails = tmdbEpisodes.isNotEmpty
+            ? details.copyWith(
+                episodes: tmdbEpisodes,
+                totalEpisodes: tmdbEpisodes.length,
+              )
+            : details;
+      }
+      _isLoadingDetails = false;
+
+      // Keep the header title in sync with the TMDB episode title.
+      final epNum = _currentEpisodeNumber ?? 1;
+      final match = tmdbEpisodes
+          .where((e) => e.episodeNumber == epNum)
+          .firstOrNull;
+      if (match != null &&
+          match.title.trim().isNotEmpty &&
+          !PlayerEpisodeHeader.isGenericTitle(match.title, epNum)) {
+        _currentEpisodeTitle = match.title;
+      }
+    });
+  }
+
   Future<void> _fetchAnimeDetails() async {
     if (widget.mediaId != null) {
+      if (_isTmdbPlayback) {
+        await _fetchTmdbDetails();
+        return;
+      }
       if (_animeDetails == null && _aniZipData == null) {
         setState(() => _isLoadingDetails = true);
       }
@@ -603,8 +709,12 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
             // Harmonize current episode title with canonical AniZip / anime details
             final epNum = _currentEpisodeNumber ?? 1;
             final eps = details?.episodes;
-            final detailsTitle = eps?.where((e) => e.episodeNumber == epNum).firstOrNull?.title;
-            final canonical = aniZip?.getEpisode(epNum)?.displayTitle ?? detailsTitle;
+            final detailsTitle = eps
+                ?.where((e) => e.episodeNumber == epNum)
+                .firstOrNull
+                ?.title;
+            final canonical =
+                aniZip?.getEpisode(epNum)?.displayTitle ?? detailsTitle;
             if (canonical != null &&
                 canonical.trim().isNotEmpty &&
                 !PlayerEpisodeHeader.isGenericTitle(canonical, epNum)) {
@@ -639,7 +749,15 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   @override
   void initState() {
     super.initState();
+    _initPlayerState();
+    _initCoordinator();
+    final winInit = _initWindowManager();
+    _initProgressManager();
+    _initSourceController();
+    _initPostFrame(winInit);
+  }
 
+  void _initPlayerState() {
     _torrentStreamNotifier = ref.read(torrentStreamStatusProvider.notifier);
     _repository = ref.read(repositoryProvider);
     _isTorrentProgressVisible = ref.read(torrentProgressOverlayEnabledProvider);
@@ -665,7 +783,9 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     if (widget.mediaId != null && _currentOnlineStreamProvider != null) {
       _fetchOnlineEpisodes();
     }
+  }
 
+  void _initCoordinator() {
     final preferredEngine = ref.read(playerEngineProvider);
     final useExo =
         Platform.isAndroid && preferredEngine == PlayerEngine.exoplayer;
@@ -725,15 +845,10 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
           _hasStartedPlayback = true;
           _isSeeking = false;
         }
-        // Only the loading overlay depends on these flags, so rebuild solely
-        // for that transition instead of on every play/pause.
         if (mounted && playing && (!wasStarted || wasSeeking)) {
           setState(() {});
         }
         if (!playing) {
-          // Deferred so the pause icon and the paused frame paint first: the
-          // flush writes SharedPreferences, re-encodes the offline collection
-          // and notifies providers watched by whole pages behind the player.
           _progressManager.scheduleSaveProgress();
           _publishLiveProgress(force: true);
         }
@@ -805,43 +920,40 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     );
     _coordinator.applySubtitleStyle(ref.read(subtitleStylePreferencesProvider));
 
+    ref.listenManual(subtitleStylePreferencesProvider, (_, next) {
+      _coordinator.applySubtitleStyle(next);
+      if (mounted) setState(() {});
+    });
+  }
+
+  PlayerWindowInit _initWindowManager() {
     _windowManager = PlayerWindowManager(
       isTv: _isTvActive,
       ref: ref,
       coordinator: _coordinator,
     );
-    final winInit = _windowManager.initWindow();
+    return _windowManager.initWindow();
+  }
 
-    final isOnline =
-        !widget.isLocalFile &&
-        (widget.onlineStreamProvider != null ||
-            _currentOnlineStreamProvider != null);
-
-    Duration? getSavedProgress([int? epNumber]) {
-      final ep = epNumber ?? _currentEpisodeNumber;
-      if (widget.mediaId != null && ep != null) {
-        final progress = ref
-            .read(playbackProgressPreferencesProvider.notifier)
-            .getProgress(widget.mediaId!, ep);
-        if (progress != null && progress.positionMs > 0) {
-          final fraction = progress.durationMs > 0
-              ? progress.positionMs / progress.durationMs
-              : 0.0;
-          if (fraction < 0.95) {
-            return Duration(milliseconds: progress.positionMs);
-          }
+  Duration? _getSavedProgress([int? epNumber]) {
+    final ep = epNumber ?? _currentEpisodeNumber;
+    if (widget.mediaId != null && ep != null) {
+      final progress = ref
+          .read(playbackProgressPreferencesProvider.notifier)
+          .getProgress(widget.mediaId!, ep);
+      if (progress != null && progress.positionMs > 0) {
+        final fraction = progress.durationMs > 0
+            ? progress.positionMs / progress.durationMs
+            : 0.0;
+        if (fraction < 0.95) {
+          return Duration(milliseconds: progress.positionMs);
         }
       }
-      return null;
     }
+    return null;
+  }
 
-    final resolvedStartPosition = widget.startPosition ?? getSavedProgress();
-
-    ref.listenManual(subtitleStylePreferencesProvider, (_, next) {
-      _coordinator.applySubtitleStyle(next);
-      if (mounted) setState(() {});
-    });
-
+  void _initProgressManager() {
     _progressManager = PlayerProgressManager(
       repository: ref.read(repositoryProvider),
       lastSessionNotifier: ref.read(lastSessionProvider.notifier),
@@ -877,6 +989,10 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       getDescription: () => _animeDetails?.description,
       getYear: () => _animeDetails?.seasonYear,
       getFormat: () => _animeDetails?.format,
+      getTmdbMediaType: () => widget.tmdbMediaType,
+      getTmdbSeason: () => widget.tmdbSeason,
+      getTmdbEnglishTitle: () => widget.tmdbEnglishTitle,
+      getTmdbYear: () => widget.tmdbYear,
       getEpisodeThumbnail: () {
         final ep = _aniZipData?.getEpisode(_currentEpisodeNumber ?? 1);
         return ep?.image ?? _effectiveCoverImage;
@@ -900,7 +1016,9 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
         }
       },
     );
+  }
 
+  void _initSourceController() {
     _sourceController = PlayerSourceController(
       repository: ref.read(repositoryProvider),
       serverManager: ref.read(serverManagerProvider),
@@ -921,29 +1039,41 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       getStartPosition: () {
         final pos = _initialStartPosition;
         _initialStartPosition = null;
-        return pos ?? getSavedProgress();
+        return pos ?? _getSavedProgress();
       },
-      getSavedProgress: (epNum) => getSavedProgress(epNum),
+      getSavedProgress: (epNum) => _getSavedProgress(epNum),
       getHasNextEpisode: () => _hasNextEpisode,
       onUpdateUi: () {
         if (mounted && !_isPlayerDisposed) setState(() {});
       },
       onSourceActivated: _onSourceActivated,
       onShowEpisodePicker: () {
-        if (mounted && widget.mediaId != null) {
-          AnimeDetailsModalSheet.show(
-            context: context,
-            mediaId: widget.mediaId!,
-            animeDetails: _animeDetails,
-          );
+        if (!mounted || widget.mediaId == null) return;
+        if (_isTmdbPlayback) {
+          if (_railEpisodes.isNotEmpty) _openEpisodesSheet();
+          return;
         }
+        AnimeDetailsModalSheet.show(
+          context: context,
+          mediaId: widget.mediaId!,
+          animeDetails: _animeDetails,
+        );
       },
-      getIsTmdb: () => widget.isTmdbMedia,
+      getIsTmdb: () => widget.isTmdbMedia || (_animeDetails?.isTmdb ?? false),
       getTmdbMediaType: () => widget.tmdbMediaType,
       getTmdbSeason: () => widget.tmdbSeason,
       getTmdbEnglishTitle: () => widget.tmdbEnglishTitle,
       getTmdbYear: () => widget.tmdbYear,
+      getDirectEpisodes: () => widget.directEpisodes,
     );
+  }
+
+  void _initPostFrame(PlayerWindowInit winInit) {
+    final isOnline =
+        !widget.isLocalFile &&
+        (widget.onlineStreamProvider != null ||
+            _currentOnlineStreamProvider != null);
+    final resolvedStartPosition = widget.startPosition ?? _getSavedProgress();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || _isPlayerDisposed) return;
@@ -998,7 +1128,11 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       _sourceController.schedulePrefetchNextEpisode();
 
       if (_currentVideoUrl.isEmpty && _currentOnlineStreamProvider != null) {
-        _sourceController.resolveInitialSources();
+        if (_isTmdbPlayback) {
+          _openSourcePickerOnEnter();
+        } else {
+          _sourceController.resolveInitialSources();
+        }
       } else if (_currentOnlineStreamProvider != null) {
         _sourceController.fetchAvailableSourcesInBackground(
           currentVideoUrl: _currentVideoUrl,
@@ -1226,7 +1360,18 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       _torrentStreamNotifier.reset();
     } catch (_) {}
 
-    _windowManager.dispose(onCustomDispose: widget.onDispose);
+    _windowManager.dispose(
+      onCustomDispose: () {
+        try {
+          widget.onPlaybackStopped?.call(
+            _currentDirectEpisode?.sourceId,
+            _position,
+            _duration,
+          );
+        } catch (_) {}
+        widget.onDispose?.call();
+      },
+    );
 
     if (Platform.isLinux) {
       MprisService.instance.reset();
@@ -1257,9 +1402,9 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
 
   void _startHideTimer() {
     _hideTimer?.cancel();
-    if (_isInteractingWithVolume) return;
+    if (_isInteractingWithVolume || _isMenuOpen) return;
     _hideTimer = Timer(const Duration(seconds: 4), () {
-      if (mounted && _isPlaying && !_isInteractingWithVolume) {
+      if (mounted && _isPlaying && !_isInteractingWithVolume && !_isMenuOpen) {
         setState(() => _areControlsVisible = false);
       }
     });
@@ -1298,6 +1443,9 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     if (!mounted) return;
     _isMouseInside = false;
     _isInteractingWithVolume = false;
+    if (_isMenuOpen) {
+      return;
+    }
     _hideTimer?.cancel();
     if (_areControlsVisible) {
       setState(() => _areControlsVisible = false);
@@ -1571,7 +1719,9 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   Widget? _buildAmbientHalo() {
     final service = _coordinator.mediaKitService;
     if (service == null || _coordinator.isUsingExoPlayer) return null;
-    if (!_hasStartedPlayback || _isLoadingNextEpisode || _isExiting) return null;
+    if (!_hasStartedPlayback || _isLoadingNextEpisode || _isExiting) {
+      return null;
+    }
     return _ambientHaloWidget ??= AmbientVideoGlow(
       controller: service.videoController,
       scrimOpacity: 0,
@@ -1643,20 +1793,12 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   }
 
   /// Episode list for the desktop right rail (falls back to 1..total).
-  List<AnimeEpisode> get _railEpisodes {
-    final eps = _animeDetails?.episodes ?? const <AnimeEpisode>[];
-    if (eps.isNotEmpty) return eps;
-    final total = _animeDetails?.totalEpisodes ?? 0;
-    if (total <= 0) return const [];
-    final l10n = ref.read(translationsProvider);
-    return List.generate(
-      total,
-      (i) => AnimeEpisode(
-        episodeNumber: i + 1,
-        title: l10n.episodeNumber(i + 1),
-      ),
-    );
-  }
+  List<AnimeEpisode> get _railEpisodes =>
+      PlayerEpisodeResolver.buildRailEpisodes(
+        animeDetails: _animeDetails,
+        episodeNumberLabel: (epNum) =>
+            ref.read(translationsProvider).episodeNumber(epNum),
+      );
 
   String? _getVideoSourceLabel() {
     if (_currentVideoSource != null && _currentVideoSource!.isNotEmpty) {
@@ -1764,15 +1906,33 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
             setState(() => _areControlsVisible = true);
           }
         } else {
-          if (_isMouseInside) {
+          if (_isMouseInside && !_isMenuOpen) {
             _startHideTimer();
-          } else {
+          } else if (!_isMouseInside && !_isMenuOpen) {
             if (_areControlsVisible) {
               setState(() => _areControlsVisible = false);
             }
           }
         }
       },
+      onMenuOpenChanged: (open) {
+        _isMenuOpen = open;
+        if (open) {
+          _hideTimer?.cancel();
+          if (!_areControlsVisible) {
+            setState(() => _areControlsVisible = true);
+          }
+        } else {
+          if (_isMouseInside) {
+            _startHideTimer();
+          }
+        }
+      },
+      audioTracks: _audioTracks,
+      subtitleTracks: _subtitleTracks,
+      selectedAudioTrackId: _selectedAudioTrackId,
+      onAudioTrackSelected: _selectAudioTrack,
+      onSubtitleTrackSelected: _selectSubtitleTrack,
       brightness: _brightness,
       onBrightnessChanged: _setBrightness,
       isBuffering: _isBuffering,
@@ -1789,6 +1949,8 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
               : ref.read(translationsProvider).loadingVideo,
         PlayerPlaybackOrigin.torrent =>
           ref.read(translationsProvider).downloadingMetadata,
+        PlayerPlaybackOrigin.mediaServer =>
+          ref.read(translationsProvider).bufferingVideo,
         PlayerPlaybackOrigin.local => '',
       },
       loadingTitle:
@@ -1820,7 +1982,9 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       videoUrl: _currentVideoUrl,
       onBack: _handleExit,
       onOpenSettings: _openSettingsModal,
-      onToggleTheaterMode: (isDesktop && !isFullscreen) ? _cycleLayoutMode : null,
+      onToggleTheaterMode: (isDesktop && !isFullscreen)
+          ? _cycleLayoutMode
+          : null,
       isTheaterMode: _layoutMode == PlayerLayoutMode.cinema,
       layoutMode: _layoutMode,
       // In wide mode the page header is gone, so the video overlay owns the
@@ -1849,37 +2013,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   }
 
   Widget _buildDesktopPageHeader(BuildContext context) {
-    final theme = Theme.of(context);
-    final l10n = ref.watch(translationsProvider);
-    final iconPack = ref.watch(iconPackProvider);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(0, 8, 0, 10),
-      child: Row(
-        children: [
-          IconButton(
-            style: IconButton.styleFrom(
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              padding: const EdgeInsets.all(6),
-              hoverColor: theme.colorScheme.onSurface.withValues(alpha: 0.06),
-            ),
-            icon: Icon(AppIcons.arrowLeft(iconPack), size: 22),
-            tooltip: l10n.back,
-            onPressed: _handleExit,
-          ),
-          const SizedBox(width: 6),
-          Expanded(
-            child: Text(
-              widget.title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+    return PlayerDesktopHeader(title: widget.title, onBack: _handleExit);
   }
 
   @override
@@ -1960,15 +2094,22 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                   autofocus: true,
                   onKeyEvent: _handleKeyEvent,
                   child: MouseRegion(
-                    cursor: (isDesktop &&
+                    cursor:
+                        (isDesktop &&
                             effectiveFullscreen &&
                             !_areControlsVisible &&
                             _isMouseInside)
                         ? SystemMouseCursors.none
                         : SystemMouseCursors.basic,
-                    onEnter: (isDesktop && effectiveFullscreen) ? (_) => _onMouseEnter() : null,
-                    onHover: (isDesktop && effectiveFullscreen) ? (_) => _onMouseMove() : null,
-                    onExit: (isDesktop && effectiveFullscreen) ? (_) => _onMouseExit() : null,
+                    onEnter: (isDesktop && effectiveFullscreen)
+                        ? (_) => _onMouseEnter()
+                        : null,
+                    onHover: (isDesktop && effectiveFullscreen)
+                        ? (_) => _onMouseMove()
+                        : null,
+                    onExit: (isDesktop && effectiveFullscreen)
+                        ? (_) => _onMouseExit()
+                        : null,
                     child: isDesktop
                         ? (effectiveFullscreen
                               ? _buildPlayerViewport(
@@ -1979,7 +2120,8 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                               : PlayerDesktopLayout(
                                   layoutMode: layoutMode,
                                   showEpisodeRail: showEpisodeRail,
-                                  ambientHalo: layoutMode == PlayerLayoutMode.normal
+                                  ambientHalo:
+                                      layoutMode == PlayerLayoutMode.normal
                                       ? _buildAmbientHalo()
                                       : null,
                                   pageHeader: _buildDesktopPageHeader(context),
@@ -2000,6 +2142,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                                     chapters: _chapters,
                                     activeChapter: _activeChapter,
                                     onSeekToChapter: _seekTo,
+                                    showComments: _showComments,
                                     positionNotifier: _positionNotifier,
                                     captureFrame:
                                         _coordinator.mediaKitService != null
@@ -2014,8 +2157,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                                           _currentOnlineStreamProvider,
                                       isDubbed:
                                           _currentOnlineStreamDubbed ?? false,
-                                      onToggleDubbed:
-                                          _toggleOnlineStreamDubbed,
+                                      onToggleDubbed: _toggleOnlineStreamDubbed,
                                       onReloadSources: () => _sourceController
                                           .resolveInitialSources(
                                             preservePosition: true,
@@ -2024,15 +2166,6 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                                           _sourceController.selectSource,
                                       onSelectProvider:
                                           _switchOnlineStreamProvider,
-                                      audioTracks: _audioTracks,
-                                      subtitleTracks: _subtitleTracks,
-                                      selectedAudioTrackId:
-                                          _selectedAudioTrackId,
-                                      selectedSubtitleTrackId:
-                                          _selectedSubtitleTrackId,
-                                      onAudioTrackSelected: _selectAudioTrack,
-                                      onSubtitleTrackSelected:
-                                          _selectSubtitleTrack,
                                     ),
                                   ),
                                   episodesRail: _isMovie
@@ -2138,6 +2271,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                                         : null,
                                     sourceController: _sourceController,
                                     playbackOrigin: _playbackOrigin,
+                                    showComments: _showComments,
                                     isResolvingSources: _isResolvingSources,
                                     availableSources: _availableSources,
                                     activeSource: _activeSource,

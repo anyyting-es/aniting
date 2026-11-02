@@ -23,6 +23,30 @@ import 'package:seanime_app/data/services/feed_cache_service.dart';
 import 'package:seanime_app/data/services/offline_library_service.dart';
 import 'package:seanime_app/presentation/widgets/snapping_scroll_physics.dart';
 import 'package:seanime_app/presentation/widgets/feed/smooth_focus_carousel.dart';
+import 'package:seanime_app/core/media_servers/models/media_server_config.dart';
+import 'package:seanime_app/core/media_servers/models/media_server_item.dart';
+import 'package:seanime_app/core/media_servers/models/media_server_library.dart';
+import 'package:seanime_app/core/media_servers/providers/media_server_content_provider.dart';
+import 'package:seanime_app/core/media_servers/providers/media_servers_provider.dart';
+import 'package:seanime_app/presentation/widgets/feed/media_server/media_server_continue_card.dart';
+import 'package:seanime_app/presentation/widgets/feed/media_server/media_server_feed_filter.dart';
+import 'package:seanime_app/presentation/widgets/feed/media_server/media_server_library_carousel.dart';
+import 'package:seanime_app/core/theme/custom_route_transitions.dart';
+import 'package:seanime_app/core/media_servers/services/media_server_player_helper.dart';
+import 'package:seanime_app/presentation/screens/media_servers/media_server_show_detail_screen.dart';
+import 'package:seanime_app/presentation/widgets/anime_preview/show_preview_data.dart';
+import 'package:seanime_app/presentation/widgets/anime_preview/show_quick_view_detector.dart';
+
+sealed class _UnifiedContinueItem {}
+class _AnimeContinueItem extends _UnifiedContinueItem {
+  final AnimeEntry entry;
+  _AnimeContinueItem(this.entry);
+}
+class _ServerContinueItem extends _UnifiedContinueItem {
+  final MediaServerItem item;
+  final MediaServerConfig server;
+  _ServerContinueItem(this.item, this.server);
+}
 
 class FeedScreen extends ConsumerStatefulWidget {
   final VoidCallback? onOpenSearch;
@@ -41,6 +65,7 @@ class FeedScreen extends ConsumerStatefulWidget {
 class _FeedScreenState extends ConsumerState<FeedScreen> {
   final ScrollController _scrollController = SmoothScrollController();
   final ValueNotifier<bool> _isScrolledNotifier = ValueNotifier<bool>(false);
+  FeedFilterMode _feedFilterMode = FeedFilterMode.all;
 
   // Sorting memoization
   List<AnimeEntry>? _lastContinueWatchingInput;
@@ -129,6 +154,78 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
       mediaId: entry.mediaId,
       initialEntry: entry,
       heroTag: heroTag,
+    );
+  }
+
+  /// Wraps a feed card with the immersive preview (right click / idle hover)
+  /// and hands the same [heroTag] to both the card and the preview.
+  Widget _withAnimePreview({
+    required BuildContext context,
+    required AnimeEntry entry,
+    required Object heroTag,
+    required Widget child,
+  }) {
+    return ShowQuickViewDetector(
+      heroTag: heroTag,
+      dataBuilder: () => ShowPreviewData.fromAnime(
+        entry,
+        ref.read(titleLanguageProvider),
+      ),
+      onOpenDetails: () => _openDetail(context, entry),
+      child: child,
+    );
+  }
+
+  /// Continue-watching cards preview the episode that is queued, not just the
+  /// show: thumbnail, episode title, synopsis, rating, duration and air date.
+  Widget _withContinueWatchingPreview({
+    required BuildContext context,
+    required AnimeEntry entry,
+    required Object heroTag,
+    required Widget child,
+  }) {
+    return ShowQuickViewDetector(
+      heroTag: heroTag,
+      dataBuilder: () {
+        final episodeNumber = entry.episodeNumber ?? (entry.progress + 1);
+        final aniZip =
+            ref.read(aniZipDataProvider(entry.mediaId)).asData?.value;
+        return ShowPreviewData.fromAnime(
+          entry,
+          ref.read(titleLanguageProvider),
+          includeCurrentEpisode: true,
+          aniZipEpisode: aniZip?.getEpisode(episodeNumber),
+        );
+      },
+      onOpenDetails: () => _openDetail(context, entry),
+      child: child,
+    );
+  }
+
+  Widget _withServerPreview({
+    required BuildContext context,
+    required MediaServerItem item,
+    required MediaServerConfig server,
+    required Widget child,
+  }) {
+    return ShowQuickViewDetector(
+      dataBuilder: () => ShowPreviewData.fromMediaServer(item),
+      onOpenDetails: () {
+        if (item.type == MediaServerItemType.show) {
+          Navigator.of(context).push(
+            SmoothPageRoute(
+              child: MediaServerShowDetailScreen(show: item, server: server),
+            ),
+          );
+        } else {
+          MediaServerPlayerHelper.playDirect(
+            context: context,
+            item: item,
+            server: server,
+          );
+        }
+      },
+      child: child,
     );
   }
 
@@ -281,6 +378,20 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     final missedSequelsAsync = ref.watch(missedSequelsProvider);
     final recommendationsAsync = ref.watch(recommendationsProvider);
     final downloadedAnimeAsync = ref.watch(downloadedAnimeProvider);
+    final tmdbTrendingAsync = ref.watch(showsSectionEnabledProvider)
+        ? ref.watch(tmdbTrendingShowsProvider)
+        : null;
+    final tmdbTrendingEntries =
+        tmdbTrendingAsync?.asData?.value ?? const <AnimeEntry>[];
+
+    // Media Server (Plex & Jellyfin) Providers
+    final activeMediaServer = ref.watch(activeMediaServerProvider);
+    final serverContinueWatching = activeMediaServer != null
+        ? (ref.watch(mediaServerContinueWatchingProvider).asData?.value ?? <MediaServerItem>[])
+        : <MediaServerItem>[];
+    final serverLibraries = activeMediaServer != null
+        ? (ref.watch(mediaServerLibrariesProvider).asData?.value ?? <MediaServerLibrary>[])
+        : <MediaServerLibrary>[];
 
     final screenWidth = MediaQuery.of(context).size.width;
     final isDesktop = screenWidth >= 720;
@@ -360,7 +471,23 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     final hasTmdbRecs = isWatchingTmdb && (tmdbRecsAsync?.value?.isNotEmpty ?? false);
     final hasRecommendations = hasAniListRecs || hasTmdbRecs;
     final hasDownloadedAnime = downloadedAnimeAsync.value?.isNotEmpty ?? false;
-    final hasAnyContent = hasContinueWatching || hasWatching || hasMissedSequels || hasRecommendations || hasDownloadedAnime;
+    final hasServerContent =
+        serverContinueWatching.isNotEmpty || serverLibraries.isNotEmpty;
+    final hasAnyContent = hasContinueWatching ||
+        hasWatching ||
+        hasMissedSequels ||
+        hasRecommendations ||
+        hasDownloadedAnime ||
+        hasServerContent;
+
+    // The mixed/server selector only makes sense when there is something else
+    // to mix in. A fresh install with just Plex/Jellyfin connected has no
+    // AniList account, downloads or local collection, so the selector would be
+    // noise (every option would show the same server content).
+    final hasUserLibraryContent =
+        isLoggedIn || allCollection.isNotEmpty || hasContinueWatching || hasDownloadedAnime;
+    final showFeedFilter = activeMediaServer != null && hasUserLibraryContent;
+    final feedFilterMode = showFeedFilter ? _feedFilterMode : FeedFilterMode.all;
 
     return PopScope(
       canPop: !_isSearching && _searchController.text.isEmpty,
@@ -380,6 +507,8 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                 ref.invalidate(missedSequelsProvider);
                 ref.invalidate(recommendationsProvider);
                 ref.invalidate(downloadedAnimeProvider);
+                ref.invalidate(mediaServerLibrariesProvider);
+                ref.invalidate(mediaServerContinueWatchingProvider);
               },
               child: CustomScrollView(
                 controller: _scrollController,
@@ -444,6 +573,14 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                       ),
                     ),
                   ),
+                  if (!_isSearching && showFeedFilter)
+                    SliverToBoxAdapter(
+                      child: MediaServerFeedFilter(
+                        mode: feedFilterMode,
+                        onModeChanged: (m) => setState(() => _feedFilterMode = m),
+                        server: activeMediaServer,
+                      ),
+                    ),
                   const SliverToBoxAdapter(
                     child: SizedBox(height: 8),
                   ),
@@ -503,9 +640,16 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                               itemCount: _searchResults.length,
                               itemBuilder: (context, index) {
                                 final item = _searchResults[index];
-                                return AnimeCard(
+                                final tag = 'feed_search_${item.mediaId}';
+                                return _withAnimePreview(
+                                  context: context,
                                   entry: item,
-                                  onTap: () => _openDetail(context, item),
+                                  heroTag: tag,
+                                  child: AnimeCard(
+                                    entry: item,
+                                    heroTag: tag,
+                                    onTap: () => _openDetail(context, item),
+                                  ),
                                 );
                               },
                             ),
@@ -536,11 +680,33 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                         ),
                       ),
                     ] else ...[
-                      // ─── 1. Seguir Viendo (Continue Watching with Local Playback Progress) ───
-                      if (continueWatchingEntries.isNotEmpty)
+                      // ─── 1. Seguir Viendo (Continue Watching Unificado) ───
+                      if (continueWatchingEntries.isNotEmpty || serverContinueWatching.isNotEmpty)
                         Builder(
                           builder: (context) {
                             final sortedEntries = _getSortedContinueWatching(continueWatchingEntries, continueWatchingSort, titleLang);
+                            final List<_UnifiedContinueItem> unifiedCw = [];
+
+                            if (feedFilterMode == FeedFilterMode.all) {
+                              if (activeMediaServer != null) {
+                                for (final sItem in serverContinueWatching) {
+                                  unifiedCw.add(_ServerContinueItem(sItem, activeMediaServer));
+                                }
+                              }
+                              for (final aItem in sortedEntries) {
+                                unifiedCw.add(_AnimeContinueItem(aItem));
+                              }
+                            } else if (feedFilterMode == FeedFilterMode.server && activeMediaServer != null) {
+                              for (final sItem in serverContinueWatching) {
+                                unifiedCw.add(_ServerContinueItem(sItem, activeMediaServer));
+                              }
+                            } else {
+                              for (final aItem in sortedEntries) {
+                                unifiedCw.add(_AnimeContinueItem(aItem));
+                              }
+                            }
+
+                            if (unifiedCw.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
                             return SliverToBoxAdapter(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -603,7 +769,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                                     ),
                                   ),
                                   SmoothFocusCarousel(
-                                    itemCount: sortedEntries.length,
+                                    itemCount: unifiedCw.length,
                                     itemWidth: continueCardWidth,
                                     spacing: carouselSpacing,
                                     height: continueListHeight,
@@ -614,20 +780,44 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                                             parent: const BouncingScrollPhysics(),
                                           ),
                                     itemBuilder: (context, index) {
-                                      final item = sortedEntries[index];
-                                      return ContinueWatchingCard(
-                                        key: ValueKey('cw_${item.mediaId}_${item.episodeNumber ?? (item.progress + 1)}'),
-                                        entry: item,
-                                        width: continueCardWidth,
-                                        height: continueCardHeight,
-                                        onTap: () => ContinueWatchingPlaybackLauncher.launch(
-                                          context,
-                                          ref,
-                                          item,
-                                          onFallbackToDetail: () => _openDetail(context, item),
-                                        ),
-                                        onOpenDetails: () => _openDetail(context, item),
-                                      );
+                                      final uItem = unifiedCw[index];
+                                      if (uItem is _ServerContinueItem) {
+                                        return _withServerPreview(
+                                          context: context,
+                                          item: uItem.item,
+                                          server: uItem.server,
+                                          child: MediaServerContinueCard(
+                                            key: ValueKey('server_cw_${uItem.item.id}'),
+                                            item: uItem.item,
+                                            server: uItem.server,
+                                            width: continueCardWidth,
+                                            height: continueCardHeight,
+                                          ),
+                                        );
+                                      } else if (uItem is _AnimeContinueItem) {
+                                        final item = uItem.entry;
+                                        return _withContinueWatchingPreview(
+                                          context: context,
+                                          entry: item,
+                                          heroTag:
+                                              'feed_cw_${item.mediaId}_${item.episodeNumber ?? (item.progress + 1)}',
+                                          child: ContinueWatchingCard(
+                                            key: ValueKey('cw_${item.mediaId}_${item.episodeNumber ?? (item.progress + 1)}'),
+                                            entry: item,
+                                            width: continueCardWidth,
+                                            height: continueCardHeight,
+                                            handleSecondaryGestures: false,
+                                            onTap: () => ContinueWatchingPlaybackLauncher.launch(
+                                              context,
+                                              ref,
+                                              item,
+                                              onFallbackToDetail: () => _openDetail(context, item),
+                                            ),
+                                            onOpenDetails: () => _openDetail(context, item),
+                                          ),
+                                        );
+                                      }
+                                      return const SizedBox.shrink();
                                     },
                                   ),
                                   const SizedBox(height: 12),
@@ -637,7 +827,25 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                           },
                         ),
 
+                      // ─── Carruseles de Bibliotecas de Servidores Multimedia (Plex / Jellyfin) ───
+                      if ((feedFilterMode == FeedFilterMode.all || feedFilterMode == FeedFilterMode.server) &&
+                          activeMediaServer != null &&
+                          serverLibraries.isNotEmpty) ...[
+                        for (final lib in serverLibraries)
+                          SliverToBoxAdapter(
+                            child: MediaServerLibraryCarousel(
+                              server: activeMediaServer,
+                              library: lib,
+                              cardWidth: animeCardWidth,
+                              carouselHeight: carouselHeight + 20,
+                              cardSpacing: carouselSpacing,
+                              isDesktop: isDesktop,
+                            ),
+                          ),
+                      ],
+
                       // ─── 2. Descargas de anime (Downloaded Anime) ───
+                      if (feedFilterMode != FeedFilterMode.server) ...[
                       downloadedAnimeAsync.when(
                         data: (downloaded) {
                           if (downloaded.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
@@ -680,11 +888,18 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                                   height: carouselHeight + 8,
                                   itemBuilder: (context, index) {
                                     final item = downloaded[index];
-                                    return AnimeCard(
-                                      key: ValueKey('dl_${item.mediaId}'),
+                                    final tag = 'feed_dl_${item.mediaId}';
+                                    return _withAnimePreview(
+                                      context: context,
                                       entry: item,
-                                      width: animeCardWidth,
-                                      onTap: () => _openDetail(context, item),
+                                      heroTag: tag,
+                                      child: AnimeCard(
+                                        key: ValueKey('dl_${item.mediaId}'),
+                                        entry: item,
+                                        width: animeCardWidth,
+                                        heroTag: tag,
+                                        onTap: () => _openDetail(context, item),
+                                      ),
                                     );
                                   },
                                 ),
@@ -723,8 +938,42 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                                 height: carouselHeight + 8,
                                 itemBuilder: (context, index) {
                                   final item = missedSequelsEntries[index];
+                                  final tag = 'feed_missed_${item.mediaId}';
+                                  return _withAnimePreview(
+                                    context: context,
+                                    entry: item,
+                                    heroTag: tag,
+                                    child: AnimeCard(
+                                      key: ValueKey('missed_${item.mediaId}'),
+                                      entry: item,
+                                      width: animeCardWidth,
+                                      heroTag: tag,
+                                      onTap: () => _openDetail(context, item),
+                                    ),
+                                  );
+                                },
+                              ),
+                              const SizedBox(height: 12),
+                            ],
+                          ),
+                        ),
+
+                      // ─── 4. Series en tendencia (TMDB) ───
+                      if (tmdbTrendingEntries.isNotEmpty)
+                        SliverToBoxAdapter(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _SectionHeader(title: l10n.tmdbTrendingTitle),
+                              SmoothFocusCarousel(
+                                itemCount: tmdbTrendingEntries.length,
+                                itemWidth: animeCardWidth,
+                                spacing: carouselSpacing,
+                                height: carouselHeight + 8,
+                                itemBuilder: (context, index) {
+                                  final item = tmdbTrendingEntries[index];
                                   return AnimeCard(
-                                    key: ValueKey('missed_${item.mediaId}'),
+                                    key: ValueKey('tmdb_trending_${item.mediaId}'),
                                     entry: item,
                                     width: animeCardWidth,
                                     onTap: () => _openDetail(context, item),
@@ -762,11 +1011,18 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                                   height: carouselHeight + 8,
                                   itemBuilder: (context, index) {
                                     final item = mixedRecs[index];
-                                    return AnimeCard(
-                                      key: ValueKey('rec_${item.mediaId}'),
+                                    final tag = 'feed_rec_${item.mediaId}';
+                                    return _withAnimePreview(
+                                      context: context,
                                       entry: item,
-                                      width: animeCardWidth,
-                                      onTap: () => _openDetail(context, item),
+                                      heroTag: tag,
+                                      child: AnimeCard(
+                                        key: ValueKey('rec_${item.mediaId}'),
+                                        entry: item,
+                                        width: animeCardWidth,
+                                        heroTag: tag,
+                                        onTap: () => _openDetail(context, item),
+                                      ),
                                     );
                                   },
                                 ),
@@ -776,6 +1032,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                           );
                         },
                       ),
+                    ],
 
                       const SliverToBoxAdapter(
                         child: SizedBox(height: 90),
@@ -841,11 +1098,18 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
               height: carouselHeight + 8,
               itemBuilder: (context, index) {
                 final item = watching[index];
-                return AnimeCard(
-                  key: ValueKey('watching_${item.mediaId}'),
+                final tag = 'feed_watching_${item.mediaId}';
+                return _withAnimePreview(
+                  context: context,
                   entry: item,
-                  width: animeCardWidth,
-                  onTap: () => _openDetail(context, item),
+                  heroTag: tag,
+                  child: AnimeCard(
+                    key: ValueKey('watching_${item.mediaId}'),
+                    entry: item,
+                    width: animeCardWidth,
+                    heroTag: tag,
+                    onTap: () => _openDetail(context, item),
+                  ),
                 );
               },
             ),

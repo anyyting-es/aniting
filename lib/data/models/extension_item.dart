@@ -16,6 +16,9 @@ class ExtensionItem {
   final bool hasUpdate;
   final bool isBuiltin;
   final int stars;
+  /// Capability declared by marketplace metadata / provider settings:
+  /// `anime`, `tmdb` or `both`. Null when the source does not declare it.
+  final String? providerType;
 
   const ExtensionItem({
     required this.id,
@@ -33,6 +36,7 @@ class ExtensionItem {
     this.hasUpdate = false,
     this.isBuiltin = false,
     this.stars = 0,
+    this.providerType,
   });
 
   factory ExtensionItem.fromJson(Map<String, dynamic> json, {bool disabled = false, bool hasUpdate = false}) {
@@ -55,7 +59,22 @@ class ExtensionItem {
       hasUpdate: hasUpdate,
       isBuiltin: manifestUri == 'builtin',
       stars: stars,
+      providerType: json['providerType']?.toString(),
     );
+  }
+
+  /// Whether this extension is an online streaming provider that only resolves
+  /// TMDB movies/series (VidSrc, Torrentio, ...).
+  ///
+  /// It prefers the declared `providerType`; for repositories that do not
+  /// declare it, the TMDB capability is inferred from the metadata text.
+  bool get isTmdbOnlyProvider {
+    if (type.toLowerCase() != 'onlinestream-provider') return false;
+    final declared = providerType?.trim().toLowerCase();
+    if (declared == 'tmdb') return true;
+    if (declared == 'anime' || declared == 'both') return false;
+    final haystack = '$id $name $description'.toLowerCase();
+    return haystack.contains('tmdb');
   }
 
   String get typeLabel {
@@ -66,8 +85,6 @@ class ExtensionItem {
         return 'Online Streaming';
       case 'manga-provider':
         return 'Manga';
-      case 'custom-source':
-        return 'Custom Sources';
       case 'plugin':
         return 'Plugins';
       default:
@@ -83,8 +100,6 @@ class ExtensionItem {
         return Icons.play_circle_filled_rounded;
       case 'manga-provider':
         return Icons.menu_book_rounded;
-      case 'custom-source':
-        return Icons.folder_shared_rounded;
       case 'plugin':
         return Icons.extension_rounded;
       default:
@@ -100,8 +115,6 @@ class ExtensionItem {
         return const Color(0xFFA855F7); // Purple
       case 'manga-provider':
         return const Color(0xFFF97316); // Orange
-      case 'custom-source':
-        return const Color(0xFF10B981); // Emerald green
       case 'plugin':
         return const Color(0xFFEC4899); // Pink
       default:

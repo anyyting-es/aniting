@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/data/models/extension_item.dart';
+import 'package:seanime_app/presentation/providers/app_providers.dart';
 
 class InstalledExtensionCard extends ConsumerWidget {
   final ExtensionItem extension;
@@ -27,6 +28,13 @@ class InstalledExtensionCard extends ConsumerWidget {
     final theme = Theme.of(context);
     final l10n = ref.watch(translationsProvider);
     final ext = extension;
+    final provider = ext.type == 'onlinestream-provider'
+        ? ref.watch(onlinestreamProvidersProvider).maybeWhen(
+              data: (providers) =>
+                  providers.where((p) => p.id == ext.id).firstOrNull,
+              orElse: () => null,
+            )
+        : null;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
@@ -104,6 +112,34 @@ class InstalledExtensionCard extends ConsumerWidget {
                             ),
                           ),
                         ),
+                        if (provider != null) ...[
+                          const SizedBox(width: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: provider.supportsTmdb
+                                  ? theme.colorScheme.primary
+                                      .withValues(alpha: 0.14)
+                                  : theme
+                                      .colorScheme.surfaceContainerHighest
+                                      .withValues(alpha: 0.5),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              provider.capabilityLabel,
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: provider.supportsTmdb
+                                    ? theme.colorScheme.primary
+                                    : theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),

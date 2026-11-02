@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
+import 'package:seanime_app/core/utils/synopsis_utils.dart';
 import 'package:seanime_app/data/models/anime_details.dart';
 import 'package:seanime_app/data/models/anizip_data.dart';
 import 'package:seanime_app/data/models/onlinestream_models.dart';
@@ -44,6 +45,10 @@ class PlayerInfoPanel extends ConsumerStatefulWidget {
   final ValueChanged<OnlinestreamVideoSource>? onSelectSource;
   final ValueChanged<String>? onSelectProvider;
 
+  /// Whether the chat/comments tab is offered. Hidden for external libraries
+  /// and TMDB detail pages, which have no local comments thread.
+  final bool showComments;
+
   const PlayerInfoPanel({
     super.key,
     this.mediaId,
@@ -73,6 +78,7 @@ class PlayerInfoPanel extends ConsumerStatefulWidget {
     this.onReloadSources,
     this.onSelectSource,
     this.onSelectProvider,
+    this.showComments = true,
   });
 
   @override
@@ -94,15 +100,7 @@ class _PlayerInfoPanelState extends ConsumerState<PlayerInfoPanel> {
   }
 
   String _cleanDescription(String? text) {
-    if (text == null) return '';
-    return text
-        .replaceAll(RegExp(r'<br\s*/?>'), '\n')
-        .replaceAll(RegExp(r'<[^>]*>'), '')
-        .replaceAll(RegExp(r'&quot;'), '"')
-        .replaceAll(RegExp(r'&amp;'), '&')
-        .replaceAll(RegExp(r'&lt;'), '<')
-        .replaceAll(RegExp(r'&gt;'), '>')
-        .trim();
+    return cleanSynopsis(text);
   }
 
   bool _isGenericTitle(String? title, int epNum) {
@@ -283,11 +281,12 @@ class _PlayerInfoPanelState extends ConsumerState<PlayerInfoPanel> {
                           icon: Icon(AppIcons.info(iconPack), size: 16),
                           label: Text(l10n.informationTitle),
                         ),
-                        ButtonSegment(
-                          value: true,
-                          icon: Icon(AppIcons.chatBubble(iconPack), size: 16),
-                          label: Text(l10n.chat),
-                        ),
+                        if (widget.showComments)
+                          ButtonSegment(
+                            value: true,
+                            icon: Icon(AppIcons.chatBubble(iconPack), size: 16),
+                            label: Text(l10n.chat),
+                          ),
                       ],
                       selected: {_showChat},
                       onSelectionChanged: (selection) {
@@ -317,7 +316,7 @@ class _PlayerInfoPanelState extends ConsumerState<PlayerInfoPanel> {
             ),
 
           Expanded(
-            child: _showChat
+            child: (_showChat && widget.showComments)
                 ? PlayerChatPanel(
                     mediaId: widget.mediaId,
                     episodeNumber: widget.episodeNumber,
@@ -391,12 +390,15 @@ class _PlayerInfoPanelState extends ConsumerState<PlayerInfoPanel> {
                 ],
 
                 // 3.5. Playback source card (reloads, displays active server/quality, switches sources)
-                if (widget.isResolvingSources ||
-                    widget.availableSources.isNotEmpty ||
-                    widget.onlineStreamProvider != null ||
-                    widget.sourceResolutionError != null ||
-                    widget.sourceController != null ||
-                    widget.playbackOrigin != PlayerPlaybackOrigin.online) ...[
+                // Direct media-server playback has nothing to switch, so the
+                // card is omitted entirely instead of showing an empty selector.
+                if (widget.playbackOrigin != PlayerPlaybackOrigin.mediaServer &&
+                    (widget.isResolvingSources ||
+                        widget.availableSources.isNotEmpty ||
+                        widget.onlineStreamProvider != null ||
+                        widget.sourceResolutionError != null ||
+                        widget.sourceController != null ||
+                        widget.playbackOrigin != PlayerPlaybackOrigin.online)) ...[
                   const SizedBox(height: 12),
                   PlayerSourceCard(
                     controller: widget.sourceController,

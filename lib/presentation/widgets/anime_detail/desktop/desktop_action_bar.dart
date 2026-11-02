@@ -35,6 +35,14 @@ class DesktopActionBar extends ConsumerStatefulWidget {
   final void Function(String mode)? onModeChanged;
   final VoidCallback? onPlayFocused;
 
+  /// When set, the share action copies this URL instead of the AniList/TMDB
+  /// link, so data sources outside those catalogs (Plex/Jellyfin) can share
+  /// their own deep link.
+  final String? shareUrl;
+
+  /// Whether AniList tracking (status/edit menu) applies to this entry.
+  final bool showTracking;
+
   const DesktopActionBar({
     super.key,
     required this.mediaId,
@@ -61,6 +69,8 @@ class DesktopActionBar extends ConsumerStatefulWidget {
     this.onModeChanged,
     this.onPlayFocused,
     this.playFocusNode,
+    this.shareUrl,
+    this.showTracking = true,
   });
 
   final FocusNode? playFocusNode;
@@ -96,7 +106,13 @@ class _DesktopActionBarState extends ConsumerState<DesktopActionBar> {
           return KeyEventResult.handled; // Lock left boundary
         }
         if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
-          _editFocusNode.requestFocus();
+          if (widget.showTracking) {
+            _editFocusNode.requestFocus();
+          } else if (_isExpanded) {
+            _shareFocusNode.requestFocus();
+          } else {
+            _expandFocusNode.requestFocus();
+          }
           return KeyEventResult.handled;
         }
       }
@@ -129,7 +145,11 @@ class _DesktopActionBarState extends ConsumerState<DesktopActionBar> {
       onKeyEvent: (node, event) {
         if (event is KeyDownEvent || event is KeyRepeatEvent) {
           if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
-            _editFocusNode.requestFocus();
+            if (widget.showTracking) {
+              _editFocusNode.requestFocus();
+            } else {
+              _playFocusNode.requestFocus();
+            }
             return KeyEventResult.handled;
           }
           if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
@@ -198,7 +218,11 @@ class _DesktopActionBarState extends ConsumerState<DesktopActionBar> {
                 _shareFocusNode.requestFocus();
               }
             } else {
-              _editFocusNode.requestFocus();
+              if (widget.showTracking) {
+                _editFocusNode.requestFocus();
+              } else {
+                _playFocusNode.requestFocus();
+              }
             }
             return KeyEventResult.handled;
           }
@@ -238,9 +262,11 @@ class _DesktopActionBarState extends ConsumerState<DesktopActionBar> {
   }
 
   void _shareAnime(BuildContext context, String title, AppTranslations l10n) {
-    final shareUrl = widget.isTmdb
-        ? 'https://www.themoviedb.org/${widget.isMovie ? "movie" : "tv"}/${widget.mediaId}'
-        : 'https://anilist.co/anime/${widget.mediaId}';
+    final shareUrl =
+        widget.shareUrl ??
+        (widget.isTmdb
+            ? 'https://www.themoviedb.org/${widget.isMovie ? "movie" : "tv"}/${widget.mediaId}'
+            : 'https://anilist.co/anime/${widget.mediaId}');
     Clipboard.setData(ClipboardData(text: shareUrl));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -444,8 +470,9 @@ class _DesktopActionBarState extends ConsumerState<DesktopActionBar> {
                 ),
                 const SizedBox(width: 10),
 
-        // Quick Action 1: Status / Bookmark Dropdown (Always visible)
-        GlassMenuAnchor(
+        // Quick Action 1: Status / Bookmark Dropdown (Always visible on tracked entries)
+        if (widget.showTracking)
+          GlassMenuAnchor(
           width: 210,
           items: [
             GlassMenuItem(

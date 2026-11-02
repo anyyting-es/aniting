@@ -145,7 +145,7 @@ class _DesktopListEpisodeCardState extends ConsumerState<DesktopListEpisodeCard>
                       child: AspectRatio(
                         aspectRatio: 16 / 9,
                         child: AnimatedScale(
-                          scale: isSelected ? 0.97 : (_isHovered ? 1.02 : 1.0),
+                          scale: isSelected ? 0.97 : 1.0,
                           duration: const Duration(milliseconds: 180),
                           curve: Curves.easeOutCubic,
                           child: AnimatedContainer(

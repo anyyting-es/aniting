@@ -77,6 +77,9 @@ class SpanishTranslations implements AppTranslations {
   @override
   String get quickSearchMangaHint => 'Buscar manga rápido...';
   @override
+  String get quickSearchKeyboardHint =>
+      '↑ ↓ para moverte · Enter para abrir · Esc para cerrar';
+  @override
   String get serverNotConnected => 'Servidor Seanime no conectado';
   @override
   String get serverNotConnectedDesc =>
@@ -648,6 +651,22 @@ class SpanishTranslations implements AppTranslations {
   @override
   String get supportingRole => 'Secundario';
   @override
+  String get voiceActor => 'Actor de voz';
+  @override
+  String get japaneseVoice => 'Voz original (Seiyuu)';
+  @override
+  String get characterDetails => 'Detalles del personaje';
+  @override
+  String get characterAge => 'Edad';
+  @override
+  String get characterGender => 'Género';
+  @override
+  String get characterBirthday => 'Cumpleaños';
+  @override
+  String get characterBloodType => 'Tipo de sangre';
+  @override
+  String get noVoiceActorInfo => 'Sin información de actor de voz';
+  @override
   String get streamingDisabledTitle => 'Fuentes de streaming desactivadas';
   @override
   String get streamingDisabledDesc =>
@@ -807,7 +826,8 @@ class SpanishTranslations implements AppTranslations {
   @override
   String get chatServerError => 'Error del servidor, reintenta más tarde';
   @override
-  String get chatLoginRequired => 'Inicia sesión con AniList para entrar al chat';
+  String get chatLoginRequired =>
+      'Inicia sesión con AniList para entrar al chat';
   @override
   String get chatLoginWithAnilist => 'Iniciar sesión con AniList';
   @override
@@ -867,6 +887,11 @@ class SpanishTranslations implements AppTranslations {
   String get playingFromTorrent => 'Reproduciendo desde torrent';
   @override
   String get playingFromTorrentDesc => 'Transmisión P2P en directo';
+  @override
+  String get playingFromMediaServer => 'Reproduciendo desde tu servidor';
+  @override
+  String get playingFromMediaServerDesc =>
+      'Reproducción directa de Plex / Jellyfin';
   @override
   String get loadingVideo => 'Cargando video...';
   @override
@@ -1182,7 +1207,7 @@ class SpanishTranslations implements AppTranslations {
   @override
   String get onlineStreamingTab => 'Streaming Online';
   @override
-  String get customSources => 'Fuentes Personalizadas';
+  String get tmdbStreamingTab => 'Streaming TMDB';
   @override
   String get searchExtensionsHint => 'Buscar extensiones...';
   @override
@@ -1424,6 +1449,16 @@ class SpanishTranslations implements AppTranslations {
   String get curatedTopRated => 'Mejor Calificados';
   @override
   String get noAiringToday => 'No hay episodios programados para este día';
+  @override
+  String get noAiringThisMonth => 'No hay episodios programados para este mes';
+  @override
+  String get calendarWeekView => 'Semana';
+  @override
+  String get calendarMonthView => 'Mes';
+  @override
+  String get previousMonth => 'Mes anterior';
+  @override
+  String get nextMonth => 'Mes siguiente';
   @override
   String get filters => 'Filtros';
   @override
@@ -2153,6 +2188,29 @@ class SpanishTranslations implements AppTranslations {
   String get emptyAnimeFeedDesc =>
       'Aún no tienes animes en seguimiento. Explora el catálogo o busca tus series favoritas.';
   @override
+  String get emptyFeedConnectDesc =>
+      'Explora el catálogo o conecta AniList, Plex o Jellyfin para empezar a armar tu feed.';
+  @override
+  String get noInternetConnection => 'Sin conexión a internet';
+  @override
+  String get noInternetConnectionDesc =>
+      'No pudimos conectar con los servidores. Revisa tu conexión a internet.';
+  @override
+  String get emptyMangaFeedConnectDesc =>
+      'Explora el catálogo o conecta AniList para empezar a armar tu biblioteca de manga.';
+  @override
+  String get serviceAniList => 'AniList';
+  @override
+  String get servicePlex => 'Plex';
+  @override
+  String get serviceJellyfin => 'Jellyfin';
+  @override
+  String get mediaType => 'Tipo de contenido';
+  @override
+  String get feedFilterAll => 'Todo mezclado';
+  @override
+  String get feedFilterAnimeOnly => 'Solo anime';
+  @override
   String get noDownloadedAnimeTitle => 'No hay anime descargado';
   @override
   String get noDownloadedAnimeDesc =>
@@ -2258,6 +2316,8 @@ class SpanishTranslations implements AppTranslations {
   String get trailersAndVideos => 'Tráilers y videos';
   @override
   String get officialTrailer => 'Tráiler oficial';
+  @override
+  String get expand => 'Expandir';
   @override
   String get collapse => 'Colapsar';
   @override
@@ -2454,14 +2514,20 @@ class SpanishTranslations implements AppTranslations {
   @override
   String get navigationSections => 'Secciones de navegación';
   @override
-  String get animeSection => 'Sección de Anime';
+  String get animeSection => 'Catálogo de Anime';
   @override
-  String get animeSectionDesc => 'Mostrar pestaña de anime en la navegación';
+  String get animeSectionDesc => 'Mostrar el catálogo de anime en Explorar';
   @override
-  String get showsSection => 'Sección de Series (TMDB)';
+  String get showsSection => 'Catálogo de Series (TMDB)';
   @override
-  String get showsSectionDesc =>
-      'Mostrar pestaña de series TMDB en la navegación';
+  String get showsSectionDesc => 'Mostrar el catálogo de series de TMDB en Explorar';
+  @override
+  String get tmdbTrendingTitle => 'Series en tendencia';
+  @override
+  String get tmdbUnavailableTitle => 'No pudimos cargar TMDB';
+  @override
+  String get tmdbUnavailableDesc =>
+      'Revisa tu conexión y la API key de TMDB en Ajustes.';
   @override
   String get mangaSection => 'Sección de Manga';
   @override
@@ -3095,4 +3161,57 @@ class SpanishTranslations implements AppTranslations {
   String get startupWarmUpSyncing => 'Sincronizando biblioteca...';
   @override
   String get startupWarmUpReady => 'Listo';
+
+  // Media Servers (Plex & Jellyfin)
+  @override
+  String get mediaServersTitle => 'Servidores Multimedia';
+  @override
+  String get mediaServersDesc =>
+      'Conecta tu servidor Plex o Jellyfin para reproducir tu biblioteca personal.';
+  @override
+  String get addMediaServer => 'Añadir Servidor';
+  @override
+  String get plexLoginTitle => 'Conectar con Plex';
+  @override
+  String get plexLoginDesc =>
+      'Autoriza Aniting ingresando este código PIN o escaneando el código QR.';
+  @override
+  String get plexPinLabel => 'Código PIN';
+  @override
+  String get plexOpenBrowser => 'Abrir Plex.tv';
+  @override
+  String get plexWaitingAuth => 'Esperando autorización en el navegador...';
+  @override
+  String get plexSelectServer => 'Seleccionar Servidor Plex';
+  @override
+  String get jellyfinLoginTitle => 'Conectar con Jellyfin / Emby';
+  @override
+  String get jellyfinServerUrl =>
+      'URL del Servidor (ej. http://192.168.1.50:8096)';
+  @override
+  String get jellyfinUsername => 'Usuario';
+  @override
+  String get jellyfinPassword => 'Contraseña';
+  @override
+  String get noMediaServersConnected =>
+      'No hay servidores multimedia conectados';
+  @override
+  String get activeServerLabel => 'Servidor Activo';
+  @override
+  String get mediaServerOnline => 'En línea';
+  @override
+  String get mediaServerOffline => 'Sin conexión';
+  @override
+  String get disconnectServer => 'Desconectar';
+  @override
+  String get playFromMediaServer => 'Reproducir desde tu Servidor';
+  @override
+  String get mediaServerLibraries => 'Bibliotecas';
+  @override
+  String get mediaServerContinueWatching => 'Continuar viendo';
+  @override
+  String get mediaServerEpisodes => 'Episodios';
+  @override
+  String get mediaServerNoItems =>
+      'No hay elementos disponibles en esta sección';
 }

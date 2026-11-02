@@ -266,6 +266,38 @@ class _AnimeDetailSourcePopupState extends ConsumerState<AnimeDetailSourcePopup>
                                                   ),
                                                 ),
                                               ),
+                                              const SizedBox(width: 6),
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                  horizontal: 6,
+                                                  vertical: 2,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: p.supportsTmdb
+                                                      ? theme.colorScheme
+                                                          .primary
+                                                          .withValues(alpha: 0.14)
+                                                      : theme
+                                                          .colorScheme
+                                                          .surfaceContainerHighest
+                                                          .withValues(alpha: 0.5),
+                                                  borderRadius:
+                                                      BorderRadius.circular(6),
+                                                ),
+                                                child: Text(
+                                                  p.capabilityLabel,
+                                                  style: TextStyle(
+                                                    fontSize: 9,
+                                                    fontWeight: FontWeight.w700,
+                                                    color: p.supportsTmdb
+                                                        ? theme
+                                                            .colorScheme.primary
+                                                        : theme.colorScheme
+                                                            .onSurfaceVariant,
+                                                  ),
+                                                ),
+                                              ),
                                               if (p.lang.isNotEmpty)
                                                 Container(
                                                   padding: const EdgeInsets.symmetric(

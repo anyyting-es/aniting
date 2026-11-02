@@ -5,6 +5,7 @@ import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/preferences/tv_mode_provider.dart';
 import 'package:seanime_app/presentation/widgets/player/controls/player_bottom_bar.dart';
 import 'package:seanime_app/presentation/widgets/player/controls/player_top_bar.dart';
+import 'package:seanime_app/presentation/widgets/player/models/player_types.dart';
 import 'package:seanime_app/presentation/widgets/player/panels/next_episode_card.dart';
 import 'package:seanime_app/presentation/widgets/player/panels/player_info_panel.dart';
 import 'package:seanime_app/data/models/anime_details.dart';
@@ -200,9 +201,9 @@ void main() {
         ),
       );
 
-      expect(find.byIcon(AppIcons.theater(AppIconPack.lucide)), findsOneWidget);
+      expect(find.byIcon(PlayerLayoutMode.normal.getIcon(AppIconPack.lucide)), findsOneWidget);
 
-      await tester.tap(find.byIcon(AppIcons.theater(AppIconPack.lucide)));
+      await tester.tap(find.byIcon(PlayerLayoutMode.normal.getIcon(AppIconPack.lucide)));
       await tester.pump();
 
       expect(theaterToggled, isTrue);

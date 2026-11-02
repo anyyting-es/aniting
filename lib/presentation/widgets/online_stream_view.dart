@@ -131,7 +131,9 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
 
     final repo = ref.read(repositoryProvider);
     try {
-      final list = await repo.getOnlinestreamProviders();
+      final list = (await repo.getOnlinestreamProviders())
+          .where((p) => p.supportsAnime)
+          .toList();
       OnlinestreamProvider? initialProvider;
       if (list.isNotEmpty) {
         try {

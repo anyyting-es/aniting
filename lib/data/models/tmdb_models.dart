@@ -92,6 +92,9 @@ class TmdbShowDetails {
   final List<TmdbSeason> seasons;
   final bool isMovie;
   final int? runtime;
+  final List<dynamic> cast;
+  final Map<String, dynamic>? trailer;
+  final String? imdbId;
 
   const TmdbShowDetails({
     required this.id,
@@ -109,6 +112,9 @@ class TmdbShowDetails {
     this.seasons = const [],
     this.isMovie = false,
     this.runtime,
+    this.cast = const [],
+    this.trailer,
+    this.imdbId,
   });
 
   String? get posterUrl =>
@@ -132,6 +138,26 @@ class TmdbShowDetails {
         .map((s) => TmdbSeason.fromJson(s as Map<String, dynamic>))
         .toList();
 
+    final credits = json['credits'];
+    final cast = (credits is Map && credits['cast'] is List)
+        ? credits['cast'] as List<dynamic>
+        : const <dynamic>[];
+
+    Map<String, dynamic>? trailer;
+    final videos = json['videos'];
+    if (videos is Map && videos['results'] is List) {
+      for (final video in videos['results'] as List<dynamic>) {
+        if (video is! Map || video['site'] != 'YouTube') continue;
+        final type = video['type']?.toString();
+        if (type != 'Trailer' && type != 'Teaser') continue;
+        trailer = {
+          'id': video['key']?.toString(),
+          'site': 'YouTube',
+        };
+        if (type == 'Trailer') break;
+      }
+    }
+
     return TmdbShowDetails(
       id: json['id'] as int? ?? 0,
       name: (json['name'] ?? json['title'] ?? '') as String,
@@ -150,7 +176,23 @@ class TmdbShowDetails {
       seasons: seasons,
       isMovie: isMovie,
       runtime: (json['runtime'] as num?)?.toInt(),
+      cast: cast,
+      trailer: trailer,
+      imdbId: _parseImdbId(json),
     );
+  }
+
+  static String? _parseImdbId(Map<String, dynamic> json) {
+    // Movies expose imdb_id at the top level; series expose it under
+    // external_ids. Both are returned by append_to_response=external_ids.
+    final direct = json['imdb_id']?.toString().trim();
+    if (direct != null && direct.isNotEmpty) return direct;
+    final external = json['external_ids'];
+    if (external is Map) {
+      final nested = external['imdb_id']?.toString().trim();
+      if (nested != null && nested.isNotEmpty) return nested;
+    }
+    return null;
   }
 
   /// Converts to universal AnimeDetails for layout reuse
@@ -180,6 +222,9 @@ class TmdbShowDetails {
         'numberOfSeasons': numberOfSeasons,
         'numberOfEpisodes': numberOfEpisodes,
         'runtime': runtime,
+        if (imdbId != null && imdbId!.isNotEmpty) 'imdbId': imdbId,
+        if (cast.isNotEmpty) 'credits': {'cast': cast},
+        if (trailer != null) 'trailer': trailer,
       },
     );
   }

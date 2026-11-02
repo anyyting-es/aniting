@@ -40,6 +40,10 @@ class PlayerProgressManager {
   final ValueGetter<String?>? getDescription;
   final ValueGetter<int?>? getYear;
   final ValueGetter<String?>? getFormat;
+  final ValueGetter<String?>? getTmdbMediaType;
+  final ValueGetter<int?>? getTmdbSeason;
+  final ValueGetter<String?>? getTmdbEnglishTitle;
+  final ValueGetter<int?>? getTmdbYear;
   final bool isTmdb;
   final VoidCallback? onProgressSynced;
   final VoidCallback? onLocalWatchRecorded;
@@ -83,6 +87,10 @@ class PlayerProgressManager {
     this.getDescription,
     this.getYear,
     this.getFormat,
+    this.getTmdbMediaType,
+    this.getTmdbSeason,
+    this.getTmdbEnglishTitle,
+    this.getTmdbYear,
     this.onProgressSynced,
     this.onLocalWatchRecorded,
   });
@@ -94,8 +102,9 @@ class PlayerProgressManager {
     _initialPosition = initialPosition;
     final initialSec = (initialPosition?.inSeconds ?? 0).toDouble();
 
-    // Only update backend continuity initially if resuming from a meaningful saved position
-    if (initialSec >= kMinWatchDurationSeconds) {
+    // Only update backend continuity initially if resuming from a meaningful saved position.
+    // TMDB ids are not AniList ids, so backend continuity would mix them up.
+    if (!isTmdb && initialSec >= kMinWatchDurationSeconds) {
       repository.updateContinuityItem(
         mediaId: mediaId!,
         episodeNumber: getEpisodeNumber() ?? 1,
@@ -158,12 +167,15 @@ class PlayerProgressManager {
     }
 
     try {
-      repository.updateContinuityItem(
-        mediaId: mediaId!,
-        episodeNumber: epNum,
-        currentTime: pos.inSeconds.toDouble(),
-        duration: dur.inSeconds.toDouble(),
-      );
+      // Backend continuity is AniList-keyed; a TMDB id there would collide.
+      if (!isTmdb) {
+        repository.updateContinuityItem(
+          mediaId: mediaId!,
+          episodeNumber: epNum,
+          currentTime: pos.inSeconds.toDouble(),
+          duration: dur.inSeconds.toDouble(),
+        );
+      }
 
       final isLocal = getIsLocalFile?.call() ?? getVideoUrl().contains('/api/v1/mediastream');
       final isTorrent = getVideoUrl().contains('torrentstream') ||
@@ -186,6 +198,10 @@ class PlayerProgressManager {
         mimeType: getMimeType(),
         videoSource: getVideoSource(),
         isTmdb: isTmdb,
+        tmdbMediaType: getTmdbMediaType?.call(),
+        tmdbSeason: getTmdbSeason?.call(),
+        tmdbEnglishTitle: getTmdbEnglishTitle?.call(),
+        tmdbYear: getTmdbYear?.call(),
         onlineStreamProvider: onlineProv,
         onlineStreamDubbed: onlineDub,
         onlineStreamServer: onlineSrv,
@@ -232,6 +248,7 @@ class PlayerProgressManager {
           description: getDescription?.call(),
           coverColor: getCoverColor?.call(),
           year: getYear?.call(),
+          isTmdb: isTmdb,
         );
 
         onLocalWatchRecorded?.call();
@@ -263,6 +280,19 @@ class PlayerProgressManager {
     if (!isNearEnd) return;
 
     _hasUpdatedAnimeProgress = true;
+
+    // TMDB ids are not AniList ids. Sync locally only, otherwise we would
+    // overwrite an unrelated AniList entry (or fail and enqueue garbage).
+    if (isTmdb) {
+      OfflineLibraryService.instance.updateAnimeProgress(
+        mediaId: mediaId!,
+        episodeNumber: epNum,
+        totalEpisodes: getTotalEpisodes(),
+        isTmdb: true,
+      );
+      onProgressSynced?.call();
+      return;
+    }
 
     OfflineLibraryService.instance.updateAnimeProgress(
       mediaId: mediaId!,

@@ -31,6 +31,26 @@ class VolumeSlider extends ConsumerStatefulWidget {
   ConsumerState<VolumeSlider> createState() => _VolumeSliderState();
 }
 
+class _CustomVolumeTrackShape extends RoundedRectSliderTrackShape {
+  const _CustomVolumeTrackShape();
+
+  @override
+  Rect getPreferredRect({
+    required RenderBox parentBox,
+    Offset offset = Offset.zero,
+    required SliderThemeData sliderTheme,
+    bool isEnabled = false,
+    bool isDiscrete = false,
+  }) {
+    final trackHeight = sliderTheme.trackHeight ?? 3.0;
+    final trackTop = offset.dy + (parentBox.size.height - trackHeight) / 2;
+    // Start track immediately next to the speaker icon without excessive horizontal padding
+    final trackLeft = offset.dx + 2.0;
+    final trackWidth = (parentBox.size.width - 10.0).clamp(0.0, double.infinity);
+    return Rect.fromLTWH(trackLeft, trackTop, trackWidth, trackHeight);
+  }
+}
+
 class _VolumeSliderState extends ConsumerState<VolumeSlider> {
   Timer? _hideTimer;
   bool _isHovering = false;
@@ -89,8 +109,6 @@ class _VolumeSliderState extends ConsumerState<VolumeSlider> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final primaryColor = theme.colorScheme.primary;
     final l10n = ref.watch(translationsProvider);
     final iconPack = ref.watch(iconPackProvider);
     final isMaterial = iconPack == AppIconPack.material;
@@ -118,7 +136,7 @@ class _VolumeSliderState extends ConsumerState<VolumeSlider> {
     // The dark backdrop keeps the same footprint as the other control circles;
     // only the icon inside is optically smaller.
     const double controlSize = 36;
-    const double sliderWidth = 104;
+    const double sliderWidth = 88;
     const double expandedWidth = controlSize + sliderWidth;
 
     // Desktop: a single pill that grows in width, carrying the slider inside
@@ -177,11 +195,12 @@ class _VolumeSliderState extends ConsumerState<VolumeSlider> {
                     child: SliderTheme(
                       data: SliderThemeData(
                         trackHeight: 3,
-                        activeTrackColor: primaryColor,
-                        inactiveTrackColor: Colors.white.withValues(alpha: 0.20),
-                        thumbColor: primaryColor,
-                        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
-                        overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
+                        trackShape: const _CustomVolumeTrackShape(),
+                        activeTrackColor: Colors.white,
+                        inactiveTrackColor: Colors.white.withValues(alpha: 0.28),
+                        thumbColor: Colors.transparent,
+                        thumbShape: SliderComponentShape.noThumb,
+                        overlayShape: SliderComponentShape.noOverlay,
                       ),
                       child: Slider(
                         value: normalizedVolume,

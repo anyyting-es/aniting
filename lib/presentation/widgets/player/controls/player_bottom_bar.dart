@@ -2,14 +2,17 @@ import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:g1455/g1455.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
+import 'package:seanime_app/presentation/widgets/player/controls/player_track_selectors.dart';
 import 'package:seanime_app/presentation/widgets/player/controls/timeline_slider.dart';
 import 'package:seanime_app/presentation/widgets/player/controls/volume_slider.dart';
 import 'package:seanime_app/presentation/widgets/player/models/player_types.dart';
 
-/// Bottom controls bar for the player containing the timeline slider and controls row.
-class PlayerBottomBar extends ConsumerWidget {
+/// Bottom controls bar for the player containing the timeline slider,
+/// controls row, and in-video track selection panels.
+class PlayerBottomBar extends ConsumerStatefulWidget {
   final ValueNotifier<Duration> positionNotifier;
   final Duration duration;
   final ValueNotifier<Duration> bufferNotifier;
@@ -27,6 +30,13 @@ class PlayerBottomBar extends ConsumerWidget {
   final bool isFullscreen;
   final bool? isDesktopOverride;
   final ValueChanged<bool>? onVolumeHoverChanged;
+  final List<UiTrack> audioTracks;
+  final List<UiTrack> subtitleTracks;
+  final String? selectedAudioTrackId;
+  final String? selectedSubtitleTrackId;
+  final ValueChanged<UiTrack>? onAudioTrackSelected;
+  final ValueChanged<UiTrack?>? onSubtitleTrackSelected;
+  final ValueChanged<bool>? onMenuOpenChanged;
 
   const PlayerBottomBar({
     super.key,
@@ -47,12 +57,27 @@ class PlayerBottomBar extends ConsumerWidget {
     this.isFullscreen = false,
     this.isDesktopOverride,
     this.onVolumeHoverChanged,
+    this.audioTracks = const [],
+    this.subtitleTracks = const [],
+    this.selectedAudioTrackId,
+    this.selectedSubtitleTrackId,
+    this.onAudioTrackSelected,
+    this.onSubtitleTrackSelected,
+    this.onMenuOpenChanged,
   });
 
-  bool get _isDesktop =>
-      isDesktopOverride ?? (!Platform.isAndroid && !Platform.isIOS);
+  @override
+  ConsumerState<PlayerBottomBar> createState() => _PlayerBottomBarState();
+}
 
-  bool get _isSmallMobile => !isFullscreen && !_isDesktop;
+class _PlayerBottomBarState extends ConsumerState<PlayerBottomBar> {
+  final GlassMenuController _subtitlePopoverController = GlassMenuController();
+  final GlassMenuController _audioPopoverController = GlassMenuController();
+
+  bool get _isDesktop =>
+      widget.isDesktopOverride ?? (!Platform.isAndroid && !Platform.isIOS);
+
+  bool get _isSmallMobile => !widget.isFullscreen && !_isDesktop;
 
   String _formatDuration(Duration d) {
     final hours = d.inHours;
@@ -65,16 +90,11 @@ class PlayerBottomBar extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final l10n = ref.watch(translationsProvider);
     final iconPack = ref.watch(iconPackProvider);
-
     final isMaterial = iconPack == AppIconPack.material;
 
-    // Optical icon sizing: Material icons have internal glyph padding
-    // and need proportional optical scaling so skipNext, volume,
-    // and fullscreen feel harmonious and not miniature.
-    // Calibrated relative delta proportions: SkipNext +1, Volume -2, Play/Fullscreen equal.
     final double playPauseSize = _isDesktop
         ? (isMaterial ? 24.0 : 20.0)
         : (isMaterial ? 28.0 : 25.0);
@@ -87,6 +107,9 @@ class PlayerBottomBar extends ConsumerWidget {
     final double volumeSize = _isDesktop
         ? (isMaterial ? 22.0 : 17.0)
         : (isMaterial ? 24.0 : 21.0);
+    final double tracksIconSize = _isDesktop
+        ? (isMaterial ? 22.0 : 18.0)
+        : (isMaterial ? 26.0 : 22.0);
 
     final buttonStyle = IconButton.styleFrom(
       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -113,37 +136,61 @@ class PlayerBottomBar extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Timestamp display directly above play/pause on the left
+              // Timestamp display directly above play/pause on the left with shadow badge
               Padding(
-                padding: const EdgeInsets.only(left: 4, bottom: 2),
+                padding: const EdgeInsets.only(left: 4, bottom: 4),
                 child: Row(
                   children: [
                     ValueListenableBuilder<Duration>(
-                      valueListenable: positionNotifier,
+                      valueListenable: widget.positionNotifier,
                       builder: (context, pos, _) {
-                        return Text(
-                          '${_formatDuration(pos)} / ${_formatDuration(duration)}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.2,
+                        return Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.45),
+                            borderRadius: BorderRadius.circular(6),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.35),
+                                blurRadius: 6,
+                                offset: const Offset(0, 1),
+                              ),
+                            ],
+                          ),
+                          child: Text(
+                            '${_formatDuration(pos)} / ${_formatDuration(widget.duration)}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.2,
+                              shadows: [
+                                Shadow(
+                                  color: Colors.black87,
+                                  blurRadius: 4,
+                                  offset: Offset(0, 1),
+                                ),
+                              ],
+                            ),
                           ),
                         );
                       },
                     ),
-                    if (currentChapterTitle != null &&
-                        currentChapterTitle!.isNotEmpty) ...[
+                    if (widget.currentChapterTitle != null &&
+                        widget.currentChapterTitle!.isNotEmpty) ...[
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
-                          '• $currentChapterTitle',
+                          '• ${widget.currentChapterTitle}',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.8),
+                            color: Colors.white.withValues(alpha: 0.85),
                             fontSize: 11,
                             fontWeight: FontWeight.w500,
+                            shadows: const [
+                              Shadow(color: Colors.black87, blurRadius: 4, offset: Offset(0, 1)),
+                            ],
                           ),
                         ),
                       ),
@@ -155,23 +202,21 @@ class PlayerBottomBar extends ConsumerWidget {
               // Single continuous line: [Play/Pause] [Next Episode] [Expanded TimelineSlider] [Fullscreen]
               Row(
                 children: [
-                  // Play / Pause Button
                   IconButton(
                     style: buttonStyle,
                     constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                     iconSize: 28,
                     icon: Icon(
-                      isPlaying
+                      widget.isPlaying
                           ? AppIcons.pause(iconPack)
                           : AppIcons.play(iconPack),
                       color: Colors.white,
                     ),
-                    tooltip: isPlaying ? l10n.pause : l10n.play,
-                    onPressed: onPlayPause,
+                    tooltip: widget.isPlaying ? l10n.pause : l10n.play,
+                    onPressed: widget.onPlayPause,
                   ),
 
-                  // Next Episode Button (if available)
-                  if (onNextEpisode != null) ...[
+                  if (widget.onNextEpisode != null) ...[
                     const SizedBox(width: 2),
                     IconButton(
                       style: buttonStyle,
@@ -182,26 +227,25 @@ class PlayerBottomBar extends ConsumerWidget {
                         color: Colors.white,
                       ),
                       tooltip: l10n.nextEpisode,
-                      onPressed: onNextEpisode,
+                      onPressed: widget.onNextEpisode,
                     ),
                   ],
 
                   const SizedBox(width: 4),
 
-                  // Continuous reproduction seek bar
                   Expanded(
                     child: ValueListenableBuilder<Duration>(
-                      valueListenable: positionNotifier,
+                      valueListenable: widget.positionNotifier,
                       builder: (context, pos, _) {
                         return ValueListenableBuilder<Duration>(
-                          valueListenable: bufferNotifier,
+                          valueListenable: widget.bufferNotifier,
                           builder: (context, buf, _) {
                             return TimelineSlider(
                               position: pos,
-                              duration: duration,
+                              duration: widget.duration,
                               buffer: buf,
-                              chapters: chapters,
-                              onSeek: onSeek,
+                              chapters: widget.chapters,
+                              onSeek: widget.onSeek,
                             );
                           },
                         );
@@ -211,22 +255,21 @@ class PlayerBottomBar extends ConsumerWidget {
 
                   const SizedBox(width: 4),
 
-                  // Fullscreen toggle button
-                  if (onToggleFullscreen != null)
+                  if (widget.onToggleFullscreen != null)
                     IconButton(
                       style: buttonStyle,
                       constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                       iconSize: smallFullscreenSize,
                       icon: Icon(
-                        isFullscreen
+                        widget.isFullscreen
                             ? AppIcons.fullscreenExit(iconPack)
                             : AppIcons.fullscreen(iconPack),
                         color: Colors.white,
                       ),
-                      tooltip: isFullscreen
+                      tooltip: widget.isFullscreen
                           ? l10n.exitFullScreen
                           : l10n.fullScreen,
-                      onPressed: onToggleFullscreen,
+                      onPressed: widget.onToggleFullscreen,
                     ),
                 ],
               ),
@@ -238,34 +281,16 @@ class PlayerBottomBar extends ConsumerWidget {
 
     return SafeArea(
       top: false,
-      bottom: isFullscreen,
+      bottom: widget.isFullscreen,
       left: false,
       right: false,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // 1. Timeline Progress Bar with MKV Chapter ticks
-            ValueListenableBuilder<Duration>(
-              valueListenable: positionNotifier,
-              builder: (context, pos, _) {
-                return ValueListenableBuilder<Duration>(
-                  valueListenable: bufferNotifier,
-                  builder: (context, buf, _) {
-                    return TimelineSlider(
-                      position: pos,
-                      duration: duration,
-                      buffer: buf,
-                      chapters: chapters,
-                      onSeek: onSeek,
-                    );
-                  },
-                );
-              },
-            ),
-
-            // 2. Controls Row Under Timeline
+            // 1. Controls Row (encima)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4),
               child: Row(
@@ -275,18 +300,18 @@ class PlayerBottomBar extends ConsumerWidget {
                     style: buttonStyle,
                     constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
                     icon: Icon(
-                      isPlaying
+                      widget.isPlaying
                           ? AppIcons.pause(iconPack)
                           : AppIcons.play(iconPack),
                       color: Colors.white,
                       size: playPauseSize,
                     ),
-                    tooltip: isPlaying ? l10n.pause : l10n.play,
-                    onPressed: onPlayPause,
+                    tooltip: widget.isPlaying ? l10n.pause : l10n.play,
+                    onPressed: widget.onPlayPause,
                   ),
 
                   // Next Episode Button (if available)
-                  if (onNextEpisode != null) ...[
+                  if (widget.onNextEpisode != null) ...[
                     const SizedBox(width: 4),
                     IconButton(
                       style: buttonStyle,
@@ -297,7 +322,7 @@ class PlayerBottomBar extends ConsumerWidget {
                         size: skipNextSize,
                       ),
                       tooltip: l10n.nextEpisode,
-                      onPressed: onNextEpisode,
+                      onPressed: widget.onNextEpisode,
                     ),
                   ],
 
@@ -305,45 +330,88 @@ class PlayerBottomBar extends ConsumerWidget {
                   if (_isDesktop) ...[
                     const SizedBox(width: 6),
                     VolumeSlider(
-                      volume: volume,
-                      onVolumeChanged: onVolumeChanged,
+                      volume: widget.volume,
+                      onVolumeChanged: widget.onVolumeChanged,
                       isDesktopOverride: _isDesktop,
-                      onHoverChanged: onVolumeHoverChanged,
+                      onHoverChanged: widget.onVolumeHoverChanged,
                       iconSize: volumeSize,
                     ),
                   ],
 
                   const SizedBox(width: 10),
 
-                  // Timestamp Display (Standard normal font, no monospace)
+                  // Timestamp Display: rounded pill badge matching other button backgrounds
                   ValueListenableBuilder<Duration>(
-                    valueListenable: positionNotifier,
+                    valueListenable: widget.positionNotifier,
                     builder: (context, pos, _) {
-                      return Text(
-                        '${_formatDuration(pos)} / ${_formatDuration(duration)}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
+                      return Container(
+                        height: 36,
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.45),
+                          borderRadius: BorderRadius.circular(18),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.25),
+                              blurRadius: 6,
+                              offset: const Offset(0, 1),
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          '${_formatDuration(pos)} / ${_formatDuration(widget.duration)}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.2,
+                            shadows: [
+                              Shadow(
+                                color: Colors.black87,
+                                blurRadius: 4,
+                                offset: Offset(0, 1),
+                              ),
+                            ],
+                          ),
                         ),
                       );
                     },
                   ),
 
-                  // Active Chapter Label
-                  if (currentChapterTitle != null &&
-                      currentChapterTitle!.isNotEmpty) ...[
+                  // Active Chapter Label: rounded pill badge matching other button backgrounds
+                  if (widget.currentChapterTitle != null &&
+                      widget.currentChapterTitle!.isNotEmpty) ...[
                     const SizedBox(width: 8),
-                    ConstrainedBox(
-                      constraints: BoxConstraints(maxWidth: _isDesktop ? 350 : 150),
-                      child: Text(
-                        '• $currentChapterTitle',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.8),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
+                    Container(
+                      height: 36,
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.45),
+                        borderRadius: BorderRadius.circular(18),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.25),
+                            blurRadius: 6,
+                            offset: const Offset(0, 1),
+                          ),
+                        ],
+                      ),
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(maxWidth: _isDesktop ? 340 : 150),
+                        child: Text(
+                          '• ${widget.currentChapterTitle}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.9),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            shadows: const [
+                              Shadow(color: Colors.black87, blurRadius: 4, offset: Offset(0, 1)),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -351,8 +419,58 @@ class PlayerBottomBar extends ConsumerWidget {
 
                   const Spacer(),
 
+                  // Desktop subtitle & audio selectors with g1455 GlassPopoverAnchor
+                  if (_isDesktop) ...[
+                    if (widget.subtitleTracks.isNotEmpty && widget.onSubtitleTrackSelected != null) ...[
+                      PlayerSubtitleMenuButton(
+                        controller: _subtitlePopoverController,
+                        isSubDisabled: widget.selectedSubtitleTrackId == null ||
+                            widget.selectedSubtitleTrackId == 'no' ||
+                            widget.selectedSubtitleTrackId == 'none',
+                        iconSize: tracksIconSize,
+                        buttonStyle: buttonStyle,
+                        iconPack: iconPack,
+                        tooltip: l10n.subtitleTracks,
+                        tracks: widget.subtitleTracks,
+                        selectedTrackId: widget.selectedSubtitleTrackId,
+                        onTrackSelected: widget.onSubtitleTrackSelected,
+                        disableOptionLabel: l10n.disableSubtitles,
+                        title: l10n.subtitleTracks,
+                        onOpen: () {
+                          _audioPopoverController.close();
+                          widget.onMenuOpenChanged?.call(true);
+                        },
+                        onClose: () {
+                          widget.onMenuOpenChanged?.call(false);
+                        },
+                      ),
+                      const SizedBox(width: 4),
+                    ],
+                    if (widget.audioTracks.isNotEmpty && widget.onAudioTrackSelected != null) ...[
+                      PlayerAudioMenuButton(
+                        controller: _audioPopoverController,
+                        iconSize: tracksIconSize,
+                        buttonStyle: buttonStyle,
+                        iconPack: iconPack,
+                        tooltip: l10n.audioTracks,
+                        tracks: widget.audioTracks,
+                        selectedTrackId: widget.selectedAudioTrackId,
+                        onTrackSelected: widget.onAudioTrackSelected!,
+                        title: l10n.audioTracks,
+                        onOpen: () {
+                          _subtitlePopoverController.close();
+                          widget.onMenuOpenChanged?.call(true);
+                        },
+                        onClose: () {
+                          widget.onMenuOpenChanged?.call(false);
+                        },
+                      ),
+                      const SizedBox(width: 4),
+                    ],
+                  ],
+
                   // Fullscreen toggle (Desktop and Mobile)
-                  if (onToggleFullscreen != null)
+                  if (widget.onToggleFullscreen != null)
                     IconButton(
                       style: buttonStyle,
                       constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
@@ -363,23 +481,44 @@ class PlayerBottomBar extends ConsumerWidget {
                           child: ScaleTransition(scale: anim, child: child),
                         ),
                         child: Icon(
-                          isFullscreen
+                          widget.isFullscreen
                               ? AppIcons.fullscreenExit(iconPack)
                               : AppIcons.fullscreen(iconPack),
-                          key: ValueKey<bool>(isFullscreen),
+                          key: ValueKey<bool>(widget.isFullscreen),
                           color: Colors.white,
                           size: fullscreenSize,
                         ),
                       ),
                       tooltip: _isDesktop
-                          ? (isFullscreen
+                          ? (widget.isFullscreen
                               ? '${l10n.exitFullScreen} (Esc / F)'
                               : '${l10n.fullScreen} (F)')
-                          : (isFullscreen ? l10n.exitFullScreen : l10n.fullScreen),
-                      onPressed: onToggleFullscreen,
+                          : (widget.isFullscreen ? l10n.exitFullScreen : l10n.fullScreen),
+                      onPressed: widget.onToggleFullscreen,
                     ),
                 ],
               ),
+            ),
+
+            const SizedBox(height: 6),
+
+            // 2. Timeline Progress Bar with MKV Chapter ticks (debajo)
+            ValueListenableBuilder<Duration>(
+              valueListenable: widget.positionNotifier,
+              builder: (context, pos, _) {
+                return ValueListenableBuilder<Duration>(
+                  valueListenable: widget.bufferNotifier,
+                  builder: (context, buf, _) {
+                    return TimelineSlider(
+                      position: pos,
+                      duration: widget.duration,
+                      buffer: buf,
+                      chapters: widget.chapters,
+                      onSeek: widget.onSeek,
+                    );
+                  },
+                );
+              },
             ),
           ],
         ),
@@ -387,4 +526,3 @@ class PlayerBottomBar extends ConsumerWidget {
     );
   }
 }
-

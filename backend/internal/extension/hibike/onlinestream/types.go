@@ -60,6 +60,10 @@ type (
 		// Season is the season number for TMDB series.
 		// It is only set when TmdbId is set and MediaType is "tv".
 		Season int `json:"season,omitempty"`
+		// ImdbId is the IMDb ID of the media (e.g. "tt0944947").
+		// It is set when the media comes from TMDB and the external id is known.
+		// Providers that index content by IMDb (e.g. Torrentio) should prefer it.
+		ImdbId string `json:"imdbId,omitempty"`
 	}
 
 	FuzzyDate struct {
@@ -68,12 +72,20 @@ type (
 		Day   *int `json:"day"`
 	}
 
+	// OnlinestreamProviderType declares which media catalogs a provider can
+	// resolve. It replaces the ambiguous SupportsTmdb-only contract while
+	// staying backwards compatible with it.
+	OnlinestreamProviderType string
+
 	Settings struct {
 		EpisodeServers []string `json:"episodeServers"`
 		SupportsDub    bool     `json:"supportsDub"`
-		// SupportsTmdb indicates that the provider can resolve sources for TMDB media (movies / series).
-		// Only providers with this flag set to true are offered in TMDB detail pages.
+		// SupportsTmdb is the legacy capability flag. New extensions should use
+		// ProviderType instead; it is kept so old extensions keep working.
 		SupportsTmdb bool `json:"supportsTmdb"`
+		// ProviderType is "anime", "tmdb" or "both". Empty falls back to
+		// SupportsTmdb: true => both, false => anime.
+		ProviderType OnlinestreamProviderType `json:"providerType,omitempty"`
 	}
 
 	SearchResult struct {
@@ -134,6 +146,19 @@ type (
 		Quality string `json:"quality"`
 		// Subtitles for the video source.
 		Subtitles []*VideoSubtitle `json:"subtitles"`
+		// InfoHash is the BitTorrent info hash when Type is VideoSourceTorrent.
+		InfoHash string `json:"infoHash,omitempty"`
+		// FileIndex is the index of the file to stream inside the torrent.
+		// It is optional and only used when Type is VideoSourceTorrent.
+		FileIndex *int `json:"fileIndex,omitempty"`
+		// Torrent metadata (optional, used to render richer source lists).
+		Seeders       int      `json:"seeders,omitempty"`
+		Size          int64    `json:"size,omitempty"`
+		SizeFormatted string   `json:"sizeFormatted,omitempty"`
+		Languages     []string `json:"languages,omitempty"`
+		Codec         string   `json:"codec,omitempty"`
+		Indexer       string   `json:"indexer,omitempty"`
+		ReleaseName   string   `json:"releaseName,omitempty"`
 	}
 
 	VideoSubtitle struct {
@@ -149,6 +174,30 @@ type (
 	}
 )
 
+// NormalizedProviderType resolves the effective provider type, applying the
+// legacy SupportsTmdb fallback.
+func (s Settings) NormalizedProviderType() OnlinestreamProviderType {
+	switch s.ProviderType {
+	case "anime", "tmdb", "both":
+		return s.ProviderType
+	default:
+		if s.SupportsTmdb {
+			return "both"
+		}
+		return "anime"
+	}
+}
+
+// SupportsAnimeMedia reports whether the provider can resolve AniList media.
+func (s Settings) SupportsAnimeMedia() bool {
+	return s.NormalizedProviderType() != "tmdb"
+}
+
+// SupportsTmdbMedia reports whether the provider can resolve TMDB media.
+func (s Settings) SupportsTmdbMedia() bool {
+	return s.NormalizedProviderType() != "anime"
+}
+
 const (
 	Sub       SubOrDub = "sub"
 	Dub       SubOrDub = "dub"
@@ -159,4 +208,7 @@ const (
 	VideoSourceMP4     VideoSourceType = "mp4"
 	VideoSourceM3U8    VideoSourceType = "m3u8"
 	VideoSourceUnknown VideoSourceType = "unknown"
+	// VideoSourceTorrent identifies a source that must be resolved by the
+	// torrent engine instead of being played directly. URL holds the magnet link.
+	VideoSourceTorrent VideoSourceType = "torrent"
 )

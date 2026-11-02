@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:g1455/g1455.dart';
@@ -52,7 +53,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   bool get _isSearchingOrFiltering =>
       _searchController.text.trim().isNotEmpty || _filterState.hasActiveFilters;
 
-  bool get _showSearchBar => _isSearchExpanded || _isSearchingOrFiltering;
+  bool get _showSearchBar =>
+      _isSearchExpanded ||
+      _isSearchingOrFiltering ||
+      ref.watch(searchViewActiveProvider);
 
   @override
   void initState() {
@@ -65,6 +69,16 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     }
     _filterState = DiscoverFilterState(mediaType: defaultType);
     _scrollController.addListener(_onScroll);
+
+    if (ref.read(searchViewActiveProvider)) {
+      _isSearchExpanded = true;
+      _filterState = _filterState.copyWith(sort: 'SCORE_DESC');
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _searchFocusNode.requestFocus();
+        _fetchResults(reset: true);
+      });
+    }
   }
 
   @override
@@ -80,6 +94,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   void _exitSearch() {
     _debounce?.cancel();
+    ref.read(searchViewActiveProvider.notifier).state = false;
     setState(() {
       _isSearchExpanded = false;
       _searchController.clear();
@@ -144,110 +159,137 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final pageToFetch = reset ? 1 : _currentPage;
     final query = _searchController.text.trim();
 
-    if (_filterState.mediaType == 'ANIME') {
-      final results = await repo.discoverAnime(
-        search: query.isNotEmpty ? query : null,
-        genres: _filterState.selectedGenres.isNotEmpty ? _filterState.selectedGenres.toList() : null,
-        tags: _filterState.selectedTags.isNotEmpty ? _filterState.selectedTags.toList() : null,
-        season: _filterState.season,
-        year: _filterState.year,
-        format: _filterState.format,
-        status: _filterState.status,
-        sort: _filterState.sort,
-        minScore: _filterState.minScore,
-        isAdult: _filterState.isAdult,
-        page: pageToFetch,
-        perPage: 24,
-      );
-
-      if (mounted && requestId == _searchRequestId) {
-        setState(() {
-          _isLoading = false;
-          _isLoadingMore = false;
-          _currentPage = pageToFetch + 1;
-          if (results.isEmpty) {
-            _hasMore = false;
-          } else {
-            final existingIds = _animeResults.map((e) => e.mediaId).toSet();
-            final unique = results.where((e) => !existingIds.contains(e.mediaId)).toList();
-            _animeResults.addAll(unique);
-            if (results.length < 24) _hasMore = false;
-          }
-        });
-      }
-    } else if (_filterState.mediaType == 'SHOWS') {
-      final tmdb = ref.read(tmdbServiceProvider);
-      final isSpanish = ref.read(appLanguageProvider) == AppLanguage.es;
-      final lang = isSpanish ? 'es-ES' : 'en-US';
-
-      final List<AnimeEntry> results;
-      if (query.isNotEmpty) {
-        results = await tmdb.searchShows(
-          query: query,
-          language: lang,
+    try {
+      if (_filterState.mediaType == 'ANIME') {
+        final results = await repo.discoverAnime(
+          search: query.isNotEmpty ? query : null,
+          genres: _filterState.selectedGenres.isNotEmpty
+              ? _filterState.selectedGenres.toList()
+              : null,
+          tags: _filterState.selectedTags.isNotEmpty
+              ? _filterState.selectedTags.toList()
+              : null,
+          season: _filterState.season,
+          year: _filterState.year,
+          format: _filterState.format,
+          status: _filterState.status,
+          sort: _filterState.sort,
+          minScore: _filterState.minScore,
+          isAdult: _filterState.isAdult,
           page: pageToFetch,
+          perPage: 24,
         );
-      } else if (_filterState.sort == 'SCORE_DESC') {
-        results = await tmdb.getTopRatedTvShows(
-          language: lang,
-          page: pageToFetch,
-        );
+
+        if (mounted && requestId == _searchRequestId) {
+          setState(() {
+            _isLoading = false;
+            _isLoadingMore = false;
+            _currentPage = pageToFetch + 1;
+            if (results.isEmpty) {
+              _hasMore = false;
+            } else {
+              final existingIds = _animeResults.map((e) => e.mediaId).toSet();
+              final unique = results
+                  .where((e) => !existingIds.contains(e.mediaId))
+                  .toList();
+              _animeResults.addAll(unique);
+              if (results.length < 24) _hasMore = false;
+            }
+          });
+        }
+      } else if (_filterState.mediaType == 'SHOWS') {
+        final tmdb = ref.read(tmdbServiceProvider);
+        final isSpanish = ref.read(appLanguageProvider) == AppLanguage.es;
+        final lang = isSpanish ? 'es-ES' : 'en-US';
+
+        final List<AnimeEntry> results;
+        if (query.isNotEmpty) {
+          results = await tmdb.searchShows(
+            query: query,
+            language: lang,
+            page: pageToFetch,
+          );
+        } else if (_filterState.sort == 'SCORE_DESC') {
+          results = await tmdb.getTopRatedTvShows(
+            language: lang,
+            page: pageToFetch,
+          );
+        } else {
+          results = await tmdb.getTrendingShows(
+            language: lang,
+            page: pageToFetch,
+          );
+        }
+
+        if (mounted && requestId == _searchRequestId) {
+          setState(() {
+            _isLoading = false;
+            _isLoadingMore = false;
+            _currentPage = pageToFetch + 1;
+            if (results.isEmpty) {
+              _hasMore = false;
+            } else {
+              final existingIds = _animeResults.map((e) => e.mediaId).toSet();
+              final unique = results
+                  .where((e) => !existingIds.contains(e.mediaId))
+                  .toList();
+              _animeResults.addAll(unique);
+              if (results.length < 20) _hasMore = false;
+            }
+          });
+        }
       } else {
-        results = await tmdb.getTrendingShows(
-          language: lang,
+        final results = await repo.discoverManga(
+          search: query.isNotEmpty ? query : null,
+          genres: _filterState.selectedGenres.isNotEmpty
+              ? _filterState.selectedGenres.toList()
+              : null,
+          tags: _filterState.selectedTags.isNotEmpty
+              ? _filterState.selectedTags.toList()
+              : null,
+          year: _filterState.year,
+          format: _filterState.format,
+          status: _filterState.status,
+          sort: _filterState.sort,
+          minScore: _filterState.minScore,
+          isAdult: _filterState.isAdult,
           page: pageToFetch,
+          perPage: 24,
         );
-      }
 
+        if (mounted && requestId == _searchRequestId) {
+          setState(() {
+            _isLoading = false;
+            _isLoadingMore = false;
+            _currentPage = pageToFetch + 1;
+            if (results.isEmpty) {
+              _hasMore = false;
+            } else {
+              final existingIds = _mangaResults.map((e) => e.id).toSet();
+              final unique = results
+                  .where((e) => !existingIds.contains(e.id))
+                  .toList();
+              _mangaResults.addAll(unique);
+              if (results.length < 24) _hasMore = false;
+            }
+          });
+        }
+      }
+    } catch (_) {
+      // A failed page (rate limit, offline...) must not leave the loading flag
+      // stuck, otherwise the grid footer would retry non-stop.
       if (mounted && requestId == _searchRequestId) {
         setState(() {
           _isLoading = false;
           _isLoadingMore = false;
-          _currentPage = pageToFetch + 1;
-          if (results.isEmpty) {
-            _hasMore = false;
-          } else {
-            final existingIds = _animeResults.map((e) => e.mediaId).toSet();
-            final unique = results.where((e) => !existingIds.contains(e.mediaId)).toList();
-            _animeResults.addAll(unique);
-            if (results.length < 20) _hasMore = false;
-          }
-        });
-      }
-    } else {
-      final results = await repo.discoverManga(
-        search: query.isNotEmpty ? query : null,
-        genres: _filterState.selectedGenres.isNotEmpty ? _filterState.selectedGenres.toList() : null,
-        tags: _filterState.selectedTags.isNotEmpty ? _filterState.selectedTags.toList() : null,
-        year: _filterState.year,
-        format: _filterState.format,
-        status: _filterState.status,
-        sort: _filterState.sort,
-        minScore: _filterState.minScore,
-        isAdult: _filterState.isAdult,
-        page: pageToFetch,
-        perPage: 24,
-      );
-
-      if (mounted && requestId == _searchRequestId) {
-        setState(() {
-          _isLoading = false;
-          _isLoadingMore = false;
-          _currentPage = pageToFetch + 1;
-          if (results.isEmpty) {
-            _hasMore = false;
-          } else {
-            final existingIds = _mangaResults.map((e) => e.id).toSet();
-            final unique = results.where((e) => !existingIds.contains(e.id)).toList();
-            _mangaResults.addAll(unique);
-            if (results.length < 24) _hasMore = false;
-          }
+          _hasMore = false;
         });
       }
     }
   }
 
   void _loadMore() {
+    if (_isLoading || _isLoadingMore || !_hasMore) return;
     _fetchResults(reset: false);
   }
 
@@ -292,6 +334,56 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     _fetchResults(reset: true);
   }
 
+  Widget _buildTmdbUnavailableCard(ThemeData theme, AppTranslations l10n) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerHighest.withValues(
+            alpha: 0.5,
+          ),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.cloud_off_rounded,
+              size: 28,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    l10n.tmdbUnavailableTitle,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    l10n.tmdbUnavailableDesc,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildCuratedAnimeSection({
     required String title,
     String? genreKey,
@@ -325,28 +417,37 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             children: [
               Text(
                 title,
-                style: (compactExplore ? theme.textTheme.titleSmall : theme.textTheme.titleMedium)?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: -0.2,
-                ),
+                style:
+                    (compactExplore
+                            ? theme.textTheme.titleSmall
+                            : theme.textTheme.titleMedium)
+                        ?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: -0.2,
+                        ),
               ),
               InkWell(
-                onTap: onSeeMoreTap ?? () {
-                  if (genreKey != null) {
-                    Navigator.push(
-                      context,
-                      SlideRightToLeftPageRoute(
-                        child: GenreDetailScreen(
-                          genre: genreKey,
-                          displayGenreName: title,
-                        ),
-                      ),
-                    );
-                  }
-                },
+                onTap:
+                    onSeeMoreTap ??
+                    () {
+                      if (genreKey != null) {
+                        Navigator.push(
+                          context,
+                          SlideRightToLeftPageRoute(
+                            child: GenreDetailScreen(
+                              genre: genreKey,
+                              displayGenreName: title,
+                            ),
+                          ),
+                        );
+                      }
+                    },
                 borderRadius: BorderRadius.circular(8),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
                   child: Row(
                     children: [
                       Text(
@@ -358,7 +459,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         ),
                       ),
                       const SizedBox(width: 2),
-                      Icon(AppIcons.chevronRight(), size: 16, color: theme.colorScheme.primary),
+                      Icon(
+                        AppIcons.chevronRight(),
+                        size: 16,
+                        color: theme.colorScheme.primary,
+                      ),
                     ],
                   ),
                 ),
@@ -372,12 +477,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           SizedBox(
             height: carouselHeight + 4,
             child: ListView.separated(
-              clipBehavior: Clip.none,
+              clipBehavior: Clip.hardEdge,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
               scrollDirection: Axis.horizontal,
               cacheExtent: 350,
               itemCount: entries.length,
-              separatorBuilder: (context, index) => SizedBox(width: carouselSpacing),
+              separatorBuilder: (context, index) =>
+                  SizedBox(width: carouselSpacing),
               itemBuilder: (context, index) {
                 final entry = entries[index];
                 return AnimeCard(
@@ -432,28 +538,37 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             children: [
               Text(
                 title,
-                style: (compactExplore ? theme.textTheme.titleSmall : theme.textTheme.titleMedium)?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: -0.2,
-                ),
+                style:
+                    (compactExplore
+                            ? theme.textTheme.titleSmall
+                            : theme.textTheme.titleMedium)
+                        ?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: -0.2,
+                        ),
               ),
               InkWell(
-                onTap: onSeeMoreTap ?? () {
-                  if (genreKey != null) {
-                    Navigator.push(
-                      context,
-                      SlideRightToLeftPageRoute(
-                        child: GenreDetailScreen(
-                          genre: genreKey,
-                          displayGenreName: title,
-                        ),
-                      ),
-                    );
-                  }
-                },
+                onTap:
+                    onSeeMoreTap ??
+                    () {
+                      if (genreKey != null) {
+                        Navigator.push(
+                          context,
+                          SlideRightToLeftPageRoute(
+                            child: GenreDetailScreen(
+                              genre: genreKey,
+                              displayGenreName: title,
+                            ),
+                          ),
+                        );
+                      }
+                    },
                 borderRadius: BorderRadius.circular(8),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
                   child: Row(
                     children: [
                       Text(
@@ -465,7 +580,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         ),
                       ),
                       const SizedBox(width: 2),
-                      Icon(AppIcons.chevronRight(), size: 16, color: theme.colorScheme.primary),
+                      Icon(
+                        AppIcons.chevronRight(),
+                        size: 16,
+                        color: theme.colorScheme.primary,
+                      ),
                     ],
                   ),
                 ),
@@ -479,12 +598,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           SizedBox(
             height: carouselHeight + 4,
             child: ListView.separated(
-              clipBehavior: Clip.none,
+              clipBehavior: Clip.hardEdge,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
               scrollDirection: Axis.horizontal,
               cacheExtent: 350,
               itemCount: entries.length,
-              separatorBuilder: (context, index) => SizedBox(width: carouselSpacing),
+              separatorBuilder: (context, index) =>
+                  SizedBox(width: carouselSpacing),
               itemBuilder: (context, index) {
                 final entry = entries[index];
                 return MangaCard(
@@ -533,52 +653,52 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           child: SizedBox(
             width: 38,
             height: 38,
-            child: Center(
-              child: Icon(AppIcons.search(iconPack), size: 18),
-            ),
+            child: Center(child: Icon(AppIcons.search(iconPack), size: 18)),
           ),
         ),
         const SizedBox(width: 8),
-        // Filter Sheet Trigger GlassButton
-        Badge(
-          isLabelVisible: _filterState.hasActiveFilters,
-          label: Text('${_filterState.activeFilterCount}'),
-          child: GlassButton(
-            onPressed: _openFilterSheet,
-            padding: EdgeInsets.zero,
-            semanticLabel: l10n.filters,
-            child: SizedBox(
-              width: 38,
-              height: 38,
-              child: Center(
-                child: Icon(
-                  _filterState.hasActiveFilters ? AppIcons.sliders(iconPack) : AppIcons.filter(iconPack),
-                  size: 18,
-                  color: _filterState.hasActiveFilters ? theme.colorScheme.primary : null,
+          // Filter Sheet Trigger GlassButton
+          Badge(
+            isLabelVisible: _filterState.hasActiveFilters,
+            label: Text('${_filterState.activeFilterCount}'),
+            child: GlassButton(
+              onPressed: _openFilterSheet,
+              padding: EdgeInsets.zero,
+              semanticLabel: l10n.filters,
+              child: SizedBox(
+                width: 38,
+                height: 38,
+                child: Center(
+                  child: Icon(
+                    _filterState.hasActiveFilters
+                        ? AppIcons.sliders(iconPack)
+                        : AppIcons.filter(iconPack),
+                    size: 18,
+                    color: _filterState.hasActiveFilters
+                        ? theme.colorScheme.primary
+                        : null,
+                  ),
                 ),
               ),
             ),
           ),
-        ),
-        const SizedBox(width: 8),
-        // Genres Hub GlassButton
-        GlassButton(
-          onPressed: () {
-            Navigator.push(
-              context,
-              SlideRightToLeftPageRoute(child: const GenresScreen()),
-            );
-          },
-          padding: EdgeInsets.zero,
-          semanticLabel: l10n.genresTitle,
-          child: SizedBox(
-            width: 38,
-            height: 38,
-            child: Center(
-              child: Icon(AppIcons.category(iconPack), size: 18),
+          const SizedBox(width: 8),
+          // Genres Hub GlassButton
+          GlassButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                SlideRightToLeftPageRoute(child: const GenresScreen()),
+              );
+            },
+            padding: EdgeInsets.zero,
+            semanticLabel: l10n.genresTitle,
+            child: SizedBox(
+              width: 38,
+              height: 38,
+              child: Center(child: Icon(AppIcons.category(iconPack), size: 18)),
             ),
           ),
-        ),
       ],
     );
   }
@@ -594,34 +714,107 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final animeEnabled = ref.watch(animeSectionEnabledProvider);
     final showsEnabled = ref.watch(showsSectionEnabledProvider);
     final mangaEnabled = ref.watch(mangaSectionEnabledProvider);
+    // Ensure mediaType adheres to enabled sections
+    if (_filterState.mediaType == 'SHOWS' && !showsEnabled) {
+      final fallback = animeEnabled ? 'ANIME' : (mangaEnabled ? 'MANGA' : 'ANIME');
+      _filterState = _filterState.copyWith(mediaType: fallback);
+    } else if (_filterState.mediaType == 'MANGA' && !mangaEnabled) {
+      final fallback = animeEnabled ? 'ANIME' : (showsEnabled ? 'SHOWS' : 'ANIME');
+      _filterState = _filterState.copyWith(mediaType: fallback);
+    } else if (_filterState.mediaType == 'ANIME' && !animeEnabled) {
+      final fallback = showsEnabled ? 'SHOWS' : (mangaEnabled ? 'MANGA' : 'ANIME');
+      _filterState = _filterState.copyWith(mediaType: fallback);
+    }
+
+    ref.listen<bool>(searchViewActiveProvider, (prev, next) {
+      if (next && !_showSearchBar) {
+        setState(() {
+          _isSearchExpanded = true;
+          if (!_filterState.hasActiveFilters) {
+            _filterState = _filterState.copyWith(sort: 'SCORE_DESC');
+          }
+        });
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          _searchFocusNode.requestFocus();
+          if (_animeResults.isEmpty && _mangaResults.isEmpty && !_isLoading) {
+            _fetchResults(reset: true);
+          }
+        });
+      } else if (!next && _showSearchBar) {
+        _exitSearch();
+      }
+    });
+
     final isDesktop = MediaQuery.of(context).size.width >= 720;
     final desktopNavStyle = ref.watch(desktopNavStyleProvider);
-    final isSidebarMode = isDesktop && desktopNavStyle == DesktopNavStyle.sidebar;
+    final isSidebarMode =
+        isDesktop && desktopNavStyle == DesktopNavStyle.sidebar;
     final isTv = ref.watch(tvModeProvider);
     final compactExplore = isTv;
     final sidebarInset = isSidebarMode ? (isTv ? 56.0 : 72.0) : 0.0;
 
     // Trending providers for the Explore curated sections
-    final trendingAnimeAsync = isAnime ? ref.watch(trendingAnimeProvider) : null;
-    final trendingShowsAsync = isShows ? ref.watch(tmdbTrendingShowsProvider) : null;
-    final popularShowsAsync = isShows && !_showSearchBar ? ref.watch(tmdbPopularShowsProvider) : null;
-    final topRatedShowsAsync = isShows && !_showSearchBar ? ref.watch(tmdbTopRatedShowsProvider) : null;
-    final trendingMangaAsync = (!isAnime && !isShows) ? ref.watch(trendingMangaProvider) : null;
+    final trendingAnimeAsync = isAnime
+        ? ref.watch(trendingAnimeProvider)
+        : null;
+    final trendingShowsAsync = isShows
+        ? ref.watch(tmdbTrendingShowsProvider)
+        : null;
+    final popularShowsAsync = isShows && !_showSearchBar
+        ? ref.watch(tmdbPopularShowsProvider)
+        : null;
+    final topRatedShowsAsync = isShows && !_showSearchBar
+        ? ref.watch(tmdbTopRatedShowsProvider)
+        : null;
+    // All three TMDB feeds failing means the API key/connection is bad; an
+    // empty Explore tab with no explanation looks like a bug.
+    final showsUnavailable =
+        isShows &&
+        !_showSearchBar &&
+        (trendingShowsAsync?.hasError ?? false) &&
+        (popularShowsAsync?.hasError ?? false) &&
+        (topRatedShowsAsync?.hasError ?? false);
+    final trendingMangaAsync = (!isAnime && !isShows)
+        ? ref.watch(trendingMangaProvider)
+        : null;
 
     // Curated providers for Anime
-    final popularAnimeAsync = isAnime && !_showSearchBar ? ref.watch(popularAnimeProvider) : null;
-    final fantasyAnimeAsync = isAnime && !_showSearchBar ? ref.watch(curatedFantasyAnimeProvider) : null;
-    final scifiAnimeAsync = isAnime && !_showSearchBar ? ref.watch(curatedSciFiAnimeProvider) : null;
-    final romanceAnimeAsync = isAnime && !_showSearchBar ? ref.watch(curatedRomanceAnimeProvider) : null;
-    final actionAnimeAsync = isAnime && !_showSearchBar ? ref.watch(curatedActionAnimeProvider) : null;
-    final comedyAnimeAsync = isAnime && !_showSearchBar ? ref.watch(curatedComedyAnimeProvider) : null;
+    final popularAnimeAsync = isAnime && !_showSearchBar
+        ? ref.watch(popularAnimeProvider)
+        : null;
+    final fantasyAnimeAsync = isAnime && !_showSearchBar
+        ? ref.watch(curatedFantasyAnimeProvider)
+        : null;
+    final scifiAnimeAsync = isAnime && !_showSearchBar
+        ? ref.watch(curatedSciFiAnimeProvider)
+        : null;
+    final romanceAnimeAsync = isAnime && !_showSearchBar
+        ? ref.watch(curatedRomanceAnimeProvider)
+        : null;
+    final actionAnimeAsync = isAnime && !_showSearchBar
+        ? ref.watch(curatedActionAnimeProvider)
+        : null;
+    final comedyAnimeAsync = isAnime && !_showSearchBar
+        ? ref.watch(curatedComedyAnimeProvider)
+        : null;
 
     // Curated providers for Manga
-    final popularMangaAsync = (!isAnime && !isShows) && !_showSearchBar ? ref.watch(popularMangaProvider) : null;
-    final fantasyMangaAsync = (!isAnime && !isShows) && !_showSearchBar ? ref.watch(curatedFantasyMangaProvider) : null;
-    final romanceMangaAsync = (!isAnime && !isShows) && !_showSearchBar ? ref.watch(curatedRomanceMangaProvider) : null;
-    final actionMangaAsync = (!isAnime && !isShows) && !_showSearchBar ? ref.watch(curatedActionMangaProvider) : null;
-    final comedyMangaAsync = (!isAnime && !isShows) && !_showSearchBar ? ref.watch(curatedComedyMangaProvider) : null;
+    final popularMangaAsync = (!isAnime && !isShows) && !_showSearchBar
+        ? ref.watch(popularMangaProvider)
+        : null;
+    final fantasyMangaAsync = (!isAnime && !isShows) && !_showSearchBar
+        ? ref.watch(curatedFantasyMangaProvider)
+        : null;
+    final romanceMangaAsync = (!isAnime && !isShows) && !_showSearchBar
+        ? ref.watch(curatedRomanceMangaProvider)
+        : null;
+    final actionMangaAsync = (!isAnime && !isShows) && !_showSearchBar
+        ? ref.watch(curatedActionMangaProvider)
+        : null;
+    final comedyMangaAsync = (!isAnime && !isShows) && !_showSearchBar
+        ? ref.watch(curatedComedyMangaProvider)
+        : null;
 
     if (_showSearchBar) {
       return PopScope(
@@ -699,35 +892,38 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
                 // Media Type Toggle (Anime / Shows / Manga) & Action Icons
                 if (!compactExplore)
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.fromLTRB(16 + sidebarInset, 12, 16, 8),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        // Non-wrapping Media Type Toggle (Anime / Shows / Manga)
-                        MediaTypeToggle(
-                          selected: _filterState.mediaType,
-                          showAnime: animeEnabled,
-                          showShows: showsEnabled,
-                          showManga: mangaEnabled,
-                          onSelected: _setMediaType,
-                        ),
-                        const Spacer(),
-                        // Action Buttons aligned to the right in iOS Liquid Glass capsule
-                        _buildGlassActionPill(
-                          theme: theme,
-                          iconPack: iconPack,
-                          l10n: l10n,
-                        ),
-                      ],
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        16 + sidebarInset,
+                        12,
+                        16,
+                        8,
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          // Non-wrapping Media Type Toggle (Anime / Shows / Manga)
+                          MediaTypeToggle(
+                            selected: _filterState.mediaType,
+                            showAnime: animeEnabled,
+                            showShows: showsEnabled,
+                            showManga: mangaEnabled,
+                            onSelected: _setMediaType,
+                          ),
+                          const Spacer(),
+                          // Action Buttons aligned to the right in iOS Liquid Glass capsule
+                          _buildGlassActionPill(
+                            theme: theme,
+                            iconPack: iconPack,
+                            l10n: l10n,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
 
-                const SliverToBoxAdapter(
-                  child: SizedBox(height: 6),
-                ),
+                const SliverToBoxAdapter(child: SizedBox(height: 6)),
 
                 SliverToBoxAdapter(
                   child: Padding(
@@ -736,82 +932,115 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       duration: const Duration(milliseconds: 280),
                       switchInCurve: Curves.easeOutCubic,
                       switchOutCurve: Curves.easeIn,
-                      layoutBuilder: (Widget? currentChild, List<Widget> previousChildren) {
-                        return Stack(
-                          alignment: Alignment.topLeft,
-                          children: <Widget>[
-                            ...previousChildren,
-                            ?currentChild,
-                          ],
-                        );
-                      },
-                      transitionBuilder: (Widget child, Animation<double> animation) {
-                        final isIncoming = child.key == ValueKey('curated_content_${_filterState.mediaType}');
-                        if (isIncoming) {
-                          final slideAnimation = Tween<Offset>(
-                            begin: const Offset(0.08, 0.0),
-                            end: Offset.zero,
-                          ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic));
+                      layoutBuilder:
+                          (
+                            Widget? currentChild,
+                            List<Widget> previousChildren,
+                          ) {
+                            return Stack(
+                              alignment: Alignment.topLeft,
+                              children: <Widget>[
+                                ...previousChildren,
+                                ?currentChild,
+                              ],
+                            );
+                          },
+                      transitionBuilder:
+                          (Widget child, Animation<double> animation) {
+                            final isIncoming =
+                                child.key ==
+                                ValueKey(
+                                  'curated_content_${_filterState.mediaType}',
+                                );
+                            if (isIncoming) {
+                              final slideAnimation =
+                                  Tween<Offset>(
+                                    begin: const Offset(0.08, 0.0),
+                                    end: Offset.zero,
+                                  ).animate(
+                                    CurvedAnimation(
+                                      parent: animation,
+                                      curve: Curves.easeOutCubic,
+                                    ),
+                                  );
 
-                          return SlideTransition(
-                            position: slideAnimation,
-                            child: FadeTransition(
-                              opacity: animation,
-                              child: child,
-                            ),
-                          );
-                        } else {
-                          return FadeTransition(
-                            opacity: animation,
-                            child: child,
-                          );
-                        }
-                      },
+                              return SlideTransition(
+                                position: slideAnimation,
+                                child: FadeTransition(
+                                  opacity: animation,
+                                  child: child,
+                                ),
+                              );
+                            } else {
+                              return FadeTransition(
+                                opacity: animation,
+                                child: child,
+                              );
+                            }
+                          },
                       child: KeyedSubtree(
-                        key: ValueKey('curated_content_${_filterState.mediaType}'),
+                        key: ValueKey(
+                          'curated_content_${_filterState.mediaType}',
+                        ),
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             if (isAnime) ...[
                               _buildCuratedAnimeSection(
-                                title: isSpanish ? 'En tendencia ahora' : 'Trending Now',
+                                title: isSpanish
+                                    ? 'En tendencia ahora'
+                                    : 'Trending Now',
                                 onSeeMoreTap: () {
                                   setState(() {
-                                    _filterState = _filterState.copyWith(sort: 'TRENDING_DESC');
+                                    _filterState = _filterState.copyWith(
+                                      sort: 'TRENDING_DESC',
+                                    );
                                     _isSearchExpanded = true;
                                   });
                                   _fetchResults(reset: true);
                                 },
-                                entries: trendingAnimeAsync?.asData?.value ?? [],
-                                isLoading: trendingAnimeAsync?.isLoading ?? false,
+                                entries:
+                                    trendingAnimeAsync?.asData?.value ?? [],
+                                isLoading:
+                                    trendingAnimeAsync?.isLoading ?? false,
                                 theme: theme,
                                 l10n: l10n,
                               ),
                               _buildCuratedAnimeSection(
-                                title: isSpanish ? 'Más populares' : 'Most Popular',
+                                title: isSpanish
+                                    ? 'Más populares'
+                                    : 'Most Popular',
                                 onSeeMoreTap: () {
                                   setState(() {
-                                    _filterState = _filterState.copyWith(sort: 'POPULARITY_DESC');
+                                    _filterState = _filterState.copyWith(
+                                      sort: 'POPULARITY_DESC',
+                                    );
                                     _isSearchExpanded = true;
                                   });
                                   _fetchResults(reset: true);
                                 },
                                 entries: popularAnimeAsync?.asData?.value ?? [],
-                                isLoading: popularAnimeAsync?.isLoading ?? false,
+                                isLoading:
+                                    popularAnimeAsync?.isLoading ?? false,
                                 theme: theme,
                                 l10n: l10n,
                               ),
                               _buildCuratedAnimeSection(
-                                title: isSpanish ? 'Fantasía en tendencia' : 'Trending Fantasy',
+                                title: isSpanish
+                                    ? 'Fantasía en tendencia'
+                                    : 'Trending Fantasy',
                                 genreKey: 'Fantasy',
                                 entries: fantasyAnimeAsync?.asData?.value ?? [],
-                                isLoading: fantasyAnimeAsync?.isLoading ?? false,
+                                isLoading:
+                                    fantasyAnimeAsync?.isLoading ?? false,
                                 theme: theme,
                                 l10n: l10n,
                               ),
                               _buildCuratedAnimeSection(
-                                title: isSpanish ? 'Acción en tendencia' : 'Trending Action',
+                                title: isSpanish
+                                    ? 'Acción en tendencia'
+                                    : 'Trending Action',
                                 genreKey: 'Action',
                                 entries: actionAnimeAsync?.asData?.value ?? [],
                                 isLoading: actionAnimeAsync?.isLoading ?? false,
@@ -819,7 +1048,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                                 l10n: l10n,
                               ),
                               _buildCuratedAnimeSection(
-                                title: isSpanish ? 'Ciencia ficción en tendencia' : 'Trending Sci-Fi',
+                                title: isSpanish
+                                    ? 'Ciencia ficción en tendencia'
+                                    : 'Trending Sci-Fi',
                                 genreKey: 'Sci-Fi',
                                 entries: scifiAnimeAsync?.asData?.value ?? [],
                                 isLoading: scifiAnimeAsync?.isLoading ?? false,
@@ -827,15 +1058,20 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                                 l10n: l10n,
                               ),
                               _buildCuratedAnimeSection(
-                                title: isSpanish ? 'Romance en tendencia' : 'Trending Romance',
+                                title: isSpanish
+                                    ? 'Romance en tendencia'
+                                    : 'Trending Romance',
                                 genreKey: 'Romance',
                                 entries: romanceAnimeAsync?.asData?.value ?? [],
-                                isLoading: romanceAnimeAsync?.isLoading ?? false,
+                                isLoading:
+                                    romanceAnimeAsync?.isLoading ?? false,
                                 theme: theme,
                                 l10n: l10n,
                               ),
                               _buildCuratedAnimeSection(
-                                title: isSpanish ? 'Comedia en tendencia' : 'Trending Comedy',
+                                title: isSpanish
+                                    ? 'Comedia en tendencia'
+                                    : 'Trending Comedy',
                                 genreKey: 'Comedy',
                                 entries: comedyAnimeAsync?.asData?.value ?? [],
                                 isLoading: comedyAnimeAsync?.isLoading ?? false,
@@ -843,87 +1079,125 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                                 l10n: l10n,
                               ),
                             ] else if (isShows) ...[
-                              _buildCuratedAnimeSection(
-                                title: isSpanish ? 'Series en Tendencia (TMDB)' : 'Trending Shows (TMDB)',
-                                onSeeMoreTap: () {
-                                  setState(() {
-                                    _filterState = _filterState.copyWith(sort: 'TRENDING_DESC');
-                                    _isSearchExpanded = true;
-                                  });
-                                  _fetchResults(reset: true);
-                                },
-                                entries: trendingShowsAsync?.asData?.value ?? [],
-                                isLoading: trendingShowsAsync?.isLoading ?? false,
-                                theme: theme,
-                                l10n: l10n,
-                              ),
-                              _buildCuratedAnimeSection(
-                                title: isSpanish ? 'Series Más Populares (TMDB)' : 'Popular TV Shows (TMDB)',
-                                onSeeMoreTap: () {
-                                  setState(() {
-                                    _filterState = _filterState.copyWith(sort: 'POPULARITY_DESC');
-                                    _isSearchExpanded = true;
-                                  });
-                                  _fetchResults(reset: true);
-                                },
-                                entries: popularShowsAsync?.asData?.value ?? [],
-                                isLoading: popularShowsAsync?.isLoading ?? false,
-                                theme: theme,
-                                l10n: l10n,
-                              ),
-                              _buildCuratedAnimeSection(
-                                title: isSpanish ? 'Mejor Valoradas (TMDB)' : 'Top Rated Shows (TMDB)',
-                                onSeeMoreTap: () {
-                                  setState(() {
-                                    _filterState = _filterState.copyWith(sort: 'SCORE_DESC');
-                                    _isSearchExpanded = true;
-                                  });
-                                  _fetchResults(reset: true);
-                                },
-                                entries: topRatedShowsAsync?.asData?.value ?? [],
-                                isLoading: topRatedShowsAsync?.isLoading ?? false,
-                                theme: theme,
-                                l10n: l10n,
-                              ),
+                              if (showsUnavailable)
+                                _buildTmdbUnavailableCard(theme, l10n)
+                              else ...[
+                                _buildCuratedAnimeSection(
+                                  title: isSpanish
+                                      ? 'Series en Tendencia (TMDB)'
+                                      : 'Trending Shows (TMDB)',
+                                  onSeeMoreTap: () {
+                                    setState(() {
+                                      _filterState = _filterState.copyWith(
+                                        sort: 'TRENDING_DESC',
+                                      );
+                                      _isSearchExpanded = true;
+                                    });
+                                    _fetchResults(reset: true);
+                                  },
+                                  entries:
+                                      trendingShowsAsync?.asData?.value ?? [],
+                                  isLoading:
+                                      trendingShowsAsync?.isLoading ?? false,
+                                  theme: theme,
+                                  l10n: l10n,
+                                ),
+                                _buildCuratedAnimeSection(
+                                  title: isSpanish
+                                      ? 'Series Más Populares (TMDB)'
+                                      : 'Popular TV Shows (TMDB)',
+                                  onSeeMoreTap: () {
+                                    setState(() {
+                                      _filterState = _filterState.copyWith(
+                                        sort: 'POPULARITY_DESC',
+                                      );
+                                      _isSearchExpanded = true;
+                                    });
+                                    _fetchResults(reset: true);
+                                  },
+                                  entries:
+                                      popularShowsAsync?.asData?.value ?? [],
+                                  isLoading:
+                                      popularShowsAsync?.isLoading ?? false,
+                                  theme: theme,
+                                  l10n: l10n,
+                                ),
+                                _buildCuratedAnimeSection(
+                                  title: isSpanish
+                                      ? 'Mejor Valoradas (TMDB)'
+                                      : 'Top Rated Shows (TMDB)',
+                                  onSeeMoreTap: () {
+                                    setState(() {
+                                      _filterState = _filterState.copyWith(
+                                        sort: 'SCORE_DESC',
+                                      );
+                                      _isSearchExpanded = true;
+                                    });
+                                    _fetchResults(reset: true);
+                                  },
+                                  entries:
+                                      topRatedShowsAsync?.asData?.value ?? [],
+                                  isLoading:
+                                      topRatedShowsAsync?.isLoading ?? false,
+                                  theme: theme,
+                                  l10n: l10n,
+                                ),
+                              ],
                             ] else ...[
                               _buildCuratedMangaSection(
-                                title: isSpanish ? 'En tendencia ahora' : 'Trending Now',
+                                title: isSpanish
+                                    ? 'En tendencia ahora'
+                                    : 'Trending Now',
                                 onSeeMoreTap: () {
                                   setState(() {
-                                    _filterState = _filterState.copyWith(sort: 'TRENDING_DESC');
+                                    _filterState = _filterState.copyWith(
+                                      sort: 'TRENDING_DESC',
+                                    );
                                     _isSearchExpanded = true;
                                   });
                                   _fetchResults(reset: true);
                                 },
-                                entries: trendingMangaAsync?.asData?.value ?? [],
-                                isLoading: trendingMangaAsync?.isLoading ?? false,
+                                entries:
+                                    trendingMangaAsync?.asData?.value ?? [],
+                                isLoading:
+                                    trendingMangaAsync?.isLoading ?? false,
                                 theme: theme,
                                 l10n: l10n,
                               ),
                               _buildCuratedMangaSection(
-                                title: isSpanish ? 'Manga más popular' : 'Popular Manga',
+                                title: isSpanish
+                                    ? 'Manga más popular'
+                                    : 'Popular Manga',
                                 onSeeMoreTap: () {
                                   setState(() {
-                                    _filterState = _filterState.copyWith(sort: 'POPULARITY_DESC');
+                                    _filterState = _filterState.copyWith(
+                                      sort: 'POPULARITY_DESC',
+                                    );
                                     _isSearchExpanded = true;
                                   });
                                   _fetchResults(reset: true);
                                 },
                                 entries: popularMangaAsync?.asData?.value ?? [],
-                                isLoading: popularMangaAsync?.isLoading ?? false,
+                                isLoading:
+                                    popularMangaAsync?.isLoading ?? false,
                                 theme: theme,
                                 l10n: l10n,
                               ),
                               _buildCuratedMangaSection(
-                                title: isSpanish ? 'Fantasía en tendencia' : 'Trending Fantasy',
+                                title: isSpanish
+                                    ? 'Fantasía en tendencia'
+                                    : 'Trending Fantasy',
                                 genreKey: 'Fantasy',
                                 entries: fantasyMangaAsync?.asData?.value ?? [],
-                                isLoading: fantasyMangaAsync?.isLoading ?? false,
+                                isLoading:
+                                    fantasyMangaAsync?.isLoading ?? false,
                                 theme: theme,
                                 l10n: l10n,
                               ),
                               _buildCuratedMangaSection(
-                                title: isSpanish ? 'Acción en tendencia' : 'Trending Action',
+                                title: isSpanish
+                                    ? 'Acción en tendencia'
+                                    : 'Trending Action',
                                 genreKey: 'Action',
                                 entries: actionMangaAsync?.asData?.value ?? [],
                                 isLoading: actionMangaAsync?.isLoading ?? false,
@@ -931,15 +1205,20 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                                 l10n: l10n,
                               ),
                               _buildCuratedMangaSection(
-                                title: isSpanish ? 'Romance en tendencia' : 'Trending Romance',
+                                title: isSpanish
+                                    ? 'Romance en tendencia'
+                                    : 'Trending Romance',
                                 genreKey: 'Romance',
                                 entries: romanceMangaAsync?.asData?.value ?? [],
-                                isLoading: romanceMangaAsync?.isLoading ?? false,
+                                isLoading:
+                                    romanceMangaAsync?.isLoading ?? false,
                                 theme: theme,
                                 l10n: l10n,
                               ),
                               _buildCuratedMangaSection(
-                                title: isSpanish ? 'Comedia en tendencia' : 'Trending Comedy',
+                                title: isSpanish
+                                    ? 'Comedia en tendencia'
+                                    : 'Trending Comedy',
                                 genreKey: 'Comedy',
                                 entries: comedyMangaAsync?.asData?.value ?? [],
                                 isLoading: comedyMangaAsync?.isLoading ?? false,
@@ -954,11 +1233,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   ),
                 ),
 
-                  const SliverToBoxAdapter(
-                    child: SizedBox(height: 90),
-                  ),
-                ],
-              ),
+                const SliverToBoxAdapter(child: SizedBox(height: 90)),
+              ],
+            ),
           ),
           ValueListenableBuilder<bool>(
             valueListenable: _isScrolledNotifier,
@@ -971,5 +1248,3 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     );
   }
 }
-
-

@@ -23,6 +23,10 @@ class LastSessionItem {
   final String? mimeType;
   final String? videoSource;
   final bool isTmdb;
+  final String? tmdbMediaType;
+  final int? tmdbSeason;
+  final String? tmdbEnglishTitle;
+  final int? tmdbYear;
   final String? onlineStreamProvider;
   final bool? onlineStreamDubbed;
   final String? onlineStreamServer;
@@ -49,6 +53,10 @@ class LastSessionItem {
     this.mimeType,
     this.videoSource,
     this.isTmdb = false,
+    this.tmdbMediaType,
+    this.tmdbSeason,
+    this.tmdbEnglishTitle,
+    this.tmdbYear,
     this.onlineStreamProvider,
     this.onlineStreamDubbed,
     this.onlineStreamServer,
@@ -97,6 +105,10 @@ class LastSessionItem {
     String? mimeType,
     String? videoSource,
     bool? isTmdb,
+    String? tmdbMediaType,
+    int? tmdbSeason,
+    String? tmdbEnglishTitle,
+    int? tmdbYear,
     String? onlineStreamProvider,
     bool? onlineStreamDubbed,
     String? onlineStreamServer,
@@ -123,6 +135,10 @@ class LastSessionItem {
       mimeType: mimeType ?? this.mimeType,
       videoSource: videoSource ?? this.videoSource,
       isTmdb: isTmdb ?? this.isTmdb,
+      tmdbMediaType: tmdbMediaType ?? this.tmdbMediaType,
+      tmdbSeason: tmdbSeason ?? this.tmdbSeason,
+      tmdbEnglishTitle: tmdbEnglishTitle ?? this.tmdbEnglishTitle,
+      tmdbYear: tmdbYear ?? this.tmdbYear,
       onlineStreamProvider: onlineStreamProvider ?? this.onlineStreamProvider,
       onlineStreamDubbed: onlineStreamDubbed ?? this.onlineStreamDubbed,
       onlineStreamServer: onlineStreamServer ?? this.onlineStreamServer,
@@ -151,6 +167,10 @@ class LastSessionItem {
         'mimeType': mimeType,
         'videoSource': videoSource,
         'isTmdb': isTmdb,
+        'tmdbMediaType': tmdbMediaType,
+        'tmdbSeason': tmdbSeason,
+        'tmdbEnglishTitle': tmdbEnglishTitle,
+        'tmdbYear': tmdbYear,
         'onlineStreamProvider': onlineStreamProvider,
         'onlineStreamDubbed': onlineStreamDubbed,
         'onlineStreamServer': onlineStreamServer,
@@ -179,6 +199,10 @@ class LastSessionItem {
       mimeType: json['mimeType']?.toString(),
       videoSource: json['videoSource']?.toString(),
       isTmdb: json['isTmdb'] as bool? ?? false,
+      tmdbMediaType: json['tmdbMediaType']?.toString(),
+      tmdbSeason: json['tmdbSeason'] is int ? json['tmdbSeason'] : null,
+      tmdbEnglishTitle: json['tmdbEnglishTitle']?.toString(),
+      tmdbYear: json['tmdbYear'] is int ? json['tmdbYear'] : null,
       onlineStreamProvider: json['onlineStreamProvider']?.toString(),
       onlineStreamDubbed: json['onlineStreamDubbed'] as bool?,
       onlineStreamServer: json['onlineStreamServer']?.toString(),

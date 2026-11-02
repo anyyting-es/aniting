@@ -56,11 +56,13 @@ class ContinueWatchingPlaybackLauncher {
     }
 
     // 2. Resolve known source from animePlaybackSourceProvider or lastSession
-    final savedSource =
-        ref.read(animePlaybackSourceProvider.notifier).getSource(entry.mediaId);
+    final savedSource = entry.isTmdb
+        ? null
+        : ref.read(animePlaybackSourceProvider.notifier).getSource(entry.mediaId);
     final lastSession = ref.read(lastSessionProvider);
-    final bool isSessionMatching =
-        lastSession != null && lastSession.mediaId == entry.mediaId;
+    final bool isSessionMatching = lastSession != null &&
+        lastSession.mediaId == entry.mediaId &&
+        lastSession.isTmdb == entry.isTmdb;
 
     final String? onlineProvider = savedSource?.onlineStreamProvider ??
         (isSessionMatching ? lastSession.onlineStreamProvider : null);
@@ -88,9 +90,17 @@ class ContinueWatchingPlaybackLauncher {
         ? entry.episodeTitle!.trim()
         : l10n.episodeNumber(epNum);
 
+    final isTmdb = entry.isTmdb;
+    final tmdbMediaType =
+        (entry.format ?? '').toUpperCase() == 'MOVIE' ? 'movie' : 'tv';
+    final tmdbSeason =
+        isSessionMatching ? lastSession.tmdbSeason : null;
+    final tmdbEnglishTitle = entry.englishTitle;
+    final tmdbYear = entry.year;
+
     // ─── 3. Local Library Fast-Path (0ms) ───
     // If the anime has local files or user was watching locally, check if local file exists for this EP
-    if (isSavedLocal || entry.hasLocalFiles) {
+    if (!isTmdb && (isSavedLocal || entry.hasLocalFiles)) {
       try {
         final libEntry = await repo.getAnimeLibraryEntry(entry.mediaId);
         final localEp = libEntry?.episodes.cast<LibraryEpisode?>().firstWhere(
@@ -118,6 +128,11 @@ class ContinueWatchingPlaybackLauncher {
                   fileName != null ? 'Local • $fileName' : l10n.localLibrary,
               startPosition: startPos,
               isLocalFile: true,
+              isTmdbMedia: isTmdb,
+              tmdbMediaType: tmdbMediaType,
+              tmdbSeason: tmdbSeason,
+              tmdbEnglishTitle: tmdbEnglishTitle,
+              tmdbYear: tmdbYear,
             ),
           );
           return;
@@ -126,7 +141,7 @@ class ContinueWatchingPlaybackLauncher {
     }
 
     // ─── 4. Torrent Stream Resume ───
-    if (isSavedTorrent) {
+    if (!isTmdb && isSavedTorrent) {
       try {
         final success = await repo.startTorrentStream(
           mediaId: entry.mediaId,
@@ -148,6 +163,11 @@ class ContinueWatchingPlaybackLauncher {
                   lastSession?.videoSource ??
                   'Torrent',
               onDispose: () => repo.stopTorrentStream(),
+              isTmdbMedia: isTmdb,
+              tmdbMediaType: tmdbMediaType,
+              tmdbSeason: tmdbSeason,
+              tmdbEnglishTitle: tmdbEnglishTitle,
+              tmdbYear: tmdbYear,
             ),
           );
           return;
@@ -169,8 +189,11 @@ class ContinueWatchingPlaybackLauncher {
       // Fallback to first available provider
       try {
         final providers = await repo.getOnlinestreamProviders();
-        if (providers.isNotEmpty) {
-          resolvedProviderId = providers.first.id;
+        final candidates = isTmdb
+            ? providers.where((p) => p.supportsTmdb).toList()
+            : providers;
+        if (candidates.isNotEmpty) {
+          resolvedProviderId = candidates.first.id;
         }
       } catch (_) {}
     }
@@ -190,6 +213,11 @@ class ContinueWatchingPlaybackLauncher {
           onlineStreamProvider: resolvedProviderId,
           onlineStreamDubbed: onlineDubbed ?? false,
           onlineStreamServer: onlineServer,
+          isTmdbMedia: isTmdb,
+          tmdbMediaType: tmdbMediaType,
+          tmdbSeason: tmdbSeason,
+          tmdbEnglishTitle: tmdbEnglishTitle,
+          tmdbYear: tmdbYear,
         ),
       );
       return;
@@ -204,6 +232,7 @@ class ContinueWatchingPlaybackLauncher {
           context,
           mediaId: entry.mediaId,
           initialEntry: entry,
+          isTmdb: entry.isTmdb,
         );
       }
     }

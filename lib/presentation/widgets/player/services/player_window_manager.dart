@@ -7,6 +7,8 @@ import 'package:seanime_app/core/theme/theme_provider.dart';
 import 'package:seanime_app/presentation/widgets/desktop_title_bar.dart';
 import 'package:seanime_app/presentation/widgets/player/services/player_playback_coordinator.dart';
 
+typedef PlayerWindowInit = ({int initialTop, int initialHeight, bool initialFullscreen});
+
 /// Service responsible for managing window states, fullscreen transitions,
 /// orientation changes (mobile landscape immersive vs portrait), desktop native fullscreen,
 /// and Android ExoPlayer native surface bounds synchronization.

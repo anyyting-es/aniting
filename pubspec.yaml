@@ -50,6 +50,9 @@ dependencies:
   g1455: 0.2.0
   dbus: ^0.7.15
   material_3_expressive: ^1.1.6
+  # Vendored Material widgets used by material_3_expressive internals
+  # (dropdown search field); its localizations delegate is registered in main.
+  material_ui: ^1.6.0
   # Pure-Dart crypto, used to decrypt AES-128 encrypted HLS segments offline
   # (Android/iOS have no ffmpeg, so the pure-Dart HLS downloader must decrypt).
   pointycastle: ^4.0.0
@@ -60,6 +63,9 @@ dependencies:
   media_kit_video: ^2.0.1
   media_kit_libs_video: ^1.0.7
   youtube_player_iframe: ^6.0.2
+  http: ^1.6.0
+  xml: ^7.0.1
+  uuid: ^4.6.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -83,6 +83,11 @@ This document records solutions to complex platform-specific bugs, hardware deco
 - **Root Cause**: `BackdropFilter` widgets placed inside components that sat entirely on top of solid opaque background colors.
 - **Solution**: Removed redundant `BackdropFilter` layers where translucency was not visually effective, restricted blur sigma to ≤25 for banners, and wrapped interactive cards and buttons with `RepaintBoundary`.
 
+### 4.3. `AmbientVideoGlow` Rectangular Inner-Shadow Seam Around Desktop Player (`ShaderMask` + `ImageFiltered`)
+- **Symptom**: In desktop normal layout mode, while the ambient blurred video glow (`AmbientVideoGlow`) spread into the background around the player, a sharp rectangular frame with an inward-fading dark shadow appeared around the video (matching no individual widget's bounds in the Flutter Widget Inspector).
+- **Root Cause**: In `AmbientVideoGlow` (`lib/presentation/widgets/player/viewport/ambient_video_glow.dart`), `ImageFiltered(imageFilter: ImageFilter.blur(sigmaX: 55, sigmaY: 55))` was placed *inside* the two `ShaderMask(blendMode: BlendMode.dstIn)` widgets. Because a Gaussian blur expands its layer `paintBounds` by `~3 * sigma` (`~165px`) beyond the child's layout box, `ShaderMaskLayer` created a `saveLayer` covering the expanded blur bounds (`[-165, -165, W + 165, H + 165]`) but only drew the `BlendMode.dstIn` edge-fade gradient rect inside `maskRect` (`[0, 0, W, H]`). In Skia/Impeller, `drawRect` with `BlendMode.dstIn` does not modify pixels outside `maskRect`, leaving the outer `165px` blur unmasked while abruptly multiplying the `maskRect` border by `alpha = 0.0` and ramping inward—creating a sharp dark rectangular cutout with an inward gradient around the player.
+- **Solution**: Applied the two `ShaderMask` edge fades directly to `_buildTexture()` *before* wrapping with `ImageFiltered(imageFilter: ImageFilter.blur(...))`. Because `_buildTexture()` is clipped to `maskRect`, the `ShaderMask` fades the texture's edges cleanly to zero alpha within its exact bounds, and `ImageFiltered` subsequently blurs the edge-faded result smoothly outward with no rectangular seam.
+
 ---
 
 ## 5. Linux MPRIS D-Bus Integration Quirks

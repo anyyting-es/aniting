@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/icons/app_icons.dart';
 import 'package:seanime_app/core/preferences/playback_progress_preferences_provider.dart';
 import 'package:seanime_app/data/models/anime_details.dart';
 import 'package:seanime_app/data/models/anizip_data.dart';
+import 'package:seanime_app/data/models/episode_item.dart';
 import 'package:seanime_app/data/models/tmdb_models.dart';
 import 'package:seanime_app/presentation/providers/episodes_provider.dart';
 import 'package:seanime_app/presentation/widgets/episodes/episode_card.dart';
@@ -22,7 +24,8 @@ class EpisodesView extends ConsumerStatefulWidget {
     required int episodeNumber,
     required String episodeTitle,
     String? aniDBEpisode,
-  })? onOpenTorrentSelector;
+  })?
+  onOpenTorrentSelector;
 
   const EpisodesView({
     super.key,
@@ -97,7 +100,8 @@ class _EpisodesViewState extends ConsumerState<EpisodesView> {
     }
 
     int targetIndex = episodes.indexWhere((e) {
-      final num = (e is Map ? e['episode_number'] : (e as dynamic).number) as int?;
+      final num =
+          (e is Map ? e['episode_number'] : (e as dynamic).number) as int?;
       return num == targetNumber;
     });
 
@@ -116,7 +120,9 @@ class _EpisodesViewState extends ConsumerState<EpisodesView> {
         final maxOffset = _horizontalScrollController.position.maxScrollExtent;
         final finalOffset = targetOffset.clamp(0.0, maxOffset);
 
-        if (finalOffset > 0 && mounted && _horizontalScrollController.hasClients) {
+        if (finalOffset > 0 &&
+            mounted &&
+            _horizontalScrollController.hasClients) {
           _horizontalScrollController.animateTo(
             finalOffset,
             duration: const Duration(milliseconds: 650),
@@ -128,12 +134,35 @@ class _EpisodesViewState extends ConsumerState<EpisodesView> {
   }
 
   void _triggerLoad() {
-    final args = EpisodesArgs(mediaId: widget.mediaId, isTmdb: widget.isTmdb);
-    ref.read(episodesControllerProvider(args).notifier).load(
+    final args = EpisodesArgs(
+      mediaId: widget.mediaId,
+      isTmdb: widget.isTmdb,
+      mediaType: _tmdbMediaType,
+    );
+    ref
+        .read(episodesControllerProvider(args).notifier)
+        .load(
           animeDetails: widget.animeDetails,
           aniZipData: widget.aniZipData,
           tmdbDetails: widget.tmdbDetails,
         );
+  }
+
+  /// TMDB movies and shows share the same numeric id space, so the media type
+  /// must travel with every request.
+  String get _tmdbMediaType {
+    if (widget.tmdbDetails?.isMovie == true) return 'movie';
+    final format = (widget.animeDetails?.format ?? '').toUpperCase();
+    return format == 'MOVIE' ? 'movie' : 'tv';
+  }
+
+  /// Starts playback. The player itself shows the source picker for TMDB.
+  void _handleEpisodeTap(
+    BuildContext context,
+    EpisodesNotifier controller,
+    EpisodeItem episode,
+  ) {
+    controller.playEpisode(context, episode);
   }
 
   @override
@@ -141,22 +170,55 @@ class _EpisodesViewState extends ConsumerState<EpisodesView> {
     final l10n = ref.watch(translationsProvider);
     final iconPack = ref.watch(iconPackProvider);
     final theme = Theme.of(context);
-    final args = EpisodesArgs(mediaId: widget.mediaId, isTmdb: widget.isTmdb);
+    final args = EpisodesArgs(
+      mediaId: widget.mediaId,
+      isTmdb: widget.isTmdb,
+      mediaType: _tmdbMediaType,
+    );
     final state = ref.watch(episodesControllerProvider(args));
     final controller = ref.read(episodesControllerProvider(args).notifier);
 
-    if (state.isLoading) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(40),
+    final episodes = widget.isHorizontal
+        ? state.visibleEpisodes
+        : state.pagedEpisodes;
+
+    final isDark = theme.brightness == Brightness.dark;
+
+    final Widget content;
+    if (state.isLoading && episodes.isEmpty) {
+      content = const Padding(
+        key: ValueKey('episodes_loading'),
+        padding: EdgeInsets.symmetric(vertical: 48),
+        child: Center(
           child: CircularProgressIndicator(strokeWidth: 2.5),
         ),
       );
+    } else if (episodes.isEmpty) {
+      content = Center(
+        key: const ValueKey('episodes_empty'),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 48),
+          child: Text(
+            l10n.noEpisodesFound,
+            style: TextStyle(
+              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+              fontSize: 14,
+            ),
+          ),
+        ),
+      );
+    } else {
+      content = KeyedSubtree(
+        key: ValueKey(
+          'episodes_${state.selectedSeason}_${state.isGridView}_${state.isSortAscending}',
+        ),
+        child: widget.isHorizontal
+            ? _buildHorizontalView(context, episodes, controller)
+            : state.isGridView
+                ? _buildGridView(context, episodes, controller)
+                : _buildListView(context, episodes, controller),
+      );
     }
-
-    final episodes = widget.isHorizontal ? state.visibleEpisodes : state.pagedEpisodes;
-
-    final isDark = theme.brightness == Brightness.dark;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -178,25 +240,24 @@ class _EpisodesViewState extends ConsumerState<EpisodesView> {
         const SizedBox(height: 12),
 
         // ─── Episodes Content ───
-        if (episodes.isEmpty)
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 48),
-              child: Text(
-                l10n.noEpisodesFound,
-                style: TextStyle(
-                  color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
-                  fontSize: 14,
-                ),
-              ),
-            ),
-          )
-        else if (widget.isHorizontal)
-          _buildHorizontalView(context, episodes, controller)
-        else if (state.isGridView)
-          _buildGridView(context, episodes, controller)
-        else
-          _buildListView(context, episodes, controller),
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          switchInCurve: Curves.easeOutCubic,
+          switchOutCurve: Curves.easeInCubic,
+          transitionBuilder: (child, animation) {
+            final slide = Tween<Offset>(
+              begin: const Offset(0.03, 0),
+              end: Offset.zero,
+            ).animate(
+              CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+            );
+            return FadeTransition(
+              opacity: animation,
+              child: SlideTransition(position: slide, child: child),
+            );
+          },
+          child: content,
+        ),
 
         // ─── Pagination ───
         if (!widget.isHorizontal && state.totalPages > 1) ...[
@@ -229,10 +290,18 @@ class _EpisodesViewState extends ConsumerState<EpisodesView> {
                 final isSelected = state.selectedSeason == season;
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
-                  child: FilterChip(
-                    selected: isSelected,
-                    label: Text('${l10n.season} $season'),
-                    onSelected: (_) => controller.selectSeason(season),
+                  child: M3EButton(
+                    onPressed: () => controller.selectSeason(season),
+                    style: isSelected
+                        ? M3EButtonStyle.filled
+                        : M3EButtonStyle.outlined,
+                    size: M3EButtonSize.sm,
+                    shape: M3EButtonShape.round,
+                    child: Text(
+                      season == 0
+                          ? l10n.specials
+                          : '${l10n.season} $season',
+                    ),
                   ),
                 );
               }).toList(),
@@ -241,31 +310,10 @@ class _EpisodesViewState extends ConsumerState<EpisodesView> {
 
         if (state.seasons.length > 1) const SizedBox(height: 8),
 
-        // Filters, Sort, and Grid/List toggle Row
+        // Layout and sort controls. All/Unwatched filters are intentionally
+        // omitted: TMDB episodes mirror the Anime episode list behaviour.
         Row(
           children: [
-            // Filter: All / Local / Unwatched
-            FilterChip(
-              selected: state.filter == EpisodeFilterType.all,
-              label: Text(l10n.all),
-              onSelected: (_) => controller.setFilter(EpisodeFilterType.all),
-            ),
-            const SizedBox(width: 6),
-            if (state.hasLocalFiles) ...[
-              FilterChip(
-                selected: state.filter == EpisodeFilterType.localOnly,
-                avatar: Icon(AppIcons.folder(iconPack), size: 14),
-                label: Text(l10n.local),
-                onSelected: (_) => controller.setFilter(EpisodeFilterType.localOnly),
-              ),
-              const SizedBox(width: 6),
-            ],
-            FilterChip(
-              selected: state.filter == EpisodeFilterType.unwatched,
-              label: Text(l10n.unwatched),
-              onSelected: (_) => controller.setFilter(EpisodeFilterType.unwatched),
-            ),
-
             const Spacer(),
 
             if (!widget.isHorizontal) ...[
@@ -279,9 +327,13 @@ class _EpisodesViewState extends ConsumerState<EpisodesView> {
                       : Colors.black.withValues(alpha: 0.05),
                 ),
                 onPressed: controller.toggleLayout,
-                tooltip: state.isGridView ? l10n.switchToList : l10n.switchToGrid,
+                tooltip: state.isGridView
+                    ? l10n.switchToList
+                    : l10n.switchToGrid,
                 icon: Icon(
-                  state.isGridView ? AppIcons.list(iconPack) : AppIcons.grid(iconPack),
+                  state.isGridView
+                      ? AppIcons.list(iconPack)
+                      : AppIcons.grid(iconPack),
                   size: 18,
                   color: isDark ? Colors.white70 : Colors.black87,
                 ),
@@ -314,7 +366,7 @@ class _EpisodesViewState extends ConsumerState<EpisodesView> {
 
   Widget _buildHorizontalView(
     BuildContext context,
-    List<dynamic> episodes,
+    List<EpisodeItem> episodes,
     EpisodesNotifier controller,
   ) {
     final playbackMap = ref.watch(playbackProgressPreferencesProvider);
@@ -336,13 +388,13 @@ class _EpisodesViewState extends ConsumerState<EpisodesView> {
               mediaId: widget.mediaId,
               episode: ep,
               isGridView: true,
-              onTap: () => controller.playEpisode(context, ep),
+              onTap: () => _handleEpisodeTap(context, controller, ep),
               onOpenTorrent: widget.onOpenTorrentSelector != null
                   ? () => widget.onOpenTorrentSelector!(
-                        episodeNumber: ep.number,
-                        episodeTitle: 'EP ${ep.number}. ${ep.title}',
-                        aniDBEpisode: ep.aniDBEpisode,
-                      )
+                      episodeNumber: ep.number,
+                      episodeTitle: 'EP ${ep.number}. ${ep.title}',
+                      aniDBEpisode: ep.aniDBEpisode,
+                    )
                   : null,
             ),
           );
@@ -353,7 +405,7 @@ class _EpisodesViewState extends ConsumerState<EpisodesView> {
 
   Widget _buildGridView(
     BuildContext context,
-    List<dynamic> episodes,
+    List<EpisodeItem> episodes,
     EpisodesNotifier controller,
   ) {
     return LayoutBuilder(
@@ -378,13 +430,13 @@ class _EpisodesViewState extends ConsumerState<EpisodesView> {
               mediaId: widget.mediaId,
               episode: ep,
               isGridView: true,
-              onTap: () => controller.playEpisode(context, ep),
+              onTap: () => _handleEpisodeTap(context, controller, ep),
               onOpenTorrent: widget.onOpenTorrentSelector != null
                   ? () => widget.onOpenTorrentSelector!(
-                        episodeNumber: ep.number,
-                        episodeTitle: 'EP ${ep.number}. ${ep.title}',
-                        aniDBEpisode: ep.aniDBEpisode,
-                      )
+                      episodeNumber: ep.number,
+                      episodeTitle: 'EP ${ep.number}. ${ep.title}',
+                      aniDBEpisode: ep.aniDBEpisode,
+                    )
                   : null,
             );
           },
@@ -395,7 +447,7 @@ class _EpisodesViewState extends ConsumerState<EpisodesView> {
 
   Widget _buildListView(
     BuildContext context,
-    List<dynamic> episodes,
+    List<EpisodeItem> episodes,
     EpisodesNotifier controller,
   ) {
     return ListView.separated(
@@ -409,13 +461,13 @@ class _EpisodesViewState extends ConsumerState<EpisodesView> {
           mediaId: widget.mediaId,
           episode: ep,
           isGridView: false,
-          onTap: () => controller.playEpisode(context, ep),
+          onTap: () => _handleEpisodeTap(context, controller, ep),
           onOpenTorrent: widget.onOpenTorrentSelector != null
               ? () => widget.onOpenTorrentSelector!(
-                    episodeNumber: ep.number,
-                    episodeTitle: 'EP ${ep.number}. ${ep.title}',
-                    aniDBEpisode: ep.aniDBEpisode,
-                  )
+                  episodeNumber: ep.number,
+                  episodeTitle: 'EP ${ep.number}. ${ep.title}',
+                  aniDBEpisode: ep.aniDBEpisode,
+                )
               : null,
         );
       },

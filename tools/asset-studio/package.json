@@ -1,0 +1,13 @@
+{
+  "name": "aniting-asset-studio",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Local curator for assets/data/custom_anime_assets.json",
+  "scripts": {
+    "start": "node server.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

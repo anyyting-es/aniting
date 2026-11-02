@@ -33,6 +33,7 @@ class SeanimeRepository {
   List<OnlinestreamProvider>? _onlinestreamProvidersCache;
   final Map<String, List<OnlinestreamEpisode>> _onlinestreamEpisodesCache = {};
   final Map<int, MangaEntry> _mangaDetailsCache = {};
+  final Map<int, List<dynamic>> _charactersWithVaCache = {};
   final Dio _externalDio = Dio(
     BaseOptions(
       connectTimeout: const Duration(seconds: 10),
@@ -54,6 +55,12 @@ class SeanimeRepository {
   AniZipData? getCachedAniZipData(int mediaId) =>
       _aniZipCache[mediaId] ?? FeedCacheService.instance.getAniZipData(mediaId);
   List<OnlinestreamProvider>? getCachedOnlinestreamProviders() => _onlinestreamProvidersCache;
+
+  /// Clears the cached provider list so newly installed/enabled extensions show
+  /// up immediately (source pickers, detail pages, etc.).
+  void invalidateOnlinestreamProvidersCache() {
+    _onlinestreamProvidersCache = null;
+  }
   List<OnlinestreamEpisode>? getCachedOnlinestreamEpisodes({
     required int mediaId,
     required String provider,
@@ -1038,6 +1045,75 @@ class SeanimeRepository {
     return [];
   }
 
+  Future<List<dynamic>?> getAnimeCharactersWithVoiceActors(int mediaId) async {
+    if (_charactersWithVaCache.containsKey(mediaId)) {
+      return _charactersWithVaCache[mediaId];
+    }
+    try {
+      final res = await _externalDio.post(
+        'https://graphql.anilist.co',
+        data: {
+          'query': '''
+            query (\$id: Int) {
+              Media(id: \$id, type: ANIME) {
+                characters(sort: [ROLE], perPage: 60) {
+                  edges {
+                    id
+                    role
+                    voiceActors(language: JAPANESE, sort: [RELEVANCE, ID]) {
+                      id
+                      name {
+                        userPreferred
+                        full
+                        native
+                      }
+                      image {
+                        large
+                        medium
+                      }
+                      languageV2
+                    }
+                    node {
+                      id
+                      name {
+                        userPreferred
+                        full
+                        native
+                        alternative
+                      }
+                      image {
+                        large
+                        medium
+                      }
+                      description(asHtml: false)
+                      gender
+                      age
+                      bloodType
+                      dateOfBirth {
+                        year
+                        month
+                        day
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ''',
+          'variables': {'id': mediaId},
+        },
+      );
+      if (res.statusCode == 200 && res.data != null) {
+        final edges = res.data['data']?['Media']?['characters']?['edges'];
+        if (edges is List) {
+          _charactersWithVaCache[mediaId] = edges;
+          return edges;
+        }
+      }
+    } catch (_) {}
+    return null;
+  }
+
   Future<AnimeDetails?> getAnimeDetails(int mediaId, {AnimeEntry? initialEntry}) async {
     try {
       // 1. Fetch AniList extended details, Seanime library entry (has full BaseAnime media), and AniZip metadata in parallel
@@ -1872,6 +1948,7 @@ class SeanimeRepository {
                         medium
                       }
                       bannerImage
+                      description
                       format
                       status
                       episodes
@@ -2312,7 +2389,11 @@ class SeanimeRepository {
           'manifestURI': manifestUri.trim(),
         },
       );
-      return response.statusCode == 200;
+      if (response.statusCode == 200) {
+        invalidateOnlinestreamProvidersCache();
+        return true;
+      }
+      return false;
     } catch (e) {
       debugPrint('Error installing extension: $e');
       return false;
@@ -2341,7 +2422,11 @@ class SeanimeRepository {
         '/extensions/external/uninstall',
         data: {'id': id},
       );
-      return response.statusCode == 200;
+      if (response.statusCode == 200) {
+        invalidateOnlinestreamProvidersCache();
+        return true;
+      }
+      return false;
     } catch (e) {
       debugPrint('Error uninstalling extension: $e');
       return false;
@@ -2354,7 +2439,11 @@ class SeanimeRepository {
         '/extensions/external/disabled',
         data: {'id': id, 'disabled': disabled},
       );
-      return response.statusCode == 200;
+      if (response.statusCode == 200) {
+        invalidateOnlinestreamProvidersCache();
+        return true;
+      }
+      return false;
     } catch (e) {
       debugPrint('Error toggling extension: $e');
       return false;
@@ -2364,7 +2453,11 @@ class SeanimeRepository {
   Future<bool> reloadExtensions() async {
     try {
       final response = await _apiClient.post('/extensions/external/reload');
-      return response.statusCode == 200;
+      if (response.statusCode == 200) {
+        invalidateOnlinestreamProvidersCache();
+        return true;
+      }
+      return false;
     } catch (e) {
       debugPrint('Error reloading extensions: $e');
       return false;
@@ -2442,8 +2535,10 @@ class SeanimeRepository {
 
   // ================= Online Streaming =================
 
-  Future<List<OnlinestreamProvider>> getOnlinestreamProviders() async {
-    if (_onlinestreamProvidersCache != null && _onlinestreamProvidersCache!.isNotEmpty) {
+  Future<List<OnlinestreamProvider>> getOnlinestreamProviders({bool forceRefresh = false}) async {
+    if (!forceRefresh &&
+        _onlinestreamProvidersCache != null &&
+        _onlinestreamProvidersCache!.isNotEmpty) {
       return _onlinestreamProvidersCache!;
     }
     try {
@@ -2479,6 +2574,7 @@ class SeanimeRepository {
                 name: e.name,
                 lang: e.lang,
                 supportsDub: true,
+                type: OnlinestreamProviderType.both,
               ))
           .toList();
       if (onlinestreamExts.isNotEmpty) {
@@ -2723,6 +2819,8 @@ class SeanimeRepository {
     int? tmdbSeason,
     String? tmdbEnglishTitle,
     int? tmdbYear,
+    String? tmdbImdbId,
+    int? episodeCount,
   }) async {
     try {
       final body = <String, dynamic>{
@@ -2745,6 +2843,12 @@ class SeanimeRepository {
         }
         if (tmdbSeason != null && tmdbSeason > 0) {
           body['season'] = tmdbSeason;
+        }
+        if (tmdbImdbId != null && tmdbImdbId.trim().isNotEmpty) {
+          body['imdbId'] = tmdbImdbId.trim();
+        }
+        if (episodeCount != null && episodeCount > 0) {
+          body['episodeCount'] = episodeCount;
         }
       }
       final response = await _apiClient.post(
@@ -3234,6 +3338,47 @@ class SeanimeRepository {
       return response.statusCode == 200;
     } catch (e) {
       debugPrint('Error starting torrent stream: $e');
+      return false;
+    }
+  }
+
+  Future<bool> startTorrentMagnetStream({
+    required String magnet,
+    String? infoHash,
+    int? fileIndex,
+    String? fileNameHint,
+  }) async {
+    try {
+      await ensureTorrentStreamingEnabled();
+
+      final payload = <String, dynamic>{
+        'clientId': 'seanime-app',
+      };
+      if (magnet.trim().isNotEmpty) {
+        payload['magnet'] = magnet.trim();
+      } else if (infoHash != null && infoHash.trim().isNotEmpty) {
+        payload['infoHash'] = infoHash.trim();
+      } else {
+        return false;
+      }
+      if (fileIndex != null) {
+        payload['fileIndex'] = fileIndex;
+      }
+      if (fileNameHint != null && fileNameHint.trim().isNotEmpty) {
+        payload['fileNameHint'] = fileNameHint.trim();
+      }
+
+      final response = await _apiClient.post(
+        ApiEndpoints.torrentstreamStartMagnet,
+        data: payload,
+        options: Options(
+          receiveTimeout: const Duration(seconds: 90),
+          sendTimeout: const Duration(seconds: 30),
+        ),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error starting torrent magnet stream: $e');
       return false;
     }
   }

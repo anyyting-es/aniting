@@ -65,6 +65,16 @@ type (
 		Quality   string                             `json:"quality"`
 		Type      hibikeonlinestream.VideoSourceType `json:"type"`
 		Subtitles []*Subtitle                        `json:"subtitles,omitempty"`
+		// Torrent metadata (Type == "torrent").
+		InfoHash      string   `json:"infoHash,omitempty"`
+		FileIndex     *int     `json:"fileIndex,omitempty"`
+		Seeders       int      `json:"seeders,omitempty"`
+		Size          int64    `json:"size,omitempty"`
+		SizeFormatted string   `json:"sizeFormatted,omitempty"`
+		Languages     []string `json:"languages,omitempty"`
+		Codec         string   `json:"codec,omitempty"`
+		Indexer       string   `json:"indexer,omitempty"`
+		ReleaseName   string   `json:"releaseName,omitempty"`
 	}
 
 	EpisodeListResponse struct {
@@ -275,6 +285,15 @@ func (r *Repository) GetEpisodeSources(ctx context.Context, provider string, mId
 						Subtitles: lo.Map(vs.Subtitles, func(sub *hibikeonlinestream.VideoSubtitle, _ int) *Subtitle {
 							return subtitleFromProvider(sub)
 						}),
+						InfoHash:      vs.InfoHash,
+						FileIndex:     vs.FileIndex,
+						Seeders:       vs.Seeders,
+						Size:          vs.Size,
+						SizeFormatted: vs.SizeFormatted,
+						Languages:     vs.Languages,
+						Codec:         vs.Codec,
+						Indexer:       vs.Indexer,
+						ReleaseName:   vs.ReleaseName,
 					})
 				}
 			}

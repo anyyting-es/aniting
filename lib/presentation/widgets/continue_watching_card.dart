@@ -20,6 +20,10 @@ class ContinueWatchingCard extends ConsumerStatefulWidget {
   final double width;
   final double height;
 
+  /// When the card is wrapped in a preview detector, the detector owns the
+  /// right-click / long-press gesture and this card must not also claim it.
+  final bool handleSecondaryGestures;
+
   const ContinueWatchingCard({
     super.key,
     required this.entry,
@@ -27,6 +31,7 @@ class ContinueWatchingCard extends ConsumerStatefulWidget {
     this.onOpenDetails,
     this.width = 285,
     this.height = 168,
+    this.handleSecondaryGestures = true,
   });
 
   @override
@@ -228,8 +233,12 @@ class _ContinueWatchingCardState extends ConsumerState<ContinueWatchingCard> {
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTap: _handleTap,
-            onLongPress: widget.onOpenDetails,
-            onSecondaryTap: widget.onOpenDetails,
+            onLongPress: widget.handleSecondaryGestures
+                ? widget.onOpenDetails
+                : null,
+            onSecondaryTap: widget.handleSecondaryGestures
+                ? widget.onOpenDetails
+                : null,
             child: SizedBox(
               width: widget.width,
               child: ValueListenableBuilder<AppInputMode>(
@@ -243,7 +252,7 @@ class _ContinueWatchingCardState extends ConsumerState<ContinueWatchingCard> {
                       // Ambient color background with inside-out expansion animation (No borders)
                       Positioned.fill(
                         child: AnimatedScale(
-                          scale: isActive ? 1.0 : 0.85,
+                          scale: 1.0,
                           duration: const Duration(milliseconds: 220),
                           curve: isActive ? Curves.easeOutCubic : Curves.easeInCubic,
                           alignment: Alignment.center,
@@ -273,7 +282,7 @@ class _ContinueWatchingCardState extends ConsumerState<ContinueWatchingCard> {
                             AspectRatio(
                               aspectRatio: 16 / 9,
                               child: AnimatedScale(
-                                scale: isActive ? 1.015 : 1.0,
+                                scale: 1.0,
                                 duration: const Duration(milliseconds: 180),
                                 curve: Curves.easeOutCubic,
                             child: Container(
@@ -296,6 +305,7 @@ class _ContinueWatchingCardState extends ConsumerState<ContinueWatchingCard> {
                                 ? CachedNetworkImage(
                                     imageUrl: imageUrl,
                                     fit: BoxFit.cover,
+                                    filterQuality: FilterQuality.medium,
                                     alignment: isCoverFallback ? Alignment.topCenter : Alignment.center,
                                     memCacheWidth: isCompact ? 450 : 600,
                                     fadeInDuration: const Duration(milliseconds: 200),
@@ -315,6 +325,7 @@ class _ContinueWatchingCardState extends ConsumerState<ContinueWatchingCard> {
                                         return CachedNetworkImage(
                                           imageUrl: fallbackImageUrl,
                                           fit: BoxFit.cover,
+                                          filterQuality: FilterQuality.medium,
                                           alignment: Alignment.topCenter,
                                           memCacheWidth: isCompact ? 450 : 600,
                                         );

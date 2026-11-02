@@ -42,24 +42,24 @@ class _MarketplaceTabViewState extends ConsumerState<MarketplaceTabView> {
 
   static const List<String> _filterTypes = [
     'All Types',
+    'TMDB Streaming',
+    'Online Streaming',
     'Anime Torrents',
     'Manga',
-    'Online Streaming',
-    'Custom Sources',
   ];
 
   String _getTypeLabel(String type, AppTranslations l10n) {
     switch (type) {
       case 'All Types':
         return l10n.allTypes;
+      case 'TMDB Streaming':
+        return l10n.tmdbStreamingTab;
       case 'Anime Torrents':
         return l10n.animeTorrents;
       case 'Manga':
         return l10n.manga;
       case 'Online Streaming':
         return l10n.onlineStreamingTab;
-      case 'Custom Sources':
-        return l10n.customSources;
       default:
         return type;
     }
@@ -88,15 +88,23 @@ class _MarketplaceTabViewState extends ConsumerState<MarketplaceTabView> {
 
   List<ExtensionItem> _filterExtensions(List<ExtensionItem> items) {
     return items.where((ext) {
-      // Exclude plugins completely
+      // Exclude plugins and the retired custom-source category completely
       if (ext.type.toLowerCase() == 'plugin') return false;
+      if (ext.type.toLowerCase() == 'custom-source') return false;
 
       // Type filter
       if (_selectedType != 'All Types') {
-        if (_selectedType == 'Anime Torrents' && ext.type != 'anime-torrent-provider') return false;
-        if (_selectedType == 'Manga' && ext.type != 'manga-provider') return false;
-        if (_selectedType == 'Online Streaming' && ext.type != 'onlinestream-provider') return false;
-        if (_selectedType == 'Custom Sources' && ext.type != 'custom-source') return false;
+        if (_selectedType == 'TMDB Streaming') {
+          if (!ext.isTmdbOnlyProvider) return false;
+        } else if (_selectedType == 'Anime Torrents') {
+          if (ext.type != 'anime-torrent-provider') return false;
+        } else if (_selectedType == 'Manga') {
+          if (ext.type != 'manga-provider') return false;
+        } else if (_selectedType == 'Online Streaming') {
+          if (ext.type != 'onlinestream-provider') return false;
+          // TMDB-only providers live in their own section.
+          if (ext.isTmdbOnlyProvider) return false;
+        }
       }
 
       // Language filter
@@ -120,14 +128,14 @@ class _MarketplaceTabViewState extends ConsumerState<MarketplaceTabView> {
 
   IconData _getIconForType(String type) {
     switch (type) {
+      case 'TMDB Streaming':
+        return Icons.movie_outlined;
       case 'Anime Torrents':
         return Icons.cloud_download_outlined;
       case 'Online Streaming':
         return Icons.play_circle_outline_rounded;
       case 'Manga':
         return Icons.menu_book_outlined;
-      case 'Custom Sources':
-        return Icons.folder_shared_outlined;
       default:
         return Icons.widgets_outlined;
     }
@@ -199,21 +207,23 @@ class _MarketplaceTabViewState extends ConsumerState<MarketplaceTabView> {
 
         final groups = <_ExtensionGroup>[];
         if (_selectedType == 'All Types') {
+          final tmdb = filtered.where((e) => e.isTmdbOnlyProvider).toList();
+          if (tmdb.isNotEmpty) {
+            groups.add(_ExtensionGroup(l10n.tmdbStreamingTab, Icons.movie_outlined, tmdb));
+          }
+          final streaming = filtered
+              .where((e) => e.type == 'onlinestream-provider' && !e.isTmdbOnlyProvider)
+              .toList();
+          if (streaming.isNotEmpty) {
+            groups.add(_ExtensionGroup(l10n.onlineStreamingTab, Icons.play_circle_outline_rounded, streaming));
+          }
           final torrents = filtered.where((e) => e.type == 'anime-torrent-provider').toList();
           if (torrents.isNotEmpty) {
             groups.add(_ExtensionGroup(l10n.animeTorrents, Icons.cloud_download_outlined, torrents));
           }
-          final streaming = filtered.where((e) => e.type == 'onlinestream-provider').toList();
-          if (streaming.isNotEmpty) {
-            groups.add(_ExtensionGroup(l10n.onlineStreamingTab, Icons.play_circle_outline_rounded, streaming));
-          }
           final manga = filtered.where((e) => e.type == 'manga-provider').toList();
           if (manga.isNotEmpty) {
             groups.add(_ExtensionGroup(l10n.manga, Icons.menu_book_outlined, manga));
-          }
-          final custom = filtered.where((e) => e.type == 'custom-source').toList();
-          if (custom.isNotEmpty) {
-            groups.add(_ExtensionGroup(l10n.customSources, Icons.folder_shared_outlined, custom));
           }
         } else {
           groups.add(_ExtensionGroup(_getTypeLabel(_selectedType, l10n), _getIconForType(_selectedType), filtered));

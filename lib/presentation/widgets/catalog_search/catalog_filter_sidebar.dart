@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:seanime_app/core/i18n/i18n_provider.dart';
 import 'package:seanime_app/core/preferences/section_visibility_provider.dart';
-import 'package:seanime_app/presentation/widgets/catalog_search/catalog_filter_dropdown.dart';
 import 'package:seanime_app/presentation/widgets/discover_filter_sheet.dart';
 
-/// Panel lateral de filtros espacioso y legible (320px de ancho).
-/// Posee fuentes y controles cómodos (14.5px, botones de 48px), alineados a la jerarquía visual de la app.
+/// Compact filter panel for catalog search.
+///
+/// The title search uses Liquid Glass (`g1455`); every other filter is a
+/// Material 3 Expressive dropdown. Multi-select filters (genres, tags) keep
+/// their picks as removable chips inside the field.
 class CatalogFilterSidebar extends ConsumerWidget {
   final TextEditingController searchController;
   final ValueChanged<String> onSearchChanged;
@@ -41,342 +44,462 @@ class CatalogFilterSidebar extends ConsumerWidget {
       mediaTypeLabel = l10n.manga;
     }
 
-    final activeMediaCount = (animeEnabled ? 1 : 0) + (showsEnabled ? 1 : 0) + (mangaEnabled ? 1 : 0);
+    final activeMediaCount =
+        (animeEnabled ? 1 : 0) + (showsEnabled ? 1 : 0) + (mangaEnabled ? 1 : 0);
+    final canReset =
+        filterState.hasActiveFilters || searchController.text.isNotEmpty;
 
-    return Container(
-      width: 320,
-      padding: const EdgeInsets.only(right: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // 1. Buscador de título integrado al tema con mayor tamaño y legibilidad
-          Container(
-            height: 48,
-            decoration: BoxDecoration(
-              color: theme.brightness == Brightness.dark
-                  ? (theme.colorScheme.surfaceContainerHighest.computeLuminance() < 0.05
-                      ? const Color(0xFF16161C)
-                      : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.65))
-                  : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: theme.brightness == Brightness.dark
-                    ? const Color(0xFF2E2E38)
-                    : theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
-                width: 1.0,
-              ),
-            ),
-            child: TextField(
-              controller: searchController,
-              onChanged: onSearchChanged,
-              style: TextStyle(
-                fontSize: 14.5,
-                fontWeight: FontWeight.w500,
-                color: theme.colorScheme.onSurface,
-              ),
-              decoration: InputDecoration(
-                isDense: true,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-                prefixIcon: Icon(
-                  Icons.search_rounded,
-                  size: 20,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-                prefixIconConstraints: const BoxConstraints(minWidth: 42, minHeight: 42),
-                suffixIcon: searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.close_rounded, size: 18),
-                        color: theme.colorScheme.onSurfaceVariant,
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                        onPressed: () {
-                          searchController.clear();
-                          onSearchChanged('');
-                        },
-                      )
-                    : null,
-                hintText: l10n.titleSearchPlaceholder,
-                hintStyle: TextStyle(
-                  fontSize: 14.5,
-                  fontWeight: FontWeight.w400,
-                  color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
-                ),
-                border: InputBorder.none,
-              ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Search — translucent field without glass capture ghosting
+        Container(
+          height: 42,
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.42),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
             ),
           ),
-
-          const SizedBox(height: 12),
-
-          // 2. Tipo de medio (Anime / Shows / Manga)
-          if (activeMediaCount > 1)
-            CatalogFilterDropdown<String>(
-              label: mediaTypeLabel,
-              selectedValue: filterState.mediaType,
-              items: [
-                if (animeEnabled)
-                  CatalogFilterDropdownItem(value: 'ANIME', label: l10n.anime),
-                if (showsEnabled)
-                  CatalogFilterDropdownItem(value: 'SHOWS', label: l10n.shows),
-                if (mangaEnabled)
-                  CatalogFilterDropdownItem(value: 'MANGA', label: l10n.manga),
-              ],
-              onChanged: (val) {
-                onFilterChanged(
-                  filterState.copyWith(
-                    mediaType: val,
-                    season: () => (val == 'MANGA' || val == 'SHOWS') ? null : filterState.season,
+          child: ValueListenableBuilder<TextEditingValue>(
+            valueListenable: searchController,
+            builder: (context, value, _) {
+              return TextField(
+                controller: searchController,
+                onChanged: onSearchChanged,
+                cursorColor: theme.colorScheme.primary,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: theme.colorScheme.onSurface,
+                ),
+                decoration: InputDecoration(
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 12,
                   ),
-                );
-              },
-            ),
-
-          if (activeMediaCount > 1) const SizedBox(height: 12),
-
-          // 3. Orden (Sort)
-          CatalogFilterDropdown<String>(
-            icon: Icons.swap_vert_rounded,
-            label: _getSortLabel(filterState.sort, l10n),
-            selectedValue: filterState.sort,
-            items: [
-              CatalogFilterDropdownItem(value: 'SCORE_DESC', label: l10n.highestScore),
-              CatalogFilterDropdownItem(value: 'POPULARITY_DESC', label: l10n.sortPopularity),
-              CatalogFilterDropdownItem(value: 'TRENDING_DESC', label: l10n.sortTrending),
-              CatalogFilterDropdownItem(value: 'START_DATE_DESC', label: l10n.sortStartDate),
-            ],
-            onChanged: (val) => onFilterChanged(filterState.copyWith(sort: val)),
-          ),
-
-          const SizedBox(height: 12),
-
-          // 4. Géneros (All genres)
-          CatalogFilterDropdown<String?>(
-            icon: Icons.grid_view_rounded,
-            label: filterState.selectedGenres.isNotEmpty
-                ? _getGenreName(filterState.selectedGenres.first, isSpanish)
-                : l10n.allGenres,
-            selectedValue: filterState.selectedGenres.isNotEmpty
-                ? filterState.selectedGenres.first
-                : null,
-            items: [
-              CatalogFilterDropdownItem(value: null, label: l10n.allGenres),
-              ...kOfficialGenresData.map(
-                (g) => CatalogFilterDropdownItem(
-                  value: g['key']!,
-                  label: isSpanish ? g['es']! : g['en']!,
-                ),
-              ),
-            ],
-            onChanged: (val) {
-              onFilterChanged(
-                filterState.copyWith(
-                  selectedGenres: val != null ? {val} : const {},
-                ),
-              );
-            },
-          ),
-
-          const SizedBox(height: 12),
-
-          // 5. Etiquetas (All tags)
-          CatalogFilterDropdown<String?>(
-            icon: Icons.sell_outlined,
-            label: filterState.selectedTags.isNotEmpty
-                ? _getTagName(filterState.selectedTags.first, isSpanish)
-                : l10n.allTags,
-            selectedValue: filterState.selectedTags.isNotEmpty
-                ? filterState.selectedTags.first
-                : null,
-            items: [
-              CatalogFilterDropdownItem(value: null, label: l10n.allTags),
-              ...kPopularTagsData.map(
-                (t) => CatalogFilterDropdownItem(
-                  value: t['key']!,
-                  label: isSpanish ? t['es']! : t['en']!,
-                ),
-              ),
-            ],
-            onChanged: (val) {
-              onFilterChanged(
-                filterState.copyWith(
-                  selectedTags: val != null ? {val} : const {},
-                ),
-              );
-            },
-          ),
-
-          const SizedBox(height: 12),
-
-          // 6. Formatos (All formats)
-          CatalogFilterDropdown<String?>(
-            icon: Icons.tv_rounded,
-            label: filterState.format != null
-                ? l10n.formatFormat(filterState.format!)
-                : l10n.allFormats,
-            selectedValue: filterState.format,
-            items: [
-              CatalogFilterDropdownItem(value: null, label: l10n.allFormats),
-              if (isAnime) ...[
-                CatalogFilterDropdownItem(value: 'TV', label: l10n.formatTv),
-                CatalogFilterDropdownItem(value: 'MOVIE', label: l10n.formatMovie),
-                CatalogFilterDropdownItem(value: 'TV_SHORT', label: l10n.formatTvShort),
-                CatalogFilterDropdownItem(value: 'SPECIAL', label: l10n.formatSpecial),
-                CatalogFilterDropdownItem(value: 'OVA', label: l10n.formatOva),
-                CatalogFilterDropdownItem(value: 'ONA', label: l10n.formatOna),
-              ] else if (isShows) ...[
-                CatalogFilterDropdownItem(value: 'TV', label: l10n.formatTv),
-                CatalogFilterDropdownItem(value: 'MOVIE', label: l10n.formatMovie),
-              ] else ...[
-                CatalogFilterDropdownItem(value: 'MANGA', label: l10n.formatManga),
-                CatalogFilterDropdownItem(value: 'NOVEL', label: l10n.formatNovel),
-                CatalogFilterDropdownItem(value: 'ONE_SHOT', label: l10n.formatOneShot),
-              ],
-            ],
-            onChanged: (val) {
-              onFilterChanged(filterState.copyWith(format: () => val));
-            },
-          ),
-
-          if (isAnime) const SizedBox(height: 12),
-
-          // 7. Temporadas (All seasons) - Solo anime
-          if (isAnime)
-            CatalogFilterDropdown<String?>(
-              icon: Icons.explore_outlined,
-              label: filterState.season != null
-                  ? l10n.formatSeason(filterState.season)
-                  : l10n.allSeasons,
-              selectedValue: filterState.season,
-              items: [
-                CatalogFilterDropdownItem(value: null, label: l10n.allSeasons),
-                CatalogFilterDropdownItem(value: 'WINTER', label: l10n.seasonWinter),
-                CatalogFilterDropdownItem(value: 'SPRING', label: l10n.seasonSpring),
-                CatalogFilterDropdownItem(value: 'SUMMER', label: l10n.seasonSummer),
-                CatalogFilterDropdownItem(value: 'FALL', label: l10n.seasonFall),
-              ],
-              onChanged: (val) {
-                onFilterChanged(filterState.copyWith(season: () => val));
-              },
-            ),
-
-          const SizedBox(height: 12),
-
-          // 8. Año (Timeless)
-          CatalogFilterDropdown<int?>(
-            icon: Icons.calendar_today_outlined,
-            label: filterState.year != null
-                ? '${filterState.year}'
-                : l10n.timelessYear,
-            selectedValue: filterState.year,
-            items: [
-              CatalogFilterDropdownItem(value: null, label: l10n.timelessYear),
-              ...[2026, 2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, 2015, 2010, 2005, 2000, 1995].map(
-                (y) => CatalogFilterDropdownItem(value: y, label: '$y'),
-              ),
-            ],
-            onChanged: (val) {
-              onFilterChanged(filterState.copyWith(year: () => val));
-            },
-          ),
-
-          const SizedBox(height: 12),
-
-          // 9. Estados (All statuses)
-          CatalogFilterDropdown<String?>(
-            icon: Icons.sensors_rounded,
-            label: filterState.status != null
-                ? l10n.formatStatus(filterState.status)
-                : l10n.allStatuses,
-            selectedValue: filterState.status,
-            items: [
-              CatalogFilterDropdownItem(value: null, label: l10n.allStatuses),
-              CatalogFilterDropdownItem(value: 'RELEASING', label: l10n.statusReleasing),
-              CatalogFilterDropdownItem(value: 'FINISHED', label: l10n.statusFinished),
-              CatalogFilterDropdownItem(value: 'NOT_YET_RELEASED', label: l10n.statusNotYetReleased),
-              CatalogFilterDropdownItem(value: 'CANCELLED', label: l10n.statusCancelled),
-            ],
-            onChanged: (val) {
-              onFilterChanged(filterState.copyWith(status: () => val));
-            },
-          ),
-
-          const SizedBox(height: 12),
-
-          // 10. Puntuación (All scores)
-          CatalogFilterDropdown<int?>(
-            icon: Icons.star_outline_rounded,
-            label: filterState.minScore != null
-                ? '${filterState.minScore}%+'
-                : l10n.allScores,
-            selectedValue: filterState.minScore,
-            items: [
-              CatalogFilterDropdownItem(value: null, label: l10n.allScores),
-              const CatalogFilterDropdownItem(value: 90, label: '90%+'),
-              const CatalogFilterDropdownItem(value: 80, label: '80%+'),
-              const CatalogFilterDropdownItem(value: 70, label: '70%+'),
-              const CatalogFilterDropdownItem(value: 60, label: '60%+'),
-            ],
-            onChanged: (val) {
-              onFilterChanged(filterState.copyWith(minScore: () => val));
-            },
-          ),
-
-          const SizedBox(height: 16),
-
-          // 11. Adult toggle (+18)
-          Row(
-            children: [
-              SizedBox(
-                height: 28,
-                width: 44,
-                child: FittedBox(
-                  fit: BoxFit.contain,
-                  child: Switch(
-                    value: filterState.isAdult,
-                    activeColor: theme.colorScheme.primary,
-                    onChanged: (val) {
-                      onFilterChanged(filterState.copyWith(isAdult: val));
-                    },
+                  border: InputBorder.none,
+                  hintText: l10n.titleSearchPlaceholder,
+                  hintStyle: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
                   ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  l10n.adultContent,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 14.5,
-                    fontWeight: FontWeight.w500,
+                  prefixIcon: Icon(
+                    Icons.search_rounded,
+                    size: 19,
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
+                  prefixIconConstraints: const BoxConstraints(
+                    minWidth: 40,
+                    minHeight: 40,
+                  ),
+                  suffixIcon: value.text.isEmpty
+                      ? null
+                      : GestureDetector(
+                          onTap: () {
+                            searchController.clear();
+                            onSearchChanged('');
+                          },
+                          child: Icon(
+                            Icons.close_rounded,
+                            size: 16,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                  suffixIconConstraints: const BoxConstraints(
+                    minWidth: 38,
+                    minHeight: 38,
+                  ),
                 ),
+              );
+            },
+          ),
+        ),
+
+        const SizedBox(height: 10),
+
+        // Media type
+        if (activeMediaCount > 1) ...[
+          _singleDropdown<String>(
+            hintText: mediaTypeLabel,
+            items: [
+              if (animeEnabled)
+                M3EDropdownItem(
+                  label: l10n.anime,
+                  value: 'ANIME',
+                  selected: filterState.mediaType == 'ANIME',
+                ),
+              if (showsEnabled)
+                M3EDropdownItem(
+                  label: l10n.shows,
+                  value: 'SHOWS',
+                  selected: filterState.mediaType == 'SHOWS',
+                ),
+              if (mangaEnabled)
+                M3EDropdownItem(
+                  label: l10n.manga,
+                  value: 'MANGA',
+                  selected: filterState.mediaType == 'MANGA',
+                ),
+            ],
+            onChanged: (val) {
+              if (val == null) return;
+              onFilterChanged(
+                filterState.copyWith(
+                  mediaType: val,
+                  season: () => (val == 'MANGA' || val == 'SHOWS')
+                      ? null
+                      : filterState.season,
+                ),
+              );
+            },
+            showClear: false,
+          ),
+          const SizedBox(height: 8),
+        ],
+
+        // Sort
+        _singleDropdown<String>(
+          hintText: _getSortLabel(filterState.sort, l10n),
+          items: [
+            M3EDropdownItem(
+              label: l10n.highestScore,
+              value: 'SCORE_DESC',
+              selected: filterState.sort == 'SCORE_DESC',
+            ),
+            M3EDropdownItem(
+              label: l10n.sortPopularity,
+              value: 'POPULARITY_DESC',
+              selected: filterState.sort == 'POPULARITY_DESC',
+            ),
+            M3EDropdownItem(
+              label: l10n.sortTrending,
+              value: 'TRENDING_DESC',
+              selected: filterState.sort == 'TRENDING_DESC',
+            ),
+            M3EDropdownItem(
+              label: l10n.sortStartDate,
+              value: 'START_DATE_DESC',
+              selected: filterState.sort == 'START_DATE_DESC',
+            ),
+          ],
+          onChanged: (val) {
+            if (val == null) return;
+            onFilterChanged(filterState.copyWith(sort: val));
+          },
+          showClear: false,
+        ),
+        const SizedBox(height: 8),
+
+        // Genres (accumulative)
+        _multiDropdown<String>(
+          hintText: l10n.allGenres,
+          searchEnabled: true,
+          searchHint: l10n.search,
+          items: [
+            for (final genre in kOfficialGenresData)
+              M3EDropdownItem(
+                label: isSpanish ? genre['es']! : genre['en']!,
+                value: genre['key']!,
+                selected: filterState.selectedGenres.contains(genre['key']),
+              ),
+          ],
+          onChanged: (values) {
+            onFilterChanged(filterState.copyWith(selectedGenres: values));
+          },
+        ),
+        const SizedBox(height: 8),
+
+        // Tags (accumulative)
+        _multiDropdown<String>(
+          hintText: l10n.allTags,
+          searchEnabled: true,
+          searchHint: l10n.search,
+          items: [
+            for (final tag in kPopularTagsData)
+              M3EDropdownItem(
+                label: isSpanish ? tag['es']! : tag['en']!,
+                value: tag['key']!,
+                selected: filterState.selectedTags.contains(tag['key']),
+              ),
+          ],
+          onChanged: (values) {
+            onFilterChanged(filterState.copyWith(selectedTags: values));
+          },
+        ),
+        const SizedBox(height: 8),
+
+        // Format
+        _singleDropdown<String>(
+          hintText: l10n.allFormats,
+          items: [
+            if (isAnime) ...[
+              M3EDropdownItem(
+                label: l10n.formatTv,
+                value: 'TV',
+                selected: filterState.format == 'TV',
+              ),
+              M3EDropdownItem(
+                label: l10n.formatMovie,
+                value: 'MOVIE',
+                selected: filterState.format == 'MOVIE',
+              ),
+              M3EDropdownItem(
+                label: l10n.formatTvShort,
+                value: 'TV_SHORT',
+                selected: filterState.format == 'TV_SHORT',
+              ),
+              M3EDropdownItem(
+                label: l10n.formatSpecial,
+                value: 'SPECIAL',
+                selected: filterState.format == 'SPECIAL',
+              ),
+              M3EDropdownItem(
+                label: l10n.formatOva,
+                value: 'OVA',
+                selected: filterState.format == 'OVA',
+              ),
+              M3EDropdownItem(
+                label: l10n.formatOna,
+                value: 'ONA',
+                selected: filterState.format == 'ONA',
+              ),
+            ] else if (isShows) ...[
+              M3EDropdownItem(
+                label: l10n.formatTv,
+                value: 'TV',
+                selected: filterState.format == 'TV',
+              ),
+              M3EDropdownItem(
+                label: l10n.formatMovie,
+                value: 'MOVIE',
+                selected: filterState.format == 'MOVIE',
+              ),
+            ] else ...[
+              M3EDropdownItem(
+                label: l10n.formatManga,
+                value: 'MANGA',
+                selected: filterState.format == 'MANGA',
+              ),
+              M3EDropdownItem(
+                label: l10n.formatNovel,
+                value: 'NOVEL',
+                selected: filterState.format == 'NOVEL',
+              ),
+              M3EDropdownItem(
+                label: l10n.formatOneShot,
+                value: 'ONE_SHOT',
+                selected: filterState.format == 'ONE_SHOT',
               ),
             ],
-          ),
+          ],
+          onChanged: (val) {
+            onFilterChanged(filterState.copyWith(format: () => val));
+          },
+        ),
 
-          const SizedBox(height: 16),
-
-          // 12. Botón Papelera / Reset
-          Align(
-            alignment: Alignment.centerLeft,
-            child: IconButton(
-              tooltip: l10n.clearFilters,
-              icon: Icon(
-                Icons.delete_outline_rounded,
-                size: 22,
-                color: filterState.hasActiveFilters || searchController.text.isNotEmpty
-                    ? theme.colorScheme.error
-                    : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.35),
+        // Season (anime only)
+        if (isAnime) ...[
+          const SizedBox(height: 8),
+          _singleDropdown<String>(
+            hintText: l10n.allSeasons,
+            items: [
+              M3EDropdownItem(
+                label: l10n.seasonWinter,
+                value: 'WINTER',
+                selected: filterState.season == 'WINTER',
               ),
-              onPressed: filterState.hasActiveFilters || searchController.text.isNotEmpty
-                  ? onReset
-                  : null,
-            ),
+              M3EDropdownItem(
+                label: l10n.seasonSpring,
+                value: 'SPRING',
+                selected: filterState.season == 'SPRING',
+              ),
+              M3EDropdownItem(
+                label: l10n.seasonSummer,
+                value: 'SUMMER',
+                selected: filterState.season == 'SUMMER',
+              ),
+              M3EDropdownItem(
+                label: l10n.seasonFall,
+                value: 'FALL',
+                selected: filterState.season == 'FALL',
+              ),
+            ],
+            onChanged: (val) {
+              onFilterChanged(filterState.copyWith(season: () => val));
+            },
           ),
         ],
+        const SizedBox(height: 8),
+
+        // Year
+        _singleDropdown<int>(
+          hintText: l10n.timelessYear,
+          items: [
+            for (final year in const [
+              2026, 2025, 2024, 2023, 2022, 2021, 2020,
+              2019, 2018, 2015, 2010, 2005, 2000, 1995,
+            ])
+              M3EDropdownItem(
+                label: '$year',
+                value: year,
+                selected: filterState.year == year,
+              ),
+          ],
+          onChanged: (val) {
+            onFilterChanged(filterState.copyWith(year: () => val));
+          },
+        ),
+        const SizedBox(height: 8),
+
+        // Status
+        _singleDropdown<String>(
+          hintText: l10n.allStatuses,
+          items: [
+            M3EDropdownItem(
+              label: l10n.statusReleasing,
+              value: 'RELEASING',
+              selected: filterState.status == 'RELEASING',
+            ),
+            M3EDropdownItem(
+              label: l10n.statusFinished,
+              value: 'FINISHED',
+              selected: filterState.status == 'FINISHED',
+            ),
+            M3EDropdownItem(
+              label: l10n.statusNotYetReleased,
+              value: 'NOT_YET_RELEASED',
+              selected: filterState.status == 'NOT_YET_RELEASED',
+            ),
+            M3EDropdownItem(
+              label: l10n.statusCancelled,
+              value: 'CANCELLED',
+              selected: filterState.status == 'CANCELLED',
+            ),
+          ],
+          onChanged: (val) {
+            onFilterChanged(filterState.copyWith(status: () => val));
+          },
+        ),
+        const SizedBox(height: 8),
+
+        // Score
+        _singleDropdown<int>(
+          hintText: l10n.allScores,
+          items: [
+            for (final score in const [90, 80, 70, 60])
+              M3EDropdownItem(
+                label: '$score%+',
+                value: score,
+                selected: filterState.minScore == score,
+              ),
+          ],
+          onChanged: (val) {
+            onFilterChanged(filterState.copyWith(minScore: () => val));
+          },
+        ),
+        const SizedBox(height: 12),
+
+        // Adult content
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                l10n.adultContent,
+                style: TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+            ),
+            M3ESwitch(
+              value: filterState.isAdult,
+              onChanged: (val) {
+                onFilterChanged(filterState.copyWith(isAdult: val));
+              },
+              semanticLabel: l10n.adultContent,
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+
+        // Clear filters
+        Align(
+          alignment: Alignment.centerLeft,
+          child: M3EButton.icon(
+            onPressed: canReset ? onReset : null,
+            icon: const Icon(Icons.delete_outline_rounded, size: 18),
+            label: Text(l10n.clearFilters),
+            style: M3EButtonStyle.tonal,
+            size: M3EButtonSize.sm,
+          ),
+        ),
+      ],
+    );
+  }
+
+  M3EDropdownMenu<T> _singleDropdown<T>({
+    required String hintText,
+    required List<M3EDropdownItem<T>> items,
+    required ValueChanged<T?> onChanged,
+    bool showClear = true,
+    bool searchEnabled = false,
+  }) {
+    return M3EDropdownMenu<T>(
+      items: items,
+      singleSelect: true,
+      searchEnabled: searchEnabled,
+      containerRadius: 18,
+      fieldStyle: M3EDropdownFieldStyle(
+        hintText: hintText,
+        showArrow: true,
+        showClearIcon: showClear,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+        borderRadius: BorderRadius.circular(14),
       ),
+      dropdownStyle: const M3EDropdownPanelStyle(
+        expandDirection: M3EDropdownExpandDirection.auto,
+        maxHeight: 300,
+      ),
+      onSelectionChanged: (selection) {
+        onChanged(selection.isEmpty ? null : selection.first.value);
+      },
+    );
+  }
+
+  M3EDropdownMenu<T> _multiDropdown<T>({
+    required String hintText,
+    required List<M3EDropdownItem<T>> items,
+    required ValueChanged<Set<T>> onChanged,
+    bool searchEnabled = false,
+    String? searchHint,
+  }) {
+    return M3EDropdownMenu<T>(
+      items: items,
+      singleSelect: false,
+      searchEnabled: searchEnabled,
+      containerRadius: 18,
+      fieldStyle: M3EDropdownFieldStyle(
+        hintText: hintText,
+        showArrow: true,
+        showClearIcon: true,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      dropdownStyle: const M3EDropdownPanelStyle(
+        expandDirection: M3EDropdownExpandDirection.auto,
+        maxHeight: 300,
+      ),
+      searchStyle: M3EDropdownSearchStyle(
+        hintText: searchHint ?? 'Search…',
+      ),
+      onSelectionChanged: (selection) {
+        onChanged(selection.map((item) => item.value).toSet());
+      },
     );
   }
 
@@ -393,21 +516,5 @@ class CatalogFilterSidebar extends ConsumerWidget {
       default:
         return l10n.sortTrending;
     }
-  }
-
-  String _getGenreName(String key, bool isSpanish) {
-    final match = kOfficialGenresData.firstWhere(
-      (g) => g['key'] == key,
-      orElse: () => {'key': key, 'es': key, 'en': key},
-    );
-    return isSpanish ? match['es']! : match['en']!;
-  }
-
-  String _getTagName(String key, bool isSpanish) {
-    final match = kPopularTagsData.firstWhere(
-      (t) => t['key'] == key,
-      orElse: () => {'key': key, 'es': key, 'en': key},
-    );
-    return isSpanish ? match['es']! : match['en']!;
   }
 }

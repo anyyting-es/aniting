@@ -77,6 +77,9 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get quickSearchMangaHint => 'Quick search manga...';
   @override
+  String get quickSearchKeyboardHint =>
+      '↑ ↓ to move · Enter to open · Esc to close';
+  @override
   String get serverNotConnected => 'Seanime Server not connected';
   @override
   String get serverNotConnectedDesc =>
@@ -646,6 +649,22 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get supportingRole => 'Supporting';
   @override
+  String get voiceActor => 'Voice Actor';
+  @override
+  String get japaneseVoice => 'Original Voice (Seiyuu)';
+  @override
+  String get characterDetails => 'Character Details';
+  @override
+  String get characterAge => 'Age';
+  @override
+  String get characterGender => 'Gender';
+  @override
+  String get characterBirthday => 'Birthday';
+  @override
+  String get characterBloodType => 'Blood Type';
+  @override
+  String get noVoiceActorInfo => 'No voice actor information';
+  @override
   String get streamingDisabledTitle => 'Streaming sources disabled';
   @override
   String get streamingDisabledDesc =>
@@ -861,6 +880,10 @@ class EnglishTranslations implements AppTranslations {
   String get playingFromTorrent => 'Playing from torrent';
   @override
   String get playingFromTorrentDesc => 'Live P2P stream';
+  @override
+  String get playingFromMediaServer => 'Playing from your server';
+  @override
+  String get playingFromMediaServerDesc => 'Direct play from Plex / Jellyfin';
   @override
   String get loadingVideo => 'Loading video...';
   @override
@@ -1174,7 +1197,7 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get onlineStreamingTab => 'Online Streaming';
   @override
-  String get customSources => 'Custom Sources';
+  String get tmdbStreamingTab => 'TMDB Streaming';
   @override
   String get searchExtensionsHint => 'Search extensions...';
   @override
@@ -1409,6 +1432,16 @@ class EnglishTranslations implements AppTranslations {
   String get curatedTopRated => 'Top Rated';
   @override
   String get noAiringToday => 'No episodes scheduled for this day';
+  @override
+  String get noAiringThisMonth => 'No episodes scheduled for this month';
+  @override
+  String get calendarWeekView => 'Week';
+  @override
+  String get calendarMonthView => 'Month';
+  @override
+  String get previousMonth => 'Previous month';
+  @override
+  String get nextMonth => 'Next month';
   @override
   String get filters => 'Filters';
   @override
@@ -2127,6 +2160,29 @@ class EnglishTranslations implements AppTranslations {
   String get emptyAnimeFeedDesc =>
       "You don't have any anime in progress. Explore the catalog or search for your favorite series.";
   @override
+  String get emptyFeedConnectDesc =>
+      'Explore the catalog or connect AniList, Plex, or Jellyfin to start building your feed.';
+  @override
+  String get noInternetConnection => 'No internet connection';
+  @override
+  String get noInternetConnectionDesc =>
+      'Could not connect to the servers. Please check your internet connection.';
+  @override
+  String get emptyMangaFeedConnectDesc =>
+      'Explore the catalog or connect AniList to start building your manga library.';
+  @override
+  String get serviceAniList => 'AniList';
+  @override
+  String get servicePlex => 'Plex';
+  @override
+  String get serviceJellyfin => 'Jellyfin';
+  @override
+  String get mediaType => 'Media type';
+  @override
+  String get feedFilterAll => 'Mixed';
+  @override
+  String get feedFilterAnimeOnly => 'Anime only';
+  @override
   String get noDownloadedAnimeTitle => 'No downloaded anime';
   @override
   String get noDownloadedAnimeDesc =>
@@ -2232,6 +2288,8 @@ class EnglishTranslations implements AppTranslations {
   String get trailersAndVideos => 'Trailers & Videos';
   @override
   String get officialTrailer => 'Official Trailer';
+  @override
+  String get expand => 'Expand';
   @override
   String get collapse => 'Collapse';
   @override
@@ -2422,13 +2480,20 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get navigationSections => 'Navigation Sections';
   @override
-  String get animeSection => 'Anime Section';
+  String get animeSection => 'Anime Catalog';
   @override
-  String get animeSectionDesc => 'Show anime tab in navigation';
+  String get animeSectionDesc => 'Show the anime catalog in Explore';
   @override
-  String get showsSection => 'Shows Section (TMDB)';
+  String get showsSection => 'Shows Catalog (TMDB)';
   @override
-  String get showsSectionDesc => 'Show TMDB shows tab in navigation';
+  String get showsSectionDesc => 'Show the TMDB shows catalog in Explore';
+  @override
+  String get tmdbTrendingTitle => 'Trending Shows';
+  @override
+  String get tmdbUnavailableTitle => 'Could not load TMDB';
+  @override
+  String get tmdbUnavailableDesc =>
+      'Check your connection and the TMDB API key in Settings.';
   @override
   String get mangaSection => 'Manga Section';
   @override
@@ -3056,4 +3121,52 @@ class EnglishTranslations implements AppTranslations {
   String get startupWarmUpSyncing => 'Synchronizing library...';
   @override
   String get startupWarmUpReady => 'Ready';
+
+  // Media Servers (Plex & Jellyfin)
+  @override
+  String get mediaServersTitle => 'Media Servers';
+  @override
+  String get mediaServersDesc => 'Connect your Plex or Jellyfin server to stream your personal library.';
+  @override
+  String get addMediaServer => 'Add Server';
+  @override
+  String get plexLoginTitle => 'Connect with Plex';
+  @override
+  String get plexLoginDesc => 'Authorize Aniting by entering this PIN or scanning the QR code.';
+  @override
+  String get plexPinLabel => 'PIN Code';
+  @override
+  String get plexOpenBrowser => 'Open Plex.tv';
+  @override
+  String get plexWaitingAuth => 'Waiting for browser authorization...';
+  @override
+  String get plexSelectServer => 'Select Plex Server';
+  @override
+  String get jellyfinLoginTitle => 'Connect with Jellyfin / Emby';
+  @override
+  String get jellyfinServerUrl => 'Server URL (e.g. http://192.168.1.50:8096)';
+  @override
+  String get jellyfinUsername => 'Username';
+  @override
+  String get jellyfinPassword => 'Password';
+  @override
+  String get noMediaServersConnected => 'No media servers connected yet';
+  @override
+  String get activeServerLabel => 'Active Server';
+  @override
+  String get mediaServerOnline => 'Online';
+  @override
+  String get mediaServerOffline => 'Offline';
+  @override
+  String get disconnectServer => 'Disconnect';
+  @override
+  String get playFromMediaServer => 'Play from your Server';
+  @override
+  String get mediaServerLibraries => 'Libraries';
+  @override
+  String get mediaServerContinueWatching => 'Continue Watching';
+  @override
+  String get mediaServerEpisodes => 'Episodes';
+  @override
+  String get mediaServerNoItems => 'No items available in this section';
 }

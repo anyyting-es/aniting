@@ -10,6 +10,7 @@ import 'package:seanime_app/core/theme/app_theme_colors.dart';
 import 'package:seanime_app/core/theme/theme_provider.dart';
 import 'package:seanime_app/data/models/manga_entry.dart';
 import 'package:seanime_app/presentation/screens/manga_detail_screen.dart';
+import 'package:seanime_app/presentation/widgets/common/media_meta_pill.dart';
 
 class MangaCard extends ConsumerStatefulWidget {
   final MangaEntry entry;
@@ -17,6 +18,7 @@ class MangaCard extends ConsumerStatefulWidget {
   final double? width;
   final double? height;
   final Object? heroTag;
+  final bool showMetadata;
 
   const MangaCard({
     super.key,
@@ -25,6 +27,7 @@ class MangaCard extends ConsumerStatefulWidget {
     this.width,
     this.height,
     this.heroTag,
+    this.showMetadata = false,
   });
 
   @override
@@ -35,6 +38,7 @@ class _MangaCardState extends ConsumerState<MangaCard> {
   late final FocusNode _focusNode = FocusNode();
   bool _isHovered = false;
   bool _isFocused = false;
+  bool _entryAnimationDone = false;
 
   @override
   void dispose() {
@@ -53,6 +57,12 @@ class _MangaCardState extends ConsumerState<MangaCard> {
         heroTag: widget.heroTag,
       );
     }
+  }
+
+  String? get _chapterText {
+    final chapters = widget.entry.totalChapters;
+    if (chapters == null || chapters <= 0) return null;
+    return '$chapters CH';
   }
 
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
@@ -80,12 +90,23 @@ class _MangaCardState extends ConsumerState<MangaCard> {
       final cardWidth = widget.width ?? constraints.maxWidth;
       final isCompact = cardWidth < 155;
       final dynamicColor = parseHexColor(widget.entry.coverColor) ?? colors.accent;
+      final chapterText = widget.showMetadata ? _chapterText : null;
+      final year = widget.entry.year;
+      final showYear = widget.showMetadata && year != null && year > 0;
+      final showRating =
+          (showScores || widget.showMetadata) &&
+          widget.entry.score != null &&
+          widget.entry.score! > 0;
 
       return RepaintBoundary(
         child: TweenAnimationBuilder<double>(
           tween: Tween<double>(begin: 0.0, end: 1.0),
           duration: const Duration(milliseconds: 220),
           curve: Curves.easeOutCubic,
+          onEnd: () {
+            if (!mounted || _entryAnimationDone) return;
+            setState(() => _entryAnimationDone = true);
+          },
           builder: (context, animValue, child) {
             if (animValue >= 0.999) return child!;
             return Transform.scale(
@@ -125,14 +146,16 @@ class _MangaCardState extends ConsumerState<MangaCard> {
                 valueListenable: AppFocusCoordinator.inputMode,
                 builder: (context, mode, _) {
                   final isDpad = mode == AppInputMode.dpad;
-                  final isActive = (mode == AppInputMode.mouse && _isHovered) || (isDpad && _isFocused);
+                  final isActive = _entryAnimationDone &&
+                      ((mode == AppInputMode.mouse && _isHovered) ||
+                          (isDpad && _isFocused));
 
                   return Stack(
                     children: [
                       // Ambient color background with inside-out expansion animation (No borders)
                       Positioned.fill(
                         child: AnimatedScale(
-                          scale: isActive ? 1.0 : 0.85,
+                          scale: 1.0,
                           duration: const Duration(milliseconds: 220),
                           curve: isActive ? Curves.easeOutCubic : Curves.easeInCubic,
                           alignment: Alignment.center,
@@ -162,7 +185,8 @@ class _MangaCardState extends ConsumerState<MangaCard> {
                             AspectRatio(
                               aspectRatio: 0.72,
                               child: AnimatedScale(
-                                scale: isActive ? 1.015 : 1.0,
+                                // Unscaled bitmap on hover (see AnimeCard).
+                                scale: 1.0,
                                 duration: const Duration(milliseconds: 180),
                                 curve: Curves.easeOutCubic,
                                 child: Container(
@@ -251,8 +275,8 @@ class _MangaCardState extends ConsumerState<MangaCard> {
                                           ),
                                         ),
 
-                                      // Subtle Chapter Progress pill
-                                      if (widget.entry.progress > 0)
+                                      // Chapter progress (only outside search metadata mode)
+                                      if (!widget.showMetadata && widget.entry.progress > 0)
                                         Positioned(
                                           top: isCompact ? 5 : 6,
                                           right: isCompact ? 5 : 6,
@@ -274,34 +298,79 @@ class _MangaCardState extends ConsumerState<MangaCard> {
                                             ),
                                           ),
                                         )
-                                      else if (showScores && widget.entry.score != null && widget.entry.score! > 0)
+                                      else if (showRating)
                                         Positioned(
-                                          top: isCompact ? 5 : 6,
-                                          right: isCompact ? 5 : 6,
+                                          top: widget.showMetadata ? 0 : (isCompact ? 5 : 6),
+                                          right: widget.showMetadata ? 0 : (isCompact ? 5 : 6),
                                           child: Container(
-                                            padding: isCompact
-                                                ? const EdgeInsets.symmetric(horizontal: 4, vertical: 2)
-                                                : const EdgeInsets.symmetric(horizontal: 5, vertical: 2.5),
+                                            padding: widget.showMetadata
+                                                ? EdgeInsets.fromLTRB(
+                                                    isCompact ? 7 : 8,
+                                                    isCompact ? 3 : 4,
+                                                    isCompact ? 7 : 8,
+                                                    isCompact ? 3 : 4,
+                                                  )
+                                                : (isCompact
+                                                    ? const EdgeInsets.symmetric(horizontal: 4, vertical: 2)
+                                                    : const EdgeInsets.symmetric(horizontal: 5, vertical: 2.5)),
                                             decoration: BoxDecoration(
-                                              color: Colors.black.withValues(alpha: 0.72),
-                                              borderRadius: BorderRadius.circular(isCompact ? 4 : 5),
+                                              color: widget.showMetadata
+                                                  ? theme.colorScheme.primary
+                                                  : Colors.black.withValues(alpha: 0.78),
+                                              borderRadius: widget.showMetadata
+                                                  ? const BorderRadius.only(
+                                                      bottomLeft: Radius.circular(10),
+                                                    )
+                                                  : BorderRadius.circular(isCompact ? 4 : 5),
                                             ),
                                             child: Row(
                                               mainAxisSize: MainAxisSize.min,
                                               children: [
-                                                Icon(Icons.star_rounded, color: Colors.amber, size: isCompact ? 10 : 11),
-                                                const SizedBox(width: 2),
+                                                Icon(
+                                                  widget.showMetadata
+                                                      ? Icons.star_outline_rounded
+                                                      : Icons.star_rounded,
+                                                  color: widget.showMetadata
+                                                      ? theme.colorScheme.onPrimary
+                                                      : Colors.amber,
+                                                  size: widget.showMetadata
+                                                      ? (isCompact ? 12 : 14)
+                                                      : (isCompact ? 10 : 11),
+                                                ),
+                                                const SizedBox(width: 2.5),
                                                 Text(
                                                   widget.entry.score! > 10
                                                       ? (widget.entry.score! / 10).toStringAsFixed(1)
                                                       : widget.entry.score!.toStringAsFixed(1),
                                                   style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: isCompact ? 8.5 : 9.5,
-                                                    fontWeight: FontWeight.bold,
+                                                    color: widget.showMetadata
+                                                        ? theme.colorScheme.onPrimary
+                                                        : Colors.white,
+                                                    fontSize: widget.showMetadata
+                                                        ? (isCompact ? 10 : 11.5)
+                                                        : (isCompact ? 8.5 : 9.5),
+                                                    fontWeight: FontWeight.w800,
                                                   ),
                                                 ),
                                               ],
+                                            ),
+                                          ),
+                                        ),
+
+                                      // Chapter count, attached to the bottom-left corner
+                                      if (chapterText != null)
+                                        Positioned(
+                                          left: 0,
+                                          bottom: 0,
+                                          child: MediaMetaPill(
+                                            text: chapterText,
+                                            fontSize: isCompact ? 9.5 : 10.5,
+                                            padding: EdgeInsets.symmetric(
+                                              horizontal: isCompact ? 6 : 7,
+                                              vertical: isCompact ? 3 : 3.5,
+                                            ),
+                                            borderRadius: const BorderRadius.only(
+                                              topRight: Radius.circular(10),
                                             ),
                                           ),
                                         ),
@@ -328,6 +397,22 @@ class _MangaCardState extends ConsumerState<MangaCard> {
                                 fontFamilyFallback: kJapaneseFontFallbacks,
                               ),
                             ),
+
+                            // 3. Year
+                            if (showYear) ...[
+                              const SizedBox(height: 3),
+                              Text(
+                                '$year',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                  fontSize: isCompact ? 11.0 : 12.0,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: -0.1,
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                       ),
@@ -378,6 +463,7 @@ class _MangaCardState extends ConsumerState<MangaCard> {
       return CachedNetworkImage(
         imageUrl: widget.entry.coverImage!,
         fit: BoxFit.cover,
+        filterQuality: FilterQuality.medium,
         memCacheWidth: isCompact ? 280 : 420,
         memCacheHeight: isCompact ? 400 : 600,
         maxWidthDiskCache: 500,

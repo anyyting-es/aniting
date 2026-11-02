@@ -16,6 +16,10 @@ class ContinueReadingCard extends ConsumerStatefulWidget {
   final double? width;
   final double? height;
 
+  /// When the card is wrapped in a preview detector, the detector owns the
+  /// right-click / long-press gesture and this card must not also claim it.
+  final bool handleSecondaryGestures;
+
   const ContinueReadingCard({
     super.key,
     required this.entry,
@@ -23,6 +27,7 @@ class ContinueReadingCard extends ConsumerStatefulWidget {
     this.onOpenDetails,
     this.width,
     this.height,
+    this.handleSecondaryGestures = true,
   });
 
   @override
@@ -108,8 +113,12 @@ class _ContinueReadingCardState extends ConsumerState<ContinueReadingCard> {
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: _triggerTap,
-              onLongPress: widget.onOpenDetails,
-              onSecondaryTap: widget.onOpenDetails,
+              onLongPress: widget.handleSecondaryGestures
+                  ? widget.onOpenDetails
+                  : null,
+              onSecondaryTap: widget.handleSecondaryGestures
+                  ? widget.onOpenDetails
+                  : null,
               child: ValueListenableBuilder<AppInputMode>(
                 valueListenable: AppFocusCoordinator.inputMode,
                 builder: (context, mode, _) {
@@ -121,7 +130,7 @@ class _ContinueReadingCardState extends ConsumerState<ContinueReadingCard> {
                       // Ambient color background with inside-out expansion animation (No borders)
                       Positioned.fill(
                         child: AnimatedScale(
-                          scale: isActive ? 1.0 : 0.85,
+                          scale: 1.0,
                           duration: const Duration(milliseconds: 220),
                           curve: isActive ? Curves.easeOutCubic : Curves.easeInCubic,
                           alignment: Alignment.center,
@@ -151,7 +160,7 @@ class _ContinueReadingCardState extends ConsumerState<ContinueReadingCard> {
                             AspectRatio(
                               aspectRatio: 0.72,
                               child: AnimatedScale(
-                                scale: isActive ? 1.015 : 1.0,
+                                scale: 1.0,
                                 duration: const Duration(milliseconds: 180),
                                 curve: Curves.easeOutCubic,
                                 child: Container(
@@ -173,6 +182,7 @@ class _ContinueReadingCardState extends ConsumerState<ContinueReadingCard> {
                                       ? CachedNetworkImage(
                                           imageUrl: imageUrl,
                                           fit: BoxFit.cover,
+                                          filterQuality: FilterQuality.medium,
                                           width: double.infinity,
                                           memCacheWidth: isCompact ? 300 : 350,
                                           memCacheHeight: isCompact ? 440 : 520,
