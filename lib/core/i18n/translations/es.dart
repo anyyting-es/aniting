@@ -3214,4 +3214,14 @@ class SpanishTranslations implements AppTranslations {
   @override
   String get mediaServerNoItems =>
       'No hay elementos disponibles en esta sección';
+
+  // Window Controls
+  @override
+  String get windowMinimize => 'Minimizar';
+  @override
+  String get windowMaximize => 'Maximizar';
+  @override
+  String get windowRestore => 'Restaurar';
+  @override
+  String get windowClose => 'Cerrar';
 }

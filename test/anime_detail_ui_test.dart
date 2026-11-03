@@ -33,7 +33,7 @@ class FakeDetailRepository extends SeanimeRepository {
   Future<LibraryEntryDetails?> getAnimeLibraryEntry(int mediaId, {bool forceRefresh = false}) async => null;
 
   @override
-  Future<List<OnlinestreamProvider>> getOnlinestreamProviders() async => [];
+  Future<List<OnlinestreamProvider>> getOnlinestreamProviders({bool forceRefresh = false}) async => [];
 }
 
 class MockRunningServerNotifier extends ServerNotifier {

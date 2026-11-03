@@ -28,7 +28,10 @@ class PlayerDesktopHeader extends ConsumerWidget {
           IconButton(
             style: IconButton.styleFrom(
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              padding: const EdgeInsets.all(6),
+              padding: const EdgeInsets.all(8),
+              hoverColor: theme.colorScheme.onSurface.withValues(alpha: 0.1),
+              highlightColor:
+                  theme.colorScheme.onSurface.withValues(alpha: 0.15),
             ),
             icon: Icon(AppIcons.arrowLeft(iconPack), size: 20),
             tooltip: l10n.back,

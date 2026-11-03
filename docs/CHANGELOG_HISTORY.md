@@ -6,6 +6,23 @@
 > - **ALWAYS** summarize improvements at a high, user-facing level with clear, direct bullet points.
 > - Keep it punchy, professional, and easy to skim.
 
+## 8.17. Carruseles Hero en Explorar y Navegación Directa (2026-11-02)
+- **Carrusel Hero Inmersivo para Anime**: los 5 animes en tendencia de AniList se presentan con un banner panorámico enriquecido con fanarts en alta resolución y logos limpios extraídos mediante AniZip.
+- **Carrusel Hero para Series y Películas TMDB**: integración fluida con la API de TMDB para renderizar imágenes panorámicas de fondo y logos vectoriales oficiales en los títulos más populares.
+- **Carrusel Tipo Banner para Mangas**: formato banner estilizado y compacto optimizado para lectura, con diseño visual adaptado que destaca portadas y resúmenes sin ocupar espacio desproporcionado.
+- **Acceso Directo al Hub de Explorar**: al pulsar el botón de búsqueda en el sidebar de escritorio, se accede de inmediato al catálogo de exploración general, permitiendo entrar a la barra de búsqueda de manera fluida cuando se desee.
+- **Mapeo Inteligente de Episodios AniZip en Secuelas**: corrección en el mapeo de episodios para animes con temporadas divididas o secuelas (split-cour como Dr. Stone), permitiendo que la numeración relativa de AniList cargue siempre las miniaturas en alta resolución, títulos oficiales y sinopsis sin ser descartados por la numeración continua de TheTVDB.
+- **Sombra Cinemática en L para el Carrusel**: difuminado suave en el piso que funde el banner de forma imperceptible con el fondo de la pantalla, combinado con un gradiente lateral izquierdo ("palito izquierdo") que maximiza el contraste de textos y logos, dejando el lado derecho completamente nítido y libre para el arte.
+
+## 8.16. Titlebar Nativo en Desktop (Client-Side Decorations) (2026-11-02)
+- **Titlebar Nativo Integrado**: reemplazada la barra de título del sistema operativo por una barra superior integrada directamente en la aplicación con estética fluida y diseño moderno.
+- **Espacio Libre Click-Through y Titlebar Minimalista**: retirados el logo y el texto para un acabado más limpio; la zona izquierda del titlebar ahora permite que los clics atraviesen directamente hacia los controles subyacentes de las pantallas (como el botón de retroceso en el reproductor).
+- **Bordes de Ventana Redondeados**: esquinas suavemente redondeadas (10px) con sutil contorno cuando la aplicación está en modo ventana, pasando automáticamente a esquinas rectas (0px) al maximizar o ir a pantalla completa.
+- **Controles de Ventana Precisos**: botones estilizados de Minimizar, Maximizar/Restaurar y Cerrar con transiciones suaves, tooltips traducidos y botón de cierre en rojo al pasar el cursor.
+- **Arrastre y Maximización Intuitiva**: soporte para mover la ventana arrastrando desde el logo, título o espacio superior, con doble clic para alternar maximizado y restaurado.
+- **Redimensionado Suave en Linux**: áreas de borde interactivas para redimensionar la ventana con el ratón sin depender de decoraciones del sistema operativo.
+- **Ocultamiento Automático en Modo Pantalla Completa**: la barra se retira automáticamente al entrar a pantalla completa o reproducción de video, garantizando inmersión total.
+
 ## 8.15. Torrentio para Series y Películas TMDB (2026-11-02)
 - **Selector de fuente dentro del reproductor**: al entrar a un episodio o película TMDB se abre el reproductor y aparece un cuadro para elegir dónde verlo. Arriba están las extensiones instaladas (VidSrc, Torrentio…); al elegir una se cargan sus fuentes (calidades torrent, servidores, etc.) y al tocar una comienza la reproducción.
 - **Torrents con toda la información**: cada opción muestra resolución, códec, seeders, tamaño, idiomas, indexer y nombre del archivo.

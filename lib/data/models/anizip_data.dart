@@ -38,6 +38,7 @@ class AniZipEpisode {
   final int episodeNumber;
   final int? seasonNumber;
   final int? absoluteEpisodeNumber;
+  final int? tvdbEpisodeNumber;
   final Map<String, String> titleMap;
   final String? image;
   final String? airDate;
@@ -55,6 +56,7 @@ class AniZipEpisode {
     required this.episodeNumber,
     this.seasonNumber,
     this.absoluteEpisodeNumber,
+    this.tvdbEpisodeNumber,
     required this.titleMap,
     this.image,
     this.airDate,
@@ -69,10 +71,24 @@ class AniZipEpisode {
   });
 
   factory AniZipEpisode.fromJson(String key, Map<String, dynamic> json) {
-    final epNum = json['episodeNumber'] as int? ??
-        json['absoluteEpisodeNumber'] as int? ??
-        int.tryParse(key.replaceAll(RegExp(r'[^0-9]'), '')) ??
-        1;
+    final keyInt = int.tryParse(key);
+    final keyDigits = int.tryParse(key.replaceAll(RegExp(r'[^0-9]'), ''));
+    final rawEpisodeNumber = json['episodeNumber'] as int?;
+    final rawAbsoluteNumber = json['absoluteEpisodeNumber'] as int?;
+
+    // In AniZip, when querying by anilist_id, the map key (e.g. "1", "2") represents
+    // the canonical AniList episode index for that media.
+    // We prioritize the numeric key so season splits (like Dr. Stone S4 Part 3 having
+    // AniList episodes 1..13 while TheTVDB numbers them 25..37) match AniList tracking.
+    final epNum = (keyInt != null && keyInt > 0)
+        ? keyInt
+        : (keyDigits != null && keyDigits > 0)
+            ? keyDigits
+            : (rawEpisodeNumber != null && rawEpisodeNumber > 0)
+                ? rawEpisodeNumber
+                : (rawAbsoluteNumber != null && rawAbsoluteNumber > 0)
+                    ? rawAbsoluteNumber
+                    : 1;
 
     final seasonNum = json['seasonNumber'] as int?;
 
@@ -105,6 +121,7 @@ class AniZipEpisode {
       episodeNumber: epNum,
       seasonNumber: seasonNum,
       absoluteEpisodeNumber: json['absoluteEpisodeNumber'] as int?,
+      tvdbEpisodeNumber: rawEpisodeNumber,
       titleMap: titles,
       image: json['image'] as String?,
       airDate: date,

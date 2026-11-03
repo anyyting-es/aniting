@@ -88,6 +88,7 @@ import 'package:seanime_app/presentation/providers/download_history_provider.dar
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:seanime_app/presentation/widgets/desktop_title_bar.dart';
 import 'package:seanime_app/presentation/widgets/dpad_navigation_scope.dart';
 
 import 'package:seanime_app/presentation/widgets/toast/app_toast_host.dart';
@@ -242,7 +243,7 @@ void main() async {
 
       skipTaskbar: false,
 
-      titleBarStyle: TitleBarStyle.normal,
+      titleBarStyle: TitleBarStyle.hidden,
 
       title: 'Aniting',
 
@@ -775,8 +776,8 @@ class _AnitingFlutterAppState extends ConsumerState<AnitingFlutterApp>
                     ),
 
                     child: DpadNavigationScope(
-
-                      child: Stack(
+                      child: DesktopWindowFrame(
+                        child: Stack(
 
                         fit: StackFit.expand,
 
@@ -845,6 +846,8 @@ class _AnitingFlutterAppState extends ConsumerState<AnitingFlutterApp>
                       ),
 
                     ),
+
+                  ),
 
                   ),
 

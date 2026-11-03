@@ -1496,4 +1496,10 @@ abstract class AppTranslations {
   String get mediaServerContinueWatching;
   String get mediaServerEpisodes;
   String get mediaServerNoItems;
+
+  // Window Controls
+  String get windowMinimize;
+  String get windowMaximize;
+  String get windowRestore;
+  String get windowClose;
 }

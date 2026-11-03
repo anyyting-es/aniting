@@ -23,6 +23,7 @@ import 'package:seanime_app/presentation/widgets/discover_filter_sheet.dart';
 import 'package:seanime_app/core/theme/smooth_scroll_controller.dart';
 import 'package:seanime_app/presentation/widgets/manga_card.dart';
 import 'package:seanime_app/presentation/widgets/media_type_toggle.dart';
+import 'package:seanime_app/presentation/widgets/explore/explore_carousel_section.dart';
 import 'package:seanime_app/presentation/widgets/top_status_bar_glass.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {
@@ -657,48 +658,48 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           ),
         ),
         const SizedBox(width: 8),
-          // Filter Sheet Trigger GlassButton
-          Badge(
-            isLabelVisible: _filterState.hasActiveFilters,
-            label: Text('${_filterState.activeFilterCount}'),
-            child: GlassButton(
-              onPressed: _openFilterSheet,
-              padding: EdgeInsets.zero,
-              semanticLabel: l10n.filters,
-              child: SizedBox(
-                width: 38,
-                height: 38,
-                child: Center(
-                  child: Icon(
-                    _filterState.hasActiveFilters
-                        ? AppIcons.sliders(iconPack)
-                        : AppIcons.filter(iconPack),
-                    size: 18,
-                    color: _filterState.hasActiveFilters
-                        ? theme.colorScheme.primary
-                        : null,
-                  ),
+        // Filter Sheet Trigger GlassButton
+        Badge(
+          isLabelVisible: _filterState.hasActiveFilters,
+          label: Text('${_filterState.activeFilterCount}'),
+          child: GlassButton(
+            onPressed: _openFilterSheet,
+            padding: EdgeInsets.zero,
+            semanticLabel: l10n.filters,
+            child: SizedBox(
+              width: 38,
+              height: 38,
+              child: Center(
+                child: Icon(
+                  _filterState.hasActiveFilters
+                      ? AppIcons.sliders(iconPack)
+                      : AppIcons.filter(iconPack),
+                  size: 18,
+                  color: _filterState.hasActiveFilters
+                      ? theme.colorScheme.primary
+                      : null,
                 ),
               ),
             ),
           ),
-          const SizedBox(width: 8),
-          // Genres Hub GlassButton
-          GlassButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                SlideRightToLeftPageRoute(child: const GenresScreen()),
-              );
-            },
-            padding: EdgeInsets.zero,
-            semanticLabel: l10n.genresTitle,
-            child: SizedBox(
-              width: 38,
-              height: 38,
-              child: Center(child: Icon(AppIcons.category(iconPack), size: 18)),
-            ),
+        ),
+        const SizedBox(width: 8),
+        // Genres Hub GlassButton
+        GlassButton(
+          onPressed: () {
+            Navigator.push(
+              context,
+              SlideRightToLeftPageRoute(child: const GenresScreen()),
+            );
+          },
+          padding: EdgeInsets.zero,
+          semanticLabel: l10n.genresTitle,
+          child: SizedBox(
+            width: 38,
+            height: 38,
+            child: Center(child: Icon(AppIcons.category(iconPack), size: 18)),
           ),
+        ),
       ],
     );
   }
@@ -716,13 +717,19 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final mangaEnabled = ref.watch(mangaSectionEnabledProvider);
     // Ensure mediaType adheres to enabled sections
     if (_filterState.mediaType == 'SHOWS' && !showsEnabled) {
-      final fallback = animeEnabled ? 'ANIME' : (mangaEnabled ? 'MANGA' : 'ANIME');
+      final fallback = animeEnabled
+          ? 'ANIME'
+          : (mangaEnabled ? 'MANGA' : 'ANIME');
       _filterState = _filterState.copyWith(mediaType: fallback);
     } else if (_filterState.mediaType == 'MANGA' && !mangaEnabled) {
-      final fallback = animeEnabled ? 'ANIME' : (showsEnabled ? 'SHOWS' : 'ANIME');
+      final fallback = animeEnabled
+          ? 'ANIME'
+          : (showsEnabled ? 'SHOWS' : 'ANIME');
       _filterState = _filterState.copyWith(mediaType: fallback);
     } else if (_filterState.mediaType == 'ANIME' && !animeEnabled) {
-      final fallback = showsEnabled ? 'SHOWS' : (mangaEnabled ? 'MANGA' : 'ANIME');
+      final fallback = showsEnabled
+          ? 'SHOWS'
+          : (mangaEnabled ? 'MANGA' : 'ANIME');
       _filterState = _filterState.copyWith(mediaType: fallback);
     }
 
@@ -883,10 +890,18 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             child: CustomScrollView(
               controller: _scrollController,
               slivers: [
-                // Top safe-area spacing (the hero carousel was removed).
+                // 1. Explore Hero Carousel Section (Anime AniZip, TMDB Shows, Manga Banner)
                 SliverToBoxAdapter(
-                  child: SizedBox(
-                    height: MediaQuery.of(context).padding.top + 12,
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                      top: isDesktop
+                          ? 0
+                          : (MediaQuery.paddingOf(context).top + 4),
+                    ),
+                    child: ExploreCarouselSection(
+                      mediaType: _filterState.mediaType,
+                      contentLeftInset: sidebarInset,
+                    ),
                   ),
                 ),
 

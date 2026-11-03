@@ -135,6 +135,49 @@ void main() {
       expect(sp2!.displayTitle, 'Speed of Youth');
       expect(sp2.isSpecial, true);
     });
+
+    test('prioritizes numeric key for split-cour anime where TVDB continues episode numbers', () {
+      final splitCourJson = {
+        'episodes': {
+          '1': {
+            'tvdbShowId': 355774,
+            'tvdbId': 11359670,
+            'seasonNumber': 4,
+            'episodeNumber': 25,
+            'absoluteEpisodeNumber': 83,
+            'title': {'en': 'Future Engine'},
+            'image': 'https://artworks.thetvdb.com/banners/v4/episode/11359670/screencap/69c9d141996ed.jpg',
+          },
+          '2': {
+            'tvdbShowId': 355774,
+            'tvdbId': 11714033,
+            'seasonNumber': 4,
+            'episodeNumber': 26,
+            'absoluteEpisodeNumber': 84,
+            'title': {'en': 'Fire'},
+            'image': 'https://artworks.thetvdb.com/banners/v4/episode/11714033/screencap/69d6daa7ace86.jpg',
+          },
+        },
+      };
+
+      final data = AniZipData.fromJson(splitCourJson);
+
+      // Episode numbers match AniList indexing (1 and 2), not TVDB (25 and 26)
+      expect(data.episodes.length, 2);
+      expect(data.episodes[0].episodeNumber, 1);
+      expect(data.episodes[0].tvdbEpisodeNumber, 25);
+      expect(data.episodes[0].displayTitle, 'Future Engine');
+      expect(data.episodes[0].image, contains('11359670'));
+
+      expect(data.episodes[1].episodeNumber, 2);
+      expect(data.episodes[1].tvdbEpisodeNumber, 26);
+      expect(data.episodes[1].displayTitle, 'Fire');
+
+      // getEpisode(1) matches episode 1 properly
+      final ep1 = data.getEpisode(1);
+      expect(ep1, isNotNull);
+      expect(ep1!.displayTitle, 'Future Engine');
+    });
   });
 
   group('AniZipEpisodeListView Widget Tests', () {

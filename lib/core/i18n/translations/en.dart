@@ -3169,4 +3169,14 @@ class EnglishTranslations implements AppTranslations {
   String get mediaServerEpisodes => 'Episodes';
   @override
   String get mediaServerNoItems => 'No items available in this section';
+
+  // Window Controls
+  @override
+  String get windowMinimize => 'Minimize';
+  @override
+  String get windowMaximize => 'Maximize';
+  @override
+  String get windowRestore => 'Restore';
+  @override
+  String get windowClose => 'Close';
 }

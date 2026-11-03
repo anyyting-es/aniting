@@ -74,6 +74,7 @@ void main() {
                   selectedIndex: selectedIdx,
                   onDaySelected: (idx) => setState(() => selectedIdx = idx),
                   isSpanish: true,
+                  todayLabel: 'Hoy',
                 );
               },
             ),

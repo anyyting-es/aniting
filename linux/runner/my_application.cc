@@ -139,64 +139,34 @@ static void my_application_activate(GApplication* application) {
   GtkWindow* window =
       GTK_WINDOW(gtk_application_window_new(GTK_APPLICATION(application)));
 
-  gboolean use_header_bar = FALSE;
-
-  const gchar* current_desktop = g_getenv("XDG_CURRENT_DESKTOP");
-  if (current_desktop != nullptr) {
-    g_autofree gchar* desktop_upper = g_ascii_strup(current_desktop, -1);
-    if (g_strstr_len(desktop_upper, -1, "GNOME") != nullptr) {
-      use_header_bar = TRUE;
-    }
-  }
-
-#if defined(GDK_WINDOWING_X11)
-  GdkScreen* screen = gtk_window_get_screen(window);
-  if (GDK_IS_X11_SCREEN(screen)) {
-    const gchar* wm_name = gdk_x11_screen_get_window_manager_name(screen);
-    if (g_strcmp0(wm_name, "GNOME Shell") == 0) {
-      use_header_bar = TRUE;
-    } else {
-      use_header_bar = FALSE;
-    }
-  }
-#endif
-  if (use_header_bar) {
-    GtkWidget* header_bar = gtk_header_bar_new();
-    gtk_widget_show(header_bar);
-    gtk_header_bar_set_title(GTK_HEADER_BAR(header_bar), "Aniting");
-    gtk_header_bar_set_show_close_button(GTK_HEADER_BAR(header_bar), TRUE);
-    gtk_window_set_titlebar(window, header_bar);
-  } else {
-    gtk_window_set_title(window, "Aniting");
-  }
+  // Use custom client-side titlebar across desktop environments (GNOME, KDE Plasma, etc.).
+  // In Wayland compositors like KDE Plasma (KWin), calling gtk_window_set_decorated(FALSE)
+  // alone is often ignored because KWin falls back to Server-Side Decorations (SSD).
+  // Attaching a GtkHeaderBar explicitly informs KWin/Wayland via xdg-decoration to use
+  // Client-Side Decorations (CSD). Hiding it leaves the Flutter app as the sole custom titlebar.
+  GtkWidget* header_bar = gtk_header_bar_new();
+  gtk_widget_show(header_bar);
+  gtk_window_set_titlebar(window, header_bar);
+  gtk_window_set_title(window, "Aniting");
+  gtk_window_set_decorated(window, FALSE);
+  gtk_widget_hide(header_bar);
 
   // Ensure window decorations follow modern dark theme styling
   g_object_set(gtk_settings_get_default(), "gtk-application-prefer-dark-theme", TRUE, NULL);
 
-  // Modern compact headerbar styling and ensure GTK window background is transparent
-  // so the RGBA visual and Flutter surface compositor pass through cleanly.
+  // Ensure GTK window background is transparent so the RGBA visual
+  // and Flutter surface compositor pass through cleanly.
   GtkCssProvider* css_provider = gtk_css_provider_new();
   gtk_css_provider_load_from_data(css_provider,
     "window, .background {"
     "  background-color: transparent;"
     "}"
     "headerbar {"
-    "  min-height: 38px;"
-    "  padding-top: 0px;"
-    "  padding-bottom: 0px;"
-    "  padding-left: 6px;"
-    "  padding-right: 6px;"
-    "  margin: 0;"
-    "}"
-    "headerbar windowhandle {"
-    "  padding: 0;"
-    "  margin: 0;"
-    "}"
-    "headerbar button.titlebutton {"
-    "  min-height: 24px;"
-    "  min-width: 24px;"
-    "  padding: 2px;"
-    "  margin: 0 2px;"
+    "  min-height: 0px;"
+    "  padding: 0px;"
+    "  margin: 0px;"
+    "  border: none;"
+    "  background: transparent;"
     "}",
     -1, nullptr);
   gtk_style_context_add_provider_for_screen(

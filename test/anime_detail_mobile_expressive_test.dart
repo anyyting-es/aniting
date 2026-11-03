@@ -47,7 +47,7 @@ class FakeMobileDetailRepo extends SeanimeRepository {
   Future<LibraryEntryDetails?> getAnimeLibraryEntry(int mediaId, {bool forceRefresh = false}) async => null;
 
   @override
-  Future<List<OnlinestreamProvider>> getOnlinestreamProviders() async => [
+  Future<List<OnlinestreamProvider>> getOnlinestreamProviders({bool forceRefresh = false}) async => [
         const OnlinestreamProvider(
           id: 'provider-1',
           name: 'AnimeFlv',

@@ -393,7 +393,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                   bottom: 0,
                   child: DesktopSidebar(
                     selectedIndex: activeIndex,
-                    isSearchActive: _activeSection == ShellSection.explore && ref.watch(searchViewActiveProvider),
+                    isSearchActive: _activeSection == ShellSection.explore,
                     onDestinationSelected: (idx) {
                       if (idx >= 0 && idx < availableSections.length) {
                         final section = availableSections[idx];
@@ -404,7 +404,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                       }
                     },
                     onSearchPressed: () {
-                      ref.read(searchViewActiveProvider.notifier).state = true;
+                      ref.read(searchViewActiveProvider.notifier).state = false;
                       setState(() => _activeSection = ShellSection.explore);
                     },
                     onSettingsPressed: _openSettings,
