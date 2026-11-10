@@ -140,7 +140,22 @@ class CustomAnimeAssetsService {
 
   /// Synchronously checks if the JSON file on disk was modified (Desktop / Dev).
   /// This enables instant live updates from Aniting-art into the running app.
+  ///
+  /// Probed at most once every [diskProbeIntervalMs]: this runs from
+  /// [getAssets]/[hasAssets], which are called from card `build()` methods, so
+  /// an unthrottled version issued two synchronous filesystem calls per card
+  /// per frame — a real source of build-phase stutter while the feed mounts.
+  static const int diskProbeIntervalMs = 1200;
+  static DateTime? _lastDiskProbe;
+
   static void _checkDiskUpdatesSync() {
+    final now = DateTime.now();
+    final last = _lastDiskProbe;
+    if (last != null &&
+        now.difference(last).inMilliseconds < diskProbeIntervalMs) {
+      return;
+    }
+    _lastDiskProbe = now;
     try {
       final file = File('assets/data/custom_anime_assets.json');
       if (file.existsSync()) {

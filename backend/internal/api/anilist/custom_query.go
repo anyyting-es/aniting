@@ -1,4 +1,4 @@
-package anilist
+﻿package anilist
 
 import (
 	"bytes"
@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"seanime/internal/util"
+	"aniting/internal/util"
 	"time"
 
 	"github.com/goccy/go-json"

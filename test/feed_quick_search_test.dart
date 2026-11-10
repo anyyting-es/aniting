@@ -1,17 +1,19 @@
-import 'package:flutter/gestures.dart';
+﻿import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:g1455/g1455.dart';
-import 'package:seanime_app/core/api/api_client.dart';
-import 'package:seanime_app/data/models/anime_entry.dart';
-import 'package:seanime_app/data/models/manga_entry.dart';
-import 'package:seanime_app/data/repositories/seanime_repository.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/widgets/quick_search/feed_quick_search.dart';
+import 'package:aniting/core/api/api_client.dart';
+import 'package:aniting/core/server/server_manager.dart';
+import 'package:aniting/data/models/anime_entry.dart';
+import 'package:aniting/data/models/manga_entry.dart';
+import 'package:aniting/data/models/server_status.dart';
+import 'package:aniting/data/repositories/aniting_repository.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/widgets/quick_search/feed_quick_search.dart';
 
-class _FakeRepository extends SeanimeRepository {
+class _FakeRepository extends AnitingRepository {
   _FakeRepository() : super(ApiClient());
 
   @override
@@ -46,12 +48,23 @@ class _FakeRepository extends SeanimeRepository {
   }) async => const [];
 }
 
+class _LoggedInServerNotifier extends ServerNotifier {
+  @override
+  ServerStateModel build() => ServerStateModel(
+        state: ServerState.running,
+        status: ServerStatus(username: 'tester'),
+      );
+}
+
 void main() {
   group('Feed quick search', () {
     late Object? selected;
 
     Widget buildApp() => ProviderScope(
-      overrides: [repositoryProvider.overrideWithValue(_FakeRepository())],
+      overrides: [
+        repositoryProvider.overrideWithValue(_FakeRepository()),
+        serverNotifierProvider.overrideWith(_LoggedInServerNotifier.new),
+      ],
       child: MaterialApp(
         builder: (context, child) =>
             GlassHost(backdrop: const Color(0xFF101014), child: child!),

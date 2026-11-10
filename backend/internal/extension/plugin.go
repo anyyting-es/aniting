@@ -438,7 +438,7 @@ func (p *PluginUnsafe) GetDescription() string {
 // explainPath adds human-readable descriptions to paths containing environment variables
 func explainPath(path string) string {
 	environmentVars := map[string]string{
-		"$SEANIME_ANIME_LIBRARY": "Your anime library directories",
+		"$ANITING_ANIME_LIBRARY": "Your anime library directories",
 		"$HOME":                  "Your system's Home directory",
 		"$CACHE":                 "Your system's Cache directory",
 		"$TEMP":                  "Your system's Temporary directory",

@@ -1,10 +1,10 @@
-package videocore
+﻿package videocore
 
 import (
 	"encoding/json"
-	"seanime/internal/api/anilist"
-	"seanime/internal/library/anime"
-	"seanime/internal/mkvparser"
+	"aniting/internal/api/anilist"
+	"aniting/internal/library/anime"
+	"aniting/internal/mkvparser"
 )
 
 type ClientEventType string

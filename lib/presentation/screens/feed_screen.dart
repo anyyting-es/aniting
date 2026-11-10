@@ -1,41 +1,42 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/core/preferences/continue_watching_sort_provider.dart';
-import 'package:seanime_app/core/preferences/title_language_provider.dart';
-import 'package:seanime_app/core/preferences/section_visibility_provider.dart';
-import 'package:seanime_app/core/preferences/resume_bar_preferences_provider.dart';
-import 'package:seanime_app/core/server/server_manager.dart';
-import 'package:seanime_app/data/models/anime_entry.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
-import 'package:seanime_app/presentation/screens/downloads_screen.dart';
-import 'package:seanime_app/presentation/widgets/anime_card.dart';
-import 'package:seanime_app/presentation/widgets/compact_search_bar.dart';
-import 'package:seanime_app/presentation/widgets/continue_watching_card.dart';
-import 'package:seanime_app/presentation/widgets/continue_watching_playback_launcher.dart';
-import 'package:seanime_app/core/theme/smooth_scroll_controller.dart';
-import 'package:seanime_app/presentation/widgets/feed_empty_state.dart';
-import 'package:seanime_app/presentation/widgets/top_status_bar_glass.dart';
-import 'package:seanime_app/data/services/feed_cache_service.dart';
-import 'package:seanime_app/data/services/offline_library_service.dart';
-import 'package:seanime_app/presentation/widgets/snapping_scroll_physics.dart';
-import 'package:seanime_app/presentation/widgets/feed/smooth_focus_carousel.dart';
-import 'package:seanime_app/core/media_servers/models/media_server_config.dart';
-import 'package:seanime_app/core/media_servers/models/media_server_item.dart';
-import 'package:seanime_app/core/media_servers/models/media_server_library.dart';
-import 'package:seanime_app/core/media_servers/providers/media_server_content_provider.dart';
-import 'package:seanime_app/core/media_servers/providers/media_servers_provider.dart';
-import 'package:seanime_app/presentation/widgets/feed/media_server/media_server_continue_card.dart';
-import 'package:seanime_app/presentation/widgets/feed/media_server/media_server_feed_filter.dart';
-import 'package:seanime_app/presentation/widgets/feed/media_server/media_server_library_carousel.dart';
-import 'package:seanime_app/core/theme/custom_route_transitions.dart';
-import 'package:seanime_app/core/media_servers/services/media_server_player_helper.dart';
-import 'package:seanime_app/presentation/screens/media_servers/media_server_show_detail_screen.dart';
-import 'package:seanime_app/presentation/widgets/anime_preview/show_preview_data.dart';
-import 'package:seanime_app/presentation/widgets/anime_preview/show_quick_view_detector.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/core/preferences/continue_watching_sort_provider.dart';
+import 'package:aniting/core/preferences/title_language_provider.dart';
+import 'package:aniting/core/preferences/section_visibility_provider.dart';
+import 'package:aniting/core/preferences/resume_bar_preferences_provider.dart';
+import 'package:aniting/core/server/server_manager.dart';
+import 'package:aniting/data/models/anime_entry.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/screens/anime_detail_screen.dart';
+import 'package:aniting/presentation/screens/downloads_screen.dart';
+import 'package:aniting/presentation/widgets/anime_card.dart';
+import 'package:aniting/presentation/widgets/compact_search_bar.dart';
+import 'package:aniting/presentation/widgets/continue_watching_card.dart';
+import 'package:aniting/presentation/widgets/continue_watching_playback_launcher.dart';
+import 'package:aniting/core/theme/smooth_scroll_controller.dart';
+import 'package:aniting/presentation/widgets/feed_empty_state.dart';
+import 'package:aniting/presentation/widgets/top_status_bar_glass.dart';
+import 'package:aniting/data/services/feed_cache_service.dart';
+import 'package:aniting/data/services/offline_library_service.dart';
+import 'package:aniting/presentation/widgets/snapping_scroll_physics.dart';
+import 'package:aniting/presentation/widgets/feed/smooth_focus_carousel.dart';
+import 'package:aniting/core/media_servers/models/media_server_config.dart';
+import 'package:aniting/core/media_servers/models/media_server_item.dart';
+import 'package:aniting/core/media_servers/models/media_server_library.dart';
+import 'package:aniting/core/media_servers/providers/media_server_content_provider.dart';
+import 'package:aniting/core/media_servers/providers/media_servers_provider.dart';
+import 'package:aniting/presentation/widgets/feed/media_server/media_server_continue_card.dart';
+import 'package:aniting/presentation/widgets/feed/media_server/media_server_feed_filter.dart';
+import 'package:aniting/presentation/widgets/feed/media_server/media_server_library_carousel.dart';
+import 'package:aniting/core/theme/custom_route_transitions.dart';
+import 'package:aniting/core/media_servers/services/media_server_player_helper.dart';
+import 'package:aniting/presentation/screens/media_servers/media_server_show_detail_screen.dart';
+import 'package:aniting/presentation/widgets/anime_preview/show_preview_data.dart';
+import 'package:aniting/presentation/widgets/anime_preview/show_quick_view_detector.dart';
+import 'package:aniting/presentation/widgets/feed/feed_hover_card.dart';
 
 sealed class _UnifiedContinueItem {}
 class _AnimeContinueItem extends _UnifiedContinueItem {
@@ -165,14 +166,19 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     required Object heroTag,
     required Widget child,
   }) {
-    return ShowQuickViewDetector(
-      heroTag: heroTag,
-      dataBuilder: () => ShowPreviewData.fromAnime(
-        entry,
-        ref.read(titleLanguageProvider),
-      ),
+    ShowPreviewData buildData() =>
+        ShowPreviewData.fromAnime(entry, ref.read(titleLanguageProvider));
+
+    return FeedHoverCard(
+      dataBuilder: buildData,
       onOpenDetails: () => _openDetail(context, entry),
-      child: child,
+      child: ShowQuickViewDetector(
+        heroTag: heroTag,
+        enableIdleHover: false,
+        dataBuilder: buildData,
+        onOpenDetails: () => _openDetail(context, entry),
+        child: child,
+      ),
     );
   }
 
@@ -184,21 +190,27 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     required Object heroTag,
     required Widget child,
   }) {
-    return ShowQuickViewDetector(
-      heroTag: heroTag,
-      dataBuilder: () {
-        final episodeNumber = entry.episodeNumber ?? (entry.progress + 1);
-        final aniZip =
-            ref.read(aniZipDataProvider(entry.mediaId)).asData?.value;
-        return ShowPreviewData.fromAnime(
-          entry,
-          ref.read(titleLanguageProvider),
-          includeCurrentEpisode: true,
-          aniZipEpisode: aniZip?.getEpisode(episodeNumber),
-        );
-      },
+    ShowPreviewData buildData() {
+      final episodeNumber = entry.episodeNumber ?? (entry.progress + 1);
+      final aniZip = ref.read(aniZipDataProvider(entry.mediaId)).asData?.value;
+      return ShowPreviewData.fromAnime(
+        entry,
+        ref.read(titleLanguageProvider),
+        includeCurrentEpisode: true,
+        aniZipEpisode: aniZip?.getEpisode(episodeNumber),
+      );
+    }
+
+    return FeedHoverCard(
+      dataBuilder: buildData,
       onOpenDetails: () => _openDetail(context, entry),
-      child: child,
+      child: ShowQuickViewDetector(
+        heroTag: heroTag,
+        enableIdleHover: false,
+        dataBuilder: buildData,
+        onOpenDetails: () => _openDetail(context, entry),
+        child: child,
+      ),
     );
   }
 
@@ -208,24 +220,33 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     required MediaServerConfig server,
     required Widget child,
   }) {
-    return ShowQuickViewDetector(
-      dataBuilder: () => ShowPreviewData.fromMediaServer(item),
-      onOpenDetails: () {
-        if (item.type == MediaServerItemType.show) {
-          Navigator.of(context).push(
-            SmoothPageRoute(
-              child: MediaServerShowDetailScreen(show: item, server: server),
-            ),
-          );
-        } else {
-          MediaServerPlayerHelper.playDirect(
-            context: context,
-            item: item,
-            server: server,
-          );
-        }
-      },
-      child: child,
+    void openDetails() {
+      if (item.type == MediaServerItemType.show) {
+        Navigator.of(context).push(
+          SmoothPageRoute(
+            child: MediaServerShowDetailScreen(show: item, server: server),
+          ),
+        );
+      } else {
+        MediaServerPlayerHelper.playDirect(
+          context: context,
+          item: item,
+          server: server,
+        );
+      }
+    }
+
+    ShowPreviewData buildData() => ShowPreviewData.fromMediaServer(item);
+
+    return FeedHoverCard(
+      dataBuilder: buildData,
+      onOpenDetails: openDetails,
+      child: ShowQuickViewDetector(
+        enableIdleHover: false,
+        dataBuilder: buildData,
+        onOpenDetails: openDetails,
+        child: child,
+      ),
     );
   }
 
@@ -466,6 +487,9 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     final hasWatching = allCollection.any((e) =>
         e.status.toUpperCase() == 'CURRENT' || e.status.toUpperCase() == 'WATCHING') ||
         continueWatchingEntries.isNotEmpty;
+    final hasPlanning = allCollection.any(
+      (e) => e.status.toUpperCase() == 'PLANNING',
+    );
     final hasMissedSequels = missedSequelsEntries.isNotEmpty;
     final hasAniListRecs = recommendationsEntries.isNotEmpty;
     final hasTmdbRecs = isWatchingTmdb && (tmdbRecsAsync?.value?.isNotEmpty ?? false);
@@ -475,6 +499,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
         serverContinueWatching.isNotEmpty || serverLibraries.isNotEmpty;
     final hasAnyContent = hasContinueWatching ||
         hasWatching ||
+        hasPlanning ||
         hasMissedSequels ||
         hasRecommendations ||
         hasDownloadedAnime ||
@@ -648,6 +673,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                                   child: AnimeCard(
                                     entry: item,
                                     heroTag: tag,
+                                    enableQuickPreview: false,
                                     onTap: () => _openDetail(context, item),
                                   ),
                                 );
@@ -844,7 +870,19 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                           ),
                       ],
 
-                      // ─── 2. Descargas de anime (Downloaded Anime) ───
+                      // ─── 2. Plan por ver (Planning) ───
+                      // Va justo después de "Seguir viendo": es la lista que el
+                      // usuario consulta al terminar un episodio para elegir el
+                      // siguiente show, así que no debe quedar más abajo.
+                      ..._buildPlanningSlivers(
+                        allCollection: allCollection,
+                        l10n: l10n,
+                        animeCardWidth: animeCardWidth,
+                        carouselHeight: carouselHeight,
+                        carouselSpacing: carouselSpacing,
+                      ),
+
+                      // ─── 3. Descargas de anime (Downloaded Anime) ───
                       if (feedFilterMode != FeedFilterMode.server) ...[
                       downloadedAnimeAsync.when(
                         data: (downloaded) {
@@ -898,6 +936,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                                         entry: item,
                                         width: animeCardWidth,
                                         heroTag: tag,
+                                        enableQuickPreview: false,
                                         onTap: () => _openDetail(context, item),
                                       ),
                                     );
@@ -948,6 +987,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                                       entry: item,
                                       width: animeCardWidth,
                                       heroTag: tag,
+                                      enableQuickPreview: false,
                                       onTap: () => _openDetail(context, item),
                                     ),
                                   );
@@ -1021,6 +1061,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                                         entry: item,
                                         width: animeCardWidth,
                                         heroTag: tag,
+                                        enableQuickPreview: false,
                                         onTap: () => _openDetail(context, item),
                                       ),
                                     );
@@ -1067,7 +1108,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
 
     for (final e in allCollection) {
       final st = e.status.toUpperCase();
-      if (st == 'CURRENT' || st == 'WATCHING' || st == 'REPEATING' || (e.progress > 0 && st != 'COMPLETED' && st != 'DROPPED')) {
+      if (st == 'CURRENT' || st == 'WATCHING' || st == 'REPEATING' || (e.progress > 0 && st != 'COMPLETED' && st != 'DROPPED' && st != 'PLANNING')) {
         if (e.mediaId > 0 && !seenIds.contains(e.mediaId)) {
           seenIds.add(e.mediaId);
           watching.add(e);
@@ -1108,6 +1149,70 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                     entry: item,
                     width: animeCardWidth,
                     heroTag: tag,
+                    enableQuickPreview: false,
+                    onTap: () => _openDetail(context, item),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    ];
+  }
+
+  List<Widget> _buildPlanningSlivers({
+    required List<AnimeEntry> allCollection,
+    required AppTranslations l10n,
+    required double animeCardWidth,
+    required double carouselHeight,
+    required double carouselSpacing,
+  }) {
+    final planning = <AnimeEntry>[];
+    final seenIds = <int>{};
+
+    for (final e in allCollection) {
+      if (e.status.toUpperCase() != 'PLANNING') continue;
+      if (e.mediaId <= 0 || seenIds.contains(e.mediaId)) continue;
+      seenIds.add(e.mediaId);
+      planning.add(e);
+    }
+
+    if (planning.isEmpty) return const [];
+
+    planning.sort((a, b) {
+      final aTime = a.updatedAt ?? 0;
+      final bTime = b.updatedAt ?? 0;
+      return bTime.compareTo(aTime);
+    });
+
+    return [
+      SliverToBoxAdapter(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _SectionHeader(
+              title: '${l10n.planToWatch} (${planning.length})',
+            ),
+            SmoothFocusCarousel(
+              itemCount: planning.length,
+              itemWidth: animeCardWidth,
+              spacing: carouselSpacing,
+              height: carouselHeight + 8,
+              itemBuilder: (context, index) {
+                final item = planning[index];
+                final tag = 'feed_planning_${item.mediaId}';
+                return _withAnimePreview(
+                  context: context,
+                  entry: item,
+                  heroTag: tag,
+                  child: AnimeCard(
+                    key: ValueKey('planning_${item.mediaId}'),
+                    entry: item,
+                    width: animeCardWidth,
+                    heroTag: tag,
+                    enableQuickPreview: false,
                     onTap: () => _openDetail(context, item),
                   ),
                 );

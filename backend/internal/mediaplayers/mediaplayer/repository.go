@@ -1,17 +1,17 @@
 package mediaplayer
 
 import (
+	"aniting/internal/continuity"
+	"aniting/internal/events"
+	"aniting/internal/hook"
+	"aniting/internal/mediaplayers/iina"
+	mpchc2 "aniting/internal/mediaplayers/mpchc"
+	"aniting/internal/mediaplayers/mpv"
+	vlc2 "aniting/internal/mediaplayers/vlc"
+	"aniting/internal/util/result"
 	"context"
 	"errors"
 	"fmt"
-	"seanime/internal/continuity"
-	"seanime/internal/events"
-	"seanime/internal/hook"
-	"seanime/internal/mediaplayers/iina"
-	mpchc2 "seanime/internal/mediaplayers/mpchc"
-	"seanime/internal/mediaplayers/mpv"
-	vlc2 "seanime/internal/mediaplayers/vlc"
-	"seanime/internal/util/result"
 	"sync"
 	"time"
 
@@ -406,6 +406,9 @@ func (m *Repository) SeekTo(seconds float64) error {
 }
 
 func (m *Repository) Stream(streamUrl string, episode int, mediaId int, windowTitle string) error {
+	if m == nil {
+		return errors.New("media player repository is not configured")
+	}
 
 	m.Logger.Debug().Str("streamUrl", streamUrl).Msg("media player: Stream requested")
 	var err error

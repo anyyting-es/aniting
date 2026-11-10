@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
+import 'package:aniting/core/icons/app_icons.dart';
 
 /// Minimalist, side-anchored seek indicator without background container.
 /// Displays on the left for rewind (<< 10) and right for fast-forward (10 >>)

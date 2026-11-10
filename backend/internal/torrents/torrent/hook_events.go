@@ -1,8 +1,8 @@
 package torrent
 
-import "seanime/internal/hook_resolver"
+import "aniting/internal/hook_resolver"
 
-// TorrentSearchRequestedEvent is triggered before Seanime searches anime torrents.
+// TorrentSearchRequestedEvent is triggered before Aniting searches anime torrents.
 // Prevent default to skip the native search and return SearchData.
 type TorrentSearchRequestedEvent struct {
 	hook_resolver.Event
@@ -10,7 +10,7 @@ type TorrentSearchRequestedEvent struct {
 	SearchData *SearchData        `json:"searchData"`
 }
 
-// TorrentSearchEvent is triggered after Seanime assembles the torrent search response.
+// TorrentSearchEvent is triggered after Aniting assembles the torrent search response.
 // Handlers can mutate SearchData before it is cached and returned.
 type TorrentSearchEvent struct {
 	hook_resolver.Event

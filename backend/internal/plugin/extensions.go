@@ -1,12 +1,12 @@
-package plugin
+﻿package plugin
 
 import (
 	"errors"
-	"seanime/internal/extension"
-	"seanime/internal/extension_repo/prompt"
-	"seanime/internal/goja/goja_bindings"
-	gojautil "seanime/internal/util/goja"
-	"seanime/internal/util/result"
+	"aniting/internal/extension"
+	"aniting/internal/extension_repo/prompt"
+	"aniting/internal/goja/goja_bindings"
+	gojautil "aniting/internal/util/goja"
+	"aniting/internal/util/result"
 
 	"github.com/dop251/goja"
 	"github.com/rs/zerolog"

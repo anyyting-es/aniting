@@ -1,16 +1,17 @@
 import 'dart:async';
+
 import 'package:flutter/foundation.dart';
-import 'package:seanime_app/core/preferences/anime_playback_source_provider.dart';
-import 'package:seanime_app/core/preferences/playback_progress_preferences_provider.dart';
-import 'package:seanime_app/core/preferences/resume_bar_preferences_provider.dart';
-import 'package:seanime_app/data/repositories/seanime_repository.dart';
-import 'package:seanime_app/data/services/offline_library_service.dart';
-import 'package:seanime_app/data/services/offline_sync_service.dart';
+import 'package:aniting/core/preferences/anime_playback_source_provider.dart';
+import 'package:aniting/core/preferences/playback_progress_preferences_provider.dart';
+import 'package:aniting/core/preferences/resume_bar_preferences_provider.dart';
+import 'package:aniting/data/repositories/aniting_repository.dart';
+import 'package:aniting/data/services/offline_library_service.dart';
+import 'package:aniting/data/services/offline_sync_service.dart';
 
 /// Service responsible for managing video playback progress, periodic continuity updates,
 /// LastSession persistence, and automatic AniList watched progress synchronization.
 class PlayerProgressManager {
-  final SeanimeRepository repository;
+  final AnitingRepository repository;
   final LastSessionNotifier lastSessionNotifier;
   final PlaybackProgressNotifier? playbackProgressNotifier;
   final AnimePlaybackSourceNotifier? animePlaybackSourceNotifier;
@@ -50,10 +51,23 @@ class PlayerProgressManager {
 
   static const int kMinWatchDurationSeconds = 10;
 
+  /// Grace period before episodes below the one being played are marked as
+  /// watched. Jumping straight to episode 6 must not instantly wipe the
+  /// unwatched state of 1–5; the user has to actually watch a bit first.
+  static const Duration kAutoMarkPreviousAfter = Duration(seconds: 15);
+
   Timer? _continuityTimer;
   Timer? _saveDebounce;
+  Timer? _markPreviousTimer;
   bool _hasUpdatedAnimeProgress = false;
   Duration? _initialPosition;
+
+  /// Completes when the last continuity PATCH has been written to the backend.
+  /// The player awaits it before silently refreshing "Continue watching", so
+  /// the feed never reads stale data.
+  Future<void>? _lastContinuityUpdate;
+
+  Future<void>? get lastContinuityUpdate => _lastContinuityUpdate;
 
   PlayerProgressManager({
     required this.repository,
@@ -122,6 +136,59 @@ class PlayerProgressManager {
         scheduleSaveProgress();
       }
     });
+
+    _schedulePreviousEpisodesMarking();
+  }
+
+  /// Marks every episode below the current one as watched, but only after
+  /// [kAutoMarkPreviousAfter] of real playback. [savePlaybackProgress] routes
+  /// through `recordAnimeWatch`, which raises the local progress to
+  /// `episodeNumber - 1` without ever moving it backwards.
+  void _schedulePreviousEpisodesMarking() {
+    _markPreviousTimer?.cancel();
+    _markPreviousTimer = Timer(
+      kAutoMarkPreviousAfter,
+      _markPreviousEpisodesIfWatched,
+    );
+  }
+
+  void _markPreviousEpisodesIfWatched() {
+    if (mediaId == null) return;
+
+    final epNum = getEpisodeNumber() ?? 1;
+    if (epNum <= 1) {
+      _markPreviousTimer = null;
+      return;
+    }
+
+    final watchedEnough =
+        getIsPlaying() && getPosition().inSeconds >= kMinWatchDurationSeconds;
+    if (!watchedEnough) {
+      // Still paused/buffering or barely started: try again shortly instead of
+      // dropping the grace period entirely.
+      _markPreviousTimer?.cancel();
+      _markPreviousTimer = Timer(
+        const Duration(seconds: 5),
+        _markPreviousEpisodesIfWatched,
+      );
+      return;
+    }
+
+    _markPreviousTimer?.cancel();
+    _markPreviousTimer = null;
+    savePlaybackProgress();
+  }
+
+  /// Cancels any progress write that was already scheduled, so leaving the
+  /// player does not trigger a provider update in the middle of the closing
+  /// transition. A final flush is still performed after the route is gone.
+  void cancelPendingWrites() {
+    _saveDebounce?.cancel();
+    _saveDebounce = null;
+    _continuityTimer?.cancel();
+    _continuityTimer = null;
+    _markPreviousTimer?.cancel();
+    _markPreviousTimer = null;
   }
 
   /// Defers [savePlaybackProgress] out of the current frame.
@@ -145,6 +212,9 @@ class PlayerProgressManager {
   void resetEpisodeLatch() {
     _hasUpdatedAnimeProgress = false;
     _initialPosition = null;
+    _markPreviousTimer?.cancel();
+    _markPreviousTimer = null;
+    _schedulePreviousEpisodesMarking();
   }
 
   /// Saves the current playback progress both to the server continuity item
@@ -159,7 +229,9 @@ class PlayerProgressManager {
     // Minimum playback threshold check:
     // If the video hasn't loaded or less than 10s were played (and user was not resuming
     // a previously advanced position), do NOT mark as currently watching in library.
-    final isResumingPrior = _initialPosition != null && _initialPosition!.inSeconds >= kMinWatchDurationSeconds;
+    final isResumingPrior =
+        _initialPosition != null &&
+        _initialPosition!.inSeconds >= kMinWatchDurationSeconds;
     final hasReachedMinThreshold = pos.inSeconds >= kMinWatchDurationSeconds;
 
     if (!force && !isResumingPrior && !hasReachedMinThreshold) {
@@ -169,7 +241,7 @@ class PlayerProgressManager {
     try {
       // Backend continuity is AniList-keyed; a TMDB id there would collide.
       if (!isTmdb) {
-        repository.updateContinuityItem(
+        _lastContinuityUpdate = repository.updateContinuityItem(
           mediaId: mediaId!,
           episodeNumber: epNum,
           currentTime: pos.inSeconds.toDouble(),
@@ -177,8 +249,11 @@ class PlayerProgressManager {
         );
       }
 
-      final isLocal = getIsLocalFile?.call() ?? getVideoUrl().contains('/api/v1/mediastream');
-      final isTorrent = getVideoUrl().contains('torrentstream') ||
+      final isLocal =
+          getIsLocalFile?.call() ??
+          getVideoUrl().contains('/api/v1/mediastream');
+      final isTorrent =
+          getVideoUrl().contains('torrentstream') ||
           (getVideoSource()?.toLowerCase().contains('torrent') ?? false);
       final sourceType = isLocal ? 'local' : (isTorrent ? 'torrent' : 'online');
       final onlineProv = getOnlineStreamProvider?.call();
@@ -275,7 +350,9 @@ class PlayerProgressManager {
     final remaining = durSec - posSec;
     // Require at least 85% watched OR within 90s of end ONLY if the duration is reliable (> 300s)
     final isReliableDuration = durSec >= 300;
-    final isNearEnd = fraction >= 0.85 || (isReliableDuration && posSec >= 180 && remaining <= 90);
+    final isNearEnd =
+        fraction >= 0.85 ||
+        (isReliableDuration && posSec >= 180 && remaining <= 90);
 
     if (!isNearEnd) return;
 
@@ -302,43 +379,54 @@ class PlayerProgressManager {
 
     repository
         .updateAnimeProgress(
-      mediaId: mediaId!,
-      episodeNumber: epNum,
-      totalEpisodes: getTotalEpisodes(),
-    )
-        .then((success) {
-      if (!success) {
-        OfflineSyncService.instance.enqueueAnimeProgress(
           mediaId: mediaId!,
           episodeNumber: epNum,
           totalEpisodes: getTotalEpisodes(),
-          title: title,
-        );
-      }
-      onProgressSynced?.call();
-    }).catchError((e) {
-      debugPrint('[PlayerProgressManager] Error syncing AniList progress: $e');
-      OfflineSyncService.instance.enqueueAnimeProgress(
-        mediaId: mediaId!,
-        episodeNumber: epNum,
-        totalEpisodes: getTotalEpisodes(),
-        title: title,
-      );
-      // Even if AniList remote sync fails, local progress succeeded
-      onProgressSynced?.call();
-    });
+        )
+        .then((success) {
+          if (!success) {
+            OfflineSyncService.instance.enqueueAnimeProgress(
+              mediaId: mediaId!,
+              episodeNumber: epNum,
+              totalEpisodes: getTotalEpisodes(),
+              title: title,
+            );
+          }
+          onProgressSynced?.call();
+        })
+        .catchError((e) {
+          debugPrint(
+            '[PlayerProgressManager] Error syncing AniList progress: $e',
+          );
+          OfflineSyncService.instance.enqueueAnimeProgress(
+            mediaId: mediaId!,
+            episodeNumber: epNum,
+            totalEpisodes: getTotalEpisodes(),
+            title: title,
+          );
+          // Even if AniList remote sync fails, local progress succeeded
+          onProgressSynced?.call();
+        });
   }
 
-  /// Disposes timers and performs final progress flush.
+  /// Disposes timers and performs the final progress flush.
+  ///
+  /// The flush touches SharedPreferences and several Riverpod providers, so it
+  /// is pushed out of the disposal frame. The route can finish its closing
+  /// transition without waiting for that work.
   void dispose() {
     _continuityTimer?.cancel();
     _saveDebounce?.cancel();
     _saveDebounce = null;
-    try {
-      savePlaybackProgress();
-    } catch (_) {}
-    try {
-      syncAnimeProgressIfNeeded();
-    } catch (_) {}
+    _markPreviousTimer?.cancel();
+    _markPreviousTimer = null;
+    Future.delayed(const Duration(milliseconds: 220), () {
+      try {
+        savePlaybackProgress();
+      } catch (_) {}
+      try {
+        syncAnimeProgressIfNeeded();
+      } catch (_) {}
+    });
   }
 }

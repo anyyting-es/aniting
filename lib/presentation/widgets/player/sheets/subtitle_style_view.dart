@@ -1,8 +1,8 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/core/preferences/subtitle_style_preferences_provider.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/core/preferences/subtitle_style_preferences_provider.dart';
 
 /// Complete, responsive subtitle customization sheet.
 /// Allows fine-grained styling (font, size, colors, borders, shadows, and ASS override).

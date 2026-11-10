@@ -1,24 +1,24 @@
-import 'dart:io' show Platform;
+﻿import 'dart:io' show Platform;
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:g1455/g1455.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/presentation/widgets/player/models/player_types.dart';
-import 'package:seanime_app/presentation/widgets/player/sheets/aspect_ratio_view.dart';
-import 'package:seanime_app/presentation/widgets/player/sheets/audio_tracks_view.dart';
-import 'package:seanime_app/presentation/widgets/player/sheets/chapters_view.dart';
-import 'package:seanime_app/presentation/widgets/player/sheets/playback_speed_view.dart';
-import 'package:seanime_app/presentation/widgets/player/sheets/shaders_view.dart';
-import 'package:seanime_app/presentation/widgets/player/sheets/source_info_view.dart';
-import 'package:seanime_app/core/preferences/subtitle_style_preferences_provider.dart';
-import 'package:seanime_app/presentation/widgets/player/sheets/subtitle_style_view.dart';
-import 'package:seanime_app/presentation/widgets/player/sheets/subtitle_tracks_view.dart';
-import 'package:seanime_app/presentation/widgets/player/sheets/sync_offset_view.dart';
-import 'package:seanime_app/presentation/widgets/player/sheets/torrent_metrics_view.dart';
-import 'package:seanime_app/presentation/providers/torrent_stream_provider.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/presentation/widgets/player/models/player_types.dart';
+import 'package:aniting/presentation/widgets/player/sheets/aspect_ratio_view.dart';
+import 'package:aniting/presentation/widgets/player/sheets/audio_tracks_view.dart';
+import 'package:aniting/presentation/widgets/player/sheets/chapters_view.dart';
+import 'package:aniting/presentation/widgets/player/sheets/playback_speed_view.dart';
+import 'package:aniting/presentation/widgets/player/sheets/shaders_view.dart';
+import 'package:aniting/presentation/widgets/player/sheets/source_info_view.dart';
+import 'package:aniting/core/preferences/subtitle_style_preferences_provider.dart';
+import 'package:aniting/presentation/widgets/player/sheets/subtitle_style_view.dart';
+import 'package:aniting/presentation/widgets/player/sheets/subtitle_tracks_view.dart';
+import 'package:aniting/presentation/widgets/player/sheets/sync_offset_view.dart';
+import 'package:aniting/presentation/widgets/player/sheets/torrent_metrics_view.dart';
+import 'package:aniting/presentation/providers/torrent_stream_provider.dart';
 
 enum _SettingsSection {
   menu,

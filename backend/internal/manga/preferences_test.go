@@ -1,8 +1,8 @@
-package manga
+﻿package manga
 
 import (
-	"seanime/internal/events"
-	"seanime/internal/testutil"
+	"aniting/internal/events"
+	"aniting/internal/testutil"
 	"sync"
 	"testing"
 

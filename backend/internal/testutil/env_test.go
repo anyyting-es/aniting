@@ -29,7 +29,7 @@ func TestNewTestEnv_CreatesIsolatedPaths(t *testing.T) {
 	assert.DirExists(t, cacheDir)
 	assert.NotNil(t, first.Logger())
 	assert.NotNil(t, first.Config())
-	assert.Contains(t, first.Config().Database.Name, "seanime-test-")
+	assert.Contains(t, first.Config().Database.Name, "aniting-test-")
 }
 
 func TestNewTestEnv_CreatesDatabaseAndCache(t *testing.T) {

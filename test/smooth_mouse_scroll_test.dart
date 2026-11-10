@@ -1,7 +1,7 @@
-import 'package:flutter/gestures.dart';
+﻿import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:seanime_app/core/theme/smooth_scroll_controller.dart';
+import 'package:aniting/core/theme/smooth_scroll_controller.dart';
 
 void main() {
   group('Advanced Ticker-Based Smooth Scroll Tests', () {

@@ -1,12 +1,12 @@
-package handlers
+﻿package handlers
 
 import (
 	"errors"
 	"net/http"
 	"net/url"
-	"seanime/internal/api/mal"
-	"seanime/internal/constants"
-	"seanime/internal/database/models"
+	"aniting/internal/api/mal"
+	"aniting/internal/constants"
+	"aniting/internal/database/models"
 	"strconv"
 	"strings"
 	"time"

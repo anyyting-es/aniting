@@ -1,18 +1,18 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:seanime_app/core/api/websocket_service.dart';
-import 'package:seanime_app/data/models/local_file_item.dart';
-import 'package:seanime_app/data/models/show_local_file_item.dart';
-import 'package:seanime_app/data/repositories/seanime_repository.dart';
-import 'package:seanime_app/data/services/feed_cache_service.dart';
-import 'package:seanime_app/data/services/offline_library_service.dart';
-import 'package:seanime_app/presentation/providers/active_downloads_provider.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/data/models/anime_entry.dart';
+import 'package:aniting/core/api/websocket_service.dart';
+import 'package:aniting/data/models/local_file_item.dart';
+import 'package:aniting/data/models/show_local_file_item.dart';
+import 'package:aniting/data/repositories/aniting_repository.dart';
+import 'package:aniting/data/services/feed_cache_service.dart';
+import 'package:aniting/data/services/offline_library_service.dart';
+import 'package:aniting/presentation/providers/active_downloads_provider.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/data/models/anime_entry.dart';
 
 /// Item representando un show o anime emparejado localmente para exploración visual
 class LocalMatchedShowItem {
@@ -134,7 +134,7 @@ class LocalLibraryNotifier extends Notifier<LocalLibraryState> {
   DateTime? _lastLoadAt;
   Future<void>? _inFlightLoad;
 
-  SeanimeRepository get _repository => ref.read(repositoryProvider);
+  AnitingRepository get _repository => ref.read(repositoryProvider);
   WebSocketService get _webSocketService => ref.read(webSocketServiceProvider);
 
   @override

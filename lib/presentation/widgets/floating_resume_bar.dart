@@ -1,17 +1,17 @@
-// Optimized FloatingResumeBar
+﻿// Optimized FloatingResumeBar
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/preferences/resume_bar_preferences_provider.dart';
-import 'package:seanime_app/data/models/library_entry_details.dart';
-import 'package:seanime_app/data/models/manga_entry.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
-import 'package:seanime_app/presentation/screens/manga_detail_screen.dart';
-import 'package:seanime_app/presentation/screens/manga_reader_screen.dart';
-import 'package:seanime_app/presentation/screens/video_player_screen.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/preferences/resume_bar_preferences_provider.dart';
+import 'package:aniting/data/models/library_entry_details.dart';
+import 'package:aniting/data/models/manga_entry.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/screens/anime_detail_screen.dart';
+import 'package:aniting/presentation/screens/manga_detail_screen.dart';
+import 'package:aniting/presentation/screens/manga_reader_screen.dart';
+import 'package:aniting/presentation/screens/video_player_screen.dart';
 
 class FloatingResumeBar extends ConsumerWidget {
   const FloatingResumeBar({super.key});
@@ -26,9 +26,40 @@ class FloatingResumeBar extends ConsumerWidget {
       final epNum = session.episodeNumber ?? 1;
 
       // 1. FAST-PATH: If file exists in PC local library, stream directly from disk (0ms)
+      if (!session.isTmdb) {
+        final cachedPath = repo.getCachedLocalFilePath(session.mediaId, epNum);
+        if (cachedPath != null && cachedPath.isNotEmpty && context.mounted) {
+          final fileName = cachedPath.split(RegExp(r'[/\\]')).last;
+          final streamUrl =
+              'http://${serverManager.host}:${serverManager.port}/api/v1/mediastream/file?path=${Uri.encodeComponent(cachedPath)}';
+          Navigator.of(context).push(
+            VideoPlayerScreen.route(
+              mediaId: session.mediaId,
+              videoUrl: streamUrl,
+              title: session.title,
+              episodeTitle: session.episodeTitle,
+              episodeNumber: epNum,
+              startPosition: session.positionMs != null
+                  ? Duration(milliseconds: session.positionMs!)
+                  : null,
+              videoSource: 'Local • $fileName',
+              isLocalFile: true,
+              isTmdbMedia: session.isTmdb,
+              tmdbMediaType: session.tmdbMediaType,
+              tmdbSeason: session.tmdbSeason,
+              tmdbEnglishTitle: session.tmdbEnglishTitle,
+              tmdbYear: session.tmdbYear,
+            ),
+          );
+          return;
+        }
+      }
+
+      // 2. FAST-PATH: Look up the library entry on disk.
       try {
         if (!session.isTmdb) {
-          final entry = await repo.getAnimeLibraryEntry(session.mediaId);
+          final entry =
+              await repo.getAnimeLibraryEntry(session.mediaId, forceRefresh: true);
           final localEp = entry?.episodes.cast<LibraryEpisode?>().firstWhere(
             (e) => e?.episodeNumber == epNum,
             orElse: () => null,
@@ -64,7 +95,7 @@ class FloatingResumeBar extends ConsumerWidget {
         }
       } catch (_) {}
 
-      // 2. TORRENT STREAM RESUME: Torrent stream on server was stopped on player exit, restart it
+      // 3. TORRENT STREAM RESUME: Torrent stream on server was stopped on player exit, restart it
       final isTorrent = (session.videoUrl?.contains('torrentstream') ?? false) ||
           (session.videoSource?.toLowerCase().contains('torrent') ?? false);
 
@@ -73,6 +104,7 @@ class FloatingResumeBar extends ConsumerWidget {
           mediaId: session.mediaId,
           episodeNumber: epNum,
           autoSelect: true,
+          playbackType: 'none',
         );
         if (success && context.mounted) {
           final streamUrl =
@@ -107,7 +139,7 @@ class FloatingResumeBar extends ConsumerWidget {
         }
       }
 
-      // 3. TMDB TORRENT RESUME: the torrent was dropped on exit, so resolve the
+      // 4. TMDB TORRENT RESUME: the torrent was dropped on exit, so resolve the
       // provider again instead of replaying the stale torrentstream URL.
       if (session.isTmdb && isTorrent) {
         final provider = session.onlineStreamProvider;

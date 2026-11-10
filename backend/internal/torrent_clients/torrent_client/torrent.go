@@ -1,9 +1,9 @@
 package torrent_client
 
 import (
-	"seanime/internal/torrent_clients/builtin_client"
-	qbittorrent_model "seanime/internal/torrent_clients/qbittorrent/model"
-	"seanime/internal/util"
+	"aniting/internal/torrent_clients/builtin_client"
+	qbittorrent_model "aniting/internal/torrent_clients/qbittorrent/model"
+	"aniting/internal/util"
 	"time"
 
 	"github.com/hekmon/transmissionrpc/v3"
@@ -42,7 +42,7 @@ type (
 	TorrentStatus string
 )
 
-func (r *Repository) FromSeanimeTorrents(items []builtin_client.TorrentSnapshot) []*Torrent {
+func (r *Repository) FromAnitingTorrents(items []builtin_client.TorrentSnapshot) []*Torrent {
 	ret := make([]*Torrent, 0, len(items))
 	for _, item := range items {
 		progress := 0.0

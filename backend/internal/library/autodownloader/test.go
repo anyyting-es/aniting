@@ -1,16 +1,16 @@
-package autodownloader
+﻿package autodownloader
 
 import (
-	"seanime/internal/api/anilist"
-	"seanime/internal/api/metadata_provider"
-	"seanime/internal/database/db"
-	"seanime/internal/database/models"
-	"seanime/internal/events"
-	"seanime/internal/extension"
-	hibiketorrent "seanime/internal/extension/hibike/torrent"
-	"seanime/internal/testutil"
-	"seanime/internal/torrents/torrent"
-	"seanime/internal/util"
+	"aniting/internal/api/anilist"
+	"aniting/internal/api/metadata_provider"
+	"aniting/internal/database/db"
+	"aniting/internal/database/models"
+	"aniting/internal/events"
+	"aniting/internal/extension"
+	hibiketorrent "aniting/internal/extension/hibike/torrent"
+	"aniting/internal/testutil"
+	"aniting/internal/torrents/torrent"
+	"aniting/internal/util"
 	"testing"
 )
 

@@ -1,16 +1,16 @@
-package torrent
+﻿package torrent
 
 import (
 	"context"
-	"seanime/internal/api/anilist"
-	"seanime/internal/api/metadata"
-	"seanime/internal/api/metadata_provider"
-	"seanime/internal/extension"
-	hibiketorrent "seanime/internal/extension/hibike/torrent"
-	"seanime/internal/hook"
-	"seanime/internal/hook_resolver"
-	"seanime/internal/testmocks"
-	"seanime/internal/util"
+	"aniting/internal/api/anilist"
+	"aniting/internal/api/metadata"
+	"aniting/internal/api/metadata_provider"
+	"aniting/internal/extension"
+	hibiketorrent "aniting/internal/extension/hibike/torrent"
+	"aniting/internal/hook"
+	"aniting/internal/hook_resolver"
+	"aniting/internal/testmocks"
+	"aniting/internal/util"
 	"sync"
 	"testing"
 	"time"

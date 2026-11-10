@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/data/models/anime_details.dart';
-import 'package:seanime_app/presentation/widgets/episodes/episode_progress_resolver.dart';
+import 'package:aniting/data/models/anime_details.dart';
+import 'package:aniting/presentation/widgets/episodes/episode_progress_resolver.dart';
 
 /// Compact episode selector used by the desktop rail: numbered tiles with no
 /// artwork, so a whole season fits on screen at a glance.
@@ -10,6 +10,7 @@ class PlayerEpisodesCompactGrid extends StatelessWidget {
   final List<AnimeEpisode> episodes;
   final int? currentEpisodeNumber;
   final ValueChanged<int> onSelectEpisode;
+  final GlobalKey? activeItemKey;
 
   const PlayerEpisodesCompactGrid({
     super.key,
@@ -17,6 +18,7 @@ class PlayerEpisodesCompactGrid extends StatelessWidget {
     required this.episodes,
     this.currentEpisodeNumber,
     required this.onSelectEpisode,
+    this.activeItemKey,
   });
 
   static const double _minTileWidth = 62;
@@ -45,12 +47,17 @@ class PlayerEpisodesCompactGrid extends StatelessWidget {
           itemCount: episodes.length,
           itemBuilder: (context, index) {
             final episode = episodes[index];
-            return _CompactEpisodeTile(
+            final tile = _CompactEpisodeTile(
               mediaId: mediaId,
               episode: episode,
               isActive: episode.episodeNumber == currentEpisodeNumber,
               onTap: () => onSelectEpisode(episode.episodeNumber),
             );
+            if (episode.episodeNumber == currentEpisodeNumber &&
+                activeItemKey != null) {
+              return KeyedSubtree(key: activeItemKey, child: tile);
+            }
+            return tile;
           },
         );
       },
@@ -161,16 +168,17 @@ class _CompactEpisodeTileState extends ConsumerState<_CompactEpisodeTile> {
                           tween: Tween<double>(begin: 0, end: fraction),
                           duration: const Duration(milliseconds: 260),
                           curve: Curves.easeOut,
-                          builder: (context, value, _) => LinearProgressIndicator(
-                            value: value,
-                            minHeight: 2.5,
-                            backgroundColor: Colors.transparent,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              isActive
-                                  ? scheme.primary
-                                  : scheme.primary.withValues(alpha: 0.55),
-                            ),
-                          ),
+                          builder: (context, value, _) =>
+                              LinearProgressIndicator(
+                                value: value,
+                                minHeight: 2.5,
+                                backgroundColor: Colors.transparent,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  isActive
+                                      ? scheme.primary
+                                      : scheme.primary.withValues(alpha: 0.55),
+                                ),
+                              ),
                         ),
                       ),
                   ],

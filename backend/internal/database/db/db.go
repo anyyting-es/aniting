@@ -1,10 +1,10 @@
-package db
+﻿package db
 
 import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"seanime/internal/database/models"
+	"aniting/internal/database/models"
 	"time"
 
 	"github.com/glebarez/sqlite"
@@ -33,14 +33,6 @@ func NewDatabase(appDataDir, dbName string, logger *zerolog.Logger) (*Database, 
 		sqlitePath = ":memory:"
 	} else {
 		targetPath := filepath.Join(appDataDir, dbName+".db")
-		if dbName == "aniting" {
-			oldPath := filepath.Join(appDataDir, "seanime.db")
-			if _, err := os.Stat(targetPath); os.IsNotExist(err) {
-				if _, errOld := os.Stat(oldPath); errOld == nil {
-					_ = os.Rename(oldPath, targetPath)
-				}
-			}
-		}
 		sqlitePath = targetPath
 	}
 

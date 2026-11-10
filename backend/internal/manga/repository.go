@@ -1,4 +1,4 @@
-package manga
+﻿package manga
 
 import (
 	"errors"
@@ -6,12 +6,12 @@ import (
 	_ "image/png"  // Register PNG format
 	"io"
 	"net/http"
-	"seanime/internal/database/db"
-	"seanime/internal/database/models"
-	"seanime/internal/events"
-	"seanime/internal/extension"
-	"seanime/internal/util"
-	"seanime/internal/util/filecache"
+	"aniting/internal/database/db"
+	"aniting/internal/database/models"
+	"aniting/internal/events"
+	"aniting/internal/extension"
+	"aniting/internal/util"
+	"aniting/internal/util/filecache"
 	"strconv"
 	"strings"
 	"sync"

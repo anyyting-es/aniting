@@ -1,11 +1,11 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:seanime_app/data/models/tmdb_models.dart';
-import 'package:seanime_app/data/services/tmdb_service.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/providers/local_library_provider.dart';
-import 'package:seanime_app/presentation/screens/settings/subpages/local_library_settings_screen.dart';
+import 'package:aniting/data/models/tmdb_models.dart';
+import 'package:aniting/data/services/tmdb_service.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/providers/local_library_provider.dart';
+import 'package:aniting/presentation/screens/settings/subpages/local_library_settings_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Servicio TMDB falso que solo cuenta cuántas veces se pide el póster.
@@ -100,13 +100,13 @@ void main() {
       expect(find.text('TMDB Show 23'), findsOneWidget);
       expect(find.text('TMDB Show 24'), findsNothing);
 
-      // Solo se consultó TMDB por las tarjetas construidas.
-      expect(tmdb.detailsCalls, 24);
+      // TMDB is disabled for this release: no poster requests are made.
+      expect(tmdb.detailsCalls, 0);
 
-      // Los rebuilds no relanzan peticiones (póster memoizado por id).
+      // Los rebuilds no relanzan peticiones.
       await tester.pump(const Duration(milliseconds: 16));
       await tester.pump(const Duration(milliseconds: 16));
-      expect(tmdb.detailsCalls, 24);
+      expect(tmdb.detailsCalls, 0);
 
       final seeMore = find.byIcon(Icons.expand_more_rounded);
       expect(seeMore, findsOneWidget);
@@ -116,8 +116,7 @@ void main() {
       // La segunda página se añade sin reconstruir más allá de la vista.
       expect(find.text('TMDB Show 24'), findsOneWidget);
       expect(find.text('TMDB Show 48'), findsNothing);
-      expect(tmdb.detailsCalls, greaterThan(24));
-      expect(tmdb.detailsCalls, lessThan(84));
+      expect(tmdb.detailsCalls, 0);
     },
   );
 }

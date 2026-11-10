@@ -1,28 +1,28 @@
-import 'dart:io';
+﻿import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/constants/feature_flags.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/core/preferences/banner_blur_provider.dart';
-import 'package:seanime_app/core/preferences/desktop_window_transparency_provider.dart';
-import 'package:seanime_app/core/preferences/glass_theme_provider.dart';
-import 'package:seanime_app/core/preferences/desktop_nav_style_provider.dart';
-import 'package:seanime_app/core/preferences/desktop_scrollbar_provider.dart';
-import 'package:seanime_app/core/preferences/episode_view_mode_provider.dart';
-import 'package:seanime_app/core/preferences/layout_mode_provider.dart';
-import 'package:seanime_app/core/preferences/mobile_nav_style_provider.dart';
-import 'package:seanime_app/core/preferences/resume_bar_preferences_provider.dart';
-import 'package:seanime_app/core/preferences/section_visibility_provider.dart';
-import 'package:seanime_app/core/preferences/show_scores_provider.dart';
-import 'package:seanime_app/core/preferences/title_language_provider.dart';
-import 'package:seanime_app/core/theme/theme_provider.dart';
-import 'package:seanime_app/presentation/screens/settings/widgets/pixel_settings_widgets.dart';
-import 'package:seanime_app/presentation/screens/settings/widgets/pixel_subpage_scaffold.dart';
-import 'package:seanime_app/presentation/screens/settings/widgets/settings_dpad_focus.dart';
-import 'package:seanime_app/presentation/widgets/m3_expressive_slider.dart';
+import 'package:aniting/core/constants/feature_flags.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/core/preferences/banner_blur_provider.dart';
+import 'package:aniting/core/preferences/desktop_window_transparency_provider.dart';
+import 'package:aniting/core/preferences/glass_theme_provider.dart';
+import 'package:aniting/core/preferences/desktop_nav_style_provider.dart';
+import 'package:aniting/core/preferences/desktop_scrollbar_provider.dart';
+import 'package:aniting/core/preferences/episode_view_mode_provider.dart';
+import 'package:aniting/core/preferences/layout_mode_provider.dart';
+import 'package:aniting/core/preferences/mobile_nav_style_provider.dart';
+import 'package:aniting/core/preferences/resume_bar_preferences_provider.dart';
+import 'package:aniting/core/preferences/section_visibility_provider.dart';
+import 'package:aniting/core/preferences/show_scores_provider.dart';
+import 'package:aniting/core/preferences/title_language_provider.dart';
+import 'package:aniting/core/theme/theme_provider.dart';
+import 'package:aniting/presentation/screens/settings/widgets/pixel_settings_widgets.dart';
+import 'package:aniting/presentation/screens/settings/widgets/pixel_subpage_scaffold.dart';
+import 'package:aniting/presentation/screens/settings/widgets/settings_dpad_focus.dart';
+import 'package:aniting/presentation/widgets/m3_expressive_slider.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PÁGINA: APARIENCIA E INTERFAZ (ESTILO ANDROID 16 / PIXEL)
@@ -183,27 +183,29 @@ class PersonalizacionSettingsScreen extends ConsumerWidget {
           },
         ),
         const SizedBox(height: 10),
-        PixelSwitchTile(
-          icon: Icons.movie_filter_rounded,
-          title: l10n.showsSection,
-          subtitle: l10n.showsSectionDesc,
-          value: showsEnabled,
-          onChanged: (val) {
-            if (!val && !animeEnabled && !mangaEnabled) {
-              final messenger = ScaffoldMessenger.of(context);
-              messenger.clearSnackBars();
-              messenger.showSnackBar(
-                SnackBar(
-                  content: Text(l10n.cannotDisableBothSections),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-              return;
-            }
-            ref.read(showsSectionEnabledProvider.notifier).setEnabled(val);
-          },
-        ),
-        const SizedBox(height: 10),
+        if (FeatureFlags.tmdb) ...[
+          PixelSwitchTile(
+            icon: Icons.movie_filter_rounded,
+            title: l10n.showsSection,
+            subtitle: l10n.showsSectionDesc,
+            value: showsEnabled,
+            onChanged: (val) {
+              if (!val && !animeEnabled && !mangaEnabled) {
+                final messenger = ScaffoldMessenger.of(context);
+                messenger.clearSnackBars();
+                messenger.showSnackBar(
+                  SnackBar(
+                    content: Text(l10n.cannotDisableBothSections),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+                return;
+              }
+              ref.read(showsSectionEnabledProvider.notifier).setEnabled(val);
+            },
+          ),
+          const SizedBox(height: 10),
+        ],
         PixelSwitchTile(
           icon: AppIcons.manga(iconPack),
           title: l10n.mangaSection,

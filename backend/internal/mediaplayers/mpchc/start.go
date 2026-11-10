@@ -1,8 +1,8 @@
-package mpchc
+﻿package mpchc
 
 import (
 	"fmt"
-	"seanime/internal/util"
+	"aniting/internal/util"
 	"strings"
 	"time"
 )

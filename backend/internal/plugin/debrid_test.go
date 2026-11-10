@@ -1,4 +1,4 @@
-package plugin
+﻿package plugin
 
 import (
 	"path/filepath"
@@ -6,12 +6,12 @@ import (
 	"testing"
 	"time"
 
-	"seanime/internal/database/models"
-	"seanime/internal/debrid/debrid"
-	"seanime/internal/extension"
-	"seanime/internal/testutil"
-	"seanime/internal/util"
-	gojautil "seanime/internal/util/goja"
+	"aniting/internal/database/models"
+	"aniting/internal/debrid/debrid"
+	"aniting/internal/extension"
+	"aniting/internal/testutil"
+	"aniting/internal/util"
+	gojautil "aniting/internal/util/goja"
 
 	"github.com/dop251/goja"
 	"github.com/stretchr/testify/require"

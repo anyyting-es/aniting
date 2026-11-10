@@ -1,9 +1,9 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:seanime_app/data/models/anime_entry.dart';
-import 'package:seanime_app/data/models/manga_entry.dart';
-import 'package:seanime_app/data/services/feed_cache_service.dart';
+import 'package:aniting/data/models/anime_entry.dart';
+import 'package:aniting/data/models/manga_entry.dart';
+import 'package:aniting/data/services/feed_cache_service.dart';
 
 /// Servicio de almacenamiento local fuera de línea para el seguimiento de anime y manga.
 /// Permite navegar, reproducir episodios, leer capítulos y organizar listas

@@ -1,9 +1,9 @@
-package anime
+﻿package anime
 
 import (
-	"seanime/internal/api/anilist"
-	"seanime/internal/api/metadata"
-	"seanime/internal/api/metadata_provider"
+	"aniting/internal/api/anilist"
+	"aniting/internal/api/metadata"
+	"aniting/internal/api/metadata_provider"
 	"strconv"
 	"strings"
 )

@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:seanime_app/data/repositories/seanime_repository.dart';
+import 'package:aniting/data/repositories/aniting_repository.dart';
 
 bool get _isInTest => !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST');
 
@@ -71,7 +71,7 @@ class OfflineSyncItem {
 /// Servicio que gestiona la cola de sincronización offline.
 /// Cuando el usuario ve episodios o lee capítulos sin conexión,
 /// las acciones se encolan de forma persistente y se sincronizan
-/// automáticamente con AniList/Seanime en cuanto se restablece la conexión.
+/// automáticamente con AniList/Aniting en cuanto se restablece la conexión.
 class OfflineSyncService {
   static OfflineSyncService? _instance;
   static SharedPreferences? _cachedPrefs;
@@ -90,7 +90,7 @@ class OfflineSyncService {
   bool _isLoaded = false;
   bool _isSyncing = false;
   Timer? _periodicSyncTimer;
-  SeanimeRepository? _repository;
+  AnitingRepository? _repository;
 
   final ValueNotifier<int> pendingCountNotifier = ValueNotifier<int>(0);
   final ValueNotifier<bool> isSyncingNotifier = ValueNotifier<bool>(false);
@@ -109,7 +109,7 @@ class OfflineSyncService {
   int get pendingCount => _queue.length;
   List<OfflineSyncItem> get pendingItems => _queue.values.toList();
 
-  void attachRepository(SeanimeRepository repository) {
+  void attachRepository(AnitingRepository repository) {
     _repository = repository;
   }
 
@@ -266,7 +266,7 @@ class OfflineSyncService {
   /// Procesa todas las acciones pendientes en la cola.
   /// Si una llamada falla (indicando que aún no hay conexión), se interrumpe el ciclo
   /// conservando los items restantes para el próximo intento automático.
-  Future<int> syncPending({SeanimeRepository? repository}) async {
+  Future<int> syncPending({AnitingRepository? repository}) async {
     final repo = repository ?? _repository;
     if (repo == null || _isSyncing || _queue.isEmpty) return 0;
 

@@ -1,7 +1,7 @@
-package cron
+﻿package cron
 
 import (
-	"seanime/internal/core"
+	"aniting/internal/core"
 	"time"
 )
 
@@ -19,8 +19,6 @@ func RunJobs(app *core.App) {
 	refreshAnilistTicker := time.NewTicker(10 * time.Minute)
 	refreshAnilistSimulatedTicker := time.NewTicker(30 * time.Minute)
 	refreshLocalDataTicker := time.NewTicker(30 * time.Minute)
-	refetchReleaseTicker := time.NewTicker(1 * time.Hour)
-	refetchAnnouncementsTicker := time.NewTicker(10 * time.Minute)
 
 	go func() {
 		for {
@@ -55,30 +53,6 @@ func RunJobs(app *core.App) {
 					continue
 				}
 				SyncLocalDataJob(ctx)
-			}
-		}
-	}()
-
-	go func() {
-		for {
-			select {
-			case <-refetchReleaseTicker.C:
-				if app.IsOffline() {
-					continue
-				}
-				app.Updater.ShouldRefetchReleases()
-			}
-		}
-	}()
-
-	go func() {
-		for {
-			select {
-			case <-refetchAnnouncementsTicker.C:
-				if app.IsOffline() {
-					continue
-				}
-				app.Updater.FetchAnnouncements()
 			}
 		}
 	}()

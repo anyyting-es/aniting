@@ -1,9 +1,9 @@
-import 'package:flutter_test/flutter_test.dart';
+﻿import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:seanime_app/data/repositories/seanime_repository.dart';
-import 'package:seanime_app/data/services/offline_sync_service.dart';
+import 'package:aniting/data/repositories/aniting_repository.dart';
+import 'package:aniting/data/services/offline_sync_service.dart';
 
-class MockSeanimeRepository extends Fake implements SeanimeRepository {
+class MockAnitingRepository extends Fake implements AnitingRepository {
   bool shouldSucceed = true;
   final List<Map<String, dynamic>> updatedAnime = [];
   final List<Map<String, dynamic>> updatedManga = [];
@@ -66,7 +66,7 @@ void main() {
 
   group('OfflineSyncService Tests', () {
     late OfflineSyncService syncService;
-    late MockSeanimeRepository mockRepo;
+    late MockAnitingRepository mockRepo;
 
     setUp(() async {
       SharedPreferences.setMockInitialValues({});
@@ -75,7 +75,7 @@ void main() {
       syncService = OfflineSyncService.instance;
       // Clear queue
       syncService.pendingItems.clear();
-      mockRepo = MockSeanimeRepository();
+      mockRepo = MockAnitingRepository();
       syncService.attachRepository(mockRepo);
     });
 

@@ -3,49 +3,49 @@ package core
 import (
 	"context"
 	"errors"
-	"seanime/internal/api/anilist"
-	"seanime/internal/continuity"
-	"seanime/internal/database/db"
-	"seanime/internal/database/db_bridge"
-	"seanime/internal/database/models"
-	debrid_client "seanime/internal/debrid/client"
-	"seanime/internal/directstream"
-	discordrpc_presence "seanime/internal/discordrpc/presence"
-	"seanime/internal/events"
-	"seanime/internal/library/anime"
-	"seanime/internal/library/autodownloader"
-	"seanime/internal/library/autoscanner"
-	"seanime/internal/library/fillermanager"
-	"seanime/internal/library/playbackmanager"
-	"seanime/internal/library_explorer"
-	"seanime/internal/manga"
-	"seanime/internal/mediacore"
-	"seanime/internal/mediaplayers/iina"
-	"seanime/internal/mediaplayers/mediaplayer"
-	"seanime/internal/mediaplayers/mpchc"
-	"seanime/internal/mediaplayers/mpv"
-	"seanime/internal/mediaplayers/vlc"
-	"seanime/internal/mediastream"
-	"seanime/internal/mpvcore"
-	"seanime/internal/nakama"
-	"seanime/internal/nativeplayer"
-	"seanime/internal/notifier"
-	"seanime/internal/onlinestream"
-	"seanime/internal/platforms/shared_platform"
-	"seanime/internal/player"
-	"seanime/internal/playlist"
-	"seanime/internal/plugin"
-	seanime_torrent "seanime/internal/torrent_clients/builtin_client"
-	"seanime/internal/torrent_clients/qbittorrent"
-	"seanime/internal/torrent_clients/torrent_client"
-	"seanime/internal/torrent_clients/transmission"
-	"seanime/internal/torrents/autoselect"
-	torrent_availability "seanime/internal/torrents/availability"
-	"seanime/internal/torrents/torrent"
-	"seanime/internal/torrentstream"
-	"seanime/internal/user"
-	"seanime/internal/util"
-	"seanime/internal/videocore"
+	"aniting/internal/api/anilist"
+	"aniting/internal/continuity"
+	"aniting/internal/database/db"
+	"aniting/internal/database/db_bridge"
+	"aniting/internal/database/models"
+	debrid_client "aniting/internal/debrid/client"
+	"aniting/internal/directstream"
+	discordrpc_presence "aniting/internal/discordrpc/presence"
+	"aniting/internal/events"
+	"aniting/internal/library/anime"
+	"aniting/internal/library/autodownloader"
+	"aniting/internal/library/autoscanner"
+	"aniting/internal/library/fillermanager"
+	"aniting/internal/library/playbackmanager"
+	"aniting/internal/library_explorer"
+	"aniting/internal/manga"
+	"aniting/internal/mediacore"
+	"aniting/internal/mediaplayers/iina"
+	"aniting/internal/mediaplayers/mediaplayer"
+	"aniting/internal/mediaplayers/mpchc"
+	"aniting/internal/mediaplayers/mpv"
+	"aniting/internal/mediaplayers/vlc"
+	"aniting/internal/mediastream"
+	"aniting/internal/mpvcore"
+	"aniting/internal/nakama"
+	"aniting/internal/nativeplayer"
+	"aniting/internal/notifier"
+	"aniting/internal/onlinestream"
+	"aniting/internal/platforms/shared_platform"
+	"aniting/internal/player"
+	"aniting/internal/playlist"
+	"aniting/internal/plugin"
+	builtin_torrent "aniting/internal/torrent_clients/builtin_client"
+	"aniting/internal/torrent_clients/qbittorrent"
+	"aniting/internal/torrent_clients/torrent_client"
+	"aniting/internal/torrent_clients/transmission"
+	"aniting/internal/torrents/autoselect"
+	torrent_availability "aniting/internal/torrents/availability"
+	"aniting/internal/torrents/torrent"
+	"aniting/internal/torrentstream"
+	"aniting/internal/user"
+	"aniting/internal/util"
+	"aniting/internal/videocore"
 
 	"github.com/cli/browser"
 	"github.com/rs/zerolog"
@@ -522,20 +522,10 @@ func (a *App) InitOrRefreshModules() {
 
 	notifier.GlobalNotifier.SetSettings(a.Config.Data.AppDataDir, a.Settings.GetNotifications(), a.Logger)
 
-	// Refresh updater settings
 	if settings.Library != nil {
 		plugin.GlobalAppContext.SetModulesPartial(plugin.AppContextModules{
 			AnimeLibraryPaths: a.Database.AllLibraryPathsFromSettings(settings),
 		})
-
-		if a.Updater != nil {
-			a.Updater.SetEnabled(!settings.Library.DisableUpdateCheck)
-			if settings.Library.UpdateChannel != "" {
-				a.Updater.UpdateChannel = settings.Library.UpdateChannel
-			} else {
-				a.Updater.UpdateChannel = "github"
-			}
-		}
 
 		// Refresh auto scanner settings (thread safe)
 		if a.AutoScanner != nil {
@@ -663,20 +653,20 @@ func (a *App) InitOrRefreshModules() {
 			a.TorrentClientRepository.Shutdown()
 		}
 
-		var builtInClient *seanime_torrent.Client
-		if settings.Torrent.Default == torrent_client.SeanimeClient {
-			builtInClient, err = seanime_torrent.New(&seanime_torrent.NewClientOptions{
+		var builtInClient *builtin_torrent.Client
+		if settings.Torrent.Default == torrent_client.AnitingClient {
+			builtInClient, err = builtin_torrent.New(&builtin_torrent.NewClientOptions{
 				Logger:             a.Logger,
 				Database:           a.Database,
 				Dir:                a.Config.Torrent.Dir,
-				Port:               settings.Torrent.SeanimePort,
-				MaxConnections:     settings.Torrent.SeanimeMaxConnections,
-				DownloadLimitKB:    settings.Torrent.SeanimeDownloadLimit,
-				UploadLimitKB:      settings.Torrent.SeanimeUploadLimit,
-				MaxActiveDownloads: settings.Torrent.SeanimeMaxActiveDownloads,
+				Port:               settings.Torrent.AnitingPort,
+				MaxConnections:     settings.Torrent.AnitingMaxConnections,
+				DownloadLimitKB:    settings.Torrent.AnitingDownloadLimit,
+				UploadLimitKB:      settings.Torrent.AnitingUploadLimit,
+				MaxActiveDownloads: settings.Torrent.AnitingMaxActiveDownloads,
 			})
 			if err != nil {
-				a.Logger.Error().Err(err).Msg("app: Failed to initialize Seanime torrent client")
+				a.Logger.Error().Err(err).Msg("app: Failed to initialize Aniting torrent client")
 			}
 		}
 
@@ -685,7 +675,7 @@ func (a *App) InitOrRefreshModules() {
 			Logger:                 a.Logger,
 			QbittorrentClient:      qbit,
 			Transmission:           trans,
-			SeanimeClient:          builtInClient,
+			AnitingClient:          builtInClient,
 			TorrentRepository:      a.TorrentRepository,
 			Provider:               settings.Torrent.Default,
 			MetadataProviderRef:    a.MetadataProviderRef,

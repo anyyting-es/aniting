@@ -1,8 +1,8 @@
-import 'package:flutter/gestures.dart';
+﻿import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/presentation/widgets/player/controls/volume_slider.dart';
+import 'package:aniting/presentation/widgets/player/controls/volume_slider.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

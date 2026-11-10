@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:g1455/g1455.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/preferences/title_language_provider.dart';
-import 'package:seanime_app/core/utils/synopsis_utils.dart';
-import 'package:seanime_app/data/models/manga_entry.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/widgets/anime_detail/desktop/desktop_hero_banner.dart';
-import 'package:seanime_app/presentation/widgets/anime_detail/desktop/desktop_relations_tab.dart';
-import 'desktop/desktop_manga_action_bar.dart';
+import 'package:material_3_expressive/material_3_expressive.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/core/preferences/title_language_provider.dart';
+import 'package:aniting/core/utils/synopsis_utils.dart';
+import 'package:aniting/data/models/manga_entry.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/widgets/anime_detail/desktop/desktop_hero_banner.dart';
+import 'package:aniting/presentation/widgets/anime_detail/desktop/desktop_relations_tab.dart';
 import 'desktop/desktop_manga_chapters_tab.dart';
 import 'desktop/desktop_manga_characters_section.dart';
 import 'desktop/desktop_manga_header.dart';
 import 'desktop/desktop_manga_recommendations_row.dart';
 import 'desktop/desktop_manga_sidebar.dart';
-import 'package:seanime_app/core/theme/smooth_scroll_controller.dart';
+import 'package:aniting/core/theme/smooth_scroll_controller.dart';
 
 class MangaDetailDesktopLayout extends ConsumerStatefulWidget {
   final int mediaId;
@@ -102,7 +102,6 @@ class _MangaDetailDesktopLayoutState extends ConsumerState<MangaDetailDesktopLay
   Widget build(BuildContext context) {
     final l10n = ref.watch(translationsProvider);
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     final titleLang = ref.watch(titleLanguageProvider);
 
     final resolvedEntry = widget.entry ?? widget.initialEntry;
@@ -142,26 +141,49 @@ class _MangaDetailDesktopLayoutState extends ConsumerState<MangaDetailDesktopLay
         ? resolvedEntry!.recommendations
         : ((raw['recommendations']?['edges'] as List?) ?? []);
 
-    final subtitleParts = <String>[];
-    if (year != null) subtitleParts.add('$year');
-    subtitleParts.add(format.replaceAll('_', ' '));
-    final subtitleStr = subtitleParts.join(' • ').toUpperCase();
+    final startDateMap = raw['startDate'] as Map<String, dynamic>?;
+    String? startDateStr;
+    if (startDateMap != null && startDateMap['year'] != null) {
+      final y = startDateMap['year'];
+      final m = startDateMap['month'] as int?;
+      if (m != null && m >= 1 && m <= 12) {
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        startDateStr = '${months[m - 1]} $y';
+      } else {
+        startDateStr = '$y';
+      }
+    } else if (year != null) {
+      startDateStr = '$year';
+    }
+
+    final romaji = resolvedEntry?.romajiTitle;
+    final english = resolvedEntry?.englishTitle;
+    final native = resolvedEntry?.nativeTitle;
+    String? subtitleStr;
+    if (titleLang == TitleLanguage.english) {
+      subtitleStr = romaji ?? native;
+    } else if (titleLang == TitleLanguage.romaji) {
+      subtitleStr = english ?? native;
+    } else {
+      subtitleStr = english ?? romaji;
+    }
+    if (subtitleStr == title) {
+      subtitleStr = null;
+    }
+
+    final iconPack = ref.watch(iconPackProvider);
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: Stack(
         children: [
-          // ─── 1. Panoramic Top Hero Backdrop with isolated scroll-driven dissolve ───
-          ValueListenableBuilder<double>(
-            valueListenable: _scrollProgressNotifier,
-            builder: (context, scrollProgress, _) {
-              return DesktopHeroBanner(
-                bannerUrl: bannerUrl,
-                isBlurredCover: isBlurredCover,
-                scrollProgress: scrollProgress,
-                scaffoldBackgroundColor: theme.scaffoldBackgroundColor,
-              );
-            },
+          // ─── 1. Full-Page Cinematic Backdrop (No harsh black cuts!) ───
+          DesktopHeroBanner(
+            bannerUrl: bannerUrl,
+            isBlurredCover: isBlurredCover,
+            scrollProgressListenable: _scrollProgressNotifier,
+            scaffoldBackgroundColor: theme.scaffoldBackgroundColor,
+            isFullPage: true,
           ),
 
           // ─── 2. Main Scrollable Container (1580px max-width) ───
@@ -175,28 +197,34 @@ class _MangaDetailDesktopLayoutState extends ConsumerState<MangaDetailDesktopLay
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Back button (clean icon without heavy background)
+                    // Back button with elegant glass capsule styling
                     Padding(
-                      padding: const EdgeInsets.only(top: 36, bottom: 24),
-                      child: IconButton(
-                        style: IconButton.styleFrom(
-                          padding: const EdgeInsets.all(8),
-                          hoverColor: isDark ? Colors.white.withValues(alpha: 0.12) : theme.colorScheme.surfaceContainerHighest,
-                          highlightColor: isDark ? Colors.white.withValues(alpha: 0.18) : theme.colorScheme.surfaceContainerHigh,
+                      padding: const EdgeInsets.only(top: 28, bottom: 20),
+                      child: M3EIconButton(
+                        decoration: M3EIconButtonDecoration(
+                          backgroundColor: WidgetStateProperty.resolveWith((states) {
+                            if (states.contains(WidgetState.pressed)) {
+                              return Colors.white.withValues(alpha: 0.24);
+                            }
+                            if (states.contains(WidgetState.hovered) ||
+                                states.contains(WidgetState.focused)) {
+                              return Colors.white.withValues(alpha: 0.18);
+                            }
+                            return Colors.white.withValues(alpha: 0.10);
+                          }),
+                          foregroundColor: WidgetStateProperty.all(Colors.white),
+                          side: WidgetStateProperty.all(
+                            BorderSide(
+                              color: Colors.white.withValues(alpha: 0.18),
+                              width: 1.0,
+                            ),
+                          ),
                         ),
+                        size: M3EIconButtonSize.sm,
                         icon: Icon(
-                          Icons.arrow_back_rounded,
-                          color: bannerUrl != null ? Colors.white : (isDark ? Colors.white : theme.colorScheme.onSurface),
-                          size: 22,
-                          shadows: bannerUrl != null
-                              ? const [
-                                  Shadow(
-                                    color: Colors.black54,
-                                    blurRadius: 4,
-                                    offset: Offset(0, 1),
-                                  ),
-                                ]
-                              : null,
+                          AppIcons.arrowLeft(iconPack),
+                          color: Colors.white,
+                          size: 20,
                         ),
                         tooltip: l10n.back,
                         onPressed: () => Navigator.pop(context),
@@ -207,8 +235,11 @@ class _MangaDetailDesktopLayoutState extends ConsumerState<MangaDetailDesktopLay
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Left: Poster Cover
+                        // Left: Poster Cover with [ ⋮ ] and [ 👤 ] buttons underneath
                         DesktopMangaSidebar(
+                          mediaId: widget.mediaId,
+                          title: title,
+                          idMal: idMal,
                           coverUrl: coverUrl,
                           format: format,
                           status: status,
@@ -218,40 +249,28 @@ class _MangaDetailDesktopLayoutState extends ConsumerState<MangaDetailDesktopLay
                           totalVolumes: totalVolumes,
                           progress: progress,
                           onOpenEditModal: widget.onOpenEditModal,
+                          onBatchDownload: widget.onBatchDownload,
                           showMetadata: false,
                           width: 220,
                         ),
 
                         const SizedBox(width: 32),
 
-                        // Right: Header + Action Bar
+                        // Right: Title, Subtitle, Badges, Score/Genres, Synopsis, Format
                         Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              DesktopMangaHeader(
-                                subtitleStr: subtitleStr,
-                                title: title,
-                                genres: resolvedEntry?.genres ?? const [],
-                                description: description,
-                                format: format,
-                                status: status,
-                                year: year,
-                                score: score,
-                                totalChapters: totalChapters,
-                                totalVolumes: totalVolumes,
-                              ),
-                              const SizedBox(height: 16),
-                              DesktopMangaActionBar(
-                                mediaId: widget.mediaId,
-                                title: title,
-                                progress: progress,
-                                idMal: idMal,
-                                onContinueReading: widget.onContinueReading,
-                                onOpenEditEntryModal: (_) => widget.onOpenEditModal(),
-                                onBatchDownload: widget.onBatchDownload,
-                              ),
-                            ],
+                          child: DesktopMangaHeader(
+                            title: title,
+                            subtitleStr: subtitleStr,
+                            progress: progress,
+                            totalChapters: totalChapters,
+                            userStatus: liveCollectionEntry?.status,
+                            releaseStatus: status,
+                            startDateStr: startDateStr,
+                            score: score,
+                            genres: resolvedEntry?.genres ?? const [],
+                            description: description,
+                            format: format,
+                            onOpenEditModal: widget.onOpenEditModal,
                           ),
                         ),
                       ],
@@ -259,113 +278,69 @@ class _MangaDetailDesktopLayoutState extends ConsumerState<MangaDetailDesktopLay
 
                     const SizedBox(height: 36),
 
-                    // ── BOTTOM SECTION: Two Columns ──
-                    // Left column: Chapters in wide box (flex: 7)
-                    // Right column: Characters compact (flex: 4), Relations (only if present)
+                    // ── BOTTOM SECTION: Two Columns (Chapters on Left, Characters on Right) ──
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Left: Chapters Box (Wider) with Liquid Glass
+                        // Left: Controls & Chapters Table (flex: 62)
                         Expanded(
-                          flex: 7,
-                          child: GlassCard(
-                            borderRadius: BorderRadius.circular(16),
-                            padding: const EdgeInsets.all(20),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Icon(Icons.list_alt_rounded, size: 20, color: theme.colorScheme.primary),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      l10n.chapters,
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w800,
-                                        color: theme.colorScheme.onSurface,
-                                      ),
-                                    ),
-                                    const Spacer(),
-                                    if (widget.chapters.isNotEmpty)
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
-                                        decoration: BoxDecoration(
-                                          color: theme.colorScheme.primary.withValues(alpha: 0.12),
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
-                                        child: Text(
-                                          '${widget.chapters.length}',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.bold,
-                                            color: theme.colorScheme.primary,
-                                          ),
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                                const SizedBox(height: 16),
-                                DesktopMangaChaptersTab(
-                                  mediaId: widget.mediaId,
-                                  providers: widget.providers,
-                                  selectedProvider: widget.selectedProvider,
-                                  chapters: widget.chapters,
-                                  isLoadingChapters: widget.isLoadingChapters,
-                                  chaptersError: widget.chaptersError,
-                                  progress: progress,
-                                  downloadedChapterIds: widget.downloadedChapterIds,
-                                  downloadingChapterIds: widget.downloadingChapterIds,
-                                  onProviderChanged: widget.onProviderChanged,
-                                  onRefreshChapters: widget.onRefreshChapters,
-                                  onChapterClicked: widget.onChapterClicked,
-                                  onDownloadChapter: widget.onDownloadChapter,
-                                  onBatchDownload: widget.onBatchDownload,
-                                  onDownloadSelected: widget.onDownloadSelected,
-                                ),
-                              ],
-                            ),
+                          flex: 62,
+                          child: DesktopMangaChaptersTab(
+                            mediaId: widget.mediaId,
+                            mangaTitle: title,
+                            providers: widget.providers,
+                            selectedProvider: widget.selectedProvider,
+                            chapters: widget.chapters,
+                            isLoadingChapters: widget.isLoadingChapters,
+                            chaptersError: widget.chaptersError,
+                            progress: progress,
+                            downloadedChapterIds: widget.downloadedChapterIds,
+                            downloadingChapterIds: widget.downloadingChapterIds,
+                            onProviderChanged: widget.onProviderChanged,
+                            onRefreshChapters: widget.onRefreshChapters,
+                            onChapterClicked: widget.onChapterClicked,
+                            onDownloadChapter: widget.onDownloadChapter,
+                            onBatchDownload: widget.onBatchDownload,
+                            onDownloadSelected: widget.onDownloadSelected,
+                            onContinueReading: widget.onContinueReading,
                           ),
                         ),
 
-                        const SizedBox(width: 32),
+                        const SizedBox(width: 36),
 
-                        // Right: Characters (Compact 2 per row) & Relations (if available)
+                        // Right: Characters & Relations (flex: 38)
                         Expanded(
-                          flex: 4,
+                          flex: 38,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Personajes (2 per row horizontal cards)
-                              Row(
-                                children: [
-                                  Icon(Icons.people_outline_rounded, size: 20, color: theme.colorScheme.primary),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'Personajes',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w800,
-                                      color: theme.colorScheme.onSurface,
-                                    ),
-                                  ),
-                                ],
+                              // Characters section header
+                              Text(
+                                l10n.charactersHeader,
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: -0.3,
+                                  color: theme.colorScheme.onSurface,
+                                ),
                               ),
-                              const SizedBox(height: 14),
+                              const SizedBox(height: 16),
                               DesktopMangaCharactersSection(
                                 characters: charactersEdges,
                                 isLoading: widget.isLoadingDetails,
+                                mediaId: widget.mediaId,
+                                bannerUrl: bannerUrl,
                               ),
 
-                              // Relaciones (Completely hidden if no relations exist)
+                              // Relations (if available)
                               if (relationsEdges.isNotEmpty) ...[
-                                const SizedBox(height: 28),
+                                const SizedBox(height: 32),
                                 Row(
                                   children: [
                                     Icon(Icons.hub_outlined, size: 20, color: theme.colorScheme.primary),
                                     const SizedBox(width: 8),
                                     Text(
-                                      'Relaciones',
+                                      l10n.relations,
                                       style: TextStyle(
                                         fontSize: 18,
                                         fontWeight: FontWeight.w800,
@@ -386,22 +361,24 @@ class _MangaDetailDesktopLayoutState extends ConsumerState<MangaDetailDesktopLay
                       ],
                     ),
 
-                    // ── OBRAS SIMILARES: Full-width horizontal scroll at the bottom ──
-                    const SizedBox(height: 40),
-                    Text(
-                      'Obras similares',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.2,
-                        color: theme.colorScheme.onSurface,
+                    // ── RECOMMENDATIONS: Full-width horizontal scroll at the bottom ──
+                    if (recommendationsEdges.isNotEmpty) ...[
+                      const SizedBox(height: 44),
+                      Text(
+                        l10n.recommendations,
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.2,
+                          color: theme.colorScheme.onSurface,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    DesktopMangaRecommendationsRow(
-                      recommendations: recommendationsEdges,
-                      isLoading: widget.isLoadingDetails,
-                    ),
+                      const SizedBox(height: 16),
+                      DesktopMangaRecommendationsRow(
+                        recommendations: recommendationsEdges,
+                        isLoading: widget.isLoadingDetails,
+                      ),
+                    ],
                   ],
                 ),
               ),

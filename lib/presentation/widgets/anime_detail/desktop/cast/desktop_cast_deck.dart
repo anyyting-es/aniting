@@ -2,7 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
+import 'package:aniting/core/icons/app_icons.dart';
 import 'desktop_cast_models.dart';
 
 /// Deck-of-cards carousel for characters with expressive 3D perspective animations.
@@ -54,8 +54,8 @@ class _DesktopCastDeckState extends ConsumerState<DesktopCastDeck> {
     final hasPrev = widget.currentIndex > 0;
     final hasNext = widget.currentIndex < widget.items.length - 1;
 
-    // Deck footprint: cardWidth + 120 for peeking side cards
-    final deckWidth = widget.cardWidth + 120;
+    // Deck footprint: cardWidth + 64 for subtle peeking side cards (at most 3 items)
+    final deckWidth = widget.cardWidth + 64;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -67,40 +67,15 @@ class _DesktopCastDeckState extends ConsumerState<DesktopCastDeck> {
             alignment: Alignment.center,
             clipBehavior: Clip.none,
             children: [
-              // ── 1. Far Left Peeking Card (i - 2) ──
-              if (widget.currentIndex >= 2)
-                _buildSideCard(
-                  item: widget.items[widget.currentIndex - 2],
-                  dx: -96,
-                  scale: 0.80,
-                  opacity: 0.12,
-                  isDark: isDark,
-                  iconPack: iconPack,
-                  theme: theme,
-                  onTap: () => widget.onSelectIndex(widget.currentIndex - 2),
-                ),
-
-              // ── 2. Far Right Peeking Card (i + 2) ──
-              if (widget.currentIndex <= widget.items.length - 3)
-                _buildSideCard(
-                  item: widget.items[widget.currentIndex + 2],
-                  dx: 96,
-                  scale: 0.80,
-                  opacity: 0.12,
-                  isDark: isDark,
-                  iconPack: iconPack,
-                  theme: theme,
-                  onTap: () => widget.onSelectIndex(widget.currentIndex + 2),
-                ),
-
-              // ── 3. Near Left Peeking Card (i - 1) ──
+              // ── 1. Previous Character Peeking Card (i - 1) ──
               if (hasPrev)
                 _buildInteractiveSideCard(
                   item: widget.items[widget.currentIndex - 1],
-                  dx: _hoverLeft ? -68 : -58,
-                  scale: _hoverLeft ? 0.92 : 0.89,
-                  opacity: _hoverLeft ? 0.42 : 0.28,
-                  tiltAngle: -0.05,
+                  deckWidth: deckWidth,
+                  dx: _hoverLeft ? -28 : -22,
+                  scale: _hoverLeft ? 0.94 : 0.91,
+                  opacity: _hoverLeft ? 0.50 : 0.30,
+                  tiltAngle: -0.035,
                   isDark: isDark,
                   iconPack: iconPack,
                   theme: theme,
@@ -108,14 +83,15 @@ class _DesktopCastDeckState extends ConsumerState<DesktopCastDeck> {
                   onTap: () => widget.onSelectIndex(widget.currentIndex - 1),
                 ),
 
-              // ── 4. Near Right Peeking Card (i + 1) ──
+              // ── 2. Next Character Peeking Card (i + 1) ──
               if (hasNext)
                 _buildInteractiveSideCard(
                   item: widget.items[widget.currentIndex + 1],
-                  dx: _hoverRight ? 68 : 58,
-                  scale: _hoverRight ? 0.92 : 0.89,
-                  opacity: _hoverRight ? 0.42 : 0.28,
-                  tiltAngle: 0.05,
+                  deckWidth: deckWidth,
+                  dx: _hoverRight ? 28 : 22,
+                  scale: _hoverRight ? 0.94 : 0.91,
+                  opacity: _hoverRight ? 0.50 : 0.30,
+                  tiltAngle: 0.035,
                   isDark: isDark,
                   iconPack: iconPack,
                   theme: theme,
@@ -123,7 +99,7 @@ class _DesktopCastDeckState extends ConsumerState<DesktopCastDeck> {
                   onTap: () => widget.onSelectIndex(widget.currentIndex + 1),
                 ),
 
-              // ── 5. Active Center Card with Dynamic 3D Perspective Transition ──
+              // ── 3. Active Center Card with Dynamic 3D Perspective Transition ──
               Center(
                 child: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 340),
@@ -219,6 +195,7 @@ class _DesktopCastDeckState extends ConsumerState<DesktopCastDeck> {
 
   Widget _buildInteractiveSideCard({
     required DesktopCastItem item,
+    required double deckWidth,
     required double dx,
     required double scale,
     required double opacity,
@@ -232,7 +209,7 @@ class _DesktopCastDeckState extends ConsumerState<DesktopCastDeck> {
     return AnimatedPositioned(
       duration: const Duration(milliseconds: 250),
       curve: Curves.easeOutCubic,
-      left: (widget.cardWidth + 120 - widget.cardWidth) / 2 + dx,
+      left: (deckWidth - widget.cardWidth) / 2 + dx,
       top: ((widget.cardHeight + 10) - (widget.cardHeight * scale)) / 2,
       child: AnimatedOpacity(
         duration: const Duration(milliseconds: 250),
@@ -282,65 +259,6 @@ class _DesktopCastDeckState extends ConsumerState<DesktopCastDeck> {
                     : Container(
                         color: isDark ? const Color(0xFF16191F) : Colors.black12,
                         child: Icon(AppIcons.profile(iconPack), size: 40, color: Colors.white24),
-                      ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSideCard({
-    required DesktopCastItem item,
-    required double dx,
-    required double scale,
-    required double opacity,
-    required bool isDark,
-    required AppIconPack iconPack,
-    required ThemeData theme,
-    required VoidCallback onTap,
-  }) {
-    return AnimatedPositioned(
-      duration: const Duration(milliseconds: 260),
-      curve: Curves.easeOutCubic,
-      left: (widget.cardWidth + 120 - widget.cardWidth) / 2 + dx,
-      top: ((widget.cardHeight + 10) - (widget.cardHeight * scale)) / 2,
-      child: AnimatedOpacity(
-        duration: const Duration(milliseconds: 260),
-        curve: Curves.easeOutCubic,
-        opacity: opacity,
-        child: MouseRegion(
-          cursor: SystemMouseCursors.click,
-          child: GestureDetector(
-            onTap: onTap,
-            child: Transform.scale(
-              scale: scale,
-              child: Container(
-                width: widget.cardWidth,
-                height: widget.cardHeight,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(
-                    color: isDark ? Colors.white12 : Colors.black12,
-                    width: 1,
-                  ),
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: item.imageUrl != null && item.imageUrl!.isNotEmpty
-                    ? CachedNetworkImage(
-                        imageUrl: item.imageUrl!,
-                        fit: BoxFit.cover,
-                        alignment: Alignment.topCenter,
-                        memCacheWidth: 320,
-                        errorWidget: (_, _, _) => Container(
-                          color: isDark ? const Color(0xFF16191F) : Colors.black12,
-                          child: Icon(AppIcons.profile(iconPack), size: 36, color: Colors.white24),
-                        ),
-                      )
-                    : Container(
-                        color: isDark ? const Color(0xFF16191F) : Colors.black12,
-                        child: Icon(AppIcons.profile(iconPack), size: 36, color: Colors.white24),
                       ),
               ),
             ),

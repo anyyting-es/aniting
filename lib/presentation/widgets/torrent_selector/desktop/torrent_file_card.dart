@@ -1,9 +1,9 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/data/models/torrent_models.dart';
-import 'package:seanime_app/presentation/widgets/torrent_selector/models/torrent_selector_helpers.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/data/models/torrent_models.dart';
+import 'package:aniting/presentation/widgets/torrent_selector/models/torrent_selector_helpers.dart';
 
 class TorrentFileCard extends ConsumerStatefulWidget {
   final TorrentItem torrent;

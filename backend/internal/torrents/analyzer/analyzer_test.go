@@ -6,17 +6,17 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"seanime/internal/api/anilist"
-	"seanime/internal/library/anime"
-	"seanime/internal/platforms/platform"
-	"seanime/internal/util"
+	"aniting/internal/api/anilist"
+	"aniting/internal/library/anime"
+	"aniting/internal/platforms/platform"
+	"aniting/internal/util"
 )
 
 func TestNewAnalyzerInitializesFiles(t *testing.T) {
 	root := t.TempDir()
 	paths := []string{
-		filepath.Join(root, "Season 1", "[Seanime] Example Show - 01.mkv"),
-		filepath.Join(root, "Season 1", "[Seanime] Example Show - 02.mkv"),
+		filepath.Join(root, "Season 1", "[Aniting] Example Show - 01.mkv"),
+		filepath.Join(root, "Season 1", "[Aniting] Example Show - 02.mkv"),
 	}
 	media := &anilist.CompleteAnime{ID: 42}
 
@@ -40,7 +40,7 @@ func TestNewAnalyzerInitializesFiles(t *testing.T) {
 
 func TestAnalyzeTorrentFilesReturnsErrorWhenPlatformRefAbsent(t *testing.T) {
 	analyzer := NewAnalyzer(&NewAnalyzerOptions{
-		Filepaths: []string{filepath.Join(t.TempDir(), "[Seanime] Example Show - 01.mkv")},
+		Filepaths: []string{filepath.Join(t.TempDir(), "[Aniting] Example Show - 01.mkv")},
 		Media:     &anilist.CompleteAnime{ID: 42},
 	})
 
@@ -94,10 +94,10 @@ func newAnalysisFixture(t *testing.T) (*Analysis, []*File) {
 	t.Helper()
 	root := t.TempDir()
 	files := []*File{
-		newAnalyzedFile(filepath.Join(root, "[Seanime] Example Show - 01.mkv"), 0, 42, 1, anime.LocalFileTypeMain, "1"),
-		newAnalyzedFile(filepath.Join(root, "[Seanime] Example Show - OVA.mkv"), 1, 42, 0, anime.LocalFileTypeSpecial, "S1"),
-		newAnalyzedFile(filepath.Join(root, "[Seanime] Other Show - 01.mkv"), 2, 7, 1, anime.LocalFileTypeMain, "1"),
-		newAnalyzedFile(filepath.Join(root, "[Seanime] Example Show - 03.mkv"), 3, 42, 3, anime.LocalFileTypeMain, "3"),
+		newAnalyzedFile(filepath.Join(root, "[Aniting] Example Show - 01.mkv"), 0, 42, 1, anime.LocalFileTypeMain, "1"),
+		newAnalyzedFile(filepath.Join(root, "[Aniting] Example Show - OVA.mkv"), 1, 42, 0, anime.LocalFileTypeSpecial, "S1"),
+		newAnalyzedFile(filepath.Join(root, "[Aniting] Other Show - 01.mkv"), 2, 7, 1, anime.LocalFileTypeMain, "1"),
+		newAnalyzedFile(filepath.Join(root, "[Aniting] Example Show - 03.mkv"), 3, 42, 3, anime.LocalFileTypeMain, "3"),
 	}
 
 	return &Analysis{

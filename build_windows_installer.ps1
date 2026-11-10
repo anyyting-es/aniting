@@ -7,13 +7,13 @@ Write-Host "==========================================" -ForegroundColor Cyan
 
 $root = $PSScriptRoot
 
-# 1. Check/Build backend seanime.exe
-Write-Host "`n[1/4] Checking backend seanime.exe..." -ForegroundColor Yellow
-if (-not (Test-Path "$root\backend\seanime.exe")) {
+# 1. Check/Build backend aniting.exe
+Write-Host "`n[1/4] Checking backend aniting.exe..." -ForegroundColor Yellow
+if (-not (Test-Path "$root\backend\aniting.exe")) {
     Write-Host "Compiling Go backend..." -ForegroundColor DarkCyan
     & "$root\backend\build_windows.ps1"
 } else {
-    Write-Host "Backend already compiled: $root\backend\seanime.exe" -ForegroundColor Green
+    Write-Host "Backend already compiled: $root\backend\aniting.exe" -ForegroundColor Green
 }
 
 # 2. Build Flutter Windows Release
@@ -27,9 +27,9 @@ if ($LASTEXITCODE -ne 0) {
 # 3. Copy backend executable to Release output directory
 Write-Host "`n[3/4] Bundling backend into Release package..." -ForegroundColor Yellow
 $releaseDir = "$root\build\windows\x64\runner\Release"
-if (-not (Test-Path "$releaseDir\seanime.exe")) {
-    Copy-Item -Path "$root\backend\seanime.exe" -Destination "$releaseDir\seanime.exe" -Force
-    Write-Host "Copied seanime.exe to $releaseDir" -ForegroundColor Green
+if (-not (Test-Path "$releaseDir\aniting.exe")) {
+    Copy-Item -Path "$root\backend\aniting.exe" -Destination "$releaseDir\aniting.exe" -Force
+    Write-Host "Copied aniting.exe to $releaseDir" -ForegroundColor Green
 }
 
 # 4. Compile Installer with Inno Setup

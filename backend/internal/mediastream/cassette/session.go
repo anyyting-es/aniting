@@ -1,11 +1,11 @@
-package cassette
+﻿package cassette
 
 import (
 	"context"
 	"fmt"
 	"os"
 	"path/filepath"
-	"seanime/internal/mediastream/videofile"
+	"aniting/internal/mediastream/videofile"
 	"sync"
 
 	"github.com/rs/zerolog"

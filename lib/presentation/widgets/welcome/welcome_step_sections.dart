@@ -4,6 +4,7 @@ import 'package:g1455/g1455.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 
+import '../../../core/constants/feature_flags.dart';
 import '../../../core/i18n/i18n_provider.dart';
 import '../../../core/preferences/section_visibility_provider.dart';
 
@@ -100,24 +101,26 @@ class WelcomeStepSections extends ConsumerWidget {
                         .setEnabled(val),
                   ),
                 ),
-                Divider(
-                  height: 20,
-                  thickness: 0.8,
-                  color: theme.dividerColor.withValues(alpha: 0.08),
-                ),
-                _ModuleToggleItem(
-                  icon: LucideIcons.tv,
-                  title: l10n.shows,
-                  subtitle: l10n.welcomeShowsSubtitle,
-                  value: showsEnabled,
-                  onChanged: (val) => _handleToggle(
-                    val: val,
-                    enabledCount: enabledCount,
-                    update: () => ref
-                        .read(showsSectionEnabledProvider.notifier)
-                        .setEnabled(val),
+                if (FeatureFlags.tmdb) ...[
+                  Divider(
+                    height: 20,
+                    thickness: 0.8,
+                    color: theme.dividerColor.withValues(alpha: 0.08),
                   ),
-                ),
+                  _ModuleToggleItem(
+                    icon: LucideIcons.tv,
+                    title: l10n.shows,
+                    subtitle: l10n.welcomeShowsSubtitle,
+                    value: showsEnabled,
+                    onChanged: (val) => _handleToggle(
+                      val: val,
+                      enabledCount: enabledCount,
+                      update: () => ref
+                          .read(showsSectionEnabledProvider.notifier)
+                          .setEnabled(val),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

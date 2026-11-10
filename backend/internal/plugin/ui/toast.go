@@ -1,7 +1,7 @@
-package plugin_ui
+﻿package plugin_ui
 
 import (
-	"seanime/internal/events"
+	"aniting/internal/events"
 
 	"github.com/dop251/goja"
 )

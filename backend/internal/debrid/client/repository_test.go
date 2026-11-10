@@ -1,4 +1,4 @@
-package debrid_client
+﻿package debrid_client
 
 import (
 	"context"
@@ -7,15 +7,15 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
-	databasepkg "seanime/internal/database/db"
-	"seanime/internal/database/models"
-	"seanime/internal/debrid/debrid"
-	"seanime/internal/events"
-	"seanime/internal/hook"
-	"seanime/internal/hook_resolver"
-	"seanime/internal/testutil"
-	"seanime/internal/util"
-	"seanime/internal/util/result"
+	databasepkg "aniting/internal/database/db"
+	"aniting/internal/database/models"
+	"aniting/internal/debrid/debrid"
+	"aniting/internal/events"
+	"aniting/internal/hook"
+	"aniting/internal/hook_resolver"
+	"aniting/internal/testutil"
+	"aniting/internal/util"
+	"aniting/internal/util/result"
 	"testing"
 	"time"
 

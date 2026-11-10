@@ -1,17 +1,17 @@
-package handlers
+﻿package handlers
 
 import (
 	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
-	"seanime/internal/database/db_bridge"
-	"seanime/internal/database/models"
-	"seanime/internal/library/anime"
-	"seanime/internal/library/filesystem"
-	"seanime/internal/library/shows"
-	"seanime/internal/library_explorer"
-	"seanime/internal/platforms/simulated_platform"
+	"aniting/internal/database/db_bridge"
+	"aniting/internal/database/models"
+	"aniting/internal/library/anime"
+	"aniting/internal/library/filesystem"
+	"aniting/internal/library/shows"
+	"aniting/internal/library_explorer"
+	"aniting/internal/platforms/simulated_platform"
 	"strings"
 	"time"
 
@@ -50,7 +50,7 @@ func (h *Handler) HandleDumpLocalFilesToFile(c echo.Context) error {
 		return h.RespondWithError(c, err)
 	}
 
-	filename := fmt.Sprintf("seanime-localfiles-%s.json", time.Now().Format("2006-01-02_15-04-05"))
+	filename := fmt.Sprintf("aniting-localfiles-%s.json", time.Now().Format("2006-01-02_15-04-05"))
 
 	c.Response().Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
 	c.Response().Header().Set("Content-Type", "application/json")

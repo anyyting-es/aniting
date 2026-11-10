@@ -1,11 +1,11 @@
-package handlers
+﻿package handlers
 
 import (
 	"errors"
 	"fmt"
-	"seanime/internal/api/anilist"
-	"seanime/internal/platforms/shared_platform"
-	"seanime/internal/util/result"
+	"aniting/internal/api/anilist"
+	"aniting/internal/platforms/shared_platform"
+	"aniting/internal/util/result"
 	"strconv"
 	"time"
 

@@ -1,10 +1,10 @@
-import 'dart:ui';
+﻿import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:seanime_app/core/preferences/mobile_nav_style_provider.dart';
-import 'package:seanime_app/presentation/widgets/desktop_sidebar.dart';
-import 'package:seanime_app/presentation/widgets/mobile_nav_dock.dart';
+import 'package:aniting/core/preferences/mobile_nav_style_provider.dart';
+import 'package:aniting/presentation/widgets/desktop_sidebar.dart';
+import 'package:aniting/presentation/widgets/mobile_nav_dock.dart';
 
 void main() {
   final testItems = [

@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:seanime_app/presentation/screens/settings/subpages/personalizacion_settings_screen.dart';
+import 'package:aniting/presentation/screens/settings/subpages/personalizacion_settings_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {

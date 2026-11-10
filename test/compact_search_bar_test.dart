@@ -1,27 +1,29 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:seanime_app/core/api/api_client.dart';
-import 'package:seanime_app/core/server/server_manager.dart';
-import 'package:seanime_app/data/models/anime_entry.dart';
-import 'package:seanime_app/data/models/manga_entry.dart';
-import 'package:seanime_app/data/repositories/seanime_repository.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/screens/feed_screen.dart';
-import 'package:seanime_app/presentation/screens/manga_feed_screen.dart';
-import 'package:seanime_app/presentation/widgets/anime_card.dart';
-import 'package:seanime_app/presentation/widgets/compact_search_bar.dart';
-import 'package:seanime_app/presentation/widgets/continue_reading_card.dart';
-import 'package:seanime_app/presentation/widgets/continue_watching_card.dart';
-import 'package:seanime_app/presentation/widgets/manga_card.dart';
+import 'package:aniting/core/api/api_client.dart';
+import 'package:aniting/core/server/server_manager.dart';
+import 'package:aniting/data/models/anime_entry.dart';
+import 'package:aniting/data/models/manga_entry.dart';
+import 'package:aniting/data/repositories/aniting_repository.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/screens/feed_screen.dart';
+import 'package:aniting/presentation/screens/manga_feed_screen.dart';
+import 'package:aniting/presentation/widgets/anime_card.dart';
+
+import 'support/fake_continue_watching_notifier.dart';
+import 'package:aniting/presentation/widgets/compact_search_bar.dart';
+import 'package:aniting/presentation/widgets/continue_reading_card.dart';
+import 'package:aniting/presentation/widgets/continue_watching_card.dart';
+import 'package:aniting/presentation/widgets/manga_card.dart';
 
 class MockServerNotifierOnline extends ServerNotifier {
   @override
   ServerStateModel build() => const ServerStateModel(state: ServerState.running);
 }
 
-class FakeSeanimeRepository extends SeanimeRepository {
-  FakeSeanimeRepository() : super(ApiClient());
+class FakeAnitingRepository extends AnitingRepository {
+  FakeAnitingRepository() : super(ApiClient());
 
   @override
   Future<List<AnimeEntry>> searchAnime(String query, {int page = 1, int perPage = 20}) async {
@@ -105,16 +107,24 @@ void main() {
 
   group('Feed Screens In-Page Search Integration Tests', () {
     testWidgets('FeedScreen shows feed when query empty, transitions to results on typing, and restores feed on back', (tester) async {
-      final fakeRepo = FakeSeanimeRepository();
+      final fakeRepo = FakeAnitingRepository();
 
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
             repositoryProvider.overrideWithValue(fakeRepo),
             serverNotifierProvider.overrideWith(MockServerNotifierOnline.new),
-            continueWatchingProvider.overrideWith((ref) => Future.value([
-              AnimeEntry(id: 1, mediaId: 1, title: 'Continue Watching Anime', progress: 1, status: 'CURRENT'),
-            ])),
+            continueWatchingProvider.overrideWith(
+              () => FakeContinueWatchingNotifier([
+                AnimeEntry(
+                  id: 1,
+                  mediaId: 1,
+                  title: 'Continue Watching Anime',
+                  progress: 1,
+                  status: 'CURRENT',
+                ),
+              ]),
+            ),
             animeCollectionProvider.overrideWith((ref) => Future.value([])),
             missedSequelsProvider.overrideWith((ref) => Future.value([])),
             recommendationsProvider.overrideWith((ref) => Future.value([])),
@@ -157,7 +167,7 @@ void main() {
     });
 
     testWidgets('MangaFeedScreen transitions to manga search results on typing and restores feed on back', (tester) async {
-      final fakeRepo = FakeSeanimeRepository();
+      final fakeRepo = FakeAnitingRepository();
 
       await tester.pumpWidget(
         ProviderScope(

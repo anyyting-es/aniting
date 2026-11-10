@@ -1,10 +1,10 @@
-package goja_bindings
+﻿package goja_bindings
 
 import (
 	"encoding/json"
 	"fmt"
-	"seanime/internal/events"
-	"seanime/internal/extension"
+	"aniting/internal/events"
+	"aniting/internal/extension"
 	"strings"
 
 	"github.com/dop251/goja"

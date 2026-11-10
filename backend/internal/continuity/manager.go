@@ -1,10 +1,10 @@
-package continuity
+﻿package continuity
 
 import (
 	"github.com/rs/zerolog"
 	"github.com/samber/mo"
-	"seanime/internal/database/db"
-	"seanime/internal/util/filecache"
+	"aniting/internal/database/db"
+	"aniting/internal/util/filecache"
 	"sync"
 	"time"
 )

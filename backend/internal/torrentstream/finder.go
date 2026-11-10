@@ -1,16 +1,16 @@
-package torrentstream
+﻿package torrentstream
 
 import (
 	"context"
 	"fmt"
-	"seanime/internal/api/anilist"
-	"seanime/internal/database/db_bridge"
-	hibiketorrent "seanime/internal/extension/hibike/torrent"
-	"seanime/internal/library/anime"
-	torrentanalyzer "seanime/internal/torrents/analyzer"
-	"seanime/internal/torrents/autoselect"
-	"seanime/internal/util"
-	"seanime/internal/util/torrentutil"
+	"aniting/internal/api/anilist"
+	"aniting/internal/database/db_bridge"
+	hibiketorrent "aniting/internal/extension/hibike/torrent"
+	"aniting/internal/library/anime"
+	torrentanalyzer "aniting/internal/torrents/analyzer"
+	"aniting/internal/torrents/autoselect"
+	"aniting/internal/util"
+	"aniting/internal/util/torrentutil"
 
 	"github.com/anacrolix/torrent"
 	"github.com/samber/lo"

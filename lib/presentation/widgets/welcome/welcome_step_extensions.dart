@@ -102,7 +102,7 @@ class _WelcomeStepExtensionsState
   Future<void> _initSavedRepoUrl() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final saved = prefs.getString('seanime_marketplace_repo_url');
+      final saved = prefs.getString('aniting_marketplace_repo_url');
       if (saved != null && saved.trim().isNotEmpty) {
         _repoController.text = saved.trim();
       }
@@ -125,7 +125,7 @@ class _WelcomeStepExtensionsState
           list.where((e) => e.type.toLowerCase() != 'plugin').toList();
 
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('seanime_marketplace_repo_url', url);
+      await prefs.setString('aniting_marketplace_repo_url', url);
 
       if (mounted) {
         setState(() {

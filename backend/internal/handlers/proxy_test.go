@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"seanime/internal/security"
+	"aniting/internal/security"
 	"strconv"
 	"strings"
 	"testing"
@@ -115,7 +115,7 @@ func TestProxyForwardsHeadersAndRange(t *testing.T) {
 		"Connection":      "close",
 		"Host":            "example.invalid",
 		"Referer":         "https://source.example/watch",
-		"User-Agent":      "SeanimeTest/1.0",
+		"User-Agent":      "AnitingTest/1.0",
 	}
 	clientHeader := http.Header{"Range": []string{"bytes=0-2"}}
 
@@ -128,7 +128,7 @@ func TestProxyForwardsHeadersAndRange(t *testing.T) {
 	assert.Empty(t, upstreamHeader.Get("Connection"))
 	assert.Equal(t, "bytes=0-2", upstreamHeader.Get("Range"))
 	assert.Equal(t, "https://source.example/watch", upstreamHeader.Get("Referer"))
-	assert.Equal(t, "SeanimeTest/1.0", upstreamHeader.Get("User-Agent"))
+	assert.Equal(t, "AnitingTest/1.0", upstreamHeader.Get("User-Agent"))
 	assert.Equal(t, "yes", rec.Header().Get("X-Upstream"))
 	assert.Equal(t, "*", rec.Header().Get("Access-Control-Allow-Origin"))
 }

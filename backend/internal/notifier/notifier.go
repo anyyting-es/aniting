@@ -1,10 +1,10 @@
-package notifier
+﻿package notifier
 
 import (
 	"fmt"
 	"path/filepath"
-	"seanime/internal/database/models"
-	"seanime/internal/util"
+	"aniting/internal/database/models"
+	"aniting/internal/util"
 	"sync"
 
 	"github.com/rs/zerolog"
@@ -56,7 +56,7 @@ func (n *Notifier) SetSettings(datadir string, settings *models.NotificationSett
 	n.mu.Lock()
 	n.dataDir = mo.Some(datadir)
 	n.settings = mo.Some(settings)
-	n.logoPath = filepath.Join(datadir, "seanime-logo.png")
+	n.logoPath = filepath.Join(datadir, "aniting-logo.png")
 	if logger != nil {
 		n.logger = mo.Some(logger)
 	} else {
@@ -111,7 +111,7 @@ func (n *Notifier) Notify(id Notification, message string) {
 			return
 		}
 
-		err := push(fmt.Sprintf("Seanime: %s", id), message, logoPath)
+		err := push(fmt.Sprintf("Aniting: %s", id), message, logoPath)
 		if err != nil {
 			if logger != nil {
 				logger.Trace().Msgf("notifier: Failed to push notification: %v", err)

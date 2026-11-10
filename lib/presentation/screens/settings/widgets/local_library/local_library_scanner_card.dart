@@ -1,8 +1,8 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/presentation/providers/local_library_provider.dart';
-import 'package:seanime_app/presentation/screens/settings/widgets/pixel_settings_widgets.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/presentation/providers/local_library_provider.dart';
+import 'package:aniting/presentation/screens/settings/widgets/pixel_settings_widgets.dart';
 
 class LocalLibraryScannerCard extends ConsumerWidget {
   final LocalLibraryState state;

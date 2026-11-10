@@ -1,14 +1,14 @@
-import 'dart:ui';
+﻿import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/core/preferences/resume_bar_preferences_provider.dart';
-import 'package:seanime_app/core/server/server_manager.dart';
-import 'package:seanime_app/data/models/server_status.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/screens/library_screen.dart';
-import 'package:seanime_app/presentation/widgets/desktop_sidebar.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/core/preferences/resume_bar_preferences_provider.dart';
+import 'package:aniting/core/server/server_manager.dart';
+import 'package:aniting/data/models/server_status.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/screens/library_screen.dart';
+import 'package:aniting/presentation/widgets/desktop_sidebar.dart';
 
 class MockRunningServerNotifier extends ServerNotifier {
   @override

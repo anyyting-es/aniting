@@ -1,26 +1,26 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:seanime_app/core/api/api_client.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/core/server/server_manager.dart';
-import 'package:seanime_app/data/models/anime_details.dart';
-import 'package:seanime_app/data/models/anime_entry.dart';
-import 'package:seanime_app/data/models/anizip_data.dart';
-import 'package:seanime_app/data/models/library_entry_details.dart';
-import 'package:seanime_app/data/models/onlinestream_models.dart';
-import 'package:seanime_app/data/repositories/seanime_repository.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
-import 'package:seanime_app/presentation/screens/anime_full_details_screen.dart';
-import 'package:seanime_app/presentation/widgets/anizip_episode_list.dart';
+import 'package:aniting/core/api/api_client.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/core/server/server_manager.dart';
+import 'package:aniting/data/models/anime_details.dart';
+import 'package:aniting/data/models/anime_entry.dart';
+import 'package:aniting/data/models/anizip_data.dart';
+import 'package:aniting/data/models/library_entry_details.dart';
+import 'package:aniting/data/models/onlinestream_models.dart';
+import 'package:aniting/data/repositories/aniting_repository.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/screens/anime_detail_screen.dart';
+import 'package:aniting/presentation/screens/anime_full_details_screen.dart';
+import 'package:aniting/presentation/widgets/anizip_episode_list.dart';
 import 'package:g1455/g1455.dart';
-import 'package:seanime_app/core/preferences/playback_progress_preferences_provider.dart';
-import 'package:seanime_app/presentation/widgets/anime_detail/desktop/desktop_episode_grid_card.dart';
-import 'package:seanime_app/presentation/widgets/anime_detail/desktop/desktop_episode_models.dart';
-import 'package:seanime_app/presentation/widgets/episode_item_widget.dart';
+import 'package:aniting/core/preferences/playback_progress_preferences_provider.dart';
+import 'package:aniting/presentation/widgets/anime_detail/desktop/desktop_episode_grid_card.dart';
+import 'package:aniting/presentation/widgets/anime_detail/desktop/desktop_episode_models.dart';
+import 'package:aniting/presentation/widgets/episode_item_widget.dart';
 
-class FakeDetailRepository extends SeanimeRepository {
+class FakeDetailRepository extends AnitingRepository {
   FakeDetailRepository() : super(ApiClient());
 
   @override

@@ -4,57 +4,56 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"seanime/internal/api/anilist"
-	"seanime/internal/api/metadata_provider"
-	"seanime/internal/constants"
-	"seanime/internal/continuity"
-	"seanime/internal/database/db"
-	"seanime/internal/database/models"
-	debrid_client "seanime/internal/debrid/client"
-	"seanime/internal/directstream"
-	discordrpc_presence "seanime/internal/discordrpc/presence"
-	"seanime/internal/doh"
-	"seanime/internal/events"
-	"seanime/internal/extension"
-	"seanime/internal/extension_playground"
-	"seanime/internal/extension_repo"
-	"seanime/internal/hook"
-	"seanime/internal/library/anime"
-	"seanime/internal/library/autodownloader"
-	"seanime/internal/library/autoscanner"
-	"seanime/internal/library/fillermanager"
-	"seanime/internal/library/playbackmanager"
-	"seanime/internal/library/scanner"
-	"seanime/internal/library_explorer"
-	"seanime/internal/local"
-	"seanime/internal/manga"
-	"seanime/internal/mediacore"
-	"seanime/internal/mediaplayers/iina"
-	"seanime/internal/mediaplayers/mediaplayer"
-	"seanime/internal/mediaplayers/mpchc"
-	"seanime/internal/mediaplayers/mpv"
-	"seanime/internal/mediaplayers/vlc"
-	"seanime/internal/mediastream"
-	"seanime/internal/mpvcore"
-	"seanime/internal/nakama"
-	"seanime/internal/nativeplayer"
-	"seanime/internal/onlinestream"
-	"seanime/internal/platforms/anilist_platform"
-	"seanime/internal/platforms/offline_platform"
-	"seanime/internal/platforms/platform"
-	"seanime/internal/platforms/simulated_platform"
-	"seanime/internal/playlist"
-	"seanime/internal/plugin"
-	"seanime/internal/report"
-	"seanime/internal/torrent_clients/torrent_client"
-	"seanime/internal/torrents/torrent"
-	"seanime/internal/torrentstream"
-	"seanime/internal/updater"
-	"seanime/internal/user"
-	"seanime/internal/util"
-	"seanime/internal/util/filecache"
-	"seanime/internal/util/result"
-	"seanime/internal/videocore"
+	"aniting/internal/api/anilist"
+	"aniting/internal/api/metadata_provider"
+	"aniting/internal/constants"
+	"aniting/internal/continuity"
+	"aniting/internal/database/db"
+	"aniting/internal/database/models"
+	debrid_client "aniting/internal/debrid/client"
+	"aniting/internal/directstream"
+	discordrpc_presence "aniting/internal/discordrpc/presence"
+	"aniting/internal/doh"
+	"aniting/internal/events"
+	"aniting/internal/extension"
+	"aniting/internal/extension_playground"
+	"aniting/internal/extension_repo"
+	"aniting/internal/hook"
+	"aniting/internal/library/anime"
+	"aniting/internal/library/autodownloader"
+	"aniting/internal/library/autoscanner"
+	"aniting/internal/library/fillermanager"
+	"aniting/internal/library/playbackmanager"
+	"aniting/internal/library/scanner"
+	"aniting/internal/library_explorer"
+	"aniting/internal/local"
+	"aniting/internal/manga"
+	"aniting/internal/mediacore"
+	"aniting/internal/mediaplayers/iina"
+	"aniting/internal/mediaplayers/mediaplayer"
+	"aniting/internal/mediaplayers/mpchc"
+	"aniting/internal/mediaplayers/mpv"
+	"aniting/internal/mediaplayers/vlc"
+	"aniting/internal/mediastream"
+	"aniting/internal/mpvcore"
+	"aniting/internal/nakama"
+	"aniting/internal/nativeplayer"
+	"aniting/internal/onlinestream"
+	"aniting/internal/platforms/anilist_platform"
+	"aniting/internal/platforms/offline_platform"
+	"aniting/internal/platforms/platform"
+	"aniting/internal/platforms/simulated_platform"
+	"aniting/internal/playlist"
+	"aniting/internal/plugin"
+	"aniting/internal/report"
+	"aniting/internal/torrent_clients/torrent_client"
+	"aniting/internal/torrents/torrent"
+	"aniting/internal/torrentstream"
+	"aniting/internal/user"
+	"aniting/internal/util"
+	"aniting/internal/util/filecache"
+	"aniting/internal/util/result"
+	"aniting/internal/videocore"
 	"sync"
 	"sync/atomic"
 
@@ -130,8 +129,6 @@ type (
 
 		// Utilities
 		FileCacher       *filecache.Cacher
-		Updater          *updater.Updater
-		SelfUpdater      *updater.SelfUpdater
 		ReportRepository *report.Repository
 
 		// Integrations
@@ -162,7 +159,7 @@ type (
 		LibraryDir       string
 		AnilistCacheDir  string
 		IsDesktopSidecar bool
-		Flags            SeanimeFlags
+		Flags            AnitingFlags
 
 		// Internal state
 		user                 *user.User
@@ -193,7 +190,7 @@ func (a *App) WithEpisodeAvailability(episodes []*anime.Episode) []*anime.Episod
 }
 
 // NewApp creates a new server instance
-func NewApp(configOpts *ConfigOptions, selfupdater *updater.SelfUpdater) *App {
+func NewApp(configOpts *ConfigOptions) *App {
 
 	var app *App
 
@@ -201,7 +198,7 @@ func NewApp(configOpts *ConfigOptions, selfupdater *updater.SelfUpdater) *App {
 	logger := util.NewLogger()
 
 	// Log application version, OS, architecture and system info
-	logger.Info().Msgf("app: Seanime %s-%s", constants.Version, constants.VersionName)
+	logger.Info().Msgf("app: Aniting %s-%s", constants.Version, constants.VersionName)
 	logger.Info().Msgf("app: OS: %s", runtime.GOOS)
 	logger.Info().Msgf("app: Arch: %s", runtime.GOARCH)
 	logger.Info().Msgf("app: Processor count: %d", runtime.NumCPU())
@@ -418,7 +415,6 @@ func NewApp(configOpts *ConfigOptions, selfupdater *updater.SelfUpdater) *App {
 		AnilistCacheDir:               anilistCacheDir,
 		Logger:                        logger,
 		Version:                       constants.Version,
-		Updater:                       updater.New(constants.Version, logger, wsEventManager),
 		FileCacher:                    fileCacher,
 		OnlinestreamRepository:        onlinestreamRepository,
 		MetadataProviderRef:           metadataProviderRef,
@@ -458,7 +454,6 @@ func NewApp(configOpts *ConfigOptions, selfupdater *updater.SelfUpdater) *App {
 			Debrid        *models.DebridSettings
 			DummyDebrid   *models.DummyDebridSettings
 		}{Mediastream: nil, Torrentstream: nil, Debrid: nil, DummyDebrid: nil},
-		SelfUpdater:                     selfupdater,
 		moduleMu:                        sync.Mutex{},
 		OnRefreshAnilistCollectionFuncs: result.NewMap[string, func()](),
 		HookManager:                     hookManager,
@@ -529,10 +524,6 @@ func NewApp(configOpts *ConfigOptions, selfupdater *updater.SelfUpdater) *App {
 		MediastreamRepository:   app.MediastreamRepository,
 		TorrentstreamRepository: app.TorrentstreamRepository,
 	})
-
-	if !app.IsOffline() {
-		go app.Updater.FetchAnnouncements()
-	}
 
 	// Initialize all modules that depend on settings
 	app.InitOrRefreshModules()

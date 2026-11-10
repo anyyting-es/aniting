@@ -1,13 +1,13 @@
-package manga
+﻿package manga
 
 import (
 	"context"
 	"errors"
-	"seanime/internal/api/anilist"
-	"seanime/internal/hook"
-	"seanime/internal/platforms/platform"
-	"seanime/internal/util"
-	"seanime/internal/util/filecache"
+	"aniting/internal/api/anilist"
+	"aniting/internal/hook"
+	"aniting/internal/platforms/platform"
+	"aniting/internal/util"
+	"aniting/internal/util/filecache"
 
 	"github.com/rs/zerolog"
 )

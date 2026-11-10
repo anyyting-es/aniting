@@ -1,9 +1,9 @@
-package doh
+﻿package doh
 
 import (
 	"context"
 	"net"
-	"seanime/internal/util"
+	"aniting/internal/util"
 
 	"github.com/ncruces/go-dns"
 	"github.com/rs/zerolog"

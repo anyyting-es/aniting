@@ -3,7 +3,7 @@
 #define MyAppVersion "1.0.6"
 #define MyAppPublisher "Aniting Team"
 #define MyAppURL "https://github.com/anyyting-es/aniting"
-#define MyAppExeName "seanime_app.exe"
+#define MyAppExeName "aniting_app.exe"
 #define MyAppAssocName MyAppName + " File"
 #define MyAppAssocExt ".torrent"
 #define MyAppAssocKey StringChange(MyAppAssocName, " ", "") + MyAppAssocExt
@@ -40,10 +40,10 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
 
 [Files]
-; Release folder containing all Flutter binaries, DLLs, assets, plugins, and seanime.exe
+; Release folder containing all Flutter binaries, DLLs, assets, plugins, and aniting.exe
 Source: "..\..\build\windows\x64\runner\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-; Also ensure backend seanime.exe is copied if not already in Release
-Source: "..\..\backend\seanime.exe"; DestDir: "{app}"; Flags: ignoreversion
+; Also ensure backend aniting.exe is copied if not already in Release
+Source: "..\..\backend\aniting.exe"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\{#MyAppExeName}"

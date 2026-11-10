@@ -1,12 +1,12 @@
-import 'package:cached_network_image/cached_network_image.dart';
+﻿import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/core/theme/theme_provider.dart';
-import 'package:seanime_app/core/theme/app_focus_coordinator.dart';
-import 'package:seanime_app/data/models/episode_item.dart';
-import 'package:seanime_app/presentation/widgets/episodes/episode_progress_resolver.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/core/theme/theme_provider.dart';
+import 'package:aniting/core/theme/app_focus_coordinator.dart';
+import 'package:aniting/data/models/episode_item.dart';
+import 'package:aniting/presentation/widgets/episodes/episode_progress_resolver.dart';
 
 /// Universal canonical episode card supporting both Grid (16:9) and List (compact row) modes.
 /// Works identically for Anime, TMDB TV Shows, and Movies.

@@ -1,4 +1,4 @@
-package torrentstream
+﻿package torrentstream
 
 import (
 	"context"
@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"seanime/internal/events"
-	"seanime/internal/util"
+	"aniting/internal/events"
+	"aniting/internal/util"
 
 	"github.com/anacrolix/torrent"
 	"github.com/samber/mo"

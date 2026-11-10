@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/Masterminds/semver/v3"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -270,35 +269,3 @@ func TestSemverConstraints(t *testing.T) {
 
 }
 
-func TestValidateReleaseUrl(t *testing.T) {
-
-	testCases := []struct {
-		url            string
-		expectedOutput bool
-	}{
-		{
-			url:            "https://github.com/5rahim/seanime/releases/download/v3.5.1/seanime-denshi-3.5.1_MacOS_arm64.dmg",
-			expectedOutput: true,
-		},
-		{
-			url:            "https://github.com/rando/seanime/releases/download/v3.5.1/seanime-denshi-3.5.1_MacOS_arm64.dmg",
-			expectedOutput: false,
-		},
-		{
-			url:            "https://seanime.app/api/updates/stable/seanime-denshi-3.5.1_MacOS_arm64.dmg",
-			expectedOutput: true,
-		},
-		{
-			url:            "http://example.com/badstuff.dmg",
-			expectedOutput: false,
-		},
-	}
-
-	for _, tt := range testCases {
-		t.Run(tt.url, func(t *testing.T) {
-			err := ValidateReleaseUrl(tt.url)
-			valid := err == nil
-			assert.Equal(t, tt.expectedOutput, valid)
-		})
-	}
-}

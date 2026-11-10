@@ -1,12 +1,13 @@
-import 'dart:io' show Platform;
+﻿import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/icons/app_icons.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
+import 'package:aniting/presentation/widgets/trailer/trailer_media_dialog.dart';
 
 /// Lightweight, centered trailer popup.
 ///
@@ -42,15 +43,34 @@ class TrailerPlayerDialog extends ConsumerStatefulWidget {
 
     final site = trailerSite?.toLowerCase();
     final isYouTube = site == null || site == 'youtube';
-    if (!canEmbedInline || !isYouTube) {
+    if (!isYouTube) {
       await openExternal(trailerId, trailerSite);
       return;
     }
 
+    // Embedded iFrame player: Android, iOS, macOS and web.
+    if (canEmbedInline) {
+      await showDialog<void>(
+        context: context,
+        barrierColor: Colors.black.withValues(alpha: 0.75),
+        builder: (_) => TrailerPlayerDialog(
+          trailerId: trailerId,
+          title: title,
+        ),
+      );
+      return;
+    }
+
+    // Desktop without iFrame support: resolve through the companion server and
+    // play with media_kit, falling back to the external player on failure.
     await showDialog<void>(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.75),
-      builder: (_) => TrailerPlayerDialog(trailerId: trailerId, title: title),
+      builder: (_) => TrailerMediaDialog(
+        trailerId: trailerId,
+        title: title,
+        onResolveFailed: () => openExternal(trailerId, trailerSite),
+      ),
     );
   }
 

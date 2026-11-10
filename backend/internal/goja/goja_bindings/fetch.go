@@ -1,4 +1,4 @@
-package goja_bindings
+﻿package goja_bindings
 
 import (
 	"context"
@@ -7,8 +7,8 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"seanime/internal/security"
-	"seanime/internal/util"
+	"aniting/internal/security"
+	"aniting/internal/util"
 	"strings"
 	"sync/atomic"
 	"time"

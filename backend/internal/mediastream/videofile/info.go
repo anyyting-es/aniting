@@ -1,4 +1,4 @@
-package videofile
+﻿package videofile
 
 import (
 	"cmp"
@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"mime"
 	"path/filepath"
-	"seanime/internal/util/filecache"
+	"aniting/internal/util/filecache"
 	"strconv"
 	"strings"
 	"sync"

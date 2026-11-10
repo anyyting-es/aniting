@@ -1,12 +1,12 @@
-package mediaplayer
+﻿package mediaplayer
 
 import (
-	"seanime/internal/events"
-	"seanime/internal/mediaplayers/mpchc"
-	"seanime/internal/mediaplayers/mpv"
-	"seanime/internal/mediaplayers/vlc"
-	"seanime/internal/testutil"
-	"seanime/internal/util"
+	"aniting/internal/events"
+	"aniting/internal/mediaplayers/mpchc"
+	"aniting/internal/mediaplayers/mpv"
+	"aniting/internal/mediaplayers/vlc"
+	"aniting/internal/testutil"
+	"aniting/internal/util"
 	"testing"
 )
 

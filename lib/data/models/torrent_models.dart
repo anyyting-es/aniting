@@ -157,7 +157,7 @@ class TorrentItem {
   }
 }
 
-/// Estado en tiempo real del stream de torrent emitido por el backend Go Seanime
+/// Estado en tiempo real del stream de torrent emitido por el backend Go Aniting
 /// a través de WebSocket (`torrentstream-state`).
 class TorrentStreamStatus {
   final int uploadProgress;

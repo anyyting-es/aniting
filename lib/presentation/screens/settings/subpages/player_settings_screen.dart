@@ -1,14 +1,17 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/preferences/player_engine_provider.dart';
-import 'package:seanime_app/core/preferences/volume_boost_provider.dart';
-import 'package:seanime_app/core/preferences/online_stream_proxy_provider.dart';
-import 'package:seanime_app/presentation/screens/settings/widgets/pixel_settings_widgets.dart';
-import 'package:seanime_app/presentation/screens/settings/widgets/pixel_subpage_scaffold.dart';
-import 'package:seanime_app/presentation/screens/settings/widgets/settings_dpad_focus.dart';
-import 'package:seanime_app/presentation/widgets/player/sheets/subtitle_style_view.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/preferences/player_ambient_glow_provider.dart';
+import 'package:aniting/core/preferences/player_engine_provider.dart';
+import 'package:aniting/core/preferences/player_smooth_motion_provider.dart';
+import 'package:aniting/core/preferences/volume_boost_provider.dart';
+import 'package:aniting/core/preferences/online_stream_proxy_provider.dart';
+import 'package:aniting/presentation/screens/settings/widgets/pixel_settings_widgets.dart';
+import 'package:aniting/presentation/screens/settings/widgets/pixel_subpage_scaffold.dart';
+import 'package:aniting/presentation/screens/settings/widgets/gpu/gpu_settings_card.dart';
+import 'package:aniting/presentation/screens/settings/widgets/settings_dpad_focus.dart';
+import 'package:aniting/presentation/widgets/player/sheets/subtitle_style_view.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PÁGINA: REPRODUCTOR DE VIDEO (ESTILO ANDROID 16)
@@ -139,11 +142,31 @@ class PlayerSettingsScreen extends ConsumerWidget {
           const SizedBox(height: 24),
         ],
 
+        // ─── GPU (WINDOWS / LINUX DESKTOP) ─────────────────────
+        const GpuSettingsCard(),
+        const SizedBox(height: 24),
+
         // ─── AUDIO Y CONTROLES ─────────────────────────────────
         SettingsSectionHeader(title: l10n.audioAndGestures),
         const SizedBox(height: 10),
         PixelSettingsGroupCard(
           children: [
+            PixelSwitchTile(
+              icon: Icons.blur_on_rounded,
+              title: l10n.ambientGlow,
+              subtitle: l10n.ambientGlowDesc,
+              value: ref.watch(playerAmbientGlowProvider),
+              onChanged: (val) =>
+                  ref.read(playerAmbientGlowProvider.notifier).setEnabled(val),
+            ),
+            PixelSwitchTile(
+              icon: Icons.auto_awesome_motion_rounded,
+              title: l10n.smoothMotion,
+              subtitle: l10n.smoothMotionDesc,
+              value: ref.watch(playerSmoothMotionProvider),
+              onChanged: (val) =>
+                  ref.read(playerSmoothMotionProvider.notifier).setEnabled(val),
+            ),
             PixelSwitchTile(
               icon: Icons.volume_up_rounded,
               title: l10n.volumeBoost,

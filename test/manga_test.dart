@@ -1,10 +1,10 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:seanime_app/core/preferences/title_language_provider.dart';
-import 'package:seanime_app/data/models/manga_entry.dart';
-import 'package:seanime_app/presentation/widgets/continue_reading_card.dart';
-import 'package:seanime_app/presentation/widgets/manga_card.dart';
+import 'package:aniting/core/preferences/title_language_provider.dart';
+import 'package:aniting/data/models/manga_entry.dart';
+import 'package:aniting/presentation/widgets/continue_reading_card.dart';
+import 'package:aniting/presentation/widgets/manga_card.dart';
 
 void main() {
   group('Manga Data Models Tests', () {

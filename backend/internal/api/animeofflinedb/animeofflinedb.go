@@ -1,11 +1,11 @@
-package animeofflinedb
+﻿package animeofflinedb
 
 import (
 	"bufio"
 	"errors"
 	"net/http"
-	"seanime/internal/api/anilist"
-	"seanime/internal/library/anime"
+	"aniting/internal/api/anilist"
+	"aniting/internal/library/anime"
 	"strconv"
 	"strings"
 	"sync"

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os/exec"
 	"runtime"
-	"seanime/internal/mediastream/videofile"
+	"aniting/internal/mediastream/videofile"
 	"strings"
 	"time"
 
@@ -161,7 +161,7 @@ func vaApiProfile(device string) HwAccelProfile {
 		Name: "vaapi",
 		DecodeFlags: []string{
 			"-hwaccel", "vaapi",
-			"-hwaccel_device", GetEnvOr("SEANIME_TRANSCODER_VAAPI_RENDERER", device),
+			"-hwaccel_device", GetEnvOr("ANITING_TRANSCODER_VAAPI_RENDERER", device),
 			"-hwaccel_output_format", "vaapi",
 		},
 		EncodeFlags: []string{
@@ -201,7 +201,7 @@ func qsvProfile(device, preset string, lowPower bool) HwAccelProfile {
 		Name: name,
 		DecodeFlags: []string{
 			"-hwaccel", "qsv",
-			"-qsv_device", GetEnvOr("SEANIME_TRANSCODER_QSV_RENDERER", device),
+			"-qsv_device", GetEnvOr("ANITING_TRANSCODER_QSV_RENDERER", device),
 			"-hwaccel_output_format", "qsv",
 		},
 		EncodeFlags:   encodeFlags,

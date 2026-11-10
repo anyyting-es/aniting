@@ -1,11 +1,11 @@
-import 'dart:collection';
+﻿import 'dart:collection';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:seanime_app/data/models/anime_entry.dart';
-import 'package:seanime_app/data/models/anizip_data.dart';
-import 'package:seanime_app/data/models/manga_entry.dart';
-import 'package:seanime_app/data/models/server_status.dart';
+import 'package:aniting/data/models/anime_entry.dart';
+import 'package:aniting/data/models/anizip_data.dart';
+import 'package:aniting/data/models/manga_entry.dart';
+import 'package:aniting/data/models/server_status.dart';
 
 /// Top-level function for compute() — must be static/top-level
 String _encodeJson(List<Map<String, dynamic>> data) => jsonEncode(data);

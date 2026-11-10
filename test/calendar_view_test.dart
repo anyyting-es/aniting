@@ -1,15 +1,15 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/preferences/title_language_provider.dart';
-import 'package:seanime_app/data/models/airing_schedule.dart';
-import 'package:seanime_app/data/models/anime_entry.dart';
-import 'package:seanime_app/presentation/widgets/calendar/calendar_day_tabs.dart';
-import 'package:seanime_app/presentation/widgets/calendar/calendar_desktop_view.dart';
-import 'package:seanime_app/presentation/widgets/calendar/calendar_episode_card.dart';
-import 'package:seanime_app/presentation/widgets/calendar/calendar_mobile_view.dart';
-import 'package:seanime_app/presentation/widgets/calendar/calendar_now_marker.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/preferences/title_language_provider.dart';
+import 'package:aniting/data/models/airing_schedule.dart';
+import 'package:aniting/data/models/anime_entry.dart';
+import 'package:aniting/presentation/widgets/calendar/calendar_day_tabs.dart';
+import 'package:aniting/presentation/widgets/calendar/calendar_desktop_view.dart';
+import 'package:aniting/presentation/widgets/calendar/calendar_episode_card.dart';
+import 'package:aniting/presentation/widgets/calendar/calendar_mobile_view.dart';
+import 'package:aniting/presentation/widgets/calendar/calendar_now_marker.dart';
 
 void main() {
   final now = DateTime.now();

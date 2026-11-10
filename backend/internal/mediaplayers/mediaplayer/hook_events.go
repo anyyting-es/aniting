@@ -1,7 +1,7 @@
-package mediaplayer
+﻿package mediaplayer
 
 import (
-	"seanime/internal/hook_resolver"
+	"aniting/internal/hook_resolver"
 )
 
 // MediaPlayerLocalFileTrackingRequestedEvent is triggered when the playback manager wants to track the progress of a local file.

@@ -1,16 +1,16 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/core/preferences/onboarding_provider.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/screens/welcome_screen.dart';
-import 'package:seanime_app/presentation/screens/settings/widgets/pixel_settings_widgets.dart';
-import 'package:seanime_app/presentation/screens/settings/widgets/pixel_subpage_scaffold.dart';
-import 'package:seanime_app/data/services/app_update_service.dart';
-import 'package:seanime_app/presentation/providers/app_update_provider.dart';
-import 'package:seanime_app/presentation/widgets/update/app_update_dialog.dart';
-import 'package:seanime_app/presentation/widgets/whats_new/whats_new_dialog.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/core/preferences/onboarding_provider.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/screens/welcome_screen.dart';
+import 'package:aniting/presentation/screens/settings/widgets/pixel_settings_widgets.dart';
+import 'package:aniting/presentation/screens/settings/widgets/pixel_subpage_scaffold.dart';
+import 'package:aniting/data/services/app_update_service.dart';
+import 'package:aniting/presentation/providers/app_update_provider.dart';
+import 'package:aniting/presentation/widgets/update/app_update_dialog.dart';
+import 'package:aniting/presentation/widgets/whats_new/whats_new_dialog.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -167,49 +167,6 @@ class AboutSettingsScreen extends ConsumerWidget {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.secondaryContainer.withValues(
-                    alpha: 0.6,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  AppIcons.server(iconPack),
-                  color: theme.colorScheme.onSecondaryContainer,
-                  size: 22,
-                ),
-              ),
-              title: const Text(
-                'Seanime Media Server',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-              ),
-              subtitle: Text(
-                l10n.originalServerSubtitle,
-                style: TextStyle(
-                  fontSize: 12.5,
-                  color: theme.colorScheme.onSurfaceVariant,
-                  height: 1.3,
-                ),
-              ),
-              trailing: Icon(
-                AppIcons.openInNew(iconPack),
-                size: 20,
-                color: theme.colorScheme.primary,
-              ),
-              onTap: () => launchUrl(
-                Uri.parse('https://seanime.app/'),
-                mode: LaunchMode.externalApplication,
-              ),
-            ),
-            const PixelTileDivider(),
-            ListTile(
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 6,
-              ),
-              leading: Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
                   color: const Color(0xFF5865F2).withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -300,7 +257,7 @@ class AboutSettingsScreen extends ConsumerWidget {
                 ),
               ),
               title: Text(
-                l10n.seanimeCoreServer,
+                l10n.anitingCoreServer,
                 style: const TextStyle(
                   fontWeight: FontWeight.w600,
                   fontSize: 15,

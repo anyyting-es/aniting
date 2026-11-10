@@ -1,4 +1,4 @@
-package cassette
+﻿package cassette
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"seanime/internal/mediastream/videofile"
+	"aniting/internal/mediastream/videofile"
 	"sync"
 	"time"
 

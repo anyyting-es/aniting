@@ -1,9 +1,9 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'package:dio/dio.dart';
-import 'package:seanime_app/core/api/api_client.dart';
-import 'package:seanime_app/core/constants/app_constants.dart';
-import 'package:seanime_app/core/server/android_server_channel.dart';
-import 'package:seanime_app/core/server/desktop_server.dart';
+import 'package:aniting/core/api/api_client.dart';
+import 'package:aniting/core/constants/app_constants.dart';
+import 'package:aniting/core/server/android_server_channel.dart';
+import 'package:aniting/core/server/desktop_server.dart';
 
 enum ServerState {
   stopped,

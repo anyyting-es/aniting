@@ -1,10 +1,10 @@
-package torrentstream
+﻿package torrentstream
 
 import (
 	"context"
-	"seanime/internal/mediacore"
-	"seanime/internal/mediaplayers/mediaplayer"
-	"seanime/internal/player"
+	"aniting/internal/mediacore"
+	"aniting/internal/mediaplayers/mediaplayer"
+	"aniting/internal/player"
 )
 
 type (

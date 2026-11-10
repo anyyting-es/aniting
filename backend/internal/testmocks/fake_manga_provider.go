@@ -1,10 +1,10 @@
-package testmocks
+﻿package testmocks
 
 import (
 	"errors"
 	"sync"
 
-	hibikemanga "seanime/internal/extension/hibike/manga"
+	hibikemanga "aniting/internal/extension/hibike/manga"
 )
 
 type FakeMangaProvider struct {

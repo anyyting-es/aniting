@@ -1,7 +1,7 @@
-package core
+﻿package core
 
 import (
-	"seanime/internal/util"
+	"aniting/internal/util"
 	"time"
 )
 
@@ -12,7 +12,7 @@ func (a *App) GetServerPasswordHMACAuth() *util.HMACAuth {
 	if a.Config != nil && a.Config.Server.Password != "" {
 		secret = a.ServerPasswordHash
 	} else {
-		secret = "seanime-default-secret"
+		secret = "aniting-default-secret"
 	}
 
 	return util.NewHMACAuth(secret, 24*time.Hour)

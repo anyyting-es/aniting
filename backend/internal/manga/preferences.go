@@ -1,10 +1,10 @@
-package manga
+﻿package manga
 
 import (
 	"errors"
 	"fmt"
-	"seanime/internal/events"
-	"seanime/internal/util/filecache"
+	"aniting/internal/events"
+	"aniting/internal/util/filecache"
 	"strings"
 )
 

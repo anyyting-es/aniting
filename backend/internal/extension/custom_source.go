@@ -1,7 +1,7 @@
-package extension
+﻿package extension
 
 import (
-	hibikecustomsource "seanime/internal/extension/hibike/customsource"
+	hibikecustomsource "aniting/internal/extension/hibike/customsource"
 )
 
 type CustomSourceExtension interface {

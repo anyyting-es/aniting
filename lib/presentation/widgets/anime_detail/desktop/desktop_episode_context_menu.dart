@@ -1,15 +1,15 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:g1455/g1455.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/data/models/anime_details.dart';
-import 'package:seanime_app/data/services/offline_library_service.dart';
-import 'package:seanime_app/presentation/providers/active_downloads_provider.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/providers/download_history_provider.dart';
-import 'package:seanime_app/presentation/widgets/toast/app_toast.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/data/models/anime_details.dart';
+import 'package:aniting/data/services/offline_library_service.dart';
+import 'package:aniting/presentation/providers/active_downloads_provider.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/providers/download_history_provider.dart';
+import 'package:aniting/presentation/widgets/toast/app_toast.dart';
 import 'desktop_episode_models.dart';
 
 /// Menú de tres puntitos con Liquid Glass `g1455` (GlassMenuAnchor)

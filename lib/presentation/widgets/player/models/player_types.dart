@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
-import 'package:seanime_app/core/i18n/translations/translations.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
+﻿import 'package:flutter/material.dart';
+import 'package:aniting/core/i18n/translations/translations.dart';
+import 'package:aniting/core/icons/app_icons.dart';
 
 /// Represents a media track (audio or subtitle) for the player UI.
 class UiTrack {
@@ -110,12 +110,20 @@ class PerformanceStats {
   final String? aspectRatio;
   final double? fps;
   final double? containerFps;
+  final double? displayFps;
+  final double? vsyncRatio;
+  final int? delayedFrames;
+  final String? videoSync;
+  final bool? interpolation;
+  final bool? displaySyncActive;
   final int? bitrate;
   final int? audioBitrate;
   final String? hwdec;
   final String? pixelFormat;
   final int? droppedFrames;
   final int? decoderDroppedFrames;
+  final int? mistimedFrames;
+  final int? cacheBufferingState;
   final int? audioChannels;
   final int? audioSampleRate;
   final double? avsync;
@@ -132,12 +140,20 @@ class PerformanceStats {
     this.aspectRatio,
     this.fps,
     this.containerFps,
+    this.displayFps,
+    this.vsyncRatio,
+    this.delayedFrames,
+    this.videoSync,
+    this.interpolation,
+    this.displaySyncActive,
     this.bitrate,
     this.audioBitrate,
     this.hwdec,
     this.pixelFormat,
     this.droppedFrames,
     this.decoderDroppedFrames,
+    this.mistimedFrames,
+    this.cacheBufferingState,
     this.audioChannels,
     this.audioSampleRate,
     this.avsync,
@@ -154,12 +170,20 @@ class PerformanceStats {
         aspectRatio = null,
         fps = null,
         containerFps = null,
+        displayFps = null,
+        vsyncRatio = null,
+        delayedFrames = null,
+        videoSync = null,
+        interpolation = null,
+        displaySyncActive = null,
         bitrate = null,
         audioBitrate = null,
         hwdec = null,
         pixelFormat = null,
         droppedFrames = null,
         decoderDroppedFrames = null,
+        mistimedFrames = null,
+        cacheBufferingState = null,
         audioChannels = null,
         audioSampleRate = null,
         avsync = null,

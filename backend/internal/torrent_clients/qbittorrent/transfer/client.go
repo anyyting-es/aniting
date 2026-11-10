@@ -1,11 +1,11 @@
-package qbittorrent_transfer
+﻿package qbittorrent_transfer
 
 import (
 	"github.com/rs/zerolog"
 	"net/http"
 	"net/url"
-	"seanime/internal/torrent_clients/qbittorrent/model"
-	"seanime/internal/torrent_clients/qbittorrent/util"
+	"aniting/internal/torrent_clients/qbittorrent/model"
+	"aniting/internal/torrent_clients/qbittorrent/util"
 	"strconv"
 )
 

@@ -14,9 +14,9 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
-	"seanime/internal/extension"
-	"seanime/internal/util"
-	gojautil "seanime/internal/util/goja"
+	"aniting/internal/extension"
+	"aniting/internal/util"
+	gojautil "aniting/internal/util/goja"
 	"strings"
 	"sync"
 
@@ -598,11 +598,11 @@ func (a *AppContextImpl) BindSystem(vm *goja.Runtime, logger *zerolog.Logger, ex
 // resolveEnvironmentPaths resolves environment paths in the form of $NAME
 // to the actual path.
 //
-// e.g. $SEANIME_LIBRARY_PATH -> /home/user/anime
+// e.g. $ANITING_LIBRARY_PATH -> /home/user/anime
 func (a *AppContextImpl) resolveEnvironmentPaths(name string) []string {
 
 	switch name {
-	case "SEANIME_ANIME_LIBRARY":
+	case "ANITING_ANIME_LIBRARY":
 		if animeLibraryPaths, ok := a.animeLibraryPaths.Get(); ok && len(animeLibraryPaths) > 0 {
 			return animeLibraryPaths
 		}
@@ -793,7 +793,7 @@ func (a *AppContextImpl) resolvePattern(pattern string) []string {
 	patterns := []string{pattern}
 
 	// Replace special placeholders with their actual values
-	placeholders := []string{"$SEANIME_ANIME_LIBRARY", "$HOME", "$CACHE", "$TEMP", "$CONFIG", "$DOWNLOAD", "$DESKTOP", "$DOCUMENT"}
+	placeholders := []string{"$ANITING_ANIME_LIBRARY", "$HOME", "$CACHE", "$TEMP", "$CONFIG", "$DOWNLOAD", "$DESKTOP", "$DOCUMENT"}
 
 	for _, placeholder := range placeholders {
 		// Extract the placeholder name without the $ prefix

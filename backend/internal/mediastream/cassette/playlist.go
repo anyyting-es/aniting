@@ -1,8 +1,8 @@
-package cassette
+﻿package cassette
 
 import (
 	"fmt"
-	"seanime/internal/mediastream/videofile"
+	"aniting/internal/mediastream/videofile"
 	"strings"
 )
 

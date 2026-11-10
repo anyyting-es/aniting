@@ -1,10 +1,10 @@
-package db
+﻿package db
 
 import (
 	"github.com/goccy/go-json"
 	"github.com/samber/mo"
-	"seanime/internal/api/filler"
-	"seanime/internal/database/models"
+	"aniting/internal/api/filler"
+	"aniting/internal/database/models"
 	"time"
 )
 

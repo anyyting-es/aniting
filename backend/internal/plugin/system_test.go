@@ -3,7 +3,7 @@ package plugin
 import (
 	"os"
 	"path/filepath"
-	"seanime/internal/extension"
+	"aniting/internal/extension"
 	"testing"
 
 	"github.com/samber/mo"
@@ -22,7 +22,7 @@ func newMockAppContext(paths map[string][]string) *mockAppContext {
 		mockPaths: paths,
 	}
 	// Initialize the animeLibraryPaths field with mock data
-	if libraryPaths, ok := paths["SEANIME_ANIME_LIBRARY"]; ok {
+	if libraryPaths, ok := paths["ANITING_ANIME_LIBRARY"]; ok {
 		ctx.animeLibraryPaths = mo.Some(libraryPaths)
 	} else {
 		ctx.animeLibraryPaths = mo.Some([]string{})
@@ -33,7 +33,7 @@ func newMockAppContext(paths map[string][]string) *mockAppContext {
 func TestIsAllowedPath(t *testing.T) {
 	// Create mock context with predefined paths
 	mockCtx := newMockAppContext(map[string][]string{
-		"SEANIME_ANIME_LIBRARY": {"/anime/lib1", "/anime/lib2"},
+		"ANITING_ANIME_LIBRARY": {"/anime/lib1", "/anime/lib2"},
 		"HOME":                  {"/home/user"},
 		"TEMP":                  {"/tmp"},
 	})
@@ -94,7 +94,7 @@ func TestIsAllowedPath(t *testing.T) {
 							extension.PluginPermissionSystem,
 						},
 						Allow: extension.PluginAllowlist{
-							ReadPaths: []string{"$SEANIME_ANIME_LIBRARY/**"},
+							ReadPaths: []string{"$ANITING_ANIME_LIBRARY/**"},
 						},
 					},
 				},
@@ -112,7 +112,7 @@ func TestIsAllowedPath(t *testing.T) {
 							extension.PluginPermissionSystem,
 						},
 						Allow: extension.PluginAllowlist{
-							ReadPaths: []string{"$SEANIME_ANIME_LIBRARY/**"},
+							ReadPaths: []string{"$ANITING_ANIME_LIBRARY/**"},
 						},
 					},
 				},
@@ -145,7 +145,7 @@ func TestIsAllowedPath(t *testing.T) {
 							extension.PluginPermissionSystem,
 						},
 						Allow: extension.PluginAllowlist{
-							ReadPaths: []string{"$SEANIME_ANIME_LIBRARY/**"},
+							ReadPaths: []string{"$ANITING_ANIME_LIBRARY/**"},
 						},
 					},
 				},
@@ -163,7 +163,7 @@ func TestIsAllowedPath(t *testing.T) {
 							extension.PluginPermissionSystem,
 						},
 						Allow: extension.PluginAllowlist{
-							ReadPaths: []string{"$SEANIME_ANIME_LIBRARY/**"},
+							ReadPaths: []string{"$ANITING_ANIME_LIBRARY/**"},
 						},
 					},
 				},
@@ -186,7 +186,7 @@ func TestIsAllowedCommand(t *testing.T) {
 	// Create mock context
 	mockCtx := newMockAppContext(map[string][]string{
 		"HOME":                  {"/home/user"},
-		"SEANIME_ANIME_LIBRARY": {}, // Empty but initialized
+		"ANITING_ANIME_LIBRARY": {}, // Empty but initialized
 	})
 
 	tests := []struct {
@@ -420,7 +420,7 @@ func TestIsAllowedCommandPathValidatorUsesReadPaths(t *testing.T) {
 	assert.NoError(t, err)
 
 	mockCtx := newMockAppContext(map[string][]string{
-		"SEANIME_ANIME_LIBRARY": {tempDir},
+		"ANITING_ANIME_LIBRARY": {tempDir},
 	})
 
 	ext := &extension.Extension{
@@ -430,7 +430,7 @@ func TestIsAllowedCommandPathValidatorUsesReadPaths(t *testing.T) {
 					extension.PluginPermissionSystem,
 				},
 				Allow: extension.PluginAllowlist{
-					ReadPaths: []string{"$SEANIME_ANIME_LIBRARY/**"},
+					ReadPaths: []string{"$ANITING_ANIME_LIBRARY/**"},
 					CommandScopes: []extension.CommandScope{
 						{
 							Command: "mpv",

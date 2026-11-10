@@ -1,10 +1,10 @@
-package plugin_ui
+﻿package plugin_ui
 
 import (
 	"encoding/json"
 	"fmt"
-	wsevents "seanime/internal/events"
-	"seanime/internal/extension"
+	wsevents "aniting/internal/events"
+	"aniting/internal/extension"
 	"strings"
 	"sync"
 	"time"

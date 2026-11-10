@@ -1,15 +1,15 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/data/models/extension_item.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/widgets/desktop_title_bar.dart';
-import 'package:seanime_app/presentation/widgets/extensions/extension_code_modal.dart';
-import 'package:seanime_app/presentation/widgets/extensions/extensions_desktop_layout.dart';
-import 'package:seanime_app/presentation/widgets/extensions/installed_tab_view.dart';
-import 'package:seanime_app/presentation/widgets/extensions/marketplace_tab_view.dart';
-import 'package:seanime_app/presentation/widgets/extensions/repo_config_dialog.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/data/models/extension_item.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/widgets/desktop_title_bar.dart';
+import 'package:aniting/presentation/widgets/extensions/extension_code_modal.dart';
+import 'package:aniting/presentation/widgets/extensions/extensions_desktop_layout.dart';
+import 'package:aniting/presentation/widgets/extensions/installed_tab_view.dart';
+import 'package:aniting/presentation/widgets/extensions/marketplace_tab_view.dart';
+import 'package:aniting/presentation/widgets/extensions/repo_config_dialog.dart';
 
 class ExtensionsMarketplaceScreen extends ConsumerStatefulWidget {
   const ExtensionsMarketplaceScreen({super.key});
@@ -20,7 +20,7 @@ class ExtensionsMarketplaceScreen extends ConsumerStatefulWidget {
 
 class _ExtensionsMarketplaceScreenState extends ConsumerState<ExtensionsMarketplaceScreen>
     with SingleTickerProviderStateMixin {
-  static const String _prefRepoKey = 'seanime_marketplace_repo_url';
+  static const String _prefRepoKey = 'aniting_marketplace_repo_url';
   static const String defaultRepoUrl =
       'https://raw.githubusercontent.com/anyyting-es/aniting-extensions/main/marketplace.json';
 

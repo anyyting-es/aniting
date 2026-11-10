@@ -1,13 +1,14 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:media_kit/media_kit.dart' as media_kit;
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/player/exo_player_service.dart';
-import 'package:seanime_app/core/player/media_kit_player_service.dart';
-import 'package:seanime_app/core/preferences/subtitle_style_preferences_provider.dart';
-import 'package:seanime_app/presentation/widgets/player/models/player_types.dart';
-import 'package:seanime_app/presentation/widgets/player/services/player_shader_service.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/player/exo_player_service.dart';
+import 'package:aniting/core/player/media_kit_player_service.dart';
+import 'package:aniting/core/preferences/subtitle_style_preferences_provider.dart';
+import 'package:aniting/presentation/widgets/player/models/player_types.dart';
+import 'package:aniting/presentation/widgets/player/services/player_shader_service.dart';
+import 'package:aniting/presentation/widgets/player/services/seek_preview_service.dart';
 
 /// Coordinates playback with ExoPlayer on Android and media_kit elsewhere.
 /// Encapsulates stream listening, track parsing, subtitle auto-selection, and automatic fallback.
@@ -21,6 +22,7 @@ class PlayerPlaybackCoordinator {
 
   final PlayerShaderService shaderService;
   final AppTranslations l10n;
+  final bool smoothMotion;
 
   // Stream event callbacks
   final ValueChanged<Duration> onPosition;
@@ -126,6 +128,7 @@ class PlayerPlaybackCoordinator {
     required this.isUsingExoPlayer,
     required this.shaderService,
     required this.l10n,
+    this.smoothMotion = false,
     required this.onPosition,
     required this.onDuration,
     required this.onBuffer,
@@ -341,7 +344,7 @@ class PlayerPlaybackCoordinator {
     bool isOnlineStream = false,
   }) {
     _cancelMediaKitSubs();
-    final service = MediaKitPlayerService();
+    final service = MediaKitPlayerService(smoothMotion: smoothMotion);
     mediaKitService = service;
     if (currentSubtitleStyle != null) {
       service.applySubtitleStyle(currentSubtitleStyle!);
@@ -410,14 +413,40 @@ class PlayerPlaybackCoordinator {
         ));
       }
 
-      // 2. External subtitles
-      if (externalSubtitles != null) {
-        for (int i = 0; i < externalSubtitles.length; i++) {
-          final extSub = externalSubtitles[i];
+      // 2. External subtitles (`_externalSubtitles` is updated by `open`, not
+      // only by the initial `init`; reading the field keeps the UI list in sync
+      // when sources are resolved after the player was created).
+      //
+      // `sub-add` makes the external files real mpv tracks, so only append the
+      // ones that are not already present in `tracks.subtitle`. Otherwise every
+      // online subtitle would appear twice in the picker.
+      final extSubs = _externalSubtitles;
+      if (extSubs != null) {
+        bool hasRealTrack(dynamic extSub) {
+          final lang = _getSubLanguage(extSub).trim().toLowerCase();
+          final label = _getSubLabel(extSub).trim().toLowerCase();
+          return tracks.subtitle.any((t) {
+            if (t.id == 'no' || t.id == 'auto') return false;
+            final trackLang = (t.language ?? '').trim().toLowerCase();
+            final trackTitle = (t.title ?? '').trim().toLowerCase();
+            if (lang.isNotEmpty && trackLang == lang) return true;
+            if (label.isNotEmpty &&
+                (trackTitle == label || trackTitle.contains(label))) {
+              return true;
+            }
+            return false;
+          });
+        }
+
+        for (int i = 0; i < extSubs.length; i++) {
+          final extSub = extSubs[i];
+          if (hasRealTrack(extSub)) continue;
           final trackId = 'ext_$i';
           final subLang = _getSubLanguage(extSub);
           final subLabel = _getSubLabel(extSub);
-          final subTitle = subLabel.isNotEmpty ? subLabel : (subLang.isNotEmpty ? subLang : '${l10n.subtitles} ${i + 1}');
+          final subTitle = subLabel.isNotEmpty
+              ? subLabel
+              : (subLang.isNotEmpty ? subLang : '${l10n.subtitles} ${i + 1}');
           final isDef = _getSubIsDefault(extSub);
           mergedSubs.add(UiTrack(
             id: trackId,
@@ -443,32 +472,77 @@ class PlayerPlaybackCoordinator {
     }
 
     if (effectiveVideoUrl.isNotEmpty) {
-      service.open(
-        effectiveVideoUrl,
-        title: title,
-        episodeTitle: episodeTitle,
-        startPosition: startPosition,
-        httpHeaders: effectiveHeaders,
+      unawaited(
+        _openAndAttachExternalSubtitles(
+          service: service,
+          videoUrl: effectiveVideoUrl,
+          title: title,
+          episodeTitle: episodeTitle,
+          startPosition: startPosition,
+          httpHeaders: effectiveHeaders,
+          externalSubtitles: externalSubtitles,
+          isOnlineStream: isOnlineStream,
+          headers: headers,
+        ),
       );
-
-      // Auto-load default external subtitle if provided
-      if (externalSubtitles != null && externalSubtitles.isNotEmpty) {
-        final idxToUse = _resolveBestExternalSubtitleIndex(externalSubtitles);
-        final subToUse = externalSubtitles[idxToUse];
-        final url = _getSubUrl(subToUse);
-        final lang = _getSubLanguage(subToUse);
-        final label = _getSubLabel(subToUse);
-        if (url.isNotEmpty) {
-          service.setSubtitleTrack(media_kit.SubtitleTrack.uri(
-            url,
-            title: label.isNotEmpty ? label : lang,
-            language: lang,
-          ));
-        }
-      }
     }
 
     shaderService.applyPreset(service, activeShaderPreset);
+  }
+
+  /// Opens the media and only then attaches the external subtitle tracks.
+  ///
+  /// Ordering matters: mpv drops `sub-add` calls issued before `loadfile`
+  /// finishes, which is exactly why online sources (reanime, espanime…) showed
+  /// no subtitle tracks at all even though the extension returned them.
+  Future<void> _openAndAttachExternalSubtitles({
+    required MediaKitPlayerService service,
+    required String videoUrl,
+    required String title,
+    String? episodeTitle,
+    Duration? startPosition,
+    Map<String, String>? httpHeaders,
+    List<dynamic>? externalSubtitles,
+    required bool isOnlineStream,
+    Map<String, String>? headers,
+  }) async {
+    await service.open(
+      videoUrl,
+      title: title,
+      episodeTitle: episodeTitle,
+      startPosition: startPosition,
+      httpHeaders: httpHeaders,
+    );
+
+    if (externalSubtitles == null || externalSubtitles.isEmpty) return;
+
+    final preferredIdx = _resolveBestExternalSubtitleIndex(externalSubtitles);
+    debugPrint(
+      '[PlayerCoordinator] Attaching ${externalSubtitles.length} external '
+      'subtitle track(s), preferred #$preferredIdx',
+    );
+
+    for (var i = 0; i < externalSubtitles.length; i++) {
+      final extSub = externalSubtitles[i];
+      var subUrl = _getSubUrl(extSub);
+      if (subUrl.isEmpty) continue;
+
+      // Same proxy treatment as the video: some CDNs require the extension
+      // headers that only the backend can replay.
+      if (isOnlineStream && buildProxyUrl != null) {
+        final proxied = buildProxyUrl!(subUrl, headers);
+        if (proxied != subUrl) subUrl = proxied;
+      }
+
+      final lang = _getSubLanguage(extSub);
+      final label = _getSubLabel(extSub);
+      await service.addExternalSubtitle(
+        url: subUrl,
+        title: label.isNotEmpty ? label : lang,
+        language: lang,
+        select: i == preferredIdx || _getSubIsDefault(extSub),
+      );
+    }
   }
 
   void triggerFallbackToMediaKit([String? reason]) {
@@ -506,7 +580,14 @@ class PlayerPlaybackCoordinator {
     Duration? startPosition,
     List<dynamic>? externalSubtitles,
     bool isOnlineStream = false,
+    String? thumbnailsUrl,
   }) {
+    // Seek bar previews come from the source itself: publish (or clear) it here
+    // so every open path stays in sync without threading it through the widgets.
+    seekThumbnailsUrl.value = thumbnailsUrl;
+    seekThumbnailsHeaders.value =
+        (thumbnailsUrl != null && thumbnailsUrl.isNotEmpty) ? headers : null;
+
     _videoUrl = videoUrl;
     _title = title;
     _episodeTitle = episodeTitle;
@@ -544,28 +625,23 @@ class PlayerPlaybackCoordinator {
         }
       }
 
-      mediaKitService!.open(
-        effectiveVideoUrl,
-        title: title,
-        episodeTitle: episodeTitle,
-        startPosition: startPosition ?? Duration.zero,
-        httpHeaders: effectiveHeaders,
+      // Open first, then `sub-add` every external track. `sub-add` issued
+      // before `loadfile` completes is silently dropped by mpv, which is why
+      // online sources appeared to have no subtitles. This also registers all
+      // languages (not just the preferred one) in the track picker.
+      unawaited(
+        _openAndAttachExternalSubtitles(
+          service: mediaKitService!,
+          videoUrl: effectiveVideoUrl,
+          title: title,
+          episodeTitle: episodeTitle,
+          startPosition: startPosition ?? Duration.zero,
+          httpHeaders: effectiveHeaders,
+          externalSubtitles: externalSubtitles,
+          isOnlineStream: isOnlineStream,
+          headers: headers,
+        ),
       );
-
-      if (externalSubtitles != null && externalSubtitles.isNotEmpty) {
-        final idxToUse = _resolveBestExternalSubtitleIndex(externalSubtitles);
-        final subToUse = externalSubtitles[idxToUse];
-        final url = _getSubUrl(subToUse);
-        final lang = _getSubLanguage(subToUse);
-        final label = _getSubLabel(subToUse);
-        if (url.isNotEmpty) {
-          mediaKitService!.setSubtitleTrack(media_kit.SubtitleTrack.uri(
-            url,
-            title: label.isNotEmpty ? label : lang,
-            language: lang,
-          ));
-        }
-      }
     }
   }
 
@@ -583,6 +659,18 @@ class PlayerPlaybackCoordinator {
     } else {
       mediaKitService?.pause();
     }
+  }
+
+  /// Awaits the native pause command before leaving the player, so the closing
+  /// transition fades a frozen frame instead of a live video still decoding.
+  Future<void> pauseAsync() async {
+    try {
+      if (isUsingExoPlayer) {
+        await exoService?.pause();
+      } else {
+        await mediaKitService?.pause();
+      }
+    } catch (_) {}
   }
 
   void stop() {
@@ -705,11 +793,15 @@ class PlayerPlaybackCoordinator {
           final lang = _getSubLanguage(extSub);
           final label = _getSubLabel(extSub);
           if (url.isNotEmpty) {
-            mediaKitService?.setSubtitleTrack(media_kit.SubtitleTrack.uri(
-              url,
-              title: label.isNotEmpty ? label : lang,
-              language: lang,
-            ));
+            unawaited(
+              mediaKitService?.addExternalSubtitle(
+                    url: url,
+                    title: label.isNotEmpty ? label : lang,
+                    language: lang,
+                    select: true,
+                  ) ??
+                  Future<void>.value(),
+            );
           }
         }
       }
@@ -779,7 +871,10 @@ class PlayerPlaybackCoordinator {
     exoService?.dispose();
     final mediaKit = mediaKitService;
     if (mediaKit != null) {
-      Future.microtask(() async {
+      // Native texture teardown is relatively expensive. Keep it out of the
+      // route's reverse transition and the first frames of the screen behind
+      // it, so closing the player never drops a frame.
+      Future.delayed(const Duration(milliseconds: 300), () async {
         try {
           await mediaKit.dispose();
         } catch (_) {}

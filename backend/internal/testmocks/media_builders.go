@@ -1,6 +1,6 @@
-package testmocks
+﻿package testmocks
 
-import "seanime/internal/api/anilist"
+import "aniting/internal/api/anilist"
 
 type BaseAnimeBuilder struct {
 	anime *anilist.BaseAnime

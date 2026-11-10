@@ -1,4 +1,4 @@
-import 'package:seanime_app/core/preferences/title_language_provider.dart';
+﻿import 'package:aniting/core/preferences/title_language_provider.dart';
 
 class MangaEntry {
   final int id;

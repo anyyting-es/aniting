@@ -1,4 +1,4 @@
-// Package main demonstrates how to use the Matroska/EBML library to extract tracks from Matroska files.
+﻿// Package main demonstrates how to use the Matroska/EBML library to extract tracks from Matroska files.
 //
 // This example application shows how to:
 //   - Parse Matroska files and extract track information
@@ -24,7 +24,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"seanime/internal/matroska"
+	"aniting/internal/matroska"
 )
 
 // formatSRTEntry formats a subtitle packet into SRT (SubRip Text) format.

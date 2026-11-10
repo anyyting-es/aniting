@@ -1,18 +1,18 @@
-package plugin
+﻿package plugin
 
 import (
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
-	database "seanime/internal/database/db"
-	"seanime/internal/database/models"
-	"seanime/internal/events"
-	"seanime/internal/extension"
-	"seanime/internal/extension_repo/prompt"
-	"seanime/internal/testutil"
-	"seanime/internal/util"
-	gojautil "seanime/internal/util/goja"
+	database "aniting/internal/database/db"
+	"aniting/internal/database/models"
+	"aniting/internal/events"
+	"aniting/internal/extension"
+	"aniting/internal/extension_repo/prompt"
+	"aniting/internal/testutil"
+	"aniting/internal/util"
+	gojautil "aniting/internal/util/goja"
 	"testing"
 	"time"
 

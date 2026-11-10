@@ -1,5 +1,5 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'package:seanime_app/core/utils/synopsis_utils.dart';
+﻿import 'package:flutter_test/flutter_test.dart';
+import 'package:aniting/core/utils/synopsis_utils.dart';
 
 void main() {
   group('cleanSynopsis', () {

@@ -1,12 +1,12 @@
-import 'package:cached_network_image/cached_network_image.dart';
+﻿import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:g1455/g1455.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/core/preferences/playback_progress_preferences_provider.dart';
-import 'package:seanime_app/core/theme/app_theme_colors.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/core/preferences/playback_progress_preferences_provider.dart';
+import 'package:aniting/core/theme/app_theme_colors.dart';
 
 /// Shows the full details modal when an episode is long-pressed
 void showEpisodeDetailModal({

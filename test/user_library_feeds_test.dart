@@ -1,19 +1,19 @@
-import 'package:cached_network_image/cached_network_image.dart';
+﻿import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/preferences/playback_progress_preferences_provider.dart';
-import 'package:seanime_app/core/server/server_manager.dart';
-import 'package:seanime_app/data/models/anime_entry.dart';
-import 'package:seanime_app/data/models/manga_entry.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/widgets/continue_watching_card.dart';
-import 'package:seanime_app/presentation/widgets/continue_reading_card.dart';
-import 'package:seanime_app/presentation/widgets/desktop_sidebar.dart';
-import 'package:seanime_app/presentation/widgets/feed_empty_state.dart';
-import 'package:seanime_app/presentation/widgets/floating_nav/floating_resume_companion.dart';
-import 'package:seanime_app/core/i18n/translations/es.dart';
-import 'package:seanime_app/core/preferences/resume_bar_preferences_provider.dart';
+import 'package:aniting/core/preferences/playback_progress_preferences_provider.dart';
+import 'package:aniting/core/server/server_manager.dart';
+import 'package:aniting/data/models/anime_entry.dart';
+import 'package:aniting/data/models/manga_entry.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/widgets/continue_watching_card.dart';
+import 'package:aniting/presentation/widgets/continue_reading_card.dart';
+import 'package:aniting/presentation/widgets/desktop_sidebar.dart';
+import 'package:aniting/presentation/widgets/feed_empty_state.dart';
+import 'package:aniting/presentation/widgets/floating_nav/floating_resume_companion.dart';
+import 'package:aniting/core/i18n/translations/es.dart';
+import 'package:aniting/core/preferences/resume_bar_preferences_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class MockServerNotifier extends ServerNotifier {

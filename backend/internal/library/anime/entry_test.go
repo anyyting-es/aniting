@@ -1,13 +1,13 @@
-package anime_test
+﻿package anime_test
 
 import (
-	"seanime/internal/api/anilist"
-	"seanime/internal/api/metadata_provider"
-	"seanime/internal/database/db"
-	"seanime/internal/extension"
-	"seanime/internal/library/anime"
-	"seanime/internal/platforms/anilist_platform"
-	"seanime/internal/util"
+	"aniting/internal/api/anilist"
+	"aniting/internal/api/metadata_provider"
+	"aniting/internal/database/db"
+	"aniting/internal/extension"
+	"aniting/internal/library/anime"
+	"aniting/internal/platforms/anilist_platform"
+	"aniting/internal/util"
 	"testing"
 
 	"github.com/stretchr/testify/assert"

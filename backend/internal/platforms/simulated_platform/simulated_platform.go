@@ -1,19 +1,19 @@
-package simulated_platform
+﻿package simulated_platform
 
 import (
 	"context"
 	"encoding/json"
 	"errors"
-	"seanime/internal/api/anilist"
-	"seanime/internal/customsource"
-	"seanime/internal/database/db"
-	"seanime/internal/extension"
-	"seanime/internal/hook"
-	"seanime/internal/local"
-	"seanime/internal/platforms/platform"
-	"seanime/internal/platforms/shared_platform"
-	"seanime/internal/util"
-	"seanime/internal/util/limiter"
+	"aniting/internal/api/anilist"
+	"aniting/internal/customsource"
+	"aniting/internal/database/db"
+	"aniting/internal/extension"
+	"aniting/internal/hook"
+	"aniting/internal/local"
+	"aniting/internal/platforms/platform"
+	"aniting/internal/platforms/shared_platform"
+	"aniting/internal/util"
+	"aniting/internal/util/limiter"
 	"sync"
 	"time"
 

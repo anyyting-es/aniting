@@ -1,15 +1,15 @@
-package local
+﻿package local
 
 import (
 	"errors"
 	"fmt"
-	"seanime/internal/api/anilist"
-	"seanime/internal/extension"
-	"seanime/internal/platforms/anilist_platform"
-	"seanime/internal/platforms/platform"
-	"seanime/internal/testmocks"
-	"seanime/internal/testutil"
-	"seanime/internal/util"
+	"aniting/internal/api/anilist"
+	"aniting/internal/extension"
+	"aniting/internal/platforms/anilist_platform"
+	"aniting/internal/platforms/platform"
+	"aniting/internal/testmocks"
+	"aniting/internal/testutil"
+	"aniting/internal/util"
 	"testing"
 	"time"
 

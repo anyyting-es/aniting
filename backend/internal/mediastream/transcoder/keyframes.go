@@ -1,11 +1,11 @@
-package transcoder
+﻿package transcoder
 
 import (
 	"bufio"
 	"path/filepath"
-	"seanime/internal/mediastream/videofile"
-	"seanime/internal/util"
-	"seanime/internal/util/result"
+	"aniting/internal/mediastream/videofile"
+	"aniting/internal/util"
+	"aniting/internal/util/result"
 	"strconv"
 	"strings"
 	"sync"

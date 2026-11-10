@@ -80,7 +80,7 @@ class SpanishTranslations implements AppTranslations {
   String get quickSearchKeyboardHint =>
       '↑ ↓ para moverte · Enter para abrir · Esc para cerrar';
   @override
-  String get serverNotConnected => 'Servidor Seanime no conectado';
+  String get serverNotConnected => 'Servidor Aniting no conectado';
   @override
   String get serverNotConnectedDesc =>
       'Inicia el servidor local o verifica la conexión para ver el contenido.';
@@ -182,6 +182,8 @@ class SpanishTranslations implements AppTranslations {
   String get statusCompleted => 'Vistos';
   @override
   String get statusPlanning => 'Planeados';
+  @override
+  String get planToWatch => 'Plan por ver';
   @override
   String get statusDropped => 'Dropeados';
   @override
@@ -303,7 +305,7 @@ class SpanishTranslations implements AppTranslations {
   @override
   String get appLanguageDesc => 'Elige tu idioma preferido para la interfaz';
   @override
-  String get serverSettings => 'Servidor Seanime';
+  String get serverSettings => 'Servidor Aniting';
   @override
   String get extensionsTitle => 'Extensiones';
   @override
@@ -323,7 +325,7 @@ class SpanishTranslations implements AppTranslations {
   String get streamingSourcesSubtitle =>
       'Activar o desactivar Torrent y Streaming Online';
   @override
-  String get serverAndNetwork => 'Servidor Seanime y Red';
+  String get serverAndNetwork => 'Servidor Aniting y Red';
   @override
   String get serverAndNetworkSubtitle =>
       'Servidor local, conexión remota IP y rendimiento';
@@ -410,6 +412,16 @@ class SpanishTranslations implements AppTranslations {
   @override
   String get audioAndGestures => 'Audio y Gestos';
   @override
+  String get ambientGlow => 'Resplandor ambiental';
+  @override
+  String get ambientGlowDesc =>
+      'Tiñe el área alrededor del video con los colores del frame. También rellena las barras negras en modo wide y cine.';
+  @override
+  String get smoothMotion => 'Suavizado de movimiento (interpolación)';
+  @override
+  String get smoothMotionDesc =>
+      'Sincroniza con la pantalla e interpola frames para quitar el judder de 24 fps en monitores de 60 Hz. Usa más GPU; solo media_kit.';
+  @override
   String get volumeBoost => 'Amplificación de Volumen (>100%)';
   @override
   String get volumeBoostDesc =>
@@ -448,7 +460,7 @@ class SpanishTranslations implements AppTranslations {
   String get animeLibraryFolderTitle => 'Carpeta de biblioteca de Anime';
   @override
   String get animeLibraryFolderDesc =>
-      'Carpeta de tu equipo donde Seanime escanea tus archivos locales de anime y descargas de vídeo.';
+      'Carpeta de tu equipo donde Aniting escanea tus archivos locales de anime y descargas de vídeo.';
   @override
   String get workingDirectoryTitle => 'Directorio de trabajo / caché';
   @override
@@ -667,6 +679,9 @@ class SpanishTranslations implements AppTranslations {
   @override
   String get noVoiceActorInfo => 'Sin información de actor de voz';
   @override
+  String get noCharacterDescriptionAvailable =>
+      'Sin descripción disponible para este personaje.';
+  @override
   String get streamingDisabledTitle => 'Fuentes de streaming desactivadas';
   @override
   String get streamingDisabledDesc =>
@@ -689,6 +704,33 @@ class SpanishTranslations implements AppTranslations {
   String get showAllEpisodes => 'Mostrar todos los episodios';
   @override
   String get hideWatchedEpisodes => 'Mostrar desde el siguiente';
+
+  // ── GPU ──────────────────────────────────────────────────────────────
+  @override
+  String get gpuSectionTitle => 'GPU';
+  @override
+  String get gpuActive => 'GPU activa';
+  @override
+  String get gpuDetected => 'Detectadas';
+  @override
+  String get gpuPreferenceTitle => 'Preferencia de GPU';
+  @override
+  String get gpuPreferenceDesc =>
+      'Windows elige la GPU por aplicación. El cambio se aplica la próxima vez que abras Aniting.';
+  @override
+  String get gpuPreferenceAuto => 'Automático';
+  @override
+  String get gpuPreferenceHigh => 'Alto rendimiento';
+  @override
+  String get gpuPreferencePower => 'Ahorro';
+  @override
+  String get gpuDedicated => 'Dedicada';
+  @override
+  String get gpuIntegrated => 'Integrada';
+  @override
+  String get gpuNoneDetected => 'No se detectaron GPUs';
+  @override
+  String get gpuRestartRequired => 'Reinicia Aniting para aplicar el cambio';
   @override
   String get switchToGrid => 'Cambiar a cuadrícula';
   @override
@@ -697,7 +739,7 @@ class SpanishTranslations implements AppTranslations {
   String get notInLocalLibrary => 'No está en tu biblioteca local';
   @override
   String get notInLocalLibraryDesc =>
-      'No se encontraron episodios descargados localmente para este anime en tu servidor de Seanime.';
+      'No se encontraron episodios descargados localmente para este anime en tu servidor de Aniting.';
   @override
   String get watchOnlineStream => 'Ver en Streaming Online';
   @override
@@ -951,6 +993,10 @@ class SpanishTranslations implements AppTranslations {
   @override
   String get exitFullScreen => 'Salir de pantalla completa';
   @override
+  String get lockScreen => 'Bloquear controles';
+  @override
+  String get unlockScreen => 'Desbloquear controles';
+  @override
   String get theaterMode => 'Modo cine';
   @override
   String get exitTheaterMode => 'Salir del modo cine';
@@ -1006,7 +1052,7 @@ class SpanishTranslations implements AppTranslations {
   String get sourceUrlLabel => 'Enlace / URL de origen:';
   @override
   String get shadersRequireMpv =>
-      'Los shaders GLSL no están disponibles con media_kit.';
+      'Los shaders GLSL necesitan el motor mpv. ExoPlayer no puede aplicarlos.';
   @override
   String get subtitleSyncDesc =>
       'Ajusta el retardo para adelantar o retrasar los subtítulos respecto al video.';
@@ -1152,7 +1198,7 @@ class SpanishTranslations implements AppTranslations {
   String get extensionInstalledSuccessfully => 'se instaló correctamente.';
   @override
   String get extensionInstallFailed =>
-      'Error al instalar. Verifica que el servidor Seanime esté en ejecución.';
+      'Error al instalar. Verifica que el servidor Aniting esté en ejecución.';
   @override
   String get extensionUninstallTitle => 'Desinstalar extensión';
   @override
@@ -1262,7 +1308,7 @@ class SpanishTranslations implements AppTranslations {
   String get openingExternalPlayer =>
       'Abriendo en reproductor externo (MPV)...';
   @override
-  String get serverNotOnline => 'El servidor Seanime no está en línea.';
+  String get serverNotOnline => 'El servidor Aniting no está en línea.';
   @override
   String get failedToStartTorrent =>
       'No se pudo iniciar el stream del torrent.';
@@ -1289,6 +1335,10 @@ class SpanishTranslations implements AppTranslations {
   String get reloadEpisodes => 'Recargar episodios';
   @override
   String get filterEpisodesHint => 'Filtrar episodios por número o título...';
+  @override
+  String get searchEpisodes => 'Buscar episodios';
+  @override
+  String get searchEpisodesShortcut => 'Buscar episodios (Ctrl+F)';
   @override
   String get filterByTitle => 'Filtrar por título...';
   @override
@@ -1748,7 +1798,7 @@ class SpanishTranslations implements AppTranslations {
   String get welcomeTvManualIp => 'Ingresar IP manualmente';
   @override
   String get welcomeTvManualIpDesc =>
-      'Escribe la dirección IP y puerto del servidor Seanime / Aniting';
+      'Escribe la dirección IP y puerto del servidor Aniting';
   @override
   String get welcomeTvServerHost => 'Dirección IP o Host';
   @override
@@ -1998,9 +2048,6 @@ class SpanishTranslations implements AppTranslations {
   String get developerSubtitle =>
       'Desarrollador del cliente nativo Flutter\nGitHub: github.com/anyyting-es';
   @override
-  String get originalServerSubtitle =>
-      'Backend y servidor multimedia original creado por 5rahim\nhttps://seanime.app';
-  @override
   String get discordCommunity => 'Comunidad de Discord';
   @override
   String get discordSubtitle =>
@@ -2012,7 +2059,7 @@ class SpanishTranslations implements AppTranslations {
   @override
   String get buildRelease => 'Build Release';
   @override
-  String get seanimeCoreServer => 'Servidor Seanime Core';
+  String get anitingCoreServer => 'Servidor Aniting Core';
   @override
   String serverVersionConnected(String version) =>
       'Versión $version (Conectado)';
@@ -2655,6 +2702,14 @@ class SpanishTranslations implements AppTranslations {
   @override
   String markedAsUnwatched(int ep) => 'Episodio $ep marcado como no visto';
   @override
+  String get addToLibrary => 'Añadir a la biblioteca';
+  @override
+  String get addedToLibrary => 'Añadido a la biblioteca';
+  @override
+  String get editStatus => 'Editar estado';
+  @override
+  String get markAsRead => 'Marcar como leído';
+  @override
   String get downloadEpisode => 'Descargar episodio';
   @override
   String get editDetails => 'Editar detalles...';
@@ -2731,7 +2786,7 @@ class SpanishTranslations implements AppTranslations {
   String get settingsSubtitleLocalLibrary =>
       'Series, películas, rutas, escáner';
   @override
-  String get settingsSubtitleServer => 'Servidor Seanime, puertos, LAN';
+  String get settingsSubtitleServer => 'Servidor Aniting, puertos, LAN';
   @override
   String get settingsSubtitleAbout => 'Versión, actualizaciones, GitHub';
 
@@ -2747,12 +2802,11 @@ class SpanishTranslations implements AppTranslations {
   @override
   String get totalRewatches => 'Total de visualizaciones';
   @override
+  String get total => 'Total';
+  @override
   String get totalRereads => 'Total de relecturas';
   @override
   String get noScore => 'Sin puntaje';
-  @override
-  String get saveChanges => 'Guardar cambios';
-
   // TMDB / Series & Seasons
   @override
   String get seasons => 'Temporadas';
@@ -3224,4 +3278,24 @@ class SpanishTranslations implements AppTranslations {
   String get windowRestore => 'Restaurar';
   @override
   String get windowClose => 'Cerrar';
+
+  // Manga Detail Desktop layout
+  @override
+  String get refreshSource => 'Actualizar fuente';
+  @override
+  String get manualMatch => 'Coincidencia manual';
+  @override
+  String get scanlator => 'Scanlator';
+  @override
+  String get showUnread => 'Mostrar no leídos';
+  @override
+  String get showDownloaded => 'Mostrar descargados';
+  @override
+  String get chapterNumberCol => 'Número';
+  @override
+  String get chapterNameCol => 'Nombre';
+  @override
+  String get scanlatorCol => 'Scanlator';
+  @override
+  String get charactersHeader => 'Personajes';
 }

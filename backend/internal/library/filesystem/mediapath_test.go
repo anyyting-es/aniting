@@ -1,10 +1,10 @@
-package filesystem
+﻿package filesystem
 
 import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"seanime/internal/util"
+	"aniting/internal/util"
 	"testing"
 
 	"github.com/stretchr/testify/assert"

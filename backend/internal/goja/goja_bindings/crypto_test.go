@@ -51,7 +51,7 @@ func TestGojaCryptoAES(t *testing.T) {
 
 		val, err := vm.RunString(`
             (() => {
-                const message = "seanime";
+                const message = "aniting";
                 const key = CryptoJS.enc.Utf8.parse("secret key");
                 const encrypted = CryptoJS.AES.encrypt(message, key);
                 return {
@@ -67,18 +67,18 @@ func TestGojaCryptoAES(t *testing.T) {
 		decoded, err := base64.StdEncoding.DecodeString(ciphertext)
 		require.NoError(t, err)
 		require.Len(t, decoded, 32)
-		require.Equal(t, "seanime", obj.Get("decrypted").String())
+		require.Equal(t, "aniting", obj.Get("decrypted").String())
 	})
 
 	t.Run("fixed iv ciphertext is deterministic", func(t *testing.T) {
 		vm := newCryptoTestVM(t)
-		message := "seanime"
+		message := "aniting"
 		key := []byte("secret key")
 		iv := []byte("3134003223491201")
 
 		val, err := vm.RunString(`
             (() => {
-                const message = "seanime";
+                const message = "aniting";
                 const key = CryptoJS.enc.Utf8.parse("secret key");
                 const iv = CryptoJS.enc.Utf8.parse("3134003223491201");
                 const encrypted = CryptoJS.AES.encrypt(message, key, { iv });
@@ -106,7 +106,7 @@ func TestGojaCryptoAES(t *testing.T) {
 		val, err := vm.RunString(`
             (() => {
                 try {
-                    CryptoJS.AES.encrypt("seanime", CryptoJS.enc.Utf8.parse("secret key"), {
+                    CryptoJS.AES.encrypt("aniting", CryptoJS.enc.Utf8.parse("secret key"), {
                         iv: CryptoJS.enc.Utf8.parse("short"),
                     });
                     return "unexpected success";
@@ -175,7 +175,7 @@ func TestGojaCryptoErrorPaths(t *testing.T) {
 			script: `
 				(() => {
 					try {
-						CryptoJS.AES.encrypt("seanime", CryptoJS.enc.Utf8.parse("secret key")).toString("bad");
+						CryptoJS.AES.encrypt("aniting", CryptoJS.enc.Utf8.parse("secret key")).toString("bad");
 						return "unexpected success";
 					} catch (e) {
 						return String(e);

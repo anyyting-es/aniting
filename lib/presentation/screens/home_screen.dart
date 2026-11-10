@@ -1,10 +1,10 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/screens/settings_screen.dart';
-import 'package:seanime_app/presentation/widgets/anime_card.dart';
-import 'package:seanime_app/presentation/widgets/server_status_banner.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/screens/settings_screen.dart';
+import 'package:aniting/presentation/widgets/anime_card.dart';
+import 'package:aniting/presentation/widgets/server_status_banner.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});

@@ -1,14 +1,14 @@
-package plugin
+﻿package plugin
 
 import (
 	"errors"
-	"seanime/internal/api/anilist"
-	"seanime/internal/extension"
-	"seanime/internal/library/playbackmanager"
-	"seanime/internal/mediaplayers/mediaplayer"
-	"seanime/internal/mediaplayers/mpv"
-	"seanime/internal/mediaplayers/mpvipc"
-	gojautil "seanime/internal/util/goja"
+	"aniting/internal/api/anilist"
+	"aniting/internal/extension"
+	"aniting/internal/library/playbackmanager"
+	"aniting/internal/mediaplayers/mediaplayer"
+	"aniting/internal/mediaplayers/mpv"
+	"aniting/internal/mediaplayers/mpvipc"
+	gojautil "aniting/internal/util/goja"
 
 	"github.com/dop251/goja"
 	"github.com/google/uuid"

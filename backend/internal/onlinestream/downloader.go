@@ -1,4 +1,4 @@
-package onlinestream
+﻿package onlinestream
 
 import (
 	"bufio"
@@ -17,11 +17,11 @@ import (
 	"sync"
 	"time"
 
-	"seanime/internal/database/db"
-	"seanime/internal/database/db_bridge"
-	"seanime/internal/events"
-	"seanime/internal/notifier"
-	"seanime/internal/util"
+	"aniting/internal/database/db"
+	"aniting/internal/database/db_bridge"
+	"aniting/internal/events"
+	"aniting/internal/notifier"
+	"aniting/internal/util"
 
 	"github.com/rs/zerolog"
 )

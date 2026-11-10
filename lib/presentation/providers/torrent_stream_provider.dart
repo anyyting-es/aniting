@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:seanime_app/core/api/ws_events.dart';
-import 'package:seanime_app/data/models/torrent_models.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
+import 'package:aniting/core/api/ws_events.dart';
+import 'package:aniting/data/models/torrent_models.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
 
 /// Notifier que mantiene el estado en tiempo real de la descarga del torrent
-/// recibido mediante eventos WebSocket del servidor Seanime (`torrentstream-state`).
+/// recibido mediante eventos WebSocket del servidor Aniting (`torrentstream-state`).
 class TorrentStreamStatusNotifier extends Notifier<TorrentStreamStatus?> {
   StreamSubscription? _sub;
 

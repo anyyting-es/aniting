@@ -1,15 +1,15 @@
-package handlers
+﻿package handlers
 
 import (
 	"errors"
 	"os"
-	"seanime/internal/api/anilist"
-	"seanime/internal/api/metadata"
-	"seanime/internal/database/models"
-	"seanime/internal/events"
-	hibiketorrent "seanime/internal/extension/hibike/torrent"
-	"seanime/internal/torrentstream"
-	"seanime/internal/util"
+	"aniting/internal/api/anilist"
+	"aniting/internal/api/metadata"
+	"aniting/internal/database/models"
+	"aniting/internal/events"
+	hibiketorrent "aniting/internal/extension/hibike/torrent"
+	"aniting/internal/torrentstream"
+	"aniting/internal/util"
 
 	"github.com/labstack/echo/v4"
 )

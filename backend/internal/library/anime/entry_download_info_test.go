@@ -1,8 +1,8 @@
-package anime_test
+﻿package anime_test
 
 import (
-	"seanime/internal/api/anilist"
-	"seanime/internal/library/anime"
+	"aniting/internal/api/anilist"
+	"aniting/internal/library/anime"
 	"testing"
 
 	"github.com/stretchr/testify/require"

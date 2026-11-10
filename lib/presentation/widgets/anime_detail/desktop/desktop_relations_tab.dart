@@ -1,12 +1,15 @@
-import 'package:cached_network_image/cached_network_image.dart';
+﻿import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/data/models/anime_entry.dart';
-import 'package:seanime_app/data/models/manga_entry.dart';
-import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
-import 'package:seanime_app/presentation/screens/manga_detail_screen.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/core/preferences/title_language_provider.dart';
+import 'package:aniting/data/models/anime_entry.dart';
+import 'package:aniting/data/models/manga_entry.dart';
+import 'package:aniting/presentation/screens/anime_detail_screen.dart';
+import 'package:aniting/presentation/screens/manga_detail_screen.dart';
+import 'package:aniting/presentation/widgets/anime_preview/show_preview_data.dart';
+import 'package:aniting/presentation/widgets/anime_preview/show_quick_view_detector.dart';
 
 class DesktopRelationsTab extends ConsumerWidget {
   final List relations;
@@ -134,17 +137,17 @@ class DesktopRelationsTab extends ConsumerWidget {
   }
 }
 
-class _DesktopRelationCard extends StatefulWidget {
+class _DesktopRelationCard extends ConsumerStatefulWidget {
   final Map<String, dynamic>? edge;
   final AppTranslations l10n;
 
   const _DesktopRelationCard({required this.edge, required this.l10n});
 
   @override
-  State<_DesktopRelationCard> createState() => _DesktopRelationCardState();
+  ConsumerState<_DesktopRelationCard> createState() => _DesktopRelationCardState();
 }
 
-class _DesktopRelationCardState extends State<_DesktopRelationCard> {
+class _DesktopRelationCardState extends ConsumerState<_DesktopRelationCard> {
   bool _isHovered = false;
 
   String _formatRelationLabel(String raw) => widget.l10n.formatRelationType(raw);
@@ -163,43 +166,52 @@ class _DesktopRelationCardState extends State<_DesktopRelationCard> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final titleColor = isDark ? Colors.white : theme.colorScheme.onSurface;
+    final titleLang = ref.watch(titleLanguageProvider);
 
-    return RepaintBoundary(
-      child: MouseRegion(
+    void openDetails() {
+      final type = node?['type'] as String?;
+      if (type == 'MANGA') {
+        MangaEntry? manga;
+        if (node != null) {
+          try {
+            manga = MangaEntry.fromJson(node);
+          } catch (_) {}
+        }
+        MangaDetailScreen.navigate(
+          context,
+          mediaId: relId,
+          initialEntry: manga,
+        );
+      } else {
+        AnimeEntry? entry;
+        if (node != null) {
+          try {
+            entry = AnimeEntry.fromJson(node);
+          } catch (_) {}
+        }
+        AnimeDetailScreen.navigate(
+          context,
+          mediaId: relId,
+          initialEntry: entry,
+        );
+      }
+    }
+
+    ShowPreviewData? previewData;
+    if (node != null) {
+      try {
+        previewData = (node['type'] as String?) == 'MANGA'
+            ? ShowPreviewData.fromManga(MangaEntry.fromJson(node), titleLang)
+            : ShowPreviewData.fromAnime(AnimeEntry.fromJson(node), titleLang);
+      } catch (_) {}
+    }
+
+    final card = MouseRegion(
         cursor: relId > 0 ? SystemMouseCursors.click : SystemMouseCursors.basic,
         onEnter: (_) => setState(() => _isHovered = true),
         onExit: (_) => setState(() => _isHovered = false),
         child: InkWell(
-        onTap: relId > 0
-              ? () {
-                  final type = node?['type'] as String?;
-                  if (type == 'MANGA') {
-                    MangaEntry? manga;
-                    if (node != null) {
-                      try {
-                        manga = MangaEntry.fromJson(node);
-                      } catch (_) {}
-                    }
-                    MangaDetailScreen.navigate(
-                      context,
-                      mediaId: relId,
-                      initialEntry: manga,
-                    );
-                  } else {
-                    AnimeEntry? entry;
-                    if (node != null) {
-                      try {
-                        entry = AnimeEntry.fromJson(node);
-                      } catch (_) {}
-                    }
-                    AnimeDetailScreen.navigate(
-                      context,
-                      mediaId: relId,
-                      initialEntry: entry,
-                    );
-                  }
-                }
-              : null,
+        onTap: relId > 0 ? openDetails : null,
           borderRadius: BorderRadius.circular(10),
           hoverColor: Colors.transparent,
           splashColor: Colors.transparent,
@@ -285,7 +297,16 @@ class _DesktopRelationCardState extends State<_DesktopRelationCard> {
             ],
           ),
         ),
-      ),
+      );
+
+    return RepaintBoundary(
+      child: previewData == null
+          ? card
+          : ShowQuickViewDetector(
+              dataBuilder: () => previewData!,
+              onOpenDetails: openDetails,
+              child: card,
+            ),
     );
   }
 }

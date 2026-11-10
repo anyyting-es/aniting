@@ -1,7 +1,7 @@
-package extension
+﻿package extension
 
 import (
-	hibikemanga "seanime/internal/extension/hibike/manga"
+	hibikemanga "aniting/internal/extension/hibike/manga"
 )
 
 type MangaProviderExtension interface {

@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"seanime/internal/api/anilist"
-	hibiketorrent "seanime/internal/extension/hibike/torrent"
-	"seanime/internal/library/anime"
-	"seanime/internal/mkvparser"
-	"seanime/internal/player"
-	"seanime/internal/util/result"
+	"aniting/internal/api/anilist"
+	hibiketorrent "aniting/internal/extension/hibike/torrent"
+	"aniting/internal/library/anime"
+	"aniting/internal/mkvparser"
+	"aniting/internal/player"
+	"aniting/internal/util/result"
 )
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -80,10 +80,10 @@ func (m *Manager) PlayNakamaStream(ctx context.Context, opts PlayNakamaStreamOpt
 		httpBaseStream: httpBaseStream{
 			streamUrl: opts.StreamUrl,
 			requestHeaders: http.Header{
-				"X-Seanime-Nakama-Token": []string{opts.NakamaHostPassword},
+				"X-Aniting-Nakama-Token": []string{opts.NakamaHostPassword},
 			},
 			headResponseHeaders: http.Header{
-				"X-Seanime-Nakama-Token": []string{opts.NakamaHostPassword},
+				"X-Aniting-Nakama-Token": []string{opts.NakamaHostPassword},
 			},
 			BaseStream: BaseStream{
 				manager:               m,

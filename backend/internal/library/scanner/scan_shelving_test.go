@@ -1,12 +1,12 @@
-package scanner
+﻿package scanner
 
 import (
 	"os"
 	"path/filepath"
-	"seanime/internal/events"
-	"seanime/internal/library/anime"
-	"seanime/internal/platforms/platform"
-	"seanime/internal/util"
+	"aniting/internal/events"
+	"aniting/internal/library/anime"
+	"aniting/internal/platforms/platform"
+	"aniting/internal/util"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -17,7 +17,7 @@ func TestScanner_Shelving(t *testing.T) {
 	logger := wrapper.Logger
 
 	// a temporary directory for the library
-	tempDir, err := os.MkdirTemp("", "seanime_test_library")
+	tempDir, err := os.MkdirTemp("", "aniting_test_library")
 	if err != nil {
 		t.Fatal(err)
 	}

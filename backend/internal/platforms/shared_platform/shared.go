@@ -1,16 +1,16 @@
-package shared_platform
+﻿package shared_platform
 
 import (
 	"context"
 	"errors"
-	"seanime/internal/api/anilist"
-	"seanime/internal/customsource"
-	"seanime/internal/database/db"
-	"seanime/internal/extension"
-	"seanime/internal/hook"
-	"seanime/internal/platforms/platform"
-	"seanime/internal/util"
-	"seanime/internal/util/result"
+	"aniting/internal/api/anilist"
+	"aniting/internal/customsource"
+	"aniting/internal/database/db"
+	"aniting/internal/extension"
+	"aniting/internal/hook"
+	"aniting/internal/platforms/platform"
+	"aniting/internal/util"
+	"aniting/internal/util/result"
 	"time"
 
 	"github.com/rs/zerolog"

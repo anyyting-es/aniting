@@ -1,9 +1,9 @@
-package testmocks
+﻿package testmocks
 
 import (
 	"context"
 	"fmt"
-	"seanime/internal/api/anilist"
+	"aniting/internal/api/anilist"
 )
 
 type FakePlatformBuilder struct {

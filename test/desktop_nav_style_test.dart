@@ -1,9 +1,9 @@
-import 'package:flutter_test/flutter_test.dart';
+﻿import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:seanime_app/core/preferences/desktop_nav_style_provider.dart';
-import 'package:seanime_app/core/i18n/translations/en.dart';
-import 'package:seanime_app/core/i18n/translations/es.dart';
+import 'package:aniting/core/preferences/desktop_nav_style_provider.dart';
+import 'package:aniting/core/i18n/translations/en.dart';
+import 'package:aniting/core/i18n/translations/es.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

@@ -1,8 +1,8 @@
-package mpchc
+﻿package mpchc
 
 import (
-	"seanime/internal/testutil"
-	"seanime/internal/util"
+	"aniting/internal/testutil"
+	"aniting/internal/util"
 	"testing"
 	"time"
 

@@ -1,11 +1,11 @@
-package anilist
+﻿package anilist
 
 import (
 	"context"
 	"errors"
 	"net/http"
 	"net/url"
-	"seanime/internal/constants"
+	"aniting/internal/constants"
 	"strings"
 	"sync"
 )

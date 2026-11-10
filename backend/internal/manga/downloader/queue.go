@@ -1,13 +1,13 @@
-package chapter_downloader
+﻿package chapter_downloader
 
 import (
 	"github.com/goccy/go-json"
 	"github.com/rs/zerolog"
-	"seanime/internal/database/db"
-	"seanime/internal/database/models"
-	"seanime/internal/events"
-	hibikemanga "seanime/internal/extension/hibike/manga"
-	"seanime/internal/util"
+	"aniting/internal/database/db"
+	"aniting/internal/database/models"
+	"aniting/internal/events"
+	hibikemanga "aniting/internal/extension/hibike/manga"
+	"aniting/internal/util"
 	"sync"
 	"time"
 )

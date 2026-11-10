@@ -1,4 +1,4 @@
-package handlers
+﻿package handlers
 
 import (
 	"archive/zip"
@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"io"
 	"path/filepath"
-	"seanime/internal/database/db_bridge"
-	"seanime/internal/library/anime"
-	"seanime/internal/report"
+	"aniting/internal/database/db_bridge"
+	"aniting/internal/library/anime"
+	"aniting/internal/report"
 	"time"
 
 	"github.com/labstack/echo/v4"

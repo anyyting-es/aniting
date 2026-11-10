@@ -1,12 +1,12 @@
-import 'package:cached_network_image/cached_network_image.dart';
+﻿import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/downloads/online_stream_download_task.dart';
-import 'package:seanime_app/core/downloads/online_stream_downloader.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/presentation/providers/online_stream_download_provider.dart';
-import 'package:seanime_app/presentation/screens/settings/widgets/pixel_settings_widgets.dart';
+import 'package:aniting/core/downloads/online_stream_download_task.dart';
+import 'package:aniting/core/downloads/online_stream_downloader.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/presentation/providers/online_stream_download_provider.dart';
+import 'package:aniting/presentation/screens/settings/widgets/pixel_settings_widgets.dart';
 
 /// Lists the online stream downloads (in progress, paused and failed) inside the
 /// download manager, sharing the same flow as torrent downloads.

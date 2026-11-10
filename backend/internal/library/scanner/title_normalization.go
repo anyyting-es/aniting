@@ -1,9 +1,9 @@
-package scanner
+﻿package scanner
 
 import (
 	"regexp"
-	"seanime/internal/library/anime"
-	"seanime/internal/util/comparison"
+	"aniting/internal/library/anime"
+	"aniting/internal/util/comparison"
 	"strconv"
 	"strings"
 	"unicode"

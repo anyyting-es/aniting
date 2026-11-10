@@ -1,4 +1,4 @@
-package directstream
+﻿package directstream
 
 import (
 	"cmp"
@@ -8,10 +8,10 @@ import (
 	"hash/fnv"
 	"io"
 	"math"
-	"seanime/internal/events"
-	"seanime/internal/mkvparser"
-	"seanime/internal/player"
-	"seanime/internal/util"
+	"aniting/internal/events"
+	"aniting/internal/mkvparser"
+	"aniting/internal/player"
+	"aniting/internal/util"
 	"sort"
 	"strings"
 	"sync"

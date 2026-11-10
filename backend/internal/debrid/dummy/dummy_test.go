@@ -1,4 +1,4 @@
-package dummy
+﻿package dummy
 
 import (
 	"context"
@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"seanime/internal/database/models"
-	"seanime/internal/debrid/debrid"
-	"seanime/internal/util"
+	"aniting/internal/database/models"
+	"aniting/internal/debrid/debrid"
+	"aniting/internal/util"
 	"testing"
 	"time"
 

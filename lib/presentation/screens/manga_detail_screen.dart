@@ -1,20 +1,20 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:seanime_app/core/api/ws_events.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/preferences/layout_mode_provider.dart';
-import 'package:seanime_app/core/preferences/title_language_provider.dart';
-import 'package:seanime_app/core/theme/custom_route_transitions.dart';
-import 'package:seanime_app/core/theme/theme_provider.dart';
-import 'package:seanime_app/data/models/manga_entry.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/screens/manga_reader_screen.dart';
-import 'package:seanime_app/presentation/widgets/edit_entry_modal.dart';
-import 'package:seanime_app/presentation/widgets/manga/manga_details_modal_sheet.dart';
-import 'package:seanime_app/presentation/widgets/manga_detail/manga_detail_desktop_layout.dart';
-import 'package:seanime_app/presentation/widgets/manga_detail/manga_detail_mobile_layout.dart';
+import 'package:aniting/core/api/ws_events.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/preferences/layout_mode_provider.dart';
+import 'package:aniting/core/preferences/title_language_provider.dart';
+import 'package:aniting/core/theme/custom_route_transitions.dart';
+import 'package:aniting/core/theme/theme_provider.dart';
+import 'package:aniting/data/models/manga_entry.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/screens/manga_reader_screen.dart';
+import 'package:aniting/presentation/widgets/edit_entry_modal.dart';
+import 'package:aniting/presentation/widgets/manga/manga_details_modal_sheet.dart';
+import 'package:aniting/presentation/widgets/manga_detail/manga_detail_desktop_layout.dart';
+import 'package:aniting/presentation/widgets/manga_detail/manga_detail_mobile_layout.dart';
 
 class MangaDetailScreen extends ConsumerStatefulWidget {
   final int mediaId;

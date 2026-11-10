@@ -1,15 +1,15 @@
-package anime_test
+﻿package anime_test
 
 import (
-	"seanime/internal/api/anilist"
-	"seanime/internal/api/metadata"
-	"seanime/internal/api/metadata_provider"
-	"seanime/internal/extension"
-	"seanime/internal/library/anime"
-	"seanime/internal/platforms/anilist_platform"
-	"seanime/internal/platforms/platform"
-	"seanime/internal/testutil"
-	"seanime/internal/util"
+	"aniting/internal/api/anilist"
+	"aniting/internal/api/metadata"
+	"aniting/internal/api/metadata_provider"
+	"aniting/internal/extension"
+	"aniting/internal/library/anime"
+	"aniting/internal/platforms/anilist_platform"
+	"aniting/internal/platforms/platform"
+	"aniting/internal/testutil"
+	"aniting/internal/util"
 	"sort"
 	"strconv"
 	"testing"

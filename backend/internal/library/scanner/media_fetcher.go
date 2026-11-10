@@ -1,20 +1,20 @@
-package scanner
+﻿package scanner
 
 import (
 	"context"
 	"errors"
-	"seanime/internal/api/anilist"
-	"seanime/internal/api/animeofflinedb"
-	"seanime/internal/api/mal"
-	"seanime/internal/api/metadata"
-	"seanime/internal/api/metadata_provider"
-	"seanime/internal/customsource"
-	"seanime/internal/hook"
-	"seanime/internal/library/anime"
-	"seanime/internal/platforms/platform"
-	"seanime/internal/util"
-	"seanime/internal/util/limiter"
-	"seanime/internal/util/parallel"
+	"aniting/internal/api/anilist"
+	"aniting/internal/api/animeofflinedb"
+	"aniting/internal/api/mal"
+	"aniting/internal/api/metadata"
+	"aniting/internal/api/metadata_provider"
+	"aniting/internal/customsource"
+	"aniting/internal/hook"
+	"aniting/internal/library/anime"
+	"aniting/internal/platforms/platform"
+	"aniting/internal/util"
+	"aniting/internal/util/limiter"
+	"aniting/internal/util/parallel"
 	"time"
 
 	"github.com/davecgh/go-spew/spew"

@@ -1,13 +1,13 @@
-package handlers
+﻿package handlers
 
 import (
 	"errors"
 	"path/filepath"
 	"strings"
-	"seanime/internal/database/db_bridge"
-	"seanime/internal/library/anime"
-	"seanime/internal/library/scanner"
-	"seanime/internal/library/summary"
+	"aniting/internal/database/db_bridge"
+	"aniting/internal/library/anime"
+	"aniting/internal/library/scanner"
+	"aniting/internal/library/summary"
 
 	"github.com/labstack/echo/v4"
 )

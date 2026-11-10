@@ -1,5 +1,5 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/storage/app_storage_paths.dart';
+﻿import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:aniting/core/storage/app_storage_paths.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class DownloadPreferencesState {

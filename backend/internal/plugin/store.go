@@ -1,11 +1,11 @@
-package plugin
+﻿package plugin
 
 // Source: PocketBase
 
 import (
 	"encoding/json"
-	gojautil "seanime/internal/util/goja"
-	"seanime/internal/util/result"
+	gojautil "aniting/internal/util/goja"
+	"aniting/internal/util/result"
 	"sync"
 
 	"github.com/dop251/goja"

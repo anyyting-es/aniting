@@ -1,6 +1,6 @@
-import 'package:seanime_app/data/models/anime_details.dart';
-import 'package:seanime_app/data/models/anizip_data.dart';
-import 'package:seanime_app/presentation/widgets/player/models/player_direct_episode.dart';
+﻿import 'package:aniting/data/models/anime_details.dart';
+import 'package:aniting/data/models/anizip_data.dart';
+import 'package:aniting/presentation/widgets/player/models/player_direct_episode.dart';
 import '../models/media_server_config.dart';
 import '../models/media_server_item.dart';
 import '../models/media_server_type.dart';

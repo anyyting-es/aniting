@@ -1,8 +1,8 @@
-package plugin_ui
+﻿package plugin_ui
 
 import (
 	"fmt"
-	"seanime/internal/util/result"
+	"aniting/internal/util/result"
 
 	"github.com/dop251/goja"
 	"github.com/goccy/go-json"

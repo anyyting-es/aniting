@@ -1,15 +1,15 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:seanime_app/core/api/api_client.dart';
-import 'package:seanime_app/data/models/anime_details.dart';
-import 'package:seanime_app/data/repositories/seanime_repository.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
-import 'package:seanime_app/presentation/widgets/anime_detail/anime_detail_mobile_layout.dart';
+import 'package:aniting/core/api/api_client.dart';
+import 'package:aniting/data/models/anime_details.dart';
+import 'package:aniting/data/repositories/aniting_repository.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/screens/anime_detail_screen.dart';
+import 'package:aniting/presentation/widgets/anime_detail/anime_detail_mobile_layout.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class FakeDetailRepo extends SeanimeRepository {
+class FakeDetailRepo extends AnitingRepository {
   FakeDetailRepo() : super(ApiClient());
 
   @override

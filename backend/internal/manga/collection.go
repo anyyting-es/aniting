@@ -1,12 +1,12 @@
-package manga
+﻿package manga
 
 import (
 	"cmp"
 	"fmt"
-	"seanime/internal/api/anilist"
-	"seanime/internal/hook"
-	"seanime/internal/platforms/platform"
-	"seanime/internal/util"
+	"aniting/internal/api/anilist"
+	"aniting/internal/hook"
+	"aniting/internal/platforms/platform"
+	"aniting/internal/util"
 	"slices"
 
 	"github.com/samber/lo"

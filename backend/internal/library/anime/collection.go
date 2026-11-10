@@ -1,14 +1,14 @@
-package anime
+﻿package anime
 
 import (
 	"cmp"
 	"context"
 	"path/filepath"
-	"seanime/internal/api/anilist"
-	"seanime/internal/api/metadata_provider"
-	"seanime/internal/hook"
-	"seanime/internal/platforms/platform"
-	"seanime/internal/util"
+	"aniting/internal/api/anilist"
+	"aniting/internal/api/metadata_provider"
+	"aniting/internal/hook"
+	"aniting/internal/platforms/platform"
+	"aniting/internal/util"
 	"slices"
 	"sort"
 

@@ -1,6 +1,6 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'package:dio/dio.dart';
-import 'package:seanime_app/core/constants/app_constants.dart';
+import 'package:aniting/core/constants/app_constants.dart';
 
 class ApiClient {
   late Dio _dio;
@@ -35,7 +35,7 @@ class ApiClient {
           'Accept': 'application/json',
           'Origin': _origin,
           'Referer': '$_origin/',
-          if (_token != null && _token!.isNotEmpty) 'X-Seanime-Token': _token,
+          if (_token != null && _token!.isNotEmpty) 'X-Aniting-Token': _token,
         },
       ),
     );
@@ -46,7 +46,7 @@ class ApiClient {
           options.headers['Origin'] ??= _origin;
           options.headers['Referer'] ??= '$_origin/';
           if (_token != null && _token!.isNotEmpty) {
-            options.headers['X-Seanime-Token'] = _token;
+            options.headers['X-Aniting-Token'] = _token;
           }
           return handler.next(options);
         },
@@ -65,9 +65,9 @@ class ApiClient {
     _dio.options.headers['Origin'] = _origin;
     _dio.options.headers['Referer'] = '$_origin/';
     if (_token != null) {
-      _dio.options.headers['X-Seanime-Token'] = _token;
+      _dio.options.headers['X-Aniting-Token'] = _token;
     } else {
-      _dio.options.headers.remove('X-Seanime-Token');
+      _dio.options.headers.remove('X-Aniting-Token');
     }
   }
 

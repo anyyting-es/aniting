@@ -1,13 +1,13 @@
-package videocore
+﻿package videocore
 
 import (
 	"bytes"
 	"context"
 	"fmt"
 	"regexp"
-	"seanime/internal/mkvparser"
-	"seanime/internal/util/limiter"
-	"seanime/internal/util/result"
+	"aniting/internal/mkvparser"
+	"aniting/internal/util/limiter"
+	"aniting/internal/util/result"
 	"sort"
 	"strings"
 	"sync"

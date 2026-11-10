@@ -1,4 +1,4 @@
-package cassette
+﻿package cassette
 
 import (
 	"bufio"
@@ -10,7 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"seanime/internal/util"
+	"aniting/internal/util"
 	"strings"
 	"sync"
 	"time"

@@ -1,6 +1,6 @@
-package handlers
+﻿package handlers
 
-import "seanime/internal/events"
+import "aniting/internal/events"
 
 func (h *Handler) HandleClientEvents(event *events.WebsocketClientEvent) {
 

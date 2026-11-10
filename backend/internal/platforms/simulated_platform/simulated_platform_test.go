@@ -1,14 +1,14 @@
-package simulated_platform
+﻿package simulated_platform
 
 import (
 	"context"
 	"errors"
-	"seanime/internal/api/anilist"
-	"seanime/internal/extension"
-	"seanime/internal/local"
-	"seanime/internal/testmocks"
-	"seanime/internal/testutil"
-	"seanime/internal/util"
+	"aniting/internal/api/anilist"
+	"aniting/internal/extension"
+	"aniting/internal/local"
+	"aniting/internal/testmocks"
+	"aniting/internal/testutil"
+	"aniting/internal/util"
 	"testing"
 
 	"github.com/gqlgo/gqlgenc/clientv2"

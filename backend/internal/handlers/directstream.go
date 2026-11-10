@@ -1,13 +1,13 @@
-package handlers
+﻿package handlers
 
 import (
 	"fmt"
 	"net/http"
-	"seanime/internal/database/db_bridge"
-	"seanime/internal/directstream"
-	"seanime/internal/mkvparser"
-	"seanime/internal/security"
-	"seanime/internal/util"
+	"aniting/internal/database/db_bridge"
+	"aniting/internal/directstream"
+	"aniting/internal/mkvparser"
+	"aniting/internal/security"
+	"aniting/internal/util"
 
 	"github.com/labstack/echo/v4"
 )

@@ -8,7 +8,7 @@ import (
 
 func defaultPush(title, message, icon string) error {
 	notification := toast.Notification{
-		AppID:   "Seanime",
+		AppID:   "Aniting",
 		Title:   title,
 		Message: message,
 		Icon:    icon,

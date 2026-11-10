@@ -1,11 +1,11 @@
-package library_explorer
+﻿package library_explorer
 
 import (
 	"fmt"
-	"seanime/internal/api/anilist"
-	"seanime/internal/database/db"
-	"seanime/internal/platforms/platform"
-	"seanime/internal/util"
+	"aniting/internal/api/anilist"
+	"aniting/internal/database/db"
+	"aniting/internal/platforms/platform"
+	"aniting/internal/util"
 	"sync"
 
 	"github.com/rs/zerolog"

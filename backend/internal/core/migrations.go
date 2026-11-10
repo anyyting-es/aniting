@@ -1,9 +1,9 @@
-package core
+﻿package core
 
 import (
-	"seanime/internal/constants"
-	"seanime/internal/database/models"
-	"seanime/internal/util"
+	"aniting/internal/constants"
+	"aniting/internal/database/models"
+	"aniting/internal/util"
 	"strings"
 
 	"github.com/Masterminds/semver/v3"

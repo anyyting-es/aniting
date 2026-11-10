@@ -1,4 +1,4 @@
-package directstream
+﻿package directstream
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	httputil "seanime/internal/util/http"
+	httputil "aniting/internal/util/http"
 	"time"
 
 	"github.com/neilotoole/streamcache"

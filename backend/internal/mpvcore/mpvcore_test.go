@@ -1,9 +1,9 @@
-package mpvcore
+﻿package mpvcore
 
 import (
 	"encoding/json"
-	"seanime/internal/events"
-	"seanime/internal/util"
+	"aniting/internal/events"
+	"aniting/internal/util"
 	"sync"
 	"testing"
 	"time"

@@ -1,28 +1,29 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/preferences/episode_view_mode_provider.dart';
-import 'package:seanime_app/core/preferences/playback_progress_preferences_provider.dart';
-import 'package:seanime_app/core/preferences/title_language_provider.dart';
-import 'package:seanime_app/core/theme/app_theme_colors.dart';
-import 'package:seanime_app/data/models/anime_details.dart';
-import 'package:seanime_app/data/models/library_entry_details.dart';
-import 'package:seanime_app/data/models/onlinestream_models.dart';
-import 'package:seanime_app/presentation/providers/active_downloads_provider.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/providers/download_history_provider.dart';
-import 'package:seanime_app/presentation/screens/extensions_marketplace_screen.dart';
-import 'package:seanime_app/presentation/screens/video_player_screen.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/preferences/episode_view_mode_provider.dart';
+import 'package:aniting/core/preferences/playback_progress_preferences_provider.dart';
+import 'package:aniting/core/preferences/title_language_provider.dart';
+import 'package:aniting/core/theme/app_theme_colors.dart';
+import 'package:aniting/data/models/anime_details.dart';
+import 'package:aniting/data/models/anizip_data.dart';
+import 'package:aniting/data/models/library_entry_details.dart';
+import 'package:aniting/data/models/onlinestream_models.dart';
+import 'package:aniting/presentation/providers/active_downloads_provider.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/providers/download_history_provider.dart';
+import 'package:aniting/presentation/screens/extensions_marketplace_screen.dart';
+import 'package:aniting/presentation/screens/video_player_screen.dart';
 import 'package:flutter/services.dart';
 import 'package:g1455/g1455.dart';
-import 'package:seanime_app/presentation/providers/episode_selection_provider.dart';
-import 'package:seanime_app/presentation/widgets/episode_item_widget.dart';
-import 'package:seanime_app/presentation/widgets/anime_detail/mobile/anime_detail_manual_mapping_sheet.dart';
-import 'package:seanime_app/presentation/widgets/online_stream_download_dialog.dart';
-import 'package:seanime_app/presentation/widgets/toast/app_toast.dart';
+import 'package:aniting/presentation/providers/episode_selection_provider.dart';
+import 'package:aniting/presentation/widgets/episode_item_widget.dart';
+import 'package:aniting/presentation/widgets/anime_detail/mobile/anime_detail_manual_mapping_sheet.dart';
+import 'package:aniting/presentation/widgets/online_stream_download_dialog.dart';
+import 'package:aniting/presentation/widgets/toast/app_toast.dart';
 
 class OnlineStreamViewController {
   _OnlineStreamViewState? _state;
@@ -274,7 +275,9 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
           mediaId: widget.mediaId,
           videoUrl: streamUrl,
           title: animeTitle,
-          episodeTitle: localEp.displayTitle.isNotEmpty ? localEp.displayTitle : ep.localizedDisplayTitle(l10n),
+          episodeTitle: localEp.displayTitle.isNotEmpty
+              ? localEp.displayTitle
+              : _resolveEpisodeTitle(ep, l10n),
           episodeNumber: ep.number,
           videoSource: fileName != null ? 'Local • $fileName' : l10n.localLibrary,
           startPosition: startPos,
@@ -306,7 +309,7 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
         mediaId: widget.mediaId,
         videoUrl: '',
         title: animeTitle,
-        episodeTitle: ep.localizedDisplayTitle(l10n),
+        episodeTitle: _resolveEpisodeTitle(ep, l10n),
         episodeNumber: ep.number,
         videoSource: providerName,
         startPosition: startPos,
@@ -322,13 +325,13 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
   void _handleDownloadEpisode(OnlinestreamEpisode ep) {
     final l10n = ref.read(translationsProvider);
     if (widget.onDownloadEpisode != null) {
-      widget.onDownloadEpisode!(ep.number, ep.localizedDisplayTitle(l10n));
+      widget.onDownloadEpisode!(
+        ep.number,
+        _resolveEpisodeTitle(ep, l10n),
+      );
       return;
     }
-    final aniZipEp = widget.animeDetails?.aniZipData?.episodes
-        .where((e) => e.episodeNumber == ep.number)
-        .firstOrNull;
-    final epImg = (ep.image != null && ep.image!.isNotEmpty) ? ep.image : aniZipEp?.image;
+    final epImg = _resolveEpisodeImage(ep);
     final animeTitle = widget.animeDetails?.title ?? 'Anime';
 
     showOnlineStreamDownloadDialog(
@@ -336,7 +339,7 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
       mediaId: widget.mediaId,
       episodeNumber: ep.number,
       animeTitle: animeTitle,
-      episodeTitle: ep.localizedDisplayTitle(l10n),
+      episodeTitle: _resolveEpisodeTitle(ep, l10n),
       thumbnail: epImg,
       provider: _selectedProvider,
       isDubbed: _isDubbed,
@@ -394,10 +397,57 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
     }
   }
 
+  bool _isGenericEpisodeTitle(String? title) {
+    final value = (title ?? '').trim();
+    if (value.isEmpty) return true;
+    return RegExp(
+      r'^(episode|episodio|ep|special|especial|especiales)\s*\d+$',
+      caseSensitive: false,
+    ).hasMatch(value);
+  }
+
+  AniZipEpisode? _aniZipEpisodeFor(int number) =>
+      widget.animeDetails?.aniZipData?.episodes
+          .where((e) => e.episodeNumber == number)
+          .firstOrNull;
+
+  AnimeEpisode? _backendEpisodeFor(int number) {
+    for (final ep in widget.animeDetails?.episodes ?? const <AnimeEpisode>[]) {
+      if (ep.episodeNumber == number) return ep;
+    }
+    return null;
+  }
+
+  /// The provider (e.g. EspAnime) often exposes generic "Episodio N" titles.
+  /// Prefer AniZip/Animap metadata when the provider has no real title.
+  String _resolveEpisodeTitle(OnlinestreamEpisode ep, AppTranslations l10n) {
+    final providerTitle = ep.localizedDisplayTitle(l10n);
+    if (!_isGenericEpisodeTitle(providerTitle)) return providerTitle;
+
+    final aniZipTitle = _aniZipEpisodeFor(
+      ep.number,
+    )?.displayTitleForLang(ref.read(appLanguageProvider).code);
+    if (!_isGenericEpisodeTitle(aniZipTitle)) return aniZipTitle!;
+
+    final backendTitle = _backendEpisodeFor(ep.number)?.title;
+    if (!_isGenericEpisodeTitle(backendTitle)) return backendTitle!;
+
+    return l10n.episodeNumber(ep.number);
+  }
+
+  String? _resolveEpisodeImage(OnlinestreamEpisode ep) {
+    if (ep.image != null && ep.image!.trim().isNotEmpty) return ep.image;
+    return _aniZipEpisodeFor(ep.number)?.image ??
+        _backendEpisodeFor(ep.number)?.image;
+  }
+
   List<OnlinestreamEpisode> _getFilteredEpisodes() {
     if (_searchQuery.trim().isEmpty) return _episodes;
     final q = _searchQuery.trim().toLowerCase();
+    final numericQuery = int.tryParse(q);
     return _episodes.where((ep) {
+      // Numeric search lists the typed episode and all following ones.
+      if (numericQuery != null) return ep.number >= numericQuery;
       final matchesNum = ep.number.toString() == q;
       final matchesTitle = ep.title?.toLowerCase().contains(q) ?? false;
       return matchesNum || matchesTitle;
@@ -918,17 +968,19 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
             itemBuilder: (context, index) {
               final ep = filtered[index];
               final isLoading = _loadingEpisodeNumber == ep.number;
-              final aniZipEp = widget.animeDetails?.aniZipData?.episodes
-                  .where((e) => e.episodeNumber == ep.number)
-                  .firstOrNull;
+              final aniZipEp = _aniZipEpisodeFor(ep.number);
+              final backendEp = _backendEpisodeFor(ep.number);
 
-              final epImg = (ep.image != null && ep.image!.isNotEmpty) ? ep.image : aniZipEp?.image;
-              final epSynopsis = (ep.description != null && ep.description!.isNotEmpty) ? ep.description : aniZipEp?.synopsis;
+              final epImg = _resolveEpisodeImage(ep);
+              final epSynopsis =
+                  (ep.description != null && ep.description!.isNotEmpty)
+                  ? ep.description
+                  : (aniZipEp?.synopsis ?? backendEp?.description);
 
               return EpisodeGridItem(
                 mediaId: widget.mediaId,
                 episodeNumber: ep.number,
-                title: ep.localizedDisplayTitle(l10n),
+                title: _resolveEpisodeTitle(ep, l10n),
                 originalTitle: aniZipEp?.originalTitle,
                 duration: aniZipEp?.formattedDuration,
                 synopsis: epSynopsis,
@@ -977,17 +1029,19 @@ class _OnlineStreamViewState extends ConsumerState<OnlineStreamView> {
                     itemBuilder: (context, index) {
                       final ep = pagedEpisodes[index];
                       final isLoading = _loadingEpisodeNumber == ep.number;
-                      final aniZipEp = widget.animeDetails?.aniZipData?.episodes
-                          .where((e) => e.episodeNumber == ep.number)
-                          .firstOrNull;
+                      final aniZipEp = _aniZipEpisodeFor(ep.number);
+                      final backendEp = _backendEpisodeFor(ep.number);
 
-                      final epImg = (ep.image != null && ep.image!.isNotEmpty) ? ep.image : aniZipEp?.image;
-                      final epSynopsis = (ep.description != null && ep.description!.isNotEmpty) ? ep.description : aniZipEp?.synopsis;
+                      final epImg = _resolveEpisodeImage(ep);
+                      final epSynopsis =
+                          (ep.description != null && ep.description!.isNotEmpty)
+                          ? ep.description
+                          : (aniZipEp?.synopsis ?? backendEp?.description);
 
                       return EpisodeListItem(
                         mediaId: widget.mediaId,
                         episodeNumber: ep.number,
-                        title: ep.localizedDisplayTitle(l10n),
+                        title: _resolveEpisodeTitle(ep, l10n),
                         originalTitle: aniZipEp?.originalTitle,
                         duration: aniZipEp?.formattedDuration,
                         synopsis: epSynopsis,

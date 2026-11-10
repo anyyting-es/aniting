@@ -1,11 +1,11 @@
-package anime
+﻿package anime
 
 import (
 	"fmt"
-	"seanime/internal/api/anilist"
-	"seanime/internal/customsource"
-	"seanime/internal/hook"
-	"seanime/internal/util/result"
+	"aniting/internal/api/anilist"
+	"aniting/internal/customsource"
+	"aniting/internal/hook"
+	"aniting/internal/util/result"
 	"time"
 
 	"github.com/samber/lo"

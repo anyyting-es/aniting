@@ -1,10 +1,10 @@
-package plugin
+﻿package plugin
 
 import (
-	"seanime/internal/extension"
-	"seanime/internal/testutil"
-	"seanime/internal/util"
-	gojautil "seanime/internal/util/goja"
+	"aniting/internal/extension"
+	"aniting/internal/testutil"
+	"aniting/internal/util"
+	gojautil "aniting/internal/util/goja"
 	"testing"
 	"time"
 

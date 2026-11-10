@@ -1,14 +1,14 @@
-package directstream
+﻿package directstream
 
 import (
 	"context"
 	"encoding/json"
-	"seanime/internal/events"
-	"seanime/internal/mkvparser"
-	"seanime/internal/nativeplayer"
-	"seanime/internal/player"
-	"seanime/internal/util"
-	"seanime/internal/util/result"
+	"aniting/internal/events"
+	"aniting/internal/mkvparser"
+	"aniting/internal/nativeplayer"
+	"aniting/internal/player"
+	"aniting/internal/util"
+	"aniting/internal/util/result"
 	"testing"
 
 	"github.com/samber/mo"

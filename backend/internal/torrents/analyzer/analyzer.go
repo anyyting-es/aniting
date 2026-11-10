@@ -1,15 +1,15 @@
-package torrent_analyzer
+﻿package torrent_analyzer
 
 import (
 	"errors"
 	"path/filepath"
-	"seanime/internal/api/anilist"
-	"seanime/internal/api/metadata_provider"
-	"seanime/internal/library/anime"
-	"seanime/internal/library/scanner"
-	"seanime/internal/platforms/platform"
-	"seanime/internal/util"
-	"seanime/internal/util/limiter"
+	"aniting/internal/api/anilist"
+	"aniting/internal/api/metadata_provider"
+	"aniting/internal/library/anime"
+	"aniting/internal/library/scanner"
+	"aniting/internal/platforms/platform"
+	"aniting/internal/util"
+	"aniting/internal/util/limiter"
 
 	"github.com/rs/zerolog"
 	lop "github.com/samber/lo/parallel"

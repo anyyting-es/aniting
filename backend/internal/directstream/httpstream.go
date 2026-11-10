@@ -1,14 +1,14 @@
-package directstream
+﻿package directstream
 
 import (
 	"context"
 	"fmt"
 	"io"
 	"net/http"
-	"seanime/internal/library/anime"
-	"seanime/internal/mkvparser"
-	"seanime/internal/player"
-	httputil "seanime/internal/util/http"
+	"aniting/internal/library/anime"
+	"aniting/internal/mkvparser"
+	"aniting/internal/player"
+	httputil "aniting/internal/util/http"
 	"sync"
 	"time"
 

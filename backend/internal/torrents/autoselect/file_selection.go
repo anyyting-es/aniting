@@ -1,14 +1,14 @@
-package autoselect
+﻿package autoselect
 
 import (
 	"context"
 	"fmt"
-	"seanime/internal/api/anilist"
-	"seanime/internal/debrid/debrid"
-	"seanime/internal/extension"
-	hibiketorrent "seanime/internal/extension/hibike/torrent"
-	torrentanalyzer "seanime/internal/torrents/analyzer"
-	"seanime/internal/util"
+	"aniting/internal/api/anilist"
+	"aniting/internal/debrid/debrid"
+	"aniting/internal/extension"
+	hibiketorrent "aniting/internal/extension/hibike/torrent"
+	torrentanalyzer "aniting/internal/torrents/analyzer"
+	"aniting/internal/util"
 	"strconv"
 
 	"github.com/anacrolix/torrent"

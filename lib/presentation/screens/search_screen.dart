@@ -1,30 +1,32 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:g1455/g1455.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/core/preferences/desktop_nav_style_provider.dart';
-import 'package:seanime_app/core/preferences/section_visibility_provider.dart';
-import 'package:seanime_app/core/preferences/tv_mode_provider.dart';
-import 'package:seanime_app/core/theme/custom_route_transitions.dart';
-import 'package:seanime_app/data/models/anime_entry.dart';
-import 'package:seanime_app/data/models/manga_entry.dart';
-import 'package:seanime_app/presentation/widgets/explore_skeleton.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
-import 'package:seanime_app/presentation/screens/genre_detail_screen.dart';
-import 'package:seanime_app/presentation/screens/genres_screen.dart';
-import 'package:seanime_app/presentation/screens/manga_detail_screen.dart';
-import 'package:seanime_app/presentation/widgets/anime_card.dart';
-import 'package:seanime_app/presentation/widgets/catalog_search/catalog_search_view.dart';
-import 'package:seanime_app/presentation/widgets/discover_filter_sheet.dart';
-import 'package:seanime_app/core/theme/smooth_scroll_controller.dart';
-import 'package:seanime_app/presentation/widgets/manga_card.dart';
-import 'package:seanime_app/presentation/widgets/media_type_toggle.dart';
-import 'package:seanime_app/presentation/widgets/explore/explore_carousel_section.dart';
-import 'package:seanime_app/presentation/widgets/top_status_bar_glass.dart';
+import 'package:aniting/core/constants/feature_flags.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/core/preferences/desktop_nav_style_provider.dart';
+import 'package:aniting/core/preferences/section_visibility_provider.dart';
+import 'package:aniting/core/preferences/tv_mode_provider.dart';
+import 'package:aniting/core/theme/custom_route_transitions.dart';
+import 'package:aniting/data/models/anime_entry.dart';
+import 'package:aniting/data/models/manga_entry.dart';
+import 'package:aniting/presentation/widgets/explore_skeleton.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/screens/anime_detail_screen.dart';
+import 'package:aniting/presentation/screens/genre_detail_screen.dart';
+import 'package:aniting/presentation/screens/genres_screen.dart';
+import 'package:aniting/presentation/screens/manga_detail_screen.dart';
+import 'package:aniting/presentation/widgets/anime_card.dart';
+import 'package:aniting/presentation/widgets/catalog_search/catalog_search_view.dart';
+import 'package:aniting/presentation/widgets/discover_filter_sheet.dart';
+import 'package:aniting/core/theme/smooth_scroll_controller.dart';
+import 'package:aniting/presentation/widgets/manga_card.dart';
+import 'package:aniting/presentation/widgets/media_type_toggle.dart';
+import 'package:aniting/presentation/widgets/explore/explore_carousel_section.dart';
+import 'package:aniting/presentation/widgets/explore/explore_genres_section.dart';
+import 'package:aniting/presentation/widgets/top_status_bar_glass.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {
   const SearchScreen({super.key});
@@ -199,6 +201,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           });
         }
       } else if (_filterState.mediaType == 'SHOWS') {
+        if (!FeatureFlags.tmdb) return;
         final tmdb = ref.read(tmdbServiceProvider);
         final isSpanish = ref.read(appLanguageProvider) == AppLanguage.es;
         final lang = isSpanish ? 'es-ES' : 'en-US';
@@ -314,6 +317,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   }
 
   void _setMediaType(String newType) {
+    if (newType == 'SHOWS' && !FeatureFlags.tmdb) return;
     if (_filterState.mediaType == newType) return;
     setState(() {
       _filterState = _filterState.copyWith(
@@ -1040,6 +1044,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                                     popularAnimeAsync?.isLoading ?? false,
                                 theme: theme,
                                 l10n: l10n,
+                              ),
+                              ExploreGenresSection(
+                                isDesktop:
+                                    MediaQuery.of(context).size.width >= 720,
+                                isTv: ref.watch(tvModeProvider),
                               ),
                               _buildCuratedAnimeSection(
                                 title: isSpanish

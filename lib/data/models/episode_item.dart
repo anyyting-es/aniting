@@ -1,6 +1,6 @@
-import 'package:seanime_app/data/models/anizip_data.dart';
-import 'package:seanime_app/data/models/library_entry_details.dart';
-import 'package:seanime_app/data/models/tmdb_models.dart';
+﻿import 'package:aniting/data/models/anizip_data.dart';
+import 'package:aniting/data/models/library_entry_details.dart';
+import 'package:aniting/data/models/tmdb_models.dart';
 
 /// Unified, media-agnostic episode data item.
 /// Represents an episode or film across Anime (AniList/AniZip),

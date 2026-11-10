@@ -1,9 +1,9 @@
-package anime_test
+﻿package anime_test
 
 import (
-	"seanime/internal/api/anilist"
-	"seanime/internal/customsource"
-	"seanime/internal/library/anime"
+	"aniting/internal/api/anilist"
+	"aniting/internal/customsource"
+	"aniting/internal/library/anime"
 	"testing"
 	"time"
 

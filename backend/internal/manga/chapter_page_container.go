@@ -1,11 +1,11 @@
-package manga
+﻿package manga
 
 import (
 	"fmt"
-	"seanime/internal/extension"
-	hibikemanga "seanime/internal/extension/hibike/manga"
-	manga_providers "seanime/internal/manga/providers"
-	"seanime/internal/util"
+	"aniting/internal/extension"
+	hibikemanga "aniting/internal/extension/hibike/manga"
+	manga_providers "aniting/internal/manga/providers"
+	"aniting/internal/util"
 	"sync"
 )
 

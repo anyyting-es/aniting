@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
-	"seanime/internal/util"
+	"aniting/internal/util"
 )
 
 var (
@@ -65,8 +65,8 @@ type (
 		Speed                    string             `json:"speed,omitempty"`                    // Current download speed (optional, present in downloading state)
 		Seeders                  int                `json:"seeders,omitempty"`                  // Number of seeders (optional, present in downloading state)
 		IsReady                  bool               `json:"isReady"`                            // Whether the torrent is ready to be downloaded
-		IsQueuedForLocalDownload bool               `json:"isQueuedForLocalDownload,omitempty"` // Whether Seanime has queued this torrent for local download
-		IsDownloadingLocally     bool               `json:"isDownloadingLocally,omitempty"`     // Whether Seanime is currently downloading this torrent locally
+		IsQueuedForLocalDownload bool               `json:"isQueuedForLocalDownload,omitempty"` // Whether Aniting has queued this torrent for local download
+		IsDownloadingLocally     bool               `json:"isDownloadingLocally,omitempty"`     // Whether Aniting is currently downloading this torrent locally
 		Files                    []*TorrentItemFile `json:"files,omitempty"`                    // List of files in the torrent (optional)
 	}
 

@@ -1,13 +1,13 @@
-package anime
+﻿package anime
 
 import (
 	"errors"
 	"fmt"
-	"seanime/internal/api/anilist"
-	"seanime/internal/api/metadata"
-	"seanime/internal/api/metadata_provider"
-	"seanime/internal/hook"
-	"seanime/internal/util"
+	"aniting/internal/api/anilist"
+	"aniting/internal/api/metadata"
+	"aniting/internal/api/metadata_provider"
+	"aniting/internal/hook"
+	"aniting/internal/util"
 	"strconv"
 
 	"github.com/samber/lo"

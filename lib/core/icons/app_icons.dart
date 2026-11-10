@@ -306,6 +306,12 @@ class AppIcons {
   static IconData fullscreenExit([AppIconPack? pack]) =>
       _isLucide(pack) ? LucideIcons.minimize2 : Icons.fullscreen_exit_rounded;
 
+  static IconData lock([AppIconPack? pack]) =>
+      _isLucide(pack) ? LucideIcons.lock : Icons.lock_rounded;
+
+  static IconData lockOpen([AppIconPack? pack]) =>
+      _isLucide(pack) ? LucideIcons.lockOpen : Icons.lock_open_rounded;
+
   static IconData theater([AppIconPack? pack]) =>
       _isLucide(pack) ? LucideIcons.monitor : Icons.theaters_rounded;
 

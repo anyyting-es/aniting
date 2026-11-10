@@ -1,12 +1,12 @@
-package testutil
+﻿package testutil
 
 import (
 	"os"
 	pathpkg "path"
 	"path/filepath"
-	"seanime/internal/database/db"
-	"seanime/internal/util"
-	"seanime/internal/util/filecache"
+	"aniting/internal/database/db"
+	"aniting/internal/util"
+	"aniting/internal/util/filecache"
 	"strings"
 	"testing"
 	"unicode"
@@ -14,7 +14,7 @@ import (
 	"github.com/rs/zerolog"
 )
 
-const defaultTestDatabaseName = "seanime-test"
+const defaultTestDatabaseName = "aniting-test"
 
 type TestEnv struct {
 	t        testing.TB

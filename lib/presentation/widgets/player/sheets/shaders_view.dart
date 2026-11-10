@@ -1,8 +1,8 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/presentation/widgets/player/models/player_types.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/presentation/widgets/player/models/player_types.dart';
 
 /// Subview for selecting GLSL enhancement shaders (Anime4K, NVScaler, ArtCNN).
 /// OFF (Desactivado) by default as requested.

@@ -1,41 +1,42 @@
-import 'dart:ui';
+﻿import 'dart:ui';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show SystemUiOverlayStyle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
+import 'package:aniting/core/icons/app_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:seanime_app/core/preferences/layout_mode_provider.dart';
-import 'package:seanime_app/core/theme/custom_route_transitions.dart';
-import 'package:seanime_app/core/theme/smooth_scroll_controller.dart';
-import 'package:seanime_app/core/theme/theme_provider.dart';
-import 'package:seanime_app/data/models/anime_details.dart';
-import 'package:seanime_app/data/models/anime_entry.dart';
-import 'package:seanime_app/data/models/anizip_data.dart';
-import 'package:seanime_app/data/models/library_entry_details.dart';
-import 'package:seanime_app/data/models/tmdb_models.dart';
-import 'package:seanime_app/core/media_servers/models/media_server_config.dart';
-import 'package:seanime_app/core/media_servers/models/media_server_item.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/preferences/tmdb_preferences_provider.dart';
-import 'package:seanime_app/data/services/tmdb_service.dart';
-import 'package:seanime_app/data/services/tmdb_mapping_service.dart';
-import 'package:seanime_app/data/services/custom_anime_assets_service.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/providers/download_history_provider.dart';
-import 'package:seanime_app/presentation/screens/video_player_screen.dart';
-import 'package:seanime_app/presentation/screens/media_servers/media_server_show_detail_screen.dart';
-import 'package:seanime_app/presentation/widgets/anime_detail/anime_detail_back_button.dart';
-import 'package:seanime_app/presentation/widgets/anime_detail/anime_detail_desktop_layout.dart';
-import 'package:seanime_app/presentation/widgets/anime_detail/anime_detail_mobile_layout.dart';
-import 'package:seanime_app/presentation/widgets/anime_details_modal_sheet.dart';
-import 'package:seanime_app/presentation/widgets/edit_entry_modal.dart';
+import 'package:aniting/core/preferences/layout_mode_provider.dart';
+import 'package:aniting/core/theme/custom_route_transitions.dart';
+import 'package:aniting/core/theme/smooth_scroll_controller.dart';
+import 'package:aniting/core/theme/theme_provider.dart';
+import 'package:aniting/data/models/anime_details.dart';
+import 'package:aniting/data/models/anime_entry.dart';
+import 'package:aniting/data/models/anizip_data.dart';
+import 'package:aniting/data/models/library_entry_details.dart';
+import 'package:aniting/data/models/tmdb_models.dart';
+import 'package:aniting/core/media_servers/models/media_server_config.dart';
+import 'package:aniting/core/media_servers/models/media_server_item.dart';
+import 'package:aniting/core/constants/feature_flags.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/preferences/tmdb_preferences_provider.dart';
+import 'package:aniting/data/services/tmdb_service.dart';
+import 'package:aniting/data/services/tmdb_mapping_service.dart';
+import 'package:aniting/data/services/custom_anime_assets_service.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/providers/download_history_provider.dart';
+import 'package:aniting/presentation/screens/video_player_screen.dart';
+import 'package:aniting/presentation/screens/media_servers/media_server_show_detail_screen.dart';
+import 'package:aniting/presentation/widgets/anime_detail/anime_detail_back_button.dart';
+import 'package:aniting/presentation/widgets/anime_detail/anime_detail_desktop_layout.dart';
+import 'package:aniting/presentation/widgets/anime_detail/anime_detail_mobile_layout.dart';
+import 'package:aniting/presentation/widgets/anime_details_modal_sheet.dart';
+import 'package:aniting/presentation/widgets/edit_entry_modal.dart';
 import 'package:g1455/g1455.dart';
-import 'package:seanime_app/presentation/widgets/torrent_selector_sheet.dart';
+import 'package:aniting/presentation/widgets/torrent_selector_sheet.dart';
 
-export 'package:seanime_app/presentation/widgets/anime_detail/anime_detail_mobile_layout.dart'
+export 'package:aniting/presentation/widgets/anime_detail/anime_detail_mobile_layout.dart'
     show AnimeDetailTab;
 
 class AnimeDetailScreen extends ConsumerStatefulWidget {
@@ -530,7 +531,8 @@ class _AnimeDetailScreenState extends ConsumerState<AnimeDetailScreen> {
     }
 
     // Resolve TMDB assets (logo + backdrop) if not already resolved by custom database
-    if ((resolvedLogo == null || resolvedBanner == null) &&
+    if (FeatureFlags.tmdb &&
+        (resolvedLogo == null || resolvedBanner == null) &&
         (effectiveTmdbId != null || tvdbId != null)) {
       try {
         final apiKey = ref.read(tmdbApiKeyProvider);

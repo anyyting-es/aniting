@@ -2,7 +2,7 @@ package hibiketracker
 
 import (
 	"context"
-	"seanime/internal/api/anilist"
+	"aniting/internal/api/anilist"
 	"time"
 )
 
@@ -12,7 +12,7 @@ type (
 		SupportsAnime bool `json:"supportsAnime"`
 		// SupportsManga indicates if this tracker supports manga tracking
 		SupportsManga bool `json:"supportsManga"`
-		// SupportsBidirectionalSync indicates if Seanime can pull data from the tracker
+		// SupportsBidirectionalSync indicates if Aniting can pull data from the tracker
 		SupportsBidirectionalSync bool `json:"supportsBidirectionalSync"`
 		MaxRequestsPerSecond      int  `json:"maxRequestsPerSecond,omitempty"`
 		CacheVersion              int  `json:"cacheVersion,omitempty"`
@@ -29,14 +29,14 @@ type (
 		//		For "Plur1bus" on the SIMKL custom source, this would be "simkl".
 		// When Pulling: The extension MUST populate this.
 		Source string `json:"source"`
-		// MediaId is the AniList or custom source media ID (Seanime ID).
+		// MediaId is the AniList or custom source media ID (Aniting ID).
 		//	When Pulling: The extension could leave this empty.
 		MediaId int `json:"mediaId"`
 		// MalId is the MyAnimeList ID (if available)
 		MalId *int `json:"malId,omitempty"`
 		// ExternalId
 		//	When Pulling: The extension MUST populate this.
-		//	When Pushing: Seanime will populate this (using ResolveExternalId).
+		//	When Pushing: Aniting will populate this (using ResolveExternalId).
 		ExternalId string `json:"externalId"`
 		// MediaType is either "ANIME" or "MANGA"
 		MediaType string `json:"mediaType"`
@@ -74,8 +74,8 @@ type (
 
 		TestConnection(ctx context.Context) error
 
-		// ResolveExternalId finds the tracker-specific ID for a given Seanime media entry.
-		// Seanime calls this BEFORE calling PushEntry to ensure MediaEntry.ExternalId is populated.
+		// ResolveExternalId finds the tracker-specific ID for a given Aniting media entry.
+		// Aniting calls this BEFORE calling PushEntry to ensure MediaEntry.ExternalId is populated.
 		// The ID is cached for future calls, in case it were to change, you can invalidate the cache by changing the value of Settings.CacheVersion.
 		ResolveExternalId(ctx context.Context, entry *MediaEntry) (string, error)
 
@@ -88,8 +88,8 @@ type DiffType string
 
 const (
 	DiffTypeNone         DiffType = "none"
-	DiffTypeLocalOnly    DiffType = "local-only"    // Exists in Seanime, missing in Tracker
-	DiffTypeRemoteOnly   DiffType = "remote-only"   // Exists in Tracker, missing in Seanime
+	DiffTypeLocalOnly    DiffType = "local-only"    // Exists in Aniting, missing in Tracker
+	DiffTypeRemoteOnly   DiffType = "remote-only"   // Exists in Tracker, missing in Aniting
 	DiffTypeDivergent    DiffType = "divergent"     // Exists in both, but values differ
 	DiffTypeMappingError DiffType = "mapping-error" // Cannot resolve ID
 )
@@ -103,7 +103,7 @@ const (
 )
 
 type SyncDiff struct {
-	MediaID        int    // Seanime ID
+	MediaID        int    // Aniting ID
 	ExternalID     string // Tracker ID
 	Type           DiffType
 	Local          *MediaEntry

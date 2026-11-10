@@ -1,7 +1,7 @@
-package plugin
+﻿package plugin
 
 import (
-	gojautil "seanime/internal/util/goja"
+	gojautil "aniting/internal/util/goja"
 	"testing"
 	"time"
 

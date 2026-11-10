@@ -1,9 +1,9 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
+import 'package:aniting/core/icons/app_icons.dart';
 
 /// Gesture overlay for the video player.
 /// Handles:

@@ -1,12 +1,12 @@
-package extension_repo
+﻿package extension_repo
 
 import (
 	"context"
-	"seanime/internal/events"
-	"seanime/internal/extension"
-	hibiketorrent "seanime/internal/extension/hibike/torrent"
-	"seanime/internal/goja/goja_runtime"
-	"seanime/internal/util"
+	"aniting/internal/events"
+	"aniting/internal/extension"
+	hibiketorrent "aniting/internal/extension/hibike/torrent"
+	"aniting/internal/goja/goja_runtime"
+	"aniting/internal/util"
 	"testing"
 
 	"github.com/dop251/goja"

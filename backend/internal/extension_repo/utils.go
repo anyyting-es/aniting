@@ -1,11 +1,11 @@
-package extension_repo
+﻿package extension_repo
 
 import (
 	"errors"
 	"fmt"
 	"regexp"
-	"seanime/internal/extension"
-	"seanime/internal/util"
+	"aniting/internal/extension"
+	"aniting/internal/util"
 	"strings"
 )
 

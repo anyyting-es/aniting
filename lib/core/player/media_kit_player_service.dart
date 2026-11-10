@@ -1,15 +1,20 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:io' show Platform;
 
+import 'package:flutter/foundation.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
-import 'package:seanime_app/core/preferences/subtitle_style_preferences_provider.dart';
-import 'package:seanime_app/presentation/widgets/player/models/player_types.dart';
+import 'package:aniting/core/preferences/subtitle_style_preferences_provider.dart';
+import 'package:aniting/core/player/renderer_info.dart';
+import 'package:aniting/presentation/widgets/player/models/player_types.dart';
 
 /// Playback service backed directly by package:media_kit.
 class MediaKitPlayerService {
   late final Player player;
   late final VideoController videoController;
+
+  /// Opt-in mpv `display-resample` + interpolation (smooth motion).
+  final bool smoothMotion;
 
   String? _currentTitle;
   String? _currentEpisodeTitle;
@@ -27,16 +32,45 @@ class MediaKitPlayerService {
   /// natively.
   static bool get usesNativeLibass => !Platform.isAndroid;
 
+  /// Enables verbose libmpv logs (console `[MPV]` lines) for playback debugging.
+  ///
+  /// Desktop: run with the `ANITING_MPV_DEBUG=1` environment variable.
+  /// Any platform: build/run with `--dart-define=ANITING_MPV_DEBUG=true`.
+  static bool get verboseLogsEnabled {
+    if (const bool.fromEnvironment('ANITING_MPV_DEBUG')) return true;
+    if (Platform.isAndroid || Platform.isIOS) return false;
+    return Platform.environment['ANITING_MPV_DEBUG'] == '1';
+  }
+
   /// Builds the media_kit configuration. Split out from the constructor so the
   /// libass decision can be unit-tested without spawning a native player.
-  static PlayerConfiguration configurationFor({required bool isAndroid}) =>
-      PlayerConfiguration(libass: !isAndroid);
+  static PlayerConfiguration configurationFor({
+    required bool isAndroid,
+    bool verbose = false,
+  }) => PlayerConfiguration(
+    libass: !isAndroid,
+    logLevel: verbose ? MPVLogLevel.info : MPVLogLevel.error,
+  );
 
-  MediaKitPlayerService() {
+  MediaKitPlayerService({this.smoothMotion = false}) {
+    final verbose = verboseLogsEnabled;
     player = Player(
-      configuration: configurationFor(isAndroid: Platform.isAndroid),
+      configuration: configurationFor(
+        isAndroid: Platform.isAndroid,
+        verbose: verbose,
+      ),
     );
     videoController = VideoController(player);
+
+    // mpv prints the real adapter it got (`GL_VENDOR` / `GL_RENDERER`) at
+    // `vo/gpu=debug`. Nothing else consumes this stream, so it stays enabled
+    // once and the GPU panel can show the truth on hybrid laptops.
+    player.stream.log.listen((log) {
+      if (ingestMpvLogLine(log.text)) return;
+      if (verbose) {
+        debugPrint('[MPV/${log.level}] ${log.text}');
+      }
+    });
   }
 
   /// media_kit's libmpv defaults to `network-timeout=5`, which is too short for
@@ -49,6 +83,75 @@ class MediaKitPlayerService {
     try {
       await platform.setProperty('network-timeout', '30');
     } catch (_) {}
+    try {
+      // `vo/gpu=debug` exposes the real adapter for the GPU panel. When
+      // ANITING_MPV_DEBUG is on, raise everything to info so decoder/cache/
+      // frame-pacing warnings reach the console too.
+      await platform.setProperty(
+        'msg-level',
+        verboseLogsEnabled ? 'all=info,vo/gpu=debug' : 'vo/gpu=debug',
+      );
+    } catch (_) {}
+
+    // Network streams (HLS proxied through the companion server) stutter when
+    // mpv keeps its conservative default read-ahead: a slow segment drains the
+    // cache and playback waits. These are cheap in memory and let mpv ride out
+    // a slow segment instead of rebuffering.
+    for (final entry in <String, String>{
+      // media_kit leaves `hwdec` unset and mpv's default is `no`, i.e. software
+      // decoding. On a laptop doing everything on the iGPU, 1080p HEVC 10-bit or
+      // 4K is guaranteed to stutter. `auto-safe` only enables decoders mpv
+      // considers stable for the platform (d3d11va / vaapi / mediacodec).
+      'hwdec': 'auto-safe',
+      'cache': 'yes',
+      'cache-pause': 'yes',
+      'demuxer-max-bytes': '64MiB',
+      'demuxer-max-back-bytes': '32MiB',
+      'demuxer-readahead-secs': '30',
+      'cache-secs': '30',
+      // 24 fps on a 60 Hz panel produces a 3:2 cadence (2.5 vsyncs/frame)
+      // that looks like random micro-stutter even with zero dropped frames.
+      // Display sync + interpolation resamples the presentation to the panel.
+      if (smoothMotion) ...{
+        'video-sync': 'display-resample',
+        'interpolation': 'yes',
+        'tscale': 'oversample',
+      },
+    }.entries) {
+      try {
+        await platform.setProperty(entry.key, entry.value);
+      } catch (_) {}
+    }
+  }
+
+  /// Adds an external subtitle as its own mpv track.
+  ///
+  /// `sub-add` is used instead of `setSubtitleTrack` because the latter replaces
+  /// the current selection: online sources expose several languages at once and
+  /// all of them must show up in the track picker.
+  ///
+  /// [select] wins the active track; otherwise the track is registered with
+  /// `auto`, which only takes over when nothing else is selected.
+  Future<void> addExternalSubtitle({
+    required String url,
+    String? title,
+    String? language,
+    bool select = false,
+  }) async {
+    if (url.isEmpty) return;
+    final platform = player.platform;
+    if (platform is! NativePlayer) return;
+    try {
+      await platform.command([
+        'sub-add',
+        url,
+        select ? 'select' : 'auto',
+        title ?? '',
+        language ?? '',
+      ]);
+    } catch (e) {
+      debugPrint('[MediaKit] sub-add failed ($language • $url): $e');
+    }
   }
 
   String? get currentTitle => _currentTitle;

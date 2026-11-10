@@ -1,8 +1,8 @@
-package shows
+﻿package shows
 
 import (
 	"path/filepath"
-	"seanime/internal/library/filesystem"
+	"aniting/internal/library/filesystem"
 	"strings"
 )
 

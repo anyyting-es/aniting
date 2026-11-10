@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
+import 'package:aniting/core/icons/app_icons.dart';
 
 /// A sleek, compact, semi-transparent search bar tailored for Anime and Manga feeds.
 /// Integrates directly with in-page search (no modal sheet), featuring instant typing,

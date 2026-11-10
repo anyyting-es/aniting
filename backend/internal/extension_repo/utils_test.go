@@ -1,7 +1,7 @@
-package extension_repo
+﻿package extension_repo
 
 import (
-	"seanime/internal/util"
+	"aniting/internal/util"
 	"strings"
 	"testing"
 )

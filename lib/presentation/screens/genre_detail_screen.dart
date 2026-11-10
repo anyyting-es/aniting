@@ -1,15 +1,15 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/data/models/anime_entry.dart';
-import 'package:seanime_app/data/models/manga_entry.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
-import 'package:seanime_app/presentation/screens/manga_detail_screen.dart';
-import 'package:seanime_app/core/theme/smooth_scroll_controller.dart';
-import 'package:seanime_app/presentation/widgets/anime_card.dart';
-import 'package:seanime_app/presentation/widgets/desktop_title_bar.dart';
-import 'package:seanime_app/presentation/widgets/manga_card.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/data/models/anime_entry.dart';
+import 'package:aniting/data/models/manga_entry.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/screens/anime_detail_screen.dart';
+import 'package:aniting/presentation/screens/manga_detail_screen.dart';
+import 'package:aniting/core/theme/smooth_scroll_controller.dart';
+import 'package:aniting/presentation/widgets/anime_card.dart';
+import 'package:aniting/presentation/widgets/desktop_title_bar.dart';
+import 'package:aniting/presentation/widgets/manga_card.dart';
 
 class GenreDetailScreen extends ConsumerStatefulWidget {
   final String genre;

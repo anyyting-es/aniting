@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:seanime_app/core/theme/app_dpad_navigator.dart';
+import 'package:aniting/core/theme/app_dpad_navigator.dart';
 
 enum AppInputMode {
   dpad,

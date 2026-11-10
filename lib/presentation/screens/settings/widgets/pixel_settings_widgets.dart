@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:aniting/core/theme/app_theme_colors.dart';
 import 'settings_dpad_focus.dart';
 
 /// Encabezado de sección con estilo Material 3 Expressive
@@ -34,15 +35,15 @@ class PixelSettingsGroupCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final appColors = context.themeColors;
 
     return Container(
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHigh,
+        color: appColors.isOled
+            ? Colors.transparent
+            : colorScheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: colorScheme.outlineVariant.withValues(alpha: 0.25),
-          width: 1,
-        ),
+        border: Border.all(color: appColors.cardBorder(colorScheme), width: 1),
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -63,16 +64,16 @@ class PixelCardContainer extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final appColors = context.themeColors;
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHigh,
+        color: appColors.isOled
+            ? Colors.transparent
+            : colorScheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: colorScheme.outlineVariant.withValues(alpha: 0.25),
-          width: 1,
-        ),
+        border: Border.all(color: appColors.cardBorder(colorScheme), width: 1),
       ),
       clipBehavior: Clip.antiAlias,
       child: child,

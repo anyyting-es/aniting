@@ -1,8 +1,8 @@
-package torrent
+﻿package torrent
 
 import (
 	"fmt"
-	hibiketorrent "seanime/internal/extension/hibike/torrent"
+	hibiketorrent "aniting/internal/extension/hibike/torrent"
 	"strings"
 )
 

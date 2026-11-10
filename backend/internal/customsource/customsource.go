@@ -1,15 +1,15 @@
-package customsource
+﻿package customsource
 
 import (
 	"context"
 	"errors"
 	"reflect"
-	"seanime/internal/api/anilist"
-	"seanime/internal/database/db"
-	"seanime/internal/database/models"
-	"seanime/internal/extension"
-	"seanime/internal/util"
-	"seanime/internal/util/result"
+	"aniting/internal/api/anilist"
+	"aniting/internal/database/db"
+	"aniting/internal/database/models"
+	"aniting/internal/extension"
+	"aniting/internal/util"
+	"aniting/internal/util/result"
 	"strings"
 	"sync"
 

@@ -1,4 +1,4 @@
-package plugin
+﻿package plugin
 
 import (
 	"context"
@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"seanime/internal/extension"
-	gojautil "seanime/internal/util/goja"
+	"aniting/internal/extension"
+	gojautil "aniting/internal/util/goja"
 	"sync"
 	"time"
 

@@ -1,4 +1,4 @@
-package main
+﻿package main
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"seanime/internal/matroska"
+	"aniting/internal/matroska"
 )
 
 func main() {

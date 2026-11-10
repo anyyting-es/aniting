@@ -1,5 +1,5 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'package:seanime_app/core/player/media_kit_player_service.dart';
+﻿import 'package:flutter_test/flutter_test.dart';
+import 'package:aniting/core/player/media_kit_player_service.dart';
 
 void main() {
   group('media_kit subtitle rendering', () {

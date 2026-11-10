@@ -1,16 +1,16 @@
-package scanner
+﻿package scanner
 
 import (
-	"seanime/internal/api/anilist"
-	"seanime/internal/api/metadata_provider"
-	"seanime/internal/database/db"
-	"seanime/internal/events"
-	"seanime/internal/extension"
-	"seanime/internal/library/anime"
-	"seanime/internal/platforms/anilist_platform"
-	"seanime/internal/testutil"
-	"seanime/internal/util"
-	"seanime/internal/util/limiter"
+	"aniting/internal/api/anilist"
+	"aniting/internal/api/metadata_provider"
+	"aniting/internal/database/db"
+	"aniting/internal/events"
+	"aniting/internal/extension"
+	"aniting/internal/library/anime"
+	"aniting/internal/platforms/anilist_platform"
+	"aniting/internal/testutil"
+	"aniting/internal/util"
+	"aniting/internal/util/limiter"
 	"testing"
 
 	"github.com/rs/zerolog"

@@ -1,32 +1,33 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/core/utils/synopsis_utils.dart';
-import 'package:seanime_app/core/preferences/playback_progress_preferences_provider.dart';
-import 'package:seanime_app/core/preferences/streaming_preferences_provider.dart';
-import 'package:seanime_app/core/preferences/title_language_provider.dart';
-import 'package:seanime_app/core/media_servers/models/media_server_config.dart';
-import 'package:seanime_app/core/media_servers/models/media_server_item.dart';
-import 'package:seanime_app/core/media_servers/models/media_server_type.dart';
-import 'package:seanime_app/core/media_servers/services/media_server_player_helper.dart';
-import 'package:seanime_app/data/models/anime_details.dart';
-import 'package:seanime_app/data/models/anime_entry.dart';
-import 'package:seanime_app/data/models/anizip_data.dart';
-import 'package:seanime_app/data/models/library_entry_details.dart';
-import 'package:seanime_app/data/models/onlinestream_models.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
-import 'package:seanime_app/presentation/screens/video_player_screen.dart';
-import 'package:seanime_app/core/theme/smooth_scroll_controller.dart';
-import 'package:seanime_app/data/services/offline_library_service.dart';
-import 'package:seanime_app/presentation/providers/episodes_provider.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/core/utils/synopsis_utils.dart';
+import 'package:aniting/core/preferences/playback_progress_preferences_provider.dart';
+import 'package:aniting/core/preferences/streaming_preferences_provider.dart';
+import 'package:aniting/core/preferences/title_language_provider.dart';
+import 'package:aniting/core/media_servers/models/media_server_config.dart';
+import 'package:aniting/core/media_servers/models/media_server_item.dart';
+import 'package:aniting/core/media_servers/models/media_server_type.dart';
+import 'package:aniting/core/media_servers/services/media_server_player_helper.dart';
+import 'package:aniting/data/models/anime_details.dart';
+import 'package:aniting/data/models/anime_entry.dart';
+import 'package:aniting/data/models/anizip_data.dart';
+import 'package:aniting/data/models/library_entry_details.dart';
+import 'package:aniting/data/models/onlinestream_models.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/screens/anime_detail_screen.dart';
+import 'package:aniting/presentation/screens/video_player_screen.dart';
+import 'package:aniting/core/theme/smooth_scroll_controller.dart';
+import 'package:aniting/data/services/offline_library_service.dart';
+import 'package:aniting/presentation/providers/episodes_provider.dart';
 
-import 'package:seanime_app/presentation/widgets/trailer_player_dialog.dart';
+import 'package:aniting/presentation/widgets/trailer_player_dialog.dart';
 
 import 'desktop/desktop_action_bar.dart';
 import 'desktop/desktop_cast_row.dart';
@@ -36,8 +37,6 @@ import 'desktop/desktop_header.dart';
 import 'desktop/desktop_hero_banner.dart';
 import 'desktop/desktop_season_switcher.dart';
 import 'desktop/desktop_trailers_section.dart';
-
-import 'package:seanime_app/presentation/widgets/episodes/episode_batch_action_bar.dart';
 
 class AnimeDetailDesktopLayout extends ConsumerStatefulWidget {
   final int mediaId;
@@ -127,12 +126,15 @@ class _AnimeDetailDesktopLayoutState
     0.0,
   );
   late final FocusNode _playFocusNode;
+  final GlobalKey<DesktopEpisodesTabState> _episodesTabKey =
+      GlobalKey<DesktopEpisodesTabState>();
 
   List<OnlinestreamProvider> _providers = [];
   OnlinestreamProvider? _selectedProvider;
   bool _isDubbed = false;
   List<OnlinestreamEpisode> _onlineEpisodes = [];
   bool _isLoadingOnlineEpisodes = false;
+  int _onlineEpisodesRequest = 0;
   final int? _loadingEpisodeNumber = null;
   bool _isSynopsisExpanded = false;
 
@@ -294,14 +296,20 @@ class _AnimeDetailDesktopLayoutState
   }
 
   Future<void> _loadOnlineEpisodes() async {
-    if (_selectedProvider == null) return;
+    final provider = _selectedProvider;
+    if (provider == null) return;
+
+    final dubbed = _isDubbed;
+    final requestId = ++_onlineEpisodesRequest;
     final repo = ref.read(repositoryProvider);
+
     final cached = repo.getCachedOnlinestreamEpisodes(
       mediaId: widget.mediaId,
-      provider: _selectedProvider!.id,
-      dubbed: _isDubbed,
+      provider: provider.id,
+      dubbed: dubbed,
     );
-    if (cached != null && cached.isNotEmpty && _onlineEpisodes.isEmpty) {
+    if (!mounted) return;
+    if (cached != null && cached.isNotEmpty) {
       setState(() {
         _onlineEpisodes = cached;
         _isLoadingOnlineEpisodes = false;
@@ -311,26 +319,36 @@ class _AnimeDetailDesktopLayoutState
         _isLoadingOnlineEpisodes = true;
       });
     }
+
     try {
       final list = await repo.getOnlinestreamEpisodes(
         mediaId: widget.mediaId,
-        provider: _selectedProvider!.id,
-        dubbed: _isDubbed,
+        provider: provider.id,
+        dubbed: dubbed,
       );
-      if (mounted) {
-        setState(() {
-          _onlineEpisodes = list;
-          _isLoadingOnlineEpisodes = false;
-        });
-      }
+      // Ignore stale responses when the user switched provider/dub while the
+      // request was in flight.
+      if (!mounted || requestId != _onlineEpisodesRequest) return;
+      setState(() {
+        _onlineEpisodes = list;
+        _isLoadingOnlineEpisodes = false;
+      });
     } catch (e) {
       debugPrint('Error loading online episodes: $e');
-      if (mounted) {
-        setState(() {
-          _isLoadingOnlineEpisodes = false;
-        });
-      }
+      if (!mounted || requestId != _onlineEpisodesRequest) return;
+      setState(() {
+        _isLoadingOnlineEpisodes = false;
+      });
     }
+  }
+
+  void _changeOnlineProvider(OnlinestreamProvider? provider) {
+    if (provider == null || _selectedProvider?.id == provider.id) return;
+    setState(() => _selectedProvider = provider);
+    SharedPreferences.getInstance()
+        .then((prefs) => prefs.setString(_prefLastProviderKey, provider.id))
+        .catchError((_) => false);
+    _loadOnlineEpisodes();
   }
 
   void _playOnlineEpisode(int epNum, String epTitle) {
@@ -552,9 +570,6 @@ class _AnimeDetailDesktopLayoutState
       return;
     }
 
-    final titleLang = ref.read(titleLanguageProvider);
-    final animeTitle = widget.details?.displayTitle(titleLang) ?? 'Anime';
-
     final repo = ref.read(repositoryProvider);
     final cachedEntry = repo.getCachedAnimeLibraryEntry(widget.mediaId);
     final localEp = cachedEntry?.episodes.cast<LibraryEpisode?>().firstWhere(
@@ -565,38 +580,62 @@ class _AnimeDetailDesktopLayoutState
     final hasLocal =
         ep.isDownloaded || (localPath != null && localPath.isNotEmpty);
 
-    showDesktopEpisodeSourceDialog(
-      context,
-      episode: localPath != null
-          ? ep.copyWith(localFilePath: localPath, isDownloaded: true)
-          : ep,
-      animeTitle: animeTitle,
-      providers: _providers,
-      selectedProvider: _selectedProvider,
-      isDubbed: _isDubbed,
-      onProviderChanged: (p) {
-        if (p != null) {
-          setState(() => _selectedProvider = p);
-          SharedPreferences.getInstance().then(
-            (prefs) => prefs.setString(_prefLastProviderKey, p.id),
-          );
-          _loadOnlineEpisodes();
-        }
-      },
-      onToggleDubbed: () {
-        setState(() => _isDubbed = !_isDubbed);
-        _loadOnlineEpisodes();
-      },
-      onPlayOnline: () => _playOnlineEpisode(ep.number, ep.title),
-      onPlayTorrent: () => widget.onOpenTorrentSelector(
+    // Downloaded files keep priority (instant, zero-buffer playback) exactly
+    // like the mobile flow does for both online and torrent modes.
+    if (hasLocal) {
+      _playLocalEpisode(
+        localPath != null
+            ? ep.copyWith(localFilePath: localPath, isDownloaded: true)
+            : ep,
+        filePath: localPath,
+      );
+      return;
+    }
+
+    if (widget.isLocalMode) {
+      _playLocalEpisode(ep, filePath: localPath);
+      return;
+    }
+
+    if (widget.currentTab == AnimeDetailTab.torrent) {
+      widget.onOpenTorrentSelector(
         episodeNumber: ep.number,
         episodeTitle: ep.title,
         aniDBEpisode: ep.aniDBEpisode,
-      ),
-      onPlayLocal: hasLocal
-          ? () => _playLocalEpisode(ep, filePath: localPath)
-          : null,
-    );
+      );
+      return;
+    }
+
+    // Online mode: play the episode with the extension chosen in the action
+    // bar. If the extensions have not loaded yet, fall back to the source
+    // dialog so the user can still pick one.
+    if (_selectedProvider == null) {
+      final titleLang = ref.read(titleLanguageProvider);
+      final animeTitle = widget.details?.displayTitle(titleLang) ?? 'Anime';
+      showDesktopEpisodeSourceDialog(
+        context,
+        episode: ep,
+        animeTitle: animeTitle,
+        providers: _providers,
+        selectedProvider: _selectedProvider,
+        isDubbed: _isDubbed,
+        onProviderChanged: _changeOnlineProvider,
+        onToggleDubbed: () {
+          setState(() => _isDubbed = !_isDubbed);
+          _loadOnlineEpisodes();
+        },
+        onPlayOnline: () => _playOnlineEpisode(ep.number, ep.title),
+        onPlayTorrent: () => widget.onOpenTorrentSelector(
+          episodeNumber: ep.number,
+          episodeTitle: ep.title,
+          aniDBEpisode: ep.aniDBEpisode,
+        ),
+        onPlayLocal: null,
+      );
+      return;
+    }
+
+    _playOnlineEpisode(ep.number, ep.title);
   }
 
   /// Reuses the TMDB episodes controller so the hero play button picks the
@@ -718,6 +757,14 @@ class _AnimeDetailDesktopLayoutState
       widget.onOpenTorrentSelector(
         episodeNumber: nextEp,
         episodeTitle: l10n.episodeNumber(nextEp),
+      );
+    } else if (_selectedProvider == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.noOnlineExtensionsInstalled),
+          behavior: SnackBarBehavior.floating,
+        ),
       );
     } else {
       _playOnlineEpisode(nextEp, l10n.episodeNumber(nextEp));
@@ -858,11 +905,14 @@ class _AnimeDetailDesktopLayoutState
         widget.details?.totalEpisodes ?? widget.initialEntry?.totalEpisodes;
     final studio = widget.details?.studio ?? '';
 
-    final rawProgress =
-        liveCollectionEntry?.progress ??
-        widget.details?.progress ??
-        widget.initialEntry?.progress ??
-        0;
+    final rawProgress = math.max(
+      liveCollectionEntry?.progress ??
+          widget.details?.progress ??
+          widget.initialEntry?.progress ??
+          0,
+      OfflineLibraryService.instance.getAnimeEntry(widget.mediaId)?.progress ??
+          0,
+    );
 
     // Media server sources expose their own seasons/episodes/progress.
     final mediaServerEpisodes = _visibleMediaServerEpisodes;
@@ -894,20 +944,15 @@ class _AnimeDetailDesktopLayoutState
               (e) => e.isDownloaded,
             ));
     final effectiveHasLocal = widget.hasLocalFiles || hasLibFiles;
-    final downloadedMap = {
-      for (final ep
-          in (libraryEntryAsync.asData?.value?.episodes ?? <LibraryEpisode>[]))
-        if (ep.isDownloaded) ep.episodeNumber: ep.localFilePath,
-    };
-    final allEpNumbers =
-        (mediaServerAniZip != null && mediaServerAniZip.episodes.isNotEmpty)
-        ? mediaServerAniZip.episodes.map((e) => e.episodeNumber).toList()
-        : ((widget.aniZipData != null && widget.aniZipData!.episodes.isNotEmpty)
-              ? widget.aniZipData!.episodes.map((e) => e.episodeNumber).toList()
-              : List.generate(totalEpisodes ?? 0, (i) => i + 1));
 
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
+    return CallbackShortcuts(
+      bindings: <ShortcutActivator, VoidCallback>{
+        const SingleActivator(LogicalKeyboardKey.keyF, control: true): () {
+          _episodesTabKey.currentState?.focusSearch();
+        },
+      },
+      child: Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
       body: Stack(
         children: [
           // ─── 1. Full-Page Cinematic Backdrop ───
@@ -934,10 +979,18 @@ class _AnimeDetailDesktopLayoutState
                 final extraHeight = _isSynopsisExpanded
                     ? _calculateExtraSynopsisHeight(description, 740.0)
                     : 0.0;
-                final effectiveTopSpacing = math.max(
-                  16.0,
-                  baseTopSpacing - extraHeight,
-                );
+                final hasPoster = coverUrl != null && coverUrl.isNotEmpty;
+
+                // With a poster the whole hero block hugs the back button, so
+                // the poster sits directly above the logo with no dead space.
+                final effectiveTopSpacing = hasPoster
+                    ? 12.0
+                    : math.max(16.0, baseTopSpacing - extraHeight);
+
+                final posterHeight = hasPoster
+                    ? (constraints.maxHeight * 0.45).clamp(300.0, 450.0)
+                    : 0.0;
+                final posterWidth = posterHeight * (2.0 / 3.0);
 
                 return SingleChildScrollView(
                   controller: _scrollController,
@@ -998,6 +1051,9 @@ class _AnimeDetailDesktopLayoutState
                         DesktopHeader(
                           key: const ValueKey('desktop_header_ready'),
                           clearlogoUrl: clearLogo,
+                          posterUrl: coverUrl,
+                          posterWidth: posterWidth,
+                          posterHeight: posterHeight,
                           isLogoPending: widget.isLogoPending,
                           isTmdb: isTmdb,
                           seasonYearStr: seasonYearStr,
@@ -1054,6 +1110,14 @@ class _AnimeDetailDesktopLayoutState
                           hasLocalFiles: effectiveHasLocal,
                           onToggleLocalMode: widget.onToggleLocalMode,
                           onModeChanged: widget.onModeChanged,
+                          showSourceSelector: !isMediaServer &&
+                              !isTmdb &&
+                              (onlineEnabled ||
+                                  torrentEnabled ||
+                                  effectiveHasLocal),
+                          providers: _providers,
+                          selectedProvider: _selectedProvider,
+                          onProviderChanged: _changeOnlineProvider,
                           onPlayFocused: () {
                             if (_scrollController.hasClients &&
                                 _scrollController.offset > 0) {
@@ -1158,6 +1222,7 @@ class _AnimeDetailDesktopLayoutState
                                     'tmdb_episodes_${tmdbState.selectedSeason}_${tmdbState.isLoading}',
                                   ),
                                   child: DesktopEpisodesTab(
+                                key: _episodesTabKey,
                                 mediaId: widget.mediaId,
                                 details: widget.details,
                                 aniZipData: null,
@@ -1202,6 +1267,7 @@ class _AnimeDetailDesktopLayoutState
                             ],
                           ] else
                             DesktopEpisodesTab(
+                              key: _episodesTabKey,
                               mediaId: widget.mediaId,
                               details: widget.details,
                               aniZipData:
@@ -1221,18 +1287,7 @@ class _AnimeDetailDesktopLayoutState
                               isLoadingOnlineEpisodes: _isLoadingOnlineEpisodes,
                               loadingEpisodeNumber: _loadingEpisodeNumber,
                               fallbackCoverImage: coverUrl,
-                              onProviderChanged: (p) {
-                                if (p != null) {
-                                  setState(() => _selectedProvider = p);
-                                  SharedPreferences.getInstance().then(
-                                    (prefs) => prefs.setString(
-                                      _prefLastProviderKey,
-                                      p.id,
-                                    ),
-                                  );
-                                  _loadOnlineEpisodes();
-                                }
-                              },
+                              onProviderChanged: _changeOnlineProvider,
                               onToggleDubbed: () {
                                 setState(() => _isDubbed = !_isDubbed);
                                 _loadOnlineEpisodes();
@@ -1291,37 +1346,9 @@ class _AnimeDetailDesktopLayoutState
               },
             ),
           ),
-          // ─── 4. Floating Batch Action Bar ───
-          if (!isTmdb)
-            Positioned(
-              bottom: 24,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 640),
-                  child: EpisodeBatchActionBar(
-                  mediaId: widget.mediaId,
-                  details: widget.details,
-                  allEpisodeNumbers: allEpNumbers,
-                  downloadedMap: downloadedMap,
-                  isOnlineMode: widget.currentTab == AnimeDetailTab.online,
-                  onlineProvider: _selectedProvider,
-                  isDubbed: _isDubbed,
-                  onDownloadTorrents: (toDownload) {
-                    final firstEp = toDownload.first;
-                    widget.onOpenTorrentSelector(
-                      episodeNumber: firstEp,
-                      episodeTitle: 'Ep. $firstEp',
-                      isDownloadMode: true,
-                      initialSelectedEpisodes: toDownload,
-                    );
-                  },
-                ),
-              ),
-            ),
-          ),
+          // ─── 4. Episode selection actions live in the episodes header ───
         ],
+      ),
       ),
     );
   }

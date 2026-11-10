@@ -1,11 +1,12 @@
-import 'package:cached_network_image/cached_network_image.dart';
+﻿import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/data/models/anime_entry.dart';
-import 'package:seanime_app/data/models/local_file_item.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/providers/local_library_provider.dart';
+import 'package:aniting/core/constants/feature_flags.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/data/models/anime_entry.dart';
+import 'package:aniting/data/models/local_file_item.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/providers/local_library_provider.dart';
 
 class LocalLibraryMatchDialog extends ConsumerStatefulWidget {
   final UnmatchedFolderGroup group;
@@ -39,7 +40,7 @@ class _LocalLibraryMatchDialogState
   @override
   void initState() {
     super.initState();
-    _isTmdbMode = widget.group.isTmdb;
+    _isTmdbMode = FeatureFlags.tmdb && widget.group.isTmdb;
     _loadSuggestions();
   }
 
@@ -124,6 +125,7 @@ class _LocalLibraryMatchDialogState
   }
 
   void _switchProviderMode(bool tmdb) {
+    if (!FeatureFlags.tmdb && tmdb) return;
     if (_isTmdbMode == tmdb) return;
     setState(() {
       _isTmdbMode = tmdb;
@@ -207,34 +209,36 @@ class _LocalLibraryMatchDialogState
               const SizedBox(height: 12),
 
               // Segmented Provider Selector
-              SegmentedButton<bool>(
-                segments: [
-                  ButtonSegment<bool>(
-                    value: false,
-                    label: Text(
-                      l10n.matchProviderAniList,
-                      style: const TextStyle(fontSize: 12.5),
+              if (FeatureFlags.tmdb) ...[
+                SegmentedButton<bool>(
+                  segments: [
+                    ButtonSegment<bool>(
+                      value: false,
+                      label: Text(
+                        l10n.matchProviderAniList,
+                        style: const TextStyle(fontSize: 12.5),
+                      ),
+                      icon: const Icon(Icons.animation_rounded, size: 16),
                     ),
-                    icon: const Icon(Icons.animation_rounded, size: 16),
-                  ),
-                  ButtonSegment<bool>(
-                    value: true,
-                    label: Text(
-                      l10n.matchProviderTmdb,
-                      style: const TextStyle(fontSize: 12.5),
+                    ButtonSegment<bool>(
+                      value: true,
+                      label: Text(
+                        l10n.matchProviderTmdb,
+                        style: const TextStyle(fontSize: 12.5),
+                      ),
+                      icon: const Icon(Icons.movie_filter_rounded, size: 16),
                     ),
-                    icon: const Icon(Icons.movie_filter_rounded, size: 16),
+                  ],
+                  selected: {_isTmdbMode},
+                  onSelectionChanged: (newSelection) =>
+                      _switchProviderMode(newSelection.first),
+                  style: const ButtonStyle(
+                    visualDensity: VisualDensity.compact,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
-                ],
-                selected: {_isTmdbMode},
-                onSelectionChanged: (newSelection) =>
-                    _switchProviderMode(newSelection.first),
-                style: const ButtonStyle(
-                  visualDensity: VisualDensity.compact,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
-              ),
-              const SizedBox(height: 12),
+                const SizedBox(height: 12),
+              ],
 
               // Search Bar
               TextField(

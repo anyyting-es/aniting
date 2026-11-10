@@ -3,8 +3,8 @@ import 'dart:io';
 import 'dart:math';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:seanime_app/core/storage/app_storage_paths.dart';
-import 'package:seanime_app/data/models/manga_entry.dart';
+import 'package:aniting/core/storage/app_storage_paths.dart';
+import 'package:aniting/data/models/manga_entry.dart';
 
 class DownloadedChapterInfo {
   final String provider;
@@ -137,7 +137,7 @@ class MangaOfflineService {
 
         final dirName = _getDirName(entity);
 
-        // Si es una carpeta de capítulo directo de Seanime backend (ej: comick_123_abc_1) la procesamos luego
+        // Si es una carpeta de capítulo directo de Aniting backend (ej: comick_123_abc_1) la procesamos luego
         if (_isBackendChapterDir(dirName)) continue;
 
         final metadataFile = File('${entity.path}/metadata.json');
@@ -249,7 +249,7 @@ class MangaOfflineService {
         list.addAll(chapters);
       }
 
-      // También verificar en la raíz de descargas (formato Seanime backend)
+      // También verificar en la raíz de descargas (formato Aniting backend)
       final mangaRoot = await AppStoragePaths.getMangaDownloadsDirectory(customBase: customBase);
       if (await mangaRoot.exists()) {
         final entities = mangaRoot.listSync();
@@ -455,7 +455,7 @@ class MangaOfflineService {
   }
 
   DownloadedChapterInfo? _parseChapterDir(String fullPath, String dirName) {
-    // Formato Seanime: {provider}_{mediaId}_{chapterId}_{chapterNumber}
+    // Formato Aniting: {provider}_{mediaId}_{chapterId}_{chapterNumber}
     // O formato interno: chapter_{chapterNumber}
     final dir = Directory(fullPath);
     final regFile = File('$fullPath/registry.json');

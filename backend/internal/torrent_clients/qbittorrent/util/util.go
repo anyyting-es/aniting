@@ -1,4 +1,4 @@
-package qbittorrent_util
+﻿package qbittorrent_util
 
 import (
 	"bytes"
@@ -8,7 +8,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/textproto"
-	qbittorrent_model "seanime/internal/torrent_clients/qbittorrent/model"
+	qbittorrent_model "aniting/internal/torrent_clients/qbittorrent/model"
 	"strings"
 )
 

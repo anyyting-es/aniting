@@ -1,16 +1,16 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/preferences/title_language_provider.dart';
-import 'package:seanime_app/data/models/anime_details.dart';
-import 'package:seanime_app/data/models/anizip_data.dart';
-import 'package:seanime_app/data/models/episode_item.dart';
-import 'package:seanime_app/data/models/library_entry_details.dart';
-import 'package:seanime_app/data/models/onlinestream_models.dart';
-import 'package:seanime_app/data/models/show_local_file_item.dart';
-import 'package:seanime_app/data/models/tmdb_models.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/screens/video_player_screen.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/preferences/title_language_provider.dart';
+import 'package:aniting/data/models/anime_details.dart';
+import 'package:aniting/data/models/anizip_data.dart';
+import 'package:aniting/data/models/episode_item.dart';
+import 'package:aniting/data/models/library_entry_details.dart';
+import 'package:aniting/data/models/onlinestream_models.dart';
+import 'package:aniting/data/models/show_local_file_item.dart';
+import 'package:aniting/data/models/tmdb_models.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/screens/video_player_screen.dart';
 
 extension _IterableFirstWhereOrNull<T> on Iterable<T> {
   T? firstWhereOrNull(bool Function(T element) test) {
@@ -567,14 +567,19 @@ class EpisodesNotifier extends Notifier<EpisodesState> {
       final localMatch = libraryEntry?.episodes.firstWhereOrNull(
         (e) => e.episodeNumber == epNum,
       );
+      // The backend resolves metadata via Animap, which is usually richer and
+      // fresher than AniZip for newly airing seasons.
+      final backendMatch = details?.episodes.firstWhereOrNull(
+        (e) => e.episodeNumber == epNum,
+      );
       final isWatched = watchedProgress >= epNum;
 
       items.add(
         EpisodeItem.fromAniZip(
           epNum,
           zipEp,
-          fallbackTitle: localMatch?.displayTitle,
-          fallbackImage: details?.coverImage,
+          fallbackTitle: localMatch?.displayTitle ?? backendMatch?.title,
+          fallbackImage: backendMatch?.image ?? details?.coverImage,
           isWatched: isWatched,
           isDownloaded: localMatch?.isDownloaded ?? false,
           localFilePath: localMatch?.localFilePath,

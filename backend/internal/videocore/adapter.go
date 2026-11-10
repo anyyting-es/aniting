@@ -1,12 +1,12 @@
-package videocore
+﻿package videocore
 
 import (
 	"errors"
 	"fmt"
-	"seanime/internal/mediacore"
-	"seanime/internal/mkvparser"
-	"seanime/internal/nativeplayer"
-	"seanime/internal/player"
+	"aniting/internal/mediacore"
+	"aniting/internal/mkvparser"
+	"aniting/internal/nativeplayer"
+	"aniting/internal/player"
 
 	"github.com/google/uuid"
 )

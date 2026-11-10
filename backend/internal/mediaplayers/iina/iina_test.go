@@ -1,7 +1,7 @@
-package iina
+﻿package iina
 
 import (
-	"seanime/internal/util"
+	"aniting/internal/util"
 	"testing"
 )
 

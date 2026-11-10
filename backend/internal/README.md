@@ -1,5 +1,5 @@
 <p align="center">
-<img src="../docs/images/seanime-logo.png" alt="preview" width="70px"/>
+<img src="../../assets/icons/logo.png" alt="preview" width="70px"/>
 </p>
 
-<h2 align="center"><b>Seanime Server</b></h2>
+<h2 align="center"><b>Aniting Server</b></h2>

@@ -1,4 +1,4 @@
-package directstream
+﻿package directstream
 
 import (
 	"context"
@@ -7,12 +7,12 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"seanime/internal/api/anilist"
-	"seanime/internal/library/anime"
-	"seanime/internal/mkvparser"
-	"seanime/internal/player"
-	"seanime/internal/util/result"
-	"seanime/internal/util/torrentutil"
+	"aniting/internal/api/anilist"
+	"aniting/internal/library/anime"
+	"aniting/internal/mkvparser"
+	"aniting/internal/player"
+	"aniting/internal/util/result"
+	"aniting/internal/util/torrentutil"
 
 	"github.com/anacrolix/torrent"
 	"github.com/google/uuid"

@@ -1,4 +1,4 @@
-package realdebrid
+﻿package realdebrid
 
 import (
 	"bytes"
@@ -12,8 +12,8 @@ import (
 	"net/http"
 	"net/url"
 	"path/filepath"
-	"seanime/internal/debrid/debrid"
-	"seanime/internal/util"
+	"aniting/internal/debrid/debrid"
+	"aniting/internal/util"
 	"slices"
 	"strconv"
 	"strings"

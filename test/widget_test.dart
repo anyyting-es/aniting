@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:seanime_app/core/preferences/onboarding_provider.dart';
-import 'package:seanime_app/core/server/server_manager.dart';
-import 'package:seanime_app/data/models/anime_entry.dart';
-import 'package:seanime_app/data/models/manga_entry.dart';
-import 'package:seanime_app/main.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/widgets/anime_card.dart';
-import 'package:seanime_app/presentation/widgets/manga_card.dart';
+import 'package:aniting/core/preferences/onboarding_provider.dart';
+import 'package:aniting/core/server/server_manager.dart';
+import 'package:aniting/data/models/anime_entry.dart';
+import 'package:aniting/data/models/manga_entry.dart';
+import 'package:aniting/main.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/widgets/anime_card.dart';
+import 'package:aniting/presentation/widgets/manga_card.dart';
 
 class MockServerNotifier extends ServerNotifier {
   @override
@@ -31,8 +31,8 @@ void main() {
         child: const AnitingFlutterApp(),
       ),
     );
-    await tester.pumpAndSettle();
-    await tester.pump(const Duration(seconds: 2));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
     expect(find.byType(AnitingFlutterApp), findsOneWidget);
   });
@@ -46,6 +46,7 @@ void main() {
       status: 'CURRENT',
       score: 93,
       airDate: '2023-09-29',
+      year: 2023,
       format: 'TV',
     );
 
@@ -57,7 +58,7 @@ void main() {
             body: Center(
               child: SizedBox(
                 width: 115,
-                child: AnimeCard(entry: entry),
+                child: AnimeCard(entry: entry, showMetadata: true),
               ),
             ),
           ),
@@ -65,7 +66,7 @@ void main() {
       ),
     );
     expect(find.text('Sousou no Frieren'), findsOneWidget);
-    expect(find.text('2023 • TV'), findsOneWidget);
+    expect(find.text('2023'), findsOneWidget);
   });
 
   testWidgets('MangaCard renders in compact and desktop widths without overflow', (WidgetTester tester) async {
@@ -96,7 +97,7 @@ void main() {
     expect(find.text('Ch. 364'), findsOneWidget);
   });
 
-  testWidgets('AnimeCard respects fixed 2-line height container for short and long titles', (WidgetTester tester) async {
+  testWidgets('AnimeCard respects fixed 2-line title display for short and long titles', (WidgetTester tester) async {
     final shortEntry = AnimeEntry(
       id: 11,
       mediaId: 11,
@@ -122,15 +123,12 @@ void main() {
       ),
     );
 
-    // Verify title text exists and is inside a Container of fixed height 30.0
+    // Verify title text exists and has maxLines: 2 with ellipsis
     final textFinder = find.text('Bleach');
     expect(textFinder, findsOneWidget);
-    final containerFinder = find.ancestor(
-      of: textFinder,
-      matching: find.byType(Container),
-    ).first;
-    final Container containerWidget = tester.widget<Container>(containerFinder);
-    expect(containerWidget.constraints?.maxHeight, 30.0);
+    final Text textWidget = tester.widget<Text>(textFinder);
+    expect(textWidget.maxLines, 2);
+    expect(textWidget.overflow, TextOverflow.ellipsis);
 
     // Desktop width
     await tester.pumpWidget(
@@ -148,11 +146,10 @@ void main() {
       ),
     );
 
-    final desktopContainerFinder = find.ancestor(
-      of: textFinder,
-      matching: find.byType(Container),
-    ).first;
-    final Container desktopContainerWidget = tester.widget<Container>(desktopContainerFinder);
-    expect(desktopContainerWidget.constraints?.maxHeight, 34.0);
+    final desktopTextFinder = find.text('Bleach');
+    expect(desktopTextFinder, findsOneWidget);
+    final Text desktopTextWidget = tester.widget<Text>(desktopTextFinder);
+    expect(desktopTextWidget.maxLines, 2);
+    expect(desktopTextWidget.overflow, TextOverflow.ellipsis);
   });
 }

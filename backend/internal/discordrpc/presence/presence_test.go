@@ -1,9 +1,9 @@
 package discordrpc_presence
 
 import (
-	"seanime/internal/api/anilist"
-	"seanime/internal/database/models"
-	discordrpc_client "seanime/internal/discordrpc/client"
+	"aniting/internal/api/anilist"
+	"aniting/internal/database/models"
+	discordrpc_client "aniting/internal/discordrpc/client"
 	"testing"
 	"time"
 
@@ -95,8 +95,7 @@ func TestSetCustomActivity(t *testing.T) {
 //		Type:           &customType,
 //		Details:        "Testing Custom Activity",
 //		State:          "Watching stuff",
-//		LargeImageKey:  "https://seanime.app/images/circular-logo.png",
-//		LargeImageText: "Seanime Logo",
+//		LargeImageText: "Aniting Logo",
 //	}
 //
 //	p.SetCustomActivity(customAct)

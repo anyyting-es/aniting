@@ -1,13 +1,13 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:g1455/g1455.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/data/models/anime_details.dart';
-import 'package:seanime_app/data/models/torrent_models.dart';
-import 'package:seanime_app/presentation/widgets/torrent_selector/desktop/torrent_file_card.dart';
-import 'package:seanime_app/presentation/widgets/torrent_selector/desktop/torrent_sidebar_info_panel.dart';
-import 'package:seanime_app/presentation/widgets/torrent_selector/models/torrent_selector_helpers.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/data/models/anime_details.dart';
+import 'package:aniting/data/models/torrent_models.dart';
+import 'package:aniting/presentation/widgets/torrent_selector/desktop/torrent_file_card.dart';
+import 'package:aniting/presentation/widgets/torrent_selector/desktop/torrent_sidebar_info_panel.dart';
+import 'package:aniting/presentation/widgets/torrent_selector/models/torrent_selector_helpers.dart';
 
 class TorrentSelectorDesktopView extends ConsumerWidget {
   final AnimeDetails? animeDetails;

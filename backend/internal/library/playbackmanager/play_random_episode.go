@@ -1,10 +1,10 @@
-package playbackmanager
+﻿package playbackmanager
 
 import (
 	"context"
 	"fmt"
-	"seanime/internal/database/db_bridge"
-	"seanime/internal/library/anime"
+	"aniting/internal/database/db_bridge"
+	"aniting/internal/library/anime"
 
 	"github.com/samber/lo"
 )

@@ -1,10 +1,10 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/core/preferences/episode_view_mode_provider.dart';
-import 'package:seanime_app/data/models/anizip_data.dart';
-import 'package:seanime_app/presentation/widgets/anizip_episode_list.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/core/preferences/episode_view_mode_provider.dart';
+import 'package:aniting/data/models/anizip_data.dart';
+import 'package:aniting/presentation/widgets/anizip_episode_list.dart';
 
 void main() {
   group('AniZip Data & Episode Parsing Tests', () {

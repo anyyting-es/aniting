@@ -1,13 +1,13 @@
-package torrentstream
+﻿package torrentstream
 
 import (
 	"context"
 	"fmt"
 	"path/filepath"
-	"seanime/internal/api/anilist"
-	hibiketorrent "seanime/internal/extension/hibike/torrent"
-	"seanime/internal/util"
-	"seanime/internal/util/comparison"
+	"aniting/internal/api/anilist"
+	hibiketorrent "aniting/internal/extension/hibike/torrent"
+	"aniting/internal/util"
+	"aniting/internal/util/comparison"
 	"slices"
 	"sync"
 

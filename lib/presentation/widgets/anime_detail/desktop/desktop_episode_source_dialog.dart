@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:g1455/g1455.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/core/theme/app_focus_coordinator.dart';
-import 'package:seanime_app/data/models/onlinestream_models.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/core/theme/app_focus_coordinator.dart';
+import 'package:aniting/data/models/onlinestream_models.dart';
 import 'desktop_episode_models.dart';
 
 Future<void> showDesktopEpisodeSourceDialog(
@@ -252,7 +252,7 @@ class _DesktopEpisodeSourceDialogState
                           items: widget.providers.map((p) {
                             final isCurrent = _selectedProvider?.id == p.id;
                             return GlassMenuItem(
-                              label: p.isBoth ? '${p.name} · TMDB' : p.name,
+                              label: p.name,
                               icon: Icon(
                                 isCurrent
                                     ? AppIcons.checkCircleFilled(iconPack)

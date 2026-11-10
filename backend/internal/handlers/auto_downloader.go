@@ -1,12 +1,12 @@
-package handlers
+﻿package handlers
 
 import (
 	"context"
 	"errors"
 	"path/filepath"
-	"seanime/internal/api/anilist"
-	"seanime/internal/database/db_bridge"
-	"seanime/internal/library/anime"
+	"aniting/internal/api/anilist"
+	"aniting/internal/database/db_bridge"
+	"aniting/internal/library/anime"
 	"strconv"
 
 	"github.com/labstack/echo/v4"

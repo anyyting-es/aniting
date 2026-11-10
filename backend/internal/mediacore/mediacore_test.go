@@ -1,11 +1,11 @@
-package mediacore
+﻿package mediacore
 
 import (
-	"seanime/internal/api/anilist"
-	"seanime/internal/continuity"
-	"seanime/internal/library/anime"
-	"seanime/internal/player"
-	"seanime/internal/testutil"
+	"aniting/internal/api/anilist"
+	"aniting/internal/continuity"
+	"aniting/internal/library/anime"
+	"aniting/internal/player"
+	"aniting/internal/testutil"
 	"testing"
 	"time"
 

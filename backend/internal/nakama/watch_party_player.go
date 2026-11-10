@@ -1,11 +1,11 @@
-package nakama
+﻿package nakama
 
 import (
-	"seanime/internal/library/playbackmanager"
-	"seanime/internal/mediacore"
-	"seanime/internal/player"
-	"seanime/internal/util"
-	"seanime/internal/util/result"
+	"aniting/internal/library/playbackmanager"
+	"aniting/internal/mediacore"
+	"aniting/internal/player"
+	"aniting/internal/util"
+	"aniting/internal/util/result"
 	"strings"
 	"sync"
 

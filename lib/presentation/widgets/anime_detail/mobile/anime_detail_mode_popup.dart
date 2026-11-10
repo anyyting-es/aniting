@@ -1,10 +1,10 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:g1455/g1455.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/presentation/screens/anime_detail_screen.dart';
 
 /// Modal popup moderno con vidrio líquido de `g1455` (GlassCard) para cambiar modos de reproducción
 /// (Online Streaming, Torrent Swarm, Local Library) con animación de resorte.

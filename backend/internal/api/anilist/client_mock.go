@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"seanime/internal/testutil"
-	"seanime/internal/util"
+	"aniting/internal/testutil"
+	"aniting/internal/util"
 	"sort"
 	"strings"
 
@@ -25,7 +25,7 @@ func NewTestAnilistClient() AnilistClient {
 
 // FixtureAnilistClient is a fixture-backed test implementation of AnilistClient.
 // It reads committed fixtures first and can fall back to the live client when
-// a fixture is missing. Fixture writes are opt-in via SEANIME_TEST_RECORD_ANILIST_FIXTURES.
+// a fixture is missing. Fixture writes are opt-in via ANITING_TEST_RECORD_ANILIST_FIXTURES.
 type FixtureAnilistClient struct {
 	realAnilistClient AnilistClient
 	logger            *zerolog.Logger

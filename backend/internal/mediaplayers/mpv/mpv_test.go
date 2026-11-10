@@ -1,9 +1,9 @@
-package mpv
+﻿package mpv
 
 import (
 	"errors"
-	"seanime/internal/mediaplayers/mpvipc"
-	"seanime/internal/util"
+	"aniting/internal/mediaplayers/mpvipc"
+	"aniting/internal/util"
 	"testing"
 )
 

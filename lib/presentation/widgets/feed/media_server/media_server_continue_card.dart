@@ -243,34 +243,6 @@ class _MediaServerContinueCardState
                                         ),
                                       ),
 
-                                      // Botón Play idéntico al hover de ContinueWatchingCard
-                                      if (isActive && !_isLaunching)
-                                        Center(
-                                          child: Container(
-                                            width: isCompact ? 36 : 44,
-                                            height: isCompact ? 36 : 44,
-                                            decoration: BoxDecoration(
-                                              color: Colors.black.withValues(alpha: 0.65),
-                                              shape: BoxShape.circle,
-                                              border: Border.all(
-                                                color: Colors.white.withValues(alpha: 0.5),
-                                                width: 1.5,
-                                              ),
-                                              boxShadow: [
-                                                BoxShadow(
-                                                  color: Colors.black.withValues(alpha: 0.35),
-                                                  blurRadius: 8,
-                                                  offset: const Offset(0, 2),
-                                                ),
-                                              ],
-                                            ),
-                                            child: Icon(
-                                              Icons.play_arrow_rounded,
-                                              color: Colors.white,
-                                              size: isCompact ? 22 : 28,
-                                            ),
-                                          ),
-                                        ),
 
                                       // Spinner de lanzamiento si está abriendo
                                       if (_isLaunching)

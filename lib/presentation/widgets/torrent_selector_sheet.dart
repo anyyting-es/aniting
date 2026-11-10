@@ -1,8 +1,8 @@
-import 'package:flutter/material.dart';
-import 'package:seanime_app/data/models/anime_details.dart';
-import 'package:seanime_app/presentation/widgets/torrent_selector/torrent_selector_dialog.dart';
+﻿import 'package:flutter/material.dart';
+import 'package:aniting/data/models/anime_details.dart';
+import 'package:aniting/presentation/widgets/torrent_selector/torrent_selector_dialog.dart';
 
-export 'package:seanime_app/presentation/widgets/torrent_selector/models/torrent_selector_helpers.dart'
+export 'package:aniting/presentation/widgets/torrent_selector/models/torrent_selector_helpers.dart'
     show TorrentStreamLaunchInfo;
 
 class TorrentSelectorSheet extends StatelessWidget {

@@ -1,9 +1,9 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:seanime_app/data/services/tmdb_service.dart';
+import 'package:aniting/data/services/tmdb_service.dart';
 
 class _EpisodeAdapter implements HttpClientAdapter {
   String? lastPath;

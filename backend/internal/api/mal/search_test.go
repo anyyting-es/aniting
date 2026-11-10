@@ -1,7 +1,7 @@
-package mal
+﻿package mal
 
 import (
-	"seanime/internal/testutil"
+	"aniting/internal/testutil"
 	"testing"
 )
 

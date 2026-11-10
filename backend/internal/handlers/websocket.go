@@ -1,9 +1,9 @@
-package handlers
+﻿package handlers
 
 import (
 	"net/http"
-	"seanime/internal/events"
-	"seanime/internal/security"
+	"aniting/internal/events"
+	"aniting/internal/security"
 
 	"github.com/goccy/go-json"
 	"github.com/gorilla/websocket"

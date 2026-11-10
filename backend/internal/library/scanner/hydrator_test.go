@@ -1,11 +1,11 @@
-package scanner
+﻿package scanner
 
 import (
-	"seanime/internal/api/anilist"
-	"seanime/internal/library/anime"
-	"seanime/internal/library/summary"
-	"seanime/internal/platforms/platform"
-	"seanime/internal/util"
+	"aniting/internal/api/anilist"
+	"aniting/internal/library/anime"
+	"aniting/internal/library/summary"
+	"aniting/internal/platforms/platform"
+	"aniting/internal/util"
 	"testing"
 
 	"github.com/stretchr/testify/assert"

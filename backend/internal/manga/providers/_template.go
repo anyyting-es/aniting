@@ -1,9 +1,9 @@
-package manga_providers
+﻿package manga_providers
 
 import (
 	"github.com/rs/zerolog"
 	"net/http"
-	"seanime/internal/util"
+	"aniting/internal/util"
 	"time"
 )
 

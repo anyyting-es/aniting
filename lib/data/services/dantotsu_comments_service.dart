@@ -1,8 +1,8 @@
-import 'dart:typed_data';
+﻿import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
-import 'package:seanime_app/core/api/api_client.dart';
-import 'package:seanime_app/data/models/dantotsu_comment.dart';
+import 'package:aniting/core/api/api_client.dart';
+import 'package:aniting/data/models/dantotsu_comment.dart';
 
 class DantotsuCommentsPage {
   final List<DantotsuComment> comments;

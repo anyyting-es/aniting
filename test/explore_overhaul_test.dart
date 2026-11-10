@@ -1,14 +1,14 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:g1455/g1455.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/core/server/server_manager.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/screens/search_screen.dart';
-import 'package:seanime_app/presentation/widgets/catalog_search/catalog_search_view.dart';
-import 'package:seanime_app/presentation/widgets/compact_search_bar.dart';
-import 'package:seanime_app/presentation/widgets/media_type_toggle.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/core/server/server_manager.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/screens/search_screen.dart';
+import 'package:aniting/presentation/widgets/catalog_search/catalog_search_view.dart';
+import 'package:aniting/presentation/widgets/compact_search_bar.dart';
+import 'package:aniting/presentation/widgets/media_type_toggle.dart';
 
 class MockServerNotifier extends ServerNotifier {
   @override

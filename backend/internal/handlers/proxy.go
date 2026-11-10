@@ -1,4 +1,4 @@
-package handlers
+﻿package handlers
 
 import (
 	"bufio"
@@ -13,8 +13,8 @@ import (
 	"net/http"
 	url2 "net/url"
 	"regexp"
-	"seanime/internal/security"
-	"seanime/internal/util"
+	"aniting/internal/security"
+	"aniting/internal/util"
 	"strconv"
 	"strings"
 	"time"

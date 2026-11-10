@@ -1,10 +1,137 @@
-# Seanime App - Historical Changelog & Performance Milestones
+# Aniting - Historical Changelog & Performance Milestones
 
 > **RELEASE CHANGELOG SIMPLICITY RULE (CRITICAL - MANDATORY)**:
 > Release changelogs must **ALWAYS be simple, clean, and concise**.
 > - **NEVER** include microscopic, tedious, or trivial implementation details that end users do not care about.
 > - **ALWAYS** summarize improvements at a high, user-facing level with clear, direct bullet points.
 > - Keep it punchy, professional, and easy to skim.
+
+## 8.37. Rail de Episodios Scrolleable y Selector de Fuentes Renovado (2026-11-06)
+- **Lista de episodios independiente**: en el reproductor de escritorio la rueda sobre los episodios desplaza solo la lista, mientras que sobre el video desplaza la página completa.
+- **Episodio activo siempre visible**: al abrir o cambiar de episodio, la lista se desplaza automáticamente para mostrarlo.
+- **Selector de fuentes moderno**: el reproductor separa el proveedor (extensión online) y el servidor de ese proveedor en dos desplegables de cristal independientes, con un botón principal más grande y el mismo estilo del resto de la app.
+- **Episodios anteriores sin saltos**: al entrar directamente a un episodio posterior, los anteriores se marcan como vistos solo tras unos segundos de reproducción real, nunca al instante.
+- **Video nativo visible en Android**: se corrigió el fondo opaco que tapaba el video de ExoPlayer; además, el spinner de carga ahora se dibuja por encima de los controles.
+- **Botón "Anterior" estable**: se muestra siempre, bloqueado cuando no existe un episodio previo, evitando que la interfaz salte.
+
+## 8.36. TMDB Desactivado por Completo (2026-11-06)
+- **Catálogo solo AniList**: Shows/TMDB desaparece de Explorar, Buscar, filtros, feed y biblioteca.
+- **Sin llamadas TMDB**: tendencias, populares, mejor valoradas, recomendaciones, búsqueda rápida y pósters TMDB quedan apagados.
+- **Ajustes ocultos**: el módulo Shows y el emparejamiento manual TMDB se ocultan; las entradas TMDB existentes se ocultan de las listas sin borrar sus datos.
+- **Sesiones TMDB ignoradas**: la barra de reanudar no revive un show de TMDB.
+
+## 8.35. Progreso Lineal y Transiciones del Modo Selección (2026-11-06)
+- **Marcar vistos conectado**: guarda el progreso local al instante, sincroniza AniList en segundo plano y mantiene el progreso lineal: todos los episodios anteriores quedan como vistos y el progreso nunca retrocede.
+- **Transiciones suaves**: el header normal y la barra de selección se funden, se deslizan y ajustan su altura al entrar o salir del modo selección.
+
+## 8.34. Buscador de Episodios y Modo Selección en el Header (2026-11-06)
+- **Buscador de episodios**: el header de episodios incluye búsqueda por número o título, contador de resultados y limpieza rápida.
+- **Atajo Ctrl+F**: abre y enfoca el buscador de episodios desde cualquier punto del detalle.
+- **Acciones de selección en el header**: al seleccionar episodios, el header normal se reemplaza por descargar, seleccionar todos, marcar como vistos y eliminar descargas; al deseleccionar vuelve la normalidad.
+- **Sin barra flotante**: se retiró la barra flotante de acciones por lote en desktop.
+
+## 8.33. Episodios desde la Fuente Online en Desktop (2026-11-06)
+- **La fuente carga sus episodios**: al elegir una extensión online en el selector, la fila de episodios se actualiza con la lista real de esa fuente.
+- **Coincidencia 1:1 con AniList**: si la fuente tiene exactamente los mismos episodios que AniList, se mantiene la lista canónica con títulos, imágenes y numeración oficiales.
+- **Listas desalineadas**: si la fuente tiene episodios de más, de menos o numeración distinta, se muestran los episodios de la fuente enriquecidos con los metadatos disponibles de AniZip.
+- **Cambio de fuente fiable**: las respuestas antiguas se descartan si cambias de extensión o de doblaje mientras carga, evitando que se mezclen listas.
+
+## 8.32. Portada Flotante en el Hero de Desktop (2026-11-06)
+- **Portada más grande**: el póster vertical pasó a formato 2:3 (hasta 300×450) y domina el espacio libre del hero.
+- **Bloque del header unido**: al mostrar portada, el logo, metadatos, sinopsis y acciones suben junto a ella; el póster queda justo debajo del botón de volver y pegado al logo, sin huecos.
+- **Centrada con el logo**: se alinea con la columna del logo y adapta su altura en ventanas pequeñas para no taparlo.
+
+## 8.31. Fondo de Personaje y Correcciones de Scroll en Desktop (2026-11-06)
+- **Fondo inmersivo de personaje**: la vista de personajes y seiyuus usa el retrato del personaje a pantalla completa, con desenfoque intenso y opacidad visible, cambiando con una transición suave al navegar entre personajes.
+- **Legibilidad garantizada**: una capa de degradado dinámico mantiene nítidos el nombre, la biografía y la tarjeta del seiyuu sobre el retrato.
+- **Scrollbars estables**: se corrigieron los `Scrollbar` sin controlador en la biografía, los popovers de torrents y el selector de fuentes, eliminando la excepción "no ScrollPosition attached" en escritorio.
+
+## 8.30. Selector de Fuente Online / Torrent en Desktop (2026-11-06)
+- **Selector en la barra de acciones**: las entradas de AniList muestran a la derecha de los botones una píldora para elegir entre Streaming Online, Torrent y Biblioteca Local.
+- **Extensión online visible**: al elegir Online aparece junto al selector la píldora de extensión para cambiar de proveedor; los episodios se recargan según la extensión elegida.
+- **Reproducción según el modo**: en Online el episodio se reproduce directo con la extensión elegida; en Torrent un clic abre todas las opciones de torrent disponibles. Los archivos ya descargados se reproducen al instante.
+- **Sin cambios en TMDB, Plex y Jellyfin**: mantienen su flujo propio y no muestran este selector.
+
+## 8.29. Editor de Listas Minimalista Fiel al Tema (2026-11-04)
+- **Diseño minimalista sin liquid glass**: se eliminaron los efectos de cristal translúcido, blur y capas reflectivas del modal de edición de entradas (`EditEntryModal`).
+- **Integración total con la paleta de la app**: el contenedor principal, los selectores y los campos de progreso y puntuación adoptan directamente las superficies y tonos del tema activo (`surfaceContainer`, `surfaceContainerHigh`, bordes con `outlineVariant` y negro puro en OLED).
+- **Selector de estado nativo Material 3**: se reemplazó el menú de cristal por `MenuAnchor` oficial, ofreciendo un desplegable ágil, limpio y con indicadores circulares por estado.
+- **Controles unificados a 46 px**: el selector de estado, steppers de capítulos/repeticiones, selectores de fecha y slider de puntuación comparten la misma altura, radio y bordes sutiles.
+
+## 8.28. Marca Aniting y Controles Centrados sin Lista de Episodios (2026-11-04)
+- **Marca unificada**: binarios, ventana, notificaciones, registros, base de datos y protocolo interno usan ahora "Aniting"; se eliminaron los restos de "Seanime".
+- **Reinicio de configuración (beta)**: al cambiar los identificadores internos, la configuración previa del servidor se reinicia una vez.
+- **Sin actualizaciones heredadas**: se eliminó el sistema de autoactualización y descarga de la app de escritorio del proyecto original; Aniting se actualiza desde su propio GitHub.
+- **Cabecera centrada sin lista de episodios**: al ocultar la lista lateral, el botón de volver, el título y el botón de episodios se alinean con el video centrado en lugar de quedar pegados a los bordes.
+
+## 8.27. Rediseño Glass y Atmósfera Completa en Detalle de Manga (2026-11-04)
+- **Fondo inmersivo a pantalla completa**: el banner artístico ahora se extiende a lo largo de toda la página con gradientes dinámicos de contraste, eliminando el corte abrupto en negro sólido.
+- **Píldoras y botones de cristal translúcido**: todos los selectores de fuente, scanlator, coincidencia manual, filtros y botones de cabecera adoptan una estética de píldora redondeada (radio 20 px) con cristal esmerilado suave, bordes tenues y sombras delicadas a juego con el botón de lectura.
+- **Tarjetas de personajes flotantes**: los personajes ahora se presentan en elegantes tarjetas translúcidas de cristal con esquinas redondeadas (14 px), avatar con borde curvo, micro-píldora de rol y soporte para abrir la vista inmersiva de reparto al hacer clic.
+- **Tabla de capítulos y estados vacíos enmarcados**: la tabla de capítulos y los estados de carga o error ahora están alojados en un contenedor flotante de cristal con desenfoque de fondo y tipografía moderna en lugar de flotar sobre el vacío.
+
+## 8.26. Buscador y Filtro Flotante de Catálogo (2026-11-04)
+- **Filtro de orden flotante**: las opciones de ordenación (puntuación, popularidad, tendencias, fecha) salieron del panel lateral y ahora flotan en una píldora moderna sobre el contenido en la esquina inferior derecha.
+- **Navegación simplificada**: se reemplazó el botón de "Explorar" en la cabecera del catálogo por un botón directo de retroceso (`IconButton`), permitiendo volver con un solo toque y dejando el título despejado.
+- **Searchbox con Floating Label de Material Design**: el campo de búsqueda de títulos ahora utiliza el diseño nativo de Material con etiqueta flotante animada que se desplaza hacia el borde superior al enfocar o escribir.
+
+## 8.25. Rediseño Desktop de Detalle de Manga y Limpieza Visual (2026-11-04)
+- **Nuevo diseño de detalle de Manga para escritorio**:
+  - **Cabecera panorámica limpia**: portada estilizada con botones de acciones rápidas `[ ⋮ ]` y perfil/lista `[ 👤 ]` justo debajo.
+  - **Metadatos y badges interactivos**: progreso `${progreso}/${total}`, píldora editable `[ ✎ Leyendo ]` para cambiar estado y progreso al instante, fecha de inicio `[ 📅 ]` y estado de emisión `[ 🌐 ]`.
+  - **Línea de puntuación y géneros**: corazón con calificación AniList `♡`, géneros limpios en línea y sinopsis expandible.
+  - **Controles de fuente y scanlator**: selector estilizado de fuente con botón de recarga rápida y diálogo de coincidencia manual (`Manual match`), además de selector desplegable de scanlator para filtrar por grupo traductor.
+  - **Acceso rápido a lectura**: botón destacado `[ Continuar leyendo ]` en píldora blanca junto a la cabecera de capítulos.
+  - **Filtros y tabla de capítulos**: chips de filtrado para no leídos y descargados, buscador redondeado y tabla elegante con columnas de nombre, scanlator, número, y accesos directos de lectura y descarga.
+  - **Sección de personajes refinada**: cuadrícula de 2 columnas con avatares cuadrados y detalles de edad y rol principal o secundario.
+- **Seguir Viendo más limpio**: se quitó el icono flotante de reproducción en las tarjetas al pasar el ratón o enfocar, dejando la miniatura totalmente despejada.
+- **Espaciado compacto en Manga**: se ajustó la altura de los carruseles en la sección de manga según las dimensiones reales de las tarjetas, eliminando el hueco vacío que quedaba al pie del manga antes de la siguiente sección.
+
+## 8.25. Entrada y Salida del Reproductor Más Fluidas (2026-11-04)
+- **Transición suave**: al abrir/cerrar el reproductor ahora hay un fundido con un leve zoom, en lugar del cambio instantáneo y seco.
+- **Arranque sin tirones**: la creación del motor nativo se aplaza hasta después de que la transición haya pintado varios frames; mientras tanto se muestra la pantalla de carga.
+- **Menos reconstrucciones**: el tema y el fondo raíz ya no se reconstruyen cada vez que se abre o cierra el reproductor.
+- **Cierre más liviano**: en desktop se eliminó la cortina negra previa al cierre, el video se pausa antes de iniciar el fundido y el guardado de progreso/refresco del feed se hace después de la animación de salida.
+- **Lista de episodios responsive**: el rail ahora se adapta al ancho de la ventana (320–440 px), garantiza un video mínimo cómodo y se oculta automáticamente antes de seguir apretando el reproductor.
+
+## 8.24. Corrección del Crash al Reproducir/Seek en Torrents (2026-11-04)
+- **Reproducción interna estable**: los inicios de stream por torrent desde "Seguir viendo", la barra flotante y el cambio de episodio ahora usan el reproductor interno (`playbackType: none`) en lugar de intentar abrir un reproductor externo.
+- **Sin más caídas por reproductor externo no configurado**: el backend ya no intenta usar una integración de reproductor externo inexistente; conserva el stream HTTP activo en lugar de cerrarlo y tirar el torrent.
+- **Protecciones adicionales**: se agregaron validaciones nulas en el gestor de reproducción y en el repositorio de reproductores para evitar el error 500/panic al cambiar de episodio o hacer seek.
+
+## 8.23. Splash de Inicio Fluido y Animado (2026-11-04)
+- **Spinner estilo Windows 11**: anillo grueso con cola degradada y un glow muy sutil, con giro constante y suave; se eliminó el efecto de contracción que se sentía raro.
+- **Fondo de colores mezclados**: se quitaron los glows neón del logo y el fondo plano; ahora hay un campo animado de gradientes suaves que se mueven y se funden entre sí.
+- **Salida sin tirón**: el splash permanece opaco unos frames mientras el shell principal se compone, y luego se desvanece con una curva suave usando un controlador dedicado.
+- **Carga sin stutter**: los cambios de estado se aislaron para no reconstruir toda la pantalla y las animaciones se pintan en capas independientes.
+
+## 8.22. Plan por Ver en el Feed y Preview Ajustado (2026-11-04)
+- **Nueva sección "Plan por ver"**: el feed ahora muestra los animes marcados como **Planning**, con su carrusel, contador y acceso directo al detalle.
+- **Vista previa más cómoda**: la X para cerrar el preview ahora está arriba a la izquierda y se puede pulsar incluso en la zona de la barra de título personalizada.
+
+## 8.21. Reproductor Móvil y Modos de Desktop Refinados (2026-11-04)
+- **Móvil más limpio**: la barra inferior solo muestra la línea de tiempo y el tiempo de reproducción; pausa, anterior y siguiente pasan al centro de la pantalla, y pantalla completa/ajustes/bloqueo quedan arriba a la derecha.
+- **Modo bloqueo**: un botón de candado oculta todos los controles y desactiva los gestos para ver tranquilo; solo queda visible el botón para desbloquear.
+- **Desktop sin saltos al ocultar episodios**: en el modo normal, el video conserva exactamente su tamaño y se centra al ocultar la lista de episodios.
+- **Fondos ambientales corregidos**: el halo difuminado del modo normal ya no se corta en los laterales y se eliminó el fondo difuminado sobrante del modo horizontal.
+- **Sin botón de regresar duplicado**: durante la carga solo se muestra el botón interno en los modos que realmente lo necesitan.
+- **Adaptación al titlebar**: los controles del reproductor dejan espacio a la barra de título personalizada y no quedan detrás de los botones de ventana.
+- **Botón de modos estable**: el selector de modo solo cambia de forma/icono al alternar, sin quedarse marcado como seleccionado.
+
+## 8.20. Vista Previa Minimalista en Todas las Portadas (2026-11-04)
+- **Clic derecho en cualquier portada**: anime, manga, recomendaciones, relaciones, calendario y tarjetas de biblioteca abren una vista previa inmersiva con el fondo difuminado de la obra.
+- **Diseño más limpio**: portada central, título, año, descripción breve y un panel de acciones compacto, sin badges ni bloques innecesarios.
+- **Acciones rápidas**: añadir a la biblioteca, editar estado y marcar como visto/leído directamente desde la vista previa.
+- **Calendario mensual**: los títulos ahora aparecen como texto limpio, uno por línea y con la hora al lado; la portada de vista previa es más grande y se mantiene dentro de la pantalla.
+
+## 8.19. Preview de Portada en el Calendario Mensual (2026-11-04)
+- **Vista previa compacta sobre el título**: al pasar el mouse por un título del calendario en modo Mes, ahora aparece una portada vertical pequeña justo encima del título, en lugar de una imagen grande que se abría hacia los lados.
+- **Siempre dentro de pantalla**: la portada se centra sobre el título y se mantiene visible incluso en las primeras filas del calendario.
+
+## 8.18. Entrada Instantánea a Episodios Descargados desde Seguir Viendo (2026-11-04)
+- **Apertura inmediata de episodios en disco**: al tocar una tarjeta de "Seguir Viendo" cuyo episodio ya está descargado (incluidos los torrents guardados en el equipo), el reproductor se abre al instante usando el archivo local, sin esperar búsquedas de torrents ni resolver enlaces.
+- **Indicador de carga visible**: mientras se resuelve una fuente que sí requiere red, la tarjeta muestra de inmediato un spinner, evitando la sensación de que el toque no hizo nada.
+- **Reanudación desde la barra flotante**: la barra de reanudación también prioriza los archivos descargados para volver al episodio sin demoras.
 
 ## 8.17. Carruseles Hero en Explorar y Navegación Directa (2026-11-02)
 - **Carrusel Hero Inmersivo para Anime**: los 5 animes en tendencia de AniList se presentan con un banner panorámico enriquecido con fanarts en alta resolución y logos limpios extraídos mediante AniZip.

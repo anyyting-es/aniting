@@ -1,9 +1,9 @@
-package manga
+﻿package manga
 
 import (
 	"testing"
 
-	hibikemanga "seanime/internal/extension/hibike/manga"
+	hibikemanga "aniting/internal/extension/hibike/manga"
 
 	"github.com/stretchr/testify/require"
 )

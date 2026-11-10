@@ -1,12 +1,12 @@
-package autoscanner
+﻿package autoscanner
 
 import (
-	"seanime/internal/api/anilist"
-	"seanime/internal/database/db"
-	"seanime/internal/database/models"
-	"seanime/internal/events"
-	"seanime/internal/testutil"
-	"seanime/internal/util"
+	"aniting/internal/api/anilist"
+	"aniting/internal/database/db"
+	"aniting/internal/database/models"
+	"aniting/internal/events"
+	"aniting/internal/testutil"
+	"aniting/internal/util"
 	"sync"
 	"sync/atomic"
 	"testing"

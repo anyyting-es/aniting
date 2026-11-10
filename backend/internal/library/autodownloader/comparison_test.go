@@ -1,12 +1,12 @@
-package autodownloader
+﻿package autodownloader
 
 import (
-	"seanime/internal/api/anilist"
-	"seanime/internal/api/metadata_provider"
-	"seanime/internal/database/db"
-	"seanime/internal/database/models"
-	"seanime/internal/library/anime"
-	"seanime/internal/util"
+	"aniting/internal/api/anilist"
+	"aniting/internal/api/metadata_provider"
+	"aniting/internal/database/db"
+	"aniting/internal/database/models"
+	"aniting/internal/library/anime"
+	"aniting/internal/util"
 	"testing"
 
 	"github.com/5rahim/habari"
@@ -43,7 +43,7 @@ func TestComparison(t *testing.T) {
 		TitleComparisonType: "likely",
 		EpisodeType:         "recent",
 		EpisodeNumbers:      []int{3}, // ignored
-		Destination:         "/data/seanime/library/[Oshi no Ko] 2nd Season",
+		Destination:         "/data/aniting/library/[Oshi no Ko] 2nd Season",
 		ComparisonTitle:     "[Oshi no Ko] 2nd Season",
 	}
 
@@ -93,7 +93,7 @@ func TestComparison(t *testing.T) {
 
 	//lfw := anime.NewLocalFileWrapper([]*anime.LocalFile{
 	//	{
-	//		Path: "/data/seanime/library/[Oshi no Ko] 2nd Season/[SubsPlease] Oshi no Ko - 12 (1080p).mkv",
+	//		Path: "/data/aniting/library/[Oshi no Ko] 2nd Season/[SubsPlease] Oshi no Ko - 12 (1080p).mkv",
 	//		Name: "Oshi no Ko - 12 (1080p).mkv",
 	//		ParsedData: &anime.LocalFileParsedData{
 	//			Original:     "Oshi no Ko - 12 (1080p).mkv",
@@ -168,7 +168,7 @@ func TestComparison2(t *testing.T) {
 		TitleComparisonType: "likely",
 		EpisodeType:         "recent",
 		EpisodeNumbers:      []int{},
-		Destination:         "/data/seanime/library/Dandadan",
+		Destination:         "/data/aniting/library/Dandadan",
 		ComparisonTitle:     "Dandadan",
 	}
 
@@ -265,7 +265,7 @@ func TestComparison3(t *testing.T) {
 		TitleComparisonType: "likely",
 		EpisodeType:         "recent",
 		EpisodeNumbers:      []int{},
-		Destination:         "/data/seanime/library/Dandadan",
+		Destination:         "/data/aniting/library/Dandadan",
 		ComparisonTitle:     "Dandadan",
 	}
 
@@ -285,7 +285,7 @@ func TestComparison3(t *testing.T) {
 
 	//lfw := anime.NewLocalFileWrapper([]*anime.LocalFile{
 	//	{
-	//		Path: "/data/seanime/library/Dandadan/[SubsPlease] Dandadan - 01 (1080p).mkv",
+	//		Path: "/data/aniting/library/Dandadan/[SubsPlease] Dandadan - 01 (1080p).mkv",
 	//		Name: "Dandadan - 01 (1080p).mkv",
 	//		ParsedData: &anime.LocalFileParsedData{
 	//			Original:     "Dandadan - 01 (1080p).mkv",

@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
-import 'package:seanime_app/presentation/screens/video_player_screen.dart';
+﻿import 'package:flutter/material.dart';
+import 'package:aniting/presentation/screens/video_player_screen.dart';
 import '../models/media_server_config.dart';
 import '../models/media_server_item.dart';
 import '../models/media_server_type.dart';

@@ -3,16 +3,16 @@ package torrentstream
 import (
 	"context"
 	"encoding/json"
-	"seanime/internal/api/anilist"
-	"seanime/internal/api/metadata_provider"
-	"seanime/internal/database/models"
-	"seanime/internal/events"
-	hibiketorrent "seanime/internal/extension/hibike/torrent"
-	"seanime/internal/library/anime"
-	"seanime/internal/platforms/platform"
-	"seanime/internal/testmocks"
-	"seanime/internal/testutil"
-	"seanime/internal/util"
+	"aniting/internal/api/anilist"
+	"aniting/internal/api/metadata_provider"
+	"aniting/internal/database/models"
+	"aniting/internal/events"
+	hibiketorrent "aniting/internal/extension/hibike/torrent"
+	"aniting/internal/library/anime"
+	"aniting/internal/platforms/platform"
+	"aniting/internal/testmocks"
+	"aniting/internal/testutil"
+	"aniting/internal/util"
 	"sync"
 	"testing"
 	"time"
@@ -310,7 +310,7 @@ func TestAddBatchHistoryPersistsAndInvalidatesQueries(t *testing.T) {
 	repo, _, ws := newTorrentstreamTestRepository(t)
 	torrent := &hibiketorrent.AnimeTorrent{
 		Provider: "provider",
-		Name:     "[Seanime] Example Show - 01-12 (1080p).mkv",
+		Name:     "[Aniting] Example Show - 01-12 (1080p).mkv",
 		InfoHash: "hash-1",
 		IsBatch:  true,
 	}
@@ -320,8 +320,8 @@ func TestAddBatchHistoryPersistsAndInvalidatesQueries(t *testing.T) {
 		CurrentAniDBEpisode:  "1",
 		Files: []*hibiketorrent.AnimeTorrentFile{{
 			Index: 0,
-			Path:  "/downloads/[Seanime] Example Show - 01.mkv",
-			Name:  "[Seanime] Example Show - 01.mkv",
+			Path:  "/downloads/[Aniting] Example Show - 01.mkv",
+			Name:  "[Aniting] Example Show - 01.mkv",
 		}},
 	}
 
@@ -336,7 +336,7 @@ func TestAddBatchHistoryPersistsAndInvalidatesQueries(t *testing.T) {
 	require.NotNil(t, history.Torrent)
 	require.Equal(t, torrent.InfoHash, history.Torrent.InfoHash)
 	require.NotNil(t, history.Metadata)
-	require.Equal(t, "Seanime", history.Metadata.ReleaseGroup)
+	require.Equal(t, "Aniting", history.Metadata.ReleaseGroup)
 	require.NotNil(t, history.BatchEpisodeFiles)
 	require.Equal(t, 1, history.BatchEpisodeFiles.CurrentEpisodeNumber)
 
@@ -358,7 +358,7 @@ func TestAddBatchHistoryUpdatesExistingRecord(t *testing.T) {
 	repo, _, _ := newTorrentstreamTestRepository(t)
 
 	repo.AddBatchHistory(101, &hibiketorrent.AnimeTorrent{
-		Name:     "[Seanime] Example Show - 01-12 (1080p).mkv",
+		Name:     "[Aniting] Example Show - 01-12 (1080p).mkv",
 		InfoHash: "old-hash",
 	}, nil)
 	require.Eventually(t, func() bool {
@@ -368,7 +368,7 @@ func TestAddBatchHistoryUpdatesExistingRecord(t *testing.T) {
 
 	updatedFiles := &hibiketorrent.BatchEpisodeFiles{CurrentEpisodeNumber: 5, CurrentAniDBEpisode: "5"}
 	repo.AddBatchHistory(101, &hibiketorrent.AnimeTorrent{
-		Name:     "[Seanime] Example Show - 05 (1080p).mkv",
+		Name:     "[Aniting] Example Show - 05 (1080p).mkv",
 		InfoHash: "new-hash",
 	}, updatedFiles)
 
@@ -388,7 +388,7 @@ func TestDeleteBatchHistoryRemovesRecordAndInvalidatesQueries(t *testing.T) {
 	repo, _, ws := newTorrentstreamTestRepository(t)
 
 	repo.AddBatchHistory(102, &hibiketorrent.AnimeTorrent{
-		Name:     "[Seanime] Example Show - 01-12 (1080p).mkv",
+		Name:     "[Aniting] Example Show - 01-12 (1080p).mkv",
 		InfoHash: "hash-delete",
 		IsBatch:  true,
 	}, &hibiketorrent.BatchEpisodeFiles{CurrentEpisodeNumber: 1, CurrentAniDBEpisode: "1"})

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/data/models/torrent_models.dart';
-import 'package:seanime_app/presentation/widgets/torrent_selector/models/torrent_selector_helpers.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/data/models/torrent_models.dart';
+import 'package:aniting/presentation/widgets/torrent_selector/models/torrent_selector_helpers.dart';
 
 /// Item de fila reutilizable para los menús popover de Liquid Glass.
 class _PopoverRowItem extends StatelessWidget {
@@ -83,7 +83,7 @@ class _PopoverRowItem extends StatelessWidget {
 }
 
 /// Contenido del popover para seleccionar Proveedor de torrents.
-class TorrentProviderPopoverContent extends ConsumerWidget {
+class TorrentProviderPopoverContent extends ConsumerStatefulWidget {
   final List<AnimeTorrentProvider> providers;
   final String? selectedProviderId;
   final ValueChanged<String?> onProviderSelected;
@@ -98,34 +98,51 @@ class TorrentProviderPopoverContent extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<TorrentProviderPopoverContent> createState() =>
+      _TorrentProviderPopoverContentState();
+}
+
+class _TorrentProviderPopoverContentState
+    extends ConsumerState<TorrentProviderPopoverContent> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = ref.watch(translationsProvider);
     final iconPack = ref.watch(iconPackProvider);
 
     return ConstrainedBox(
       constraints: const BoxConstraints(maxHeight: 280),
       child: Scrollbar(
+        controller: _scrollController,
         thumbVisibility: true,
         child: SingleChildScrollView(
+          controller: _scrollController,
           padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               _PopoverRowItem(
                 title: l10n.allProviders,
-                isSelected: selectedProviderId == null,
+                isSelected: widget.selectedProviderId == null,
                 icon: AppIcons.globe(iconPack),
                 iconPack: iconPack,
                 onTap: () {
                   HapticFeedback.lightImpact();
-                  onProviderSelected(null);
-                  onClose();
+                  widget.onProviderSelected(null);
+                  widget.onClose();
                 },
               ),
-              if (providers.isNotEmpty)
+              if (widget.providers.isNotEmpty)
                 const Divider(height: 6, indent: 8, endIndent: 8),
-              ...providers.map((p) {
-                final isSelected = selectedProviderId == p.id;
+              ...widget.providers.map((p) {
+                final isSelected = widget.selectedProviderId == p.id;
                 return _PopoverRowItem(
                   title: p.name,
                   isSelected: isSelected,
@@ -133,8 +150,8 @@ class TorrentProviderPopoverContent extends ConsumerWidget {
                   iconPack: iconPack,
                   onTap: () {
                     HapticFeedback.lightImpact();
-                    onProviderSelected(p.id);
-                    onClose();
+                    widget.onProviderSelected(p.id);
+                    widget.onClose();
                   },
                 );
               }),
@@ -147,7 +164,7 @@ class TorrentProviderPopoverContent extends ConsumerWidget {
 }
 
 /// Contenido del popover para seleccionar Episodio o Batches.
-class TorrentEpisodePopoverContent extends ConsumerWidget {
+class TorrentEpisodePopoverContent extends ConsumerStatefulWidget {
   final int? currentEpisode;
   final int totalEpisodes;
   final Set<int>? selectedEpisodes;
@@ -164,7 +181,22 @@ class TorrentEpisodePopoverContent extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<TorrentEpisodePopoverContent> createState() =>
+      _TorrentEpisodePopoverContentState();
+}
+
+class _TorrentEpisodePopoverContentState
+    extends ConsumerState<TorrentEpisodePopoverContent> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = ref.watch(translationsProvider);
     final iconPack = ref.watch(iconPackProvider);
     final theme = Theme.of(context);
@@ -172,29 +204,32 @@ class TorrentEpisodePopoverContent extends ConsumerWidget {
     return ConstrainedBox(
       constraints: const BoxConstraints(maxHeight: 300),
       child: Scrollbar(
+        controller: _scrollController,
         thumbVisibility: true,
         child: SingleChildScrollView(
+          controller: _scrollController,
           padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               _PopoverRowItem(
                 title: l10n.allBatches,
-                isSelected: currentEpisode == null,
+                isSelected: widget.currentEpisode == null,
                 icon: AppIcons.folderZip(iconPack),
                 iconColor: Colors.purpleAccent,
                 iconPack: iconPack,
                 onTap: () {
                   HapticFeedback.lightImpact();
-                  onEpisodeSelected(null);
-                  onClose();
+                  widget.onEpisodeSelected(null);
+                  widget.onClose();
                 },
               ),
               const Divider(height: 6, indent: 8, endIndent: 8),
-              for (int ep = 1; ep <= totalEpisodes; ep++) ...[
+              for (int ep = 1; ep <= widget.totalEpisodes; ep++) ...[
                 () {
-                  final isQueued = selectedEpisodes?.contains(ep) == true;
-                  final isCurrent = currentEpisode == ep;
+                  final isQueued =
+                      widget.selectedEpisodes?.contains(ep) == true;
+                  final isCurrent = widget.currentEpisode == ep;
                   return _PopoverRowItem(
                     title: l10n.episodeNumber(ep),
                     isSelected: isCurrent,
@@ -202,25 +237,38 @@ class TorrentEpisodePopoverContent extends ConsumerWidget {
                     iconPack: iconPack,
                     trailing: isQueued
                         ? Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 5,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
-                              color: theme.colorScheme.primary.withValues(alpha: 0.18),
+                              color: theme.colorScheme.primary.withValues(
+                                alpha: 0.18,
+                              ),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(AppIcons.check(iconPack), size: 11, color: theme.colorScheme.primary),
+                                Icon(
+                                  AppIcons.check(iconPack),
+                                  size: 11,
+                                  color: theme.colorScheme.primary,
+                                ),
                                 const SizedBox(width: 3),
-                                Icon(AppIcons.download(iconPack), size: 11, color: theme.colorScheme.primary),
+                                Icon(
+                                  AppIcons.download(iconPack),
+                                  size: 11,
+                                  color: theme.colorScheme.primary,
+                                ),
                               ],
                             ),
                           )
                         : null,
                     onTap: () {
                       HapticFeedback.lightImpact();
-                      onEpisodeSelected(ep);
-                      onClose();
+                      widget.onEpisodeSelected(ep);
+                      widget.onClose();
                     },
                   );
                 }(),

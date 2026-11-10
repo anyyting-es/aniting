@@ -1,9 +1,9 @@
-import 'package:flutter/gestures.dart';
+﻿import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:g1455/g1455.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/presentation/widgets/player/models/player_types.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/presentation/widgets/player/models/player_types.dart';
 
 /// Formats a track's display title and language nicely.
 String formatTrackLabel(UiTrack t) {

@@ -1,9 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:g1455/g1455.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/icons/app_icons.dart';
 import 'desktop_cast_models.dart';
 
 /// Prominent vertical showcase card for the Seiyuu (voice actor).
@@ -40,36 +39,11 @@ class DesktopCastSeiyuuCard extends ConsumerWidget {
         child: SizedBox(
           width: width,
           height: height,
-          child: GlassCard(
-            borderRadius: BorderRadius.circular(20),
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // ── 1. Top Section Header ──
-                Row(
-                  children: [
-                    Icon(
-                      AppIcons.mic(iconPack),
-                      size: 13,
-                      color: theme.colorScheme.primary,
-                    ),
-                    const SizedBox(width: 5),
-                    Text(
-                      l10n.japaneseVoice.toUpperCase(),
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.9,
-                        color: theme.colorScheme.primary,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-
-                // ── 2. Large Vertical Portrait Image ──
-                Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── 1. Large Vertical Portrait Image (Top position, no overlay) ──
+              Expanded(
                   child: Container(
                     width: double.infinity,
                     decoration: BoxDecoration(
@@ -183,7 +157,7 @@ class DesktopCastSeiyuuCard extends ConsumerWidget {
                                         borderRadius: BorderRadius.circular(6),
                                       ),
                                       child: Text(
-                                        item.vaLanguage ?? 'Japanese',
+                                        item.vaLanguage ?? l10n.japaneseVoice,
                                         style: TextStyle(
                                           fontSize: 10,
                                           fontWeight: FontWeight.w700,
@@ -214,7 +188,6 @@ class DesktopCastSeiyuuCard extends ConsumerWidget {
                 ),
               ],
             ),
-          ),
         ),
       ),
     );

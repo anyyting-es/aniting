@@ -1,12 +1,12 @@
-package transcoder
+﻿package transcoder
 
 import (
 	"fmt"
 	"os"
 	"path"
 	"path/filepath"
-	"seanime/internal/mediastream/videofile"
-	"seanime/internal/util/result"
+	"aniting/internal/mediastream/videofile"
+	"aniting/internal/util/result"
 	"time"
 
 	"github.com/rs/zerolog"

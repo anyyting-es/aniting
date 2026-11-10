@@ -1,8 +1,8 @@
-package plugin_ui
+﻿package plugin_ui
 
 import (
-	gojautil "seanime/internal/util/goja"
-	"seanime/internal/util/result"
+	gojautil "aniting/internal/util/goja"
+	"aniting/internal/util/result"
 	"slices"
 	"sync"
 	"time"

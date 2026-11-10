@@ -1,6 +1,6 @@
 # Desktop Window Transparency & Compositor Blur (Wayland / X11 / Multi-OS)
 
-This guide documents the native architecture and implementation for **desktop window transparency and compositor-driven background blur** in **Aniting (Seanime App)**.
+This guide documents the native architecture and implementation for **desktop window transparency and compositor-driven background blur** in **Aniting**.
 
 ---
 
@@ -116,9 +116,9 @@ Requires **Niri >= 26.04** (supports `background-effect { blur true }`).
 In `~/.config/niri/config.kdl`:
 ```kdl
 window-rule {
-    match app-id="com.seanime.app.seanime_app"
+    match app-id="com.anyyting.aniting.aniting_app"
     match app-id="aniting"
-    match app-id="seanime_app"
+    match app-id="aniting_app"
     background-effect {
         blur true
         xray false
@@ -143,9 +143,9 @@ niri msg action load-config-file
 In `~/.config/hypr/hyprland.conf`:
 ```ini
 # Match either application ID or executable name
-windowrule = blur, match:class ^(com.seanime.app.seanime_app)$
+windowrule = blur, match:class ^(com.anyyting.aniting.aniting_app)$
 windowrule = blur, match:class ^(aniting)$
-windowrule = blur, match:class ^(seanime_app)$
+windowrule = blur, match:class ^(aniting_app)$
 
 # Optional: Global blur tuning
 decoration {
@@ -166,7 +166,7 @@ In `~/.config/sway/config`:
 blur enable
 blur_passes 3
 blur_radius 5
-for_window [app_id="com.seanime.app.seanime_app"] blur enable
+for_window [app_id="com.anyyting.aniting.aniting_app"] blur enable
 for_window [app_id="aniting"] blur enable
 ```
 
@@ -175,7 +175,7 @@ for_window [app_id="aniting"] blur enable
 ### 4.4. KDE Plasma / KWin (Wayland / X11)
 KWin natively supports blurring windows with alpha channels:
 1. In **System Settings** -> **Window Management** -> **Window Rules**:
-   - Add new rule for Window Class: `com.seanime.app.seanime_app`.
+   - Add new rule for Window Class: `com.anyyting.aniting.aniting_app`.
    - Set "Force Blur" or use KWin Scripts such as `kwin-effects-forceblur`.
 2. Under Plasma Wayland, transparent surfaces with RGBA visual are automatically blended over the wallpaper.
 
@@ -187,7 +187,7 @@ To enable blur behind Aniting on GNOME:
 1. Install the popular **Blur my Shell** extension.
 2. In **Blur my Shell Settings** -> **Applications**:
    - Enable "Application Blur".
-   - Add `com.seanime.app.seanime_app` or `aniting` to the whitelist.
+   - Add `com.anyyting.aniting.aniting_app` or `aniting` to the whitelist.
 
 ---
 

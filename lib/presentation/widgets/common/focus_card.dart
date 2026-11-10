@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:seanime_app/core/theme/app_theme_colors.dart';
+import 'package:aniting/core/theme/app_theme_colors.dart';
 
 /// Modern Web & Media Center Focusable Card.
 /// Provides smooth 1.04x scaling, border accent illumination, and DPAD focus traversal.

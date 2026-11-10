@@ -1,15 +1,15 @@
-import 'dart:io';
+﻿import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/constants/app_constants.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/server/server_manager.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/screens/settings/widgets/pixel_settings_widgets.dart';
-import 'package:seanime_app/presentation/screens/settings/widgets/pixel_subpage_scaffold.dart';
-import 'package:seanime_app/presentation/screens/settings/widgets/server_lan_sharing_card.dart';
-import 'package:seanime_app/presentation/screens/settings/widgets/server_discovered_list_card.dart';
+import 'package:aniting/core/constants/app_constants.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/server/server_manager.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/screens/settings/widgets/pixel_settings_widgets.dart';
+import 'package:aniting/presentation/screens/settings/widgets/pixel_subpage_scaffold.dart';
+import 'package:aniting/presentation/screens/settings/widgets/server_lan_sharing_card.dart';
+import 'package:aniting/presentation/screens/settings/widgets/server_discovered_list_card.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PÁGINA: SERVIDOR Y RED

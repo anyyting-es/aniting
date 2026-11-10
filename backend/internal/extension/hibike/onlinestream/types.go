@@ -13,7 +13,7 @@ type (
 	}
 
 	SearchOptions struct {
-		// The media object provided by Seanime.
+		// The media object provided by Aniting.
 		Media Media `json:"media"`
 		// The search query.
 		Query string `json:"query"`
@@ -146,6 +146,10 @@ type (
 		Quality string `json:"quality"`
 		// Subtitles for the video source.
 		Subtitles []*VideoSubtitle `json:"subtitles"`
+		// Thumbnails is a WebVTT storyboard used for the seek bar previews.
+		// Its cues point at a sprite sheet with a `#xywh=` tile, exactly like
+		// the trickplay files AniZone and MegaPlay expose.
+		Thumbnails string `json:"thumbnails,omitempty"`
 		// InfoHash is the BitTorrent info hash when Type is VideoSourceTorrent.
 		InfoHash string `json:"infoHash,omitempty"`
 		// FileIndex is the index of the file to stream inside the torrent.

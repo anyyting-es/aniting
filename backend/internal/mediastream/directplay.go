@@ -1,4 +1,4 @@
-package mediastream
+﻿package mediastream
 
 import (
 	"errors"
@@ -7,8 +7,8 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"seanime/internal/events"
-	"seanime/internal/util"
+	"aniting/internal/events"
+	"aniting/internal/util"
 
 	"github.com/labstack/echo/v4"
 )

@@ -1,11 +1,11 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/core/preferences/download_preferences_provider.dart';
-import 'package:seanime_app/core/preferences/manga_reader_preferences_provider.dart';
-import 'package:seanime_app/presentation/screens/settings/widgets/pixel_settings_widgets.dart';
-import 'package:seanime_app/presentation/screens/settings/widgets/pixel_subpage_scaffold.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/core/preferences/download_preferences_provider.dart';
+import 'package:aniting/core/preferences/manga_reader_preferences_provider.dart';
+import 'package:aniting/presentation/screens/settings/widgets/pixel_settings_widgets.dart';
+import 'package:aniting/presentation/screens/settings/widgets/pixel_subpage_scaffold.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PÁGINA: AJUSTES DEL LECTOR DE MANGA (GLOBAL)

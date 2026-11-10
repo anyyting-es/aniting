@@ -1,21 +1,21 @@
-import 'package:cached_network_image/cached_network_image.dart';
+﻿import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/core/preferences/playback_progress_preferences_provider.dart';
-import 'package:seanime_app/core/preferences/title_language_provider.dart';
-import 'package:seanime_app/data/models/anime_details.dart';
-import 'package:seanime_app/data/models/anime_entry.dart';
-import 'package:seanime_app/data/models/anizip_data.dart';
-import 'package:seanime_app/data/models/library_entry_details.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/screens/video_player_screen.dart';
-import 'package:seanime_app/presentation/widgets/anime_detail/anime_detail_mobile_layout.dart';
-import 'package:seanime_app/presentation/widgets/anizip_episode_list.dart';
-import 'package:seanime_app/presentation/widgets/local_library_view.dart';
-import 'package:seanime_app/presentation/widgets/online_stream_view.dart';
-import 'package:seanime_app/presentation/widgets/episodes/episodes_view.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/core/preferences/playback_progress_preferences_provider.dart';
+import 'package:aniting/core/preferences/title_language_provider.dart';
+import 'package:aniting/data/models/anime_details.dart';
+import 'package:aniting/data/models/anime_entry.dart';
+import 'package:aniting/data/models/anizip_data.dart';
+import 'package:aniting/data/models/library_entry_details.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/screens/video_player_screen.dart';
+import 'package:aniting/presentation/widgets/anime_detail/anime_detail_mobile_layout.dart';
+import 'package:aniting/presentation/widgets/anizip_episode_list.dart';
+import 'package:aniting/presentation/widgets/local_library_view.dart';
+import 'package:aniting/presentation/widgets/online_stream_view.dart';
+import 'package:aniting/presentation/widgets/episodes/episodes_view.dart';
 
 class AnimeDetailTvLayout extends ConsumerStatefulWidget {
   final int mediaId;

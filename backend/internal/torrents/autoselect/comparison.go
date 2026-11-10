@@ -1,11 +1,11 @@
-package autoselect
+﻿package autoselect
 
 import (
 	"cmp"
 	"context"
-	hibiketorrent "seanime/internal/extension/hibike/torrent"
-	"seanime/internal/library/anime"
-	"seanime/internal/util"
+	hibiketorrent "aniting/internal/extension/hibike/torrent"
+	"aniting/internal/library/anime"
+	"aniting/internal/util"
 	"slices"
 	"strings"
 

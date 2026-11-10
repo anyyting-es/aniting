@@ -1,19 +1,19 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:g1455/g1455.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:seanime_app/core/api/api_client.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/preferences/onboarding_provider.dart';
-import 'package:seanime_app/core/preferences/title_language_provider.dart';
-import 'package:seanime_app/core/server/server_manager.dart';
-import 'package:seanime_app/core/theme/theme_provider.dart';
-import 'package:seanime_app/data/models/extension_item.dart';
-import 'package:seanime_app/data/repositories/seanime_repository.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/screens/welcome_screen.dart';
+import 'package:aniting/core/api/api_client.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/preferences/onboarding_provider.dart';
+import 'package:aniting/core/preferences/title_language_provider.dart';
+import 'package:aniting/core/server/server_manager.dart';
+import 'package:aniting/core/theme/theme_provider.dart';
+import 'package:aniting/data/models/extension_item.dart';
+import 'package:aniting/data/repositories/aniting_repository.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/screens/welcome_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class MockServerNotifier extends ServerNotifier {
@@ -21,7 +21,7 @@ class MockServerNotifier extends ServerNotifier {
   ServerStateModel build() => const ServerStateModel(state: ServerState.stopped);
 }
 
-class FakeWelcomeRepository extends SeanimeRepository {
+class FakeWelcomeRepository extends AnitingRepository {
   FakeWelcomeRepository() : super(ApiClient());
 
   @override

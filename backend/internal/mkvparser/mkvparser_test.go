@@ -1,4 +1,4 @@
-//go:build outdated
+﻿//go:build outdated
 
 package mkvparser
 
@@ -7,7 +7,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
-	"seanime/internal/util"
+	"aniting/internal/util"
 	"strings"
 	"testing"
 	"time"

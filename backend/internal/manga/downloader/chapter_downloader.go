@@ -1,4 +1,4 @@
-package chapter_downloader
+﻿package chapter_downloader
 
 import (
 	"bytes"
@@ -9,11 +9,11 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"seanime/internal/database/db"
-	"seanime/internal/events"
-	hibikemanga "seanime/internal/extension/hibike/manga"
-	manga_providers "seanime/internal/manga/providers"
-	"seanime/internal/util"
+	"aniting/internal/database/db"
+	"aniting/internal/events"
+	hibikemanga "aniting/internal/extension/hibike/manga"
+	manga_providers "aniting/internal/manga/providers"
+	"aniting/internal/util"
 	"strconv"
 	"strings"
 	"sync"

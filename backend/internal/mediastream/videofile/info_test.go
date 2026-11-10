@@ -1,9 +1,9 @@
-package videofile
+﻿package videofile
 
 import (
 	"os"
 	"path/filepath"
-	"seanime/internal/util"
+	"aniting/internal/util"
 	"testing"
 
 	"gopkg.in/vansante/go-ffprobe.v2"

@@ -1,16 +1,16 @@
-package manga
+﻿package manga
 
 import (
 	"cmp"
 	"fmt"
 	"os"
 	"path/filepath"
-	"seanime/internal/api/anilist"
-	"seanime/internal/extension"
-	hibikemanga "seanime/internal/extension/hibike/manga"
-	"seanime/internal/hook"
-	chapter_downloader "seanime/internal/manga/downloader"
-	manga_providers "seanime/internal/manga/providers"
+	"aniting/internal/api/anilist"
+	"aniting/internal/extension"
+	hibikemanga "aniting/internal/extension/hibike/manga"
+	"aniting/internal/hook"
+	chapter_downloader "aniting/internal/manga/downloader"
+	manga_providers "aniting/internal/manga/providers"
 	"slices"
 
 	"github.com/goccy/go-json"

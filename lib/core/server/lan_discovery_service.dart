@@ -1,8 +1,8 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:seanime_app/core/constants/app_constants.dart';
+import 'package:aniting/core/constants/app_constants.dart';
 
 /// Represents a discovered Aniting server on the local network.
 class DiscoveredServer {

@@ -1,7 +1,7 @@
-import 'dart:ui';
+﻿import 'dart:ui';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:seanime_app/presentation/widgets/player/viewport/ambient_video_glow.dart';
+import 'package:aniting/presentation/widgets/player/viewport/ambient_video_glow.dart';
 
 void main() {
   group('AmbientVideoGlow.canPaintFrame', () {

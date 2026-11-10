@@ -1,17 +1,17 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:g1455/g1455.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/preferences/episode_view_mode_provider.dart';
-import 'package:seanime_app/core/theme/app_theme_colors.dart';
-import 'package:seanime_app/data/models/anime_details.dart';
-import 'package:seanime_app/data/models/library_entry_details.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/providers/download_history_provider.dart';
-import 'package:seanime_app/presentation/screens/video_player_screen.dart';
-import 'package:seanime_app/presentation/widgets/episode_item_widget.dart';
-import 'package:seanime_app/presentation/widgets/toast/app_toast.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/preferences/episode_view_mode_provider.dart';
+import 'package:aniting/core/theme/app_theme_colors.dart';
+import 'package:aniting/data/models/anime_details.dart';
+import 'package:aniting/data/models/library_entry_details.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/providers/download_history_provider.dart';
+import 'package:aniting/presentation/screens/video_player_screen.dart';
+import 'package:aniting/presentation/widgets/episode_item_widget.dart';
+import 'package:aniting/presentation/widgets/toast/app_toast.dart';
 
 class LocalLibraryView extends ConsumerStatefulWidget {
   final int mediaId;

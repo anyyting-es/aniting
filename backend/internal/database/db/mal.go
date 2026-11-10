@@ -1,10 +1,10 @@
-package db
+﻿package db
 
 import (
 	"errors"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
-	"seanime/internal/database/models"
+	"aniting/internal/database/models"
 )
 
 func (db *Database) GetMalInfo() (*models.Mal, error) {

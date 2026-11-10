@@ -1,11 +1,14 @@
-import 'package:cached_network_image/cached_network_image.dart';
+﻿import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/i18n/i18n_provider.dart';
-import 'package:seanime_app/data/models/anime_entry.dart';
-import 'package:seanime_app/data/models/manga_entry.dart';
-import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
-import 'package:seanime_app/presentation/screens/manga_detail_screen.dart';
+import 'package:aniting/core/preferences/title_language_provider.dart';
+import 'package:aniting/data/models/anime_entry.dart';
+import 'package:aniting/data/models/manga_entry.dart';
+import 'package:aniting/presentation/screens/anime_detail_screen.dart';
+import 'package:aniting/presentation/screens/manga_detail_screen.dart';
+import 'package:aniting/presentation/widgets/anime_preview/show_preview_data.dart';
+import 'package:aniting/presentation/widgets/anime_preview/show_quick_view_detector.dart';
 
 class DesktopMangaRecommendationsRow extends ConsumerWidget {
   final List recommendations;
@@ -117,6 +120,7 @@ class _DesktopMangaRecommendationCardState extends ConsumerState<_DesktopMangaRe
     if (mediaRec == null) return const SizedBox.shrink();
 
     final l10n = ref.watch(translationsProvider);
+    final titleLang = ref.watch(titleLanguageProvider);
     final recId = mediaRec['id'] as int? ?? 0;
     final titleMap = mediaRec['title'] as Map<String, dynamic>?;
     final recTitle = titleMap?['userPreferred'] ?? titleMap?['romaji'] ?? titleMap?['english'] ?? l10n.noTitle;
@@ -127,39 +131,52 @@ class _DesktopMangaRecommendationCardState extends ConsumerState<_DesktopMangaRe
     final isDark = theme.brightness == Brightness.dark;
     final titleColor = isDark ? Colors.white : theme.colorScheme.onSurface;
 
-    return SizedBox(
-      width: 165,
-      child: MouseRegion(
+    void openDetails() {
+      final type = mediaRec['type'] as String?;
+      if (type == 'MANGA') {
+        MangaEntry? manga;
+        try {
+          manga = MangaEntry.fromJson(mediaRec);
+        } catch (_) {}
+        MangaDetailScreen.navigate(
+          context,
+          mediaId: recId,
+          initialEntry: manga,
+        );
+      } else {
+        AnimeEntry? entry;
+        try {
+          entry = AnimeEntry.fromJson(mediaRec);
+        } catch (_) {}
+        AnimeDetailScreen.navigate(
+          context,
+          mediaId: recId,
+          initialEntry: entry,
+        );
+      }
+    }
+
+    ShowPreviewData? previewData;
+    try {
+      if ((mediaRec['type'] as String?) == 'MANGA') {
+        previewData = ShowPreviewData.fromManga(
+          MangaEntry.fromJson(mediaRec),
+          titleLang,
+        );
+      } else {
+        previewData = ShowPreviewData.fromAnime(
+          AnimeEntry.fromJson(mediaRec),
+          titleLang,
+        );
+      }
+    } catch (_) {}
+
+    final card = MouseRegion(
         cursor: recId > 0 ? SystemMouseCursors.click : SystemMouseCursors.basic,
         onEnter: (_) => setState(() => _isHovered = true),
         onExit: (_) => setState(() => _isHovered = false),
         child: InkWell(
-          onTap: recId > 0
-              ? () {
-                  final type = mediaRec['type'] as String?;
-                  if (type == 'MANGA') {
-                    MangaEntry? manga;
-                    try {
-                      manga = MangaEntry.fromJson(mediaRec);
-                    } catch (_) {}
-                    MangaDetailScreen.navigate(
-                      context,
-                      mediaId: recId,
-                      initialEntry: manga,
-                    );
-                  } else {
-                    AnimeEntry? entry;
-                    try {
-                      entry = AnimeEntry.fromJson(mediaRec);
-                    } catch (_) {}
-                    AnimeDetailScreen.navigate(
-                      context,
-                      mediaId: recId,
-                      initialEntry: entry,
-                    );
-                  }
-                }
-              : null,
+          onTap: recId > 0 ? openDetails : null,
           borderRadius: BorderRadius.circular(12),
           hoverColor: Colors.transparent,
           splashColor: Colors.transparent,
@@ -222,7 +239,17 @@ class _DesktopMangaRecommendationCardState extends ConsumerState<_DesktopMangaRe
             ],
           ),
         ),
-      ),
+      );
+
+    return SizedBox(
+      width: 165,
+      child: previewData == null
+          ? card
+          : ShowQuickViewDetector(
+              dataBuilder: () => previewData!,
+              onOpenDetails: openDetails,
+              child: card,
+            ),
     );
   }
 }

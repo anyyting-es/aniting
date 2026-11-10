@@ -1,13 +1,13 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:seanime_app/data/models/anime_details.dart';
-import 'package:seanime_app/data/models/anizip_data.dart';
-import 'package:seanime_app/presentation/widgets/player/models/player_types.dart';
-import 'package:seanime_app/presentation/widgets/player/panels/player_chat_panel.dart';
-import 'package:seanime_app/presentation/widgets/player/panels/player_info_panel.dart';
-import 'package:seanime_app/presentation/widgets/player/panels/player_source_card.dart';
-import 'package:seanime_app/presentation/widgets/player/panels/watch/player_watch_content.dart';
+import 'package:aniting/data/models/anime_details.dart';
+import 'package:aniting/data/models/anizip_data.dart';
+import 'package:aniting/presentation/widgets/player/models/player_types.dart';
+import 'package:aniting/presentation/widgets/player/panels/player_chat_panel.dart';
+import 'package:aniting/presentation/widgets/player/panels/player_info_panel.dart';
+import 'package:aniting/presentation/widgets/player/panels/player_source_card.dart';
+import 'package:aniting/presentation/widgets/player/panels/watch/player_watch_content.dart';
 
 /// A Plex/Jellyfin (or TMDB) entry has no local comments thread and no online
 /// sources to switch, so the player must not render either of them.

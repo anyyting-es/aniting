@@ -1,13 +1,13 @@
-package handlers
+﻿package handlers
 
 import (
 	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
-	"seanime/internal/database/models"
-	"seanime/internal/mediastream"
-	"seanime/internal/util"
+	"aniting/internal/database/models"
+	"aniting/internal/mediastream"
+	"aniting/internal/util"
 	"strings"
 
 	"github.com/labstack/echo/v4"

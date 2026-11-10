@@ -1,6 +1,6 @@
-import 'package:flutter_test/flutter_test.dart';
+﻿import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/widgets.dart';
-import 'package:seanime_app/presentation/widgets/snapping_scroll_physics.dart';
+import 'package:aniting/presentation/widgets/snapping_scroll_physics.dart';
 
 void main() {
   group('SnappingListScrollPhysics Tests', () {

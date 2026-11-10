@@ -1,9 +1,9 @@
-package anilist
+﻿package anilist
 
 import (
 	"context"
-	"seanime/internal/util"
-	"seanime/internal/util/limiter"
+	"aniting/internal/util"
+	"aniting/internal/util/limiter"
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"

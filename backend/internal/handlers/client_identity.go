@@ -2,17 +2,17 @@ package handlers
 
 import (
 	"net/http"
-	"seanime/internal/core"
+	"aniting/internal/core"
 	"strings"
 )
 
 const (
-	clientIdHeaderName      = "X-Seanime-Client-Id"
-	clientIdProofHeaderName = "X-Seanime-Client-Id-Proof"
-	clientIdCookieName      = "Seanime-Client-Id"
+	clientIdHeaderName      = "X-Aniting-Client-Id"
+	clientIdProofHeaderName = "X-Aniting-Client-Id-Proof"
+	clientIdCookieName      = "Aniting-Client-Id"
 	clientIdQueryParam      = "id"
 	clientIdProofQueryParam = "proof"
-	clientPlatformHeader    = "X-Seanime-Client-Platform"
+	clientPlatformHeader    = "X-Aniting-Client-Platform"
 	clientPlatformQuery     = "platform"
 	clientIdTokenPrefix     = "client-id:"
 

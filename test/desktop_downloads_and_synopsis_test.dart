@@ -1,21 +1,21 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
-import 'package:seanime_app/core/api/api_client.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/data/models/anime_details.dart';
-import 'package:seanime_app/data/models/anime_entry.dart';
-import 'package:seanime_app/data/models/anizip_data.dart';
-import 'package:seanime_app/data/models/library_entry_details.dart';
-import 'package:seanime_app/data/repositories/seanime_repository.dart';
-import 'package:seanime_app/presentation/providers/active_downloads_provider.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
-import 'package:seanime_app/presentation/widgets/anime_detail/desktop/desktop_episodes_tab.dart';
-import 'package:seanime_app/presentation/widgets/anime_detail/desktop/desktop_header.dart';
+import 'package:aniting/core/api/api_client.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/data/models/anime_details.dart';
+import 'package:aniting/data/models/anime_entry.dart';
+import 'package:aniting/data/models/anizip_data.dart';
+import 'package:aniting/data/models/library_entry_details.dart';
+import 'package:aniting/data/repositories/aniting_repository.dart';
+import 'package:aniting/presentation/providers/active_downloads_provider.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/screens/anime_detail_screen.dart';
+import 'package:aniting/presentation/widgets/anime_detail/desktop/desktop_episodes_tab.dart';
+import 'package:aniting/presentation/widgets/anime_detail/desktop/desktop_header.dart';
 
-class FakeEpisodesRepo extends SeanimeRepository {
+class FakeEpisodesRepo extends AnitingRepository {
   FakeEpisodesRepo() : super(ApiClient());
 
   @override

@@ -1,12 +1,12 @@
-import 'dart:io' show Platform;
+﻿import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/data/models/torrent_models.dart';
-import 'package:seanime_app/presentation/providers/torrent_stream_provider.dart';
-import 'package:seanime_app/presentation/widgets/player/models/player_types.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/data/models/torrent_models.dart';
+import 'package:aniting/presentation/providers/torrent_stream_provider.dart';
+import 'package:aniting/presentation/widgets/player/models/player_types.dart';
 
 /// Clean, modern top bar for the video player displaying back button, titles,
 /// video source badge (extension, torrent, local file or stream),
@@ -22,7 +22,10 @@ class PlayerTopBar extends ConsumerWidget {
   final bool showTitle;
   final bool showBackButton;
   final VoidCallback? onToggleTheaterMode;
-  final bool isTheaterMode;
+
+  /// Mobile quick actions pinned to the top-right corner.
+  final VoidCallback? onToggleFullscreen;
+  final VoidCallback? onTogglePlayerLock;
 
   /// Drives the icon/tooltip of the layout button (normal / wide / cinema).
   final PlayerLayoutMode layoutMode;
@@ -43,7 +46,8 @@ class PlayerTopBar extends ConsumerWidget {
     this.showTitle = true,
     this.showBackButton = true,
     this.onToggleTheaterMode,
-    this.isTheaterMode = false,
+    this.onToggleFullscreen,
+    this.onTogglePlayerLock,
     this.layoutMode = PlayerLayoutMode.normal,
     this.onShowEpisodes,
   });
@@ -191,14 +195,6 @@ class PlayerTopBar extends ConsumerWidget {
       highlightColor: Colors.white.withValues(alpha: 0.18),
       shape: const CircleBorder(),
     );
-    final activeButtonStyle = IconButton.styleFrom(
-      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      padding: const EdgeInsets.all(2),
-      backgroundColor: Colors.white.withValues(alpha: 0.24),
-      hoverColor: Colors.white.withValues(alpha: 0.20),
-      highlightColor: Colors.white.withValues(alpha: 0.26),
-      shape: const CircleBorder(),
-    );
 
     return SafeArea(
       top: isFullscreen,
@@ -297,19 +293,76 @@ class PlayerTopBar extends ConsumerWidget {
                 // Theater mode toggle (desktop only)
                 if (onToggleTheaterMode != null) ...[
                   IconButton(
-                    style: isTheaterMode ? activeButtonStyle : buttonStyle,
+                    style: buttonStyle,
                     constraints: const BoxConstraints(
                       minWidth: 36,
                       minHeight: 36,
                     ),
-                    icon: Icon(
-                      layoutMode.getIcon(iconPack),
-                      color: Colors.white,
-                      size: sidebarIconSize,
+                    icon: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 180),
+                      transitionBuilder: (child, animation) {
+                        return FadeTransition(
+                          opacity: animation,
+                          child: ScaleTransition(
+                            scale: Tween<double>(
+                              begin: 0.86,
+                              end: 1,
+                            ).animate(animation),
+                            child: child,
+                          ),
+                        );
+                      },
+                      child: Icon(
+                        layoutMode.getIcon(iconPack),
+                        key: ValueKey(layoutMode),
+                        color: Colors.white,
+                        size: sidebarIconSize,
+                      ),
                     ),
                     tooltip: layoutMode.localizedLabel(l10n),
                     onPressed: onToggleTheaterMode,
                   ),
+                  const SizedBox(width: 6),
+                ],
+
+                // Mobile quick actions: fullscreen and chill lock mode.
+                if (!isDesktop) ...[
+                  if (onToggleFullscreen != null)
+                    IconButton(
+                      style: buttonStyle,
+                      constraints: const BoxConstraints(
+                        minWidth: 36,
+                        minHeight: 36,
+                      ),
+                      icon: Icon(
+                        isFullscreen
+                            ? AppIcons.fullscreenExit(iconPack)
+                            : AppIcons.fullscreen(iconPack),
+                        color: Colors.white,
+                        size: settingsIconSize,
+                      ),
+                      tooltip: isFullscreen
+                          ? l10n.exitFullScreen
+                          : l10n.fullScreen,
+                      onPressed: onToggleFullscreen,
+                    ),
+                  if (onTogglePlayerLock != null) ...[
+                    const SizedBox(width: 6),
+                    IconButton(
+                      style: buttonStyle,
+                      constraints: const BoxConstraints(
+                        minWidth: 36,
+                        minHeight: 36,
+                      ),
+                      icon: Icon(
+                        AppIcons.lockOpen(iconPack),
+                        color: Colors.white,
+                        size: settingsIconSize,
+                      ),
+                      tooltip: l10n.lockScreen,
+                      onPressed: onTogglePlayerLock,
+                    ),
+                  ],
                   const SizedBox(width: 6),
                 ],
 

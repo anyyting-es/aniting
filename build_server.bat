@@ -1,7 +1,7 @@
 @echo off
 setlocal
 echo ========================================================
-echo   Compilando servidor Seanime para Windows (Go Backend)
+echo   Compilando servidor Aniting para Windows (Go Backend)
 echo ========================================================
 
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0backend\build_windows.ps1"

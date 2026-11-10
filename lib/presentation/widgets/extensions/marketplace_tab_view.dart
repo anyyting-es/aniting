@@ -1,10 +1,11 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:g1455/g1455.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/data/models/extension_item.dart';
-import 'package:seanime_app/presentation/widgets/extensions/marketplace_extension_card.dart';
+import 'package:aniting/core/constants/feature_flags.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/data/models/extension_item.dart';
+import 'package:aniting/presentation/widgets/extensions/marketplace_extension_card.dart';
 
 class MarketplaceTabView extends ConsumerStatefulWidget {
   final bool isLoading;
@@ -40,13 +41,17 @@ class _MarketplaceTabViewState extends ConsumerState<MarketplaceTabView> {
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
 
-  static const List<String> _filterTypes = [
+  static const List<String> _allFilterTypes = [
     'All Types',
     'TMDB Streaming',
     'Online Streaming',
     'Anime Torrents',
     'Manga',
   ];
+
+  List<String> get _filterTypes => FeatureFlags.tmdb
+      ? _allFilterTypes
+      : _allFilterTypes.where((type) => type != 'TMDB Streaming').toList();
 
   String _getTypeLabel(String type, AppTranslations l10n) {
     switch (type) {
@@ -192,7 +197,9 @@ class _MarketplaceTabViewState extends ConsumerState<MarketplaceTabView> {
       );
     }
 
-    final filtered = _filterExtensions(widget.extensions);
+    final filtered = _filterExtensions(widget.extensions)
+        .where((e) => FeatureFlags.tmdb || !e.isTmdbOnlyProvider)
+        .toList();
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -207,9 +214,11 @@ class _MarketplaceTabViewState extends ConsumerState<MarketplaceTabView> {
 
         final groups = <_ExtensionGroup>[];
         if (_selectedType == 'All Types') {
-          final tmdb = filtered.where((e) => e.isTmdbOnlyProvider).toList();
-          if (tmdb.isNotEmpty) {
-            groups.add(_ExtensionGroup(l10n.tmdbStreamingTab, Icons.movie_outlined, tmdb));
+          if (FeatureFlags.tmdb) {
+            final tmdb = filtered.where((e) => e.isTmdbOnlyProvider).toList();
+            if (tmdb.isNotEmpty) {
+              groups.add(_ExtensionGroup(l10n.tmdbStreamingTab, Icons.movie_outlined, tmdb));
+            }
           }
           final streaming = filtered
               .where((e) => e.type == 'onlinestream-provider' && !e.isTmdbOnlyProvider)

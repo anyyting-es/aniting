@@ -1,4 +1,4 @@
-package torrentstream
+﻿package torrentstream
 
 import (
 	"context"
@@ -12,9 +12,9 @@ import (
 	"path"
 	"path/filepath"
 	"runtime"
-	"seanime/internal/database/models"
-	"seanime/internal/mediaplayers/mediaplayer"
-	"seanime/internal/util"
+	"aniting/internal/database/models"
+	"aniting/internal/mediaplayers/mediaplayer"
+	"aniting/internal/util"
 	"strings"
 	"sync"
 	"time"
@@ -131,7 +131,7 @@ func (c *Client) initializeClient() error {
 	}
 	cfg.ListenPort = settings.TorrentClientPort
 	// Set the download directory
-	// e.g. /path/to/temp/seanime/torrentstream/{infohash}
+	// e.g. /path/to/temp/aniting/torrentstream/{infohash}
 	cfg.DefaultStorage = storage.NewFileByInfoHash(settings.DownloadDir)
 
 	c.mu.Lock()

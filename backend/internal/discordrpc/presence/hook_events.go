@@ -1,8 +1,8 @@
-package discordrpc_presence
+﻿package discordrpc_presence
 
 import (
-	discordrpc_client "seanime/internal/discordrpc/client"
-	"seanime/internal/hook_resolver"
+	discordrpc_client "aniting/internal/discordrpc/client"
+	"aniting/internal/hook_resolver"
 )
 
 // DiscordPresenceAnimeActivityRequestedEvent is triggered when anime activity is requested, after the [animeActivity] is processed, and right before the activity is sent to queue.

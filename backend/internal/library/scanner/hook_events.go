@@ -1,8 +1,8 @@
 package scanner
 
 import (
-	"seanime/internal/hook_resolver"
-	"seanime/internal/library/anime"
+	"aniting/internal/hook_resolver"
+	"aniting/internal/library/anime"
 )
 
 // ScanStartedEvent is triggered when the scanning process begins.
@@ -49,7 +49,7 @@ type ScanCompletedEvent struct {
 	Duration   int                `json:"duration"` // in milliseconds
 }
 
-// ScanMediaFetcherStartedEvent is triggered right before Seanime starts fetching media to be matched against the local files.
+// ScanMediaFetcherStartedEvent is triggered right before Aniting starts fetching media to be matched against the local files.
 type ScanMediaFetcherStartedEvent struct {
 	hook_resolver.Event
 	// Whether to use enhanced scanning.

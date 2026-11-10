@@ -1,9 +1,9 @@
-package plugin_ui
+﻿package plugin_ui
 
 import (
 	"context"
 	"encoding/json"
-	gojautil "seanime/internal/util/goja"
+	gojautil "aniting/internal/util/goja"
 	"strings"
 	"sync"
 	"sync/atomic"

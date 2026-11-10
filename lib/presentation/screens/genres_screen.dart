@@ -1,11 +1,11 @@
-import 'package:cached_network_image/cached_network_image.dart';
+﻿import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/theme/custom_route_transitions.dart';
-import 'package:seanime_app/presentation/screens/genre_detail_screen.dart';
-import 'package:seanime_app/presentation/widgets/desktop_title_bar.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/theme/custom_route_transitions.dart';
+import 'package:aniting/presentation/screens/genre_detail_screen.dart';
+import 'package:aniting/presentation/widgets/desktop_title_bar.dart';
 
 class GenreItem {
   final String key;

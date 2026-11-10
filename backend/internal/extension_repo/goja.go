@@ -1,4 +1,4 @@
-package extension_repo
+﻿package extension_repo
 
 import (
 	"context"
@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"io"
 	"reflect"
-	"seanime/internal/events"
-	"seanime/internal/extension"
-	goja_bindings "seanime/internal/goja/goja_bindings"
-	"seanime/internal/library/anime"
-	"seanime/internal/plugin"
+	"aniting/internal/events"
+	"aniting/internal/extension"
+	goja_bindings "aniting/internal/goja/goja_bindings"
+	"aniting/internal/library/anime"
+	"aniting/internal/plugin"
 	"sync"
 	"time"
 

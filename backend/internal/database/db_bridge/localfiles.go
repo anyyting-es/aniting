@@ -1,10 +1,10 @@
-package db_bridge
+﻿package db_bridge
 
 import (
 	"errors"
-	"seanime/internal/database/db"
-	"seanime/internal/database/models"
-	"seanime/internal/library/anime"
+	"aniting/internal/database/db"
+	"aniting/internal/database/models"
+	"aniting/internal/library/anime"
 
 	"github.com/goccy/go-json"
 	"github.com/samber/mo"

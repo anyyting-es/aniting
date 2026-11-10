@@ -1,4 +1,4 @@
-package plugin
+﻿package plugin
 
 import (
 	"errors"
@@ -7,11 +7,11 @@ import (
 	"strings"
 	"time"
 
-	"seanime/internal/database/models"
-	"seanime/internal/extension"
-	"seanime/internal/extension_repo/prompt"
-	"seanime/internal/goja/goja_bindings"
-	gojautil "seanime/internal/util/goja"
+	"aniting/internal/database/models"
+	"aniting/internal/extension"
+	"aniting/internal/extension_repo/prompt"
+	"aniting/internal/goja/goja_bindings"
+	gojautil "aniting/internal/util/goja"
 
 	"github.com/dop251/goja"
 	"github.com/goccy/go-json"

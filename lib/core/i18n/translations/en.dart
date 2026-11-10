@@ -78,9 +78,9 @@ class EnglishTranslations implements AppTranslations {
   String get quickSearchMangaHint => 'Quick search manga...';
   @override
   String get quickSearchKeyboardHint =>
-      '↑ ↓ to move · Enter to open · Esc to close';
+      'â†‘ â†“ to move Â· Enter to open Â· Esc to close';
   @override
-  String get serverNotConnected => 'Seanime Server not connected';
+  String get serverNotConnected => 'Aniting Server not connected';
   @override
   String get serverNotConnectedDesc =>
       'Start the local server or check your connection to view content.';
@@ -106,7 +106,7 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get seeLess => 'See less';
   @override
-  String get reachedTheEnd => 'You have reached the end • No more results';
+  String get reachedTheEnd => 'You have reached the end â€¢ No more results';
   @override
   String get loginForFeed => 'Sign in for your feed';
   @override
@@ -182,6 +182,8 @@ class EnglishTranslations implements AppTranslations {
   String get statusCompleted => 'Completed';
   @override
   String get statusPlanning => 'Planning';
+  @override
+  String get planToWatch => 'Plan to Watch';
   @override
   String get statusDropped => 'Dropped';
   @override
@@ -303,7 +305,7 @@ class EnglishTranslations implements AppTranslations {
   String get appLanguageDesc =>
       'Choose your preferred language for the interface';
   @override
-  String get serverSettings => 'Seanime Server';
+  String get serverSettings => 'Aniting Server';
   @override
   String get extensionsTitle => 'Extensions';
   @override
@@ -323,7 +325,7 @@ class EnglishTranslations implements AppTranslations {
   String get streamingSourcesSubtitle =>
       'Enable or disable Torrent and Online Streaming';
   @override
-  String get serverAndNetwork => 'Seanime Server & Network';
+  String get serverAndNetwork => 'Aniting Server & Network';
   @override
   String get serverAndNetworkSubtitle =>
       'Local server, remote IP connection and performance';
@@ -409,6 +411,16 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get audioAndGestures => 'Audio & Gestures';
   @override
+  String get ambientGlow => 'Ambient glow';
+  @override
+  String get ambientGlowDesc =>
+      'Tints the area around the video with the frame colours. Also fills the black bars in wide and cinema mode.';
+  @override
+  String get smoothMotion => 'Smooth motion (interpolation)';
+  @override
+  String get smoothMotionDesc =>
+      'Syncs playback to the display and interpolates frames to remove 24 fps judder on 60 Hz screens. Uses more GPU; media_kit only.';
+  @override
   String get volumeBoost => 'Volume Amplification (>100%)';
   @override
   String get volumeBoostDesc =>
@@ -447,7 +459,7 @@ class EnglishTranslations implements AppTranslations {
   String get animeLibraryFolderTitle => 'Anime Library Folder';
   @override
   String get animeLibraryFolderDesc =>
-      'Folder on your device where Seanime scans for local anime files and video downloads.';
+      'Folder on your device where Aniting scans for local anime files and video downloads.';
   @override
   String get workingDirectoryTitle => 'Working / Cache Directory';
   @override
@@ -665,6 +677,9 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get noVoiceActorInfo => 'No voice actor information';
   @override
+  String get noCharacterDescriptionAvailable =>
+      'No description available for this character.';
+  @override
   String get streamingDisabledTitle => 'Streaming sources disabled';
   @override
   String get streamingDisabledDesc =>
@@ -687,6 +702,33 @@ class EnglishTranslations implements AppTranslations {
   String get showAllEpisodes => 'Show all episodes';
   @override
   String get hideWatchedEpisodes => 'Show from next up';
+
+  // ── GPU ──────────────────────────────────────────────────────────────
+  @override
+  String get gpuSectionTitle => 'GPU';
+  @override
+  String get gpuActive => 'Active GPU';
+  @override
+  String get gpuDetected => 'Detected';
+  @override
+  String get gpuPreferenceTitle => 'GPU preference';
+  @override
+  String get gpuPreferenceDesc =>
+      'Windows picks a GPU per application. The change takes effect the next time Aniting starts.';
+  @override
+  String get gpuPreferenceAuto => 'Automatic';
+  @override
+  String get gpuPreferenceHigh => 'High performance';
+  @override
+  String get gpuPreferencePower => 'Power saving';
+  @override
+  String get gpuDedicated => 'Dedicated';
+  @override
+  String get gpuIntegrated => 'Integrated';
+  @override
+  String get gpuNoneDetected => 'No GPUs detected';
+  @override
+  String get gpuRestartRequired => 'Restart Aniting to apply the change';
   @override
   String get switchToGrid => 'Switch to grid';
   @override
@@ -695,7 +737,7 @@ class EnglishTranslations implements AppTranslations {
   String get notInLocalLibrary => 'Not in your local library';
   @override
   String get notInLocalLibraryDesc =>
-      'No locally downloaded episodes were found for this anime on your Seanime server.';
+      'No locally downloaded episodes were found for this anime on your Aniting server.';
   @override
   String get watchOnlineStream => 'Watch Online Stream';
   @override
@@ -943,6 +985,10 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get exitFullScreen => 'Exit Fullscreen';
   @override
+  String get lockScreen => 'Lock controls';
+  @override
+  String get unlockScreen => 'Unlock controls';
+  @override
   String get theaterMode => 'Theater mode';
   @override
   String get exitTheaterMode => 'Exit theater mode';
@@ -998,7 +1044,7 @@ class EnglishTranslations implements AppTranslations {
   String get sourceUrlLabel => 'Source Link / URL:';
   @override
   String get shadersRequireMpv =>
-      'GLSL shaders are unavailable with media_kit.';
+      'GLSL shaders need the mpv engine. ExoPlayer cannot apply them.';
   @override
   String get subtitleSyncDesc =>
       'Adjust delay to advance or delay subtitles relative to the video.';
@@ -1142,7 +1188,7 @@ class EnglishTranslations implements AppTranslations {
   String get extensionInstalledSuccessfully => 'installed successfully.';
   @override
   String get extensionInstallFailed =>
-      'Failed to install. Verify that Seanime server is running.';
+      'Failed to install. Verify that Aniting server is running.';
   @override
   String get extensionUninstallTitle => 'Uninstall extension';
   @override
@@ -1249,7 +1295,7 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get openingExternalPlayer => 'Opening in external player (MPV)...';
   @override
-  String get serverNotOnline => 'Seanime server is not online.';
+  String get serverNotOnline => 'Aniting server is not online.';
   @override
   String get failedToStartTorrent => 'Could not start torrent stream.';
   @override
@@ -1274,6 +1320,10 @@ class EnglishTranslations implements AppTranslations {
   String get reloadEpisodes => 'Reload episodes';
   @override
   String get filterEpisodesHint => 'Filter episodes by number or title...';
+  @override
+  String get searchEpisodes => 'Search episodes';
+  @override
+  String get searchEpisodesShortcut => 'Search episodes (Ctrl+F)';
   @override
   String get filterByTitle => 'Filter by title...';
   @override
@@ -1727,7 +1777,7 @@ class EnglishTranslations implements AppTranslations {
   String get welcomeTvManualIp => 'Enter IP Manually';
   @override
   String get welcomeTvManualIpDesc =>
-      'Type the Seanime / Aniting server address and port';
+      'Type the Aniting server address and port';
   @override
   String get welcomeTvServerHost => 'IP Address or Host';
   @override
@@ -1750,7 +1800,7 @@ class EnglishTranslations implements AppTranslations {
       'Run the local server on this device and set up default sources';
   @override
   String get welcomeTvLocalServerActive =>
-      'Integrated server active • Continue';
+      'Integrated server active â€¢ Continue';
   @override
   String get noProvidersInstalled => 'No streaming sources installed';
   @override
@@ -1977,9 +2027,6 @@ class EnglishTranslations implements AppTranslations {
   String get developerSubtitle =>
       'Flutter native client developer\nGitHub: github.com/anyyting-es';
   @override
-  String get originalServerSubtitle =>
-      'Original backend & media server created by 5rahim\nhttps://seanime.app';
-  @override
   String get discordCommunity => 'Discord Community';
   @override
   String get discordSubtitle =>
@@ -1991,7 +2038,7 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get buildRelease => 'Build Release';
   @override
-  String get seanimeCoreServer => 'Seanime Core Server';
+  String get anitingCoreServer => 'Aniting Core Server';
   @override
   String serverVersionConnected(String version) =>
       'Version $version (Connected)';
@@ -2129,7 +2176,7 @@ class EnglishTranslations implements AppTranslations {
   String get updateDialogTitle => 'New version';
   @override
   String updateDialogCurrentVersion(String version, String size) =>
-      'Current version: v$version${size.isNotEmpty ? ' • $size' : ''}';
+      'Current version: v$version${size.isNotEmpty ? ' â€¢ $size' : ''}';
   @override
   String get updateDialogChangelogTitle => 'Release Notes & Changes';
   @override
@@ -2199,7 +2246,7 @@ class EnglishTranslations implements AppTranslations {
       '$count downloaded ${count == 1 ? "anime" : "anime"} in local library';
   @override
   String downloadedMangaCount(int mangaCount, int chaptersCount) =>
-      '$mangaCount ${mangaCount == 1 ? "manga" : "manga"} • $chaptersCount ch.';
+      '$mangaCount ${mangaCount == 1 ? "manga" : "manga"} â€¢ $chaptersCount ch.';
   @override
   String storageUsed(String formattedSize) => 'Storage used: $formattedSize';
   @override
@@ -2247,7 +2294,7 @@ class EnglishTranslations implements AppTranslations {
 
   // Player & UI Details
   @override
-  String prevEpisodeNumbered(int number) => '← Previous episode: Ep. $number';
+  String prevEpisodeNumbered(int number) => 'â† Previous episode: Ep. $number';
   @override
   String scorePercent(String score) => '$score% score';
   @override
@@ -2357,7 +2404,7 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get informationTitle => 'Information';
   @override
-  String get prevEpisode => '← Previous episode';
+  String get prevEpisode => 'â† Previous episode';
   @override
   String get synopsisMore => 'More';
   @override
@@ -2429,7 +2476,7 @@ class EnglishTranslations implements AppTranslations {
   String get downloadChapters => 'Download Chapters';
   @override
   String providerWithUnreadCount(String provider, int unreadCount) =>
-      'Provider: $provider • $unreadCount unread';
+      'Provider: $provider â€¢ $unreadCount unread';
   @override
   String downloadNextUnread(int count) => 'Download next $count unread';
   @override
@@ -2621,6 +2668,14 @@ class EnglishTranslations implements AppTranslations {
   @override
   String markedAsUnwatched(int ep) => 'Episode $ep marked as unwatched';
   @override
+  String get addToLibrary => 'Add to library';
+  @override
+  String get addedToLibrary => 'Added to library';
+  @override
+  String get editStatus => 'Edit status';
+  @override
+  String get markAsRead => 'Mark as read';
+  @override
   String get downloadEpisode => 'Download Episode';
   @override
   String get editDetails => 'Edit details...';
@@ -2695,7 +2750,7 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get settingsSubtitleLocalLibrary => 'Shows, movies, paths, scanner';
   @override
-  String get settingsSubtitleServer => 'Seanime server, ports, LAN sharing';
+  String get settingsSubtitleServer => 'Aniting server, ports, LAN sharing';
   @override
   String get settingsSubtitleAbout => 'Version, updates, GitHub, credits';
 
@@ -2711,12 +2766,11 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get totalRewatches => 'Total rewatches';
   @override
+  String get total => 'Total';
+  @override
   String get totalRereads => 'Total rereads';
   @override
   String get noScore => 'No score';
-  @override
-  String get saveChanges => 'Save changes';
-
   // TMDB / Series & Seasons
   @override
   String get seasons => 'Seasons';
@@ -3006,7 +3060,7 @@ class EnglishTranslations implements AppTranslations {
   @override
   String get downloadFailedGeneric => 'Download failed.';
   @override
-  String downloadingEpisodesCount(int count) => 'Downloading $count episodes…';
+  String downloadingEpisodesCount(int count) => 'Downloading $count episodesâ€¦';
   @override
   String episodesQueuedForDownload(int count) =>
       '$count episodes added to the download queue';
@@ -3179,4 +3233,24 @@ class EnglishTranslations implements AppTranslations {
   String get windowRestore => 'Restore';
   @override
   String get windowClose => 'Close';
+
+  // Manga Detail Desktop layout
+  @override
+  String get refreshSource => 'Refresh source';
+  @override
+  String get manualMatch => 'Manual match';
+  @override
+  String get scanlator => 'Scanlator';
+  @override
+  String get showUnread => 'Show unread';
+  @override
+  String get showDownloaded => 'Show downloaded';
+  @override
+  String get chapterNumberCol => 'Number';
+  @override
+  String get chapterNameCol => 'Name';
+  @override
+  String get scanlatorCol => 'Scanlator';
+  @override
+  String get charactersHeader => 'Characters';
 }

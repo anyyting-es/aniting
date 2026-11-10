@@ -6,8 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"seanime/internal/constants"
-	"seanime/internal/util"
+	"aniting/internal/constants"
+	"aniting/internal/util"
 	"strconv"
 	"strings"
 
@@ -21,7 +21,7 @@ type Config struct {
 		Host            string
 		Port            int
 		Offline         bool
-		UseBinaryPath   bool // Makes $SEANIME_WORKING_DIR point to the binary's directory
+		UseBinaryPath   bool // Makes $ANITING_WORKING_DIR point to the binary's directory
 		Systray         bool
 		DoHUrl          string
 		Password        string
@@ -76,7 +76,7 @@ type Config struct {
 }
 
 type ConfigOptions struct {
-	Flags           SeanimeFlags
+	Flags           AnitingFlags
 	OnVersionChange []func(oldVersion string, newVersion string)
 	EmbeddedLogo    []byte // The embedded logo
 }
@@ -92,8 +92,6 @@ func NewConfig(options *ConfigOptions, logger *zerolog.Logger) (*Config, error) 
 	// Set data dir (flag overrides env var)
 	if os.Getenv("ANITING_DATA_DIR") != "" {
 		definedDataDir = os.Getenv("ANITING_DATA_DIR")
-	} else if os.Getenv("SEANIME_DATA_DIR") != "" {
-		definedDataDir = os.Getenv("SEANIME_DATA_DIR")
 	}
 
 	if flags.DataDir != "" {
@@ -106,20 +104,12 @@ func NewConfig(options *ConfigOptions, logger *zerolog.Logger) (*Config, error) 
 	// Environment variables override defaults
 	if os.Getenv("ANITING_SERVER_HOST") != "" {
 		defaultHost = os.Getenv("ANITING_SERVER_HOST")
-	} else if os.Getenv("SEANIME_SERVER_HOST") != "" {
-		defaultHost = os.Getenv("SEANIME_SERVER_HOST")
 	}
 	if os.Getenv("ANITING_SERVER_PORT") != "" {
 		var err error
 		defaultPort, err = strconv.Atoi(os.Getenv("ANITING_SERVER_PORT"))
 		if err != nil {
 			return nil, fmt.Errorf("invalid ANITING_SERVER_PORT environment variable: %s", os.Getenv("ANITING_SERVER_PORT"))
-		}
-	} else if os.Getenv("SEANIME_SERVER_PORT") != "" {
-		var err error
-		defaultPort, err = strconv.Atoi(os.Getenv("SEANIME_SERVER_PORT"))
-		if err != nil {
-			return nil, fmt.Errorf("invalid SEANIME_SERVER_PORT environment variable: %s", os.Getenv("SEANIME_SERVER_PORT"))
 		}
 	}
 
@@ -196,11 +186,11 @@ func NewConfig(options *ConfigOptions, logger *zerolog.Logger) (*Config, error) 
 	hostChanged := false
 	portChanged := false
 
-	if (flags.Host != "" || os.Getenv("ANITING_SERVER_HOST") != "" || os.Getenv("SEANIME_SERVER_HOST") != "") && existingHost != defaultHost {
+	if (flags.Host != "" || os.Getenv("ANITING_SERVER_HOST") != "") && existingHost != defaultHost {
 		viper.Set("server.host", defaultHost)
 		hostChanged = true
 	}
-	if (flags.Port != 0 || os.Getenv("ANITING_SERVER_PORT") != "" || os.Getenv("SEANIME_SERVER_PORT") != "") && existingPort != defaultPort {
+	if (flags.Port != 0 || os.Getenv("ANITING_SERVER_PORT") != "") && existingPort != defaultPort {
 		viper.Set("server.port", defaultPort)
 		portChanged = true
 	}
@@ -246,11 +236,11 @@ func NewConfig(options *ConfigOptions, logger *zerolog.Logger) (*Config, error) 
 	// Expand the values, replacing environment variables
 	expandEnvironmentValues(cfg, dataDir)
 	cfg.Data.AppDataDir = dataDir
-	cfg.Data.WorkingDir = os.Getenv("SEANIME_WORKING_DIR")
+	cfg.Data.WorkingDir = os.Getenv("ANITING_WORKING_DIR")
 
 	if cfg.Server.Tls.Enabled && (cfg.Server.Tls.CertPath == "" || cfg.Server.Tls.KeyPath == "") {
-		viper.SetDefault("server.tls.certPath", "$SEANIME_DATA_DIR/certs/cert.pem")
-		viper.SetDefault("server.tls.keyPath", "$SEANIME_DATA_DIR/certs/key.pem")
+		viper.SetDefault("server.tls.certPath", "$ANITING_DATA_DIR/certs/cert.pem")
+		viper.SetDefault("server.tls.keyPath", "$ANITING_DATA_DIR/certs/key.pem")
 		_ = viper.WriteConfig()
 		_ = viper.ReadInConfig()
 		_ = viper.Unmarshal(cfg)
@@ -290,7 +280,7 @@ func (cfg *Config) GetServerURI(df ...string) string {
 
 func getWorkingDir(useBinaryPath bool) (string, error) {
 	if runtime.GOOS == "android" || runtime.GOOS == "ios" {
-		if dataDir := os.Getenv("SEANIME_DATA_DIR"); dataDir != "" {
+		if dataDir := os.Getenv("ANITING_DATA_DIR"); dataDir != "" {
 			return dataDir, nil
 		}
 	}
@@ -331,7 +321,6 @@ func getWorkingDir(useBinaryPath bool) (string, error) {
 
 func setDataDirEnv(dataDir string) error {
 	_ = os.Setenv("ANITING_DATA_DIR", dataDir)
-	_ = os.Setenv("SEANIME_DATA_DIR", dataDir)
 	return nil
 }
 
@@ -358,7 +347,7 @@ func setWorkingDirEnv(useBinaryPath bool) error {
 	if err != nil {
 		return err
 	}
-	if err = os.Setenv("SEANIME_WORKING_DIR", filepath.FromSlash(wd)); err != nil {
+	if err = os.Setenv("ANITING_WORKING_DIR", filepath.FromSlash(wd)); err != nil {
 		return err
 	}
 
@@ -491,10 +480,10 @@ func expandEnvironmentValues(cfg *Config, dataDir string) {
 		}
 		expanded := os.Expand(val, func(key string) string {
 			switch key {
-			case "ANITING_DATA_DIR", "SEANIME_DATA_DIR":
+			case "ANITING_DATA_DIR":
 				return dataDir
-			case "ANITING_WORKING_DIR", "SEANIME_WORKING_DIR":
-				if wd := os.Getenv("SEANIME_WORKING_DIR"); wd != "" {
+			case "ANITING_WORKING_DIR":
+				if wd := os.Getenv("ANITING_WORKING_DIR"); wd != "" {
 					return wd
 				}
 				return dataDir
@@ -600,7 +589,7 @@ func loadLogo(embeddedLogo []byte, dataDir string) (err error) {
 		return nil
 	}
 
-	logoPath := filepath.Join(dataDir, "seanime-logo.png")
+	logoPath := filepath.Join(dataDir, "aniting-logo.png")
 	if _, err = os.Stat(logoPath); os.IsNotExist(err) {
 		if err = os.WriteFile(logoPath, embeddedLogo, 0644); err != nil {
 			return err

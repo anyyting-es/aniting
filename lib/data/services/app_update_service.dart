@@ -1,9 +1,9 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:seanime_app/data/models/app_update_models.dart';
+import 'package:aniting/data/models/app_update_models.dart';
 
 /// Progress callback for APK download: (downloadedBytes, totalBytes, fraction 0.0 to 1.0)
 typedef UpdateDownloadProgressCallback = void Function(int received, int total, double progress);

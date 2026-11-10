@@ -1,8 +1,8 @@
-package platform
+﻿package platform
 
 import (
-	"seanime/internal/api/anilist"
-	"seanime/internal/hook_resolver"
+	"aniting/internal/api/anilist"
+	"aniting/internal/hook_resolver"
 )
 
 /////////////////////////////

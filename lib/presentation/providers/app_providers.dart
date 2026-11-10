@@ -2,31 +2,32 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:seanime_app/core/constants/app_constants.dart';
-import 'package:seanime_app/core/api/api_client.dart';
-import 'package:seanime_app/core/server/server_manager.dart';
-import 'package:seanime_app/core/server/lan_discovery_service.dart';
-import 'package:seanime_app/core/preferences/lan_sharing_provider.dart';
-import 'package:seanime_app/core/preferences/download_preferences_provider.dart';
-import 'package:seanime_app/core/preferences/playback_progress_preferences_provider.dart';
-import 'package:seanime_app/data/models/anime_entry.dart';
-import 'package:seanime_app/data/models/library_entry_details.dart';
-import 'package:seanime_app/data/models/anizip_data.dart';
-import 'package:seanime_app/data/models/manga_entry.dart';
-import 'package:seanime_app/data/models/onlinestream_models.dart';
-import 'package:seanime_app/data/models/server_status.dart';
-import 'package:seanime_app/data/models/show_local_file_item.dart';
-import 'package:seanime_app/data/repositories/seanime_repository.dart';
-import 'package:seanime_app/data/services/manga_offline_service.dart';
-import 'package:seanime_app/data/services/offline_library_service.dart';
-import 'package:seanime_app/data/services/offline_sync_service.dart';
-import 'package:seanime_app/data/services/feed_cache_service.dart';
-import 'package:seanime_app/core/api/websocket_service.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/preferences/tmdb_preferences_provider.dart';
-import 'package:seanime_app/core/preferences/section_visibility_provider.dart';
-import 'package:seanime_app/core/preferences/resume_bar_preferences_provider.dart';
-import 'package:seanime_app/data/services/tmdb_service.dart';
+import 'package:aniting/core/constants/app_constants.dart';
+import 'package:aniting/core/api/api_client.dart';
+import 'package:aniting/core/constants/feature_flags.dart';
+import 'package:aniting/core/server/server_manager.dart';
+import 'package:aniting/core/server/lan_discovery_service.dart';
+import 'package:aniting/core/preferences/lan_sharing_provider.dart';
+import 'package:aniting/core/preferences/download_preferences_provider.dart';
+import 'package:aniting/core/preferences/playback_progress_preferences_provider.dart';
+import 'package:aniting/data/models/anime_entry.dart';
+import 'package:aniting/data/models/library_entry_details.dart';
+import 'package:aniting/data/models/anizip_data.dart';
+import 'package:aniting/data/models/manga_entry.dart';
+import 'package:aniting/data/models/onlinestream_models.dart';
+import 'package:aniting/data/models/server_status.dart';
+import 'package:aniting/data/models/show_local_file_item.dart';
+import 'package:aniting/data/repositories/aniting_repository.dart';
+import 'package:aniting/data/services/manga_offline_service.dart';
+import 'package:aniting/data/services/offline_library_service.dart';
+import 'package:aniting/data/services/offline_sync_service.dart';
+import 'package:aniting/data/services/feed_cache_service.dart';
+import 'package:aniting/core/api/websocket_service.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/preferences/tmdb_preferences_provider.dart';
+import 'package:aniting/core/preferences/section_visibility_provider.dart';
+import 'package:aniting/core/preferences/resume_bar_preferences_provider.dart';
+import 'package:aniting/data/services/tmdb_service.dart';
 
 final apiClientProvider = Provider<ApiClient>((ref) {
   return ApiClient();
@@ -47,9 +48,9 @@ class SearchViewActiveNotifier extends Notifier<bool> {
 }
 final searchViewActiveProvider = NotifierProvider<SearchViewActiveNotifier, bool>(SearchViewActiveNotifier.new);
 
-final repositoryProvider = Provider<SeanimeRepository>((ref) {
+final repositoryProvider = Provider<AnitingRepository>((ref) {
   final client = ref.watch(apiClientProvider);
-  return SeanimeRepository(client);
+  return AnitingRepository(client);
 });
 
 /// Servicio de sincronización offline para persistir y enviar cambios diferidos a AniList.
@@ -80,7 +81,7 @@ final lanDiscoveryServiceProvider = Provider<LanDiscoveryService>((ref) {
   return service;
 });
 
-/// Stream de servidores Seanime/Aniting descubiertos en la misma red Wi-Fi.
+/// Stream de servidores Aniting/Aniting descubiertos en la misma red Wi-Fi.
 final discoveredServersProvider = StreamProvider.autoDispose<List<DiscoveredServer>>((ref) {
   final service = ref.watch(lanDiscoveryServiceProvider);
   service.startListening();
@@ -116,7 +117,7 @@ class ServerStateModel {
 
 class ServerNotifier extends Notifier<ServerStateModel> {
   ServerManager get _manager => ref.read(serverManagerProvider);
-  SeanimeRepository get _repo => ref.read(repositoryProvider);
+  AnitingRepository get _repo => ref.read(repositoryProvider);
 
   @override
   ServerStateModel build() {
@@ -132,17 +133,8 @@ class ServerNotifier extends Notifier<ServerStateModel> {
     // 0. Si el usuario guardó un servidor remoto previamente, intentar conectar primero
     try {
       final prefs = await SharedPreferences.getInstance();
-      final legacyPort = prefs.getInt('seanime_server_port');
-      if (legacyPort == 43211) {
-        await prefs.remove('seanime_server_port');
-      }
-      final legacyHost = prefs.getString('seanime_server_host');
-      if (legacyHost == '127.0.0.1' || legacyHost == 'localhost') {
-        await prefs.remove('seanime_server_host');
-      }
-
-      final savedHost = prefs.getString(AppConstants.keyServerHost) ?? prefs.getString('seanime_server_host');
-      final savedPort = prefs.getInt(AppConstants.keyServerPort) ?? prefs.getInt('seanime_server_port');
+      final savedHost = prefs.getString(AppConstants.keyServerHost);
+      final savedPort = prefs.getInt(AppConstants.keyServerPort);
       final isSavedRemote = savedHost != null &&
           savedHost.isNotEmpty &&
           savedHost != '127.0.0.1' &&
@@ -391,16 +383,20 @@ Future<List<AnimeEntry>> loadAnimeWithCacheAndSwr({
   required String cacheKey,
   required Future<List<AnimeEntry>> Function() fetchFresh,
   bool requireAuth = false,
+  /// When provided, avoids `ref.watch` so this can run outside a provider
+  /// `build` (used by the silent continue-watching refresh).
+  ServerStateModel? serverState,
 }) async {
   final cache = FeedCacheService.instance;
   final cached = cache.getAnimeList(cacheKey);
-  final serverState = ref.watch(serverNotifierProvider);
+  final ServerStateModel resolvedServerState =
+      serverState ?? ref.watch(serverNotifierProvider);
 
-  if (!serverState.isOnline) {
+  if (!resolvedServerState.isOnline) {
     return cached;
   }
 
-  final isLoggedIn = serverState.status?.isLoggedIn ?? false;
+  final isLoggedIn = resolvedServerState.status?.isLoggedIn ?? false;
   if (requireAuth && !isLoggedIn) {
     return [];
   }
@@ -409,7 +405,7 @@ Future<List<AnimeEntry>> loadAnimeWithCacheAndSwr({
     final fresh = await fetchFresh();
     if (fresh.isNotEmpty || (requireAuth && isLoggedIn)) {
       await cache.saveAnimeList(cacheKey, fresh);
-    } else if (serverState.isOnline && fresh.isEmpty) {
+    } else if (resolvedServerState.isOnline && fresh.isEmpty) {
       await cache.clearCache(cacheKey);
     }
     return fresh;
@@ -454,27 +450,38 @@ Future<List<MangaEntry>> loadMangaWithCacheAndSwr({
 
 // ─── ANIME PROVIDERS ───
 
+/// Hides TMDB entries from every AniList-first surface while the catalog is
+/// disabled. Existing offline TMDB entries stay on disk for a future release.
+List<AnimeEntry> _visibleAnimeCollection(List<AnimeEntry> entries) {
+  if (FeatureFlags.tmdb) return entries;
+  return entries.where((entry) => !entry.isTmdb).toList();
+}
+
 final animeCollectionProvider = FutureProvider<List<AnimeEntry>>((ref) async {
   final serverState = ref.watch(serverNotifierProvider);
 
   if (!serverState.isOnline) {
     final cached = FeedCacheService.instance.getAnimeList(FeedCacheService.kCacheAnimeCollection);
-    if (cached.isNotEmpty) return cached;
-    return OfflineLibraryService.instance.getAnimeCollection();
+    if (cached.isNotEmpty) return _visibleAnimeCollection(cached);
+    return _visibleAnimeCollection(
+      OfflineLibraryService.instance.getAnimeCollection(),
+    );
   }
 
-  return loadAnimeWithCacheAndSwr(
+  final collection = await loadAnimeWithCacheAndSwr(
     ref: ref,
     cacheKey: FeedCacheService.kCacheAnimeCollection,
     requireAuth: false,
     fetchFresh: () => ref.read(repositoryProvider).getLibraryCollection(),
   );
+  return _visibleAnimeCollection(collection);
 });
 
 final downloadedAnimeProvider = FutureProvider<List<AnimeEntry>>((ref) async {
   final serverState = ref.watch(serverNotifierProvider);
   if (!serverState.isOnline) return [];
-  return ref.read(repositoryProvider).getDownloadedAnime();
+  final list = await ref.read(repositoryProvider).getDownloadedAnime();
+  return _visibleAnimeCollection(list);
 });
 
 final animeLibraryEntryProvider =
@@ -492,43 +499,116 @@ final aniZipDataProvider = FutureProvider.family<AniZipData?, int>((ref, mediaId
   return ref.watch(repositoryProvider).getAniZipData(mediaId);
 });
 
-final continueWatchingProvider = FutureProvider<List<AnimeEntry>>((ref) async {
-  final serverState = ref.watch(serverNotifierProvider);
-
-  if (!serverState.isOnline) {
-    final cached = FeedCacheService.instance.getAnimeList(FeedCacheService.kCacheContinueWatchingAnime);
-    if (cached.isNotEmpty) return cached;
-    return OfflineLibraryService.instance.getContinueWatching();
+class ContinueWatchingNotifier extends AsyncNotifier<List<AnimeEntry>> {
+  @override
+  Future<List<AnimeEntry>> build() async {
+    final serverState = ref.watch(serverNotifierProvider);
+    return _load(serverState);
   }
 
-  // Sincronizar historial de continuidad del servidor (progreso en segundos) con las preferencias del dispositivo
-  ref.read(repositoryProvider).getContinuityWatchHistory().then((history) {
-    if (history.isNotEmpty) {
-      ref.read(playbackProgressPreferencesProvider.notifier).syncWithServerContinuity(history);
+  Future<List<AnimeEntry>> _load(ServerStateModel serverState) async {
+    if (!serverState.isOnline) {
+      final cached = FeedCacheService.instance.getAnimeList(
+        FeedCacheService.kCacheContinueWatchingAnime,
+      );
+      if (cached.isNotEmpty) return _visibleAnimeCollection(cached);
+      return _visibleAnimeCollection(
+        OfflineLibraryService.instance.getContinueWatching(),
+      );
     }
-  }).catchError((_) {});
 
-  return loadAnimeWithCacheAndSwr(
-    ref: ref,
-    cacheKey: FeedCacheService.kCacheContinueWatchingAnime,
-    requireAuth: false,
-    fetchFresh: () async {
-      final remote = await ref.read(repositoryProvider).getContinueWatching();
-      // TMDB progress is local-only (backend continuity is AniList-keyed), so
-      // merge it here to keep "Continue watching" complete while online.
-      final localTmdb = OfflineLibraryService.instance
-          .getContinueWatching()
-          .where((entry) => entry.isTmdb)
-          .toList();
-      if (localTmdb.isEmpty) return remote;
-      final seen = remote.map((entry) => entry.mediaId).toSet();
-      return [
-        ...remote,
-        ...localTmdb.where((entry) => !seen.contains(entry.mediaId)),
-      ];
-    },
-  );
-});
+    // Sincronizar historial de continuidad del servidor (progreso en segundos) con las preferencias del dispositivo
+    ref
+        .read(repositoryProvider)
+        .getContinuityWatchHistory()
+        .then((history) {
+          if (history.isNotEmpty) {
+            ref
+                .read(playbackProgressPreferencesProvider.notifier)
+                .syncWithServerContinuity(history);
+          }
+        })
+        .catchError((_) {});
+
+    final result = await loadAnimeWithCacheAndSwr(
+      ref: ref,
+      cacheKey: FeedCacheService.kCacheContinueWatchingAnime,
+      requireAuth: false,
+      serverState: serverState,
+      fetchFresh: () async {
+        final remote = await ref.read(repositoryProvider).getContinueWatching();
+        if (!FeatureFlags.tmdb) return remote;
+        // TMDB progress is local-only (backend continuity is AniList-keyed), so
+        // merge it here to keep "Continue watching" complete while online.
+        final localTmdb = OfflineLibraryService.instance
+            .getContinueWatching()
+            .where((entry) => entry.isTmdb)
+            .toList();
+        if (localTmdb.isEmpty) return remote;
+        final seen = remote.map((entry) => entry.mediaId).toSet();
+        return [
+          ...remote,
+          ...localTmdb.where((entry) => !seen.contains(entry.mediaId)),
+        ];
+      },
+    );
+    return _visibleAnimeCollection(result);
+  }
+
+  /// Applies the just-watched episode to the in-memory list so the feed is
+  /// already correct **before** the player route reveals it. The server refresh
+  /// happens later silently (no loading state, no visible jump).
+  void applyLocalProgress({
+    required int mediaId,
+    required int episodeNumber,
+    int? progress,
+    String? episodeTitle,
+    String? episodeThumbnail,
+    int? totalEpisodes,
+  }) {
+    final current = state.value;
+    if (current == null || current.isEmpty) return;
+
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final updated = <AnimeEntry>[];
+    AnimeEntry? touched;
+    for (final entry in current) {
+      if (entry.mediaId == mediaId) {
+        touched = entry.copyWith(
+          episodeNumber: episodeNumber,
+          progress: progress,
+          episodeTitle: episodeTitle,
+          episodeThumbnail: episodeThumbnail,
+          totalEpisodes: totalEpisodes,
+          lastWatchedTime: now,
+          updatedAt: now,
+        );
+      } else {
+        updated.add(entry);
+      }
+    }
+    if (touched == null) return;
+
+    // Same entry, but now the most recent one for the default "recent" sort.
+    state = AsyncData([touched, ...updated]);
+  }
+
+  /// Re-reads the server list without exposing an intermediate loading state.
+  Future<void> refreshFromServer() async {
+    try {
+      final serverState = ref.read(serverNotifierProvider);
+      final fresh = await _load(serverState);
+      state = AsyncData(fresh);
+    } catch (_) {
+      // Keep the optimistic/local value if the refresh fails.
+    }
+  }
+}
+
+final continueWatchingProvider =
+    AsyncNotifierProvider<ContinueWatchingNotifier, List<AnimeEntry>>(
+      ContinueWatchingNotifier.new,
+    );
 
 final trendingAnimeProvider = FutureProvider<List<AnimeEntry>>((ref) async {
   return loadAnimeWithCacheAndSwr(
@@ -567,7 +647,9 @@ final recommendationsProvider = FutureProvider<List<AnimeEntry>>((ref) async {
   final serverState = ref.watch(serverNotifierProvider);
 
   if (!serverState.isOnline) {
-    final localCollection = OfflineLibraryService.instance.getAnimeCollection();
+    final localCollection = _visibleAnimeCollection(
+      OfflineLibraryService.instance.getAnimeCollection(),
+    );
     if (localCollection.isEmpty) return [];
 
     final watchingOrCompleted = localCollection
@@ -932,6 +1014,7 @@ final tmdbServiceProvider = Provider<TmdbService>((ref) {
 /// local con muchos shows de TMDB sin carátula).
 final tmdbShowPosterProvider = FutureProvider.family<String?, ({int id, bool isMovie})>(
   (ref, arg) async {
+    if (!FeatureFlags.tmdb) return null;
     final details = await ref
         .watch(tmdbServiceProvider)
         .getShowDetails(arg.id, isMovie: arg.isMovie);
@@ -941,6 +1024,7 @@ final tmdbShowPosterProvider = FutureProvider.family<String?, ({int id, bool isM
 
 /// Series y películas TMDB en tendencia (Trending)
 final tmdbTrendingShowsProvider = FutureProvider<List<AnimeEntry>>((ref) async {
+  if (!FeatureFlags.tmdb) return const [];
   final service = ref.watch(tmdbServiceProvider);
   final isSpanish = ref.watch(appLanguageProvider) == AppLanguage.es;
   return service.getTrendingShows(language: isSpanish ? 'es-ES' : 'en-US');
@@ -948,6 +1032,7 @@ final tmdbTrendingShowsProvider = FutureProvider<List<AnimeEntry>>((ref) async {
 
 /// Series TMDB populares
 final tmdbPopularShowsProvider = FutureProvider<List<AnimeEntry>>((ref) async {
+  if (!FeatureFlags.tmdb) return const [];
   final service = ref.watch(tmdbServiceProvider);
   final isSpanish = ref.watch(appLanguageProvider) == AppLanguage.es;
   return service.getPopularTvShows(language: isSpanish ? 'es-ES' : 'en-US');
@@ -955,6 +1040,7 @@ final tmdbPopularShowsProvider = FutureProvider<List<AnimeEntry>>((ref) async {
 
 /// Series TMDB mejor valoradas
 final tmdbTopRatedShowsProvider = FutureProvider<List<AnimeEntry>>((ref) async {
+  if (!FeatureFlags.tmdb) return const [];
   final service = ref.watch(tmdbServiceProvider);
   final isSpanish = ref.watch(appLanguageProvider) == AppLanguage.es;
   return service.getTopRatedTvShows(language: isSpanish ? 'es-ES' : 'en-US');
@@ -962,6 +1048,7 @@ final tmdbTopRatedShowsProvider = FutureProvider<List<AnimeEntry>>((ref) async {
 
 /// Recomendaciones TMDB contextuales basadas en shows que el usuario esté viendo (o trending como fallback)
 final tmdbRecommendationsProvider = FutureProvider<List<AnimeEntry>>((ref) async {
+  if (!FeatureFlags.tmdb) return const [];
   final showsEnabled = ref.watch(showsSectionEnabledProvider);
   if (!showsEnabled) return [];
 

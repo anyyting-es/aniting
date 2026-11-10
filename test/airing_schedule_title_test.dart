@@ -1,6 +1,6 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'package:seanime_app/core/preferences/title_language_provider.dart';
-import 'package:seanime_app/data/models/airing_schedule.dart';
+﻿import 'package:flutter_test/flutter_test.dart';
+import 'package:aniting/core/preferences/title_language_provider.dart';
+import 'package:aniting/data/models/airing_schedule.dart';
 
 void main() {
   test('AiringScheduleItem parses AniList media title correctly', () {

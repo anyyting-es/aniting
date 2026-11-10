@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/preferences/section_visibility_provider.dart';
-import 'package:seanime_app/presentation/widgets/discover_filter_sheet.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/preferences/section_visibility_provider.dart';
+import 'package:aniting/presentation/widgets/discover_filter_sheet.dart';
 
 /// Compact filter panel for catalog search.
 ///
@@ -52,71 +52,75 @@ class CatalogFilterSidebar extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Search — translucent field without glass capture ghosting
-        Container(
-          height: 42,
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.42),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
-            ),
-          ),
-          child: ValueListenableBuilder<TextEditingValue>(
-            valueListenable: searchController,
-            builder: (context, value, _) {
-              return TextField(
-                controller: searchController,
-                onChanged: onSearchChanged,
-                cursorColor: theme.colorScheme.primary,
-                style: TextStyle(
+        // Search — Material Design TextField with animated floating label
+        ValueListenableBuilder<TextEditingValue>(
+          valueListenable: searchController,
+          builder: (context, value, _) {
+            return TextField(
+              controller: searchController,
+              onChanged: onSearchChanged,
+              cursorColor: theme.colorScheme.primary,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: theme.colorScheme.onSurface,
+              ),
+              decoration: InputDecoration(
+                labelText: l10n.titleSearchPlaceholder,
+                labelStyle: TextStyle(
                   fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: theme.colorScheme.onSurface,
+                  fontWeight: FontWeight.w400,
+                  color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.75),
                 ),
-                decoration: InputDecoration(
-                  isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 12,
-                  ),
-                  border: InputBorder.none,
-                  hintText: l10n.titleSearchPlaceholder,
-                  hintStyle: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w400,
-                    color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
-                  ),
-                  prefixIcon: Icon(
-                    Icons.search_rounded,
-                    size: 19,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                  prefixIconConstraints: const BoxConstraints(
-                    minWidth: 40,
-                    minHeight: 40,
-                  ),
-                  suffixIcon: value.text.isEmpty
-                      ? null
-                      : GestureDetector(
-                          onTap: () {
-                            searchController.clear();
-                            onSearchChanged('');
-                          },
-                          child: Icon(
-                            Icons.close_rounded,
-                            size: 16,
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                  suffixIconConstraints: const BoxConstraints(
-                    minWidth: 38,
-                    minHeight: 38,
+                floatingLabelStyle: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.primary,
+                ),
+                floatingLabelBehavior: FloatingLabelBehavior.auto,
+                prefixIcon: Icon(
+                  Icons.search_rounded,
+                  size: 20,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                suffixIcon: value.text.isEmpty
+                    ? null
+                    : IconButton(
+                        icon: const Icon(Icons.close_rounded, size: 18),
+                        color: theme.colorScheme.onSurfaceVariant,
+                        onPressed: () {
+                          searchController.clear();
+                          onSearchChanged('');
+                        },
+                      ),
+                filled: true,
+                fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 14,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
                   ),
                 ),
-              );
-            },
-          ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: theme.colorScheme.primary,
+                    width: 1.8,
+                  ),
+                ),
+              ),
+            );
+          },
         ),
 
         const SizedBox(height: 10),
@@ -160,39 +164,6 @@ class CatalogFilterSidebar extends ConsumerWidget {
           ),
           const SizedBox(height: 8),
         ],
-
-        // Sort
-        _singleDropdown<String>(
-          hintText: _getSortLabel(filterState.sort, l10n),
-          items: [
-            M3EDropdownItem(
-              label: l10n.highestScore,
-              value: 'SCORE_DESC',
-              selected: filterState.sort == 'SCORE_DESC',
-            ),
-            M3EDropdownItem(
-              label: l10n.sortPopularity,
-              value: 'POPULARITY_DESC',
-              selected: filterState.sort == 'POPULARITY_DESC',
-            ),
-            M3EDropdownItem(
-              label: l10n.sortTrending,
-              value: 'TRENDING_DESC',
-              selected: filterState.sort == 'TRENDING_DESC',
-            ),
-            M3EDropdownItem(
-              label: l10n.sortStartDate,
-              value: 'START_DATE_DESC',
-              selected: filterState.sort == 'START_DATE_DESC',
-            ),
-          ],
-          onChanged: (val) {
-            if (val == null) return;
-            onFilterChanged(filterState.copyWith(sort: val));
-          },
-          showClear: false,
-        ),
-        const SizedBox(height: 8),
 
         // Genres (accumulative)
         _multiDropdown<String>(
@@ -501,20 +472,5 @@ class CatalogFilterSidebar extends ConsumerWidget {
         onChanged(selection.map((item) => item.value).toSet());
       },
     );
-  }
-
-  String _getSortLabel(String sort, AppTranslations l10n) {
-    switch (sort) {
-      case 'SCORE_DESC':
-        return l10n.highestScore;
-      case 'POPULARITY_DESC':
-        return l10n.sortPopularity;
-      case 'TRENDING_DESC':
-        return l10n.sortTrending;
-      case 'START_DATE_DESC':
-        return l10n.sortStartDate;
-      default:
-        return l10n.sortTrending;
-    }
   }
 }

@@ -9,31 +9,30 @@ import (
 	"github.com/cli/browser"
 	"github.com/gonutz/w32/v2"
 	"github.com/rs/zerolog/log"
-	"seanime/internal/constants"
-	"seanime/internal/core"
-	"seanime/internal/handlers"
-	"seanime/internal/icon"
-	"seanime/internal/updater"
+	"aniting/internal/constants"
+	"aniting/internal/core"
+	"aniting/internal/handlers"
+	"aniting/internal/icon"
 )
 
 func StartServer(webFS embed.FS, embeddedLogo []byte) {
 	onExit := func() {}
 	hideConsole()
 
-	app, flags, selfupdater := startApp(embeddedLogo)
+	app, flags := startApp(embeddedLogo)
 
 	if flags.IsDesktopSidecar {
-		startAppLoop(&webFS, app, flags, selfupdater)
+		startAppLoop(&webFS, app)
 		return
 	}
 
 	// Blocks until systray.Quit() is called
-	systray.Run(onReady(&webFS, app, flags, selfupdater), onExit)
+	systray.Run(onReady(&webFS, app, flags), onExit)
 }
 
 func addQuitItem() {
 	systray.AddSeparator()
-	mQuit := systray.AddMenuItem("Quit Seanime", "Quit the whole app")
+	mQuit := systray.AddMenuItem("Quit Aniting", "Quit the whole app")
 	mQuit.Enable()
 	go func() {
 		<-mQuit.ClickedCh
@@ -43,15 +42,15 @@ func addQuitItem() {
 	}()
 }
 
-func onReady(webFS *embed.FS, app *core.App, flags core.SeanimeFlags, selfupdater *updater.SelfUpdater) func() {
+func onReady(webFS *embed.FS, app *core.App, flags core.AnitingFlags) func() {
 	return func() {
 		systray.SetTemplateIcon(icon.Data, icon.Data)
-		systray.SetTitle(fmt.Sprintf("Seanime v%s", constants.Version))
-		systray.SetTooltip(fmt.Sprintf("Seanime v%s", constants.Version))
+		systray.SetTitle(fmt.Sprintf("Aniting v%s", constants.Version))
+		systray.SetTooltip(fmt.Sprintf("Aniting v%s", constants.Version))
 		log.Trace().Msg("systray: App is ready")
 
 		// Menu items
-		systray.AddMenuItem("Seanime v"+constants.Version, "Seanime version")
+		systray.AddMenuItem("Aniting v"+constants.Version, "Aniting version")
 		mWeb := systray.AddMenuItem(app.Config.GetServerURI("127.0.0.1"), "Open web interface")
 		mOpenLibrary := systray.AddMenuItem("Open Anime Library", "Open anime library")
 		mOpenDataDir := systray.AddMenuItem("Open Data Directory", "Open data directory")
@@ -63,7 +62,7 @@ func onReady(webFS *embed.FS, app *core.App, flags core.SeanimeFlags, selfupdate
 			// Close the systray when the app exits
 			defer systray.Quit()
 
-			startAppLoop(webFS, app, flags, selfupdater)
+			startAppLoop(webFS, app)
 		}()
 
 		go func() {

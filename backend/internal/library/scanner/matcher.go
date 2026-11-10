@@ -1,4 +1,4 @@
-package scanner
+﻿package scanner
 
 import (
 	"errors"
@@ -6,12 +6,12 @@ import (
 	"math"
 	"regexp"
 	"runtime"
-	"seanime/internal/api/anilist"
-	"seanime/internal/hook"
-	"seanime/internal/library/anime"
-	"seanime/internal/library/summary"
-	"seanime/internal/util"
-	"seanime/internal/util/comparison"
+	"aniting/internal/api/anilist"
+	"aniting/internal/hook"
+	"aniting/internal/library/anime"
+	"aniting/internal/library/summary"
+	"aniting/internal/util"
+	"aniting/internal/util/comparison"
 	"strings"
 	"sync"
 	"time"

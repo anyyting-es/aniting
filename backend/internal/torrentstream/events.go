@@ -1,6 +1,6 @@
-package torrentstream
+﻿package torrentstream
 
-import "seanime/internal/events"
+import "aniting/internal/events"
 
 const (
 	eventLoading               = "loading"

@@ -1,9 +1,9 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:seanime_app/core/preferences/resume_bar_preferences_provider.dart';
-import 'package:seanime_app/presentation/widgets/desktop_sidebar.dart';
+import 'package:aniting/core/preferences/resume_bar_preferences_provider.dart';
+import 'package:aniting/presentation/widgets/desktop_sidebar.dart';
 
 /// A floating mobile navigation bar that includes both icons and text labels,
 /// styled with rounded corners, elevated glassmorphism, and smooth active transitions,

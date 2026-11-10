@@ -1,12 +1,12 @@
-package handlers
+﻿package handlers
 
 import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"seanime/internal/database/models"
-	"seanime/internal/security"
-	"seanime/internal/util"
+	"aniting/internal/database/models"
+	"aniting/internal/security"
+	"aniting/internal/util"
 	"slices"
 	"sort"
 	"strings"

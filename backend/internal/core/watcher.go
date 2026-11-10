@@ -1,9 +1,9 @@
-package core
+﻿package core
 
 import (
-	"seanime/internal/events"
-	"seanime/internal/library/scanner"
-	"seanime/internal/util"
+	"aniting/internal/events"
+	"aniting/internal/library/scanner"
+	"aniting/internal/util"
 	"sync"
 )
 

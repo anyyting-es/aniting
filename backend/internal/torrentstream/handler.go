@@ -1,11 +1,11 @@
-package torrentstream
+﻿package torrentstream
 
 import (
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
-	"seanime/internal/util/torrentutil"
+	"aniting/internal/util/torrentutil"
 	"strconv"
 	"time"
 )

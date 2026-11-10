@@ -1,15 +1,15 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/data/models/anime_details.dart';
-import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
-import 'package:seanime_app/presentation/widgets/anime_detail/desktop/desktop_action_bar.dart';
-import 'package:seanime_app/presentation/widgets/anime_detail/desktop/desktop_characters_tab.dart';
-import 'package:seanime_app/presentation/widgets/anime_detail/desktop/desktop_header.dart';
-import 'package:seanime_app/presentation/widgets/anime_detail/desktop/desktop_recommendations_tab.dart';
-import 'package:seanime_app/presentation/widgets/anime_detail/desktop/desktop_relations_tab.dart';
-import 'package:seanime_app/presentation/widgets/anime_detail/desktop/desktop_sidebar.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/data/models/anime_details.dart';
+import 'package:aniting/presentation/screens/anime_detail_screen.dart';
+import 'package:aniting/presentation/widgets/anime_detail/desktop/desktop_action_bar.dart';
+import 'package:aniting/presentation/widgets/anime_detail/desktop/desktop_characters_tab.dart';
+import 'package:aniting/presentation/widgets/anime_detail/desktop/desktop_header.dart';
+import 'package:aniting/presentation/widgets/anime_detail/desktop/desktop_recommendations_tab.dart';
+import 'package:aniting/presentation/widgets/anime_detail/desktop/desktop_relations_tab.dart';
+import 'package:aniting/presentation/widgets/anime_detail/desktop/desktop_sidebar.dart';
 
 void main() {
   group('Desktop Anime Detail Overhaul Tests', () {

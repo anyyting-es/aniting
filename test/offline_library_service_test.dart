@@ -1,6 +1,6 @@
-import 'package:flutter_test/flutter_test.dart';
+﻿import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:seanime_app/data/services/offline_library_service.dart';
+import 'package:aniting/data/services/offline_library_service.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -94,6 +94,36 @@ void main() {
       final cr = service.getContinueReading();
       expect(cr.length, 1);
       expect(cr.first.mediaId, 30002);
+    });
+
+    test('Starting a later episode marks the previous ones watched and never regresses', () async {
+      final service = OfflineLibraryService.instance;
+
+      await service.recordAnimeWatch(
+        mediaId: 42,
+        title: 'Linear Progress',
+        episodeNumber: 1,
+        totalEpisodes: 12,
+      );
+      expect(service.getAnimeCollection().first.progress, 0);
+
+      // Jumping to episode 6 marks 1–5 as watched in one step.
+      await service.recordAnimeWatch(
+        mediaId: 42,
+        title: 'Linear Progress',
+        episodeNumber: 6,
+        totalEpisodes: 12,
+      );
+      expect(service.getAnimeCollection().first.progress, 5);
+
+      // Going back to an earlier episode must not move progress backwards.
+      await service.recordAnimeWatch(
+        mediaId: 42,
+        title: 'Linear Progress',
+        episodeNumber: 2,
+        totalEpisodes: 12,
+      );
+      expect(service.getAnimeCollection().first.progress, 5);
     });
 
     test('Edits and deletes entries offline', () async {

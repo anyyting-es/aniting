@@ -1,11 +1,11 @@
-package goja_bindings
+﻿package goja_bindings
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
 	"reflect"
-	gojautil "seanime/internal/util/goja"
+	gojautil "aniting/internal/util/goja"
 	"strings"
 	"sync"
 	"time"

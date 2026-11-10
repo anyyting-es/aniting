@@ -1,16 +1,16 @@
-package core
+﻿package core
 
 import (
 	"context"
 	"errors"
-	"seanime/internal/api/anilist"
-	"seanime/internal/database/models"
-	"seanime/internal/events"
-	"seanime/internal/platforms/anilist_platform"
-	"seanime/internal/platforms/platform"
-	"seanime/internal/platforms/simulated_platform"
-	"seanime/internal/user"
-	"seanime/internal/util"
+	"aniting/internal/api/anilist"
+	"aniting/internal/database/models"
+	"aniting/internal/events"
+	"aniting/internal/platforms/anilist_platform"
+	"aniting/internal/platforms/platform"
+	"aniting/internal/platforms/simulated_platform"
+	"aniting/internal/user"
+	"aniting/internal/util"
 	"time"
 
 	"github.com/goccy/go-json"

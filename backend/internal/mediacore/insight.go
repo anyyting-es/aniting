@@ -1,9 +1,9 @@
-package mediacore
+﻿package mediacore
 
 import (
 	"fmt"
-	"seanime/internal/util/limiter"
-	"seanime/internal/util/result"
+	"aniting/internal/util/limiter"
+	"aniting/internal/util/result"
 	"time"
 
 	"github.com/imroc/req/v3"

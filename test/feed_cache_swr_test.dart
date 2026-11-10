@@ -1,14 +1,16 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:seanime_app/core/server/server_manager.dart';
-import 'package:seanime_app/data/models/anime_entry.dart';
-import 'package:seanime_app/data/models/manga_entry.dart';
-import 'package:seanime_app/data/models/server_status.dart';
-import 'package:seanime_app/data/services/feed_cache_service.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/screens/feed_screen.dart';
+import 'package:aniting/core/server/server_manager.dart';
+import 'package:aniting/data/models/anime_entry.dart';
+import 'package:aniting/data/models/manga_entry.dart';
+import 'package:aniting/data/models/server_status.dart';
+import 'package:aniting/data/services/feed_cache_service.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/screens/feed_screen.dart';
+
+import 'support/fake_continue_watching_notifier.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -178,7 +180,9 @@ void main() {
         ProviderScope(
           overrides: [
             serverNotifierProvider.overrideWith(() => _MockServerNotifier(isOnline: true, isLoggedIn: true)),
-            continueWatchingProvider.overrideWith((ref) => Future.value([cachedEntry])),
+            continueWatchingProvider.overrideWith(
+              () => FakeContinueWatchingNotifier([cachedEntry]),
+            ),
             animeCollectionProvider.overrideWith((ref) => Future.value([cachedEntry])),
             trendingAnimeProvider.overrideWith((ref) => Future.value([])),
             popularAnimeProvider.overrideWith((ref) => Future.value([])),

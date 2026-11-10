@@ -1,4 +1,4 @@
-import 'package:seanime_app/data/models/onlinestream_models.dart';
+﻿import 'package:aniting/data/models/onlinestream_models.dart';
 
 enum OnlineStreamDownloadStatus {
   pending,

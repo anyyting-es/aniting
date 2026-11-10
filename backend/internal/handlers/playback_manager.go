@@ -1,7 +1,7 @@
-package handlers
+﻿package handlers
 
 import (
-	"seanime/internal/library/playbackmanager"
+	"aniting/internal/library/playbackmanager"
 
 	"github.com/labstack/echo/v4"
 )

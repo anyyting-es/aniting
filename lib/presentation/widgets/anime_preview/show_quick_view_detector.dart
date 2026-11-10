@@ -1,9 +1,9 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:flutter/gestures.dart' show PointerHoverEvent;
 import 'package:flutter/material.dart';
-import 'package:seanime_app/presentation/widgets/anime_preview/immersive_show_preview.dart';
-import 'package:seanime_app/presentation/widgets/anime_preview/show_preview_data.dart';
+import 'package:aniting/presentation/widgets/anime_preview/immersive_show_preview.dart';
+import 'package:aniting/presentation/widgets/anime_preview/show_preview_data.dart';
 
 /// Opens the immersive preview for a feed card when the user:
 ///
@@ -26,6 +26,12 @@ class ShowQuickViewDetector extends StatefulWidget {
   /// How long the card must keep focus.
   final Duration focusDelay;
 
+  /// When false, resting the pointer over the card no longer opens the
+  /// immersive preview. Used by the feed, where hover is handled by the
+  /// anchored [_FeedHoverCard] instead. Right-click, long-press and D-pad focus
+  /// keep working either way.
+  final bool enableIdleHover;
+
   const ShowQuickViewDetector({
     super.key,
     required this.dataBuilder,
@@ -34,6 +40,7 @@ class ShowQuickViewDetector extends StatefulWidget {
     this.heroTag,
     this.hoverDelay = const Duration(milliseconds: 1300),
     this.focusDelay = const Duration(milliseconds: 1800),
+    this.enableIdleHover = true,
   });
 
   @override
@@ -58,7 +65,7 @@ class _ShowQuickViewDetectorState extends State<ShowQuickViewDetector> {
   }
 
   void _scheduleHover() {
-    if (!_armed || _isOpen) return;
+    if (!widget.enableIdleHover || !_armed || _isOpen) return;
     _hoverTimer?.cancel();
     _hoverTimer = Timer(widget.hoverDelay, _openFromIdle);
   }

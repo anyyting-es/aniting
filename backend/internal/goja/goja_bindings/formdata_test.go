@@ -1,7 +1,7 @@
-package goja_bindings
+﻿package goja_bindings
 
 import (
-	"seanime/internal/util"
+	"aniting/internal/util"
 	"testing"
 
 	"github.com/dop251/goja"

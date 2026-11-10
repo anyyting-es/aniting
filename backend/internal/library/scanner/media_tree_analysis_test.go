@@ -1,10 +1,10 @@
-package scanner
+﻿package scanner
 
 import (
 	"context"
-	"seanime/internal/api/anilist"
-	"seanime/internal/util"
-	"seanime/internal/util/limiter"
+	"aniting/internal/api/anilist"
+	"aniting/internal/util"
+	"aniting/internal/util/limiter"
 	"testing"
 	"time"
 

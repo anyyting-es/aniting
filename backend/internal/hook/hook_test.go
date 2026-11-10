@@ -1,8 +1,8 @@
-package hook
+﻿package hook
 
 import (
 	"errors"
-	"seanime/internal/hook_resolver"
+	"aniting/internal/hook_resolver"
 	"testing"
 )
 

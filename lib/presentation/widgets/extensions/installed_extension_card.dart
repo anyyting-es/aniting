@@ -1,9 +1,9 @@
-import 'package:cached_network_image/cached_network_image.dart';
+﻿import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/data/models/extension_item.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/data/models/extension_item.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
 
 class InstalledExtensionCard extends ConsumerWidget {
   final ExtensionItem extension;

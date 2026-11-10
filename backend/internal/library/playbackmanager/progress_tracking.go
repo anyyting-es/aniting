@@ -1,15 +1,15 @@
-package playbackmanager
+﻿package playbackmanager
 
 import (
 	"cmp"
 	"context"
 	"errors"
-	"seanime/internal/continuity"
-	discordrpc_presence "seanime/internal/discordrpc/presence"
-	"seanime/internal/events"
-	"seanime/internal/library/anime"
-	"seanime/internal/mediaplayers/mediaplayer"
-	"seanime/internal/util"
+	"aniting/internal/continuity"
+	discordrpc_presence "aniting/internal/discordrpc/presence"
+	"aniting/internal/events"
+	"aniting/internal/library/anime"
+	"aniting/internal/mediaplayers/mediaplayer"
+	"aniting/internal/util"
 
 	"github.com/samber/mo"
 )

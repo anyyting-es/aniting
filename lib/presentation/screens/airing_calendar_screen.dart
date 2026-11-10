@@ -1,16 +1,16 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/preferences/layout_mode_provider.dart';
-import 'package:seanime_app/core/preferences/title_language_provider.dart';
-import 'package:seanime_app/data/models/airing_schedule.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/widgets/calendar/calendar_desktop_view.dart';
-import 'package:seanime_app/presentation/widgets/calendar/calendar_loading_line.dart';
-import 'package:seanime_app/presentation/widgets/calendar/calendar_mobile_view.dart';
-import 'package:seanime_app/presentation/widgets/calendar/calendar_month_view.dart';
-import 'package:seanime_app/presentation/widgets/calendar/calendar_only_watching_toggle.dart';
-import 'package:seanime_app/presentation/widgets/desktop_title_bar.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/preferences/layout_mode_provider.dart';
+import 'package:aniting/core/preferences/title_language_provider.dart';
+import 'package:aniting/data/models/airing_schedule.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/widgets/calendar/calendar_desktop_view.dart';
+import 'package:aniting/presentation/widgets/calendar/calendar_loading_line.dart';
+import 'package:aniting/presentation/widgets/calendar/calendar_mobile_view.dart';
+import 'package:aniting/presentation/widgets/calendar/calendar_month_view.dart';
+import 'package:aniting/presentation/widgets/calendar/calendar_only_watching_toggle.dart';
+import 'package:aniting/presentation/widgets/desktop_title_bar.dart';
 
 enum AiringCalendarViewMode { week, month }
 

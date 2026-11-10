@@ -1,4 +1,4 @@
-import 'package:seanime_app/core/i18n/translations/translations.dart';
+﻿import 'package:aniting/core/i18n/translations/translations.dart';
 
 /// What kind of media an onlinestream provider can resolve.
 ///
@@ -162,6 +162,10 @@ class OnlinestreamVideoSource {
   final String? label;
   final String? type;
   final List<OnlinestreamSubtitle> subtitles;
+
+  /// WebVTT storyboard for the seek bar previews (sprite sheet + `#xywh=`
+  /// tiles). Empty when the provider does not offer trickplay.
+  final String? thumbnails;
   final String? infoHash;
   final int? fileIndex;
   final int? seeders;
@@ -180,6 +184,7 @@ class OnlinestreamVideoSource {
     this.label,
     this.type,
     this.subtitles = const [],
+    this.thumbnails,
     this.infoHash,
     this.fileIndex,
     this.seeders,
@@ -228,6 +233,7 @@ class OnlinestreamVideoSource {
       label: json['label'] as String?,
       type: json['type'] as String?,
       subtitles: subs,
+      thumbnails: json['thumbnails'] as String?,
       infoHash: json['infoHash'] as String?,
       fileIndex: (json['fileIndex'] as num?)?.toInt(),
       seeders: (json['seeders'] as num?)?.toInt(),

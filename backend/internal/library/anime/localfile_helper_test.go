@@ -1,10 +1,10 @@
-package anime_test
+﻿package anime_test
 
 import (
 	"path/filepath"
 	"runtime"
-	"seanime/internal/library/anime"
-	"seanime/internal/util"
+	"aniting/internal/library/anime"
+	"aniting/internal/util"
 	"strings"
 	"testing"
 

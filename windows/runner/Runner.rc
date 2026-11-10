@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.seanime.app" "\0"
-            VALUE "FileDescription", "seanime_app" "\0"
+            VALUE "CompanyName", "com.anyyting.aniting" "\0"
+            VALUE "FileDescription", "Aniting" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "seanime_app" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 com.seanime.app. All rights reserved." "\0"
-            VALUE "OriginalFilename", "seanime_app.exe" "\0"
-            VALUE "ProductName", "seanime_app" "\0"
+            VALUE "InternalName", "aniting_app" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 com.anyyting.aniting. All rights reserved." "\0"
+            VALUE "OriginalFilename", "aniting_app.exe" "\0"
+            VALUE "ProductName", "Aniting" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

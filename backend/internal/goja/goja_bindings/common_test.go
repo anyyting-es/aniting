@@ -1,14 +1,14 @@
-package goja_bindings_test
+﻿package goja_bindings_test
 
 import (
 	"errors"
 	"fmt"
 	"os"
-	"seanime/internal/events"
-	"seanime/internal/extension"
-	"seanime/internal/extension_repo"
-	"seanime/internal/goja/goja_bindings"
-	"seanime/internal/util"
+	"aniting/internal/events"
+	"aniting/internal/extension"
+	"aniting/internal/extension_repo"
+	"aniting/internal/goja/goja_bindings"
+	"aniting/internal/util"
 	"testing"
 	"time"
 

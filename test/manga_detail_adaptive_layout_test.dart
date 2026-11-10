@@ -1,21 +1,21 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:seanime_app/core/api/api_client.dart';
-import 'package:seanime_app/core/preferences/layout_mode_provider.dart';
-import 'package:seanime_app/core/server/server_manager.dart';
-import 'package:seanime_app/data/models/manga_entry.dart';
-import 'package:seanime_app/data/repositories/seanime_repository.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/screens/manga_detail_screen.dart';
-import 'package:seanime_app/presentation/widgets/manga_detail/desktop/desktop_manga_action_bar.dart';
-import 'package:seanime_app/presentation/widgets/manga_detail/desktop/desktop_manga_header.dart';
-import 'package:seanime_app/presentation/widgets/manga_detail/desktop/desktop_manga_sidebar.dart';
-import 'package:seanime_app/presentation/widgets/manga_detail/manga_detail_desktop_layout.dart';
-import 'package:seanime_app/presentation/widgets/manga_detail/manga_detail_mobile_layout.dart';
+import 'package:aniting/core/api/api_client.dart';
+import 'package:aniting/core/preferences/layout_mode_provider.dart';
+import 'package:aniting/core/server/server_manager.dart';
+import 'package:aniting/data/models/manga_entry.dart';
+import 'package:aniting/data/repositories/aniting_repository.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/screens/manga_detail_screen.dart';
+import 'package:aniting/presentation/widgets/manga_detail/desktop/desktop_manga_action_bar.dart';
+import 'package:aniting/presentation/widgets/manga_detail/desktop/desktop_manga_header.dart';
+import 'package:aniting/presentation/widgets/manga_detail/desktop/desktop_manga_sidebar.dart';
+import 'package:aniting/presentation/widgets/manga_detail/manga_detail_desktop_layout.dart';
+import 'package:aniting/presentation/widgets/manga_detail/manga_detail_mobile_layout.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class FakeMangaRepo extends SeanimeRepository {
+class FakeMangaRepo extends AnitingRepository {
   FakeMangaRepo() : super(ApiClient());
 
   @override

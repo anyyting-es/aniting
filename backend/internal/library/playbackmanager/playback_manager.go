@@ -1,21 +1,21 @@
 package playbackmanager
 
 import (
+	"aniting/internal/api/anilist"
+	"aniting/internal/api/metadata_provider"
+	"aniting/internal/continuity"
+	"aniting/internal/database/db"
+	discordrpc_presence "aniting/internal/discordrpc/presence"
+	"aniting/internal/events"
+	"aniting/internal/hook"
+	"aniting/internal/library/anime"
+	"aniting/internal/mediaplayers/mediaplayer"
+	"aniting/internal/platforms/platform"
+	"aniting/internal/util"
+	"aniting/internal/util/result"
 	"context"
 	"errors"
 	"fmt"
-	"seanime/internal/api/anilist"
-	"seanime/internal/api/metadata_provider"
-	"seanime/internal/continuity"
-	"seanime/internal/database/db"
-	discordrpc_presence "seanime/internal/discordrpc/presence"
-	"seanime/internal/events"
-	"seanime/internal/hook"
-	"seanime/internal/library/anime"
-	"seanime/internal/mediaplayers/mediaplayer"
-	"seanime/internal/platforms/platform"
-	"seanime/internal/util"
-	"seanime/internal/util/result"
 	"sync"
 	"sync/atomic"
 
@@ -426,6 +426,10 @@ func (pm *PlaybackManager) StartStreamingUsingMediaPlayer(windowTitle string, op
 	if event.Media == nil || aniDbEpisode == "" {
 		pm.Logger.Error().Msg("playback manager: cannot start streaming, missing options [StartStreamingUsingMediaPlayer]")
 		return errors.New("cannot start streaming, not enough data provided")
+	}
+
+	if pm.MediaPlayerRepository == nil {
+		return errors.New("media player repository is not configured")
 	}
 
 	pm.Logger.Trace().Msg("playback manager: Starting the media player")

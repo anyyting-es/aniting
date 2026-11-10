@@ -1,4 +1,4 @@
-package mpv
+﻿package mpv
 
 import (
 	"bufio"
@@ -10,9 +10,9 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
-	"seanime/internal/mediaplayers/mpvipc"
-	"seanime/internal/util"
-	"seanime/internal/util/result"
+	"aniting/internal/mediaplayers/mpvipc"
+	"aniting/internal/util"
+	"aniting/internal/util/result"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -743,7 +743,7 @@ func getDefaultSocketName() string {
 }
 
 func createLaunchLogPath() (string, error) {
-	file, err := os.CreateTemp("", "seanime-mpv-*.log")
+	file, err := os.CreateTemp("", "aniting-mpv-*.log")
 	if err != nil {
 		return "", err
 	}

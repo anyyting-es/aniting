@@ -1,8 +1,8 @@
-package platform
+﻿package platform
 
 import (
 	"context"
-	"seanime/internal/api/anilist"
+	"aniting/internal/api/anilist"
 )
 
 type Platform interface {

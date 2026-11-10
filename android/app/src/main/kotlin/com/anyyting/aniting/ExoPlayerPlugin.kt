@@ -620,7 +620,7 @@ class ExoPlayerPlugin :
                 .setReadTimeoutMs(readTimeout)
                 .setKeepPostFor302Redirects(true)
                 .setAllowCrossProtocolRedirects(true)
-                .setUserAgent("SeanimeApp/1.0 (Android; ExoPlayer+libass)")
+                .setUserAgent("AnitingApp/1.0 (Android; ExoPlayer+libass)")
 
             if (!headers.isNullOrEmpty()) {
                 val reqHeaders = mutableMapOf<String, String>()

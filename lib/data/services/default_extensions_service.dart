@@ -1,6 +1,6 @@
-import 'package:flutter/foundation.dart';
+﻿import 'package:flutter/foundation.dart';
 import '../../core/i18n/i18n_provider.dart';
-import '../repositories/seanime_repository.dart';
+import '../repositories/aniting_repository.dart';
 
 class DefaultExtensionsService {
   static const Map<String, String> esRecommended = {
@@ -28,7 +28,7 @@ class DefaultExtensionsService {
   /// Installs default recommended streaming and torrent extensions based on language.
   /// Skips any extensions that are already installed.
   static Future<int> installRecommended(
-    SeanimeRepository repo, {
+    AnitingRepository repo, {
     AppLanguage language = AppLanguage.es,
   }) async {
     final targets = language == AppLanguage.es ? esRecommended : enRecommended;

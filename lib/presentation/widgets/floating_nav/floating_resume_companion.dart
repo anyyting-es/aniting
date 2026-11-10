@@ -1,14 +1,14 @@
-import 'dart:math' as math;
+﻿import 'dart:math' as math;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:g1455/g1455.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/preferences/glass_theme_provider.dart';
-import 'package:seanime_app/core/preferences/resume_bar_preferences_provider.dart';
-import 'package:seanime_app/core/constants/feature_flags.dart';
-import 'package:seanime_app/core/preferences/wallpaper_preferences_provider.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/preferences/glass_theme_provider.dart';
+import 'package:aniting/core/preferences/resume_bar_preferences_provider.dart';
+import 'package:aniting/core/constants/feature_flags.dart';
+import 'package:aniting/core/preferences/wallpaper_preferences_provider.dart';
 
 /// A solid Material Design 3 resume playback companion card.
 ///

@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:cached_network_image/cached_network_image.dart';
@@ -6,13 +6,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:g1455/g1455.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/core/preferences/title_language_provider.dart';
-import 'package:seanime_app/core/preferences/section_visibility_provider.dart';
-import 'package:seanime_app/data/models/anime_entry.dart';
-import 'package:seanime_app/data/models/manga_entry.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/constants/feature_flags.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/core/preferences/title_language_provider.dart';
+import 'package:aniting/core/preferences/section_visibility_provider.dart';
+import 'package:aniting/data/models/anime_entry.dart';
+import 'package:aniting/data/models/manga_entry.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
 
 /// Everything the preview pane renders, extracted from either media type.
 typedef _DetailsDescription = ({
@@ -161,14 +162,17 @@ class _FeedQuickSearchState extends ConsumerState<FeedQuickSearch>
         results = await repo.searchManga(query, perPage: _maxResults);
       } else {
         final animeEnabled = ref.read(animeSectionEnabledProvider);
-        final isLoggedIn =
-            ref.read(serverNotifierProvider).status?.isLoggedIn ?? false;
-        if (animeEnabled && isLoggedIn) {
+        // AniList search is a public catalog query: it must not depend on the
+        // viewer being signed in. The local/simulated user (`isLoggedIn`
+        // false) previously skipped the request entirely, so Ctrl+K returned
+        // no results even though the backend could query AniList.
+        if (animeEnabled) {
           results = await repo.searchAnime(query, perPage: _maxResults);
         }
-        // Without AniList (disabled or not signed in) quick search falls back
-        // to TMDB, which also covers anime as TV shows.
-        if (results.isEmpty) {
+        // Without AniList (disabled or unreachable) quick search falls back to
+        // TMDB, which also covers anime as TV shows. TMDB is disabled for the
+        // AniList-first release.
+        if (results.isEmpty && FeatureFlags.tmdb) {
           final isSpanish =
               ref.read(appLanguageProvider) == AppLanguage.es;
           results = await ref.read(tmdbServiceProvider).searchShows(

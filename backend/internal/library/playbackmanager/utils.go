@@ -1,13 +1,13 @@
-package playbackmanager
+﻿package playbackmanager
 
 import (
 	"errors"
 	"fmt"
-	"seanime/internal/api/anilist"
-	"seanime/internal/database/db_bridge"
-	"seanime/internal/hook"
-	"seanime/internal/library/anime"
-	"seanime/internal/util"
+	"aniting/internal/api/anilist"
+	"aniting/internal/database/db_bridge"
+	"aniting/internal/hook"
+	"aniting/internal/library/anime"
+	"aniting/internal/util"
 
 	"github.com/samber/mo"
 )

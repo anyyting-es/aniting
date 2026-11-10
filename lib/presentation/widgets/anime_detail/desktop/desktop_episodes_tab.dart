@@ -1,21 +1,30 @@
+﻿import 'dart:io';
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:g1455/g1455.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/core/preferences/playback_progress_preferences_provider.dart';
-import 'package:seanime_app/core/theme/smooth_scroll_controller.dart';
-import 'package:seanime_app/data/models/anime_details.dart';
-import 'package:seanime_app/data/models/anizip_data.dart';
-import 'package:seanime_app/data/models/episode_item.dart';
-import 'package:seanime_app/data/models/onlinestream_models.dart';
-import 'package:seanime_app/data/models/library_entry_details.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/providers/active_downloads_provider.dart';
-import 'package:seanime_app/presentation/providers/download_history_provider.dart';
-import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/core/preferences/playback_progress_preferences_provider.dart';
+import 'package:aniting/presentation/widgets/anime_detail/anime_episode_target.dart';
+import 'package:aniting/core/theme/smooth_scroll_controller.dart';
+import 'package:aniting/data/models/anime_details.dart';
+import 'package:aniting/data/models/anizip_data.dart';
+import 'package:aniting/data/models/episode_item.dart';
+import 'package:aniting/data/models/onlinestream_models.dart';
+import 'package:aniting/data/models/library_entry_details.dart';
+import 'package:aniting/data/services/offline_library_service.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/providers/active_downloads_provider.dart';
+import 'package:aniting/presentation/providers/download_history_provider.dart';
+import 'package:aniting/presentation/providers/episode_selection_provider.dart';
+import 'package:aniting/presentation/screens/anime_detail_screen.dart';
 
-import 'package:seanime_app/presentation/widgets/online_stream_download_dialog.dart';
+import 'package:aniting/presentation/widgets/online_stream_batch_download_dialog.dart';
+import 'package:aniting/presentation/widgets/online_stream_download_dialog.dart';
+import 'package:aniting/presentation/widgets/toast/app_toast.dart';
 
 import 'desktop_episode_context_menu.dart';
 import 'desktop_episode_grid_card.dart';
@@ -92,10 +101,10 @@ class DesktopEpisodesTab extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<DesktopEpisodesTab> createState() => _DesktopEpisodesTabState();
+  ConsumerState<DesktopEpisodesTab> createState() => DesktopEpisodesTabState();
 }
 
-class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab>
+class DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab>
     with SingleTickerProviderStateMixin {
   late final AnimationController _shimmerController = AnimationController(
     vsync: this,
@@ -103,7 +112,21 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab>
   );
   late final ScrollController _horizontalScrollController =
       SmoothScrollController(smoothingFactor: 16.0, speedMultiplier: 1.0);
-  bool _hasAutoScrolled = false;
+
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode(
+    debugLabel: 'desktop_episode_search',
+  );
+  bool _isSearchExpanded = false;
+  String _searchQuery = '';
+
+  /// Episode the list last auto-scrolled to, per anime.
+  ///
+  /// Tracking the target (instead of a one-shot boolean) is what makes the list
+  /// follow the progress when another episode gets marked as watched.
+  int? _lastAutoScrollTarget;
+  int? _lastAutoScrollMediaId;
+  int _lastAlignmentRequest = 0;
 
   LibraryEntryDetails? _libraryEntry;
   bool _isLoadingLocal = false;
@@ -138,7 +161,345 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab>
   void dispose() {
     _shimmerController.dispose();
     _horizontalScrollController.dispose();
+    _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
+  }
+
+  /// Expands and focuses the episode search. Called by the Ctrl+F shortcut
+  /// from the desktop detail layout.
+  void focusSearch() {
+    final selection = ref.read(episodeSelectionProvider(widget.mediaId));
+    if (selection.isSelectionMode) {
+      ref.read(episodeSelectionProvider(widget.mediaId).notifier).clear();
+    }
+    if (!_isSearchExpanded) {
+      setState(() => _isSearchExpanded = true);
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _searchFocusNode.requestFocus();
+    });
+  }
+
+  void _onSearchChanged(String value) {
+    // Let clearing the query restore the resume scroll position.
+    _lastAutoScrollTarget = null;
+    _lastAutoScrollMediaId = null;
+    setState(() => _searchQuery = value);
+  }
+
+  void _clearSearch() {
+    _searchController.clear();
+    _onSearchChanged('');
+  }
+
+  void _closeSearch() {
+    _searchController.clear();
+    _searchFocusNode.unfocus();
+    _lastAutoScrollTarget = null;
+    _lastAutoScrollMediaId = null;
+    setState(() {
+      _isSearchExpanded = false;
+      _searchQuery = '';
+    });
+  }
+
+  Future<void> _batchDownload(
+    BuildContext context,
+    List<int> selectedNumbers,
+    Map<int, String?> downloadedMap,
+  ) async {
+    final l10n = ref.read(translationsProvider);
+    final toDownload =
+        selectedNumbers
+            .where(
+              (n) => !downloadedMap.containsKey(n) || downloadedMap[n] == null,
+            )
+            .toList()
+          ..sort();
+    if (toDownload.isEmpty) return;
+
+    final isOnline =
+        !widget.isLocalMode && widget.currentTab == AnimeDetailTab.online;
+    if (!isOnline) {
+      final openTorrentSelector = widget.onOpenTorrentSelector;
+      if (openTorrentSelector == null) return;
+      final first = toDownload.first;
+      await openTorrentSelector(
+        episodeNumber: first,
+        episodeTitle: l10n.episodeNumber(first),
+        isDownloadMode: true,
+        initialSelectedEpisodes: toDownload,
+      );
+      if (mounted) {
+        ref.read(episodeSelectionProvider(widget.mediaId).notifier).clear();
+      }
+      return;
+    }
+
+    if (toDownload.length == 1) {
+      final epNum = toDownload.first;
+      final epThumb = widget.details?.aniZipData?.episodes
+          .where((e) => e.episodeNumber == epNum)
+          .firstOrNull
+          ?.image;
+      showOnlineStreamDownloadDialog(
+        context,
+        mediaId: widget.mediaId,
+        episodeNumber: epNum,
+        animeTitle: widget.details?.title ?? 'Anime',
+        episodeTitle: l10n.episodeNumber(epNum),
+        thumbnail: epThumb,
+        provider: widget.selectedProvider,
+        isDubbed: widget.isDubbed,
+      );
+    } else {
+      showOnlineStreamBatchDownloadDialog(
+        context,
+        mediaId: widget.mediaId,
+        animeTitle: widget.details?.title ?? 'Anime',
+        episodeNumbers: toDownload,
+        aniZipData: widget.details?.aniZipData,
+        initialProvider: widget.selectedProvider,
+        isDubbed: widget.isDubbed,
+      );
+    }
+    if (mounted) {
+      ref.read(episodeSelectionProvider(widget.mediaId).notifier).clear();
+    }
+  }
+
+  Future<void> _batchDelete(
+    BuildContext context,
+    List<int> selectedNumbers,
+    Map<int, String?> downloadedMap,
+  ) async {
+    final l10n = ref.read(translationsProvider);
+    final downloadedSelected = selectedNumbers
+        .where((n) => downloadedMap.containsKey(n) && downloadedMap[n] != null)
+        .toList();
+    if (downloadedSelected.isEmpty) return;
+
+    final confirmed = await showGlassDialog<bool>(
+      context: context,
+      builder: (ctx) => GlassAlert(
+        title: Text(l10n.deleteDownload, textAlign: TextAlign.center),
+        message: Text(
+          l10n.deleteSelectedEpisodesConfirm(downloadedSelected.length),
+          textAlign: TextAlign.center,
+        ),
+        actions: <GlassAlertAction>[
+          GlassAlertAction(
+            label: l10n.cancel,
+            onPressed: () => Navigator.pop(ctx, false),
+          ),
+          GlassAlertAction(
+            label: l10n.delete,
+            isDestructive: true,
+            onPressed: () => Navigator.pop(ctx, true),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    final repo = ref.read(repositoryProvider);
+    final paths = downloadedSelected
+        .map((n) => downloadedMap[n])
+        .whereType<String>()
+        .toList();
+    if (paths.isNotEmpty) {
+      try {
+        await repo.deleteLocalFiles(paths);
+      } catch (_) {}
+      for (final path in paths) {
+        try {
+          final file = File(path);
+          if (file.existsSync()) file.deleteSync();
+        } catch (_) {}
+      }
+    }
+
+    final history = ref.read(downloadHistoryProvider.notifier);
+    for (final epNum in downloadedSelected) {
+      history.removeItem('${widget.mediaId}_$epNum');
+      history.removeItem('$epNum');
+    }
+
+    ref.invalidate(downloadedAnimeProvider);
+    ref.invalidate(animeLibraryEntryProvider(widget.mediaId));
+    ref.invalidate(animeCollectionProvider);
+    ref.read(activeDownloadsProvider.notifier).refresh();
+    ref.read(episodeSelectionProvider(widget.mediaId).notifier).clear();
+
+    if (!mounted || !context.mounted) return;
+    _loadLocalEntry();
+    AppToast.success(l10n.downloadDeleted, context: context);
+  }
+
+  Future<void> _batchMarkWatched(
+    BuildContext context,
+    List<int> selectedNumbers, {
+    required bool markAsWatched,
+  }) async {
+    if (selectedNumbers.isEmpty) return;
+    final repo = ref.read(repositoryProvider);
+    final l10n = ref.read(translationsProvider);
+    final localService = OfflineLibraryService.instance;
+    final existingEntry = localService.getAnimeEntry(widget.mediaId);
+
+    final selectedMax = selectedNumbers.reduce((a, b) => a > b ? a : b);
+    final selectedMin = selectedNumbers.reduce((a, b) => a < b ? a : b);
+    final currentProgress = math.max(
+      widget.progress,
+      existingEntry?.progress ?? 0,
+    );
+
+    // AniList progress is linear: marking EP n also marks every previous
+    // episode. Never move the progress backwards when marking as watched.
+    final targetEpisode = markAsWatched
+        ? math.max(currentProgress, selectedMax)
+        : (math.min(currentProgress, selectedMin) - 1).clamp(0, 9999);
+
+    // Save the progress locally first so the episode row reacts instantly.
+    if (existingEntry == null) {
+      await localService.recordAnimeWatch(
+        mediaId: widget.mediaId,
+        title: widget.details?.title ?? '',
+        episodeNumber: targetEpisode,
+        totalEpisodes: widget.details?.totalEpisodes,
+        isTmdb: widget.isTmdb,
+      );
+    }
+    await localService.updateAnimeProgress(
+      mediaId: widget.mediaId,
+      episodeNumber: targetEpisode,
+      totalEpisodes: widget.details?.totalEpisodes,
+      isTmdb: widget.isTmdb,
+    );
+    if (!mounted || !context.mounted) return;
+
+    ref.invalidate(animeCollectionProvider);
+    ref.invalidate(animeLibraryEntryProvider(widget.mediaId));
+    ref.invalidate(continueWatchingProvider);
+    ref.read(episodeSelectionProvider(widget.mediaId).notifier).clear();
+    AppToast.info(
+      markAsWatched
+          ? l10n.markedAsWatched(targetEpisode)
+          : l10n.markedAsUnwatched(targetEpisode + 1),
+      context: context,
+    );
+
+    // Sync AniList in the background; the local progress is already saved.
+    if (!widget.isTmdb) {
+      final synced = await repo.updateAnimeProgress(
+        mediaId: widget.mediaId,
+        episodeNumber: targetEpisode,
+        totalEpisodes: widget.details?.totalEpisodes ?? 0,
+      );
+      if (!synced) {
+        debugPrint('AniList progress sync failed; local progress saved.');
+      }
+    }
+  }
+
+  Widget _buildSelectionHeader({
+    required EpisodeSelectionState selection,
+    required List<int> allEpisodeNumbers,
+    required Map<int, String?> downloadedMap,
+    required AppTranslations l10n,
+    required AppIconPack iconPack,
+    required ThemeData theme,
+  }) {
+    final notifier = ref.read(episodeSelectionProvider(widget.mediaId).notifier);
+    final selected = selection.selectedNumbers.toList()..sort();
+    final notDownloaded = selected
+        .where((n) => !downloadedMap.containsKey(n) || downloadedMap[n] == null)
+        .toList();
+    final downloaded = selected
+        .where((n) => downloadedMap.containsKey(n) && downloadedMap[n] != null)
+        .toList();
+    final isAllSelected =
+        allEpisodeNumbers.isNotEmpty &&
+        selection.selectedNumbers.length >= allEpisodeNumbers.length;
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Row(
+      key: const ValueKey('episode_selection_header'),
+      children: [
+        M3EIconButton(
+          variant: M3EIconButtonVariant.standard,
+          size: M3EIconButtonSize.xs,
+          tooltip: l10n.close,
+          icon: Icon(AppIcons.close(iconPack), size: 18),
+          onPressed: notifier.clear,
+        ),
+        const SizedBox(width: 8),
+        Text(
+          l10n.selectedEpisodesCount(selection.count),
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            color: isDark ? Colors.white : theme.colorScheme.onSurface,
+          ),
+        ),
+        const SizedBox(width: 10),
+        M3EButton.icon(
+          style: M3EButtonStyle.tonal,
+          size: M3EButtonSize.sm,
+          shape: M3EButtonShape.round,
+          icon: Icon(
+            isAllSelected
+                ? AppIcons.removeDone(iconPack)
+                : Icons.select_all_rounded,
+            size: 16,
+          ),
+          label: Text(isAllSelected ? l10n.deselectAll : l10n.selectAll),
+          onPressed: () {
+            if (isAllSelected) {
+              notifier.clear();
+            } else {
+              notifier.selectAll(allEpisodeNumbers);
+            }
+          },
+        ),
+        const Spacer(),
+        if (notDownloaded.isNotEmpty)
+          M3EButton.icon(
+            style: M3EButtonStyle.filled,
+            size: M3EButtonSize.sm,
+            shape: M3EButtonShape.round,
+            icon: Icon(AppIcons.download(iconPack), size: 16),
+            label: Text(l10n.downloadCount(notDownloaded.length)),
+            onPressed: () =>
+                _batchDownload(context, notDownloaded, downloadedMap),
+          ),
+        if (downloaded.isNotEmpty) ...[
+          const SizedBox(width: 6),
+          M3EIconButton(
+            variant: M3EIconButtonVariant.standard,
+            size: M3EIconButtonSize.xs,
+            tooltip: l10n.deleteCount(downloaded.length),
+            icon: Icon(
+              AppIcons.trash(iconPack),
+              size: 18,
+              color: theme.colorScheme.error,
+            ),
+            onPressed: () => _batchDelete(context, downloaded, downloadedMap),
+          ),
+        ],
+        const SizedBox(width: 6),
+        M3EButton.icon(
+          style: M3EButtonStyle.tonal,
+          size: M3EButtonSize.sm,
+          shape: M3EButtonShape.round,
+          icon: Icon(AppIcons.checkCircle(iconPack), size: 16),
+          label: Text(l10n.markWatched),
+          onPressed: () =>
+              _batchMarkWatched(context, selected, markAsWatched: true),
+        ),
+      ],
+    );
   }
 
   void _clearMemoizedCaches() {
@@ -190,11 +551,17 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab>
         oldWidget.isLocalMode != widget.isLocalMode ||
         oldWidget.selectedProvider?.id != widget.selectedProvider?.id ||
         oldWidget.isDubbed != widget.isDubbed) {
-      // The desktop layout keeps every episode visible in one scroll view, so
-      // there is no page cursor to reset here.
+      // The list is source-dependent: torrent/local uses the metadata
+      // providers, online merges the provider's episodes with that metadata.
+      // Drop the memoized list and re-align the resume target for the new
+      // source instead of showing the previous tab's episodes.
+      _cachedAniZipItems = null;
+      _lastAutoScrollTarget = null;
+      _lastAutoScrollMediaId = null;
     }
     if (oldWidget.mediaId != widget.mediaId) {
-      _hasAutoScrolled = false;
+      _lastAutoScrollTarget = null;
+      _lastAutoScrollMediaId = null;
       _clearMemoizedCaches();
       _loadLocalEntry();
     } else if (oldWidget.isLocalMode != widget.isLocalMode) {
@@ -202,69 +569,100 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab>
     }
   }
 
+  /// Progress including the offline entry that the player just updated.
+  ///
+  /// The parent may not rebuild immediately when the local library changes, so
+  /// the tab reads it directly. This is what makes the resume target advance
+  /// from 15 to 16 as soon as episode 15 is completed, without waiting for the
+  /// server collection round-trip.
+  int get _effectiveProgress => math.max(
+    widget.progress,
+    OfflineLibraryService.instance.getAnimeEntry(widget.mediaId)?.progress ?? 0,
+  );
+
+  /// Next episode to surface, derived from the **same value the action bar
+  /// uses**, so the "Continuar EP n" label and the episode list can never
+  /// disagree. See [resolveTargetEpisodeNumber].
   int _calculateTargetEpisodeNumber(
     List<DesktopEpisodeItemData> items,
     EpisodePlaybackProgress? mediaProgress,
   ) {
-    if (items.isEmpty) return 1;
-
-    final totalCount = widget.details?.totalEpisodes ?? items.length;
-    final isCompleted =
-        (widget.details?.userStatus == 'COMPLETED') ||
-        (widget.progress >= totalCount && totalCount > 0);
-
-    if (isCompleted) return 1;
-
-    int targetEpisodeNumber = 1;
-
-    // 1. Check if the most recently played episode has in-progress playback (< 95%)
-    if (mediaProgress != null &&
-        mediaProgress.durationMs > 0 &&
-        mediaProgress.positionMs > 0) {
-      final fraction = mediaProgress.positionMs / mediaProgress.durationMs;
-      if (fraction > 0.02 && fraction < 0.95) {
-        targetEpisodeNumber = mediaProgress.episodeNumber;
-      } else if (fraction >= 0.95) {
-        targetEpisodeNumber = mediaProgress.episodeNumber + 1;
-      }
-    }
-
-    // 2. If no in-progress episode was found, resume from watch progress + 1
-    if (targetEpisodeNumber == 1 && widget.progress > 0) {
-      targetEpisodeNumber = widget.progress + 1;
-    }
-
-    // 3. Fallback if target exceeds total count
-    if (targetEpisodeNumber > totalCount) {
-      targetEpisodeNumber = 1;
-    }
-
-    return targetEpisodeNumber;
+    return resolveTargetEpisodeNumber(
+      episodeNumbers: [for (final ep in items) ep.number],
+      progress: _effectiveProgress,
+      totalEpisodes: widget.details?.totalEpisodes,
+      userStatus: widget.details?.userStatus,
+      playbackEpisodeNumber: mediaProgress?.episodeNumber,
+      playbackPositionMs: mediaProgress?.positionMs ?? 0,
+      playbackDurationMs: mediaProgress?.durationMs ?? 0,
+    );
   }
 
   void _scrollToResumeEpisode(
     List<DesktopEpisodeItemData> items,
     int targetEpisodeNumber,
   ) {
-    if (_hasAutoScrolled || items.isEmpty) return;
+    if (items.isEmpty) return;
+
+    // Same target for the same anime: leave the user's scroll alone.
+    if (_lastAutoScrollTarget == targetEpisodeNumber &&
+        _lastAutoScrollMediaId == widget.mediaId) {
+      return;
+    }
+
     final targetIndex = items.indexWhere(
       (ep) => ep.number == targetEpisodeNumber,
     );
-    _hasAutoScrolled = true;
-    if (targetIndex <= 0) return;
+    if (targetIndex < 0) return;
+
+    // First alignment for a media happens while the page is opening: jump to
+    // the final position instead of animating across a long, heavy card list.
+    final isInitialAlignment = _lastAutoScrollMediaId != widget.mediaId;
+    _lastAutoScrollTarget = targetEpisodeNumber;
+    _lastAutoScrollMediaId = widget.mediaId;
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !_horizontalScrollController.hasClients) return;
+
+      final position = _horizontalScrollController.position;
       const step = 443.0;
-      final offset = (targetIndex * step).clamp(
-        0.0,
-        _horizontalScrollController.position.maxScrollExtent,
-      );
-      _horizontalScrollController.animateTo(
-        offset,
-        duration: const Duration(milliseconds: 420),
-        curve: Curves.easeOutCubic,
+      final currentOffset = position.pixels;
+
+      // The resume episode must be the first card in the carousel, not merely
+      // "somewhere visible": after finishing 15 the list should start at 16,
+      // and while 15 is in progress it should start at 15.
+      final targetStart = targetIndex * step;
+      final clamped = targetStart.clamp(0.0, position.maxScrollExtent);
+      _moveEpisodeCarouselTo(
+        target: clamped,
+        delta: (clamped - currentOffset).abs(),
+        isInitial: isInitialAlignment,
+        step: step,
       );
     });
+  }
+
+  /// Smooth for short, visible corrections; instant for long jumps.
+  ///
+  /// Animating over many 443 px episode cards rebuilds every card in between
+  /// and is what made returning from the player feel like a stutter. Large
+  /// alignments now happen off-screen (initial) or in a single frame.
+  void _moveEpisodeCarouselTo({
+    required double target,
+    required double delta,
+    required bool isInitial,
+    required double step,
+  }) {
+    if (delta < 1) return;
+    if (isInitial || delta > step * 4) {
+      _horizontalScrollController.jumpTo(target);
+      return;
+    }
+    _horizontalScrollController.animateTo(
+      target,
+      duration: const Duration(milliseconds: 260),
+      curve: Curves.easeOutCubic,
+    );
   }
 
   String _formatEpisodeTitle(DesktopEpisodeItemData ep) {
@@ -324,7 +722,7 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab>
     Map<int, String?> downloadedMap,
     DateTime nowThreshold,
   ) {
-    if (widget.progress >= episodeNumber ||
+    if (_effectiveProgress >= episodeNumber ||
         downloadedMap.containsKey(episodeNumber)) {
       return true;
     }
@@ -352,6 +750,105 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab>
     return true;
   }
 
+  bool _isGenericEpisodeTitle(String? title) {
+    final value = (title ?? '').trim();
+    if (value.isEmpty) return true;
+    return RegExp(
+      r'^(episode|episodio|ep|special|especial|especiales)\s*\d+$',
+      caseSensitive: false,
+    ).hasMatch(value);
+  }
+
+  /// Builds the episode row from the selected online provider when its list
+  /// does not match AniList 1:1 (extra episodes, missing episodes or different
+  /// numbering). AniZip/Animap metadata is used only to enrich matching
+  /// episodes.
+  List<DesktopEpisodeItemData> _buildOnlineProviderEpisodes(
+    AppTranslations l10n,
+    String langCode,
+    DownloadingEpisodesState downloadingEpisodes,
+    List<DownloadHistoryItem> historyItems,
+    AniZipData? aniZipData,
+  ) {
+    final downloadedMap = <int, String?>{
+      for (final ep in (_libraryEntry?.episodes ?? <LibraryEpisode>[]))
+        if (ep.isDownloaded) ep.episodeNumber: ep.localFilePath,
+    };
+    for (final item in historyItems) {
+      if (item.filePath == null || item.filePath!.isEmpty) continue;
+      int? epNum;
+      if (item.id.startsWith('${widget.mediaId}_')) {
+        epNum = int.tryParse(item.id.substring('${widget.mediaId}_'.length));
+      }
+      if (epNum != null) downloadedMap[epNum] = item.filePath;
+    }
+
+    // Only main episodes: AniZip specials (S1, S2, ...) reuse the same numeric
+    // `episodeNumber` (1, 2, ...) and would overwrite the real episode metadata
+    // in the map, leaking special titles/thumbnails into the episode list.
+    final aniZipByNumber = <int, AniZipEpisode>{
+      for (final ep in (aniZipData?.mainEpisodes ?? const <AniZipEpisode>[]))
+        ep.episodeNumber: ep,
+    };
+
+    // The backend resolves episodes through Animap, which (unlike AniZip for
+    // brand-new seasons) usually already has real titles and TVDB stills.
+    final backendEpisodesByNumber = <int, AnimeEpisode>{
+      for (final ep in (widget.details?.episodes ?? const <AnimeEpisode>[]))
+        ep.episodeNumber: ep,
+    };
+
+    final seen = <int>{};
+    final result = <DesktopEpisodeItemData>[];
+    for (final online in widget.onlineEpisodes) {
+      if (!seen.add(online.number)) continue;
+      final aniZipEp = aniZipByNumber[online.number];
+      final backendEp = backendEpisodesByNumber[online.number];
+      final onlineTitle = (online.title ?? '').trim();
+      final aniZipTitle = aniZipEp?.displayTitleForLang(langCode);
+      final String title;
+      if (!_isGenericEpisodeTitle(onlineTitle)) {
+        title = onlineTitle;
+      } else if (!_isGenericEpisodeTitle(aniZipTitle)) {
+        title = aniZipTitle!;
+      } else if (!_isGenericEpisodeTitle(backendEp?.title)) {
+        title = backendEp!.title;
+      } else {
+        title = l10n.episodeNumber(online.number);
+      }
+      final synopsis =
+          (online.description != null && online.description!.trim().isNotEmpty)
+          ? online.description
+          : (aniZipEp?.synopsis ?? backendEp?.description);
+      final image =
+          (online.image != null && online.image!.trim().isNotEmpty)
+          ? online.image
+          : (aniZipEp?.image ?? backendEp?.image);
+
+      result.add(
+        DesktopEpisodeItemData(
+          number: online.number,
+          title: title,
+          synopsis: synopsis,
+          image: image,
+          aniDBEpisode: aniZipEp?.episode,
+          isWatched: _effectiveProgress >= online.number,
+          isDownloaded: downloadedMap.containsKey(online.number),
+          isDownloading: downloadingEpisodes.contains(
+            '${widget.mediaId}_${online.number}',
+          ),
+          downloadProgress: downloadingEpisodes.getProgress(
+            widget.mediaId,
+            online.number,
+          ),
+          localFilePath: downloadedMap[online.number],
+        ),
+      );
+    }
+    result.sort((a, b) => a.number.compareTo(b.number));
+    return result;
+  }
+
   List<DesktopEpisodeItemData> _getEpisodes(
     AppTranslations l10n,
     String langCode,
@@ -367,7 +864,7 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab>
               title: ep.title,
               synopsis: ep.synopsis,
               image: ep.image,
-              isWatched: widget.progress >= ep.number,
+              isWatched: _effectiveProgress >= ep.number,
               isDownloaded: ep.isDownloaded,
               localFilePath: ep.localFilePath,
             ),
@@ -377,11 +874,49 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab>
 
     final aniZipData = widget.aniZipData ?? widget.details?.aniZipData;
 
+    // Online mode: mirror the mobile flow. The provider's episode list is the
+    // source of truth, but when it maps 1:1 to AniList/AniZip we keep the
+    // canonical episode list (official titles, art and numbering).
+    final isOnlineProviderMode =
+        !widget.isLocalMode &&
+        widget.currentTab == AnimeDetailTab.online &&
+        widget.onlineEpisodes.isNotEmpty;
+    if (isOnlineProviderMode) {
+      final mainEps =
+          aniZipData?.mainEpisodes ??
+          aniZipData?.episodes.where((e) => !e.isSpecial).toList() ??
+          const <AniZipEpisode>[];
+      final aniZipNumbers = <int>{
+        for (final ep in mainEps) ep.episodeNumber,
+      };
+      if (aniZipNumbers.isEmpty) {
+        aniZipNumbers.addAll(
+          (widget.details?.episodes ?? const <AnimeEpisode>[])
+              .map((ep) => ep.episodeNumber),
+        );
+      }
+      final providerNumbers = <int>{
+        for (final ep in widget.onlineEpisodes) ep.number,
+      };
+      final isOneToOne =
+          aniZipNumbers.length == providerNumbers.length &&
+          aniZipNumbers.containsAll(providerNumbers);
+      if (!isOneToOne) {
+        return _buildOnlineProviderEpisodes(
+          l10n,
+          langCode,
+          downloadingEpisodes,
+          historyItems,
+          aniZipData,
+        );
+      }
+    }
+
     // Fast-path: return cached list instantly if no relevant dependency changed
     if (_cachedAniZipItems != null &&
         _lastAniZip == aniZipData &&
         _lastDetails == widget.details &&
-        _lastProgress == widget.progress &&
+        _lastProgress == _effectiveProgress &&
         _lastLang == langCode &&
         _lastDownloads == downloadingEpisodes &&
         _lastLoadingAniZip == widget.isLoadingAniZip &&
@@ -422,6 +957,10 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab>
     final nowThreshold = DateTime.now().add(const Duration(hours: 4));
     final Set<int> seenEpisodes = {};
     final List<DesktopEpisodeItemData> result = [];
+    final backendEpsByNumber = <int, AnimeEpisode>{
+      for (final ep in (widget.details?.episodes ?? const <AnimeEpisode>[]))
+        ep.episodeNumber: ep,
+    };
 
     if (aniZipMainEps.isNotEmpty) {
       for (final ep in aniZipMainEps) {
@@ -433,10 +972,12 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab>
         )) {
           continue;
         }
+        final backendEp = backendEpsByNumber[ep.episodeNumber];
+        final resolvedImage = ep.image ?? backendEp?.image;
         if (!_hasEpisodeAired(
           ep.episodeNumber,
           ep.airDate,
-          ep.image,
+          resolvedImage,
           downloadedMap,
           nowThreshold,
         )) {
@@ -451,14 +992,19 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab>
             ep.episodeNumber,
           );
 
+          final aniZipTitle = ep.displayTitleForLang(langCode);
           result.add(
             DesktopEpisodeItemData(
               number: ep.episodeNumber,
-              title: ep.displayTitleForLang(langCode),
-              synopsis: ep.synopsis,
-              image: ep.image,
+              // Torrent/local lists combine AniZip with the backend's Animap
+              // metadata: AniZip may be missing titles/stills for new seasons.
+              title: _isGenericEpisodeTitle(aniZipTitle)
+                  ? (backendEp?.title ?? aniZipTitle)
+                  : aniZipTitle,
+              synopsis: ep.synopsis ?? backendEp?.description,
+              image: resolvedImage,
               aniDBEpisode: ep.episode,
-              isWatched: widget.progress >= ep.episodeNumber,
+              isWatched: _effectiveProgress >= ep.episodeNumber,
               isDownloaded: downloadedMap.containsKey(ep.episodeNumber),
               isDownloading: isDownloading,
               downloadProgress: downloadProgress,
@@ -496,7 +1042,7 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab>
               title: ep.title,
               synopsis: ep.description,
               image: ep.image,
-              isWatched: widget.progress >= ep.episodeNumber,
+              isWatched: _effectiveProgress >= ep.episodeNumber,
               isDownloaded: downloadedMap.containsKey(ep.episodeNumber),
               isDownloading: isDownloading,
               downloadProgress: downloadProgress,
@@ -524,7 +1070,7 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab>
           DesktopEpisodeItemData(
             number: i,
             title: l10n.episodeNumber(i),
-            isWatched: widget.progress >= i,
+            isWatched: _effectiveProgress >= i,
             isDownloaded: downloadedMap.containsKey(i),
             isDownloading: isDownloading,
             downloadProgress: downloadProgress,
@@ -541,7 +1087,7 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab>
           DesktopEpisodeItemData(
             number: entry.key,
             title: l10n.episodeNumber(entry.key),
-            isWatched: widget.progress >= entry.key,
+            isWatched: _effectiveProgress >= entry.key,
             isDownloaded: true,
             localFilePath: entry.value,
           ),
@@ -553,7 +1099,7 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab>
     _cachedAniZipItems = result;
     _lastAniZip = aniZipData;
     _lastDetails = widget.details;
-    _lastProgress = widget.progress;
+    _lastProgress = _effectiveProgress;
     _lastLang = langCode;
     _lastDownloads = downloadingEpisodes;
     _lastLoadingAniZip = widget.isLoadingAniZip;
@@ -671,6 +1217,16 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab>
       ),
     );
 
+    // Re-align the resume card after the player closes, even when the target
+    // episode number stayed the same (e.g. the user had scrolled the carousel
+    // away before pressing Continue).
+    final alignmentRequest = ref.watch(episodeResumeAlignmentProvider);
+    if (alignmentRequest != _lastAlignmentRequest) {
+      _lastAlignmentRequest = alignmentRequest;
+      _lastAutoScrollTarget = null;
+      _lastAutoScrollMediaId = null;
+    }
+
     final items = _getEpisodes(
       l10n,
       langCode,
@@ -711,24 +1267,83 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab>
       items,
       mediaProgress,
     );
+
+    final normalizedQuery = _searchQuery.trim().toLowerCase();
+    final isFiltering = normalizedQuery.isNotEmpty;
+    final numericQuery = int.tryParse(normalizedQuery);
+    final displayedItems = isFiltering
+        ? items.where((ep) {
+            // Typing an episode number lists that episode and every later one,
+            // so "5" surfaces 5, 6, 7… instead of only the exact match.
+            if (numericQuery != null) {
+              return ep.number >= numericQuery;
+            }
+            return ep.number.toString() == normalizedQuery ||
+                ep.title.toLowerCase().contains(normalizedQuery);
+          }).toList()
+        : items;
     final bool hasWatchedEpisodes =
+        !isFiltering &&
         targetEpisodeNumber > 1 &&
         items.any((ep) => ep.number < targetEpisodeNumber);
 
-    final displayedItems = items;
-    if (hasWatchedEpisodes) {
-      _scrollToResumeEpisode(displayedItems, targetEpisodeNumber);
+    // Always reconcile the scroll with the current target: marking another
+    // episode as watched moves it, and the list has to follow.
+    if (!isFiltering) {
+      _scrollToResumeEpisode(items, targetEpisodeNumber);
     }
 
     final totalEpisodes = items.length;
 
+    final selection = ref.watch(episodeSelectionProvider(widget.mediaId));
+    final isSelectionMode = selection.isSelectionMode;
+    final allEpisodeNumbers = displayedItems.map((e) => e.number).toList();
+    final downloadedMap = <int, String?>{
+      for (final ep in items)
+        if (ep.isDownloaded) ep.number: ep.localFilePath,
+    };
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // ─── Header: Episodes Title & Controls ───
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
+        // ─── Header: selection toolbar or normal controls ───
+        AnimatedSize(
+          duration: const Duration(milliseconds: 260),
+          curve: Curves.easeOutCubic,
+          alignment: Alignment.topLeft,
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 220),
+            switchInCurve: Curves.easeOutCubic,
+            switchOutCurve: Curves.easeInCubic,
+            layoutBuilder: (current, previous) => Stack(
+              alignment: Alignment.centerLeft,
+              children: [...previous, ?current],
+            ),
+            transitionBuilder: (child, animation) {
+              final slide = Tween<Offset>(
+                begin: const Offset(0, -0.08),
+                end: Offset.zero,
+              ).animate(
+                CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+              );
+              return FadeTransition(
+                opacity: animation,
+                child: SlideTransition(position: slide, child: child),
+              );
+            },
+            child: isSelectionMode
+                ? _buildSelectionHeader(
+                    selection: selection,
+                    allEpisodeNumbers: allEpisodeNumbers,
+                    downloadedMap: downloadedMap,
+                    l10n: l10n,
+                    iconPack: iconPack,
+                    theme: theme,
+                  )
+                : Row(
+                    key: const ValueKey('episodes_header_normal'),
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
             Text(
               l10n.episodes,
               style: TextStyle(
@@ -761,7 +1376,7 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab>
                   ),
                 ),
                 child: Text(
-                  hasWatchedEpisodes
+                  isFiltering || hasWatchedEpisodes
                       ? '${displayedItems.length} / $totalEpisodes'
                       : '$totalEpisodes',
                   style: TextStyle(
@@ -776,6 +1391,64 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab>
             ],
 
             const Spacer(),
+
+            // ─── Episode search (Ctrl+F) ───
+            AnimatedSize(
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOutCubic,
+              alignment: Alignment.centerRight,
+              child: _isSearchExpanded
+                  ? SizedBox(
+                      width: 280,
+                      child: GlassTextField.search(
+                        controller: _searchController,
+                        focusNode: _searchFocusNode,
+                        placeholder: l10n.filterEpisodesHint,
+                        onChanged: _onSearchChanged,
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (_searchQuery.isNotEmpty)
+                              InkWell(
+                                borderRadius: BorderRadius.circular(12),
+                                onTap: _clearSearch,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(4),
+                                  child: Icon(
+                                    AppIcons.close(iconPack),
+                                    size: 16,
+                                  ),
+                                ),
+                              ),
+                            InkWell(
+                              borderRadius: BorderRadius.circular(12),
+                              onTap: _closeSearch,
+                              child: Padding(
+                                padding: const EdgeInsets.all(4),
+                                child: Icon(
+                                  AppIcons.searchOff(iconPack),
+                                  size: 16,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  : Focus(
+                      skipTraversal: true,
+                      canRequestFocus: false,
+                      descendantsAreFocusable: false,
+                      child: M3EIconButton(
+                        variant: M3EIconButtonVariant.standard,
+                        size: M3EIconButtonSize.xs,
+                        tooltip: l10n.searchEpisodesShortcut,
+                        icon: Icon(AppIcons.search(iconPack), size: 17),
+                        onPressed: focusSearch,
+                      ),
+                    ),
+            ),
+            const SizedBox(width: 6),
 
             // If Local mode, show local count pill and scan button
             if (widget.isLocalMode) ...[
@@ -826,6 +1499,8 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab>
             ],
           ],
         ),
+        ),
+        ),
 
         const SizedBox(height: 16),
 
@@ -858,7 +1533,9 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab>
                     height: 290,
                     child: Center(
                       child: Text(
-                        l10n.noEpisodesFound,
+                        isFiltering
+                            ? '${l10n.noEpisodesFoundMatching} "${_searchQuery.trim()}".'
+                            : l10n.noEpisodesFound,
                         style: TextStyle(
                           fontSize: 14,
                           color: isDark
@@ -878,69 +1555,77 @@ class _DesktopEpisodesTabState extends ConsumerState<DesktopEpisodesTab>
                       const cardWidth = 425.0;
                       const gap = 18.0;
                       const step = cardWidth + gap;
+                      final cardCount = displayedItems.length;
                       final targetIndex = displayedItems
                           .indexWhere((ep) => ep.number == targetEpisodeNumber)
-                          .clamp(0, displayedItems.length);
-                      final contentWidth = displayedItems.isEmpty
-                          ? 0.0
-                          : displayedItems.length * cardWidth +
-                                (displayedItems.length - 1) * gap;
-                      final trailingSpace = hasWatchedEpisodes
-                          ? (targetIndex * step +
-                                    constraints.maxWidth -
-                                    contentWidth -
-                                    gap)
-                                .clamp(0.0, double.infinity)
-                          : 0.0;
-                      return ListView.separated(
+                          .clamp(0, cardCount);
+
+                      // Trailing slots let the target episode reach the left
+                      // edge even near the end of the list. Every slot is
+                      // exactly [step] wide so the ListView can estimate the
+                      // total scroll extent immediately (a single variable
+                      // width spacer was under-estimated and left a sliver of
+                      // the previous episode visible).
+                      final targetOffset = targetIndex * step;
+                      final requiredSlots = hasWatchedEpisodes
+                          ? ((targetOffset + constraints.maxWidth) / step)
+                                .ceil()
+                          : cardCount;
+                      final trailingItemCount = (requiredSlots - cardCount)
+                          .clamp(0, 100000);
+                      final itemCount = cardCount + trailingItemCount;
+
+                      return ListView.builder(
                         controller: _horizontalScrollController,
                         scrollDirection: Axis.horizontal,
                         physics: const ClampingScrollPhysics(),
                         cacheExtent: 1200,
-                        itemCount:
-                            displayedItems.length + (trailingSpace > 0 ? 1 : 0),
-                        separatorBuilder: (_, _) => const SizedBox(width: 18),
+                        itemCount: itemCount,
                         itemBuilder: (context, index) {
-                          if (index == displayedItems.length) {
-                            return SizedBox(width: trailingSpace);
+                          if (index >= cardCount) {
+                            return const SizedBox(width: step);
                           }
                           final ep = displayedItems[index];
                           return SizedBox(
-                            width: 425,
-                            child: DesktopGridEpisodeCard(
-                              key: ValueKey('grid_ep_${ep.number}'),
-                              mediaId: widget.mediaId,
-                              ep: ep,
-                              isFirst: index == 0,
-                              isLast: index == displayedItems.length - 1,
-                              isLoading:
-                                  widget.loadingEpisodeNumber == ep.number,
-                              formattedTitle: _formatEpisodeTitle(ep),
-                              fallbackCoverImage: widget.fallbackCoverImage,
-                              coverColor: widget.details?.coverColor,
-                              onTap: () => widget.onEpisodeClicked(ep),
-                              onArrowUp: widget.onMoveUpToPlay,
-                              trailingActions: DesktopEpisodeMenuButton(
-                                ep: ep,
+                            width: step,
+                            child: Padding(
+                              padding: const EdgeInsets.only(right: gap),
+                              child: DesktopGridEpisodeCard(
+                                key: ValueKey('grid_ep_${ep.number}'),
                                 mediaId: widget.mediaId,
-                                details: widget.details,
-                                onEpisodeClicked: widget.onEpisodeClicked,
-                                onOpenTorrentSelector:
-                                    widget.onOpenTorrentSelector,
-                                onDownloadOnline:
-                                    widget.selectedProvider != null
-                                    ? () => showOnlineStreamDownloadDialog(
-                                        context,
-                                        mediaId: widget.mediaId,
-                                        episodeNumber: ep.number,
-                                        animeTitle: widget.details?.title ?? '',
-                                        episodeTitle: ep.title,
-                                        thumbnail: ep.image,
-                                        provider: widget.selectedProvider,
-                                        isDubbed: widget.isDubbed,
-                                      )
-                                    : null,
-                                onRefreshLocal: _scanAndRefreshLocal,
+                                ep: ep,
+                                isFirst: index == 0,
+                                isLast: index == cardCount - 1,
+                                isLoading:
+                                    widget.loadingEpisodeNumber == ep.number,
+                                formattedTitle: _formatEpisodeTitle(ep),
+                                fallbackCoverImage: widget.fallbackCoverImage,
+                                coverColor: widget.details?.coverColor,
+                                onTap: () => widget.onEpisodeClicked(ep),
+                                onArrowUp: widget.onMoveUpToPlay,
+                                trailingActions: DesktopEpisodeMenuButton(
+                                  ep: ep,
+                                  mediaId: widget.mediaId,
+                                  details: widget.details,
+                                  onEpisodeClicked: widget.onEpisodeClicked,
+                                  onOpenTorrentSelector:
+                                      widget.onOpenTorrentSelector,
+                                  onDownloadOnline:
+                                      widget.selectedProvider != null
+                                      ? () => showOnlineStreamDownloadDialog(
+                                          context,
+                                          mediaId: widget.mediaId,
+                                          episodeNumber: ep.number,
+                                          animeTitle:
+                                              widget.details?.title ?? '',
+                                          episodeTitle: ep.title,
+                                          thumbnail: ep.image,
+                                          provider: widget.selectedProvider,
+                                          isDubbed: widget.isDubbed,
+                                        )
+                                      : null,
+                                  onRefreshLocal: _scanAndRefreshLocal,
+                                ),
                               ),
                             ),
                           );

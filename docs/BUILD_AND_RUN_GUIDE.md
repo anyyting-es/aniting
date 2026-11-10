@@ -8,8 +8,8 @@ Esta guía detalla los comandos y scripts automatizados para ejecutar y compilar
 
 | Modo | Descripción | Tamaño APK | Caso de uso principal |
 | :--- | :--- | :--- | :--- |
-| **Completo (Full)** | Incluye el runtime Go (`seanime.aar`), SQLite GORM y motor Torrent embebido. Arranca el servidor local automáticamente. | ~100–120 MB por ABI | Móviles, Smart TVs autónomas, Waydroid, Emuladores Android. |
-| **Cliente Ligero (Client-Only)** | Excluye el backend Go (`seanime.aar`). Se conecta vía Wi-Fi / LAN o Internet a un servidor Seanime externo (PC). | ~30–35 MB por ABI | Smart TVs de bajos recursos, teléfonos con almacenamiento limitado, clientes remotos. |
+| **Completo (Full)** | Incluye el runtime Go (`aniting.aar`), SQLite GORM y motor Torrent embebido. Arranca el servidor local automáticamente. | ~100–120 MB por ABI | Móviles, Smart TVs autónomas, Waydroid, Emuladores Android. |
+| **Cliente Ligero (Client-Only)** | Excluye el backend Go (`aniting.aar`). Se conecta vía Wi-Fi / LAN o Internet a un servidor Aniting externo (PC). | ~30–35 MB por ABI | Smart TVs de bajos recursos, teléfonos con almacenamiento limitado, clientes remotos. |
 
 ---
 
@@ -97,7 +97,31 @@ Compila el binario ejecutable del backend Go para la versión de escritorio de L
 ./build_server.sh
 ```
 **Salida**:
-- `backend/seanime-server` (Ejecutable nativo para Linux x86_64)
+- `backend/aniting-server` (Ejecutable nativo para Linux x86_64)
+
+---
+
+### D. Recompilar el Backend Go Embebido en Android (`aniting.aar`)
+El APK *Full* usa un `android/app/libs/aniting.aar` **precompilado**; `flutter build apk` **no** recompila el Go. Si cambias el backend (`backend/internal/...`), debes regenerar el AAR antes de compilar el APK:
+
+```bash
+cd backend
+
+# Solo la primera vez (o si falta el comando gomobile):
+# go get -tool golang.org/x/mobile/cmd/gobind
+go install golang.org/x/mobile/cmd/gomobile@latest
+gomobile init
+
+# Regenerar el AAR (requiere Android SDK + NDK configurados)
+# -checklinkname=0 evita el error de `wlynxg/anet: invalid reference to net.zoneCache`
+gomobile bind "-target=android/arm,android/arm64,android/amd64" -androidapi 21 \
+  -ldflags "-s -w -checklinkname=0" \
+  -o ../android/app/libs/aniting.aar ./mobile
+```
+
+> En Windows/PowerShell define antes `ANDROID_HOME`, `ANDROID_NDK_HOME` y añade `%USERPROFILE%\go\bin` al `PATH`. Usa Go 1.26.x (`GOTOOLCHAIN=go1.26.2`) si el toolchain instalado es más nuevo que las dependencias.
+
+Los builds *Client-Only* (`build_apk_client.sh`) no incluyen el AAR y por tanto se conectan a un servidor externo ya actualizado.
 
 ---
 
@@ -105,7 +129,7 @@ Compila el binario ejecutable del backend Go para la versión de escritorio de L
 
 1. **Gradle (`android/app/build.gradle.kts`)**:
    - Detecta la propiedad `-PincludeBackend=false` o el define de Dart `NO_BACKEND=true`.
-   - Si está deshabilitado, excluye `seanime.aar` de las dependencias (`exclude = ["seanime.aar"]`), reduciendo drásticamente el tamaño del APK y evitando la carga de librerías nativas Go.
+   - Si está deshabilitado, excluye `aniting.aar` de las dependencias (`exclude = ["aniting.aar"]`), reduciendo drásticamente el tamaño del APK y evitando la carga de librerías nativas Go.
 2. **Dart (`AppConstants.isNoBackend`)**:
    - Compilado vía `bool.fromEnvironment('NO_BACKEND', defaultValue: false)`.
    - Cuando es `true`, `ServerManager` y `serverNotifierProvider` omiten el ciclo de sondeo y arranque local, dirigiéndose de inmediato a la búsqueda de servidores LAN o configuración remota.

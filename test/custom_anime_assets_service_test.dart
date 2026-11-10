@@ -1,5 +1,5 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'package:seanime_app/data/services/custom_anime_assets_service.dart';
+﻿import 'package:flutter_test/flutter_test.dart';
+import 'package:aniting/data/services/custom_anime_assets_service.dart';
 
 void main() {
   group('CustomAnimeAssetsService Tests', () {

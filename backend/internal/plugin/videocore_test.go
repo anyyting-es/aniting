@@ -1,12 +1,12 @@
-package plugin
+﻿package plugin
 
 import (
-	"seanime/internal/api/anilist"
-	"seanime/internal/extension"
-	"seanime/internal/library/anime"
-	"seanime/internal/mediacore"
-	"seanime/internal/player"
-	gojautil "seanime/internal/util/goja"
+	"aniting/internal/api/anilist"
+	"aniting/internal/extension"
+	"aniting/internal/library/anime"
+	"aniting/internal/mediacore"
+	"aniting/internal/player"
+	gojautil "aniting/internal/util/goja"
 	"testing"
 	"time"
 

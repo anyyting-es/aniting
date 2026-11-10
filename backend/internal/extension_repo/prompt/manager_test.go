@@ -1,12 +1,12 @@
-package prompt
+﻿package prompt
 
 import (
 	"context"
 	"errors"
-	"seanime/internal/events"
-	"seanime/internal/extension"
-	"seanime/internal/util"
-	"seanime/internal/util/result"
+	"aniting/internal/events"
+	"aniting/internal/extension"
+	"aniting/internal/util"
+	"aniting/internal/util/result"
 	"testing"
 	"time"
 

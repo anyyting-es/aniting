@@ -1,16 +1,16 @@
-import 'dart:math' as math;
+﻿import 'dart:math' as math;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:g1455/g1455.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/data/models/anime_details.dart';
-import 'package:seanime_app/data/models/torrent_models.dart';
-import 'package:seanime_app/presentation/widgets/torrent_selector/desktop/torrent_file_card.dart';
-import 'package:seanime_app/presentation/widgets/torrent_selector/mobile/torrent_popover_menus.dart';
-import 'package:seanime_app/presentation/widgets/torrent_selector/models/torrent_selector_helpers.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/data/models/anime_details.dart';
+import 'package:aniting/data/models/torrent_models.dart';
+import 'package:aniting/presentation/widgets/torrent_selector/desktop/torrent_file_card.dart';
+import 'package:aniting/presentation/widgets/torrent_selector/mobile/torrent_popover_menus.dart';
+import 'package:aniting/presentation/widgets/torrent_selector/models/torrent_selector_helpers.dart';
 
 class TorrentSelectorMobileView extends ConsumerStatefulWidget {
   final AnimeDetails? animeDetails;
@@ -357,13 +357,9 @@ class _TorrentSelectorMobileViewState extends ConsumerState<TorrentSelectorMobil
                     IconButton(
                       tooltip: l10n.refresh,
                       onPressed: widget.isLoadingTorrents ? null : widget.onRefresh,
-                      icon: widget.isLoadingTorrents
-                          ? SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: theme.colorScheme.primary),
-                            )
-                          : Icon(AppIcons.refresh(iconPack), size: 18),
+                      // Keep a single loading indicator (the results panel).
+                      // The button stays disabled while the search runs.
+                      icon: Icon(AppIcons.refresh(iconPack), size: 18),
                       style: IconButton.styleFrom(
                         backgroundColor: isDark ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.04),
                         minimumSize: const Size(36, 36),
@@ -642,22 +638,9 @@ class _TorrentSelectorMobileViewState extends ConsumerState<TorrentSelectorMobil
                 padding: const EdgeInsets.fromLTRB(16, 6, 16, 4),
                 child: Row(
                   children: [
-                    if (widget.isLoadingTorrents) ...[
-                      const SizedBox(
-                        width: 12,
-                        height: 12,
-                        child: CircularProgressIndicator(strokeWidth: 1.8),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        l10n.searchingTorrents,
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w500,
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ] else ...[
+                    // The large spinner in the results panel is the only
+                    // loading indicator; avoid spinners in the toolbar/status.
+                    if (!widget.isLoadingTorrents)
                       Text(
                         sortedTorrents.length == widget.allTorrents.length
                             ? '${sortedTorrents.length} ${l10n.resultsFound}'
@@ -668,7 +651,6 @@ class _TorrentSelectorMobileViewState extends ConsumerState<TorrentSelectorMobil
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
-                    ],
                     const Spacer(),
                     if (hasActiveCustomFilter)
                       InkWell(

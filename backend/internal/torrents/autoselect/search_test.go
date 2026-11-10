@@ -1,16 +1,16 @@
-package autoselect
+﻿package autoselect
 
 import (
 	"context"
 	"errors"
-	"seanime/internal/api/anilist"
-	"seanime/internal/api/metadata_provider"
-	"seanime/internal/extension"
-	hibiketorrent "seanime/internal/extension/hibike/torrent"
-	"seanime/internal/library/anime"
-	itorrent "seanime/internal/torrents/torrent"
-	"seanime/internal/util"
-	"seanime/internal/util/filecache"
+	"aniting/internal/api/anilist"
+	"aniting/internal/api/metadata_provider"
+	"aniting/internal/extension"
+	hibiketorrent "aniting/internal/extension/hibike/torrent"
+	"aniting/internal/library/anime"
+	itorrent "aniting/internal/torrents/torrent"
+	"aniting/internal/util"
+	"aniting/internal/util/filecache"
 	"testing"
 	"time"
 

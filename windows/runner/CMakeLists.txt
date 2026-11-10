@@ -41,12 +41,12 @@ target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 # Run the Flutter tool portions of the build. This must not be removed.
 add_dependencies(${BINARY_NAME} flutter_assemble)
 
-# Automatically bundle seanime.exe next to the runner executable if present
-set(BACKEND_BIN "${CMAKE_CURRENT_SOURCE_DIR}/../../backend/seanime.exe")
+# Automatically bundle aniting.exe next to the runner executable if present
+set(BACKEND_BIN "${CMAKE_CURRENT_SOURCE_DIR}/../../backend/aniting.exe")
 if(EXISTS "${BACKEND_BIN}")
   add_custom_command(TARGET ${BINARY_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
     "${BACKEND_BIN}"
-    "$<TARGET_FILE_DIR:${BINARY_NAME}>/seanime.exe"
+    "$<TARGET_FILE_DIR:${BINARY_NAME}>/aniting.exe"
   )
 endif()

@@ -1,7 +1,7 @@
-package events
+﻿package events
 
 import (
-	"seanime/internal/util/result"
+	"aniting/internal/util/result"
 	"sync"
 
 	"github.com/rs/zerolog"

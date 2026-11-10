@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
 
 /// Expandable synopsis block (3-line clamp + "more/less").
 /// Shared between the desktop watch column and the mobile info panel.

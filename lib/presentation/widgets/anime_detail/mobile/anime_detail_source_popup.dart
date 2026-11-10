@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:g1455/g1455.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/data/models/onlinestream_models.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/data/models/onlinestream_models.dart';
 import 'anime_detail_advanced_sheet.dart';
 
 /// Modal popup moderno con vidrio líquido de `g1455` (GlassCard) para seleccionar fuentes de streaming.
@@ -80,11 +80,18 @@ class AnimeDetailSourcePopup extends ConsumerStatefulWidget {
 
 class _AnimeDetailSourcePopupState extends ConsumerState<AnimeDetailSourcePopup> {
   late OnlinestreamProvider? _selectedProv;
+  final ScrollController _providersScrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _selectedProv = widget.selectedProvider;
+  }
+
+  @override
+  void dispose() {
+    _providersScrollController.dispose();
+    super.dispose();
   }
 
   void _openAdvancedSheet() {
@@ -213,8 +220,10 @@ class _AnimeDetailSourcePopupState extends ConsumerState<AnimeDetailSourcePopup>
                               ),
                             )
                           : Scrollbar(
+                              controller: _providersScrollController,
                               thumbVisibility: true,
                               child: ListView.builder(
+                                controller: _providersScrollController,
                                 padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
                                 shrinkWrap: true,
                                 itemCount: widget.providers.length,
@@ -274,14 +283,10 @@ class _AnimeDetailSourcePopupState extends ConsumerState<AnimeDetailSourcePopup>
                                                   vertical: 2,
                                                 ),
                                                 decoration: BoxDecoration(
-                                                  color: p.supportsTmdb
-                                                      ? theme.colorScheme
-                                                          .primary
-                                                          .withValues(alpha: 0.14)
-                                                      : theme
-                                                          .colorScheme
-                                                          .surfaceContainerHighest
-                                                          .withValues(alpha: 0.5),
+                                                  color: theme
+                                                      .colorScheme
+                                                      .surfaceContainerHighest
+                                                      .withValues(alpha: 0.5),
                                                   borderRadius:
                                                       BorderRadius.circular(6),
                                                 ),
@@ -290,11 +295,8 @@ class _AnimeDetailSourcePopupState extends ConsumerState<AnimeDetailSourcePopup>
                                                   style: TextStyle(
                                                     fontSize: 9,
                                                     fontWeight: FontWeight.w700,
-                                                    color: p.supportsTmdb
-                                                        ? theme
-                                                            .colorScheme.primary
-                                                        : theme.colorScheme
-                                                            .onSurfaceVariant,
+                                                    color: theme.colorScheme
+                                                        .onSurfaceVariant,
                                                   ),
                                                 ),
                                               ),

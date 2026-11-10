@@ -1,8 +1,8 @@
-package filler
+﻿package filler
 
 import (
 	"fmt"
-	"seanime/internal/util"
+	"aniting/internal/util"
 	"strings"
 	"time"
 

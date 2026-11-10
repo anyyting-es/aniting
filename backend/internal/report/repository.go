@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"regexp"
 	"runtime"
-	"seanime/internal/constants"
-	"seanime/internal/database/models"
-	"seanime/internal/library/anime"
-	"seanime/internal/util"
+	"aniting/internal/constants"
+	"aniting/internal/database/models"
+	"aniting/internal/library/anime"
+	"aniting/internal/util"
 
 	"github.com/rs/zerolog"
 	"github.com/samber/lo"
@@ -147,9 +147,9 @@ func (r *Repository) Anonymize(opts AnonymizeOptions) string {
 	}
 
 	// Remove empty strings to avoid infinite replacements
-	// don't redact "seanime"
+	// don't redact "aniting"
 	toRedact = lo.Filter(toRedact, func(s string, _ int) bool {
-		return s != "" && s != "seanime" && s != "Seanime"
+		return s != "" && s != "aniting" && s != "Aniting"
 	})
 
 	content := opts.Content

@@ -1,18 +1,18 @@
-package manga
+﻿package manga
 
 import (
 	"errors"
 	"fmt"
 	"os"
-	"seanime/internal/api/anilist"
-	"seanime/internal/database/db"
-	"seanime/internal/database/models"
-	"seanime/internal/events"
-	"seanime/internal/hook"
-	chapter_downloader "seanime/internal/manga/downloader"
-	manga_providers "seanime/internal/manga/providers"
-	"seanime/internal/util"
-	"seanime/internal/util/filecache"
+	"aniting/internal/api/anilist"
+	"aniting/internal/database/db"
+	"aniting/internal/database/models"
+	"aniting/internal/events"
+	"aniting/internal/hook"
+	chapter_downloader "aniting/internal/manga/downloader"
+	manga_providers "aniting/internal/manga/providers"
+	"aniting/internal/util"
+	"aniting/internal/util/filecache"
 	"sync"
 
 	"github.com/rs/zerolog"

@@ -2,7 +2,7 @@
 set -e
 
 echo "========================================================"
-echo "  Compilando servidor Seanime para Linux (Go Backend)"
+echo "  Compilando servidor Aniting para Linux (Go Backend)"
 echo "========================================================"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

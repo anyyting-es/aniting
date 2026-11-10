@@ -1,11 +1,11 @@
-package db
+﻿package db
 
 import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"seanime/internal/database/models"
-	"seanime/internal/util"
+	"aniting/internal/database/models"
+	"aniting/internal/util"
 	"testing"
 	"time"
 

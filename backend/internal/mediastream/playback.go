@@ -1,10 +1,10 @@
-package mediastream
+﻿package mediastream
 
 import (
 	"errors"
 	"fmt"
-	"seanime/internal/mediastream/videofile"
-	"seanime/internal/util/result"
+	"aniting/internal/mediastream/videofile"
+	"aniting/internal/util/result"
 
 	"github.com/rs/zerolog"
 	"github.com/samber/mo"

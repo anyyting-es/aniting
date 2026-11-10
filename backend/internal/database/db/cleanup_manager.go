@@ -1,7 +1,7 @@
-package db
+﻿package db
 
 import (
-	"seanime/internal/database/models"
+	"aniting/internal/database/models"
 
 	"github.com/rs/zerolog"
 	"gorm.io/gorm"

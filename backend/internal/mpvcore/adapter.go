@@ -1,10 +1,10 @@
-package mpvcore
+﻿package mpvcore
 
 import (
 	"errors"
 	"fmt"
-	"seanime/internal/mediacore"
-	"seanime/internal/player"
+	"aniting/internal/mediacore"
+	"aniting/internal/player"
 
 	"github.com/google/uuid"
 )

@@ -2,20 +2,21 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/core/theme/smooth_scroll_controller.dart';
-import 'package:seanime_app/presentation/widgets/player/models/player_types.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/core/theme/smooth_scroll_controller.dart';
+import 'package:aniting/presentation/widgets/player/models/player_types.dart';
+import 'package:aniting/presentation/widgets/desktop_title_bar.dart';
 
 /// YouTube-style desktop watch page with three layout modes
 /// ([PlayerLayoutMode]):
 ///
 /// - `normal`: a centered page with a single smooth-scrolling column (header +
 ///   player + watch content) and a right rail with the episode list. The rail
-///   has a fixed width; when the window is too narrow to host it, it collapses
-///   into a header button that opens the list as a sheet. Hiding the rail
-///   shrinks the page into a narrower centered column with just the video and
-///   the comments.
+///   is responsive (320–440 px); when the window is too narrow to host it while
+///   keeping a comfortable video width, it collapses into a header button that
+///   opens the list as a sheet. Hiding the rail keeps the video at the exact
+///   same size and simply centers it on the page.
 /// - `wide`: the video spans the full window width and the watch content plus
 ///   the episode rail are stacked underneath, so a slice of the page stays
 ///   visible while watching.
@@ -46,18 +47,17 @@ class PlayerDesktopLayout extends StatefulWidget {
 
   static const double _pageMaxWidth = 2200;
 
-  /// Narrower, centered page used when the episode rail is hidden.
-  static const double _narrowPageMaxWidth = 1180;
-
   /// Fraction of the window height the video may take in [PlayerLayoutMode.wide]
   /// so a slice of the content below it stays visible.
   static const double _wideVideoHeightFactor = 0.78;
 
-  /// Fixed width of the episode rail. It is the same in every layout mode and
-  /// no longer depends on the window size.
-  static const double railWidth = 440;
+  /// Responsive width of the desktop episode rail. At medium window sizes it
+  /// shrinks down to [railMinWidth] so the video keeps a comfortable size.
+  static const double railMaxWidth = 440;
+  static const double railMinWidth = 320;
 
-  static const double _minVideoWidth = 480;
+  /// The video never gets narrower than this while the rail is visible.
+  static const double _minVideoWidth = 720;
   static const double _pageHorizontalPadding = 24;
   static const double _railGap = 20;
 
@@ -66,11 +66,14 @@ class PlayerDesktopLayout extends StatefulWidget {
   /// It is a fixed amount (not a fraction of the video) so the room reserved
   /// for it in the page padding can be computed up-front and is guaranteed to
   /// be enough at every window size.
-  static const double haloBleed = 56;
+  static const double haloBleed = 72;
 
-  /// Below this width the rail no longer fits and is replaced by a button.
+  static const double _pageBleed = _pageHorizontalPadding + haloBleed;
+
+  /// Below this page width the rail no longer fits without squeezing the video
+  /// under [_minVideoWidth], so it is replaced by a button.
   static const double railBreakpoint =
-      railWidth + _minVideoWidth + _railGap + _pageHorizontalPadding;
+      2 * _pageBleed + _minVideoWidth + _railGap + railMinWidth;
 
   const PlayerDesktopLayout({
     super.key,
@@ -94,8 +97,24 @@ class PlayerDesktopLayout extends StatefulWidget {
 
 class _PlayerDesktopLayoutState extends State<PlayerDesktopLayout>
     with SingleTickerProviderStateMixin {
-  final ScrollController _scrollController =
-      SmoothScrollController(smoothingFactor: 16.0);
+  final ScrollController _scrollController = SmoothScrollController(
+    smoothingFactor: 16.0,
+  );
+
+  /// True while the pointer is over the independent episode rail.
+  ///
+  /// The page physics are disabled during that time so a wheel gesture that
+  /// reaches the end of the episode list stops there instead of chaining into
+  /// the whole page (video + info + comments).
+  bool _railHovered = false;
+
+  ScrollPhysics? get _pagePhysics =>
+      _railHovered ? const NeverScrollableScrollPhysics() : null;
+
+  void _setRailHovered(bool hovered) {
+    if (_railHovered == hovered) return;
+    if (mounted) setState(() => _railHovered = hovered);
+  }
 
   /// Plays a short fade/slide whenever the layout mode changes, so switching
   /// between normal / wide / cinema does not feel like an instant snap.
@@ -110,6 +129,10 @@ class _PlayerDesktopLayoutState extends State<PlayerDesktopLayout>
     super.didUpdateWidget(oldWidget);
     if (oldWidget.layoutMode != widget.layoutMode) {
       _modeReveal.forward(from: 0);
+    }
+    if (!widget.showEpisodeRail && _railHovered) {
+      // The rail can disappear while hovered (hide button / layout change).
+      _railHovered = false;
     }
   }
 
@@ -143,10 +166,12 @@ class _PlayerDesktopLayoutState extends State<PlayerDesktopLayout>
       cursor: widget.hideCursorOnVideo
           ? SystemMouseCursors.none
           : SystemMouseCursors.basic,
-      onEnter:
-          widget.onVideoEnter == null ? null : (_) => widget.onVideoEnter!(),
-      onHover:
-          widget.onVideoHover == null ? null : (_) => widget.onVideoHover!(),
+      onEnter: widget.onVideoEnter == null
+          ? null
+          : (_) => widget.onVideoEnter!(),
+      onHover: widget.onVideoHover == null
+          ? null
+          : (_) => widget.onVideoHover!(),
       onExit: widget.onVideoExit == null ? null : (_) => widget.onVideoExit!(),
       child: child,
     );
@@ -154,8 +179,8 @@ class _PlayerDesktopLayoutState extends State<PlayerDesktopLayout>
 
   @override
   Widget build(BuildContext context) {
-    final scrollConfig =
-        ScrollConfiguration.of(context).copyWith(scrollbars: false);
+    final scrollConfig = ScrollConfiguration.of(context)
+        .copyWith(scrollbars: false);
 
     if (widget.layoutMode == PlayerLayoutMode.cinema) {
       return _withModeReveal(
@@ -176,17 +201,18 @@ class _PlayerDesktopLayoutState extends State<PlayerDesktopLayout>
           builder: (context, viewportConstraints) {
             return widget.layoutMode == PlayerLayoutMode.wide
                 ? _buildWideLayout(viewportConstraints)
-                : _buildNormalLayout();
+                : _buildNormalLayout(viewportConstraints.maxHeight);
           },
         ),
       ),
     );
   }
 
-  Widget _buildNormalLayout() {
-    final targetWidth = widget.showEpisodeRail
-        ? PlayerDesktopLayout._pageMaxWidth
-        : PlayerDesktopLayout._narrowPageMaxWidth;
+  Widget _buildNormalLayout(double viewportHeight) {
+    final targetWidth = PlayerDesktopLayout._pageMaxWidth;
+    final railHeight = math
+        .max(360.0, viewportHeight - DesktopTitleBar.height - 152)
+        .clamp(360.0, 2400.0);
     return Center(
       child: TweenAnimationBuilder<double>(
         tween: Tween<double>(begin: targetWidth, end: targetWidth),
@@ -199,12 +225,40 @@ class _PlayerDesktopLayoutState extends State<PlayerDesktopLayout>
         child: LayoutBuilder(
           builder: (context, constraints) {
             final available = constraints.maxWidth;
-            final showRail =
-                widget.showEpisodeRail &&
-                available >= PlayerDesktopLayout.railBreakpoint;
+            final contentWidth = math.max(
+              0.0,
+              available - 2 * PlayerDesktopLayout._pageBleed,
+            );
+            final canFitRail = available >= PlayerDesktopLayout.railBreakpoint;
+            final showRail = widget.showEpisodeRail && canFitRail;
+
+            // The rail width adapts to the page: 440 at large sizes, down to
+            // 320 when space is tighter. The video keeps at least
+            // [_minVideoWidth] while the rail is present.
+            final railTargetWidth = canFitRail
+                ? (contentWidth -
+                          PlayerDesktopLayout._minVideoWidth -
+                          PlayerDesktopLayout._railGap)
+                      .clamp(
+                        PlayerDesktopLayout.railMinWidth,
+                        PlayerDesktopLayout.railMaxWidth,
+                      )
+                : 0.0;
+
+            // Hiding the rail must not resize the video: reserve the width the
+            // rail would occupy and simply center the column in the page.
+            final videoWidth = canFitRail
+                ? math.max(
+                    0.0,
+                    contentWidth -
+                        railTargetWidth -
+                        PlayerDesktopLayout._railGap,
+                  )
+                : contentWidth;
 
             return ListView(
               controller: _scrollController,
+              physics: _pagePhysics,
               // The horizontal padding reserves room for the ambient halo to
               // bleed into. Without it the halo overflowed the video column
               // and the scroll viewport (Clip.hardEdge) sliced it off, leaving
@@ -222,21 +276,43 @@ class _PlayerDesktopLayoutState extends State<PlayerDesktopLayout>
               // started, which read as the layout "jumping" right after
               // opening an episode.
               padding: const EdgeInsets.fromLTRB(
-                PlayerDesktopLayout._pageHorizontalPadding +
-                    PlayerDesktopLayout.haloBleed,
-                0,
-                PlayerDesktopLayout._pageHorizontalPadding +
-                    PlayerDesktopLayout.haloBleed,
+                PlayerDesktopLayout._pageBleed,
+                DesktopTitleBar.height + 4,
+                PlayerDesktopLayout._pageBleed,
                 48,
               ),
               children: [
-                _buildHeaderRow(railRendered: showRail),
+                if (!showRail && canFitRail)
+                  Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: videoWidth),
+                      child: _buildHeaderRow(railRendered: showRail),
+                    ),
+                  )
+                else
+                  _buildHeaderRow(railRendered: showRail),
                 const SizedBox(height: 8),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(child: _buildVideoColumn()),
-                    _buildAnimatedRail(showRail: showRail),
+                    if (showRail)
+                      Expanded(child: _buildVideoColumn())
+                    else
+                      Expanded(
+                        child: Center(
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(maxWidth: videoWidth),
+                            child: _buildVideoColumn(),
+                          ),
+                        ),
+                      ),
+                    SizedBox(
+                      height: railHeight,
+                      child: _buildAnimatedRail(
+                        showRail: showRail,
+                        railWidth: railTargetWidth,
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -254,8 +330,12 @@ class _PlayerDesktopLayoutState extends State<PlayerDesktopLayout>
   /// the child out narrower) rather than an [OverflowBox]: inside a [ListView]
   /// the vertical constraints are unbounded, and an `OverflowBox` would try to
   /// size itself to infinity.
-  Widget _buildAnimatedRail({required bool showRail}) {
-    const target = PlayerDesktopLayout.railWidth;
+  Widget _buildAnimatedRail({
+    required bool showRail,
+    required double railWidth,
+  }) {
+    if (railWidth <= 0.5) return const SizedBox.shrink();
+    final target = railWidth;
     return TweenAnimationBuilder<double>(
       tween: Tween<double>(
         begin: showRail ? target : 0,
@@ -280,7 +360,11 @@ class _PlayerDesktopLayoutState extends State<PlayerDesktopLayout>
           ),
         );
       },
-      child: widget.episodesRail,
+      child: MouseRegion(
+        onEnter: (_) => _setRailHovered(true),
+        onExit: (_) => _setRailHovered(false),
+        child: widget.episodesRail,
+      ),
     );
   }
 
@@ -293,6 +377,7 @@ class _PlayerDesktopLayoutState extends State<PlayerDesktopLayout>
 
     return ListView(
       controller: _scrollController,
+      physics: _pagePhysics,
       padding: EdgeInsets.zero,
       children: [
         // No page header here: the video starts at the very top and owns the
@@ -313,7 +398,13 @@ class _PlayerDesktopLayoutState extends State<PlayerDesktopLayout>
                   child: widget.watchContent,
                 ),
               ),
-              _buildAnimatedRail(showRail: showRail),
+              SizedBox(
+                height: (viewport.maxHeight * 0.62).clamp(360.0, 900.0),
+                child: _buildAnimatedRail(
+                  showRail: showRail,
+                  railWidth: PlayerDesktopLayout.railMaxWidth,
+                ),
+              ),
             ],
           ),
         ),
@@ -384,13 +475,14 @@ class _PlayerDesktopLayoutState extends State<PlayerDesktopLayout>
               child: Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  // Bottom layer: the blurred wash. It bleeds past the frame
-                  // and dissolves into the page on all four sides.
+                  // Bottom layer: the blurred wash. It bleeds past the frame on
+                  // the top and sides, but stops exactly at the video's bottom
+                  // edge so no glow spills over the episode metadata below.
                   Positioned(
                     left: -PlayerDesktopLayout.haloBleed,
                     right: -PlayerDesktopLayout.haloBleed,
                     top: -PlayerDesktopLayout.haloBleed,
-                    bottom: -PlayerDesktopLayout.haloBleed,
+                    bottom: 0,
                     child: IgnorePointer(child: halo),
                   ),
                   // The video itself, painted on top of the wash.

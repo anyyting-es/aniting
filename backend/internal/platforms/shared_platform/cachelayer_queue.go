@@ -1,12 +1,12 @@
-package shared_platform
+﻿package shared_platform
 
 import (
 	"cmp"
 	"context"
 	"errors"
 	"fmt"
-	"seanime/internal/api/anilist"
-	"seanime/internal/util/filecache"
+	"aniting/internal/api/anilist"
+	"aniting/internal/util/filecache"
 	"slices"
 	"strconv"
 	"strings"

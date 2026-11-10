@@ -1,7 +1,7 @@
-package core
+﻿package core
 
 import (
-	"seanime/internal/security"
+	"aniting/internal/security"
 	"strings"
 
 	"github.com/spf13/viper"

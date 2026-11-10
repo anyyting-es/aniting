@@ -1,18 +1,18 @@
-package videocore
+﻿package videocore
 
 import (
 	"context"
 	"encoding/json"
-	"seanime/internal/api/anilist"
-	"seanime/internal/api/metadata_provider"
-	"seanime/internal/continuity"
-	"seanime/internal/database/models"
-	discordrpc_presence "seanime/internal/discordrpc/presence"
-	"seanime/internal/events"
-	"seanime/internal/mkvparser"
-	"seanime/internal/platforms/platform"
-	"seanime/internal/util"
-	"seanime/internal/util/result"
+	"aniting/internal/api/anilist"
+	"aniting/internal/api/metadata_provider"
+	"aniting/internal/continuity"
+	"aniting/internal/database/models"
+	discordrpc_presence "aniting/internal/discordrpc/presence"
+	"aniting/internal/events"
+	"aniting/internal/mkvparser"
+	"aniting/internal/platforms/platform"
+	"aniting/internal/util"
+	"aniting/internal/util/result"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -25,7 +25,7 @@ import (
 
 type (
 	// VideoCore represents the built-in HTML5 video player.
-	// It can be the NativePlayer (Seanime Denshi player) or the WebPlayer.
+	// It can be the NativePlayer (desktop player) or the WebPlayer.
 	VideoCore struct {
 		wsEventManager              events.WSEventManagerInterface
 		clientPlayerEventSubscriber *events.ClientEventSubscriber

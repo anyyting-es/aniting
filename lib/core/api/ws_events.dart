@@ -1,4 +1,4 @@
-/// Constantes de tipos de eventos WebSocket emitidos por el servidor Go Seanime.
+/// Constantes de tipos de eventos WebSocket emitidos por el servidor Go Aniting.
 ///
 /// El servidor envía mensajes JSON con el formato:
 /// ```json

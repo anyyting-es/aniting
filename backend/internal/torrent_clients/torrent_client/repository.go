@@ -3,14 +3,14 @@ package torrent_client
 import (
 	"context"
 	"errors"
-	"seanime/internal/api/metadata_provider"
-	"seanime/internal/events"
-	"seanime/internal/torrent_clients/builtin_client"
-	"seanime/internal/torrent_clients/qbittorrent"
-	"seanime/internal/torrent_clients/qbittorrent/model"
-	"seanime/internal/torrent_clients/transmission"
-	"seanime/internal/torrents/torrent"
-	"seanime/internal/util"
+	"aniting/internal/api/metadata_provider"
+	"aniting/internal/events"
+	"aniting/internal/torrent_clients/builtin_client"
+	"aniting/internal/torrent_clients/qbittorrent"
+	"aniting/internal/torrent_clients/qbittorrent/model"
+	"aniting/internal/torrent_clients/transmission"
+	"aniting/internal/torrents/torrent"
+	"aniting/internal/util"
 	"sort"
 	"strconv"
 	"strings"
@@ -23,7 +23,7 @@ import (
 const (
 	QbittorrentClient  = "qbittorrent"
 	TransmissionClient = "transmission"
-	SeanimeClient      = "seanime"
+	AnitingClient      = "aniting"
 	NoneClient         = "none"
 )
 
@@ -32,7 +32,7 @@ type (
 		logger                      *zerolog.Logger
 		qBittorrentClient           *qbittorrent.Client
 		transmission                *transmission.Transmission
-		seanimeClient               *builtin_client.Client
+		anitingClient               *builtin_client.Client
 		torrentRepository           *torrent.Repository
 		provider                    string
 		metadataProviderRef         *util.Ref[metadata_provider.Provider]
@@ -44,7 +44,7 @@ type (
 		Logger                 *zerolog.Logger
 		QbittorrentClient      *qbittorrent.Client
 		Transmission           *transmission.Transmission
-		SeanimeClient          *builtin_client.Client
+		AnitingClient          *builtin_client.Client
 		TorrentRepository      *torrent.Repository
 		Provider               string
 		MetadataProviderRef    *util.Ref[metadata_provider.Provider]
@@ -59,7 +59,7 @@ type (
 )
 
 func NewRepository(opts *NewRepositoryOptions) *Repository {
-	if !opts.IsBuiltinClientEnabled && opts.Provider == SeanimeClient {
+	if !opts.IsBuiltinClientEnabled && opts.Provider == AnitingClient {
 		opts.Provider = ""
 	}
 	if opts.Provider == "" {
@@ -69,7 +69,7 @@ func NewRepository(opts *NewRepositoryOptions) *Repository {
 		logger:              opts.Logger,
 		qBittorrentClient:   opts.QbittorrentClient,
 		transmission:        opts.Transmission,
-		seanimeClient:       opts.SeanimeClient,
+		anitingClient:       opts.AnitingClient,
 		torrentRepository:   opts.TorrentRepository,
 		provider:            opts.Provider,
 		metadataProviderRef: opts.MetadataProviderRef,
@@ -82,8 +82,8 @@ func (r *Repository) Shutdown() {
 		r.activeTorrentCountCtxCancel()
 		r.activeTorrentCountCtxCancel = nil
 	}
-	if r.seanimeClient != nil {
-		r.seanimeClient.Close()
+	if r.anitingClient != nil {
+		r.anitingClient.Close()
 	}
 }
 
@@ -125,8 +125,8 @@ func (r *Repository) Start() bool {
 		return r.qBittorrentClient.CheckStart()
 	case TransmissionClient:
 		return r.transmission.CheckStart()
-	case SeanimeClient:
-		return r.seanimeClient != nil && r.seanimeClient.Start()
+	case AnitingClient:
+		return r.anitingClient != nil && r.anitingClient.Start()
 	case NoneClient:
 		return true
 	default:
@@ -141,8 +141,8 @@ func (r *Repository) TorrentExists(hash string) bool {
 	case TransmissionClient:
 		torrents, err := r.transmission.Client.TorrentGetAllForHashes(context.Background(), []string{hash})
 		return err == nil && len(torrents) > 0
-	case SeanimeClient:
-		return r.seanimeClient != nil && r.seanimeClient.TorrentExists(hash)
+	case AnitingClient:
+		return r.anitingClient != nil && r.anitingClient.TorrentExists(hash)
 	default:
 		return false
 	}
@@ -241,11 +241,11 @@ func (r *Repository) GetList(opts *GetListOptions) ([]*Torrent, error) {
 
 		return r.FromTransmissionTorrents(torrents), nil
 
-	case SeanimeClient:
-		if r.seanimeClient == nil {
-			return nil, errors.New("torrent client: Seanime client is not available")
+	case AnitingClient:
+		if r.anitingClient == nil {
+			return nil, errors.New("torrent client: Aniting client is not available")
 		}
-		torrents := r.FromSeanimeTorrents(r.seanimeClient.Snapshots())
+		torrents := r.FromAnitingTorrents(r.anitingClient.Snapshots())
 		sort.SliceStable(torrents, func(i, j int) bool {
 			if sortBy == "name" {
 				if reverse {
@@ -316,11 +316,11 @@ func (r *Repository) GetActiveCount(ret *ActiveCount) {
 			}
 		}
 		return
-	case SeanimeClient:
-		if r.seanimeClient == nil {
+	case AnitingClient:
+		if r.anitingClient == nil {
 			return
 		}
-		for _, torrent := range r.FromSeanimeTorrents(r.seanimeClient.Snapshots()) {
+		for _, torrent := range r.FromAnitingTorrents(r.anitingClient.Snapshots()) {
 			switch torrent.Status {
 			case TorrentStatusDownloading, TorrentStatusQueued:
 				ret.Downloading++
@@ -378,12 +378,12 @@ func (r *Repository) AddMagnets(magnets []string, dest string) error {
 				break
 			}
 		}
-	case SeanimeClient:
-		if r.seanimeClient == nil {
-			return errors.New("torrent client: Seanime client is not available")
+	case AnitingClient:
+		if r.anitingClient == nil {
+			return errors.New("torrent client: Aniting client is not available")
 		}
 		for _, magnet := range magnets {
-			if _, err = r.seanimeClient.AddMagnet(magnet, dest); err != nil {
+			if _, err = r.anitingClient.AddMagnet(magnet, dest); err != nil {
 				break
 			}
 		}
@@ -426,12 +426,12 @@ func (r *Repository) RemoveTorrents(hashes []string) error {
 			r.logger.Err(err).Msg("torrent client: Error while removing torrents (Transmission)")
 			return err
 		}
-	case SeanimeClient:
-		if r.seanimeClient == nil {
-			return errors.New("torrent client: Seanime client is not available")
+	case AnitingClient:
+		if r.anitingClient == nil {
+			return errors.New("torrent client: Aniting client is not available")
 		}
 		for _, hash := range hashes {
-			if err = r.seanimeClient.RemoveTorrent(hash, true); err != nil {
+			if err = r.anitingClient.RemoveTorrent(hash, true); err != nil {
 				break
 			}
 		}
@@ -454,12 +454,12 @@ func (r *Repository) PauseTorrents(hashes []string) error {
 		err = r.qBittorrentClient.Torrent.StopTorrents(hashes)
 	case TransmissionClient:
 		err = r.transmission.Client.TorrentStopHashes(context.Background(), hashes)
-	case SeanimeClient:
-		if r.seanimeClient == nil {
-			return errors.New("torrent client: Seanime client is not available")
+	case AnitingClient:
+		if r.anitingClient == nil {
+			return errors.New("torrent client: Aniting client is not available")
 		}
 		for _, hash := range hashes {
-			if err = r.seanimeClient.PauseTorrent(hash); err != nil {
+			if err = r.anitingClient.PauseTorrent(hash); err != nil {
 				break
 			}
 		}
@@ -484,12 +484,12 @@ func (r *Repository) ResumeTorrents(hashes []string) error {
 		err = r.qBittorrentClient.Torrent.ResumeTorrents(hashes)
 	case TransmissionClient:
 		err = r.transmission.Client.TorrentStartHashes(context.Background(), hashes)
-	case SeanimeClient:
-		if r.seanimeClient == nil {
-			return errors.New("torrent client: Seanime client is not available")
+	case AnitingClient:
+		if r.anitingClient == nil {
+			return errors.New("torrent client: Aniting client is not available")
 		}
 		for _, hash := range hashes {
-			if err = r.seanimeClient.ResumeTorrent(hash); err != nil {
+			if err = r.anitingClient.ResumeTorrent(hash); err != nil {
 				break
 			}
 		}
@@ -530,12 +530,12 @@ func (r *Repository) DeselectFiles(hash string, indices []int) error {
 			FilesUnwanted: ind,
 			IDs:           []int64{id},
 		})
-	case SeanimeClient:
-		if r.seanimeClient == nil {
-			return errors.New("torrent client: Seanime client is not available")
+	case AnitingClient:
+		if r.anitingClient == nil {
+			return errors.New("torrent client: Aniting client is not available")
 		}
 		for _, index := range indices {
-			if err = r.seanimeClient.SetFilePriority(hash, index, 0); err != nil {
+			if err = r.anitingClient.SetFilePriority(hash, index, 0); err != nil {
 				break
 			}
 		}
@@ -591,12 +591,12 @@ func (r *Repository) GetFiles(hash string) (filenames []string, err error) {
 						}
 						return
 					}
-				case SeanimeClient:
-					if r.seanimeClient == nil {
-						err = errors.New("torrent client: Seanime client is not available")
+				case AnitingClient:
+					if r.anitingClient == nil {
+						err = errors.New("torrent client: Aniting client is not available")
 						return
 					}
-					details, detailsErr := r.seanimeClient.GetTorrentDetails(hash)
+					details, detailsErr := r.anitingClient.GetTorrentDetails(hash)
 					if detailsErr == nil && len(details.Files) > 0 {
 						for _, file := range details.Files {
 							filenames = append(filenames, file.Path)
@@ -613,6 +613,6 @@ func (r *Repository) GetFiles(hash string) (filenames []string, err error) {
 	return
 }
 
-func (r *Repository) GetSeanimeClient() *builtin_client.Client {
-	return r.seanimeClient
+func (r *Repository) GetAnitingClient() *builtin_client.Client {
+	return r.anitingClient
 }

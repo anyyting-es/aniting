@@ -1,10 +1,10 @@
-package goja_runtime
+﻿package goja_runtime
 
 import (
 	"context"
 	"fmt"
 	"runtime"
-	"seanime/internal/util/result"
+	"aniting/internal/util/result"
 	"sync"
 	"sync/atomic"
 

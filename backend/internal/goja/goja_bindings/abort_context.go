@@ -1,8 +1,8 @@
-package goja_bindings
+﻿package goja_bindings
 
 import (
 	"context"
-	gojautil "seanime/internal/util/goja"
+	gojautil "aniting/internal/util/goja"
 	"sync"
 
 	"github.com/dop251/goja"

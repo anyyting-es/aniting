@@ -1,10 +1,10 @@
-package handlers
+﻿package handlers
 
 import (
 	"errors"
-	"seanime/internal/api/anilist"
-	hibikeonlinestream "seanime/internal/extension/hibike/onlinestream"
-	"seanime/internal/onlinestream"
+	"aniting/internal/api/anilist"
+	hibikeonlinestream "aniting/internal/extension/hibike/onlinestream"
+	"aniting/internal/onlinestream"
 
 	"github.com/labstack/echo/v4"
 )

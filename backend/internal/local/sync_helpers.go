@@ -1,14 +1,14 @@
-package local
+﻿package local
 
 import (
 	"fmt"
 	"path/filepath"
-	"seanime/internal/api/anilist"
-	"seanime/internal/api/metadata"
-	"seanime/internal/api/metadata_provider"
-	"seanime/internal/library/anime"
-	"seanime/internal/util"
-	"seanime/internal/util/image_downloader"
+	"aniting/internal/api/anilist"
+	"aniting/internal/api/metadata"
+	"aniting/internal/api/metadata_provider"
+	"aniting/internal/library/anime"
+	"aniting/internal/util"
+	"aniting/internal/util/image_downloader"
 
 	"github.com/goccy/go-json"
 	"github.com/rs/zerolog"

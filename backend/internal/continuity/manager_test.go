@@ -1,10 +1,10 @@
-package continuity
+﻿package continuity
 
 import (
-	"seanime/internal/database/db_bridge"
-	"seanime/internal/library/anime"
-	"seanime/internal/testutil"
-	"seanime/internal/util/filecache"
+	"aniting/internal/database/db_bridge"
+	"aniting/internal/library/anime"
+	"aniting/internal/testutil"
+	"aniting/internal/util/filecache"
 	"strconv"
 	"testing"
 	"time"

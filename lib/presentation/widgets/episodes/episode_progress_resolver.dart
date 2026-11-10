@@ -1,6 +1,6 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/preferences/live_playback_progress_provider.dart';
-import 'package:seanime_app/core/preferences/playback_progress_preferences_provider.dart';
+﻿import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:aniting/core/preferences/live_playback_progress_provider.dart';
+import 'package:aniting/core/preferences/playback_progress_preferences_provider.dart';
 
 /// Resolves the progress fraction drawn on an episode card or compact tile.
 ///

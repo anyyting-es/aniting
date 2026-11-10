@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/preferences/title_language_provider.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
+import 'package:aniting/core/preferences/title_language_provider.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
 
 import 'explore_carousel_models.dart';
 import 'explore_hero_carousel.dart';

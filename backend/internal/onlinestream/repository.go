@@ -1,18 +1,18 @@
-package onlinestream
+﻿package onlinestream
 
 import (
 	"context"
 	"errors"
 	"fmt"
-	"seanime/internal/api/anilist"
-	"seanime/internal/api/metadata_provider"
-	"seanime/internal/database/db"
-	"seanime/internal/extension"
-	hibikeonlinestream "seanime/internal/extension/hibike/onlinestream"
-	"seanime/internal/library/anime"
-	"seanime/internal/platforms/platform"
-	"seanime/internal/util"
-	"seanime/internal/util/filecache"
+	"aniting/internal/api/anilist"
+	"aniting/internal/api/metadata_provider"
+	"aniting/internal/database/db"
+	"aniting/internal/extension"
+	hibikeonlinestream "aniting/internal/extension/hibike/onlinestream"
+	"aniting/internal/library/anime"
+	"aniting/internal/platforms/platform"
+	"aniting/internal/util"
+	"aniting/internal/util/filecache"
 	"strconv"
 	"strings"
 	"time"
@@ -65,6 +65,9 @@ type (
 		Quality   string                             `json:"quality"`
 		Type      hibikeonlinestream.VideoSourceType `json:"type"`
 		Subtitles []*Subtitle                        `json:"subtitles,omitempty"`
+		// Thumbnails is a WebVTT storyboard (sprite sheet + `#xywh=` tiles) used
+		// by the player to render seek bar previews.
+		Thumbnails string `json:"thumbnails,omitempty"`
 		// Torrent metadata (Type == "torrent").
 		InfoHash      string   `json:"infoHash,omitempty"`
 		FileIndex     *int     `json:"fileIndex,omitempty"`
@@ -285,6 +288,7 @@ func (r *Repository) GetEpisodeSources(ctx context.Context, provider string, mId
 						Subtitles: lo.Map(vs.Subtitles, func(sub *hibikeonlinestream.VideoSubtitle, _ int) *Subtitle {
 							return subtitleFromProvider(sub)
 						}),
+						Thumbnails:    vs.Thumbnails,
 						InfoHash:      vs.InfoHash,
 						FileIndex:     vs.FileIndex,
 						Seeders:       vs.Seeders,

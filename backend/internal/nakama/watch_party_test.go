@@ -1,13 +1,13 @@
-package nakama
+﻿package nakama
 
 import (
 	"context"
-	"seanime/internal/api/anilist"
-	"seanime/internal/customsource"
-	"seanime/internal/extension"
-	"seanime/internal/platforms/platform"
-	"seanime/internal/testmocks"
-	"seanime/internal/util"
+	"aniting/internal/api/anilist"
+	"aniting/internal/customsource"
+	"aniting/internal/extension"
+	"aniting/internal/platforms/platform"
+	"aniting/internal/testmocks"
+	"aniting/internal/util"
 	"testing"
 
 	"github.com/rs/zerolog"

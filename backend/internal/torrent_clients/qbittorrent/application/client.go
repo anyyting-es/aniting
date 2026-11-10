@@ -1,10 +1,10 @@
-package qbittorrent_application
+﻿package qbittorrent_application
 
 import (
 	"github.com/rs/zerolog"
 	"net/http"
-	qbittorrent_model "seanime/internal/torrent_clients/qbittorrent/model"
-	qbittorrent_util "seanime/internal/torrent_clients/qbittorrent/util"
+	qbittorrent_model "aniting/internal/torrent_clients/qbittorrent/model"
+	qbittorrent_util "aniting/internal/torrent_clients/qbittorrent/util"
 )
 
 type Client struct {

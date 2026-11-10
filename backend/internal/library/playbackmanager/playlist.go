@@ -1,11 +1,11 @@
-package playbackmanager
+﻿package playbackmanager
 
 import (
 	"context"
 	"fmt"
-	"seanime/internal/api/anilist"
-	"seanime/internal/events"
-	"seanime/internal/library/anime"
+	"aniting/internal/api/anilist"
+	"aniting/internal/events"
+	"aniting/internal/library/anime"
 	"sync"
 	"sync/atomic"
 

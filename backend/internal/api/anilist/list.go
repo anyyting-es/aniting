@@ -1,8 +1,8 @@
-package anilist
+﻿package anilist
 
 import (
 	"fmt"
-	"seanime/internal/hook"
+	"aniting/internal/hook"
 
 	"github.com/goccy/go-json"
 	"github.com/rs/zerolog"

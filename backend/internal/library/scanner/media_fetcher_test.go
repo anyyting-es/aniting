@@ -1,10 +1,10 @@
-package scanner
+﻿package scanner
 
 import (
-	"seanime/internal/api/anilist"
-	"seanime/internal/platforms/platform"
-	"seanime/internal/util"
-	"seanime/internal/util/limiter"
+	"aniting/internal/api/anilist"
+	"aniting/internal/platforms/platform"
+	"aniting/internal/util"
+	"aniting/internal/util/limiter"
 	"testing"
 
 	"github.com/samber/lo"

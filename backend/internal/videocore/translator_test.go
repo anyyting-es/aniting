@@ -1,12 +1,12 @@
-package videocore
+﻿package videocore
 
 import (
 	"context"
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"seanime/internal/util"
-	"seanime/internal/util/result"
+	"aniting/internal/util"
+	"aniting/internal/util/result"
 	"strings"
 	"sync"
 	"testing"

@@ -1,11 +1,12 @@
 import 'dart:ui';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/core/theme/theme_provider.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/core/theme/theme_provider.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
 import 'desktop_cast_deck.dart';
 import 'desktop_cast_info_panel.dart';
 import 'desktop_cast_models.dart';
@@ -37,8 +38,9 @@ class DesktopCastDetailView extends ConsumerStatefulWidget {
     required int initialIndex,
     int? mediaId,
     String? bannerUrl,
-    required bool isTmdb,
+    bool isTmdb = false,
   }) {
+    if (isTmdb) return Future.value();
     return Navigator.of(context).push(
       PageRouteBuilder(
         opaque: false,
@@ -167,6 +169,10 @@ class _DesktopCastDetailViewState extends ConsumerState<DesktopCastDetailView> {
 
     final currentItem = _items.isNotEmpty ? _items[_currentIndex] : null;
 
+    final backdropBase = isOled
+        ? Colors.black
+        : (isDark ? const Color(0xFF090B0E) : const Color(0xFF14171C));
+
     return Focus(
       focusNode: _focusNode,
       autofocus: true,
@@ -190,16 +196,59 @@ class _DesktopCastDetailViewState extends ConsumerState<DesktopCastDetailView> {
         body: Stack(
           fit: StackFit.expand,
           children: [
-            // ─── 1. Deep, Static, Opaque Blurred Backdrop ───
+            // ─── 1. Giant character portrait as a heavily blurred backdrop ───
             Positioned.fill(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 45, sigmaY: 45),
-                child: Container(
-                  color: isOled
-                      ? Colors.black.withValues(alpha: 0.96)
-                      : (isDark
-                          ? const Color(0xFF090B0E).withValues(alpha: 0.93)
-                          : const Color(0xFF14171C).withValues(alpha: 0.90)),
+              child: ColoredBox(color: backdropBase),
+            ),
+            Positioned.fill(
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 520),
+                switchInCurve: Curves.easeOutCubic,
+                switchOutCurve: Curves.easeInCubic,
+                // AnimatedSwitcher's default Stack uses loose constraints:
+                // CachedNetworkImage would lay itself out at the portrait's
+                // intrinsic (square) size and sit centred. Tight constraints
+                // make the blurred portrait cover the whole viewport.
+                layoutBuilder: (currentChild, previousChildren) => Stack(
+                  fit: StackFit.expand,
+                  children: [...previousChildren, ?currentChild],
+                ),
+                child: currentItem?.imageUrl != null
+                    ? _CastBackdropImage(
+                        key: ValueKey(
+                          'cast_backdrop_${currentItem!.id}_${currentItem.imageUrl}',
+                        ),
+                        imageUrl: currentItem.imageUrl!,
+                        isDark: isDark,
+                        isOled: isOled,
+                      )
+                    : const SizedBox.expand(),
+              ),
+            ),
+
+            // ─── 1b. Legibility scrim: the portrait still reads through, but
+            // the name, biography and seiyuu card stay perfectly readable. ───
+            Positioned.fill(
+              child: IgnorePointer(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        backdropBase.withValues(
+                          alpha: isOled ? 0.58 : 0.46,
+                        ),
+                        backdropBase.withValues(
+                          alpha: isOled ? 0.74 : 0.64,
+                        ),
+                        backdropBase.withValues(
+                          alpha: isOled ? 0.92 : 0.84,
+                        ),
+                      ],
+                      stops: const [0.0, 0.55, 1.0],
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -289,6 +338,49 @@ class _DesktopCastDetailViewState extends ConsumerState<DesktopCastDetailView> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Full-screen character portrait rendered as a giant, heavily blurred
+/// backdrop. It is scaled past the viewport so the blur never shows a
+/// transparent fringe at the edges.
+class _CastBackdropImage extends StatelessWidget {
+  final String imageUrl;
+  final bool isDark;
+  final bool isOled;
+
+  const _CastBackdropImage({
+    super.key,
+    required this.imageUrl,
+    required this.isDark,
+    required this.isOled,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRect(
+      child: ImageFiltered(
+        imageFilter: ImageFilter.blur(
+          sigmaX: 46,
+          sigmaY: 46,
+          tileMode: TileMode.decal,
+        ),
+        child: Transform.scale(
+          scale: 1.22,
+          child: Opacity(
+            opacity: isOled ? 0.74 : (isDark ? 0.68 : 0.52),
+            child: CachedNetworkImage(
+              imageUrl: imageUrl,
+              fit: BoxFit.cover,
+              alignment: Alignment.topCenter,
+              fadeInDuration: const Duration(milliseconds: 280),
+              placeholder: (_, _) => const SizedBox.shrink(),
+              errorWidget: (_, _, _) => const SizedBox.shrink(),
+            ),
+          ),
         ),
       ),
     );

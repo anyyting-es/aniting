@@ -1,7 +1,7 @@
-import 'package:flutter_test/flutter_test.dart';
+﻿import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

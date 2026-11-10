@@ -1,9 +1,9 @@
-package anilist
+﻿package anilist
 
 import (
 	"fmt"
-	"seanime/internal/testutil"
-	"seanime/internal/util"
+	"aniting/internal/testutil"
+	"aniting/internal/util"
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"

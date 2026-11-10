@@ -1,188 +1,255 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/core/preferences/tv_mode_provider.dart';
-import 'package:seanime_app/presentation/widgets/player/controls/player_bottom_bar.dart';
-import 'package:seanime_app/presentation/widgets/player/controls/player_top_bar.dart';
-import 'package:seanime_app/presentation/widgets/player/models/player_types.dart';
-import 'package:seanime_app/presentation/widgets/player/panels/next_episode_card.dart';
-import 'package:seanime_app/presentation/widgets/player/panels/player_info_panel.dart';
-import 'package:seanime_app/data/models/anime_details.dart';
-import 'package:seanime_app/data/models/anizip_data.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/core/preferences/tv_mode_provider.dart';
+import 'package:aniting/presentation/widgets/player/controls/player_bottom_bar.dart';
+import 'package:aniting/presentation/widgets/player/controls/player_top_bar.dart';
+import 'package:aniting/presentation/widgets/player/controls/timeline_slider.dart';
+import 'package:aniting/presentation/widgets/player/models/player_types.dart';
+import 'package:aniting/presentation/widgets/player/panels/next_episode_card.dart';
+import 'package:aniting/presentation/widgets/player/panels/player_info_panel.dart';
+import 'package:aniting/data/models/anime_details.dart';
+import 'package:aniting/data/models/anizip_data.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   group('YouTube Watch Page & TV Mode Tests', () {
-    testWidgets('NextEpisodeCard renders clean layout without center play icon, with titles and badges', (tester) async {
-      bool tapped = false;
-      await tester.pumpWidget(
-        ProviderScope(
-          child: MaterialApp(
-            home: Scaffold(
-              body: NextEpisodeCard(
-                episode: AnimeEpisode(
-                  episodeNumber: 2,
-                  title: 'Encounter with Spirits',
-                ),
-                animeTitle: 'Frieren: Beyond Journey\'s End',
-                synopsis: 'Frieren journeys north and encounters new wonders.',
-                onTap: () => tapped = true,
-              ),
-            ),
-          ),
-        ),
-      );
-
-      // Episode title is primary
-      expect(find.textContaining('Encounter with Spirits'), findsOneWidget);
-      // Anime title is omitted from NextEpisodeCard to prevent spilling and redundancy
-      expect(find.text('Frieren: Beyond Journey\'s End'), findsNothing);
-      // EP badge
-      expect(find.text('EP 2'), findsOneWidget);
-      // Synopsis
-      expect(find.text('Frieren journeys north and encounters new wonders.'), findsOneWidget);
-      // Ensure no play arrow icon inside thumbnail
-      expect(find.byIcon(Icons.play_arrow_rounded), findsNothing);
-
-      // Tap card
-      await tester.tap(find.byType(NextEpisodeCard));
-      expect(tapped, isTrue);
-    });
-
-    testWidgets('PlayerInfoPanel renders episode title first, anime title below, and clean previous button', (tester) async {
-      final aniZip = AniZipData.fromJson({
-        'episodes': {
-          '1': {
-            'episode': '1',
-            'episodeNumber': 1,
-            'title': {'en': 'The Journey Begins'},
-            'overview': 'The great adventure concludes and another begins.',
-            'rating': '8.8',
-            'airdate': '2023-09-29',
-          },
-          '2': {
-            'episode': '2',
-            'episodeNumber': 2,
-            'title': {'en': 'It Didn\'t Have to Be Magic'},
-            'overview': 'Next step on the northern road.',
-            'rating': '8.8',
-          },
-        },
-      });
-
-      final animeDetails = AnimeDetails(
-        id: 12345,
-        title: 'Frieren',
-        episodes: [
-          AnimeEpisode(episodeNumber: 1, title: 'The Journey Begins'),
-          AnimeEpisode(episodeNumber: 2, title: 'It Didn\'t Have to Be Magic'),
-        ],
-      );
-
-      await tester.pumpWidget(
-        ProviderScope(
-          child: MaterialApp(
-            home: Scaffold(
-              body: SizedBox(
-                width: 400,
-                height: 800,
-                child: PlayerInfoPanel(
-                  mediaId: 12345,
-                  animeTitle: 'Frieren',
-                  episodeNumber: 2,
-                  episodeTitle: 'It Didn\'t Have to Be Magic',
-                  animeDetails: animeDetails,
-                  aniZipData: aniZip,
-                  isLoading: false,
-                  isDesktop: false,
-                  onSeekToChapter: (_) {},
+    testWidgets(
+      'NextEpisodeCard renders clean layout without center play icon, with titles and badges',
+      (tester) async {
+        bool tapped = false;
+        await tester.pumpWidget(
+          ProviderScope(
+            child: MaterialApp(
+              home: Scaffold(
+                body: NextEpisodeCard(
+                  episode: AnimeEpisode(
+                    episodeNumber: 2,
+                    title: 'Encounter with Spirits',
+                  ),
+                  animeTitle: 'Frieren: Beyond Journey\'s End',
+                  synopsis:
+                      'Frieren journeys north and encounters new wonders.',
+                  onTap: () => tapped = true,
                 ),
               ),
             ),
           ),
-        ),
-      );
+        );
 
-      // Current episode title appears prominently first with EP prefix
-      expect(find.text('EP 2 • It Didn\'t Have to Be Magic'), findsOneWidget);
-      // Anime title appears (in header and/or cards)
-      expect(find.text('Frieren'), findsWidgets);
-      // Episode synopsis appears
-      expect(find.text('Next step on the northern road.'), findsOneWidget);
+        // Episode title is primary
+        expect(find.textContaining('Encounter with Spirits'), findsOneWidget);
+        // Anime title is omitted from NextEpisodeCard to prevent spilling and redundancy
+        expect(find.text('Frieren: Beyond Journey\'s End'), findsNothing);
+        // EP badge
+        expect(find.text('EP 2'), findsOneWidget);
+        // Synopsis
+        expect(
+          find.text('Frieren journeys north and encounters new wonders.'),
+          findsOneWidget,
+        );
+        // Ensure no play arrow icon inside thumbnail
+        expect(find.byIcon(Icons.play_arrow_rounded), findsNothing);
 
-      // Rating has single star icon and clean number without duplicate star
-      expect(find.byIcon(AppIcons.star(AppIconPack.lucide)), findsOneWidget);
-      expect(find.text('8.8'), findsOneWidget);
-      expect(find.text('8.8 ★'), findsNothing);
+        // Tap card
+        await tester.tap(find.byType(NextEpisodeCard));
+        expect(tapped, isTrue);
+      },
+    );
 
-      // Previous episode text-only button
-      expect(find.text('← Episodio anterior: Ep. 1'), findsOneWidget);
-    });
-
-    testWidgets('PlayerInfoPanel overrides placeholder Episode N with AniZip title and positions previous button below next episode', (tester) async {
-      final aniZip = AniZipData.fromJson({
-        'episodes': {
-          '1': {
-            'episode': '1',
-            'episodeNumber': 1,
-            'title': {'en': 'The Journey Begins'},
-            'overview': 'The great adventure concludes.',
+    testWidgets(
+      'PlayerInfoPanel renders episode title first, anime title below, and clean previous button',
+      (tester) async {
+        final aniZip = AniZipData.fromJson({
+          'episodes': {
+            '1': {
+              'episode': '1',
+              'episodeNumber': 1,
+              'title': {'en': 'The Journey Begins'},
+              'overview': 'The great adventure concludes and another begins.',
+              'rating': '8.8',
+              'airdate': '2023-09-29',
+            },
+            '2': {
+              'episode': '2',
+              'episodeNumber': 2,
+              'title': {'en': 'It Didn\'t Have to Be Magic'},
+              'overview': 'Next step on the northern road.',
+              'rating': '8.8',
+            },
           },
-          '2': {
-            'episode': '2',
-            'episodeNumber': 2,
-            'title': {'es': 'No tenía por qué ser magia', 'en': 'It Didn\'t Have to Be Magic'},
-            'overview': 'Next step on the northern road.',
-          },
-        },
-      });
+        });
 
-      final animeDetails = AnimeDetails(
-        id: 12345,
-        title: 'Frieren',
-        episodes: [
-          // Seanime local/torrent episode collection has generic "Episode 2"
-          AnimeEpisode(episodeNumber: 1, title: 'Episode 1'),
-          AnimeEpisode(episodeNumber: 2, title: 'Episode 2'),
-        ],
-      );
+        final animeDetails = AnimeDetails(
+          id: 12345,
+          title: 'Frieren',
+          episodes: [
+            AnimeEpisode(episodeNumber: 1, title: 'The Journey Begins'),
+            AnimeEpisode(
+              episodeNumber: 2,
+              title: 'It Didn\'t Have to Be Magic',
+            ),
+          ],
+        );
 
-      await tester.pumpWidget(
-        ProviderScope(
-          child: MaterialApp(
-            home: Scaffold(
-              body: SizedBox(
-                width: 400,
-                height: 800,
-                child: PlayerInfoPanel(
-                  mediaId: 12345,
-                  animeTitle: 'Frieren',
-                  episodeNumber: 1,
-                  episodeTitle: 'Episode 1',
-                  animeDetails: animeDetails,
-                  aniZipData: aniZip,
-                  isLoading: false,
-                  isDesktop: false,
-                  onSeekToChapter: (_) {},
+        await tester.pumpWidget(
+          ProviderScope(
+            child: MaterialApp(
+              home: Scaffold(
+                body: SizedBox(
+                  width: 400,
+                  height: 800,
+                  child: PlayerInfoPanel(
+                    mediaId: 12345,
+                    animeTitle: 'Frieren',
+                    episodeNumber: 2,
+                    episodeTitle: 'It Didn\'t Have to Be Magic',
+                    animeDetails: animeDetails,
+                    aniZipData: aniZip,
+                    isLoading: false,
+                    isDesktop: false,
+                    onSeekToChapter: (_) {},
+                  ),
                 ),
               ),
             ),
           ),
-        ),
-      );
+        );
 
-      // 1. Current episode resolves title from AniZip instead of generic "Episode 1"
-      expect(find.text('EP 1 • The Journey Begins'), findsOneWidget);
+        // Current episode title appears prominently first with EP prefix
+        expect(find.text('EP 2 • It Didn\'t Have to Be Magic'), findsOneWidget);
+        // Anime title appears (in header and/or cards)
+        expect(find.text('Frieren'), findsWidgets);
+        // Episode synopsis appears
+        expect(find.text('Next step on the northern road.'), findsOneWidget);
 
-      // 2. Next episode card resolves AniZip Spanish title instead of placeholder "Episode 2"
-      expect(find.text('No tenía por qué ser magia'), findsOneWidget);
-      expect(find.text('Ep. 2 • Episode 2'), findsNothing);
+        // Rating has single star icon and clean number without duplicate star
+        expect(find.byIcon(AppIcons.star(AppIconPack.lucide)), findsOneWidget);
+        expect(find.text('8.8'), findsOneWidget);
+        expect(find.text('8.8 ★'), findsNothing);
 
-      // 3. Next episode card is positioned ABOVE previous episode button (if visible) or next episode exists
-      expect(find.byType(NextEpisodeCard), findsOneWidget);
-    });
-    testWidgets('PlayerTopBar renders theater mode toggle and calls callback', (tester) async {
+        // Previous episode text-only button
+        expect(find.text('← Episodio anterior: Ep. 1'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'PlayerInfoPanel keeps the previous button visible but disabled on episode 1',
+      (tester) async {
+        final animeDetails = AnimeDetails(
+          id: 12345,
+          title: 'Frieren',
+          episodes: [
+            AnimeEpisode(episodeNumber: 1, title: 'The Journey Begins'),
+          ],
+        );
+
+        await tester.pumpWidget(
+          ProviderScope(
+            child: MaterialApp(
+              home: Scaffold(
+                body: SizedBox(
+                  width: 400,
+                  height: 800,
+                  child: PlayerInfoPanel(
+                    mediaId: 12345,
+                    animeTitle: 'Frieren',
+                    episodeNumber: 1,
+                    episodeTitle: 'The Journey Begins',
+                    animeDetails: animeDetails,
+                    isLoading: false,
+                    isDesktop: false,
+                    onSeekToChapter: (_) {},
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+
+        // The control stays in the layout so the panel does not jump, but it is
+        // locked because there is no previous episode.
+        final label = find.text('← Episodio anterior');
+        expect(label, findsOneWidget);
+        final button = tester.widget<TextButton>(
+          find.ancestor(of: label, matching: find.byType(TextButton)),
+        );
+        expect(button.onPressed, isNull);
+      },
+    );
+
+    testWidgets(
+      'PlayerInfoPanel overrides placeholder Episode N with AniZip title and positions previous button below next episode',
+      (tester) async {
+        final aniZip = AniZipData.fromJson({
+          'episodes': {
+            '1': {
+              'episode': '1',
+              'episodeNumber': 1,
+              'title': {'en': 'The Journey Begins'},
+              'overview': 'The great adventure concludes.',
+            },
+            '2': {
+              'episode': '2',
+              'episodeNumber': 2,
+              'title': {
+                'es': 'No tenía por qué ser magia',
+                'en': 'It Didn\'t Have to Be Magic',
+              },
+              'overview': 'Next step on the northern road.',
+            },
+          },
+        });
+
+        final animeDetails = AnimeDetails(
+          id: 12345,
+          title: 'Frieren',
+          episodes: [
+            // Seanime local/torrent episode collection has generic "Episode 2"
+            AnimeEpisode(episodeNumber: 1, title: 'Episode 1'),
+            AnimeEpisode(episodeNumber: 2, title: 'Episode 2'),
+          ],
+        );
+
+        await tester.pumpWidget(
+          ProviderScope(
+            child: MaterialApp(
+              home: Scaffold(
+                body: SizedBox(
+                  width: 400,
+                  height: 800,
+                  child: PlayerInfoPanel(
+                    mediaId: 12345,
+                    animeTitle: 'Frieren',
+                    episodeNumber: 1,
+                    episodeTitle: 'Episode 1',
+                    animeDetails: animeDetails,
+                    aniZipData: aniZip,
+                    isLoading: false,
+                    isDesktop: false,
+                    onSeekToChapter: (_) {},
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+
+        // 1. Current episode resolves title from AniZip instead of generic "Episode 1"
+        expect(find.text('EP 1 • The Journey Begins'), findsOneWidget);
+
+        // 2. Next episode card resolves AniZip Spanish title instead of placeholder "Episode 2"
+        expect(find.text('No tenía por qué ser magia'), findsOneWidget);
+        expect(find.text('Ep. 2 • Episode 2'), findsNothing);
+
+        // 3. Next episode card is positioned ABOVE previous episode button (if visible) or next episode exists
+        expect(find.byType(NextEpisodeCard), findsOneWidget);
+      },
+    );
+    testWidgets('PlayerTopBar renders theater mode toggle and calls callback', (
+      tester,
+    ) async {
       bool theaterToggled = false;
 
       await tester.pumpWidget(
@@ -201,35 +268,43 @@ void main() {
         ),
       );
 
-      expect(find.byIcon(PlayerLayoutMode.normal.getIcon(AppIconPack.lucide)), findsOneWidget);
+      expect(
+        find.byIcon(PlayerLayoutMode.normal.getIcon(AppIconPack.lucide)),
+        findsOneWidget,
+      );
 
-      await tester.tap(find.byIcon(PlayerLayoutMode.normal.getIcon(AppIconPack.lucide)));
+      await tester.tap(
+        find.byIcon(PlayerLayoutMode.normal.getIcon(AppIconPack.lucide)),
+      );
       await tester.pump();
 
       expect(theaterToggled, isTrue);
     });
 
-    testWidgets('PlayerTopBar does not render the theater toggle when callback is null', (tester) async {
-      await tester.pumpWidget(
-        ProviderScope(
-          child: MaterialApp(
-            home: Scaffold(
-              body: PlayerTopBar(
-                title: 'DanDaDan',
-                onBack: () {},
-                onOpenSettings: () {},
+    testWidgets(
+      'PlayerTopBar does not render the theater toggle when callback is null',
+      (tester) async {
+        await tester.pumpWidget(
+          ProviderScope(
+            child: MaterialApp(
+              home: Scaffold(
+                body: PlayerTopBar(
+                  title: 'DanDaDan',
+                  onBack: () {},
+                  onOpenSettings: () {},
+                ),
               ),
             ),
           ),
-        ),
-      );
+        );
 
-      expect(find.byIcon(AppIcons.theater(AppIconPack.lucide)), findsNothing);
-    });
+        expect(find.byIcon(AppIcons.theater(AppIconPack.lucide)), findsNothing);
+      },
+    );
 
-    testWidgets('PlayerBottomBar renders fullscreen toggle button on all platforms', (tester) async {
-      bool fullscreenToggled = false;
-
+    testWidgets('PlayerBottomBar mobile keeps the timeline in the bottom bar', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         ProviderScope(
           child: MaterialApp(
@@ -245,7 +320,7 @@ void main() {
                 onSeekBackward: () {},
                 onSeekForward: () {},
                 onVolumeChanged: (_) {},
-                onToggleFullscreen: () => fullscreenToggled = true,
+                onToggleFullscreen: () {},
                 isFullscreen: false,
                 isDesktopOverride: false, // test mobile
               ),
@@ -254,12 +329,13 @@ void main() {
         ),
       );
 
-      expect(find.byIcon(AppIcons.fullscreen(AppIconPack.lucide)), findsOneWidget);
-
-      await tester.tap(find.byIcon(AppIcons.fullscreen(AppIconPack.lucide)));
-      await tester.pump();
-
-      expect(fullscreenToggled, isTrue);
+      expect(find.byType(TimelineSlider), findsOneWidget);
+      expect(find.text('00:30'), findsOneWidget);
+      expect(find.text('24:00'), findsOneWidget);
+      expect(
+        find.byIcon(AppIcons.fullscreen(AppIconPack.lucide)),
+        findsNothing,
+      );
     });
 
     testWidgets('PlayerTopBar respects showTitle parameter', (tester) async {
@@ -304,103 +380,116 @@ void main() {
       expect(find.text('Episodio 1'), findsNothing);
     });
 
-    testWidgets('PlayerBottomBar small mobile mini view renders compact single-row controls and timestamp above', (tester) async {
-      bool playPauseCalled = false;
-      bool nextEpisodeCalled = false;
-
-      await tester.pumpWidget(
-        ProviderScope(
-          child: MaterialApp(
-            home: Scaffold(
-              body: PlayerBottomBar(
-                positionNotifier: ValueNotifier(const Duration(minutes: 5, seconds: 30)),
-                duration: const Duration(minutes: 24),
-                bufferNotifier: ValueNotifier(const Duration(minutes: 8)),
-                isPlaying: true,
-                volume: 80,
-                onSeek: (_) {},
-                onPlayPause: () => playPauseCalled = true,
-                onSeekBackward: () {},
-                onSeekForward: () {},
-                onNextEpisode: () => nextEpisodeCalled = true,
-                onVolumeChanged: (_) {},
-                onToggleFullscreen: () {},
-                isFullscreen: false,
-                isDesktopOverride: false, // Mobile small
-                currentChapterTitle: 'Intro',
-              ),
-            ),
-          ),
-        ),
-      );
-
-      // Timestamp & chapter rendered above
-      expect(find.text('05:30 / 24:00'), findsOneWidget);
-      expect(find.text('• Intro'), findsOneWidget);
-
-      // Compact controls row
-      expect(find.byIcon(AppIcons.pause(AppIconPack.lucide)), findsOneWidget);
-      expect(find.byIcon(AppIcons.skipNext(AppIconPack.lucide)), findsOneWidget);
-      expect(find.byIcon(AppIcons.fullscreen(AppIconPack.lucide)), findsOneWidget);
-
-      // Tap play/pause
-      await tester.tap(find.byIcon(AppIcons.pause(AppIconPack.lucide)));
-      expect(playPauseCalled, isTrue);
-
-      // Tap next episode
-      await tester.tap(find.byIcon(AppIcons.skipNext(AppIconPack.lucide)));
-      expect(nextEpisodeCalled, isTrue);
-    });
-
-    testWidgets('PlayerInfoPanel synopsis only displays Más/Menos when text exceeds 3 lines', (tester) async {
-      final shortSynopsis = 'A brief one sentence synopsis that easily fits in one line.';
-      final longSynopsis = 'This is an exceptionally long paragraph designed to span well across multiple lines of text when rendered within a narrow container. ' * 5;
-
-      // 1. Short synopsis: 'Más' should NOT be present
-      await tester.pumpWidget(
-        ProviderScope(
-          child: MaterialApp(
-            home: Scaffold(
-              body: SizedBox(
-                width: 350,
-                height: 600,
-                child: PlayerInfoPanel(
-                  animeTitle: 'Anime',
-                  episodeNumber: 1,
-                  episodeTitle: 'Ep 1',
-                  animeDetails: AnimeDetails(id: 1, title: 'Anime', description: shortSynopsis),
-                  onSeekToChapter: (_) {},
+    testWidgets(
+      'PlayerBottomBar mobile mini view shows only timeline and time',
+      (tester) async {
+        await tester.pumpWidget(
+          ProviderScope(
+            child: MaterialApp(
+              home: Scaffold(
+                body: PlayerBottomBar(
+                  positionNotifier: ValueNotifier(
+                    const Duration(minutes: 5, seconds: 30),
+                  ),
+                  duration: const Duration(minutes: 24),
+                  bufferNotifier: ValueNotifier(const Duration(minutes: 8)),
+                  isPlaying: true,
+                  volume: 80,
+                  onSeek: (_) {},
+                  onPlayPause: () {},
+                  onSeekBackward: () {},
+                  onSeekForward: () {},
+                  onNextEpisode: () {},
+                  onVolumeChanged: (_) {},
+                  onToggleFullscreen: () {},
+                  isFullscreen: false,
+                  isDesktopOverride: false, // Mobile small
+                  currentChapterTitle: 'Intro',
                 ),
               ),
             ),
           ),
-        ),
-      );
-      expect(find.text('Más'), findsNothing);
-      expect(find.text('Menos'), findsNothing);
+        );
 
-      // 2. Long synopsis: 'Más' SHOULD be present
-      await tester.pumpWidget(
-        ProviderScope(
-          child: MaterialApp(
-            home: Scaffold(
-              body: SizedBox(
-                width: 350,
-                height: 600,
-                child: PlayerInfoPanel(
-                  animeTitle: 'Anime',
-                  episodeNumber: 1,
-                  episodeTitle: 'Ep 1',
-                  animeDetails: AnimeDetails(id: 1, title: 'Anime', description: longSynopsis),
-                  onSeekToChapter: (_) {},
+        expect(find.byType(TimelineSlider), findsOneWidget);
+        expect(find.text('05:30'), findsOneWidget);
+        expect(find.text('24:00'), findsOneWidget);
+        expect(find.text('• Intro'), findsNothing);
+        expect(find.byIcon(AppIcons.pause(AppIconPack.lucide)), findsNothing);
+        expect(
+          find.byIcon(AppIcons.skipNext(AppIconPack.lucide)),
+          findsNothing,
+        );
+        expect(
+          find.byIcon(AppIcons.fullscreen(AppIconPack.lucide)),
+          findsNothing,
+        );
+      },
+    );
+
+    testWidgets(
+      'PlayerInfoPanel synopsis only displays Más/Menos when text exceeds 3 lines',
+      (tester) async {
+        final shortSynopsis =
+            'A brief one sentence synopsis that easily fits in one line.';
+        final longSynopsis =
+            'This is an exceptionally long paragraph designed to span well across multiple lines of text when rendered within a narrow container. ' *
+            5;
+
+        // 1. Short synopsis: 'Más' should NOT be present
+        await tester.pumpWidget(
+          ProviderScope(
+            child: MaterialApp(
+              home: Scaffold(
+                body: SizedBox(
+                  width: 350,
+                  height: 600,
+                  child: PlayerInfoPanel(
+                    animeTitle: 'Anime',
+                    episodeNumber: 1,
+                    episodeTitle: 'Ep 1',
+                    animeDetails: AnimeDetails(
+                      id: 1,
+                      title: 'Anime',
+                      description: shortSynopsis,
+                    ),
+                    onSeekToChapter: (_) {},
+                  ),
                 ),
               ),
             ),
           ),
-        ),
-      );
-      expect(find.text('Más'), findsOneWidget);
-    });
+        );
+        expect(find.text('Más'), findsNothing);
+        expect(find.text('Menos'), findsNothing);
+
+        // 2. Long synopsis: 'Más' SHOULD be present
+        await tester.pumpWidget(
+          ProviderScope(
+            child: MaterialApp(
+              home: Scaffold(
+                body: SizedBox(
+                  width: 350,
+                  height: 600,
+                  child: PlayerInfoPanel(
+                    animeTitle: 'Anime',
+                    episodeNumber: 1,
+                    episodeTitle: 'Ep 1',
+                    animeDetails: AnimeDetails(
+                      id: 1,
+                      title: 'Anime',
+                      description: longSynopsis,
+                    ),
+                    onSeekToChapter: (_) {},
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+        expect(find.text('Más'), findsOneWidget);
+      },
+    );
 
     test('tvModeProvider persists and toggles value properly', () async {
       SharedPreferences.setMockInitialValues({});

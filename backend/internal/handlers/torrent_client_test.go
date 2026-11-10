@@ -1,4 +1,4 @@
-package handlers
+﻿package handlers
 
 import (
 	"errors"
@@ -9,13 +9,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"seanime/internal/api/metadata_provider"
-	"seanime/internal/database/models"
-	"seanime/internal/extension"
-	hibiketorrent "seanime/internal/extension/hibike/torrent"
-	"seanime/internal/library/autodownloader"
-	torrentrepo "seanime/internal/torrents/torrent"
-	"seanime/internal/util"
+	"aniting/internal/api/metadata_provider"
+	"aniting/internal/database/models"
+	"aniting/internal/extension"
+	hibiketorrent "aniting/internal/extension/hibike/torrent"
+	"aniting/internal/library/autodownloader"
+	torrentrepo "aniting/internal/torrents/torrent"
+	"aniting/internal/util"
 )
 
 type ruleMagnetTestProvider struct {

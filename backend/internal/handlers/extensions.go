@@ -1,14 +1,14 @@
-package handlers
+﻿package handlers
 
 import (
 	"fmt"
 	"net/url"
-	"seanime/internal/constants"
-	"seanime/internal/core"
-	"seanime/internal/extension"
-	"seanime/internal/extension_playground"
-	"seanime/internal/security"
-	"seanime/internal/util"
+	"aniting/internal/constants"
+	"aniting/internal/core"
+	"aniting/internal/extension"
+	"aniting/internal/extension_playground"
+	"aniting/internal/security"
+	"aniting/internal/util"
 	"strings"
 	"sync"
 	"time"

@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"seanime/internal/constants"
-	"seanime/internal/events"
-	"seanime/internal/util"
+	"aniting/internal/constants"
+	"aniting/internal/events"
+	"aniting/internal/util"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -59,7 +59,7 @@ func (m *Manager) startHostServices() {
 // RoomsAvailable returns true if the Rooms API is available.
 func (m *Manager) RoomsAvailable() bool {
 	resp, err := m.reqClient.R().
-		Get(constants.SeanimeRoomsApiUrl + "/health")
+		Get(constants.AnitingRoomsApiUrl + "/health")
 	if err != nil {
 		return false
 	}
@@ -76,14 +76,14 @@ func (m *Manager) RoomsAvailable() bool {
 		return false
 	}
 
-	if createResp.Status != "healthy" && createResp.Version != constants.SeanimeRoomsVersion {
+	if createResp.Status != "healthy" && createResp.Version != constants.AnitingRoomsVersion {
 		return false
 	}
 
 	return true
 }
 
-// CreateAndJoinRoom creates a room using Seanime Rooms API and connects as host
+// CreateAndJoinRoom creates a room using Aniting Rooms API and connects as host
 func (m *Manager) CreateAndJoinRoom() error {
 	if !m.IsHost() {
 		return errors.New("not in host mode")
@@ -483,20 +483,20 @@ func (m *Manager) HandlePeerConnection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	username := r.Header.Get("X-Seanime-Nakama-Username")
+	username := r.Header.Get("X-Aniting-Nakama-Username")
 	// Generate a random username if username is not set (this shouldn't be the case because the peer will generate its own username)
 	if username == "" {
 		username = "Peer_" + util.RandomStringWithAlphabet(8, "bcdefhijklmnopqrstuvwxyz0123456789")
 	}
 
-	peerID := r.Header.Get("X-Seanime-Nakama-Peer-Id")
+	peerID := r.Header.Get("X-Aniting-Nakama-Peer-Id")
 	if peerID == "" {
 		m.logger.Error().Msg("nakama: Peer connection missing PeerID header")
 		http.Error(w, "Missing PeerID header", http.StatusBadRequest)
 		return
 	}
 
-	serverVersion := r.Header.Get("X-Seanime-Nakama-Server-Version")
+	serverVersion := r.Header.Get("X-Aniting-Nakama-Server-Version")
 	if serverVersion != constants.Version {
 		http.Error(w, "Server version mismatch", http.StatusBadRequest)
 		return

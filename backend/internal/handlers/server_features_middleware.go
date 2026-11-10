@@ -1,8 +1,8 @@
-package handlers
+﻿package handlers
 
 import (
 	"errors"
-	"seanime/internal/core"
+	"aniting/internal/core"
 	"slices"
 	"strings"
 

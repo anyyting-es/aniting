@@ -1,12 +1,15 @@
-import 'package:cached_network_image/cached_network_image.dart';
+﻿import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/data/models/anime_entry.dart';
-import 'package:seanime_app/data/models/manga_entry.dart';
-import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
-import 'package:seanime_app/presentation/screens/manga_detail_screen.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/core/preferences/title_language_provider.dart';
+import 'package:aniting/data/models/anime_entry.dart';
+import 'package:aniting/data/models/manga_entry.dart';
+import 'package:aniting/presentation/screens/anime_detail_screen.dart';
+import 'package:aniting/presentation/screens/manga_detail_screen.dart';
+import 'package:aniting/presentation/widgets/anime_preview/show_preview_data.dart';
+import 'package:aniting/presentation/widgets/anime_preview/show_quick_view_detector.dart';
 
 class DesktopRecommendationsTab extends ConsumerWidget {
   final List recommendations;
@@ -125,17 +128,17 @@ class DesktopRecommendationsTab extends ConsumerWidget {
   }
 }
 
-class _DesktopRecommendationCard extends StatefulWidget {
+class _DesktopRecommendationCard extends ConsumerStatefulWidget {
   final Map<String, dynamic>? edge;
   final AppTranslations l10n;
 
   const _DesktopRecommendationCard({required this.edge, required this.l10n});
 
   @override
-  State<_DesktopRecommendationCard> createState() => _DesktopRecommendationCardState();
+  ConsumerState<_DesktopRecommendationCard> createState() => _DesktopRecommendationCardState();
 }
 
-class _DesktopRecommendationCardState extends State<_DesktopRecommendationCard> {
+class _DesktopRecommendationCardState extends ConsumerState<_DesktopRecommendationCard> {
   bool _isHovered = false;
 
   @override
@@ -144,6 +147,7 @@ class _DesktopRecommendationCardState extends State<_DesktopRecommendationCard> 
     final mediaRec = node?['mediaRecommendation'] as Map<String, dynamic>?;
     if (mediaRec == null) return const SizedBox.shrink();
 
+    final titleLang = ref.watch(titleLanguageProvider);
     final recId = mediaRec['id'] as int? ?? 0;
     final titleMap = mediaRec['title'] as Map<String, dynamic>?;
     final recTitle = titleMap?['userPreferred'] ?? titleMap?['romaji'] ?? titleMap?['english'] ?? widget.l10n.noTitle;
@@ -154,38 +158,52 @@ class _DesktopRecommendationCardState extends State<_DesktopRecommendationCard> 
     final isDark = theme.brightness == Brightness.dark;
     final titleColor = isDark ? Colors.white : theme.colorScheme.onSurface;
 
-    return RepaintBoundary(
-      child: MouseRegion(
+    void openDetails() {
+      final type = mediaRec['type'] as String?;
+      if (type == 'MANGA') {
+        MangaEntry? manga;
+        try {
+          manga = MangaEntry.fromJson(mediaRec);
+        } catch (_) {}
+        MangaDetailScreen.navigate(
+          context,
+          mediaId: recId,
+          initialEntry: manga,
+        );
+      } else {
+        AnimeEntry? entry;
+        try {
+          entry = AnimeEntry.fromJson(mediaRec);
+        } catch (_) {}
+        AnimeDetailScreen.navigate(
+          context,
+          mediaId: recId,
+          initialEntry: entry,
+        );
+      }
+    }
+
+    ShowPreviewData? previewData;
+    try {
+      if ((mediaRec['type'] as String?) == 'MANGA') {
+        previewData = ShowPreviewData.fromManga(
+          MangaEntry.fromJson(mediaRec),
+          titleLang,
+        );
+      } else {
+        previewData = ShowPreviewData.fromAnime(
+          AnimeEntry.fromJson(mediaRec),
+          titleLang,
+        );
+      }
+    } catch (_) {}
+
+    final card = MouseRegion(
         cursor: recId > 0 ? SystemMouseCursors.click : SystemMouseCursors.basic,
         onEnter: (_) => setState(() => _isHovered = true),
         onExit: (_) => setState(() => _isHovered = false),
         child: InkWell(
-        onTap: recId > 0
-            ? () {
-                final type = mediaRec['type'] as String?;
-                if (type == 'MANGA') {
-                  MangaEntry? manga;
-                  try {
-                    manga = MangaEntry.fromJson(mediaRec);
-                  } catch (_) {}
-                  MangaDetailScreen.navigate(
-                    context,
-                    mediaId: recId,
-                    initialEntry: manga,
-                  );
-                } else {
-                  AnimeEntry? entry;
-                  try {
-                    entry = AnimeEntry.fromJson(mediaRec);
-                  } catch (_) {}
-                  AnimeDetailScreen.navigate(
-                    context,
-                    mediaId: recId,
-                    initialEntry: entry,
-                  );
-                }
-              }
-            : null,
+        onTap: recId > 0 ? openDetails : null,
         borderRadius: BorderRadius.circular(10),
         hoverColor: Colors.transparent,
         splashColor: Colors.transparent,
@@ -257,7 +275,16 @@ class _DesktopRecommendationCardState extends State<_DesktopRecommendationCard> 
           ],
         ),
       ),
-    ),
-  );
-}
+    );
+
+    return RepaintBoundary(
+      child: previewData == null
+          ? card
+          : ShowQuickViewDetector(
+              dataBuilder: () => previewData!,
+              onOpenDetails: openDetails,
+              child: card,
+            ),
+    );
+  }
 }

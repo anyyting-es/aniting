@@ -1,11 +1,11 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
-import 'package:seanime_app/core/theme/app_focus_coordinator.dart';
-import 'package:seanime_app/presentation/screens/settings/settings_screen.dart';
-import 'package:seanime_app/presentation/screens/settings/widgets/expressive/expressive_settings_detail_panel.dart';
-import 'package:seanime_app/presentation/screens/settings/widgets/settings_dpad_focus.dart';
+import 'package:aniting/core/theme/app_focus_coordinator.dart';
+import 'package:aniting/presentation/screens/settings/settings_screen.dart';
+import 'package:aniting/presentation/screens/settings/widgets/expressive/expressive_settings_detail_panel.dart';
+import 'package:aniting/presentation/screens/settings/widgets/settings_dpad_focus.dart';
 
 void main() {
   setUp(() {

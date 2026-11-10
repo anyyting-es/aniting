@@ -2,10 +2,10 @@ package nativeplayer
 
 import (
 	"context"
-	"seanime/internal/api/anilist"
-	"seanime/internal/events"
-	"seanime/internal/library/anime"
-	"seanime/internal/mkvparser"
+	"aniting/internal/api/anilist"
+	"aniting/internal/events"
+	"aniting/internal/library/anime"
+	"aniting/internal/mkvparser"
 
 	"github.com/rs/zerolog"
 	"github.com/samber/mo"
@@ -59,7 +59,7 @@ type (
 )
 
 type (
-	// NativePlayer is the built-in HTML5 video player in Seanime.
+	// NativePlayer is the built-in HTML5 video player in Aniting.
 	// There can only be one instance of this player at a time.
 	NativePlayer struct {
 		wsEventManager        events.WSEventManagerInterface

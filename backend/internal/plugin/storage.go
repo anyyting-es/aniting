@@ -1,12 +1,12 @@
-package plugin
+﻿package plugin
 
 import (
 	"encoding/json"
 	"errors"
-	"seanime/internal/database/models"
-	"seanime/internal/extension"
-	gojautil "seanime/internal/util/goja"
-	"seanime/internal/util/result"
+	"aniting/internal/database/models"
+	"aniting/internal/extension"
+	gojautil "aniting/internal/util/goja"
+	"aniting/internal/util/result"
 	"strings"
 	"sync"
 

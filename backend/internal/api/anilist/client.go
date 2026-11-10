@@ -1,4 +1,4 @@
-package anilist
+﻿package anilist
 
 import (
 	"compress/gzip"
@@ -8,8 +8,8 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"seanime/internal/events"
-	"seanime/internal/util"
+	"aniting/internal/events"
+	"aniting/internal/util"
 	"strconv"
 	"sync"
 	"sync/atomic"

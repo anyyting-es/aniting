@@ -1,14 +1,15 @@
+﻿import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/preferences/title_language_provider.dart';
-import 'package:seanime_app/core/theme/app_theme_colors.dart';
-import 'package:seanime_app/data/models/airing_schedule.dart';
-import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
-import 'package:seanime_app/presentation/widgets/anime_preview/show_preview_data.dart';
-import 'package:seanime_app/presentation/widgets/anime_preview/show_quick_view_detector.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/preferences/title_language_provider.dart';
+import 'package:aniting/core/theme/app_theme_colors.dart';
+import 'package:aniting/data/models/airing_schedule.dart';
+import 'package:aniting/presentation/screens/anime_detail_screen.dart';
+import 'package:aniting/presentation/widgets/anime_preview/show_preview_data.dart';
+import 'package:aniting/presentation/widgets/anime_preview/show_quick_view_detector.dart';
 
 import 'calendar_episode_card.dart';
 
@@ -50,6 +51,31 @@ class _CalendarMonthViewState extends State<CalendarMonthView> {
         widget.currentMonth.month,
         1,
       );
+    }
+  }
+
+  /// Anchor for the hover cover preview. The preview is rendered inside this
+  /// stack (not in the root overlay) so it can never survive the calendar page
+  /// or float above other routes.
+  final GlobalKey _previewStackKey = GlobalKey();
+
+  @override
+  void dispose() {
+    // The poster is rendered inside this page, but its hide timer is global.
+    // Clear both so nothing lingers after the calendar is gone.
+    _CalendarCoverPreview.hide();
+    super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Offstage tabs keep their state (IndexedStack + TickerMode). Clear the
+    // hovered poster so it does not reappear stale when the tab comes back.
+    if (!TickerMode.of(context)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _CalendarCoverPreview.hide();
+      });
     }
   }
 
@@ -233,6 +259,10 @@ class _CalendarMonthViewState extends State<CalendarMonthView> {
     DateTime cellDate,
     List<AiringScheduleItem> daySchedules,
   ) {
+    // A title preview may be open while the user clicks the day cell. It lives
+    // in the root overlay and would otherwise stay above the day route and
+    // never come back down.
+    _CalendarCoverPreview.hide();
     final colors = context.themeColors;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
@@ -442,74 +472,211 @@ class _CalendarMonthViewState extends State<CalendarMonthView> {
       builder: (context, constraints) {
         final isDesktop = constraints.maxWidth >= 720;
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+        return Stack(
+          key: _previewStackKey,
           children: [
-            // Month Navigation Toolbar
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-              child: Row(
+            Positioned.fill(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  IconButton(
-                    tooltip: widget.l10n.previousMonth,
-                    icon: const Icon(Icons.chevron_left_rounded, size: 20),
-                    visualDensity: VisualDensity.compact,
-                    color: colors.textSecondary,
-                    onPressed: _previousMonth,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    _formatMonthYear(widget.currentMonth),
-                    style: TextStyle(
-                      fontSize: 14.5,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.6,
-                      color: colors.textPrimary,
+                  // Month Navigation Toolbar
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 4,
+                    ),
+                    child: Row(
+                      children: [
+                        IconButton(
+                          tooltip: widget.l10n.previousMonth,
+                          icon: const Icon(Icons.chevron_left_rounded, size: 20),
+                          visualDensity: VisualDensity.compact,
+                          color: colors.textSecondary,
+                          onPressed: _previousMonth,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          _formatMonthYear(widget.currentMonth),
+                          style: TextStyle(
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.6,
+                            color: colors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        IconButton(
+                          tooltip: widget.l10n.nextMonth,
+                          icon: const Icon(Icons.chevron_right_rounded, size: 20),
+                          visualDensity: VisualDensity.compact,
+                          color: colors.textSecondary,
+                          onPressed: _nextMonth,
+                        ),
+                        const Spacer(),
+                        if (!isCurrentMonth)
+                          TextButton.icon(
+                            onPressed: _goToToday,
+                            style: TextButton.styleFrom(
+                              foregroundColor: colors.accent,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
+                              visualDensity: VisualDensity.compact,
+                            ),
+                            icon: const Icon(Icons.today_rounded, size: 15),
+                            label: Text(
+                              widget.l10n.today,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 11.5,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
-                  const SizedBox(width: 4),
-                  IconButton(
-                    tooltip: widget.l10n.nextMonth,
-                    icon: const Icon(Icons.chevron_right_rounded, size: 20),
-                    visualDensity: VisualDensity.compact,
-                    color: colors.textSecondary,
-                    onPressed: _nextMonth,
+
+                  // Weekday Headers
+                  _buildWeekdayHeaders(theme, isDark, isOled),
+
+                  // Calendar Grid Body
+                  Expanded(
+                    child: isDesktop
+                        ? _buildDesktopGrid(context, theme, isDark, isOled)
+                        : _buildMobileView(context, theme, isDark, isOled),
                   ),
-                  const Spacer(),
-                  if (!isCurrentMonth)
-                    TextButton.icon(
-                      onPressed: _goToToday,
-                      style: TextButton.styleFrom(
-                        foregroundColor: colors.accent,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 6,
-                        ),
-                        visualDensity: VisualDensity.compact,
-                      ),
-                      icon: const Icon(Icons.today_rounded, size: 15),
-                      label: Text(
-                        widget.l10n.today,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 11.5,
-                        ),
-                      ),
-                    ),
                 ],
               ),
             ),
-
-            // Weekday Headers
-            _buildWeekdayHeaders(theme, isDark, isOled),
-
-            // Calendar Grid Body
-            Expanded(
-              child: isDesktop
-                  ? _buildDesktopGrid(context, theme, isDark, isOled)
-                  : _buildMobileView(context, theme, isDark, isOled),
-            ),
+            _buildCoverPreview(context),
           ],
+        );
+      },
+    );
+  }
+
+  /// Renders the poster for the hovered month title, positioned inside this
+  /// page's own stack.
+  Widget _buildCoverPreview(BuildContext context) {
+    return ValueListenableBuilder<_CalendarCoverPreviewData?>(
+      valueListenable: _CalendarCoverPreview.notifier,
+      builder: (context, data, _) {
+        if (data == null) return const SizedBox.shrink();
+
+        final colors = context.themeColors;
+        final theme = Theme.of(context);
+        final isOled =
+            data.isOled ||
+            (theme.brightness == Brightness.dark &&
+                theme.scaffoldBackgroundColor == Colors.black);
+
+        final stackBox =
+            _previewStackKey.currentContext?.findRenderObject() as RenderBox?;
+        if (stackBox == null || !stackBox.attached || !stackBox.hasSize) {
+          return const SizedBox.shrink();
+        }
+
+        final anchorTopLeft = stackBox.globalToLocal(data.anchor.topLeft);
+        final anchorSize = data.anchor.size;
+        final stackSize = stackBox.size;
+
+        final previewWidth = _CalendarCoverPreview.width;
+        final previewHeight = _CalendarCoverPreview.height;
+
+        var left =
+            anchorTopLeft.dx + (anchorSize.width - previewWidth) / 2;
+        left = left.clamp(
+          8.0,
+          math.max(8.0, stackSize.width - previewWidth - 8),
+        );
+
+        var top = anchorTopLeft.dy - previewHeight - _CalendarCoverPreview.gap;
+        if (top < 8) {
+          top = anchorTopLeft.dy + (anchorSize.height - previewHeight) / 2;
+        }
+        top = top.clamp(
+          8.0,
+          math.max(8.0, stackSize.height - previewHeight - 8),
+        );
+
+        return Positioned(
+          left: left,
+          top: top,
+          child: MouseRegion(
+            // Moving the pointer from the title onto the poster keeps it
+            // alive so it can be clicked; leaving both dismisses it.
+            onEnter: (_) => _CalendarCoverPreview.cancelHide(),
+            onExit: (_) => _CalendarCoverPreview.hideAfterDelay(data.owner),
+            cursor: SystemMouseCursors.click,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
+                _CalendarCoverPreview.hide();
+                data.onOpen();
+              },
+              child: Material(
+                type: MaterialType.transparency,
+                child: TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.0, end: 1.0),
+                  duration: const Duration(milliseconds: 130),
+                  curve: Curves.easeOutCubic,
+                  builder: (context, value, child) {
+                    return Opacity(
+                      opacity: value,
+                      child: Transform.translate(
+                        offset: Offset(0, (1 - value) * 5),
+                        child: child,
+                      ),
+                    );
+                  },
+                  child: Container(
+                    width: previewWidth,
+                    height: previewHeight,
+                    decoration: BoxDecoration(
+                      color: isOled ? Colors.black : colors.surfaceElevated,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: isOled
+                            ? const Color(0xFF2E2E38)
+                            : colors.border.withValues(alpha: 0.85),
+                        width: 1,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(
+                            alpha: isOled ? 0.95 : 0.45,
+                          ),
+                          blurRadius: 14,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(7),
+                      child: data.coverUrl != null
+                          ? CachedNetworkImage(
+                              imageUrl: data.coverUrl!,
+                              fit: BoxFit.cover,
+                              memCacheWidth: 480,
+                              memCacheHeight: 720,
+                              errorWidget: (_, _, _) => ColoredBox(
+                                color: isOled
+                                    ? const Color(0xFF101014)
+                                    : colors.surfaceElevated,
+                              ),
+                            )
+                          : ColoredBox(
+                              color: isOled
+                                  ? const Color(0xFF101014)
+                                  : colors.surfaceElevated,
+                            ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
         );
       },
     );
@@ -774,10 +941,7 @@ class _CalendarMonthViewState extends State<CalendarMonthView> {
                                               item: item,
                                               title: _resolveTitle(item),
                                               titleLang: widget.titleLang,
-                                              isDark: isDark,
                                               isOled: isOled,
-                                              theme: theme,
-                                              columnNumber: index % 7,
                                               onOpenDayModal: () =>
                                                   _openDayModal(
                                                     context,
@@ -1021,25 +1185,94 @@ class _CalendarMonthViewState extends State<CalendarMonthView> {
   }
 }
 
+/// Snapshot of the poster drawn while a month title is hovered.
+class _CalendarCoverPreviewData {
+  final Object owner;
+
+  /// Global rect of the hovered title, used to anchor the poster.
+  final Rect anchor;
+  final String? coverUrl;
+  final bool isOled;
+
+  /// Opens the anime's details when the poster itself is clicked.
+  final VoidCallback onOpen;
+
+  const _CalendarCoverPreviewData({
+    required this.owner,
+    required this.anchor,
+    required this.coverUrl,
+    required this.isOled,
+    required this.onOpen,
+  });
+}
+
+/// Owns the single cover preview shown above the month grid.
+///
+/// The poster used to be an `OverlayEntry` inserted into the *root* overlay,
+/// which put it above every route: opening a day or a detail page while it was
+/// visible left it floating over the whole app. It is now rendered inside the
+/// month view's own stack, so it cannot outlive the calendar page.
+class _CalendarCoverPreview {
+  static const double width = 160;
+  static const double height = 240;
+  static const double gap = 10;
+
+  static final ValueNotifier<_CalendarCoverPreviewData?> notifier =
+      ValueNotifier<_CalendarCoverPreviewData?>(null);
+
+  static Timer? _hideTimer;
+
+  static void show(_CalendarCoverPreviewData data) {
+    cancelHide();
+    notifier.value = data;
+  }
+
+  /// Keeps the poster alive while the pointer travels from the title to it.
+  static void cancelHide() {
+    _hideTimer?.cancel();
+    _hideTimer = null;
+  }
+
+  /// Dismisses the poster soon unless the pointer enters the poster itself.
+  static void hideAfterDelay([Object? owner]) {
+    final current = notifier.value;
+    if (current == null) return;
+    if (owner != null && !identical(owner, current.owner)) return;
+    cancelHide();
+    _hideTimer = Timer(const Duration(milliseconds: 180), () {
+      _hideTimer = null;
+      notifier.value = null;
+    });
+  }
+
+  static void hide([Object? owner]) {
+    final current = notifier.value;
+    if (current == null) {
+      cancelHide();
+      return;
+    }
+    if (owner != null && !identical(owner, current.owner)) return;
+    cancelHide();
+    notifier.value = null;
+  }
+
+  static bool isOwnedBy(Object owner) =>
+      identical(notifier.value?.owner, owner);
+}
+
 /// Anime Title item in the month view cell.
 class _AiringTitleHoverItem extends StatefulWidget {
   final AiringScheduleItem item;
   final String title;
   final TitleLanguage titleLang;
-  final bool isDark;
   final bool isOled;
-  final ThemeData theme;
-  final int columnNumber;
   final VoidCallback onOpenDayModal;
 
   const _AiringTitleHoverItem({
     required this.item,
     required this.title,
     required this.titleLang,
-    required this.isDark,
     required this.isOled,
-    required this.theme,
-    required this.columnNumber,
     required this.onOpenDayModal,
   });
 
@@ -1048,177 +1281,145 @@ class _AiringTitleHoverItem extends StatefulWidget {
 }
 
 class _AiringTitleHoverItemState extends State<_AiringTitleHoverItem> {
-  final OverlayPortalController _overlayPortalController =
-      OverlayPortalController();
-  final LayerLink _layerLink = LayerLink();
+  final GlobalKey _anchorKey = GlobalKey();
   bool _isHovered = false;
+
+  @override
+  void dispose() {
+    if (_CalendarCoverPreview.isOwnedBy(this)) {
+      // The grid may dispose this item while a page is being rebuilt; notify
+      // after the current frame to avoid rebuilding the month view mid-build.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _CalendarCoverPreview.hide(this);
+      });
+    }
+    super.dispose();
+  }
+
+  void _hidePreview() {
+    _CalendarCoverPreview.hide(this);
+  }
+
+  void _showPreview() {
+    final anchorBox =
+        _anchorKey.currentContext?.findRenderObject() as RenderBox?;
+    if (anchorBox == null || !anchorBox.attached || !anchorBox.hasSize) {
+      return;
+    }
+
+    _CalendarCoverPreview.show(
+      _CalendarCoverPreviewData(
+        owner: this,
+        anchor: anchorBox.localToGlobal(Offset.zero) & anchorBox.size,
+        coverUrl: widget.item.media.coverImage,
+        isOled: widget.isOled,
+        onOpen: () {
+          AnimeDetailScreen.navigate(
+            context,
+            mediaId: widget.item.media.mediaId,
+            initialEntry: widget.item.media,
+          );
+        },
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final colors = context.themeColors;
     final anime = widget.item.media;
-    final isFarRight =
-        widget.columnNumber >=
-        3; // Columns 3, 4, 5, 6 display popover on the left
 
-    return CompositedTransformTarget(
-      link: _layerLink,
-      child: OverlayPortal(
-        controller: _overlayPortalController,
-        overlayChildBuilder: (context) {
-          return CompositedTransformFollower(
-            link: _layerLink,
-            targetAnchor: isFarRight ? Alignment.topLeft : Alignment.topRight,
-            followerAnchor: isFarRight ? Alignment.topRight : Alignment.topLeft,
-            offset: Offset(isFarRight ? -8 : 8, -8),
-            showWhenUnlinked: false,
-            child: IgnorePointer(
-              child: Material(
-                type: MaterialType.transparency,
-                child: AnimatedOpacity(
-                  duration: const Duration(milliseconds: 140),
-                  opacity: _isHovered ? 1.0 : 0.0,
-                  child: Container(
-                    width: 62,
-                    height: 90,
-                    decoration: BoxDecoration(
-                      color: widget.isOled
-                          ? Colors.black
-                          : colors.surfaceElevated,
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(
-                        color: widget.isOled
-                            ? const Color(0xFF2E2E38)
-                            : colors.border.withValues(alpha: 0.8),
-                        width: 1,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(
-                            alpha: widget.isOled ? 0.95 : 0.5,
-                          ),
-                          blurRadius: 16,
-                          offset: const Offset(0, 6),
-                        ),
-                      ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(5),
-                      child: anime.coverImage != null
-                          ? CachedNetworkImage(
-                              imageUrl: anime.coverImage!,
-                              fit: BoxFit.cover,
-                              memCacheWidth: 260,
-                              errorWidget: (_, _, _) => ColoredBox(
-                                color: widget.isOled
-                                    ? const Color(0xFF101014)
-                                    : colors.surfaceElevated,
-                              ),
-                            )
-                          : ColoredBox(
-                              color: widget.isOled
-                                  ? const Color(0xFF101014)
-                                  : colors.surfaceElevated,
-                            ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          );
-        },
-        child: MouseRegion(
-          onEnter: (_) {
-            setState(() => _isHovered = true);
-            _overlayPortalController.show();
+    return MouseRegion(
+      onEnter: (_) {
+        setState(() => _isHovered = true);
+        _showPreview();
+      },
+      onExit: (_) {
+        setState(() => _isHovered = false);
+        _CalendarCoverPreview.hideAfterDelay(this);
+      },
+      child: Listener(
+        behavior: HitTestBehavior.deferToChild,
+        onPointerDown: (_) => _hidePreview(),
+        child: ShowQuickViewDetector(
+          heroTag: 'quick_prev_${widget.item.id}_${anime.mediaId}',
+          hoverDelay: const Duration(
+            days: 365,
+          ), // Disables idle auto-popup so only right-click triggers it!
+          dataBuilder: () => ShowPreviewData.fromAnime(anime, widget.titleLang),
+          onOpenDetails: () {
+            AnimeDetailScreen.navigate(
+              context,
+              mediaId: anime.mediaId,
+              initialEntry: anime,
+            );
           },
-          onExit: (_) {
-            setState(() => _isHovered = false);
-            _overlayPortalController.hide();
-          },
-          child: ShowQuickViewDetector(
-            heroTag: 'quick_prev_${widget.item.id}_${anime.mediaId}',
-            hoverDelay: const Duration(
-              days: 365,
-            ), // Disables idle auto-popup so only right-click triggers it!
-            dataBuilder: () =>
-                ShowPreviewData.fromAnime(anime, widget.titleLang),
-            onOpenDetails: () {
+          child: InkWell(
+            key: _anchorKey,
+            onTap: () {
+              _hidePreview();
               AnimeDetailScreen.navigate(
                 context,
                 mediaId: anime.mediaId,
                 initialEntry: anime,
               );
             },
-            child: InkWell(
-              onTap: () {
-                AnimeDetailScreen.navigate(
-                  context,
-                  mediaId: anime.mediaId,
-                  initialEntry: anime,
-                );
-              },
-              borderRadius: BorderRadius.circular(4),
-              child: Container(
-                height: 22,
-                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                decoration: BoxDecoration(
-                  color: _isHovered
-                      ? (widget.isOled
-                            ? const Color(0xFF1A1A22)
-                            : colors.surfaceElevated.withValues(alpha: 0.95))
-                      : (widget.isOled
-                            ? const Color(0xFF0D0D12)
-                            : colors.surfaceElevated.withValues(
-                                alpha: widget.isDark ? 0.45 : 0.3,
-                              )),
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(
-                    color: _isHovered
-                        ? (widget.isOled
-                              ? const Color(0xFF32323E)
-                              : colors.borderFocused.withValues(alpha: 0.6))
-                        : (widget.isOled
-                              ? const Color(0xFF1C1C24)
-                              : Colors.transparent),
-                    width: 0.8,
+            borderRadius: BorderRadius.circular(4),
+            child: SizedBox(
+              height: 22,
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 34,
+                    child: Text(
+                      _formatTime(widget.item.airingAt),
+                      maxLines: 1,
+                      overflow: TextOverflow.clip,
+                      style: TextStyle(
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w700,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                        color: _isHovered
+                            ? colors.accent
+                            : (widget.isOled
+                                  ? Colors.white.withValues(alpha: 0.56)
+                                  : colors.textMuted),
+                      ),
+                    ),
                   ),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 4,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: colors.accent.withValues(
-                          alpha: _isHovered ? 1.0 : 0.65,
-                        ),
-                        shape: BoxShape.circle,
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      widget.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: -0.1,
+                        height: 1.1,
+                        color: _isHovered
+                            ? colors.accent
+                            : (widget.isOled
+                                  ? Colors.white.withValues(alpha: 0.88)
+                                  : colors.textPrimary),
                       ),
                     ),
-                    const SizedBox(width: 5),
-                    Expanded(
-                      child: Text(
-                        widget.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 12.0,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: -0.1,
-                          color: widget.isOled
-                              ? Colors.white
-                              : colors.textPrimary,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),
         ),
       ),
     );
+  }
+
+  String _formatTime(int timestamp) {
+    if (timestamp <= 0) return '';
+    final date = DateTime.fromMillisecondsSinceEpoch(timestamp * 1000);
+    final hour = date.hour.toString().padLeft(2, '0');
+    final minute = date.minute.toString().padLeft(2, '0');
+    return '$hour:$minute';
   }
 }

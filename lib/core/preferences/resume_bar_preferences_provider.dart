@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:aniting/core/constants/feature_flags.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LastSessionItem {
@@ -226,7 +227,9 @@ class LastSessionNotifier extends Notifier<LastSessionItem?> {
       final raw = _cachedPrefs!.getString(_storageKey);
       if (raw != null) {
         try {
-          return LastSessionItem.fromJson(jsonDecode(raw));
+          final item = LastSessionItem.fromJson(jsonDecode(raw));
+          if (!FeatureFlags.tmdb && item.isTmdb) return null;
+          return item;
         } catch (_) {}
       }
     }
@@ -241,7 +244,9 @@ class LastSessionNotifier extends Notifier<LastSessionItem?> {
       if (raw != null) {
         final decoded = jsonDecode(raw);
         if (decoded is Map<String, dynamic>) {
-          state = LastSessionItem.fromJson(decoded);
+          final item = LastSessionItem.fromJson(decoded);
+          if (!FeatureFlags.tmdb && item.isTmdb) return;
+          state = item;
         }
       }
     } catch (e) {
@@ -250,6 +255,7 @@ class LastSessionNotifier extends Notifier<LastSessionItem?> {
   }
 
   Future<void> saveSession(LastSessionItem item) async {
+    if (!FeatureFlags.tmdb && item.isTmdb) return;
     state = item;
     try {
       final prefs = await SharedPreferences.getInstance();

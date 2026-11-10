@@ -1,7 +1,7 @@
 package constants
 
 import (
-	"seanime/internal/util"
+	"aniting/internal/util"
 	"time"
 )
 
@@ -16,9 +16,9 @@ const (
 )
 
 const (
-	SeanimeRoomsApiUrl   = "https://seanime.app/api/rooms"
-	SeanimeRoomsApiWsUrl = "wss://seanime.app/api/rooms"
-	SeanimeRoomsVersion  = "1.0.0"
+	AnitingRoomsApiUrl   = "https://seanime.app/api/rooms"
+	AnitingRoomsApiWsUrl = "wss://seanime.app/api/rooms"
+	AnitingRoomsVersion  = "1.0.0"
 )
 
 var DefaultExtensionMarketplaceURL = util.Decode("aHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tLzVyYWhpbS9zZWFuaW1lLWV4dGVuc2lvbnMvcmVmcy9oZWFkcy9tYWluL21hcmtldHBsYWNlLmpzb24=")

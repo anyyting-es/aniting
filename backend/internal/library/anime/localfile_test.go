@@ -1,8 +1,8 @@
-package anime_test
+﻿package anime_test
 
 import (
 	"runtime"
-	"seanime/internal/library/anime"
+	"aniting/internal/library/anime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"

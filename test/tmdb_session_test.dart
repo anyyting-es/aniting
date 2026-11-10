@@ -1,9 +1,9 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+﻿import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:seanime_app/core/preferences/resume_bar_preferences_provider.dart';
-import 'package:seanime_app/core/preferences/section_visibility_provider.dart';
+import 'package:aniting/core/preferences/resume_bar_preferences_provider.dart';
+import 'package:aniting/core/preferences/section_visibility_provider.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -47,14 +47,14 @@ void main() {
   });
 
   group('TMDB section activation', () {
-    test('Shows are enabled by default on a fresh install', () async {
+    test('TMDB/Shows stays disabled on a fresh install', () async {
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
       ShowsSectionEnabledNotifier.setCachedPrefs(prefs);
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
-      expect(container.read(showsSectionEnabledProvider), isTrue);
+      expect(container.read(showsSectionEnabledProvider), isFalse);
     });
 
     test('An explicit disabled preference is respected', () async {
@@ -64,6 +64,17 @@ void main() {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
+      expect(container.read(showsSectionEnabledProvider), isFalse);
+    });
+
+    test('TMDB cannot be re-enabled while the feature flag is off', () async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      ShowsSectionEnabledNotifier.setCachedPrefs(prefs);
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await container.read(showsSectionEnabledProvider.notifier).setEnabled(true);
       expect(container.read(showsSectionEnabledProvider), isFalse);
     });
   });

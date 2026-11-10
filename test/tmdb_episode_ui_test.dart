@@ -1,15 +1,15 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:g1455/g1455.dart';
 
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/i18n/translations/es.dart';
-import 'package:seanime_app/data/models/anime_details.dart';
-import 'package:seanime_app/data/models/episode_item.dart';
-import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
-import 'package:seanime_app/presentation/widgets/anime_detail/desktop/desktop_episodes_tab.dart';
-import 'package:seanime_app/presentation/widgets/anime_detail/desktop/desktop_season_switcher.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/i18n/translations/es.dart';
+import 'package:aniting/data/models/anime_details.dart';
+import 'package:aniting/data/models/episode_item.dart';
+import 'package:aniting/presentation/screens/anime_detail_screen.dart';
+import 'package:aniting/presentation/widgets/anime_detail/desktop/desktop_episodes_tab.dart';
+import 'package:aniting/presentation/widgets/anime_detail/desktop/desktop_season_switcher.dart';
 
 void main() {
   testWidgets('TMDB episodes render with the Anime episode component',

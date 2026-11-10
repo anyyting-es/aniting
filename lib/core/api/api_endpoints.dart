@@ -6,6 +6,13 @@ class ApiEndpoints {
   static const String settings = '/settings';
   static const String settingsPath = '/settings/path';
 
+  // Trailers
+  static const String trailerResolve = '/trailer/resolve';
+
+  // System / hardware
+  static const String systemGpu = '/system/gpu';
+  static const String systemGpuPreference = '/system/gpu/preference';
+
   // Library
   static const String libraryCollection = '/library/collection';
   static const String libraryScan = '/library/scan';
@@ -78,6 +85,8 @@ class ApiEndpoints {
   static const String mangaUpdateProgress = '/manga/update-progress';
   static const String mangaAnilistList = '/manga/anilist/list';
   static const String mangaCache = '/manga/entry/cache';
+  static const String mangaManualSearch = '/manga/manual-search';
+  static const String mangaManualMapping = '/manga/manual-mapping';
 
   // Manga Downloads
   static const String mangaDownloadChapters = '/manga/download-chapters';

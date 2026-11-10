@@ -1,9 +1,9 @@
-package mediastream
+﻿package mediastream
 
 import (
 	"errors"
-	"seanime/internal/events"
-	"seanime/internal/mediastream/cassette"
+	"aniting/internal/events"
+	"aniting/internal/mediastream/cassette"
 	"strconv"
 	"strings"
 

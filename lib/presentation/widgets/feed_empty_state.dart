@@ -1,12 +1,12 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/presentation/providers/local_library_provider.dart';
-import 'package:seanime_app/presentation/screens/settings/widgets/media_servers/jellyfin_login_dialog.dart';
-import 'package:seanime_app/presentation/screens/settings/widgets/media_servers/plex_login_dialog.dart';
-import 'package:seanime_app/presentation/widgets/anilist_auth_sheet.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/presentation/providers/local_library_provider.dart';
+import 'package:aniting/presentation/screens/settings/widgets/media_servers/jellyfin_login_dialog.dart';
+import 'package:aniting/presentation/screens/settings/widgets/media_servers/plex_login_dialog.dart';
+import 'package:aniting/presentation/widgets/anilist_auth_sheet.dart';
 
 /// Compact empty state shown when the user is not logged in or has no items
 /// in their anime/manga library. Offers exploring the catalog plus the

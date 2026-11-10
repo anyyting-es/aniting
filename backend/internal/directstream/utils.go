@@ -1,10 +1,10 @@
-package directstream
+﻿package directstream
 
 import (
 	"context"
 	"net/url"
 	"path/filepath"
-	"seanime/internal/mkvparser"
+	"aniting/internal/mkvparser"
 )
 
 func getAttachmentByName(ctx context.Context, stream Stream, filename string) (*mkvparser.AttachmentInfo, bool) {

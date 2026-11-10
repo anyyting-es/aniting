@@ -1,10 +1,10 @@
-package handlers
+﻿package handlers
 
 import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"seanime/internal/util"
+	"aniting/internal/util"
 
 	"github.com/labstack/echo/v4"
 )

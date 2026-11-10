@@ -1,13 +1,13 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/downloads/online_stream_download_task.dart';
-import 'package:seanime_app/core/downloads/online_stream_downloader.dart';
-import 'package:seanime_app/data/models/onlinestream_models.dart';
-import 'package:seanime_app/presentation/providers/active_downloads_provider.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/providers/download_history_provider.dart';
+import 'package:aniting/core/downloads/online_stream_download_task.dart';
+import 'package:aniting/core/downloads/online_stream_downloader.dart';
+import 'package:aniting/data/models/onlinestream_models.dart';
+import 'package:aniting/presentation/providers/active_downloads_provider.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/providers/download_history_provider.dart';
 
 /// Outcome of attempting to start an online stream download.
 enum DownloadStartResult {

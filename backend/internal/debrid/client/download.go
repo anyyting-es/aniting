@@ -1,4 +1,4 @@
-package debrid_client
+﻿package debrid_client
 
 import (
 	"context"
@@ -12,12 +12,12 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
-	"seanime/internal/debrid/debrid"
-	"seanime/internal/events"
-	"seanime/internal/hook"
-	"seanime/internal/notifier"
-	"seanime/internal/util"
-	"seanime/internal/util/result"
+	"aniting/internal/debrid/debrid"
+	"aniting/internal/events"
+	"aniting/internal/hook"
+	"aniting/internal/notifier"
+	"aniting/internal/util"
+	"aniting/internal/util/result"
 	"strings"
 	"sync"
 	"time"
@@ -505,7 +505,7 @@ func (r *Repository) downloadFile(ctx context.Context, tId string, downloadUrl s
 
 func createDownloadTempDir(destination string) (string, error) {
 	if isMobileDownload() {
-		return os.MkdirTemp("", "seanime-debrid-")
+		return os.MkdirTemp("", "aniting-debrid-")
 	}
 	return os.MkdirTemp(destination, ".tmp-")
 }

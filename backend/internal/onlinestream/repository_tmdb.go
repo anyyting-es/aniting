@@ -1,13 +1,13 @@
-package onlinestream
+﻿package onlinestream
 
 import (
 	"context"
 	"fmt"
 	"strings"
 
-	"seanime/internal/extension"
-	hibikeonlinestream "seanime/internal/extension/hibike/onlinestream"
-	"seanime/internal/util/filecache"
+	"aniting/internal/extension"
+	hibikeonlinestream "aniting/internal/extension/hibike/onlinestream"
+	"aniting/internal/util/filecache"
 
 	"github.com/samber/lo"
 )

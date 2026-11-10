@@ -1,8 +1,8 @@
-package extension_repo
+﻿package extension_repo
 
 import (
 	"fmt"
-	gojautil "seanime/internal/util/goja"
+	gojautil "aniting/internal/util/goja"
 	"strings"
 	"sync"
 

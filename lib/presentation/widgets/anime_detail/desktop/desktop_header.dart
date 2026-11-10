@@ -2,12 +2,22 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/core/utils/synopsis_utils.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/core/utils/synopsis_utils.dart';
+
+import 'desktop_header_poster.dart';
 
 class DesktopHeader extends ConsumerStatefulWidget {
   final String? clearlogoUrl;
+
+  /// Vertical poster rendered above the logo / title block.
+  final String? posterUrl;
+
+  /// Rendered poster size. The parent sizes it to the available hero height so
+  /// it can sit just below the back button and right above the logo.
+  final double posterWidth;
+  final double posterHeight;
 
   /// When true, the logo slot is reserved (showing the title inside it) while
   /// the parent resolves a logo. Prevents the header from jumping later.
@@ -34,6 +44,9 @@ class DesktopHeader extends ConsumerStatefulWidget {
   const DesktopHeader({
     super.key,
     this.clearlogoUrl,
+    this.posterUrl,
+    this.posterWidth = 300,
+    this.posterHeight = 450,
     this.isLogoPending = false,
     this.isTmdb = false,
     this.seasonYearStr = '',
@@ -190,6 +203,16 @@ class _DesktopHeaderState extends ConsumerState<DesktopHeader> {
         mainAxisAlignment: MainAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
+          // ─── 0. Poster (directly above the logo) ───
+          if (widget.posterUrl != null && widget.posterUrl!.isNotEmpty) ...[
+            DesktopHeaderPoster(
+              url: widget.posterUrl!,
+              width: widget.posterWidth,
+              height: widget.posterHeight,
+            ),
+            const SizedBox(height: 16),
+          ],
+
           // ─── 1. Clear Logo or Text Title ───
           Builder(
             builder: (context) {

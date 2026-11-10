@@ -1,4 +1,4 @@
-package manga_providers
+﻿package manga_providers
 
 import (
 	"archive/zip"
@@ -8,9 +8,9 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	hibikemanga "seanime/internal/extension/hibike/manga"
-	"seanime/internal/util/comparison"
-	"seanime/internal/util/result"
+	hibikemanga "aniting/internal/extension/hibike/manga"
+	"aniting/internal/util/comparison"
+	"aniting/internal/util/result"
 	"slices"
 	"strconv"
 	"strings"

@@ -1,6 +1,6 @@
 {
-    "name": "seanime_app",
-    "short_name": "seanime_app",
+    "name": "Aniting",
+    "short_name": "Aniting",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

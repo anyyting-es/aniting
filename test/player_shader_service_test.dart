@@ -1,8 +1,8 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'package:seanime_app/core/i18n/translations/en.dart';
-import 'package:seanime_app/core/i18n/translations/es.dart';
-import 'package:seanime_app/presentation/widgets/player/models/player_types.dart';
-import 'package:seanime_app/presentation/widgets/player/services/player_shader_service.dart';
+﻿import 'package:flutter_test/flutter_test.dart';
+import 'package:aniting/core/i18n/translations/en.dart';
+import 'package:aniting/core/i18n/translations/es.dart';
+import 'package:aniting/presentation/widgets/player/models/player_types.dart';
+import 'package:aniting/presentation/widgets/player/services/player_shader_service.dart';
 
 void main() {
   group('PlayerShaderService and ShaderPreset Tests', () {

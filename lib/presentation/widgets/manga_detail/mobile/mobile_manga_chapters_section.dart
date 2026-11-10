@@ -1,12 +1,12 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:g1455/g1455.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/data/models/manga_entry.dart';
-import 'package:seanime_app/presentation/screens/extensions_marketplace_screen.dart';
-import 'package:seanime_app/presentation/widgets/manga/manga_chapter_item.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/data/models/manga_entry.dart';
+import 'package:aniting/presentation/screens/extensions_marketplace_screen.dart';
+import 'package:aniting/presentation/widgets/manga/manga_chapter_item.dart';
 
 enum MangaFilterOption {
   all,

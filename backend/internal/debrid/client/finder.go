@@ -1,16 +1,16 @@
-package debrid_client
+﻿package debrid_client
 
 import (
 	"context"
 	"fmt"
-	"seanime/internal/api/anilist"
-	"seanime/internal/database/db_bridge"
-	"seanime/internal/debrid/debrid"
-	hibiketorrent "seanime/internal/extension/hibike/torrent"
-	"seanime/internal/library/anime"
-	torrentanalyzer "seanime/internal/torrents/analyzer"
-	"seanime/internal/torrents/autoselect"
-	"seanime/internal/util"
+	"aniting/internal/api/anilist"
+	"aniting/internal/database/db_bridge"
+	"aniting/internal/debrid/debrid"
+	hibiketorrent "aniting/internal/extension/hibike/torrent"
+	"aniting/internal/library/anime"
+	torrentanalyzer "aniting/internal/torrents/analyzer"
+	"aniting/internal/torrents/autoselect"
+	"aniting/internal/util"
 	"strconv"
 
 	"github.com/samber/lo"

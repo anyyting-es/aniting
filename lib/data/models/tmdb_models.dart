@@ -1,4 +1,4 @@
-import 'package:seanime_app/data/models/anime_details.dart';
+﻿import 'package:aniting/data/models/anime_details.dart';
 
 class TmdbEpisode {
   final int id;

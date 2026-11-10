@@ -1,4 +1,4 @@
-import 'package:seanime_app/data/models/anime_entry.dart';
+﻿import 'package:aniting/data/models/anime_entry.dart';
 
 class AiringScheduleItem {
   final int id;

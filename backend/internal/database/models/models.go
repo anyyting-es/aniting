@@ -76,7 +76,6 @@ type AnilistSettings struct {
 type LibrarySettings struct {
 	LibraryPath        string `gorm:"column:library_path" json:"libraryPath"`
 	AutoUpdateProgress bool   `gorm:"column:auto_update_progress" json:"autoUpdateProgress"`
-	DisableUpdateCheck bool   `gorm:"column:disable_update_check" json:"disableUpdateCheck"`
 	TorrentProvider    string `gorm:"column:torrent_provider" json:"torrentProvider"`
 	// DEPRECATED
 	AutoSelectTorrentProvider       string `gorm:"column:auto_select_torrent_provider" json:"autoSelectTorrentProvider"`
@@ -106,7 +105,6 @@ type LibrarySettings struct {
 	// v3.5+
 	ScannerUseLegacyMatching bool   `gorm:"column:scanner_use_legacy_matching" json:"scannerUseLegacyMatching"`
 	ScannerConfig            string `gorm:"column:scanner_config" json:"scannerConfig"`
-	UpdateChannel            string `gorm:"column:update_channel" json:"updateChannel"` // "github", "seanime", "seanime_nightly"
 	// v3.7.0+
 	EnableExtensionSecureMode bool   `gorm:"column:enable_extension_secure_mode" json:"enableExtensionSecureMode"`
 	DefaultPlaybackSource     string `gorm:"column:default_playback_source" json:"defaultPlaybackSource"` // "", "library", "torrentstream", "debridstream", "onlinestream", "ext:[extensionId]"
@@ -229,11 +227,11 @@ type TorrentSettings struct {
 	TransmissionPort          int    `gorm:"column:transmission_port" json:"transmissionPort"`
 	TransmissionUsername      string `gorm:"column:transmission_username" json:"transmissionUsername"`
 	TransmissionPassword      string `gorm:"column:transmission_password" json:"transmissionPassword"`
-	SeanimePort               int    `gorm:"column:seanime_port" json:"seanimePort"`
-	SeanimeMaxConnections     int    `gorm:"column:seanime_max_connections" json:"seanimeMaxConnections"`
-	SeanimeDownloadLimit      int    `gorm:"column:seanime_download_limit" json:"seanimeDownloadLimit"`
-	SeanimeUploadLimit        int    `gorm:"column:seanime_upload_limit" json:"seanimeUploadLimit"`
-	SeanimeMaxActiveDownloads int    `gorm:"column:seanime_max_active_downloads" json:"seanimeMaxActiveDownloads"`
+	AnitingPort               int    `gorm:"column:aniting_port" json:"anitingPort"`
+	AnitingMaxConnections     int    `gorm:"column:aniting_max_connections" json:"anitingMaxConnections"`
+	AnitingDownloadLimit      int    `gorm:"column:aniting_download_limit" json:"anitingDownloadLimit"`
+	AnitingUploadLimit        int    `gorm:"column:aniting_upload_limit" json:"anitingUploadLimit"`
+	AnitingMaxActiveDownloads int    `gorm:"column:aniting_max_active_downloads" json:"anitingMaxActiveDownloads"`
 	// v2.1+
 	ShowActiveTorrentCount bool `gorm:"column:show_active_torrent_count" json:"showActiveTorrentCount"`
 	// v2.2+
@@ -265,7 +263,7 @@ type DiscordSettings struct {
 	EnableRichPresence                      bool `gorm:"column:enable_rich_presence" json:"enableRichPresence"`
 	EnableAnimeRichPresence                 bool `gorm:"column:enable_anime_rich_presence" json:"enableAnimeRichPresence"`
 	EnableMangaRichPresence                 bool `gorm:"column:enable_manga_rich_presence" json:"enableMangaRichPresence"`
-	RichPresenceHideSeanimeRepositoryButton bool `gorm:"column:rich_presence_hide_seanime_repository_button" json:"richPresenceHideSeanimeRepositoryButton"`
+	RichPresenceHideAnitingRepositoryButton bool `gorm:"column:rich_presence_hide_aniting_repository_button" json:"richPresenceHideAnitingRepositoryButton"`
 	RichPresenceShowAniListMediaButton      bool `gorm:"column:rich_presence_show_anilist_media_button" json:"richPresenceShowAniListMediaButton"`
 	RichPresenceShowAniListProfileButton    bool `gorm:"column:rich_presence_show_anilist_profile_button" json:"richPresenceShowAniListProfileButton"`
 	RichPresenceUseMediaTitleStatus         bool `gorm:"column:rich_presence_use_media_title_status;default:true" json:"richPresenceUseMediaTitleStatus"`

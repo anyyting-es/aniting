@@ -1,11 +1,11 @@
-import 'package:seanime_app/core/i18n/translations/translations.dart';
-import 'package:seanime_app/core/server/server_manager.dart';
-import 'package:seanime_app/data/models/anime_details.dart';
-import 'package:seanime_app/data/models/anizip_data.dart';
-import 'package:seanime_app/data/models/library_entry_details.dart';
-import 'package:seanime_app/data/models/onlinestream_models.dart';
-import 'package:seanime_app/data/repositories/seanime_repository.dart';
-import 'package:seanime_app/presentation/widgets/player/models/player_direct_episode.dart';
+﻿import 'package:aniting/core/i18n/translations/translations.dart';
+import 'package:aniting/core/server/server_manager.dart';
+import 'package:aniting/data/models/anime_details.dart';
+import 'package:aniting/data/models/anizip_data.dart';
+import 'package:aniting/data/models/library_entry_details.dart';
+import 'package:aniting/data/models/onlinestream_models.dart';
+import 'package:aniting/data/repositories/aniting_repository.dart';
+import 'package:aniting/presentation/widgets/player/models/player_direct_episode.dart';
 
 /// Resolved source configuration to play a target episode.
 class ResolvedEpisodeSource {
@@ -31,7 +31,7 @@ class ResolvedEpisodeSource {
 /// Helper service to resolve next/previous episode streams from local library
 /// or active online stream providers with in-memory caching and background prefetching.
 class PlayerEpisodeResolver {
-  final SeanimeRepository repository;
+  final AnitingRepository repository;
   final ServerManager serverManager;
   final AppTranslations? l10n;
 
@@ -250,6 +250,7 @@ class PlayerEpisodeResolver {
           mediaId: mediaId,
           episodeNumber: targetEpNum,
           autoSelect: true,
+          playbackType: 'none',
         );
         if (success) {
           final streamUrl =

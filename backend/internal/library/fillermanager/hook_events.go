@@ -1,9 +1,9 @@
-package fillermanager
+﻿package fillermanager
 
 import (
-	"seanime/internal/hook_resolver"
-	"seanime/internal/library/anime"
-	"seanime/internal/onlinestream"
+	"aniting/internal/hook_resolver"
+	"aniting/internal/library/anime"
+	"aniting/internal/onlinestream"
 )
 
 // HydrateFillerDataRequestedEvent is triggered when the filler manager requests to hydrate the filler data for an entry.

@@ -1,9 +1,9 @@
-package autoselect
+﻿package autoselect
 
 import (
 	"context"
-	hibiketorrent "seanime/internal/extension/hibike/torrent"
-	"seanime/internal/library/anime"
+	hibiketorrent "aniting/internal/extension/hibike/torrent"
+	"aniting/internal/library/anime"
 	"testing"
 
 	"github.com/rs/zerolog"

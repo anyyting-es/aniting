@@ -1,19 +1,19 @@
-package local
+﻿package local
 
 import (
 	"context"
 	"fmt"
 	"os"
 	"path/filepath"
-	"seanime/internal/api/anilist"
-	"seanime/internal/api/metadata_provider"
-	"seanime/internal/database/db"
-	"seanime/internal/database/db_bridge"
-	"seanime/internal/events"
-	"seanime/internal/library/anime"
-	"seanime/internal/manga"
-	"seanime/internal/platforms/platform"
-	"seanime/internal/util"
+	"aniting/internal/api/anilist"
+	"aniting/internal/api/metadata_provider"
+	"aniting/internal/database/db"
+	"aniting/internal/database/db_bridge"
+	"aniting/internal/events"
+	"aniting/internal/library/anime"
+	"aniting/internal/manga"
+	"aniting/internal/platforms/platform"
+	"aniting/internal/util"
 
 	"github.com/rs/zerolog"
 	"github.com/samber/lo"

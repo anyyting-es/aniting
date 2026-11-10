@@ -1,9 +1,9 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/data/models/app_update_models.dart';
-import 'package:seanime_app/data/services/app_update_service.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/data/models/app_update_models.dart';
+import 'package:aniting/data/services/app_update_service.dart';
 
 enum UpdateDownloadStatus {
   idle,

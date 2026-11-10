@@ -1,7 +1,7 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'package:seanime_app/data/models/onlinestream_models.dart';
-import 'package:seanime_app/data/models/tmdb_models.dart';
-import 'package:seanime_app/presentation/providers/episodes_provider.dart';
+﻿import 'package:flutter_test/flutter_test.dart';
+import 'package:aniting/data/models/onlinestream_models.dart';
+import 'package:aniting/data/models/tmdb_models.dart';
+import 'package:aniting/presentation/providers/episodes_provider.dart';
 
 void main() {
   group('TMDB integration wiring', () {

@@ -116,7 +116,7 @@ func addPortMappingIGD(clientFactory func() ([]UPnPClient, error), port int) (st
 			uint16(port),     // NewInternalPort
 			"127.0.0.1",      // NewInternalClient (localhost)
 			true,             // NewEnabled
-			"Seanime Nakama", // NewPortMappingDescription
+			"Aniting Nakama", // NewPortMappingDescription
 			uint32(3600),     // NewLeaseDuration (1 hour)
 		)
 		if err != nil {

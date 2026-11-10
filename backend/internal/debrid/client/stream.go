@@ -1,17 +1,17 @@
-package debrid_client
+﻿package debrid_client
 
 import (
 	"context"
 	"errors"
 	"fmt"
-	"seanime/internal/database/db_bridge"
-	"seanime/internal/debrid/debrid"
-	"seanime/internal/directstream"
-	"seanime/internal/events"
-	hibiketorrent "seanime/internal/extension/hibike/torrent"
-	"seanime/internal/hook"
-	"seanime/internal/library/playbackmanager"
-	"seanime/internal/util"
+	"aniting/internal/database/db_bridge"
+	"aniting/internal/debrid/debrid"
+	"aniting/internal/directstream"
+	"aniting/internal/events"
+	hibiketorrent "aniting/internal/extension/hibike/torrent"
+	"aniting/internal/hook"
+	"aniting/internal/library/playbackmanager"
+	"aniting/internal/util"
 	"strconv"
 	"sync"
 	"time"

@@ -1,17 +1,17 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/preferences/anime_playback_source_provider.dart';
-import 'package:seanime_app/core/preferences/playback_progress_preferences_provider.dart';
-import 'package:seanime_app/core/preferences/resume_bar_preferences_provider.dart';
-import 'package:seanime_app/core/preferences/title_language_provider.dart';
-import 'package:seanime_app/data/models/anime_entry.dart';
-import 'package:seanime_app/data/models/library_entry_details.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
-import 'package:seanime_app/presentation/screens/video_player_screen.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/preferences/anime_playback_source_provider.dart';
+import 'package:aniting/core/preferences/playback_progress_preferences_provider.dart';
+import 'package:aniting/core/preferences/resume_bar_preferences_provider.dart';
+import 'package:aniting/core/preferences/title_language_provider.dart';
+import 'package:aniting/data/models/anime_entry.dart';
+import 'package:aniting/data/models/library_entry_details.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/screens/anime_detail_screen.dart';
+import 'package:aniting/presentation/screens/video_player_screen.dart';
 
 /// Service that launches playback directly for an episode in "Continue Watching" (Seguir Viendo)
 /// using the exact same source the user was watching (Local Library, Online Stream provider, or Torrent).
@@ -98,11 +98,42 @@ class ContinueWatchingPlaybackLauncher {
     final tmdbEnglishTitle = entry.englishTitle;
     final tmdbYear = entry.year;
 
-    // ─── 3. Local Library Fast-Path (0ms) ───
-    // If the anime has local files or user was watching locally, check if local file exists for this EP
-    if (!isTmdb && (isSavedLocal || entry.hasLocalFiles)) {
+    // ─── 3. Instant Local Fast-Path (0ms, no await) ───
+    // Downloaded episodes (local library files or completed torrents) are
+    // already indexed in memory by the feed. Resolving them synchronously lets
+    // the player open on the same frame as the tap, just like a local file.
+    if (!isTmdb) {
+      final cachedPath = repo.getCachedLocalFilePath(entry.mediaId, epNum);
+      if (cachedPath != null && cachedPath.isNotEmpty && context.mounted) {
+        final fileName = cachedPath.split(RegExp(r'[/\\]')).last;
+        final streamUrl =
+            'http://${serverManager.host}:${serverManager.port}/api/v1/mediastream/file?path=${Uri.encodeComponent(cachedPath)}';
+        _openLocalFile(
+          context,
+          mediaId: entry.mediaId,
+          streamUrl: streamUrl,
+          title: mediaTitle,
+          episodeTitle: defaultEpTitle,
+          episodeNumber: epNum,
+          startPosition: startPos,
+          videoSource: 'Local • $fileName',
+          isTmdb: isTmdb,
+          tmdbMediaType: tmdbMediaType,
+          tmdbSeason: tmdbSeason,
+          tmdbEnglishTitle: tmdbEnglishTitle,
+          tmdbYear: tmdbYear,
+        );
+        return;
+      }
+    }
+
+    // ─── 4. Local Library Async Fallback ───
+    // If the anime has local files, was watched locally, or was resumed from a
+    // torrent, look up the episode on disk (covers a stale in-memory index).
+    if (!isTmdb && (isSavedLocal || isSavedTorrent || entry.hasLocalFiles)) {
       try {
-        final libEntry = await repo.getAnimeLibraryEntry(entry.mediaId);
+        final libEntry =
+            await repo.getAnimeLibraryEntry(entry.mediaId, forceRefresh: true);
         final localEp = libEntry?.episodes.cast<LibraryEpisode?>().firstWhere(
               (e) => e?.episodeNumber == epNum,
               orElse: () => null,
@@ -117,36 +148,35 @@ class ContinueWatchingPlaybackLauncher {
               ? localEp.displayTitle
               : defaultEpTitle;
 
-          Navigator.of(context, rootNavigator: true).push(
-            VideoPlayerScreen.route(
-              mediaId: entry.mediaId,
-              videoUrl: streamUrl,
-              title: mediaTitle,
-              episodeTitle: epTitle,
-              episodeNumber: epNum,
-              videoSource:
-                  fileName != null ? 'Local • $fileName' : l10n.localLibrary,
-              startPosition: startPos,
-              isLocalFile: true,
-              isTmdbMedia: isTmdb,
-              tmdbMediaType: tmdbMediaType,
-              tmdbSeason: tmdbSeason,
-              tmdbEnglishTitle: tmdbEnglishTitle,
-              tmdbYear: tmdbYear,
-            ),
+          _openLocalFile(
+            context,
+            mediaId: entry.mediaId,
+            streamUrl: streamUrl,
+            title: mediaTitle,
+            episodeTitle: epTitle,
+            episodeNumber: epNum,
+            startPosition: startPos,
+            videoSource:
+                fileName != null ? 'Local • $fileName' : l10n.localLibrary,
+            isTmdb: isTmdb,
+            tmdbMediaType: tmdbMediaType,
+            tmdbSeason: tmdbSeason,
+            tmdbEnglishTitle: tmdbEnglishTitle,
+            tmdbYear: tmdbYear,
           );
           return;
         }
       } catch (_) {}
     }
 
-    // ─── 4. Torrent Stream Resume ───
+    // ─── 5. Torrent Stream Resume ───
     if (!isTmdb && isSavedTorrent) {
       try {
         final success = await repo.startTorrentStream(
           mediaId: entry.mediaId,
           episodeNumber: epNum,
           autoSelect: true,
+          playbackType: 'none',
         );
         if (success && context.mounted) {
           final streamUrl =
@@ -175,7 +205,7 @@ class ContinueWatchingPlaybackLauncher {
       } catch (_) {}
     }
 
-    // ─── 5. Online Stream Source (same provider, sub/dub, server) ───
+    // ─── 6. Online Stream Source (same provider, sub/dub, server) ───
     String? resolvedProviderId = onlineProvider;
     if (resolvedProviderId == null || resolvedProviderId.isEmpty) {
       // Check global last selected provider
@@ -223,7 +253,7 @@ class ContinueWatchingPlaybackLauncher {
       return;
     }
 
-    // ─── 6. Ultimate Fallback to Detail Screen ───
+    // ─── 7. Ultimate Fallback to Detail Screen ───
     if (context.mounted) {
       if (onFallbackToDetail != null) {
         onFallbackToDetail();
@@ -236,5 +266,40 @@ class ContinueWatchingPlaybackLauncher {
         );
       }
     }
+  }
+
+  /// Opens the video player for a file that lives on the server's disk.
+  static void _openLocalFile(
+    BuildContext context, {
+    required int mediaId,
+    required String streamUrl,
+    required String title,
+    required String episodeTitle,
+    required int episodeNumber,
+    required Duration? startPosition,
+    required String videoSource,
+    required bool isTmdb,
+    required String tmdbMediaType,
+    required int? tmdbSeason,
+    required String? tmdbEnglishTitle,
+    required int? tmdbYear,
+  }) {
+    Navigator.of(context, rootNavigator: true).push(
+      VideoPlayerScreen.route(
+        mediaId: mediaId,
+        videoUrl: streamUrl,
+        title: title,
+        episodeTitle: episodeTitle,
+        episodeNumber: episodeNumber,
+        videoSource: videoSource,
+        startPosition: startPosition,
+        isLocalFile: true,
+        isTmdbMedia: isTmdb,
+        tmdbMediaType: tmdbMediaType,
+        tmdbSeason: tmdbSeason,
+        tmdbEnglishTitle: tmdbEnglishTitle,
+        tmdbYear: tmdbYear,
+      ),
+    );
   }
 }

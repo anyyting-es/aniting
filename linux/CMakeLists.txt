@@ -4,10 +4,10 @@ project(runner LANGUAGES CXX)
 
 # The name of the executable created for the application. Change this to change
 # the on-disk name of your application.
-set(BINARY_NAME "seanime_app")
+set(BINARY_NAME "aniting_app")
 # The unique GTK application identifier for this application. See:
 # https://wiki.gnome.org/HowDoI/ChooseApplicationID
-set(APPLICATION_ID "com.seanime.app.seanime_app")
+set(APPLICATION_ID "com.anyyting.aniting.aniting_app")
 
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.
@@ -123,8 +123,8 @@ install(DIRECTORY "${NATIVE_ASSETS_DIR}"
    COMPONENT Runtime
    OPTIONAL)
 
-# Bundle seanime server on install/release if present
-set(BACKEND_BIN "${CMAKE_CURRENT_SOURCE_DIR}/../backend/seanime")
+# Bundle aniting server on install/release if present
+set(BACKEND_BIN "${CMAKE_CURRENT_SOURCE_DIR}/../backend/aniting")
 if(EXISTS "${BACKEND_BIN}")
   install(PROGRAMS "${BACKEND_BIN}" DESTINATION "${CMAKE_INSTALL_PREFIX}" COMPONENT Runtime)
 endif()

@@ -1,4 +1,4 @@
-package mal
+﻿package mal
 
 import (
 	"fmt"
@@ -7,8 +7,8 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"seanime/internal/database/db"
-	"seanime/internal/database/models"
+	"aniting/internal/database/db"
+	"aniting/internal/database/models"
 	"strings"
 	"time"
 )

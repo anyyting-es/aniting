@@ -1,14 +1,14 @@
-import 'dart:io' show Platform;
+﻿import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:g1455/g1455.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/presentation/widgets/player/controls/player_track_selectors.dart';
-import 'package:seanime_app/presentation/widgets/player/controls/timeline_slider.dart';
-import 'package:seanime_app/presentation/widgets/player/controls/volume_slider.dart';
-import 'package:seanime_app/presentation/widgets/player/models/player_types.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/presentation/widgets/player/controls/player_track_selectors.dart';
+import 'package:aniting/presentation/widgets/player/controls/timeline_slider.dart';
+import 'package:aniting/presentation/widgets/player/controls/volume_slider.dart';
+import 'package:aniting/presentation/widgets/player/models/player_types.dart';
 
 /// Bottom controls bar for the player containing the timeline slider,
 /// controls row, and in-video track selection panels.
@@ -77,7 +77,7 @@ class _PlayerBottomBarState extends ConsumerState<PlayerBottomBar> {
   bool get _isDesktop =>
       widget.isDesktopOverride ?? (!Platform.isAndroid && !Platform.isIOS);
 
-  bool get _isSmallMobile => !widget.isFullscreen && !_isDesktop;
+  bool get _isMobile => !_isDesktop;
 
   String _formatDuration(Duration d) {
     final hours = d.inHours;
@@ -120,159 +120,61 @@ class _PlayerBottomBarState extends ConsumerState<PlayerBottomBar> {
       shape: const CircleBorder(),
     );
 
-    // Compact single-line layout for mobile in portrait / mini view
-    if (_isSmallMobile) {
-      final double smallSkipNextSize = isMaterial ? 28 : 24;
-      final double smallFullscreenSize = isMaterial ? 28 : 24;
+    // Mobile: the bottom only carries the timeline and the playback time.
+    // Play/pause and episode skipping live in the center controls overlay.
+    if (_isMobile) {
+      final timeStyle = TextStyle(
+        color: Colors.white.withValues(alpha: 0.92),
+        fontSize: 11.5,
+        fontWeight: FontWeight.w600,
+        fontFeatures: const [FontFeature.tabularFigures()],
+        shadows: const [
+          Shadow(color: Colors.black87, blurRadius: 4, offset: Offset(0, 1)),
+        ],
+      );
 
       return SafeArea(
         top: false,
-        bottom: false,
+        bottom: widget.isFullscreen,
         left: false,
         right: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 0, 12, 6),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+          padding: EdgeInsets.fromLTRB(
+            16,
+            0,
+            16,
+            widget.isFullscreen ? 12 : 8,
+          ),
+          child: Row(
             children: [
-              // Timestamp display directly above play/pause on the left with shadow badge
-              Padding(
-                padding: const EdgeInsets.only(left: 4, bottom: 4),
-                child: Row(
-                  children: [
-                    ValueListenableBuilder<Duration>(
-                      valueListenable: widget.positionNotifier,
-                      builder: (context, pos, _) {
-                        return Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.45),
-                            borderRadius: BorderRadius.circular(6),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.35),
-                                blurRadius: 6,
-                                offset: const Offset(0, 1),
-                              ),
-                            ],
-                          ),
-                          child: Text(
-                            '${_formatDuration(pos)} / ${_formatDuration(widget.duration)}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 0.2,
-                              shadows: [
-                                Shadow(
-                                  color: Colors.black87,
-                                  blurRadius: 4,
-                                  offset: Offset(0, 1),
-                                ),
-                              ],
-                            ),
-                          ),
+              ValueListenableBuilder<Duration>(
+                valueListenable: widget.positionNotifier,
+                builder: (context, pos, _) {
+                  return Text(_formatDuration(pos), style: timeStyle);
+                },
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: ValueListenableBuilder<Duration>(
+                  valueListenable: widget.positionNotifier,
+                  builder: (context, pos, _) {
+                    return ValueListenableBuilder<Duration>(
+                      valueListenable: widget.bufferNotifier,
+                      builder: (context, buf, _) {
+                        return TimelineSlider(
+                          position: pos,
+                          duration: widget.duration,
+                          buffer: buf,
+                          chapters: widget.chapters,
+                          onSeek: widget.onSeek,
                         );
                       },
-                    ),
-                    if (widget.currentChapterTitle != null &&
-                        widget.currentChapterTitle!.isNotEmpty) ...[
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          '• ${widget.currentChapterTitle}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.85),
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                            shadows: const [
-                              Shadow(color: Colors.black87, blurRadius: 4, offset: Offset(0, 1)),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
+                    );
+                  },
                 ),
               ),
-
-              // Single continuous line: [Play/Pause] [Next Episode] [Expanded TimelineSlider] [Fullscreen]
-              Row(
-                children: [
-                  IconButton(
-                    style: buttonStyle,
-                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                    iconSize: 28,
-                    icon: Icon(
-                      widget.isPlaying
-                          ? AppIcons.pause(iconPack)
-                          : AppIcons.play(iconPack),
-                      color: Colors.white,
-                    ),
-                    tooltip: widget.isPlaying ? l10n.pause : l10n.play,
-                    onPressed: widget.onPlayPause,
-                  ),
-
-                  if (widget.onNextEpisode != null) ...[
-                    const SizedBox(width: 2),
-                    IconButton(
-                      style: buttonStyle,
-                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                      iconSize: smallSkipNextSize,
-                      icon: Icon(
-                        AppIcons.skipNext(iconPack),
-                        color: Colors.white,
-                      ),
-                      tooltip: l10n.nextEpisode,
-                      onPressed: widget.onNextEpisode,
-                    ),
-                  ],
-
-                  const SizedBox(width: 4),
-
-                  Expanded(
-                    child: ValueListenableBuilder<Duration>(
-                      valueListenable: widget.positionNotifier,
-                      builder: (context, pos, _) {
-                        return ValueListenableBuilder<Duration>(
-                          valueListenable: widget.bufferNotifier,
-                          builder: (context, buf, _) {
-                            return TimelineSlider(
-                              position: pos,
-                              duration: widget.duration,
-                              buffer: buf,
-                              chapters: widget.chapters,
-                              onSeek: widget.onSeek,
-                            );
-                          },
-                        );
-                      },
-                    ),
-                  ),
-
-                  const SizedBox(width: 4),
-
-                  if (widget.onToggleFullscreen != null)
-                    IconButton(
-                      style: buttonStyle,
-                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                      iconSize: smallFullscreenSize,
-                      icon: Icon(
-                        widget.isFullscreen
-                            ? AppIcons.fullscreenExit(iconPack)
-                            : AppIcons.fullscreen(iconPack),
-                        color: Colors.white,
-                      ),
-                      tooltip: widget.isFullscreen
-                          ? l10n.exitFullScreen
-                          : l10n.fullScreen,
-                      onPressed: widget.onToggleFullscreen,
-                    ),
-                ],
-              ),
+              const SizedBox(width: 10),
+              Text(_formatDuration(widget.duration), style: timeStyle),
             ],
           ),
         ),

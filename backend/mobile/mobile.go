@@ -3,8 +3,8 @@ package mobile
 import (
 	"embed"
 	"os"
-	"seanime/internal/core"
-	"seanime/internal/handlers"
+	"aniting/internal/core"
+	"aniting/internal/handlers"
 )
 
 //go:embed all:web
@@ -19,10 +19,8 @@ func StartServer(dataDir string, cacheDir string, port int) {
 
 		_ = os.Setenv("ANITING_DATA_DIR", dataDir)
 		_ = os.Setenv("ANITING_WORKING_DIR", dataDir)
-		_ = os.Setenv("SEANIME_DATA_DIR", dataDir)
-		_ = os.Setenv("SEANIME_WORKING_DIR", dataDir)
 
-		flags := core.SeanimeFlags{
+		flags := core.AnitingFlags{
 			DataDir:          dataDir,
 			Host:             "127.0.0.1",
 			Port:             port,
@@ -32,7 +30,7 @@ func StartServer(dataDir string, cacheDir string, port int) {
 
 		app := core.NewApp(&core.ConfigOptions{
 			Flags: flags,
-		}, nil)
+		})
 
 		app.InitLogging(false)
 

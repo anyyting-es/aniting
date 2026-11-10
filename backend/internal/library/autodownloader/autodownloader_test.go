@@ -1,17 +1,17 @@
-package autodownloader
+﻿package autodownloader
 
 import (
 	"context"
-	"seanime/internal/api/anilist"
-	"seanime/internal/database/db_bridge"
-	"seanime/internal/database/models"
-	"seanime/internal/debrid/debrid"
-	hibiketorrent "seanime/internal/extension/hibike/torrent"
-	"seanime/internal/hook"
-	"seanime/internal/hook_resolver"
-	"seanime/internal/library/anime"
-	"seanime/internal/torrent_clients/torrent_client"
-	"seanime/internal/util"
+	"aniting/internal/api/anilist"
+	"aniting/internal/database/db_bridge"
+	"aniting/internal/database/models"
+	"aniting/internal/debrid/debrid"
+	hibiketorrent "aniting/internal/extension/hibike/torrent"
+	"aniting/internal/hook"
+	"aniting/internal/hook_resolver"
+	"aniting/internal/library/anime"
+	"aniting/internal/torrent_clients/torrent_client"
+	"aniting/internal/util"
 	"testing"
 	"time"
 

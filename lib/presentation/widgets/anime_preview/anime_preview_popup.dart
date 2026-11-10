@@ -1,11 +1,11 @@
-import 'package:cached_network_image/cached_network_image.dart';
+﻿import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/preferences/title_language_provider.dart';
-import 'package:seanime_app/core/utils/synopsis_utils.dart';
-import 'package:seanime_app/data/models/anime_entry.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/preferences/title_language_provider.dart';
+import 'package:aniting/core/utils/synopsis_utils.dart';
+import 'package:aniting/data/models/anime_entry.dart';
 
 /// Compact preview shown from the catalog results on right click.
 /// The cover travels from the card to this panel with a Hero animation.

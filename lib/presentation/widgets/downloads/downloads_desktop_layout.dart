@@ -1,25 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/core/storage/app_storage_paths.dart';
-import 'package:seanime_app/core/theme/custom_route_transitions.dart';
-import 'package:seanime_app/core/theme/smooth_scroll_controller.dart';
-import 'package:seanime_app/data/models/anime_entry.dart';
-import 'package:seanime_app/data/models/manga_entry.dart';
-import 'package:seanime_app/presentation/providers/active_downloads_provider.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/providers/online_stream_download_provider.dart';
-import 'package:seanime_app/presentation/providers/torrent_stream_provider.dart';
-import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
-import 'package:seanime_app/presentation/screens/download_manager_screen.dart';
-import 'package:seanime_app/presentation/screens/manga_detail_screen.dart';
-import 'package:seanime_app/presentation/widgets/anime_card.dart';
-import 'package:seanime_app/presentation/widgets/manga_card.dart';
-import 'package:seanime_app/presentation/widgets/media_type_toggle.dart';
-import 'package:seanime_app/presentation/widgets/toast/app_toast.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/core/storage/app_storage_paths.dart';
+import 'package:aniting/core/theme/custom_route_transitions.dart';
+import 'package:aniting/core/theme/smooth_scroll_controller.dart';
+import 'package:aniting/data/models/anime_entry.dart';
+import 'package:aniting/data/models/manga_entry.dart';
+import 'package:aniting/presentation/providers/active_downloads_provider.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/providers/online_stream_download_provider.dart';
+import 'package:aniting/presentation/providers/torrent_stream_provider.dart';
+import 'package:aniting/presentation/screens/anime_detail_screen.dart';
+import 'package:aniting/presentation/screens/download_manager_screen.dart';
+import 'package:aniting/presentation/screens/manga_detail_screen.dart';
+import 'package:aniting/presentation/widgets/anime_card.dart';
+import 'package:aniting/presentation/widgets/manga_card.dart';
+import 'package:aniting/presentation/widgets/media_type_toggle.dart';
+import 'package:aniting/presentation/widgets/toast/app_toast.dart';
 
-/// Modern Seanime-style desktop layout for offline downloads (Anime & Manga).
+/// Modern Aniting-style desktop layout for offline downloads (Anime & Manga).
 ///
 /// Features:
 /// - Safe 42dp desktop top clearance below the custom titlebar.

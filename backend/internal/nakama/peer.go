@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"seanime/internal/constants"
-	"seanime/internal/events"
-	"seanime/internal/util"
+	"aniting/internal/constants"
+	"aniting/internal/events"
+	"aniting/internal/util"
 	"strings"
 	"time"
 
@@ -66,7 +66,7 @@ func (m *Manager) connectToHost() {
 	go m.connectToHostAsync()
 }
 
-// isRoomURL checks if the URL is a Seanime Rooms URL
+// isRoomURL checks if the URL is a Aniting Rooms URL
 func (m *Manager) isRoomURL(rawURL string) bool {
 	return strings.HasPrefix(rawURL, "room://")
 }
@@ -184,7 +184,7 @@ func (m *Manager) attemptHostConnection(connCtx context.Context) error {
 	return m.attemptDirectConnection(connCtx)
 }
 
-// attemptDirectConnection makes a direct H2P connection to a Seanime host
+// attemptDirectConnection makes a direct H2P connection to a Aniting host
 func (m *Manager) attemptDirectConnection(connCtx context.Context) error {
 	// Parse URL
 	u, err := url.Parse(m.settings.RemoteServerURL)
@@ -217,10 +217,10 @@ func (m *Manager) attemptDirectConnection(connCtx context.Context) error {
 
 	// Set up headers for authentication
 	headers := http.Header{}
-	headers.Set("X-Seanime-Nakama-Token", m.settings.RemoteServerPassword)
-	headers.Set("X-Seanime-Nakama-Username", username)
-	headers.Set("X-Seanime-Nakama-Server-Version", constants.Version)
-	headers.Set("X-Seanime-Nakama-Peer-Id", peerID)
+	headers.Set("X-Aniting-Nakama-Token", m.settings.RemoteServerPassword)
+	headers.Set("X-Aniting-Nakama-Username", username)
+	headers.Set("X-Aniting-Nakama-Server-Version", constants.Version)
+	headers.Set("X-Aniting-Nakama-Peer-Id", peerID)
 
 	// Create a dialer with the connection context
 	dialer := websocket.Dialer{
@@ -325,7 +325,7 @@ func (m *Manager) attemptDirectConnection(connCtx context.Context) error {
 	return nil
 }
 
-// attemptRoomConnection connects to a Seanime Rooms relay as a peer
+// attemptRoomConnection connects to a Aniting Rooms relay as a peer
 func (m *Manager) attemptRoomConnection(connCtx context.Context) error {
 	// Use existing peer ID if reconnecting, generate new one only on first connection
 	// This ensures the peer maintains the same ID across reconnections in rooms mode
@@ -346,7 +346,7 @@ func (m *Manager) attemptRoomConnection(connCtx context.Context) error {
 
 	roomId := strings.TrimPrefix(m.settings.RemoteServerURL, "room://")
 
-	u, err := url.Parse(fmt.Sprintf("%s/%s/peer", constants.SeanimeRoomsApiWsUrl, roomId))
+	u, err := url.Parse(fmt.Sprintf("%s/%s/peer", constants.AnitingRoomsApiWsUrl, roomId))
 	if err != nil {
 		return err
 	}

@@ -1,13 +1,13 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:g1455/g1455.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/data/models/onlinestream_models.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/widgets/online_stream_download_dialog.dart';
-import 'package:seanime_app/presentation/widgets/player/services/player_source_controller.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/data/models/onlinestream_models.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/widgets/online_stream_download_dialog.dart';
+import 'package:aniting/presentation/widgets/player/services/player_source_controller.dart';
 
 /// Minimalist, clean streaming sources sheet with iOS Liquid Glass design (g1455).
 /// Features a single cohesive container for options without individual boxes,

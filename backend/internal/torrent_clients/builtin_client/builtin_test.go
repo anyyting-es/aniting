@@ -4,8 +4,8 @@ import (
 	"context"
 	"os"
 	"path/filepath"
-	"seanime/internal/database/db"
-	"seanime/internal/database/models"
+	"aniting/internal/database/db"
+	"aniting/internal/database/models"
 	"strings"
 	"testing"
 
@@ -15,11 +15,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const testMagnet = "magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567&dn=Seanime%20Test"
+const testMagnet = "magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567&dn=Aniting%20Test"
 
 func TestClientPersistsTorrentState(t *testing.T) {
 	logger := zerolog.Nop()
-	database, err := db.NewDatabase("", "seanime-test", &logger)
+	database, err := db.NewDatabase("", "aniting-test", &logger)
 	require.NoError(t, err)
 
 	newClient := func() *Client {
@@ -71,7 +71,7 @@ func TestClientPersistsTorrentState(t *testing.T) {
 
 func TestRemoveTorrentFallsBackToModelNameWhenRuntimeTorrentMissing(t *testing.T) {
 	logger := zerolog.Nop()
-	database, err := db.NewDatabase("", "seanime-test", &logger)
+	database, err := db.NewDatabase("", "aniting-test", &logger)
 	require.NoError(t, err)
 
 	destDir := t.TempDir()
@@ -143,7 +143,7 @@ func TestClassicStorageWritesHugeFileIncrementally(t *testing.T) {
 
 func TestRemovePausedTorrent(t *testing.T) {
 	logger := zerolog.Nop()
-	database, err := db.NewDatabase("", "seanime-test", &logger)
+	database, err := db.NewDatabase("", "aniting-test", &logger)
 	require.NoError(t, err)
 
 	client, err := New(&NewClientOptions{

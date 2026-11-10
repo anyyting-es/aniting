@@ -1,13 +1,13 @@
-package metadata_provider
+﻿package metadata_provider
 
 import (
 	"regexp"
-	"seanime/internal/api/anilist"
-	"seanime/internal/api/metadata"
-	"seanime/internal/database/db"
-	"seanime/internal/hook"
-	"seanime/internal/util"
-	"seanime/internal/util/filecache"
+	"aniting/internal/api/anilist"
+	"aniting/internal/api/metadata"
+	"aniting/internal/database/db"
+	"aniting/internal/hook"
+	"aniting/internal/util"
+	"aniting/internal/util/filecache"
 	"strconv"
 	"strings"
 

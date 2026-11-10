@@ -1,7 +1,7 @@
-import 'package:dio/dio.dart';
+﻿import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:seanime_app/data/models/anime_entry.dart';
-import 'package:seanime_app/data/models/tmdb_models.dart';
+import 'package:aniting/data/models/anime_entry.dart';
+import 'package:aniting/data/models/tmdb_models.dart';
 
 class TmdbService {
   final Dio _dio;

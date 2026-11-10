@@ -68,7 +68,7 @@ val includeBackend = if (isNoBackendViaDartDefine) {
 }
 
 if (includeBackend) {
-    println("[Aniting Build] Packaging FULL build with embedded Go backend (seanime.aar)")
+    println("[Aniting Build] Packaging FULL build with embedded Go backend (aniting.aar)")
 } else {
     println("[Aniting Build] Packaging LIGHTWEIGHT build WITHOUT Go backend (client-only)")
 }
@@ -77,7 +77,7 @@ dependencies {
     if (includeBackend) {
         implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar", "*.aar"))))
     } else {
-        implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"), "exclude" to listOf("seanime.aar"))))
+        implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"), "exclude" to listOf("aniting.aar"))))
     }
     implementation(project(":libass"))
     implementation("androidx.media3:media3-exoplayer:1.5.1")

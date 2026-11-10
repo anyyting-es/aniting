@@ -1,9 +1,9 @@
-package db_bridge
+﻿package db_bridge
 
 import (
-	"seanime/internal/database/db"
-	"seanime/internal/database/models"
-	hibiketorrent "seanime/internal/extension/hibike/torrent"
+	"aniting/internal/database/db"
+	"aniting/internal/database/models"
+	hibiketorrent "aniting/internal/extension/hibike/torrent"
 
 	"github.com/goccy/go-json"
 )

@@ -1,9 +1,9 @@
-package plugin_ui
+﻿package plugin_ui
 
 import (
-	"seanime/internal/events"
-	"seanime/internal/extension"
-	"seanime/internal/util/result"
+	"aniting/internal/events"
+	"aniting/internal/extension"
+	"aniting/internal/util/result"
 	"strings"
 	"sync"
 	"sync/atomic"

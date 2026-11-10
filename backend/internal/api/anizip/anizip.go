@@ -1,11 +1,11 @@
-package anizip
+﻿package anizip
 
 import (
 	"errors"
 	"io"
 	"net/http"
-	"seanime/internal/hook"
-	"seanime/internal/util/result"
+	"aniting/internal/hook"
+	"aniting/internal/util/result"
 	"strconv"
 
 	"github.com/goccy/go-json"

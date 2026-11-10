@@ -1,9 +1,9 @@
-package testmocks
+﻿package testmocks
 
 import (
 	"testing"
 
-	"seanime/internal/api/anilist"
+	"aniting/internal/api/anilist"
 
 	"github.com/stretchr/testify/require"
 )

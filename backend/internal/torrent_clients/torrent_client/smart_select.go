@@ -1,13 +1,13 @@
-package torrent_client
+﻿package torrent_client
 
 import (
 	"errors"
 	"fmt"
-	"seanime/internal/api/anilist"
-	hibiketorrent "seanime/internal/extension/hibike/torrent"
-	"seanime/internal/platforms/platform"
-	torrent_analyzer "seanime/internal/torrents/analyzer"
-	"seanime/internal/util"
+	"aniting/internal/api/anilist"
+	hibiketorrent "aniting/internal/extension/hibike/torrent"
+	"aniting/internal/platforms/platform"
+	torrent_analyzer "aniting/internal/torrents/analyzer"
+	"aniting/internal/util"
 	"time"
 )
 

@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
-import 'package:seanime_app/core/theme/app_dpad_navigator.dart';
+import 'package:aniting/core/theme/app_dpad_navigator.dart';
 
 /// Intercepts and swallows Flutter's default instantaneous `showOnScreen` request
 /// (which jumps without animation and aligns strictly to the edge).

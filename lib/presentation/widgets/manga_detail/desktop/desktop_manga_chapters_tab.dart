@@ -1,21 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:g1455/g1455.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/data/models/manga_entry.dart';
-import 'package:seanime_app/presentation/screens/extensions_marketplace_screen.dart';
+import 'package:material_3_expressive/material_3_expressive.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/data/models/manga_entry.dart';
+import 'package:aniting/presentation/screens/extensions_marketplace_screen.dart';
 
 import 'desktop_manga_chapter_card.dart';
-
-enum DesktopMangaFilter {
-  all,
-  unread,
-  read,
-}
+import 'manga_manual_match_dialog.dart';
 
 class DesktopMangaChaptersTab extends ConsumerStatefulWidget {
   final int mediaId;
+  final String mangaTitle;
   final List<MangaProvider> providers;
   final MangaProvider? selectedProvider;
   final List<MangaChapter> chapters;
@@ -30,10 +27,12 @@ class DesktopMangaChaptersTab extends ConsumerStatefulWidget {
   final ValueChanged<MangaChapter> onDownloadChapter;
   final VoidCallback onBatchDownload;
   final void Function(List<MangaChapter>)? onDownloadSelected;
+  final VoidCallback onContinueReading;
 
   const DesktopMangaChaptersTab({
     super.key,
     required this.mediaId,
+    required this.mangaTitle,
     required this.providers,
     required this.selectedProvider,
     required this.chapters,
@@ -48,6 +47,7 @@ class DesktopMangaChaptersTab extends ConsumerStatefulWidget {
     required this.onDownloadChapter,
     required this.onBatchDownload,
     this.onDownloadSelected,
+    required this.onContinueReading,
   });
 
   @override
@@ -57,10 +57,11 @@ class DesktopMangaChaptersTab extends ConsumerStatefulWidget {
 class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTab> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  bool _isAscending = true;
-  DesktopMangaFilter _filterOption = DesktopMangaFilter.all;
+  final bool _isAscending = true;
+  bool _showOnlyUnread = false;
   bool _showOnlyDownloaded = false;
-  int _pageSize = 50; // default 50
+  String? _selectedScanlator;
+  final int _pageSize = 50;
   int _currentPage = 0;
   final Set<String> _selectedChapterIds = <String>{};
 
@@ -69,6 +70,7 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
     super.didUpdateWidget(oldWidget);
     if (oldWidget.selectedProvider?.id != widget.selectedProvider?.id) {
       _selectedChapterIds.clear();
+      _selectedScanlator = null;
       _currentPage = 0;
     }
   }
@@ -79,11 +81,30 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
     super.dispose();
   }
 
+  List<String> get _availableScanlators {
+    final set = <String>{};
+    for (final c in widget.chapters) {
+      if (c.scanlator != null && c.scanlator!.trim().isNotEmpty) {
+        set.add(c.scanlator!.trim());
+      }
+    }
+    final list = set.toList()..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    return list;
+  }
+
   List<MangaChapter> get _filteredChapters {
     var list = List<MangaChapter>.from(widget.chapters);
 
+    if (_selectedScanlator != null && _selectedScanlator!.isNotEmpty) {
+      list = list.where((c) => c.scanlator?.trim() == _selectedScanlator).toList();
+    }
+
     if (_showOnlyDownloaded) {
       list = list.where((c) => widget.downloadedChapterIds.contains(c.id)).toList();
+    }
+
+    if (_showOnlyUnread && widget.progress > 0) {
+      list = list.where((c) => c.chapterNumber > widget.progress).toList();
     }
 
     final q = _searchQuery.trim();
@@ -102,21 +123,6 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
               c.title.toLowerCase().contains(queryLower) ||
               (c.scanlator?.toLowerCase().contains(queryLower) ?? false);
         }).toList();
-      }
-    } else {
-      switch (_filterOption) {
-        case DesktopMangaFilter.unread:
-          if (widget.progress > 0) {
-            list = list.where((c) => c.chapterNumber > widget.progress).toList();
-          }
-          break;
-        case DesktopMangaFilter.read:
-          if (widget.progress > 0) {
-            list = list.where((c) => c.chapterNumber <= widget.progress).toList();
-          }
-          break;
-        case DesktopMangaFilter.all:
-          break;
       }
     }
 
@@ -162,14 +168,21 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
     final endIndex = (startIndex + effectivePageSize).clamp(0, totalCount);
     final paginatedChapters = allFiltered.sublist(startIndex, endIndex);
 
+    final pillBg = isDark
+        ? Colors.white.withValues(alpha: 0.08)
+        : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.65);
+    final pillBorder = isDark
+        ? Colors.white.withValues(alpha: 0.16)
+        : theme.colorScheme.outlineVariant.withValues(alpha: 0.45);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // ── 1. Top Controls Bar: Liquid Glass Provider Menu + Search + Sort + Refresh ──
+        // ── 1. Row 1: Source Dropdown, Refresh Source, Manual Match ──
         Row(
           children: [
-            // Liquid Glass Source Selector (Mirrors Anime Detail)
-            if (widget.providers.isNotEmpty) ...[
+            // Source Dropdown [ Source | ProviderName v ]
+            if (widget.providers.isNotEmpty)
               GlassMenuAnchor(
                 width: 220,
                 items: widget.providers.map((p) {
@@ -178,292 +191,472 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
                     label: p.name,
                     icon: Icon(
                       isCurrent ? AppIcons.checkCircleFilled(iconPack) : AppIcons.manga(iconPack),
-                      size: 18,
+                      size: 16,
                       color: isCurrent ? theme.colorScheme.primary : null,
                     ),
                     onPressed: () => widget.onProviderChanged(p),
                   );
                 }).toList(),
                 builder: (context, controller) {
-                  return GlassButton(
-                    onPressed: controller.open,
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          AppIcons.manga(iconPack),
-                          size: 16,
-                          color: isDark ? Colors.white : theme.colorScheme.primary,
+                  return MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    child: GestureDetector(
+                      onTap: controller.open,
+                      child: Container(
+                        height: 38,
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
+                        decoration: BoxDecoration(
+                          color: pillBg,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: pillBorder),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.12),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 8),
-                        Text(
-                          widget.selectedProvider?.name ?? l10n.source,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                          ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              l10n.source,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: isDark ? Colors.white60 : theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                            Container(
+                              width: 1,
+                              height: 14,
+                              color: isDark ? Colors.white.withValues(alpha: 0.2) : theme.colorScheme.outlineVariant,
+                              margin: const EdgeInsets.symmetric(horizontal: 8),
+                            ),
+                            Text(
+                              widget.selectedProvider?.name ?? l10n.source,
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w700,
+                                color: theme.colorScheme.onSurface,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Icon(
+                              Icons.keyboard_arrow_down_rounded,
+                              size: 17,
+                              color: isDark ? Colors.white70 : Colors.black54,
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 4),
-                        Icon(
-                          AppIcons.chevronDown(iconPack),
-                          size: 17,
-                          color: isDark ? Colors.white60 : Colors.black54,
-                        ),
-                      ],
+                      ),
                     ),
                   );
                 },
               ),
-              const SizedBox(width: 12),
-            ],
 
-            // Search chapters TextField (modern rounded style)
-            Expanded(
-              child: SizedBox(
-                height: 40,
-                child: TextField(
-                  controller: _searchController,
-                  style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurface),
-                  decoration: InputDecoration(
-                    hintText: l10n.searchChapterPlaceholder,
-                    hintStyle: TextStyle(
-                      fontSize: 13,
-                      color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
-                    ),
-                    prefixIcon: Icon(Icons.search_rounded, size: 18, color: theme.colorScheme.onSurfaceVariant),
-                    suffixIcon: _searchQuery.isNotEmpty
-                        ? IconButton(
-                            icon: Icon(Icons.clear_rounded, size: 16, color: theme.colorScheme.onSurfaceVariant),
-                            onPressed: () {
-                              _searchController.clear();
-                              setState(() {
-                                _searchQuery = '';
-                              });
-                            },
-                          )
-                        : null,
-                    isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    filled: true,
-                    fillColor: isDark ? theme.colorScheme.surfaceContainerHigh : theme.colorScheme.surfaceContainerHighest,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: isDark ? Colors.white.withValues(alpha: 0.1) : theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
+            const SizedBox(width: 8),
+
+            // Refresh Source Button [ ↻ Refresh source ]
+            MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
+                onTap: widget.onRefreshChapters,
+                child: Container(
+                  height: 38,
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  decoration: BoxDecoration(
+                    color: pillBg,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: pillBorder),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.12),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
                       ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: isDark ? Colors.white.withValues(alpha: 0.1) : theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: theme.colorScheme.primary, width: 1.5),
-                    ),
+                    ],
                   ),
-                  onChanged: (val) => setState(() {
-                    _searchQuery = val;
-                  }),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.refresh_rounded,
+                        size: 15,
+                        color: isDark ? Colors.white : theme.colorScheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        l10n.refreshSource,
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
-            const SizedBox(width: 10),
 
-            // Asc / Desc Sort Button
-            IconButton(
-              tooltip: _isAscending ? l10n.oldestFirst : l10n.newestFirst,
-              style: IconButton.styleFrom(
-                backgroundColor: isDark ? theme.colorScheme.surfaceContainerHigh : theme.colorScheme.surfaceContainerHighest,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  side: BorderSide(
-                    color: isDark ? Colors.white.withValues(alpha: 0.1) : theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
+            const SizedBox(width: 8),
+
+            // Manual Match Button [ 🔍 Manual match ]
+            if (widget.selectedProvider != null)
+              MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: GestureDetector(
+                  onTap: () {
+                    MangaManualMatchDialog.show(
+                      context,
+                      mediaId: widget.mediaId,
+                      initialTitle: widget.mangaTitle,
+                      provider: widget.selectedProvider!,
+                      onMatched: widget.onRefreshChapters,
+                    );
+                  },
+                  child: Container(
+                    height: 38,
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    decoration: BoxDecoration(
+                      color: pillBg,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: pillBorder),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.12),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.search_rounded,
+                          size: 15,
+                          color: isDark ? Colors.white : theme.colorScheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          l10n.manualMatch,
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w700,
+                            color: theme.colorScheme.onSurface,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                padding: const EdgeInsets.all(10),
               ),
+          ],
+        ),
+
+        const SizedBox(height: 10),
+
+        // ── 2. Row 2: Scanlator Dropdown [ Scanlator | All v ] ──
+        GlassMenuAnchor(
+          width: 240,
+          items: [
+            GlassMenuItem(
+              label: l10n.all,
               icon: Icon(
-                _isAscending ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
-                size: 18,
+                _selectedScanlator == null ? Icons.check_circle_rounded : Icons.radio_button_unchecked,
+                size: 16,
+                color: _selectedScanlator == null ? theme.colorScheme.primary : null,
+              ),
+              onPressed: () => setState(() => _selectedScanlator = null),
+            ),
+            for (final scanlator in _availableScanlators)
+              GlassMenuItem(
+                label: scanlator,
+                icon: Icon(
+                  _selectedScanlator == scanlator ? Icons.check_circle_rounded : Icons.radio_button_unchecked,
+                  size: 16,
+                  color: _selectedScanlator == scanlator ? theme.colorScheme.primary : null,
+                ),
+                onPressed: () => setState(() => _selectedScanlator = scanlator),
+              ),
+          ],
+          builder: (context, controller) {
+            return MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
+                onTap: controller.open,
+                child: Container(
+                  height: 38,
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  decoration: BoxDecoration(
+                    color: pillBg,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: pillBorder),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.12),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        l10n.scanlator,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? Colors.white60 : theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      Container(
+                        width: 1,
+                        height: 14,
+                        color: isDark ? Colors.white.withValues(alpha: 0.2) : theme.colorScheme.outlineVariant,
+                        margin: const EdgeInsets.symmetric(horizontal: 8),
+                      ),
+                      Text(
+                        _selectedScanlator ?? l10n.all,
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        size: 17,
+                        color: isDark ? Colors.white70 : Colors.black54,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+
+        const SizedBox(height: 20),
+
+        // ── 3. Row 3: Heading "Chapters" + "Continue reading" Pill Button ──
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text(
+              l10n.chapters,
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.3,
                 color: theme.colorScheme.onSurface,
               ),
-              onPressed: () => setState(() {
-                _isAscending = !_isAscending;
-              }),
             ),
-            const SizedBox(width: 6),
 
-            // Refresh Chapters Button
-            IconButton(
-              tooltip: l10n.reloadChapters,
-              style: IconButton.styleFrom(
-                backgroundColor: isDark ? theme.colorScheme.surfaceContainerHigh : theme.colorScheme.surfaceContainerHighest,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  side: BorderSide(
-                    color: isDark ? Colors.white.withValues(alpha: 0.1) : theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
+            // White pill "Continue reading" button with black icon & text
+            MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
+                onTap: widget.onContinueReading,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.18),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.menu_book_rounded,
+                        size: 16,
+                        color: Colors.black87,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        l10n.continueReading,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.black87,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                padding: const EdgeInsets.all(10),
               ),
-              icon: Icon(Icons.refresh_rounded, size: 18, color: theme.colorScheme.onSurface),
-              onPressed: widget.onRefreshChapters,
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 14),
+
+        // ── 4. Row 4: Filter Chips & Rounded Search Bar ──
+        Row(
+          children: [
+            // [ Show unread ] chip
+            MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
+                onTap: () => setState(() => _showOnlyUnread = !_showOnlyUnread),
+                child: Container(
+                  height: 36,
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  decoration: BoxDecoration(
+                    color: _showOnlyUnread
+                        ? theme.colorScheme.primary.withValues(alpha: 0.22)
+                        : pillBg,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: _showOnlyUnread ? theme.colorScheme.primary : pillBorder,
+                      width: _showOnlyUnread ? 1.2 : 1.0,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: _showOnlyUnread
+                            ? theme.colorScheme.primary.withValues(alpha: 0.25)
+                            : Colors.black.withValues(alpha: 0.10),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Center(
+                    child: Text(
+                      l10n.showUnread,
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: _showOnlyUnread ? FontWeight.w700 : FontWeight.w500,
+                        color: _showOnlyUnread ? theme.colorScheme.primary : theme.colorScheme.onSurface,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(width: 8),
+
+            // [ Show downloaded ] chip
+            MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
+                onTap: () => setState(() => _showOnlyDownloaded = !_showOnlyDownloaded),
+                child: Container(
+                  height: 36,
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  decoration: BoxDecoration(
+                    color: _showOnlyDownloaded
+                        ? theme.colorScheme.primary.withValues(alpha: 0.22)
+                        : pillBg,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: _showOnlyDownloaded ? theme.colorScheme.primary : pillBorder,
+                      width: _showOnlyDownloaded ? 1.2 : 1.0,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: _showOnlyDownloaded
+                            ? theme.colorScheme.primary.withValues(alpha: 0.25)
+                            : Colors.black.withValues(alpha: 0.10),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.download_rounded,
+                        size: 14,
+                        color: _showOnlyDownloaded ? theme.colorScheme.primary : (isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        l10n.showDownloaded,
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: _showOnlyDownloaded ? FontWeight.w700 : FontWeight.w500,
+                          color: _showOnlyDownloaded ? theme.colorScheme.primary : theme.colorScheme.onSurface,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ],
         ),
 
         const SizedBox(height: 12),
 
-        // ── 2. Filters Wrap (Todos / No leídos / Leídos / Solo descargados / Tamaño de lista) ──
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            // Filter All
-            ChoiceChip(
-              label: Text(l10n.filterAll),
-              selected: _filterOption == DesktopMangaFilter.all,
-              onSelected: (sel) {
-                if (sel) setState(() => _filterOption = DesktopMangaFilter.all);
-              },
-              labelStyle: TextStyle(
-                fontSize: 11.5,
-                fontWeight: _filterOption == DesktopMangaFilter.all ? FontWeight.bold : FontWeight.w500,
+        // Rounded Search Bar
+        SizedBox(
+          height: 40,
+          child: TextField(
+            controller: _searchController,
+            style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurface),
+            decoration: InputDecoration(
+              hintText: l10n.searchChapterPlaceholder,
+              hintStyle: TextStyle(
+                fontSize: 13,
+                color: isDark ? Colors.white38 : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
               ),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-
-            // Filter Unread
-            ChoiceChip(
-              avatar: const Icon(Icons.menu_book_rounded, size: 14),
-              label: Text(l10n.filterUnread),
-              selected: _filterOption == DesktopMangaFilter.unread,
-              onSelected: (sel) {
-                if (sel) setState(() => _filterOption = DesktopMangaFilter.unread);
-              },
-              labelStyle: TextStyle(
-                fontSize: 11.5,
-                fontWeight: _filterOption == DesktopMangaFilter.unread ? FontWeight.bold : FontWeight.w500,
+              prefixIcon: Icon(Icons.search_rounded, size: 18, color: isDark ? Colors.white54 : theme.colorScheme.onSurfaceVariant),
+              suffixIcon: _searchQuery.isNotEmpty
+                  ? IconButton(
+                      icon: Icon(Icons.clear_rounded, size: 16, color: theme.colorScheme.onSurfaceVariant),
+                      onPressed: () {
+                        _searchController.clear();
+                        setState(() => _searchQuery = '');
+                      },
+                    )
+                  : null,
+              isDense: true,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              filled: true,
+              fillColor: pillBg,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(22),
+                borderSide: BorderSide(color: pillBorder),
               ),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-
-            // Filter Read
-            ChoiceChip(
-              avatar: const Icon(Icons.check_rounded, size: 14),
-              label: Text(l10n.filterRead),
-              selected: _filterOption == DesktopMangaFilter.read,
-              onSelected: (sel) {
-                if (sel) setState(() => _filterOption = DesktopMangaFilter.read);
-              },
-              labelStyle: TextStyle(
-                fontSize: 11.5,
-                fontWeight: _filterOption == DesktopMangaFilter.read ? FontWeight.bold : FontWeight.w500,
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(22),
+                borderSide: BorderSide(color: pillBorder),
               ),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-
-            if (widget.downloadedChapterIds.isNotEmpty || _showOnlyDownloaded) ...[
-              FilterChip(
-                avatar: Icon(
-                  _showOnlyDownloaded ? Icons.download_done_rounded : Icons.download_for_offline_outlined,
-                  size: 14,
-                ),
-                label: Text(
-                  _showOnlyDownloaded
-                      ? l10n.downloadedCount(widget.downloadedChapterIds.length)
-                      : '${l10n.onlyDownloaded} (${widget.downloadedChapterIds.length})',
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: _showOnlyDownloaded ? FontWeight.w700 : FontWeight.w500,
-                  ),
-                ),
-                selected: _showOnlyDownloaded,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                onSelected: (val) => setState(() => _showOnlyDownloaded = val),
-              ),
-            ],
-
-            // Page Size Selector (30 / 50 / 100 / Todos)
-            Container(
-              height: 32,
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              decoration: BoxDecoration(
-                color: isDark ? theme.colorScheme.surfaceContainerHigh : theme.colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: isDark ? Colors.white.withValues(alpha: 0.1) : theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
-                ),
-              ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<int>(
-                  value: _pageSize,
-                  borderRadius: BorderRadius.circular(10),
-                  isDense: true,
-                  icon: const Icon(Icons.arrow_drop_down, size: 16),
-                  items: [
-                    DropdownMenuItem(value: 30, child: Text('30 ${l10n.episodes.toLowerCase()}', style: const TextStyle(fontSize: 11.5))),
-                    DropdownMenuItem(value: 50, child: Text('50 ${l10n.episodes.toLowerCase()}', style: const TextStyle(fontSize: 11.5))),
-                    DropdownMenuItem(value: 100, child: Text('100 ${l10n.episodes.toLowerCase()}', style: const TextStyle(fontSize: 11.5))),
-                    DropdownMenuItem(value: 0, child: Text(l10n.all, style: const TextStyle(fontSize: 11.5))),
-                  ],
-                  onChanged: (val) {
-                    if (val != null) {
-                      setState(() {
-                        _pageSize = val;
-                        _currentPage = 0;
-                      });
-                    }
-                  },
-                ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(22),
+                borderSide: BorderSide(color: theme.colorScheme.primary, width: 1.5),
               ),
             ),
-
-            if (widget.selectedProvider != null && widget.chapters.isNotEmpty) ...[
-              ActionChip(
-                avatar: Icon(
-                  Icons.download_rounded,
-                  size: 14,
-                  color: theme.colorScheme.primary,
-                ),
-                label: Text(
-                  l10n.downloadBatch,
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w600,
-                    color: theme.colorScheme.onSurface,
-                  ),
-                ),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                onPressed: widget.onBatchDownload,
-              ),
-            ],
-
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-              child: Text(
-                l10n.chaptersCount(totalCount),
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
-                ),
-              ),
-            ),
-          ],
+            onChanged: (val) => setState(() => _searchQuery = val),
+          ),
         ),
 
-        // ── Multi-selection Action Bar (Desktop) ──
+        const SizedBox(height: 16),
+
+        // ── Multi-selection Action Bar ──
         if (_selectedChapterIds.isNotEmpty) ...[
-          const SizedBox(height: 10),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            margin: const EdgeInsets.only(bottom: 12),
             decoration: BoxDecoration(
-              color: theme.colorScheme.primaryContainer.withValues(alpha: 0.4),
+              color: theme.colorScheme.primaryContainer.withValues(alpha: 0.35),
               borderRadius: BorderRadius.circular(10),
               border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.35)),
             ),
@@ -501,51 +694,129 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
           ),
         ],
 
-        const SizedBox(height: 16),
-
-        // ── 3. Chapters List / States ──
-        if (widget.isLoadingChapters)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 48),
-            child: Center(
-              child: CircularProgressIndicator(),
+        // ── 5. Chapters Table (Header + Rows or Empty/Error State inside container) ──
+        Container(
+          decoration: BoxDecoration(
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.35)
+                : theme.colorScheme.surfaceContainerLow.withValues(alpha: 0.75),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.08)
+                  : theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
             ),
-          )
-        else if (widget.chaptersError != null)
-          _buildErrorView(theme)
-        else if (paginatedChapters.isEmpty)
-          _buildEmptyView()
-        else
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: paginatedChapters.length,
-            separatorBuilder: (_, _) => const SizedBox(height: 6),
-            itemBuilder: (context, index) {
-              final c = paginatedChapters[index];
-              final epNum = c.chapterNumber.toInt();
-              final isRead = widget.progress >= epNum && epNum > 0;
-              final isSelected = _selectedChapterIds.contains(c.id);
-
-              return DesktopMangaChapterCard(
-                chapter: c,
-                isRead: isRead,
-                isDownloaded: widget.downloadedChapterIds.contains(c.id),
-                isDownloading: widget.downloadingChapterIds.contains(c.id),
-                canDownload: widget.selectedProvider != null,
-                isSelected: isSelected,
-                onToggleSelect: () => _toggleSelectChapter(c.id),
-                onTap: () {
-                  if (_selectedChapterIds.isNotEmpty) {
-                    _toggleSelectChapter(c.id);
-                  } else {
-                    widget.onChapterClicked(c);
-                  }
-                },
-                onDownload: () => widget.onDownloadChapter(c),
-              );
-            },
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.15),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
+          child: widget.isLoadingChapters
+              ? const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 48),
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              : widget.chaptersError != null
+                  ? _buildErrorView(theme, l10n)
+                  : paginatedChapters.isEmpty
+                      ? _buildEmptyView(theme, l10n)
+                      : Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Table Column Headers
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                              child: Row(
+                                children: [
+                                  const SizedBox(width: 32),
+                                  Expanded(
+                                    child: Text(
+                                      l10n.chapterNameCol,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                        color: isDark ? Colors.white54 : theme.colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    width: 170,
+                                    child: Text(
+                                      l10n.scanlatorCol,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                        color: isDark ? Colors.white54 : theme.colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    width: 65,
+                                    child: Text(
+                                      l10n.chapterNumberCol,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                        color: isDark ? Colors.white54 : theme.colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 72),
+                                ],
+                              ),
+                            ),
+
+                            Divider(
+                              height: 1,
+                              thickness: 1,
+                              color: isDark
+                                  ? Colors.white.withValues(alpha: 0.05)
+                                  : theme.colorScheme.outlineVariant.withValues(alpha: 0.2),
+                            ),
+
+                            // Table Rows
+                            ListView.separated(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: paginatedChapters.length,
+                              separatorBuilder: (_, _) => Divider(
+                                height: 1,
+                                thickness: 1,
+                                color: isDark
+                                    ? Colors.white.withValues(alpha: 0.03)
+                                    : theme.colorScheme.outlineVariant.withValues(alpha: 0.12),
+                              ),
+                              itemBuilder: (context, index) {
+                                final c = paginatedChapters[index];
+                                final epNum = c.chapterNumber.toInt();
+                                final isRead = widget.progress >= epNum && epNum > 0;
+                                final isSelected = _selectedChapterIds.contains(c.id);
+
+                                return DesktopMangaChapterCard(
+                                  chapter: c,
+                                  isRead: isRead,
+                                  isDownloaded: widget.downloadedChapterIds.contains(c.id),
+                                  isDownloading: widget.downloadingChapterIds.contains(c.id),
+                                  canDownload: widget.selectedProvider != null,
+                                  isSelected: isSelected,
+                                  onToggleSelect: () => _toggleSelectChapter(c.id),
+                                  onTap: () {
+                                    if (_selectedChapterIds.isNotEmpty) {
+                                      _toggleSelectChapter(c.id);
+                                    } else {
+                                      widget.onChapterClicked(c);
+                                    }
+                                  },
+                                  onDownload: () => widget.onDownloadChapter(c),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+        ),
 
         // Pagination Stepper Controls (Desktop)
         if (totalPages > 1) ...[
@@ -624,24 +895,29 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
     );
   }
 
-  Widget _buildErrorView(ThemeData theme) {
+  Widget _buildErrorView(ThemeData theme, AppTranslations l10n) {
+    final isDark = theme.brightness == Brightness.dark;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 40),
+      padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
       child: Center(
         child: Column(
           children: [
-            Icon(Icons.menu_book_outlined, color: theme.colorScheme.outline, size: 40),
-            const SizedBox(height: 10),
+            Icon(Icons.wifi_off_rounded, color: isDark ? Colors.white38 : theme.colorScheme.outline, size: 40),
+            const SizedBox(height: 12),
             Text(
               widget.chaptersError!,
               textAlign: TextAlign.center,
-              style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+              style: TextStyle(
+                color: isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
+                fontSize: 13,
+              ),
             ),
-            const SizedBox(height: 14),
-            FilledButton.icon(
+            const SizedBox(height: 16),
+            M3EButton(
               onPressed: widget.onRefreshChapters,
-              icon: const Icon(Icons.refresh_rounded, size: 18),
-              label: Text(ref.read(translationsProvider).retry),
+              style: M3EButtonStyle.tonal,
+              icon: const Icon(Icons.refresh_rounded, size: 16),
+              label: Text(l10n.retry),
             ),
           ],
         ),
@@ -649,11 +925,10 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
     );
   }
 
-  Widget _buildEmptyView() {
-    final theme = Theme.of(context);
-    final l10n = ref.read(translationsProvider);
+  Widget _buildEmptyView(ThemeData theme, AppTranslations l10n) {
+    final isDark = theme.brightness == Brightness.dark;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 40),
+      padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -661,12 +936,16 @@ class _DesktopMangaChaptersTabState extends ConsumerState<DesktopMangaChaptersTa
             Icon(
               _showOnlyDownloaded ? Icons.download_done_rounded : Icons.menu_book_outlined,
               size: 40,
-              color: theme.colorScheme.outline,
+              color: isDark ? Colors.white38 : theme.colorScheme.outline,
             ),
             const SizedBox(height: 12),
             Text(
               _showOnlyDownloaded ? l10n.noDownloadedChaptersForManga : l10n.noChaptersAvailable,
-              style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+              style: TextStyle(
+                color: isDark ? Colors.white60 : theme.colorScheme.onSurfaceVariant,
+                fontSize: 13.5,
+                fontWeight: FontWeight.w500,
+              ),
               textAlign: TextAlign.center,
             ),
           ],

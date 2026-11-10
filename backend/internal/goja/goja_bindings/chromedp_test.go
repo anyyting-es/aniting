@@ -1,11 +1,11 @@
-package goja_bindings
+﻿package goja_bindings
 
 import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"seanime/internal/testutil"
-	"seanime/internal/util"
+	"aniting/internal/testutil"
+	"aniting/internal/util"
 	"testing"
 	"time"
 

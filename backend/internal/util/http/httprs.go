@@ -1,4 +1,4 @@
-package httputil
+﻿package httputil
 
 // Original source: https://github.com/jfbus/httprs/tree/master
 
@@ -23,7 +23,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"seanime/internal/util/limiter"
+	"aniting/internal/util/limiter"
 	"strconv"
 	"strings"
 	"sync"

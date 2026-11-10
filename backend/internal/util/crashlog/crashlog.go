@@ -1,4 +1,4 @@
-package crashlog
+﻿package crashlog
 
 import (
 	"bytes"
@@ -9,7 +9,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"seanime/internal/util"
+	"aniting/internal/util"
 	"sync"
 	"time"
 )

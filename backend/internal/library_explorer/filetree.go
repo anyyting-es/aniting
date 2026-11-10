@@ -1,11 +1,11 @@
-package library_explorer
+﻿package library_explorer
 
 import (
 	"path/filepath"
-	"seanime/internal/database/db_bridge"
-	"seanime/internal/library/anime"
-	"seanime/internal/library/filesystem"
-	"seanime/internal/util"
+	"aniting/internal/database/db_bridge"
+	"aniting/internal/library/anime"
+	"aniting/internal/library/filesystem"
+	"aniting/internal/util"
 	"sort"
 	"strings"
 	"sync"

@@ -1,11 +1,11 @@
-package handlers
+﻿package handlers
 
 import (
 	"net"
 	"net/http"
 	"net/netip"
 	"net/url"
-	"seanime/internal/security"
+	"aniting/internal/security"
 	"strings"
 )
 

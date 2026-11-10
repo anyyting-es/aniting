@@ -1,16 +1,16 @@
-package mediastream
+﻿package mediastream
 
 import (
 	"errors"
 	"os"
 	"path/filepath"
-	"seanime/internal/database/models"
-	"seanime/internal/events"
-	"seanime/internal/mediacore"
-	"seanime/internal/mediastream/cassette"
-	"seanime/internal/mediastream/videofile"
-	"seanime/internal/player"
-	"seanime/internal/util/filecache"
+	"aniting/internal/database/models"
+	"aniting/internal/events"
+	"aniting/internal/mediacore"
+	"aniting/internal/mediastream/cassette"
+	"aniting/internal/mediastream/videofile"
+	"aniting/internal/player"
+	"aniting/internal/util/filecache"
 	"strings"
 	"sync"
 

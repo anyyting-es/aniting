@@ -1,12 +1,12 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:seanime_app/core/constants/feature_flags.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/preferences/wallpaper_preferences_provider.dart';
-import 'package:seanime_app/core/theme/app_palette.dart';
-import 'package:seanime_app/core/theme/theme_provider.dart';
+import 'package:aniting/core/constants/feature_flags.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/preferences/wallpaper_preferences_provider.dart';
+import 'package:aniting/core/theme/app_palette.dart';
+import 'package:aniting/core/theme/theme_provider.dart';
 import '../settings_dpad_focus.dart';
 
 class PaletteOptionItem {

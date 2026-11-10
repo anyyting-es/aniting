@@ -1,12 +1,12 @@
-package onlinestream
+﻿package onlinestream
 
 import (
 	"errors"
 	"fmt"
-	"seanime/internal/extension"
-	hibikeonlinestream "seanime/internal/extension/hibike/onlinestream"
-	"seanime/internal/util"
-	"seanime/internal/util/result"
+	"aniting/internal/extension"
+	hibikeonlinestream "aniting/internal/extension/hibike/onlinestream"
+	"aniting/internal/util"
+	"aniting/internal/util/result"
 	"strings"
 )
 

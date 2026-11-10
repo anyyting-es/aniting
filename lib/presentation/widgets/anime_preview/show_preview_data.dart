@@ -1,11 +1,11 @@
-import 'package:flutter/material.dart';
-import 'package:seanime_app/core/media_servers/models/media_server_item.dart';
-import 'package:seanime_app/core/preferences/title_language_provider.dart';
-import 'package:seanime_app/core/theme/theme_provider.dart' show parseHexColor;
-import 'package:seanime_app/core/utils/synopsis_utils.dart';
-import 'package:seanime_app/data/models/anime_entry.dart';
-import 'package:seanime_app/data/models/anizip_data.dart';
-import 'package:seanime_app/data/models/manga_entry.dart';
+﻿import 'package:flutter/material.dart';
+import 'package:aniting/core/media_servers/models/media_server_item.dart';
+import 'package:aniting/core/preferences/title_language_provider.dart';
+import 'package:aniting/core/theme/theme_provider.dart' show parseHexColor;
+import 'package:aniting/core/utils/synopsis_utils.dart';
+import 'package:aniting/data/models/anime_entry.dart';
+import 'package:aniting/data/models/anizip_data.dart';
+import 'package:aniting/data/models/manga_entry.dart';
 
 /// One metadata chip of the immersive preview.
 class ShowPreviewMeta {
@@ -53,6 +53,23 @@ class ShowPreviewData {
   /// Present when the preview is about a specific episode.
   final ShowPreviewEpisode? episode;
 
+  // ── Tracking / quick actions ──────────────────────────────────────────
+  /// AniList / TMDB media id (null for media-server items).
+  final int? mediaId;
+  final int? year;
+  final bool isInList;
+  final String? userStatus;
+  final int? progress;
+  final int? totalCount;
+  final double? userScore;
+  final int? repeat;
+  final String? startedAt;
+  final String? completedAt;
+  final bool isTmdb;
+
+  /// False for media-server items that are not part of AniList/local lists.
+  final bool canTrack;
+
   const ShowPreviewData({
     required this.title,
     this.subtitle,
@@ -64,7 +81,31 @@ class ShowPreviewData {
     this.meta = const [],
     this.isManga = false,
     this.episode,
+    this.mediaId,
+    this.year,
+    this.isInList = false,
+    this.userStatus,
+    this.progress,
+    this.totalCount,
+    this.userScore,
+    this.repeat,
+    this.startedAt,
+    this.completedAt,
+    this.isTmdb = false,
+    this.canTrack = false,
   });
+
+  static const _userListStatuses = {
+    'CURRENT',
+    'PLANNING',
+    'COMPLETED',
+    'PAUSED',
+    'DROPPED',
+    'REPEATING',
+  };
+
+  static bool _isUserListStatus(String status) =>
+      _userListStatuses.contains(status.trim().toUpperCase());
 
   factory ShowPreviewData.fromAnime(
     AnimeEntry entry,
@@ -80,6 +121,10 @@ class ShowPreviewData {
     );
     final score = _scoreLabel(entry.score);
     final episodes = entry.totalEpisodes;
+
+    final rawStatus = entry.status.trim().toUpperCase();
+    final userStatus = _isUserListStatus(rawStatus) ? rawStatus : null;
+    final isInList = userStatus != null || entry.progress > 0;
 
     ShowPreviewEpisode? episode;
     if (includeCurrentEpisode) {
@@ -110,6 +155,15 @@ class ShowPreviewData {
       description: _cleanDescription(entry.description),
       genres: entry.genres.take(6).toList(),
       episode: episode,
+      mediaId: entry.mediaId > 0 ? entry.mediaId : null,
+      year: entry.year,
+      isInList: isInList,
+      userStatus: userStatus ?? (isInList ? 'CURRENT' : null),
+      progress: entry.progress,
+      totalCount: episodes,
+      userScore: entry.score,
+      isTmdb: entry.isTmdb,
+      canTrack: true,
       meta: [
         if (entry.year != null && entry.year! > 0)
           ShowPreviewMeta('${entry.year}', Icons.calendar_today_rounded),
@@ -133,6 +187,10 @@ class ShowPreviewData {
     final chapters = entry.totalChapters;
     final volumes = entry.totalVolumes;
 
+    final rawStatus = entry.status.trim().toUpperCase();
+    final userStatus = _isUserListStatus(rawStatus) ? rawStatus : null;
+    final isInList = userStatus != null || entry.progress > 0;
+
     return ShowPreviewData(
       title: title,
       subtitle: subtitle,
@@ -143,6 +201,14 @@ class ShowPreviewData {
       description: _cleanDescription(entry.description),
       genres: entry.genres.take(6).toList(),
       isManga: true,
+      mediaId: entry.mediaId > 0 ? entry.mediaId : null,
+      year: entry.year,
+      isInList: isInList,
+      userStatus: userStatus ?? (isInList ? 'CURRENT' : null),
+      progress: entry.progress,
+      totalCount: chapters,
+      userScore: entry.score,
+      canTrack: true,
       meta: [
         if (entry.year != null && entry.year! > 0)
           ShowPreviewMeta('${entry.year}', Icons.calendar_today_rounded),
@@ -199,6 +265,9 @@ class ShowPreviewData {
       description: _cleanDescription(item.overview),
       genres: item.genres.take(6).toList(),
       episode: episode,
+      year: item.year,
+      totalCount: item.episodeCount,
+      canTrack: false,
       meta: [
         if (item.year != null && item.year! > 0)
           ShowPreviewMeta('${item.year}', Icons.calendar_today_rounded),

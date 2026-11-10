@@ -1,13 +1,13 @@
-package autoselect
+﻿package autoselect
 
 import (
 	"context"
 	"fmt"
-	"seanime/internal/api/anilist"
-	hibiketorrent "seanime/internal/extension/hibike/torrent"
-	"seanime/internal/library/anime"
-	itorrent "seanime/internal/torrents/torrent"
-	"seanime/internal/util"
+	"aniting/internal/api/anilist"
+	hibiketorrent "aniting/internal/extension/hibike/torrent"
+	"aniting/internal/library/anime"
+	itorrent "aniting/internal/torrents/torrent"
+	"aniting/internal/util"
 	"slices"
 	"sync"
 	"time"

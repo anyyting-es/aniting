@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:seanime_app/presentation/widgets/player/layouts/player_desktop_layout.dart';
-import 'package:seanime_app/presentation/widgets/player/models/player_types.dart';
+import 'package:aniting/presentation/widgets/player/layouts/player_desktop_layout.dart';
+import 'package:aniting/presentation/widgets/player/models/player_types.dart';
 
 void main() {
   group('PlayerDesktopLayout ambient halo', () {
@@ -200,6 +200,35 @@ void main() {
           PlayerDesktopLayout.haloBleed + 24,
           1.0,
         ),
+      );
+    });
+
+    testWidgets('hiding the rail keeps the video size and centers it', (
+      tester,
+    ) async {
+      await pumpLayout(
+        tester,
+        pageWidth: 1920,
+        showRail: true,
+        withHalo: false,
+      );
+      final withRail = videoRectOf(tester);
+
+      await pumpLayout(
+        tester,
+        pageWidth: 1920,
+        showRail: false,
+        withHalo: false,
+      );
+      final withoutRail = videoRectOf(tester);
+      final pageRect = tester.getRect(find.byType(PlayerDesktopLayout));
+
+      expect(withoutRail.width, closeTo(withRail.width, 0.5));
+      expect(withoutRail.height, closeTo(withRail.height, 0.5));
+      expect(
+        withoutRail.center.dx,
+        closeTo(pageRect.center.dx, 0.5),
+        reason: 'the video must stay centered when the rail is hidden',
       );
     });
 

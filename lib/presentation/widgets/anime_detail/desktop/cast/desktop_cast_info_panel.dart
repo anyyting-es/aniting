@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:g1455/g1455.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/icons/app_icons.dart';
 import 'desktop_cast_models.dart';
 
 /// Center detailed info panel presenting character biography, attributes, and roles.
-/// Features a fixed-slot layout that keeps character information calm and static without jumping.
-class DesktopCastInfoPanel extends ConsumerWidget {
+/// Features clean, frameless typography and tight, proportional spacing.
+class DesktopCastInfoPanel extends ConsumerStatefulWidget {
   final DesktopCastItem item;
 
   const DesktopCastInfoPanel({
@@ -16,7 +15,22 @@ class DesktopCastInfoPanel extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DesktopCastInfoPanel> createState() =>
+      _DesktopCastInfoPanelState();
+}
+
+class _DesktopCastInfoPanelState extends ConsumerState<DesktopCastInfoPanel> {
+  final ScrollController _bioScrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _bioScrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final item = widget.item;
     final l10n = ref.watch(translationsProvider);
     final iconPack = ref.watch(iconPackProvider);
     final theme = Theme.of(context);
@@ -36,133 +50,114 @@ class DesktopCastInfoPanel extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ─── Slot 1: Header (Role + Native name, Name, and Aliases) ─── Fixed height: 96px
-          SizedBox(
-            height: 96,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // Top line: Role badge + Native Japanese Name
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: item.isMain
-                            ? theme.colorScheme.primary.withValues(alpha: 0.16)
-                            : (isDark ? Colors.white.withValues(alpha: 0.08) : theme.colorScheme.surfaceContainerHighest),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: item.isMain
-                              ? theme.colorScheme.primary.withValues(alpha: 0.45)
-                              : (isDark ? Colors.white.withValues(alpha: 0.12) : theme.colorScheme.outlineVariant.withValues(alpha: 0.3)),
-                          width: 1,
-                        ),
-                      ),
-                      child: Text(
-                        roleLabel,
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.8,
-                          color: item.isMain ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
-                    if (item.nativeName != null && item.nativeName!.isNotEmpty) ...[
-                      const SizedBox(width: 12),
-                      Flexible(
-                        child: Text(
-                          item.nativeName!,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
+          // ─── Header: Role badge + Native Japanese Name ───
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: item.isMain
+                      ? theme.colorScheme.primary.withValues(alpha: 0.16)
+                      : (isDark ? Colors.white.withValues(alpha: 0.08) : theme.colorScheme.surfaceContainerHighest),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: item.isMain
+                        ? theme.colorScheme.primary.withValues(alpha: 0.45)
+                        : (isDark ? Colors.white.withValues(alpha: 0.12) : theme.colorScheme.outlineVariant.withValues(alpha: 0.3)),
+                    width: 1,
+                  ),
                 ),
-
-                // Character Name
-                SizedBox(
-                  height: 38,
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      item.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w800,
-                        color: isDark ? Colors.white : theme.colorScheme.onSurface,
-                        letterSpacing: -0.5,
-                      ),
+                child: Text(
+                  roleLabel,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.8,
+                    color: item.isMain ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+              if (item.nativeName != null && item.nativeName!.isNotEmpty) ...[
+                const SizedBox(width: 12),
+                Flexible(
+                  child: Text(
+                    item.nativeName!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+                      letterSpacing: 0.5,
                     ),
                   ),
                 ),
-
-                // Alternative Names line
-                SizedBox(
-                  height: 18,
-                  child: item.alternativeNames.isNotEmpty
-                      ? Text(
-                          item.alternativeNames.take(4).map((a) => '• $a').join('  '),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.75),
-                            fontWeight: FontWeight.w500,
-                          ),
-                        )
-                      : const SizedBox.shrink(),
-                ),
               ],
+            ],
+          ),
+
+          const SizedBox(height: 8),
+
+          // ─── Character Name ───
+          Text(
+            item.name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.w800,
+              color: isDark ? Colors.white : theme.colorScheme.onSurface,
+              letterSpacing: -0.5,
             ),
           ),
 
-          const SizedBox(height: 12),
+          // ─── Alternative Names (only if present) ───
+          if (item.alternativeNames.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              item.alternativeNames.take(4).map((a) => '• $a').join('  '),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12,
+                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.75),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
 
-          // ─── Slot 2: Attributes Row ─── Fixed height: 32px
-          SizedBox(
-            height: 32,
-            child: hasAttributes
-                ? _buildAttributesRow(theme, iconPack, isDark)
-                : const SizedBox.shrink(),
-          ),
+          const SizedBox(height: 10),
 
-          const SizedBox(height: 16),
+          // ─── Attributes Row (Gender, Age, Birthday, Blood Type) ───
+          if (hasAttributes) ...[
+            SizedBox(
+              height: 32,
+              child: _buildAttributesRow(theme, iconPack, isDark),
+            ),
+            const SizedBox(height: 14),
+          ],
 
-          // ─── Slot 3: Biography Container ───
+          // ─── Biography Text (Frameless, clean typography) ───
           Expanded(
-            child: GlassCard(
-              borderRadius: BorderRadius.circular(18),
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-              child: Scrollbar(
-                thumbVisibility: true,
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.only(right: 8),
-                  child: Text(
-                    (item.bio != null && item.bio!.isNotEmpty)
-                        ? item.bio!
-                        : l10n.noDescriptionAvailable,
-                    style: TextStyle(
-                      fontSize: 13.5,
-                      height: 1.55,
-                      color: isDark
-                          ? Colors.white.withValues(alpha: 0.82)
-                          : theme.colorScheme.onSurface.withValues(alpha: 0.88),
-                      fontWeight: FontWeight.w400,
-                    ),
+            child: Scrollbar(
+              controller: _bioScrollController,
+              thumbVisibility: true,
+              child: SingleChildScrollView(
+                controller: _bioScrollController,
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.only(right: 12),
+                child: Text(
+                  (item.bio != null && item.bio!.isNotEmpty)
+                      ? item.bio!
+                      : l10n.noCharacterDescriptionAvailable,
+                  style: TextStyle(
+                    fontSize: 13.5,
+                    height: 1.55,
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.82)
+                        : theme.colorScheme.onSurface.withValues(alpha: 0.88),
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
               ),
@@ -174,6 +169,7 @@ class DesktopCastInfoPanel extends ConsumerWidget {
   }
 
   Widget _buildAttributesRow(ThemeData theme, AppIconPack iconPack, bool isDark) {
+    final item = widget.item;
     return ListView(
       scrollDirection: Axis.horizontal,
       physics: const BouncingScrollPhysics(),

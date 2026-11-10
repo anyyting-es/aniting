@@ -1,10 +1,10 @@
-import 'package:file_picker/file_picker.dart';
+﻿import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/preferences/wallpaper_preferences_provider.dart';
-import 'package:seanime_app/presentation/widgets/m3_expressive_slider.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/preferences/wallpaper_preferences_provider.dart';
+import 'package:aniting/presentation/widgets/m3_expressive_slider.dart';
 import '../settings_dpad_focus.dart';
 
 /// In-page section view for adjusting wallpaper opacity, blur, and selecting/removing image.

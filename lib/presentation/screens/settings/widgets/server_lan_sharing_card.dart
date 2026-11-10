@@ -1,14 +1,14 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/preferences/lan_sharing_provider.dart';
-import 'package:seanime_app/core/server/lan_discovery_service.dart';
-import 'package:seanime_app/core/server/server_manager.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/screens/settings/widgets/pixel_settings_widgets.dart';
-import 'package:seanime_app/presentation/widgets/welcome/tv/tv_pairing_sheet.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/preferences/lan_sharing_provider.dart';
+import 'package:aniting/core/server/lan_discovery_service.dart';
+import 'package:aniting/core/server/server_manager.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/screens/settings/widgets/pixel_settings_widgets.dart';
+import 'package:aniting/presentation/widgets/welcome/tv/tv_pairing_sheet.dart';
 
 /// Card widget to configure LAN server sharing and broadcasting.
 class ServerLanSharingCard extends ConsumerStatefulWidget {

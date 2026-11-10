@@ -1,8 +1,8 @@
-package db
+﻿package db
 
 import (
 	"gorm.io/gorm/clause"
-	"seanime/internal/database/models"
+	"aniting/internal/database/models"
 )
 
 func (db *Database) UpsertToken(token *models.Token) (*models.Token, error) {

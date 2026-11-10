@@ -1,14 +1,14 @@
-import 'package:g1455/g1455.dart';
+﻿import 'package:g1455/g1455.dart';
 import 'dart:ui' show PointerDeviceKind;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:seanime_app/core/i18n/translations/en.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/presentation/widgets/player/controls/player_bottom_bar.dart';
-import 'package:seanime_app/presentation/widgets/player/controls/player_track_selectors.dart';
-import 'package:seanime_app/presentation/widgets/player/models/player_types.dart';
+import 'package:aniting/core/i18n/translations/en.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/presentation/widgets/player/controls/player_bottom_bar.dart';
+import 'package:aniting/presentation/widgets/player/controls/player_track_selectors.dart';
+import 'package:aniting/presentation/widgets/player/models/player_types.dart';
 
 void main() {
   group('PlayerBottomBar Desktop Track Selectors', () {

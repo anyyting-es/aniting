@@ -1,11 +1,11 @@
-package goja_bindings
+﻿package goja_bindings
 
 import (
 	"fmt"
 	"regexp"
-	"seanime/internal/library/scanner"
-	"seanime/internal/util"
-	"seanime/internal/util/comparison"
+	"aniting/internal/library/scanner"
+	"aniting/internal/util"
+	"aniting/internal/util/comparison"
 	"strconv"
 	"strings"
 

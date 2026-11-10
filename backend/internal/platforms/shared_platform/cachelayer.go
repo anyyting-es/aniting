@@ -1,14 +1,14 @@
-package shared_platform
+﻿package shared_platform
 
 import (
 	"context"
 	"errors"
 	"fmt"
-	"seanime/internal/api/anilist"
-	"seanime/internal/events"
-	"seanime/internal/util"
-	"seanime/internal/util/filecache"
-	"seanime/internal/util/result"
+	"aniting/internal/api/anilist"
+	"aniting/internal/events"
+	"aniting/internal/util"
+	"aniting/internal/util/filecache"
+	"aniting/internal/util/result"
 	"slices"
 	"strconv"
 	"strings"

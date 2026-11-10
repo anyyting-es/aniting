@@ -14,7 +14,7 @@ import (
 // formData
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-const formDataInternalProperty = "__seanimeFormData"
+const formDataInternalProperty = "__anitingFormData"
 
 func BindFormData(vm *goja.Runtime) error {
 	err := vm.Set("FormData", func(call goja.ConstructorCall) *goja.Object {

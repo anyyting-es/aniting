@@ -60,7 +60,7 @@ const (
 	PushRequests      FeatureKey = "PushRequests"
 )
 
-func NewFeatureManager(logger *zerolog.Logger, flags SeanimeFlags) *FeatureManager {
+func NewFeatureManager(logger *zerolog.Logger, flags AnitingFlags) *FeatureManager {
 	ret := &FeatureManager{
 		disabledFeatures: make(map[FeatureKey]bool),
 		DisabledFeatures: flags.DisableFeatures,

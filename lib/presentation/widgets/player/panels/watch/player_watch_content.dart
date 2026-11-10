@@ -1,16 +1,16 @@
-import 'package:flutter/foundation.dart';
+﻿import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/data/models/anime_details.dart';
-import 'package:seanime_app/data/models/anizip_data.dart';
-import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
-import 'package:seanime_app/presentation/widgets/player/models/player_types.dart';
-import 'package:seanime_app/presentation/widgets/player/panels/player_chat_panel.dart';
-import 'package:seanime_app/presentation/widgets/player/panels/watch/player_chapters_strip.dart';
-import 'package:seanime_app/presentation/widgets/player/panels/watch/player_episode_header.dart';
-import 'package:seanime_app/presentation/widgets/player/panels/watch/player_synopsis_section.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/data/models/anime_details.dart';
+import 'package:aniting/data/models/anizip_data.dart';
+import 'package:aniting/presentation/screens/anime_detail_screen.dart';
+import 'package:aniting/presentation/widgets/player/models/player_types.dart';
+import 'package:aniting/presentation/widgets/player/panels/player_chat_panel.dart';
+import 'package:aniting/presentation/widgets/player/panels/watch/player_chapters_strip.dart';
+import 'package:aniting/presentation/widgets/player/panels/watch/player_episode_header.dart';
+import 'package:aniting/presentation/widgets/player/panels/watch/player_synopsis_section.dart';
 
 /// Scrollable YouTube-style content column rendered below the desktop player:
 /// episode header, synopsis, chapters and comments. Playback source/audio/subtitle

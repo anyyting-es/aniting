@@ -1,16 +1,16 @@
-package handlers
+﻿package handlers
 
 import (
 	"errors"
 	"net/http"
 	"path/filepath"
-	"seanime/internal/api/anilist"
-	"seanime/internal/api/metadata"
-	"seanime/internal/database/models"
-	debrid_client "seanime/internal/debrid/client"
-	"seanime/internal/debrid/debrid"
-	"seanime/internal/events"
-	hibiketorrent "seanime/internal/extension/hibike/torrent"
+	"aniting/internal/api/anilist"
+	"aniting/internal/api/metadata"
+	"aniting/internal/database/models"
+	debrid_client "aniting/internal/debrid/client"
+	"aniting/internal/debrid/debrid"
+	"aniting/internal/events"
+	hibiketorrent "aniting/internal/extension/hibike/torrent"
 
 	"github.com/labstack/echo/v4"
 )

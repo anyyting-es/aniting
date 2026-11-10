@@ -1,9 +1,9 @@
-package qbittorrent
+﻿package qbittorrent
 
 import (
 	"errors"
 	"runtime"
-	"seanime/internal/util"
+	"aniting/internal/util"
 	"time"
 )
 

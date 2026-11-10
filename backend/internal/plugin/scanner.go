@@ -1,15 +1,15 @@
-package plugin
+﻿package plugin
 
 import (
 	"context"
 	"errors"
-	"seanime/internal/database/db_bridge"
-	"seanime/internal/extension"
-	"seanime/internal/goja/goja_bindings"
-	"seanime/internal/library/anime"
-	"seanime/internal/library/scanner"
-	"seanime/internal/library/summary"
-	gojautil "seanime/internal/util/goja"
+	"aniting/internal/database/db_bridge"
+	"aniting/internal/extension"
+	"aniting/internal/goja/goja_bindings"
+	"aniting/internal/library/anime"
+	"aniting/internal/library/scanner"
+	"aniting/internal/library/summary"
+	gojautil "aniting/internal/util/goja"
 
 	"github.com/dop251/goja"
 	"github.com/rs/zerolog"

@@ -3,12 +3,12 @@ package discordrpc_presence
 import (
 	"context"
 	"fmt"
-	"seanime/internal/api/anilist"
-	"seanime/internal/constants"
-	"seanime/internal/database/models"
-	discordrpc_client "seanime/internal/discordrpc/client"
-	"seanime/internal/hook"
-	"seanime/internal/util"
+	"aniting/internal/api/anilist"
+	"aniting/internal/constants"
+	"aniting/internal/database/models"
+	discordrpc_client "aniting/internal/discordrpc/client"
+	"aniting/internal/hook"
+	"aniting/internal/util"
 	"sync"
 	"time"
 
@@ -224,15 +224,15 @@ func (p *Presence) check() (proceed bool) {
 
 var (
 	defaultActivity = discordrpc_client.Activity{
-		Name:    "Seanime",
+		Name:    "Aniting",
 		Details: "",
 		State:   "",
 		Assets: &discordrpc_client.Assets{
 			LargeImage: "",
 			LargeText:  "",
-			// SmallImage: "https://seanime.app/images/circular-logo.png",
-			// SmallText:  "Seanime v" + constants.Version,
-			// SmallURL:   "https://seanime.app",
+			// SmallImage: "",
+			// SmallText:  "Aniting v" + constants.Version,
+			// SmallURL:   "https://github.com/anyyting-es/aniting",
 			SmallImage: "",
 			SmallText:  "",
 			SmallURL:   "",
@@ -244,8 +244,8 @@ var (
 		},
 		Buttons: []*discordrpc_client.Button{
 			{
-				Label: "Seanime",
-				Url:   "https://seanime.app",
+				Label: "Aniting",
+				Url:   "https://github.com/anyyting-es/aniting",
 			},
 		},
 		Instance:          true,
@@ -254,13 +254,13 @@ var (
 	}
 )
 
-func isSeanimeButtonPresent(activity *discordrpc_client.Activity) bool {
+func isAnitingButtonPresent(activity *discordrpc_client.Activity) bool {
 	return true
 	// if activity == nil || activity.Buttons == nil {
 	// 	return false
 	// }
 	// for _, button := range activity.Buttons {
-	// 	if button.Label == "Seanime" && button.Url == "https://seanime.app" {
+	// 	if button.Label == "Aniting" && button.Url == "https://github.com/anyyting-es/aniting" {
 	// 		return true
 	// 	}
 	// }
@@ -371,10 +371,10 @@ func (p *Presence) SetAnimeActivity(a *AnimeActivity) {
 		})
 	}
 
-	if !(p.settings.RichPresenceHideSeanimeRepositoryButton || len(activity.Buttons) > 1) {
+	if !(p.settings.RichPresenceHideAnitingRepositoryButton || len(activity.Buttons) > 1) {
 		activity.Buttons = append(activity.Buttons, &discordrpc_client.Button{
-			Label: "Seanime",
-			Url:   "https://seanime.app",
+			Label: "Aniting",
+			Url:   "https://github.com/anyyting-es/aniting",
 		})
 	}
 
@@ -412,8 +412,8 @@ func (p *Presence) SetAnimeActivity(a *AnimeActivity) {
 	activity.Assets.LargeText = event.LargeText
 	activity.Assets.LargeURL = event.LargeURL
 	activity.Buttons = event.Buttons
-	// Only allow changing small image and text if Seanime button is present
-	if isSeanimeButtonPresent(&activity) {
+	// Only allow changing small image and text if Aniting button is present
+	if isAnitingButtonPresent(&activity) {
 		activity.Assets.SmallImage = event.SmallImage
 		activity.Assets.SmallText = event.SmallText
 		activity.Assets.SmallURL = event.SmallURL
@@ -557,10 +557,10 @@ func (p *Presence) LegacySetAnimeActivity(a *LegacyAnimeActivity) {
 		})
 	}
 
-	if !(p.settings.RichPresenceHideSeanimeRepositoryButton || len(activity.Buttons) > 1) {
+	if !(p.settings.RichPresenceHideAnitingRepositoryButton || len(activity.Buttons) > 1) {
 		activity.Buttons = append(activity.Buttons, &discordrpc_client.Button{
-			Label: "Seanime",
-			Url:   "https://seanime.app",
+			Label: "Aniting",
+			Url:   "https://github.com/anyyting-es/aniting",
 		})
 	}
 
@@ -619,10 +619,10 @@ func (p *Presence) SetMangaActivity(a *MangaActivity) {
 		})
 	}
 
-	if !(p.settings.RichPresenceHideSeanimeRepositoryButton || len(activity.Buttons) > 1) {
+	if !(p.settings.RichPresenceHideAnitingRepositoryButton || len(activity.Buttons) > 1) {
 		activity.Buttons = append(activity.Buttons, &discordrpc_client.Button{
-			Label: "Seanime",
-			Url:   "https://seanime.app",
+			Label: "Aniting",
+			Url:   "https://github.com/anyyting-es/aniting",
 		})
 	}
 
@@ -656,8 +656,8 @@ func (p *Presence) SetMangaActivity(a *MangaActivity) {
 	activity.Assets.LargeText = event.LargeText
 	activity.Assets.LargeURL = event.LargeURL
 	activity.Buttons = event.Buttons
-	// Only allow changing small image and text if Seanime button is present
-	if isSeanimeButtonPresent(&activity) {
+	// Only allow changing small image and text if Aniting button is present
+	if isAnitingButtonPresent(&activity) {
 		activity.Assets.SmallImage = event.SmallImage
 		activity.Assets.SmallText = event.SmallText
 		activity.Assets.SmallURL = event.SmallURL
@@ -745,10 +745,10 @@ func (p *Presence) SetCustomActivity(a *CustomActivity) {
 				Url:   fmt.Sprintf("https://anilist.co/user/%s", p.username),
 			})
 		}
-		if !(p.settings.RichPresenceHideSeanimeRepositoryButton || len(activity.Buttons) > 1) {
+		if !(p.settings.RichPresenceHideAnitingRepositoryButton || len(activity.Buttons) > 1) {
 			activity.Buttons = append(activity.Buttons, &discordrpc_client.Button{
-				Label: "Seanime",
-				Url:   "https://seanime.app",
+				Label: "Aniting",
+				Url:   "https://github.com/anyyting-es/aniting",
 			})
 		}
 	}

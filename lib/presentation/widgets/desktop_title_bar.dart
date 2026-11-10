@@ -1,9 +1,9 @@
-import 'dart:io';
+﻿import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
 import 'package:window_manager/window_manager.dart';
 
 /// Global notifier to hide/show the desktop titlebar (e.g. during video fullscreen).
@@ -21,6 +21,30 @@ class DesktopTitleBarVisibleNotifier extends Notifier<bool> {
 final desktopTitleBarVisibleProvider =
     NotifierProvider<DesktopTitleBarVisibleNotifier, bool>(
   DesktopTitleBarVisibleNotifier.new,
+);
+
+/// Global notifier tracking the real native fullscreen state.
+///
+/// The window_manager plugin can drop its `leave-full-screen` event on Windows
+/// when the window was maximized before entering fullscreen (it restores with
+/// `SC_MAXIMIZE` instead of `SIZE_RESTORED`, so the internal state machine
+/// stays stuck in `FULLSCREEN_ENTERED`). The player therefore updates this
+/// provider directly so the titlebar and window frame never depend on a
+/// missing native event.
+class DesktopNativeFullscreenNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void setFullscreen(bool fullscreen) {
+    if (state != fullscreen) {
+      state = fullscreen;
+    }
+  }
+}
+
+final desktopNativeFullscreenProvider =
+    NotifierProvider<DesktopNativeFullscreenNotifier, bool>(
+  DesktopNativeFullscreenNotifier.new,
 );
 
 /// Global notifier to override caption button brightness (e.g. forced white icons over video player).
@@ -94,7 +118,6 @@ class DesktopTitleBar extends ConsumerStatefulWidget
 class _DesktopTitleBarState extends ConsumerState<DesktopTitleBar>
     with WindowListener {
   bool _isMaximized = false;
-  bool _isFullScreen = false;
 
   @override
   void initState() {
@@ -113,13 +136,24 @@ class _DesktopTitleBarState extends ConsumerState<DesktopTitleBar>
     try {
       final max = await windowManager.isMaximized();
       final fs = await windowManager.isFullScreen();
-      if (mounted) {
-        setState(() {
-          _isMaximized = max;
-          _isFullScreen = fs;
-        });
+      if (mounted && _isMaximized != max) {
+        setState(() => _isMaximized = max);
       }
+      ref.read(desktopNativeFullscreenProvider.notifier).setFullscreen(fs);
     } catch (_) {}
+  }
+
+  /// Re-reads the native window state a couple of times, because on Windows
+  /// `window_manager` posts `SC_MAXIMIZE`/`SC_RESTORE` asynchronously and may
+  /// swallow the matching event when the window was maximized before entering
+  /// fullscreen. Without this the maximize/restore button gets stuck.
+  void _scheduleWindowStateSync() {
+    _initWindowState();
+    for (final delay in const [220, 480]) {
+      Future.delayed(Duration(milliseconds: delay), () {
+        if (mounted) _initWindowState();
+      });
+    }
   }
 
   @override
@@ -134,28 +168,47 @@ class _DesktopTitleBarState extends ConsumerState<DesktopTitleBar>
 
   @override
   void onWindowEnterFullScreen() {
-    if (mounted) setState(() => _isFullScreen = true);
+    ref.read(desktopNativeFullscreenProvider.notifier).setFullscreen(true);
   }
 
   @override
   void onWindowLeaveFullScreen() {
-    if (mounted) setState(() => _isFullScreen = false);
+    ref.read(desktopNativeFullscreenProvider.notifier).setFullscreen(false);
   }
 
   void _toggleMaximize() async {
-    if (_isMaximized) {
+    // Never trust the cached flag here: after leaving native fullscreen the
+    // plugin can report a stale `_isMaximized == false` while the window is
+    // actually maximized, which made the button a no-op (it kept sending
+    // "maximize" instead of "restore to floating").
+    bool isMaximized = _isMaximized;
+    try {
+      isMaximized = await windowManager.isMaximized();
+    } catch (_) {}
+    if (isMaximized) {
       await windowManager.unmaximize();
     } else {
       await windowManager.maximize();
     }
+    _scheduleWindowStateSync();
   }
 
   @override
   Widget build(BuildContext context) {
+    // The native maximize event can also be swallowed after leaving fullscreen,
+    // so refresh the maximized/restore icon whenever the player gives the
+    // titlebar back.
+    ref.listen<bool>(desktopTitleBarVisibleProvider, (previous, next) {
+      if (next && previous == false) {
+        _scheduleWindowStateSync();
+      }
+    });
+
     final isExplicitlyVisible = ref.watch(desktopTitleBarVisibleProvider);
+    final isNativeFullscreen = ref.watch(desktopNativeFullscreenProvider);
     final isVideoPlayerActive = ref.watch(isVideoPlayerActiveProvider);
 
-    if (!isExplicitlyVisible || _isFullScreen || (isVideoPlayerActive && _isFullScreen)) {
+    if (!isExplicitlyVisible || isNativeFullscreen) {
       return const SizedBox.shrink();
     }
 
@@ -399,7 +452,7 @@ class _CloseIconPainter extends CustomPainter {
 
 /// Helper wrapper that renders [DesktopTitleBar] above the application on desktop platforms,
 /// applies rounded window corners with a subtle native contour, and enables border resizing on Linux.
-class DesktopWindowFrame extends StatefulWidget {
+class DesktopWindowFrame extends ConsumerStatefulWidget {
   final Widget child;
   const DesktopWindowFrame({super.key, required this.child});
 
@@ -407,13 +460,12 @@ class DesktopWindowFrame extends StatefulWidget {
       !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
 
   @override
-  State<DesktopWindowFrame> createState() => _DesktopWindowFrameState();
+  ConsumerState<DesktopWindowFrame> createState() => _DesktopWindowFrameState();
 }
 
-class _DesktopWindowFrameState extends State<DesktopWindowFrame>
+class _DesktopWindowFrameState extends ConsumerState<DesktopWindowFrame>
     with WindowListener {
   bool _isMaximized = false;
-  bool _isFullScreen = false;
   bool _isFocused = true;
 
   @override
@@ -441,10 +493,10 @@ class _DesktopWindowFrameState extends State<DesktopWindowFrame>
       if (mounted) {
         setState(() {
           _isMaximized = max;
-          _isFullScreen = fs;
           _isFocused = focused;
         });
       }
+      ref.read(desktopNativeFullscreenProvider.notifier).setFullscreen(fs);
     } catch (_) {}
   }
 
@@ -460,12 +512,12 @@ class _DesktopWindowFrameState extends State<DesktopWindowFrame>
 
   @override
   void onWindowEnterFullScreen() {
-    if (mounted) setState(() => _isFullScreen = true);
+    ref.read(desktopNativeFullscreenProvider.notifier).setFullscreen(true);
   }
 
   @override
   void onWindowLeaveFullScreen() {
-    if (mounted) setState(() => _isFullScreen = false);
+    ref.read(desktopNativeFullscreenProvider.notifier).setFullscreen(false);
   }
 
   @override
@@ -486,7 +538,8 @@ class _DesktopWindowFrameState extends State<DesktopWindowFrame>
 
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final isClamped = _isMaximized || _isFullScreen;
+    final isFullScreen = ref.watch(desktopNativeFullscreenProvider);
+    final isClamped = _isMaximized || isFullScreen;
     final double radius = isClamped ? 0.0 : 10.0;
 
     Widget windowContent = ClipRRect(

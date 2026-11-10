@@ -1,8 +1,8 @@
-package local
+﻿package local
 
 import (
-	"seanime/internal/api/anilist"
-	"seanime/internal/customsource"
+	"aniting/internal/api/anilist"
+	"aniting/internal/customsource"
 
 	"github.com/goccy/go-json"
 )

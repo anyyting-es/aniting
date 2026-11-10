@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/widgets/desktop_title_bar.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/widgets/desktop_title_bar.dart';
+import 'package:window_manager/window_manager.dart';
 
 class _TestVideoPlayerActiveNotifier extends VideoPlayerActiveNotifier {
   @override
@@ -66,5 +67,57 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(underlyingButtonClicked, isTrue);
+  });
+
+  testWidgets(
+      'caption controls come back after native fullscreen is exited',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(1200, 800));
+
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          home: Consumer(
+            builder: (context, ref, _) {
+              return Scaffold(
+                body: Column(
+                  children: [
+                    TextButton(
+                      key: const ValueKey('enter_fullscreen'),
+                      onPressed: () => ref
+                          .read(desktopNativeFullscreenProvider.notifier)
+                          .setFullscreen(true),
+                      child: const Text('enter'),
+                    ),
+                    TextButton(
+                      key: const ValueKey('exit_fullscreen'),
+                      onPressed: () => ref
+                          .read(desktopNativeFullscreenProvider.notifier)
+                          .setFullscreen(false),
+                      child: const Text('exit'),
+                    ),
+                    const SizedBox(
+                      height: 40,
+                      child: DesktopTitleBar(),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    expect(find.byType(DragToMoveArea), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('enter_fullscreen')));
+    await tester.pumpAndSettle();
+    expect(find.byType(DragToMoveArea), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('exit_fullscreen')));
+    await tester.pumpAndSettle();
+    expect(find.byType(DragToMoveArea), findsOneWidget);
   });
 }

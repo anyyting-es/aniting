@@ -1,6 +1,6 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'package:seanime_app/data/models/onlinestream_models.dart';
-import 'package:seanime_app/data/models/tmdb_models.dart';
+﻿import 'package:flutter_test/flutter_test.dart';
+import 'package:aniting/data/models/onlinestream_models.dart';
+import 'package:aniting/data/models/tmdb_models.dart';
 
 void main() {
   group('Torrent online sources', () {

@@ -1,10 +1,10 @@
-package cassette
+﻿package cassette
 
 import (
 	"errors"
 	"fmt"
 	"math"
-	"seanime/internal/mediastream/videofile"
+	"aniting/internal/mediastream/videofile"
 	"strings"
 )
 

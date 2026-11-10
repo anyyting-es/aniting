@@ -1,7 +1,7 @@
-import 'package:flutter/gestures.dart';
+﻿import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:seanime_app/core/theme/app_focus_coordinator.dart';
+import 'package:aniting/core/theme/app_focus_coordinator.dart';
 
 /// Wraps the scrollable settings content once and reveals whatever control
 /// gains focus (D-pad included), even when it was not wrapped with

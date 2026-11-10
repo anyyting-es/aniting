@@ -1,14 +1,14 @@
-package plugin_ui
+﻿package plugin_ui
 
 import (
 	"errors"
 	"fmt"
-	"seanime/internal/database/db"
-	"seanime/internal/events"
-	"seanime/internal/extension"
-	"seanime/internal/plugin"
-	"seanime/internal/util"
-	gojautil "seanime/internal/util/goja"
+	"aniting/internal/database/db"
+	"aniting/internal/events"
+	"aniting/internal/extension"
+	"aniting/internal/plugin"
+	"aniting/internal/util"
+	gojautil "aniting/internal/util/goja"
 	"sync"
 
 	"github.com/dop251/goja"

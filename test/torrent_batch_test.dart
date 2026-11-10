@@ -1,9 +1,9 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:seanime_app/data/models/torrent_file_preview.dart';
-import 'package:seanime_app/data/models/torrent_models.dart';
-import 'package:seanime_app/presentation/widgets/torrent_batch_files_sheet.dart';
+import 'package:aniting/data/models/torrent_file_preview.dart';
+import 'package:aniting/data/models/torrent_models.dart';
+import 'package:aniting/presentation/widgets/torrent_batch_files_sheet.dart';
 
 void main() {
   group('TorrentFilePreview Model Tests', () {

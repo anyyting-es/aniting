@@ -1,11 +1,11 @@
-package local
+﻿package local
 
 import (
 	"fmt"
-	"seanime/internal/api/anilist"
-	hibikemanga "seanime/internal/extension/hibike/manga"
-	"seanime/internal/library/anime"
-	"seanime/internal/manga"
+	"aniting/internal/api/anilist"
+	hibikemanga "aniting/internal/extension/hibike/manga"
+	"aniting/internal/library/anime"
+	"aniting/internal/manga"
 	"slices"
 	"strings"
 

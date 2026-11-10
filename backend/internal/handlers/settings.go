@@ -1,14 +1,14 @@
-package handlers
+﻿package handlers
 
 import (
 	"errors"
 	"os"
 	"path/filepath"
 	"runtime"
-	"seanime/internal/database/db"
-	"seanime/internal/database/models"
-	"seanime/internal/torrents/torrent"
-	"seanime/internal/util"
+	"aniting/internal/database/db"
+	"aniting/internal/database/models"
+	"aniting/internal/torrents/torrent"
+	"aniting/internal/util"
 	"strings"
 	"time"
 

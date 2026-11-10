@@ -1,16 +1,18 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/preferences/show_scores_provider.dart';
-import 'package:seanime_app/core/preferences/title_language_provider.dart';
-import 'package:seanime_app/core/theme/app_focus_coordinator.dart';
-import 'package:seanime_app/core/theme/app_theme_colors.dart';
-import 'package:seanime_app/core/theme/theme_provider.dart';
-import 'package:seanime_app/data/models/manga_entry.dart';
-import 'package:seanime_app/presentation/screens/manga_detail_screen.dart';
-import 'package:seanime_app/presentation/widgets/common/media_meta_pill.dart';
+import 'package:aniting/core/preferences/show_scores_provider.dart';
+import 'package:aniting/core/preferences/title_language_provider.dart';
+import 'package:aniting/core/theme/app_focus_coordinator.dart';
+import 'package:aniting/core/theme/app_theme_colors.dart';
+import 'package:aniting/core/theme/theme_provider.dart';
+import 'package:aniting/data/models/manga_entry.dart';
+import 'package:aniting/presentation/screens/manga_detail_screen.dart';
+import 'package:aniting/presentation/widgets/anime_preview/show_preview_data.dart';
+import 'package:aniting/presentation/widgets/anime_preview/show_quick_view_detector.dart';
+import 'package:aniting/presentation/widgets/common/media_meta_pill.dart';
 
 class MangaCard extends ConsumerStatefulWidget {
   final MangaEntry entry;
@@ -19,6 +21,7 @@ class MangaCard extends ConsumerStatefulWidget {
   final double? height;
   final Object? heroTag;
   final bool showMetadata;
+  final bool enableQuickPreview;
 
   const MangaCard({
     super.key,
@@ -28,6 +31,7 @@ class MangaCard extends ConsumerStatefulWidget {
     this.height,
     this.heroTag,
     this.showMetadata = false,
+    this.enableQuickPreview = true,
   });
 
   @override
@@ -57,6 +61,17 @@ class _MangaCardState extends ConsumerState<MangaCard> {
         heroTag: widget.heroTag,
       );
     }
+  }
+
+  Widget _wrapQuickPreview(TitleLanguage titleLang, Widget child) {
+    if (!widget.enableQuickPreview) return child;
+    return ShowQuickViewDetector(
+      heroTag: widget.heroTag,
+      dataBuilder: () =>
+          ShowPreviewData.fromManga(widget.entry, titleLang),
+      onOpenDetails: _triggerTap,
+      child: child,
+    );
   }
 
   String? get _chapterText {
@@ -139,10 +154,12 @@ class _MangaCardState extends ConsumerState<MangaCard> {
               setState(() => _isHovered = false);
             },
             cursor: SystemMouseCursors.click,
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: _triggerTap,
-              child: ValueListenableBuilder<AppInputMode>(
+            child: _wrapQuickPreview(
+              titleLang,
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: _triggerTap,
+                child: ValueListenableBuilder<AppInputMode>(
                 valueListenable: AppFocusCoordinator.inputMode,
                 builder: (context, mode, _) {
                   final isDpad = mode == AppInputMode.dpad;
@@ -420,13 +437,13 @@ class _MangaCardState extends ConsumerState<MangaCard> {
                   );
                 },
               ),
+              ),
             ),
           ),
         ),
       ),
     );
     }
-
     if (widget.width != null) {
       return SizedBox(
         width: widget.width,

@@ -45,7 +45,7 @@ func generateSelfSignedCert(certPath, keyPath string, logger *zerolog.Logger) er
 	template := x509.Certificate{
 		SerialNumber: serialNumber,
 		Subject: pkix.Name{
-			Organization: []string{"Seanime Self-Signed"},
+			Organization: []string{"Aniting Self-Signed"},
 			CommonName:   "localhost",
 		},
 		NotBefore:             time.Now(),

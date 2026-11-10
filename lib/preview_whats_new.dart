@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
-import 'package:seanime_app/presentation/widgets/whats_new/whats_new_dialog.dart';
+﻿import 'package:flutter/material.dart';
+import 'package:aniting/presentation/widgets/whats_new/whats_new_dialog.dart';
 
 void main() {
   runApp(const WhatsNewPreviewApp());

@@ -1,10 +1,10 @@
-package local
+﻿package local
 
 import (
 	"database/sql/driver"
 	"errors"
-	"seanime/internal/api/metadata"
-	"seanime/internal/manga"
+	"aniting/internal/api/metadata"
+	"aniting/internal/manga"
 	"time"
 
 	"github.com/goccy/go-json"

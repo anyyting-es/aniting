@@ -1,11 +1,11 @@
-package manga
+﻿package manga
 
 import (
-	"seanime/internal/database/db"
-	"seanime/internal/events"
-	"seanime/internal/extension"
-	"seanime/internal/testutil"
-	"seanime/internal/util"
+	"aniting/internal/database/db"
+	"aniting/internal/events"
+	"aniting/internal/extension"
+	"aniting/internal/testutil"
+	"aniting/internal/util"
 	"testing"
 )
 

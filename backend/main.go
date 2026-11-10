@@ -1,8 +1,8 @@
-package main
+﻿package main
 
 import (
 	"embed"
-	"seanime/internal/server"
+	"aniting/internal/server"
 )
 
 //go:embed all:web

@@ -1,9 +1,9 @@
-package plugin
+﻿package plugin
 
 import (
-	"seanime/internal/constants"
-	"seanime/internal/events"
-	"seanime/internal/extension"
+	"aniting/internal/constants"
+	"aniting/internal/events"
+	"aniting/internal/extension"
 
 	"github.com/dop251/goja"
 	"github.com/rs/zerolog"

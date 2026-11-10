@@ -1,8 +1,8 @@
 # Project-level configuration.
 cmake_minimum_required(VERSION 3.14)
-project(seanime_app LANGUAGES CXX)
+project(aniting_app LANGUAGES CXX)
 
-set(BINARY_NAME "seanime_app")
+set(BINARY_NAME "aniting_app")
 cmake_policy(VERSION 3.14...3.25)
 
 get_property(IS_MULTICONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
@@ -57,7 +57,7 @@ set(NATIVE_ASSETS_DIR "${PROJECT_BUILD_DIR}native_assets/windows/")
 install(DIRECTORY "${NATIVE_ASSETS_DIR}"
   DESTINATION "${INSTALL_BUNDLE_LIB_DIR}" COMPONENT Runtime OPTIONAL)
 
-set(BACKEND_BIN "${CMAKE_CURRENT_SOURCE_DIR}/../backend/seanime.exe")
+set(BACKEND_BIN "${CMAKE_CURRENT_SOURCE_DIR}/../backend/aniting.exe")
 if(EXISTS "${BACKEND_BIN}")
   install(FILES "${BACKEND_BIN}" DESTINATION "${CMAKE_INSTALL_PREFIX}" COMPONENT Runtime)
 endif()

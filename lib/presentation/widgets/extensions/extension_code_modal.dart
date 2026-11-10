@@ -1,13 +1,13 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/data/models/extension_item.dart';
-import 'package:seanime_app/data/repositories/seanime_repository.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/data/models/extension_item.dart';
+import 'package:aniting/data/repositories/aniting_repository.dart';
 
 class ExtensionCodeModal extends ConsumerWidget {
   final ExtensionItem extension;
-  final SeanimeRepository repository;
+  final AnitingRepository repository;
 
   const ExtensionCodeModal({
     super.key,
@@ -18,7 +18,7 @@ class ExtensionCodeModal extends ConsumerWidget {
   static Future<void> show(
     BuildContext context, {
     required ExtensionItem extension,
-    required SeanimeRepository repository,
+    required AnitingRepository repository,
   }) {
     return showDialog(
       context: context,

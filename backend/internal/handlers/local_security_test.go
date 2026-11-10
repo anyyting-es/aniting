@@ -1,11 +1,11 @@
-package handlers
+﻿package handlers
 
 import (
 	"net/http"
 	"net/http/httptest"
-	"seanime/internal/core"
-	"seanime/internal/database/models"
-	"seanime/internal/security"
+	"aniting/internal/core"
+	"aniting/internal/database/models"
+	"aniting/internal/security"
 	"strings"
 	"testing"
 
@@ -130,8 +130,8 @@ func TestRequestHasStrictTrustedLocalBoundary(t *testing.T) {
 		},
 		{
 			name:       "rejects public host through local proxy",
-			origin:     "https://seanime.example",
-			reqHost:    "seanime.example",
+			origin:     "https://aniting.example",
+			reqHost:    "aniting.example",
 			remoteAddr: "127.0.0.1:51111",
 			want:       false,
 		},

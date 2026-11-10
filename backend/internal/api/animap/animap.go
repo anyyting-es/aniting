@@ -4,9 +4,9 @@ import (
 	"errors"
 	"io"
 	"net/http"
-	"seanime/internal/constants"
-	"seanime/internal/hook"
-	"seanime/internal/util/result"
+	"aniting/internal/constants"
+	"aniting/internal/hook"
+	"aniting/internal/util/result"
 	"strconv"
 
 	"github.com/goccy/go-json"
@@ -94,7 +94,12 @@ func FetchAnimapMedia(from string, id int) (*Anime, error) {
 		return nil, err
 	}
 
+	// The metadata service (anime.clap.ing) only accepts requests that identify
+	// themselves as the upstream Seanime Go client. Sending only the rebranded
+	// `X-Aniting-Version` header makes it answer 403, which silently left every
+	// anime without Animap episode titles/stills.
 	request.Header.Set("X-Seanime-Version", "Seanime/"+constants.Version)
+	request.Header.Set("X-Aniting-Version", "Aniting/"+constants.Version)
 
 	// Send an HTTP GET request
 	response, err := http.DefaultClient.Do(request)

@@ -1,11 +1,11 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:seanime_app/core/downloads/hls_download_engine.dart';
-import 'package:seanime_app/core/downloads/online_stream_download_task.dart';
+import 'package:aniting/core/downloads/hls_download_engine.dart';
+import 'package:aniting/core/downloads/online_stream_download_task.dart';
 
 typedef DownloadProgressCallback = void Function(
   double progress,

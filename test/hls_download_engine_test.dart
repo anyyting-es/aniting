@@ -1,8 +1,8 @@
-import 'dart:typed_data';
+﻿import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:seanime_app/core/downloads/hls_download_engine.dart';
-import 'package:seanime_app/core/downloads/online_stream_downloader.dart';
+import 'package:aniting/core/downloads/hls_download_engine.dart';
+import 'package:aniting/core/downloads/online_stream_downloader.dart';
 
 Uint8List _hex(String value) {
   final clean = value.replaceAll(RegExp(r'[^0-9a-fA-F]'), '');

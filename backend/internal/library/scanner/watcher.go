@@ -1,9 +1,9 @@
-package scanner
+﻿package scanner
 
 import (
 	"os"
 	"path/filepath"
-	"seanime/internal/events"
+	"aniting/internal/events"
 	"strings"
 
 	"github.com/fsnotify/fsnotify"

@@ -1,9 +1,9 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:g1455/g1455.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:seanime_app/data/models/whats_new_data.dart';
+import 'package:aniting/data/models/whats_new_data.dart';
 
 class WhatsNewDialog extends StatelessWidget {
   final VoidCallback? onDismiss;

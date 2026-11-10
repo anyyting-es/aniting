@@ -1,21 +1,22 @@
+import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/preferences/playback_progress_preferences_provider.dart';
-import 'package:seanime_app/core/preferences/title_language_provider.dart';
-import 'package:seanime_app/core/theme/app_theme_colors.dart';
-import 'package:seanime_app/core/theme/theme_provider.dart';
-import 'package:seanime_app/data/models/anime_entry.dart';
-import 'package:seanime_app/data/services/custom_anime_assets_service.dart';
-import 'package:seanime_app/data/services/feed_cache_service.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/theme/app_focus_coordinator.dart';
+import 'package:aniting/core/preferences/playback_progress_preferences_provider.dart';
+import 'package:aniting/core/preferences/title_language_provider.dart';
+import 'package:aniting/core/theme/app_theme_colors.dart';
+import 'package:aniting/core/theme/theme_provider.dart';
+import 'package:aniting/data/models/anime_entry.dart';
+import 'package:aniting/data/services/custom_anime_assets_service.dart';
+import 'package:aniting/data/services/feed_cache_service.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/theme/app_focus_coordinator.dart';
 
 class ContinueWatchingCard extends ConsumerStatefulWidget {
   final AnimeEntry entry;
-  final VoidCallback onTap;
+  final FutureOr<void> Function() onTap;
   final VoidCallback? onOpenDetails;
   final double width;
   final double height;
@@ -54,7 +55,7 @@ class _ContinueWatchingCardState extends ConsumerState<ContinueWatchingCard> {
     if (_isLaunching) return;
     setState(() => _isLaunching = true);
     try {
-      widget.onTap();
+      await widget.onTap();
     } finally {
       if (mounted) setState(() => _isLaunching = false);
     }
@@ -346,34 +347,6 @@ class _ContinueWatchingCardState extends ConsumerState<ContinueWatchingCard> {
                                       ),
                                     ),
                                   ),
-                            // Expressive Play Badge on hover / focus
-                            if (isActive && !_isLaunching)
-                              Center(
-                                child: Container(
-                                  width: isCompact ? 36 : 44,
-                                  height: isCompact ? 36 : 44,
-                                  decoration: BoxDecoration(
-                                    color: Colors.black.withValues(alpha: 0.65),
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: Colors.white.withValues(alpha: 0.5),
-                                      width: 1.5,
-                                    ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withValues(alpha: 0.35),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Icon(
-                                    Icons.play_arrow_rounded,
-                                    color: Colors.white,
-                                    size: isCompact ? 22 : 28,
-                                  ),
-                                ),
-                              ),
                             // Launching spinner overlay
                             if (_isLaunching)
                               Container(

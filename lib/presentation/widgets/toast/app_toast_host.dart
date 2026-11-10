@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/presentation/widgets/toast/app_toast.dart';
-import 'package:seanime_app/presentation/widgets/toast/app_toast_item.dart';
+import 'package:aniting/presentation/widgets/toast/app_toast.dart';
+import 'package:aniting/presentation/widgets/toast/app_toast_item.dart';
 
 /// Global overlay host mounted at the root of the app that renders
 /// active liquid glass notifications in the top corner.

@@ -1,9 +1,9 @@
-package user
+﻿package user
 
 import (
 	"errors"
-	"seanime/internal/api/anilist"
-	"seanime/internal/database/models"
+	"aniting/internal/api/anilist"
+	"aniting/internal/database/models"
 
 	"github.com/goccy/go-json"
 )

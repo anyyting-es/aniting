@@ -88,14 +88,14 @@ type (
 
 	// AnimeSearchOptions represents the options to search for torrents without filters.
 	AnimeSearchOptions struct {
-		// The media object provided by Seanime.
+		// The media object provided by Aniting.
 		Media Media `json:"media"`
 		// The user search query.
 		Query string `json:"query"`
 	}
 
 	AnimeSmartSearchOptions struct {
-		// The media object provided by Seanime.
+		// The media object provided by Aniting.
 		Media Media `json:"media"`
 		// The user search query.
 		// This will be empty if your extension does not support custom queries.
@@ -130,7 +130,7 @@ type (
 		// Size of the torrent in bytes.
 		Size int64 `json:"size"`
 		// Formatted size of the torrent. e.g. "1.2 GB"
-		// Leave this empty if you want Seanime to format the size.
+		// Leave this empty if you want Aniting to format the size.
 		FormattedSize string `json:"formattedSize"`
 		// Number of seeders.
 		Seeders int `json:"seeders"`
@@ -153,13 +153,13 @@ type (
 		// e.g. "1080p", "720p"
 		Resolution string `json:"resolution,omitempty"`
 		// Set this to true if you can confirm that the torrent is a batch.
-		// Else, Seanime will parse the torrent name to determine if it's a batch.
+		// Else, Aniting will parse the torrent name to determine if it's a batch.
 		IsBatch bool `json:"isBatch,omitempty"`
 		// Episode number of the torrent.
-		// Return -1 if unknown / unable to determine and Seanime will parse the torrent name.
+		// Return -1 if unknown / unable to determine and Aniting will parse the torrent name.
 		EpisodeNumber int `json:"episodeNumber,omitempty"`
 		// Release group of the torrent.
-		// Leave this empty if you want Seanime to parse the release group from the name.
+		// Leave this empty if you want Aniting to parse the release group from the name.
 		ReleaseGroup string `json:"releaseGroup,omitempty"`
 		// Set this to true if you can confirm that the torrent is the best release.
 		IsBestRelease bool `json:"isBestRelease"`

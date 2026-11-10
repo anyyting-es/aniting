@@ -1,12 +1,12 @@
-package qbittorrent_log
+﻿package qbittorrent_log
 
 import (
 	"github.com/google/go-querystring/query"
 	"github.com/rs/zerolog"
 	"net/http"
 	"net/url"
-	"seanime/internal/torrent_clients/qbittorrent/model"
-	"seanime/internal/torrent_clients/qbittorrent/util"
+	"aniting/internal/torrent_clients/qbittorrent/model"
+	"aniting/internal/torrent_clients/qbittorrent/util"
 	"strconv"
 )
 

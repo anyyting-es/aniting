@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:seanime_app/presentation/widgets/feed/smooth_focus_carousel.dart';
+import 'package:aniting/presentation/widgets/feed/smooth_focus_carousel.dart';
 
 void main() {
   group('SmoothFocusCarousel Center-Locked Offset Calculations', () {

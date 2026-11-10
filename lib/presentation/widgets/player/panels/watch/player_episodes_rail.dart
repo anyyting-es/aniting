@@ -1,18 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/core/preferences/player_desktop_view_provider.dart';
-import 'package:seanime_app/data/models/anime_details.dart';
-import 'package:seanime_app/data/models/anizip_data.dart';
-import 'package:seanime_app/data/models/episode_item.dart';
-import 'package:seanime_app/presentation/widgets/episodes/episode_card.dart';
-import 'package:seanime_app/presentation/widgets/player/panels/watch/player_episode_header.dart';
-import 'package:seanime_app/presentation/widgets/player/panels/watch/player_episodes_compact_grid.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/core/preferences/player_desktop_view_provider.dart';
+import 'package:aniting/data/models/anime_details.dart';
+import 'package:aniting/data/models/anizip_data.dart';
+import 'package:aniting/data/models/episode_item.dart';
+import 'package:aniting/presentation/widgets/episodes/episode_card.dart';
+import 'package:aniting/presentation/widgets/player/panels/watch/player_episode_header.dart';
+import 'package:aniting/presentation/widgets/player/panels/watch/player_episodes_compact_grid.dart';
 
-/// Episode list rendered inside the desktop watch page. It has no scroll of its
-/// own: the whole page scrolls as one, so the list simply grows with the rest of
-/// the content and the currently playing episode is revealed when it changes.
+/// Episode list rendered inside the desktop watch page. When
+/// [independentScroll] is true it owns a vertical scroll area (so wheeling over
+/// the rail does not scroll the page) and the active episode is revealed
+/// inside that area. In the sheet it keeps the historical behaviour where the
+/// sheet itself scrolls.
 class PlayerEpisodesRail extends ConsumerStatefulWidget {
   final String animeTitle;
   final int? mediaId;
@@ -21,6 +24,9 @@ class PlayerEpisodesRail extends ConsumerStatefulWidget {
   final int? currentEpisodeNumber;
   final bool isMovie;
   final ValueChanged<int> onSelectEpisode;
+
+  /// Gives the rail its own bounded scroll area.
+  final bool independentScroll;
 
   /// Hides the rail entirely (the page then opens it from the header again).
   final VoidCallback? onHide;
@@ -34,6 +40,7 @@ class PlayerEpisodesRail extends ConsumerStatefulWidget {
     this.currentEpisodeNumber,
     this.isMovie = false,
     required this.onSelectEpisode,
+    this.independentScroll = false,
     this.onHide,
   });
 
@@ -43,6 +50,11 @@ class PlayerEpisodesRail extends ConsumerStatefulWidget {
 
 class _PlayerEpisodesRailState extends ConsumerState<PlayerEpisodesRail> {
   final GlobalKey _activeItemKey = GlobalKey();
+  final ScrollController _scrollController = ScrollController();
+
+  bool _userIsScrolling = false;
+  bool _isAutoScrolling = false;
+  DateTime? _lastUserScrollAt;
 
   // Cards are cached so rebuilds of the parent page (buffering, subtitles,
   // controls visibility, play/pause, etc.) do not rebuild every episode card.
@@ -90,19 +102,86 @@ class _PlayerEpisodesRailState extends ConsumerState<PlayerEpisodesRail> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _revealActiveEpisode();
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   void didUpdateWidget(covariant PlayerEpisodesRail oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.currentEpisodeNumber != widget.currentEpisodeNumber) {
-      WidgetsBinding.instance
-          .addPostFrameCallback((_) => _revealActiveEpisode());
+    final episodeChanged =
+        oldWidget.currentEpisodeNumber != widget.currentEpisodeNumber;
+    final episodesBecameAvailable =
+        oldWidget.episodes.isEmpty && widget.episodes.isNotEmpty;
+    final mediaChanged = oldWidget.mediaId != widget.mediaId;
+    if (episodeChanged || episodesBecameAvailable || mediaChanged) {
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _revealActiveEpisode(),
+      );
     }
   }
 
-  /// Brings the active episode into view within the page's single scroll.
+  /// Brings the active episode into view. With [PlayerEpisodesRail.independentScroll]
+  /// only the rail's own scroll position moves, so revealing the episode never
+  /// yanks the page away from the video. In the sheet the historical behaviour
+  /// (scroll the enclosing scrollable) is kept.
   void _revealActiveEpisode() {
     if (!mounted) return;
     final ctx = _activeItemKey.currentContext;
     if (ctx == null) return;
+
+    if (widget.independentScroll && _scrollController.hasClients) {
+      final renderObject = ctx.findRenderObject();
+      if (renderObject != null) {
+        // Never fight the user: if they are currently wheeling/dragging the
+        // rail, or just did, leave the scroll position alone.
+        final recentlyScrolled =
+            _userIsScrolling ||
+            (_lastUserScrollAt != null &&
+                DateTime.now().difference(_lastUserScrollAt!) <
+                    const Duration(milliseconds: 800));
+        if (recentlyScrolled || _isAutoScrolling) return;
+
+        // If the active card is already fully visible, do not move the list.
+        // Only reveal when it is actually outside the viewport.
+        try {
+          final viewport = RenderAbstractViewport.of(renderObject);
+          final revealOffset = viewport
+              .getOffsetToReveal(renderObject, 0.0)
+              .offset;
+          final box = renderObject as RenderBox;
+          final position = _scrollController.position;
+          final fullyVisible =
+              revealOffset >= position.pixels - 1 &&
+              revealOffset + box.size.height <=
+                  position.pixels + position.viewportDimension + 1;
+          if (fullyVisible) return;
+        } catch (_) {
+          // Fall back to ensureVisible if the render tree is not ready.
+        }
+
+        _isAutoScrolling = true;
+        _scrollController.position
+            .ensureVisible(
+              renderObject,
+              alignment: 0.28,
+              duration: const Duration(milliseconds: 320),
+              curve: Curves.easeOutCubic,
+            )
+            .whenComplete(() => _isAutoScrolling = false);
+        return;
+      }
+    }
+
     Scrollable.ensureVisible(
       ctx,
       alignment: 0.28,
@@ -161,8 +240,7 @@ class _PlayerEpisodesRailState extends ConsumerState<PlayerEpisodesRail> {
         final titleFont = (thumbWidth * 0.073).clamp(12.5, 16.0);
         final synopsisLines = thumbWidth >= 180 ? 4 : 2;
 
-        if (!isCompact &&
-            (_cardsAreStale || thumbWidth != _cardsThumbWidth)) {
+        if (!isCompact && (_cardsAreStale || thumbWidth != _cardsThumbWidth)) {
           _refreshCards(thumbWidth, titleFont, synopsisLines);
         }
 
@@ -190,8 +268,14 @@ class _PlayerEpisodesRailState extends ConsumerState<PlayerEpisodesRail> {
                     tooltip: isCompact
                         ? l10n.detailedEpisodeList
                         : l10n.compactEpisodeList,
-                    onPressed: () =>
-                        ref.read(playerEpisodeListCompactProvider.notifier).toggle(),
+                    onPressed: () {
+                      ref
+                          .read(playerEpisodeListCompactProvider.notifier)
+                          .toggle();
+                      WidgetsBinding.instance.addPostFrameCallback(
+                        (_) => _revealActiveEpisode(),
+                      );
+                    },
                   ),
                   if (widget.onHide != null)
                     _RailHeaderButton(
@@ -202,41 +286,83 @@ class _PlayerEpisodesRailState extends ConsumerState<PlayerEpisodesRail> {
                 ],
               ),
             ),
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 220),
-              switchInCurve: Curves.easeOutCubic,
-              switchOutCurve: Curves.easeInCubic,
-              layoutBuilder: (currentChild, previousChildren) => Stack(
-                alignment: Alignment.topCenter,
-                children: [...previousChildren, ?currentChild],
-              ),
-              transitionBuilder: (child, animation) => FadeTransition(
-                opacity: animation,
-                child: SlideTransition(
-                  position: Tween<Offset>(
-                    begin: const Offset(0, 0.02),
-                    end: Offset.zero,
-                  ).animate(animation),
-                  child: child,
-                ),
-              ),
-              child: isCompact
-                  ? PlayerEpisodesCompactGrid(
-                      key: const ValueKey('compact-episodes'),
-                      mediaId: widget.mediaId,
-                      episodes: widget.episodes,
-                      currentEpisodeNumber: widget.currentEpisodeNumber,
-                      onSelectEpisode: widget.onSelectEpisode,
-                    )
-                  : Column(
-                      key: const ValueKey('detailed-episodes'),
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [...?_cards],
-                    ),
-            ),
+            _buildEpisodesList(isCompact),
           ],
         );
       },
+    );
+  }
+
+  Widget _buildEpisodesList(bool isCompact) {
+    final Widget content = isCompact
+        ? PlayerEpisodesCompactGrid(
+            key: const ValueKey('compact-episodes'),
+            mediaId: widget.mediaId,
+            episodes: widget.episodes,
+            currentEpisodeNumber: widget.currentEpisodeNumber,
+            onSelectEpisode: widget.onSelectEpisode,
+            activeItemKey: widget.independentScroll ? _activeItemKey : null,
+          )
+        : Column(
+            key: const ValueKey('detailed-episodes'),
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [...?_cards],
+          );
+
+    final animated = AnimatedSwitcher(
+      duration: const Duration(milliseconds: 220),
+      switchInCurve: Curves.easeOutCubic,
+      switchOutCurve: Curves.easeInCubic,
+      layoutBuilder: (currentChild, previousChildren) => Stack(
+        alignment: Alignment.topCenter,
+        children: [...previousChildren, ?currentChild],
+      ),
+      transitionBuilder: (child, animation) => FadeTransition(
+        opacity: animation,
+        child: SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0, 0.02),
+            end: Offset.zero,
+          ).animate(animation),
+          child: child,
+        ),
+      ),
+      child: content,
+    );
+
+    if (!widget.independentScroll) return animated;
+
+    return Expanded(
+      child: NotificationListener<ScrollNotification>(
+        onNotification: (notification) {
+          if (notification.depth != 0) return false;
+          if (notification is ScrollStartNotification) {
+            if (!_isAutoScrolling) {
+              _userIsScrolling = true;
+              _lastUserScrollAt = DateTime.now();
+            }
+          } else if (notification is ScrollUpdateNotification) {
+            if (!_isAutoScrolling) {
+              _lastUserScrollAt = DateTime.now();
+            }
+          } else if (notification is ScrollEndNotification) {
+            _userIsScrolling = false;
+            if (!_isAutoScrolling) {
+              _lastUserScrollAt = DateTime.now();
+            }
+          }
+          return false;
+        },
+        child: Scrollbar(
+          controller: _scrollController,
+          thumbVisibility: true,
+          child: SingleChildScrollView(
+            controller: _scrollController,
+            padding: const EdgeInsets.only(right: 4, bottom: 8),
+            child: animated,
+          ),
+        ),
+      ),
     );
   }
 

@@ -1,13 +1,13 @@
-package customsource
+﻿package customsource
 
 import (
 	"context"
-	"seanime/internal/api/anilist"
-	"seanime/internal/api/metadata"
-	"seanime/internal/extension"
-	hibikecustomsource "seanime/internal/extension/hibike/customsource"
-	"seanime/internal/testutil"
-	"seanime/internal/util"
+	"aniting/internal/api/anilist"
+	"aniting/internal/api/metadata"
+	"aniting/internal/extension"
+	hibikecustomsource "aniting/internal/extension/hibike/customsource"
+	"aniting/internal/testutil"
+	"aniting/internal/util"
 	"testing"
 
 	"github.com/stretchr/testify/require"

@@ -1,10 +1,10 @@
-package videocore
+﻿package videocore
 
 import (
 	"encoding/json"
-	"seanime/internal/events"
-	"seanime/internal/library/anime"
-	"seanime/internal/util"
+	"aniting/internal/events"
+	"aniting/internal/library/anime"
+	"aniting/internal/util"
 	"testing"
 	"time"
 

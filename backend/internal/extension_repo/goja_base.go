@@ -1,15 +1,15 @@
-package extension_repo
+﻿package extension_repo
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"seanime/internal/events"
-	"seanime/internal/extension"
-	"seanime/internal/goja/goja_bindings"
-	"seanime/internal/goja/goja_runtime"
-	"seanime/internal/plugin"
-	gojautil "seanime/internal/util/goja"
+	"aniting/internal/events"
+	"aniting/internal/extension"
+	"aniting/internal/goja/goja_bindings"
+	"aniting/internal/goja/goja_runtime"
+	"aniting/internal/plugin"
+	gojautil "aniting/internal/util/goja"
 
 	"github.com/dop251/goja"
 	"github.com/dop251/goja/parser"

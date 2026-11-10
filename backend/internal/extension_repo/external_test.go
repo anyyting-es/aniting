@@ -1,13 +1,13 @@
-package extension_repo
+﻿package extension_repo
 
 import (
 	"os"
 	"path/filepath"
-	"seanime/internal/events"
-	"seanime/internal/extension"
-	"seanime/internal/hook"
-	"seanime/internal/util"
-	"seanime/internal/util/filecache"
+	"aniting/internal/events"
+	"aniting/internal/extension"
+	"aniting/internal/hook"
+	"aniting/internal/util"
+	"aniting/internal/util/filecache"
 	"testing"
 
 	"github.com/goccy/go-json"

@@ -1,4 +1,4 @@
-package image_downloader
+﻿package image_downloader
 
 import (
 	"bytes"
@@ -10,8 +10,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"seanime/internal/util"
-	"seanime/internal/util/limiter"
+	"aniting/internal/util"
+	"aniting/internal/util/limiter"
 	"slices"
 	"sync"
 	"time"

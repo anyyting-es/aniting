@@ -1,9 +1,9 @@
-package onlinestream
+﻿package onlinestream
 
 import (
 	"testing"
 
-	hibikeonlinestream "seanime/internal/extension/hibike/onlinestream"
+	hibikeonlinestream "aniting/internal/extension/hibike/onlinestream"
 
 	"github.com/stretchr/testify/require"
 )

@@ -12,4 +12,9 @@ class FeatureFlags {
 
   /// Desktop window transparency + compositor blur controls.
   static const bool desktopWindowTransparency = false;
+
+  /// TMDB catalog (shows/movies), recommendations, search fallback and their
+  /// settings. Disabled for the AniList-first release; flip to true to bring
+  /// the multi-catalog experience back.
+  static const bool tmdb = false;
 }

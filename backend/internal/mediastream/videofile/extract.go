@@ -1,12 +1,12 @@
-package videofile
+﻿package videofile
 
 import (
 	"context"
 	"fmt"
 	"os"
 	"path/filepath"
-	"seanime/internal/util"
-	"seanime/internal/util/crashlog"
+	"aniting/internal/util"
+	"aniting/internal/util/crashlog"
 	"time"
 
 	"github.com/rs/zerolog"

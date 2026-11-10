@@ -1,10 +1,10 @@
-package metadata_provider
+﻿package metadata_provider
 
 import (
-	"seanime/internal/database/db"
-	"seanime/internal/extension"
-	"seanime/internal/testutil"
-	"seanime/internal/util"
+	"aniting/internal/database/db"
+	"aniting/internal/extension"
+	"aniting/internal/testutil"
+	"aniting/internal/util"
 	"testing"
 )
 

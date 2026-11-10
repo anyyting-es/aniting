@@ -1,10 +1,10 @@
-package availability
+﻿package availability
 
 import (
 	"context"
 	"fmt"
-	"seanime/internal/api/anilist"
-	"seanime/internal/library/anime"
+	"aniting/internal/api/anilist"
+	"aniting/internal/library/anime"
 	"strings"
 	"sync"
 	"time"

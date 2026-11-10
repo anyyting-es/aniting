@@ -98,9 +98,9 @@ class MainActivity : FlutterActivity() {
                 }
                 "startServer" -> {
                     try {
-                        val port = call.argument<Int>("port") ?: SeanimeServerRuntime.defaultPort
-                        val host = call.argument<String>("host") ?: SeanimeServerRuntime.defaultHost
-                        val status = SeanimeServerRuntime.start(applicationContext, port, host)
+                        val port = call.argument<Int>("port") ?: AnitingServerRuntime.defaultPort
+                        val host = call.argument<String>("host") ?: AnitingServerRuntime.defaultHost
+                        val status = AnitingServerRuntime.start(applicationContext, port, host)
                         result.success(status)
                     } catch (e: Throwable) {
                         result.error("SERVER_START_ERROR", e.localizedMessage, null)
@@ -108,7 +108,7 @@ class MainActivity : FlutterActivity() {
                 }
                 "stopServer" -> {
                     try {
-                        val status = SeanimeServerRuntime.stop(applicationContext)
+                        val status = AnitingServerRuntime.stop(applicationContext)
                         result.success(status)
                     } catch (e: Throwable) {
                         result.error("SERVER_STOP_ERROR", e.localizedMessage, null)
@@ -116,33 +116,33 @@ class MainActivity : FlutterActivity() {
                 }
                 "getStatus" -> {
                     try {
-                        val status = SeanimeServerRuntime.status(applicationContext)
+                        val status = AnitingServerRuntime.status(applicationContext)
                         result.success(status)
                     } catch (e: Throwable) {
                         result.error("SERVER_STATUS_ERROR", e.localizedMessage, null)
                     }
                 }
                 "getDataDir" -> {
-                    result.success(SeanimeServerRuntime.dataDir(applicationContext).absolutePath)
+                    result.success(AnitingServerRuntime.dataDir(applicationContext).absolutePath)
                 }
                 "readConfig" -> {
-                    result.success(SeanimeServerRuntime.readConfig(applicationContext))
+                    result.success(AnitingServerRuntime.readConfig(applicationContext))
                 }
                 "writeConfig" -> {
                     val content = call.argument<String>("content") ?: ""
-                    result.success(SeanimeServerRuntime.writeConfig(applicationContext, content))
+                    result.success(AnitingServerRuntime.writeConfig(applicationContext, content))
                 }
                 "resetConfig" -> {
-                    result.success(SeanimeServerRuntime.resetConfig(applicationContext))
+                    result.success(AnitingServerRuntime.resetConfig(applicationContext))
                 }
                 "isBatteryOptimizationIgnored" -> {
-                    result.success(SeanimeServerRuntime.isBatteryOptimizationIgnored(applicationContext))
+                    result.success(AnitingServerRuntime.isBatteryOptimizationIgnored(applicationContext))
                 }
                 "requestIgnoreBatteryOptimization" -> {
-                    result.success(SeanimeServerRuntime.requestIgnoreBatteryOptimization(applicationContext))
+                    result.success(AnitingServerRuntime.requestIgnoreBatteryOptimization(applicationContext))
                 }
                 "isManageStorageGranted" -> {
-                    result.success(SeanimeServerRuntime.isManageStorageGranted())
+                    result.success(AnitingServerRuntime.isManageStorageGranted())
                 }
                 "isTvDevice" -> {
                     val pm = packageManager
@@ -151,7 +151,7 @@ class MainActivity : FlutterActivity() {
                     result.success(isTv)
                 }
                 "requestManageStorage" -> {
-                    result.success(SeanimeServerRuntime.requestManageStorage(applicationContext))
+                    result.success(AnitingServerRuntime.requestManageStorage(applicationContext))
                 }
                 "installApk" -> {
                     val filePath = call.argument<String>("filePath")

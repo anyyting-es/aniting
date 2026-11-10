@@ -1,20 +1,20 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:seanime_app/core/i18n/translations/translations.dart';
-import 'package:seanime_app/presentation/widgets/player/panels/watch/player_episode_header.dart';
-import 'package:seanime_app/core/server/server_manager.dart';
-import 'package:seanime_app/data/models/anime_details.dart';
-import 'package:seanime_app/data/models/anizip_data.dart';
-import 'package:seanime_app/data/models/onlinestream_models.dart';
-import 'package:seanime_app/data/repositories/seanime_repository.dart';
-import 'package:seanime_app/presentation/widgets/player/services/player_episode_resolver.dart';
-import 'package:seanime_app/presentation/widgets/player/services/player_playback_coordinator.dart';
-import 'package:seanime_app/presentation/widgets/player/models/player_direct_episode.dart';
+import 'package:aniting/core/i18n/translations/translations.dart';
+import 'package:aniting/presentation/widgets/player/panels/watch/player_episode_header.dart';
+import 'package:aniting/core/server/server_manager.dart';
+import 'package:aniting/data/models/anime_details.dart';
+import 'package:aniting/data/models/anizip_data.dart';
+import 'package:aniting/data/models/onlinestream_models.dart';
+import 'package:aniting/data/repositories/aniting_repository.dart';
+import 'package:aniting/presentation/widgets/player/services/player_episode_resolver.dart';
+import 'package:aniting/presentation/widgets/player/services/player_playback_coordinator.dart';
+import 'package:aniting/presentation/widgets/player/models/player_direct_episode.dart';
 
 /// Controller responsible for managing online video sources, in-player auto-streaming,
 /// live server/quality switching, episode transitions, and background prefetching.
 class PlayerSourceController extends ChangeNotifier {
-  final SeanimeRepository repository;
+  final AnitingRepository repository;
   final ServerManager serverManager;
   final PlayerPlaybackCoordinator coordinator;
   final int? mediaId;
@@ -259,6 +259,8 @@ class PlayerSourceController extends ChangeNotifier {
           ? (currentPos > Duration.zero ? currentPos : savedPos)
           : savedPos;
 
+      // Publish the trickplay storyboard (if the provider offers one) so the
+      // timeline can render seek bar previews.
       onSourceActivated(
         videoUrl: playable.url,
         episodeNumber: epNum,
@@ -279,6 +281,7 @@ class PlayerSourceController extends ChangeNotifier {
         startPosition: targetStartPos,
         externalSubtitles: chosenSource.subtitles,
         isOnlineStream: true,
+        thumbnailsUrl: chosenSource.thumbnails,
       );
 
       _safeUpdateUi();
@@ -388,6 +391,7 @@ class PlayerSourceController extends ChangeNotifier {
       startPosition: currentPos,
       externalSubtitles: newSource.subtitles,
       isOnlineStream: true,
+      thumbnailsUrl: newSource.thumbnails,
     );
 
     onUpdateUi();

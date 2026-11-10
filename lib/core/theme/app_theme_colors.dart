@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
-import 'package:seanime_app/core/theme/app_palette.dart';
+﻿import 'package:flutter/material.dart';
+import 'package:aniting/core/theme/app_palette.dart';
 
 /// Flutter ThemeExtension for custom Web / Media Center tokens.
 @immutable
@@ -15,6 +15,13 @@ class AppThemeColors extends ThemeExtension<AppThemeColors> {
   final Color textMuted;
   final double borderRadius;
 
+  /// True when the app runs on a pure black (OLED) background.
+  ///
+  /// Cards must not paint an elevated fill in that mode: the extra tone reads as
+  /// a muddy purple-grey patch over black. Only the accent border should be
+  /// visible.
+  final bool isOled;
+
   const AppThemeColors({
     required this.background,
     required this.surface,
@@ -26,16 +33,31 @@ class AppThemeColors extends ThemeExtension<AppThemeColors> {
     required this.textSecondary,
     required this.textMuted,
     this.borderRadius = 10.0,
+    this.isOled = false,
   });
 
   BorderRadius get cardBorderRadius => BorderRadius.circular(borderRadius);
   Radius get radius => Radius.circular(borderRadius);
 
-  factory AppThemeColors.fromPalette(AppThemePalette palette, {double borderRadius = 10.0}) {
+  /// Surface used by settings cards and grouped tiles.
+  Color get cardSurface =>
+      isOled ? Colors.transparent : surfaceElevated.withValues(alpha: 0.40);
+
+  /// Border used by settings cards: the accent stays visible on OLED.
+  Color cardBorder(ColorScheme colorScheme) => isOled
+      ? colorScheme.primary.withValues(alpha: 0.20)
+      : colorScheme.outlineVariant.withValues(alpha: 0.25);
+
+  factory AppThemeColors.fromPalette(
+    AppThemePalette palette, {
+    double borderRadius = 10.0,
+    bool isOled = false,
+  }) {
     return AppThemeColors(
       background: palette.background,
-      surface: palette.surface,
-      surfaceElevated: palette.surfaceElevated,
+      // Pure black in OLED: no elevated tones anywhere.
+      surface: isOled ? Colors.black : palette.surface,
+      surfaceElevated: isOled ? Colors.black : palette.surfaceElevated,
       border: palette.border,
       borderFocused: palette.borderFocused,
       accent: palette.accent,
@@ -43,6 +65,7 @@ class AppThemeColors extends ThemeExtension<AppThemeColors> {
       textSecondary: palette.textSecondary,
       textMuted: palette.textMuted,
       borderRadius: borderRadius,
+      isOled: isOled,
     );
   }
 
@@ -62,6 +85,7 @@ class AppThemeColors extends ThemeExtension<AppThemeColors> {
     Color? textSecondary,
     Color? textMuted,
     double? borderRadius,
+    bool? isOled,
   }) {
     return AppThemeColors(
       background: background ?? this.background,
@@ -74,6 +98,7 @@ class AppThemeColors extends ThemeExtension<AppThemeColors> {
       textSecondary: textSecondary ?? this.textSecondary,
       textMuted: textMuted ?? this.textMuted,
       borderRadius: borderRadius ?? this.borderRadius,
+      isOled: isOled ?? this.isOled,
     );
   }
 
@@ -91,6 +116,7 @@ class AppThemeColors extends ThemeExtension<AppThemeColors> {
       textSecondary: Color.lerp(textSecondary, other.textSecondary, t) ?? textSecondary,
       textMuted: Color.lerp(textMuted, other.textMuted, t) ?? textMuted,
       borderRadius: (borderRadius + (other.borderRadius - borderRadius) * t),
+      isOled: t < 0.5 ? isOled : other.isOled,
     );
   }
 }

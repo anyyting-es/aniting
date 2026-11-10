@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:media_kit_video/media_kit_video.dart';
+import 'package:aniting/presentation/widgets/player/models/player_types.dart';
 
 /// YouTube-style "ambient mode" glow.
 ///
@@ -58,7 +59,7 @@ class AmbientVideoGlow extends StatelessWidget {
   /// It is tuned so the ramp covers the band of glow that is actually visible
   /// around the frame: the glow stays strong where it meets the player and
   /// reaches zero alpha exactly at the outer edge of its box.
-  static const double _edgeFadeExtent = 70;
+  static const double _edgeFadeExtent = 96;
 
   /// Builds a linear gradient that fades from transparent at one edge to fully
   /// opaque [_edgeFadeExtent] pixels in, and back to transparent at the other
@@ -182,6 +183,106 @@ class AmbientVideoGlow extends StatelessWidget {
                       ),
                     ),
                   ),
+                );
+              },
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+/// Ambient glow restricted to the **side black bars** of a contained video.
+///
+/// In fullscreen / wide / cinema the video may expand to the full height,
+/// leaving pillarbox bands left and right. This widget paints the blurred frame
+/// only inside those bands; if the video is letterboxed instead (top/bottom
+/// bars), it stays plain black instead of glowing underneath.
+class AmbientVideoSideGlow extends StatelessWidget {
+  final VideoController controller;
+  final PlayerFitMode fitMode;
+  final double opacity;
+  final double scrimOpacity;
+  final double blurSigma;
+
+  const AmbientVideoSideGlow({
+    super.key,
+    required this.controller,
+    this.fitMode = PlayerFitMode.contain,
+    this.opacity = 0.9,
+    this.scrimOpacity = 0.35,
+    this.blurSigma = 55,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // `cover` / `fill` paint over the whole box: there are no black bars.
+    if (fitMode != PlayerFitMode.contain) {
+      return const ColoredBox(color: Colors.black);
+    }
+
+    return ValueListenableBuilder<PlatformVideoController?>(
+      valueListenable: controller.notifier,
+      builder: (context, platform, _) {
+        if (platform == null) return const ColoredBox(color: Colors.black);
+        return ValueListenableBuilder<Rect?>(
+          valueListenable: platform.rect,
+          builder: (context, frameRect, _) {
+            if (!AmbientVideoGlow.canPaintFrame(frameRect)) {
+              return const ColoredBox(color: Colors.black);
+            }
+            return LayoutBuilder(
+              builder: (context, constraints) {
+                final width = constraints.maxWidth;
+                final height = constraints.maxHeight;
+                if (width <= 1 || height <= 1) {
+                  return const ColoredBox(color: Colors.black);
+                }
+
+                final boxAspect = width / height;
+                final videoAspect = frameRect!.width / frameRect.height;
+                // Letterbox (bars on top/bottom): explicitly keep them black.
+                if (videoAspect >= boxAspect) {
+                  return const ColoredBox(color: Colors.black);
+                }
+
+                final videoWidth = height * videoAspect;
+                final side = ((width - videoWidth) / 2).clamp(0.0, width / 2);
+                if (side < 1) {
+                  return const ColoredBox(color: Colors.black);
+                }
+                final stop = (side / width).clamp(0.0, 0.5);
+
+                return Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    const ColoredBox(color: Colors.black),
+                    // Keep only the left/right bands of the blurred frame.
+                    ShaderMask(
+                      blendMode: BlendMode.dstIn,
+                      shaderCallback: (rect) => LinearGradient(
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                        colors: const [
+                          Colors.white,
+                          Colors.white,
+                          AmbientVideoGlow._transparent,
+                          AmbientVideoGlow._transparent,
+                          Colors.white,
+                          Colors.white,
+                        ],
+                        stops: [0, stop, stop, 1 - stop, 1 - stop, 1],
+                      ).createShader(rect),
+                      child: AmbientVideoGlow(
+                        controller: controller,
+                        softEdges: false,
+                        opacity: opacity,
+                        scrimOpacity: scrimOpacity,
+                        blurSigma: blurSigma,
+                      ),
+                    ),
+                  ],
                 );
               },
             );

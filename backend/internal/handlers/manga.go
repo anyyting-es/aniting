@@ -1,14 +1,14 @@
-package handlers
+﻿package handlers
 
 import (
 	"errors"
 	"net/http"
 	"net/url"
-	"seanime/internal/api/anilist"
-	"seanime/internal/extension"
-	"seanime/internal/manga"
-	manga_providers "seanime/internal/manga/providers"
-	"seanime/internal/util/result"
+	"aniting/internal/api/anilist"
+	"aniting/internal/extension"
+	"aniting/internal/manga"
+	manga_providers "aniting/internal/manga/providers"
+	"aniting/internal/util/result"
 	"strconv"
 	"strings"
 	"time"

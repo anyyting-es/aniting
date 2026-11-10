@@ -1,9 +1,9 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/data/models/app_update_models.dart';
-import 'package:seanime_app/presentation/widgets/update/app_update_dialog.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/data/models/app_update_models.dart';
+import 'package:aniting/presentation/widgets/update/app_update_dialog.dart';
 
 class _MaterialIconPackNotifier extends IconPackNotifier {
   @override

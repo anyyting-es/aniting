@@ -4,8 +4,8 @@ import (
 	"errors"
 	"net/http"
 	"path/filepath"
-	"seanime/internal/core"
-	util "seanime/internal/util/proxies"
+	"aniting/internal/core"
+	util "aniting/internal/util/proxies"
 	"strings"
 	"sync"
 	"time"
@@ -36,8 +36,8 @@ func InitRoutes(app *core.App, e *echo.Echo) {
 			return isTrustedCORSOrigin(origin, app.Config.Server.Password, app.Config.Server.AccessAllowlist), nil
 		},
 		AllowHeaders: []string{"Origin", "Content-Type", "Accept", "Cookie", "Authorization",
-			"X-Seanime-Token", clientIdHeaderName, clientIdProofHeaderName, clientPlatformHeader,
-			"X-Seanime-Nakama-Token", "X-Seanime-Nakama-Username", "X-Seanime-Nakama-Server-Version", "X-Seanime-Nakama-Peer-Id"},
+			"X-Aniting-Token", clientIdHeaderName, clientIdProofHeaderName, clientPlatformHeader,
+			"X-Aniting-Nakama-Token", "X-Aniting-Nakama-Username", "X-Aniting-Nakama-Server-Version", "X-Aniting-Nakama-Peer-Id"},
 		ExposeHeaders:    []string{clientIdHeaderName, clientIdProofHeaderName},
 		AllowCredentials: true,
 	}))
@@ -143,9 +143,16 @@ func InitRoutes(app *core.App, e *echo.Echo) {
 	v1.GET("/p", h.VideoProxy)
 	v1.HEAD("/p", h.VideoProxy)
 
+	// Trailers: YouTube -> directly playable URLs (media_kit / ExoPlayer).
+	v1.GET("/trailer/resolve", h.HandleResolveTrailer)
+
 	v1.GET("/status", h.HandleGetStatus)
 	v1.GET("/status/home-items", h.HandleGetHomeItems)
 	v1.POST("/status/home-items", h.HandleUpdateHomeItems)
+
+	// Host hardware: GPU enumeration + per-app GPU preference.
+	v1.GET("/system/gpu", h.HandleGetGPUSettings)
+	v1.PATCH("/system/gpu/preference", h.HandleSetGPUPreference)
 
 	v1.GET("/log/*", h.HandleGetLogContent)
 	v1.GET("/logs/filenames", h.HandleGetLogFilenames)
@@ -158,7 +165,6 @@ func InitRoutes(app *core.App, e *echo.Echo) {
 	v1.GET("/memory/cpu", h.HandleGetCPUProfile)
 	v1.POST("/memory/gc", h.HandleForceGC)
 
-	v1.POST("/announcements", h.HandleGetAnnouncements)
 
 	// Auth
 	v1.POST("/auth/login", h.HandleLogin)
@@ -330,12 +336,6 @@ func InitRoutes(app *core.App, e *echo.Echo) {
 	// Updates
 	//
 
-	v1.GET("/latest-update", h.HandleGetLatestUpdate)
-	v1.GET("/changelog", h.HandleGetChangelog)
-	v1.POST("/install-update", h.HandleInstallLatestUpdate)
-	v1.POST("/download-release", h.HandleDownloadRelease)
-	v1.POST("/download-mac-denshi-update", h.HandleDownloadMacDenshiUpdate)
-	v1.POST("/check-for-updates", h.HandleCheckForUpdates)
 
 	//
 	// Theme

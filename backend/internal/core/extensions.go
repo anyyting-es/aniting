@@ -1,9 +1,9 @@
 package core
 
 import (
-	"seanime/internal/extension"
-	"seanime/internal/extension_repo"
-	manga_providers "seanime/internal/manga/providers"
+	"aniting/internal/extension"
+	"aniting/internal/extension_repo"
+	manga_providers "aniting/internal/manga/providers"
 
 	"github.com/rs/zerolog"
 )
@@ -23,7 +23,7 @@ func LoadExtensions(extensionRepository *extension_repo.Repository, logger *zero
 		ManifestURI: "builtin",
 		Language:    extension.LanguageGo,
 		Type:        extension.TypeMangaProvider,
-		Author:      "Seanime",
+		Author:      "Aniting",
 		Lang:        "multi",
 		Icon:        "https://raw.githubusercontent.com/5rahim/hibike/main/icons/local-manga.png",
 	}, manga_providers.NewLocal(config.Manga.LocalDir, logger))

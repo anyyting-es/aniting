@@ -1,9 +1,9 @@
-package events
+﻿package events
 
 import (
 	"testing"
 
-	"seanime/internal/util"
+	"aniting/internal/util"
 
 	"github.com/stretchr/testify/require"
 )

@@ -1,6 +1,6 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/data/models/debrid_models.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
+﻿import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:aniting/data/models/debrid_models.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
 
 final debridSettingsProvider =
     NotifierProvider<DebridSettingsNotifier, AsyncValue<DebridSettings>>(

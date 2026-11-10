@@ -1,6 +1,6 @@
-package animap
+﻿package animap
 
-import "seanime/internal/hook_resolver"
+import "aniting/internal/hook_resolver"
 
 // AnimapMediaRequestedEvent is triggered when the Animap media is requested.
 // Prevent default to skip the default behavior and return your own data.

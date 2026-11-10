@@ -1,7 +1,7 @@
-import 'dart:ui' as ui;
+﻿import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
-import 'package:seanime_app/presentation/widgets/desktop_title_bar.dart';
+import 'package:aniting/presentation/widgets/desktop_title_bar.dart';
 
 /// Scaffold envolvente para subpantallas de ajustes con soporte adaptativo y cabecera colapsable fluida
 class PixelSubpageScaffold extends StatelessWidget {

@@ -1,4 +1,4 @@
-package extension_repo
+﻿package extension_repo
 
 import (
 	"archive/zip"
@@ -7,8 +7,8 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
-	"seanime/internal/extension"
-	"seanime/internal/plugin"
+	"aniting/internal/extension"
+	"aniting/internal/plugin"
 	"strings"
 	"testing"
 	"time"

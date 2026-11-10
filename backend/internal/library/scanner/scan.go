@@ -1,4 +1,4 @@
-package scanner
+﻿package scanner
 
 import (
 	"context"
@@ -7,16 +7,16 @@ import (
 	"os"
 	"runtime"
 	"runtime/debug"
-	"seanime/internal/api/anilist"
-	"seanime/internal/api/metadata_provider"
-	"seanime/internal/events"
-	"seanime/internal/hook"
-	"seanime/internal/library/anime"
-	"seanime/internal/library/filesystem"
-	"seanime/internal/library/summary"
-	"seanime/internal/platforms/platform"
-	"seanime/internal/util"
-	"seanime/internal/util/limiter"
+	"aniting/internal/api/anilist"
+	"aniting/internal/api/metadata_provider"
+	"aniting/internal/events"
+	"aniting/internal/hook"
+	"aniting/internal/library/anime"
+	"aniting/internal/library/filesystem"
+	"aniting/internal/library/summary"
+	"aniting/internal/platforms/platform"
+	"aniting/internal/util"
+	"aniting/internal/util/limiter"
 	"sort"
 	"strings"
 	"sync"

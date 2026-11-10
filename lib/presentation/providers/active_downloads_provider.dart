@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/providers/download_history_provider.dart';
-import 'package:seanime_app/presentation/providers/torrent_stream_provider.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/providers/download_history_provider.dart';
+import 'package:aniting/presentation/providers/torrent_stream_provider.dart';
 
 String _formatBytes(int bytes) {
   if (bytes <= 0) return '0 B';
@@ -90,7 +90,7 @@ class ActiveDownloadsNotifier extends Notifier<ActiveDownloadsState> {
       ref.read(downloadingEpisodesProvider.notifier).syncWithTorrents(torrents);
 
       // Auto-scan detection: when a torrent reaches 100% or completion,
-      // automatically trigger a library scan so Seanime indexes the downloaded episode.
+      // automatically trigger a library scan so Aniting indexes the downloaded episode.
       for (final t in torrents) {
         final hash = t['hash']?.toString() ?? '';
         final rawProgress = t['progress'];

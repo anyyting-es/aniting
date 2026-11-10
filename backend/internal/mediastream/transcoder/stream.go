@@ -1,4 +1,4 @@
-package transcoder
+﻿package transcoder
 
 import (
 	"bufio"
@@ -10,7 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"seanime/internal/util"
+	"aniting/internal/util"
 	"slices"
 	"strings"
 	"sync"

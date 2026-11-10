@@ -1,9 +1,9 @@
-import 'dart:ui';
+﻿import 'dart:ui';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/preferences/banner_blur_provider.dart';
+import 'package:aniting/core/preferences/banner_blur_provider.dart';
 
 class DesktopHeroBanner extends ConsumerWidget {
   final String? bannerUrl;

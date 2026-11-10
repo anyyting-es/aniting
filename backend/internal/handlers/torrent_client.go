@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"seanime/internal/api/anilist"
-	"seanime/internal/database/db_bridge"
-	"seanime/internal/database/models"
-	hibiketorrent "seanime/internal/extension/hibike/torrent"
-	"seanime/internal/library/autodownloader"
-	"seanime/internal/torrent_clients/torrent_client"
-	torrentrepo "seanime/internal/torrents/torrent"
-	"seanime/internal/util"
+	"aniting/internal/api/anilist"
+	"aniting/internal/database/db_bridge"
+	"aniting/internal/database/models"
+	hibiketorrent "aniting/internal/extension/hibike/torrent"
+	"aniting/internal/library/autodownloader"
+	"aniting/internal/torrent_clients/torrent_client"
+	torrentrepo "aniting/internal/torrents/torrent"
+	"aniting/internal/util"
 	"time"
 
 	"github.com/goccy/go-json"
@@ -44,7 +44,7 @@ func (h *Handler) HandleGetActiveTorrentList(c echo.Context) error {
 	// If an error occurred, try to start the torrent client and get the list again
 	// DEVNOTE: We try to get the list first because this route is called repeatedly by the client.
 	if err != nil {
-		if h.App.TorrentClientRepository.GetProvider() == torrent_client.SeanimeClient {
+		if h.App.TorrentClientRepository.GetProvider() == torrent_client.AnitingClient {
 			return h.RespondWithData(c, make([]*torrent_client.Torrent, 0))
 		}
 		if err := h.guardPrivilegedTorrentClient(c, h.App.Settings); err != nil {
@@ -134,9 +134,9 @@ func (h *Handler) HandleTorrentClientAction(c echo.Context) error {
 		}
 		OpenDirInExplorer(b.Dir)
 	case "pause-all", "resume-all", "force-start", "queue-up", "queue-down", "move-storage", "recheck", "reannounce", "add-tracker", "remove-tracker", "set-file-priority", "set-sequential", "rename", "set-limits", "add-magnet":
-		client := h.App.TorrentClientRepository.GetSeanimeClient()
-		if h.App.TorrentClientRepository.GetProvider() != torrent_client.SeanimeClient || client == nil {
-			return h.RespondWithError(c, errors.New("action is only available for the Seanime torrent client"))
+		client := h.App.TorrentClientRepository.GetAnitingClient()
+		if h.App.TorrentClientRepository.GetProvider() != torrent_client.AnitingClient || client == nil {
+			return h.RespondWithError(c, errors.New("action is only available for the Aniting torrent client"))
 		}
 		var err error
 		switch b.Action {
@@ -186,17 +186,17 @@ func (h *Handler) HandleTorrentClientAction(c echo.Context) error {
 
 // HandleGetBuiltInTorrentDetails
 //
-//	@summary returns details for a torrent managed by the Seanime torrent client.
+//	@summary returns details for a torrent managed by the Aniting torrent client.
 //	@route /api/v1/torrent-client/details [GET]
-//	@returns seanime.TorrentDetails
+//	@returns aniting.TorrentDetails
 func (h *Handler) HandleGetBuiltInTorrentDetails(c echo.Context) error {
 	hash := c.QueryParam("hash")
 	if hash == "" {
 		return h.RespondWithError(c, errors.New("missing torrent hash"))
 	}
-	client := h.App.TorrentClientRepository.GetSeanimeClient()
-	if h.App.TorrentClientRepository.GetProvider() != torrent_client.SeanimeClient || client == nil {
-		return h.RespondWithError(c, errors.New("Seanime torrent client is not active"))
+	client := h.App.TorrentClientRepository.GetAnitingClient()
+	if h.App.TorrentClientRepository.GetProvider() != torrent_client.AnitingClient || client == nil {
+		return h.RespondWithError(c, errors.New("Aniting torrent client is not active"))
 	}
 	details, err := client.GetTorrentDetails(hash)
 	if err != nil {
@@ -326,11 +326,11 @@ func (h *Handler) HandleTorrentClientDownload(c echo.Context) error {
 	}
 	ok := h.App.TorrentClientRepository.Start()
 	if !ok {
-		// Attempt fallback to built-in Seanime client if external client failed
-		if h.App.TorrentClientRepository.GetProvider() != torrent_client.SeanimeClient {
-			h.App.Logger.Warn().Msg("torrent client: Selected client failed to start, attempting fallback to built-in Seanime client")
+		// Attempt fallback to built-in Aniting client if external client failed
+		if h.App.TorrentClientRepository.GetProvider() != torrent_client.AnitingClient {
+			h.App.Logger.Warn().Msg("torrent client: Selected client failed to start, attempting fallback to built-in Aniting client")
 			if settings, err := h.App.Database.GetSettings(); err == nil && settings != nil {
-				if nextSettings, err := models.SetSettingsPath(settings, "torrent.defaultTorrentClient", torrent_client.SeanimeClient); err == nil {
+				if nextSettings, err := models.SetSettingsPath(settings, "torrent.defaultTorrentClient", torrent_client.AnitingClient); err == nil {
 					nextSettings.BaseModel = models.BaseModel{ID: 1, UpdatedAt: time.Now()}
 					if s, err := h.App.Database.UpsertSettings(nextSettings); err == nil {
 						h.App.WSEventManager.SendEvent("settings", s)

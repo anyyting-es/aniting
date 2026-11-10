@@ -5,12 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"seanime/internal/api/anilist"
-	"seanime/internal/customsource"
-	debrid_client "seanime/internal/debrid/client"
-	"seanime/internal/events"
-	"seanime/internal/player"
-	"seanime/internal/torrentstream"
+	"aniting/internal/api/anilist"
+	"aniting/internal/customsource"
+	debrid_client "aniting/internal/debrid/client"
+	"aniting/internal/events"
+	"aniting/internal/player"
+	"aniting/internal/torrentstream"
 	"strings"
 	"sync"
 	"time"
@@ -38,7 +38,7 @@ const (
 	MessageTypeWatchPartyRelayModeOriginStreamStarted   = "watch_party_relay_mode_origin_stream_started"   // Relay origin sends is starting a stream, the host will start it too
 	MessageTypeWatchPartyRelayModeOriginPlaybackStatus  = "watch_party_relay_mode_origin_playback_status"  // Relay origin sends playback status to relay server
 	MessageTypeWatchPartyRelayModeOriginPlaybackStopped = "watch_party_relay_mode_origin_playback_stopped" // Relay origin sends playback stopped to relay server
-	// Seanime Watch Party Rooms, Host -> Seanime Watch Party Room API -> Peers
+	// Aniting Watch Party Rooms, Host -> Aniting Watch Party Room API -> Peers
 
 	// Chat
 	MessageTypeWatchPartyChatMessage = "watch_party_chat_message" // Chat message sent by any participant
@@ -152,7 +152,7 @@ type WatchPartySession struct {
 	// Whether this session is in relay mode
 	// In this case, the host will act as a relay server and relay status from the origin (a chosen peer) to all other peers
 	IsRelayMode bool `json:"isRelayMode"`
-	// Whether this session is using the Seanime Watch Party Rooms API
+	// Whether this session is using the Aniting Watch Party Rooms API
 	// In this case, the host will broadcast playback status via a  relay server
 	IsRoom bool         `json:"isRoom"`
 	mu     sync.RWMutex `json:"-"`

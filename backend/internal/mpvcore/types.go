@@ -1,8 +1,8 @@
-package mpvcore
+﻿package mpvcore
 
 import (
 	"encoding/json"
-	"seanime/internal/player"
+	"aniting/internal/player"
 )
 
 type PlaybackType = player.PlaybackType

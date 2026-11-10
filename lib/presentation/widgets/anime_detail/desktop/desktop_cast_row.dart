@@ -2,9 +2,9 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/core/theme/app_focus_coordinator.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/core/theme/app_focus_coordinator.dart';
 import 'cast/desktop_cast_detail_view.dart';
 import 'cast/desktop_cast_models.dart';
 
@@ -68,22 +68,25 @@ class DesktopCastRow extends ConsumerWidget {
               final item = validItems[index];
               final heroTag = 'cast_hero_${mediaId ?? 0}_${item.id}';
 
+              final canOpenDetail = !isTmdb;
               return _DesktopCastCard(
                 item: item,
                 heroTag: heroTag,
                 isTmdb: isTmdb,
                 isFirst: index == 0,
                 isLast: index == validItems.length - 1,
-                onTap: () {
-                  DesktopCastDetailView.open(
-                    context,
-                    items: validItems,
-                    initialIndex: index,
-                    mediaId: mediaId,
-                    bannerUrl: bannerUrl,
-                    isTmdb: isTmdb,
-                  );
-                },
+                onTap: canOpenDetail
+                    ? () {
+                        DesktopCastDetailView.open(
+                          context,
+                          items: validItems,
+                          initialIndex: index,
+                          mediaId: mediaId,
+                          bannerUrl: bannerUrl,
+                          isTmdb: false,
+                        );
+                      }
+                    : null,
               );
             },
           ),
@@ -99,13 +102,13 @@ class _DesktopCastCard extends ConsumerStatefulWidget {
   final bool isTmdb;
   final bool isFirst;
   final bool isLast;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   const _DesktopCastCard({
     required this.item,
     required this.heroTag,
     required this.isTmdb,
-    required this.onTap,
+    this.onTap,
     this.isFirst = false,
     this.isLast = false,
   });
@@ -152,10 +155,11 @@ class _DesktopCastCardState extends ConsumerState<_DesktopCastCard> {
           if (widget.isLast && key == LogicalKeyboardKey.arrowRight) {
             return KeyEventResult.handled;
           }
-          if (key == LogicalKeyboardKey.enter ||
-              key == LogicalKeyboardKey.select ||
-              key == LogicalKeyboardKey.space) {
-            widget.onTap();
+          if (widget.onTap != null &&
+              (key == LogicalKeyboardKey.enter ||
+                  key == LogicalKeyboardKey.select ||
+                  key == LogicalKeyboardKey.space)) {
+            widget.onTap!();
             return KeyEventResult.handled;
           }
         }
@@ -181,22 +185,26 @@ class _DesktopCastCardState extends ConsumerState<_DesktopCastCard> {
           final isDpad = inputMode == AppInputMode.dpad;
           final isActive = (inputMode == AppInputMode.mouse && _isHovered) || (isDpad && _isFocused);
 
+          final isInteractive = widget.onTap != null;
+
           return MouseRegion(
-            cursor: SystemMouseCursors.click,
+            cursor: isInteractive ? SystemMouseCursors.click : SystemMouseCursors.basic,
             onEnter: (_) {
-              AppFocusCoordinator.switchToMouse(_focusNode);
-              setState(() => _isHovered = true);
+              if (isInteractive) {
+                AppFocusCoordinator.switchToMouse(_focusNode);
+                setState(() => _isHovered = true);
+              }
             },
             onExit: (_) {
               if (AppFocusCoordinator.lastHoveredNode == _focusNode) {
                 AppFocusCoordinator.lastHoveredNode = null;
               }
-              setState(() => _isHovered = false);
+              if (_isHovered) setState(() => _isHovered = false);
             },
             child: GestureDetector(
               onTap: widget.onTap,
               child: AnimatedScale(
-                scale: _isHovered ? 1.04 : 1.0,
+                scale: (isInteractive && _isHovered) ? 1.04 : 1.0,
                 alignment: Alignment.bottomCenter,
                 duration: const Duration(milliseconds: 180),
                 curve: Curves.easeOutCubic,

@@ -1,12 +1,12 @@
-package continuity
+﻿package continuity
 
 import (
 	"fmt"
-	"seanime/internal/database/db_bridge"
-	"seanime/internal/hook"
-	"seanime/internal/library/anime"
-	"seanime/internal/util"
-	"seanime/internal/util/filecache"
+	"aniting/internal/database/db_bridge"
+	"aniting/internal/hook"
+	"aniting/internal/library/anime"
+	"aniting/internal/util"
+	"aniting/internal/util/filecache"
 	"strconv"
 	"strings"
 	"time"

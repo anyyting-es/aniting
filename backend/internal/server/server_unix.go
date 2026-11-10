@@ -8,7 +8,8 @@ import (
 
 func StartServer(webFS embed.FS, embeddedLogo []byte) {
 
-	app, flags, selfupdater := startApp(embeddedLogo)
+	app, flags := startApp(embeddedLogo)
+	_ = flags
 
-	startAppLoop(&webFS, app, flags, selfupdater)
+	startAppLoop(&webFS, app)
 }

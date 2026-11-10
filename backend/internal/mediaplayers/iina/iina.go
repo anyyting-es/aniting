@@ -1,12 +1,12 @@
-package iina
+﻿package iina
 
 import (
 	"context"
 	"errors"
 	"os/exec"
-	"seanime/internal/mediaplayers/mpvipc"
-	"seanime/internal/util"
-	"seanime/internal/util/result"
+	"aniting/internal/mediaplayers/mpvipc"
+	"aniting/internal/util"
+	"aniting/internal/util/result"
 	"strings"
 	"sync"
 	"time"

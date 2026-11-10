@@ -1,8 +1,8 @@
-package scanner
+﻿package scanner
 
 import (
-	"seanime/internal/platforms/platform"
-	"seanime/internal/util"
+	"aniting/internal/platforms/platform"
+	"aniting/internal/util"
 	"testing"
 )
 

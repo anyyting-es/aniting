@@ -1,9 +1,9 @@
-package scanner
+﻿package scanner
 
 import (
-	"seanime/internal/library/anime"
-	"seanime/internal/util"
-	"seanime/internal/util/comparison"
+	"aniting/internal/library/anime"
+	"aniting/internal/util"
+	"aniting/internal/util/comparison"
 	"strings"
 
 	"github.com/rs/zerolog"

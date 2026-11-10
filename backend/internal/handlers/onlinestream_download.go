@@ -1,8 +1,8 @@
-package handlers
+﻿package handlers
 
 import (
 	"errors"
-	"seanime/internal/onlinestream"
+	"aniting/internal/onlinestream"
 
 	"github.com/labstack/echo/v4"
 )

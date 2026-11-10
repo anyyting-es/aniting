@@ -1,17 +1,17 @@
-import 'package:cached_network_image/cached_network_image.dart';
+﻿import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/media_servers/models/media_server_config.dart';
-import 'package:seanime_app/core/media_servers/models/media_server_item.dart';
-import 'package:seanime_app/core/media_servers/providers/media_server_content_provider.dart';
-import 'package:seanime_app/core/media_servers/services/media_server_player_helper.dart';
-import 'package:seanime_app/data/models/anime_details.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
-import 'package:seanime_app/presentation/widgets/anime_detail/anime_detail_back_button.dart';
-import 'package:seanime_app/presentation/widgets/anime_detail/anime_detail_desktop_layout.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/media_servers/models/media_server_config.dart';
+import 'package:aniting/core/media_servers/models/media_server_item.dart';
+import 'package:aniting/core/media_servers/providers/media_server_content_provider.dart';
+import 'package:aniting/core/media_servers/services/media_server_player_helper.dart';
+import 'package:aniting/data/models/anime_details.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/screens/anime_detail_screen.dart';
+import 'package:aniting/presentation/widgets/anime_detail/anime_detail_back_button.dart';
+import 'package:aniting/presentation/widgets/anime_detail/anime_detail_desktop_layout.dart';
 
 /// Detail page for a show hosted on Plex/Jellyfin.
 ///

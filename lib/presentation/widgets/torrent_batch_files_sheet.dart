@@ -1,10 +1,10 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/core/theme/app_theme_colors.dart';
-import 'package:seanime_app/data/models/torrent_file_preview.dart';
-import 'package:seanime_app/data/models/torrent_models.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/core/theme/app_theme_colors.dart';
+import 'package:aniting/data/models/torrent_file_preview.dart';
+import 'package:aniting/data/models/torrent_models.dart';
 
 class TorrentBatchSelectionResult {
   final TorrentFilePreview file;

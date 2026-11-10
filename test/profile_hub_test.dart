@@ -1,15 +1,15 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:seanime_app/core/server/server_manager.dart';
-import 'package:seanime_app/data/models/anime_entry.dart';
-import 'package:seanime_app/data/models/manga_entry.dart';
-import 'package:seanime_app/data/models/server_status.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/screens/downloads_screen.dart';
-import 'package:seanime_app/presentation/screens/library_screen.dart';
-import 'package:seanime_app/presentation/screens/my_lists_screen.dart';
-import 'package:seanime_app/presentation/widgets/media_type_toggle.dart';
+import 'package:aniting/core/server/server_manager.dart';
+import 'package:aniting/data/models/anime_entry.dart';
+import 'package:aniting/data/models/manga_entry.dart';
+import 'package:aniting/data/models/server_status.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/screens/downloads_screen.dart';
+import 'package:aniting/presentation/screens/library_screen.dart';
+import 'package:aniting/presentation/screens/my_lists_screen.dart';
+import 'package:aniting/presentation/widgets/media_type_toggle.dart';
 
 class MockRunningServerNotifier extends ServerNotifier {
   @override

@@ -1,13 +1,13 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
-import 'package:seanime_app/presentation/screens/manga_detail_screen.dart';
-import 'package:seanime_app/presentation/widgets/anime_card.dart';
-import 'package:seanime_app/presentation/widgets/desktop_title_bar.dart';
-import 'package:seanime_app/presentation/widgets/manga_card.dart';
-import 'package:seanime_app/presentation/widgets/my_lists/my_lists_desktop_layout.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/screens/anime_detail_screen.dart';
+import 'package:aniting/presentation/screens/manga_detail_screen.dart';
+import 'package:aniting/presentation/widgets/anime_card.dart';
+import 'package:aniting/presentation/widgets/desktop_title_bar.dart';
+import 'package:aniting/presentation/widgets/manga_card.dart';
+import 'package:aniting/presentation/widgets/my_lists/my_lists_desktop_layout.dart';
 
 class MyListsScreen extends ConsumerStatefulWidget {
   final int initialTabIndex;

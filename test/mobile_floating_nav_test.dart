@@ -1,10 +1,10 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:seanime_app/core/preferences/resume_bar_preferences_provider.dart';
-import 'package:seanime_app/presentation/widgets/desktop_sidebar.dart';
-import 'package:seanime_app/presentation/widgets/floating_nav/floating_dock_pill.dart';
-import 'package:seanime_app/presentation/widgets/mobile_floating_nav.dart';
+import 'package:aniting/core/preferences/resume_bar_preferences_provider.dart';
+import 'package:aniting/presentation/widgets/desktop_sidebar.dart';
+import 'package:aniting/presentation/widgets/floating_nav/floating_dock_pill.dart';
+import 'package:aniting/presentation/widgets/mobile_floating_nav.dart';
 
 void main() {
   final testItems = [

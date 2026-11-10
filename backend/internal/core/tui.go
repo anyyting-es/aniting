@@ -3,7 +3,7 @@ package core
 import (
 	"fmt"
 	"os"
-	"seanime/internal/constants"
+	"aniting/internal/constants"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
@@ -50,7 +50,7 @@ func PrintHeader() {
 		// Background(secondary).
 		Padding(0, 1).
 		Bold(true).
-		Render("Seanime")
+		Render("Aniting")
 
 	versionBox := lipgloss.NewStyle().
 		Border(lipgloss.NormalBorder()).

@@ -1,9 +1,9 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:seanime_app/presentation/widgets/explore/explore_carousel_models.dart';
-import 'package:seanime_app/presentation/widgets/explore/explore_hero_carousel.dart';
-import 'package:seanime_app/presentation/widgets/explore/explore_manga_banner_carousel.dart';
+import 'package:aniting/presentation/widgets/explore/explore_carousel_models.dart';
+import 'package:aniting/presentation/widgets/explore/explore_hero_carousel.dart';
+import 'package:aniting/presentation/widgets/explore/explore_manga_banner_carousel.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

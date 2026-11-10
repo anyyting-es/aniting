@@ -1,13 +1,13 @@
-import 'dart:math' as math;
+﻿import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/preferences/resume_bar_preferences_provider.dart';
-import 'package:seanime_app/presentation/widgets/desktop_sidebar.dart';
-import 'package:seanime_app/presentation/widgets/floating_nav/floating_dock_pill.dart';
-import 'package:seanime_app/presentation/widgets/floating_nav/floating_resume_companion.dart';
-import 'package:seanime_app/presentation/widgets/floating_resume_bar.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/preferences/resume_bar_preferences_provider.dart';
+import 'package:aniting/presentation/widgets/desktop_sidebar.dart';
+import 'package:aniting/presentation/widgets/floating_nav/floating_dock_pill.dart';
+import 'package:aniting/presentation/widgets/floating_nav/floating_resume_companion.dart';
+import 'package:aniting/presentation/widgets/floating_resume_bar.dart';
 
 /// A floating mobile navigation bar coordinating a solid Material Design 3 dock
 /// with an animated zero-overlap resume companion.

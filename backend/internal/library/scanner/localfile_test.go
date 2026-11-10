@@ -1,8 +1,8 @@
-package scanner
+﻿package scanner
 
 import (
 	"github.com/stretchr/testify/assert"
-	"seanime/internal/util"
+	"aniting/internal/util"
 	"testing"
 )
 

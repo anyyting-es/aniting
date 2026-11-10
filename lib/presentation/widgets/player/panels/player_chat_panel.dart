@@ -1,15 +1,15 @@
-import 'package:flutter/foundation.dart';
+﻿import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/widgets/anilist_auth_sheet.dart';
-import 'package:seanime_app/data/models/dantotsu_comment.dart';
-import 'package:seanime_app/data/services/dantotsu_comments_service.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/widgets/anilist_auth_sheet.dart';
+import 'package:aniting/data/models/dantotsu_comment.dart';
+import 'package:aniting/data/services/dantotsu_comments_service.dart';
 
 class PlayerChatPanel extends ConsumerStatefulWidget {
   final int? mediaId;

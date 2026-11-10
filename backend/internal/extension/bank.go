@@ -1,7 +1,7 @@
-package extension
+﻿package extension
 
 import (
-	"seanime/internal/util/result"
+	"aniting/internal/util/result"
 	"sync"
 	"sync/atomic"
 )

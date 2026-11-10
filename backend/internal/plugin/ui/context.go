@@ -1,16 +1,16 @@
-package plugin_ui
+﻿package plugin_ui
 
 import (
 	"context"
 	"errors"
 	"fmt"
 	"reflect"
-	"seanime/internal/events"
-	"seanime/internal/extension"
-	"seanime/internal/plugin"
-	"seanime/internal/security"
-	gojautil "seanime/internal/util/goja"
-	"seanime/internal/util/result"
+	"aniting/internal/events"
+	"aniting/internal/extension"
+	"aniting/internal/plugin"
+	"aniting/internal/security"
+	gojautil "aniting/internal/util/goja"
+	"aniting/internal/util/result"
 	"sync"
 	"sync/atomic"
 	"time"

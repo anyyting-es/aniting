@@ -1,8 +1,8 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/data/models/extension_item.dart';
-import 'package:seanime_app/presentation/widgets/extensions/installed_extension_card.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/data/models/extension_item.dart';
+import 'package:aniting/presentation/widgets/extensions/installed_extension_card.dart';
 
 class InstalledTabView extends ConsumerWidget {
   final bool isLoading;

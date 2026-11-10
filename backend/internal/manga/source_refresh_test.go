@@ -1,15 +1,15 @@
-package manga
+﻿package manga
 
 import (
 	"context"
 	"errors"
-	"seanime/internal/api/anilist"
-	"seanime/internal/database/models"
-	"seanime/internal/events"
-	"seanime/internal/extension"
-	hibikemanga "seanime/internal/extension/hibike/manga"
-	"seanime/internal/testmocks"
-	"seanime/internal/testutil"
+	"aniting/internal/api/anilist"
+	"aniting/internal/database/models"
+	"aniting/internal/events"
+	"aniting/internal/extension"
+	hibikemanga "aniting/internal/extension/hibike/manga"
+	"aniting/internal/testmocks"
+	"aniting/internal/testutil"
 	"testing"
 	"time"
 

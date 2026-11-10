@@ -2,19 +2,19 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:g1455/g1455.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/core/preferences/episode_view_mode_provider.dart';
-import 'package:seanime_app/core/theme/app_theme_colors.dart';
-import 'package:seanime_app/data/models/anime_details.dart';
-import 'package:seanime_app/data/models/anizip_data.dart';
-import 'package:seanime_app/data/models/library_entry_details.dart';
-import 'package:seanime_app/presentation/providers/active_downloads_provider.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/providers/download_history_provider.dart';
-import 'package:seanime_app/presentation/providers/episode_selection_provider.dart';
-import 'package:seanime_app/presentation/widgets/episode_item_widget.dart';
-import 'package:seanime_app/presentation/widgets/toast/app_toast.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/core/preferences/episode_view_mode_provider.dart';
+import 'package:aniting/core/theme/app_theme_colors.dart';
+import 'package:aniting/data/models/anime_details.dart';
+import 'package:aniting/data/models/anizip_data.dart';
+import 'package:aniting/data/models/library_entry_details.dart';
+import 'package:aniting/presentation/providers/active_downloads_provider.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/providers/download_history_provider.dart';
+import 'package:aniting/presentation/providers/episode_selection_provider.dart';
+import 'package:aniting/presentation/widgets/episode_item_widget.dart';
+import 'package:aniting/presentation/widgets/toast/app_toast.dart';
 
 class AniZipEpisodeListView extends ConsumerStatefulWidget {
   final AniZipData? aniZipData;
@@ -81,6 +81,22 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
     super.dispose();
   }
 
+  AnimeEpisode? _backendEpisodeFor(int number) {
+    for (final ep in widget.fallbackEpisodes) {
+      if (ep.episodeNumber == number) return ep;
+    }
+    return null;
+  }
+
+  bool _isGenericEpisodeTitle(String? title) {
+    final value = (title ?? '').trim();
+    if (value.isEmpty) return true;
+    return RegExp(
+      r'^(episode|episodio|ep|special|especial)\s*\d+$',
+      caseSensitive: false,
+    ).hasMatch(value);
+  }
+
   /// Determines if an AniZip episode has already aired
   bool _hasEpisodeAired(AniZipEpisode ep, [Map<int, String?>? downloadedMap]) {
     // 0. If episode is already downloaded locally or watched, always allow it
@@ -142,11 +158,20 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
     // Apply search filter
     if (_searchQuery.trim().isNotEmpty) {
       final q = _searchQuery.trim().toLowerCase();
+      final numericQuery = int.tryParse(q);
       list = list.where((ep) {
-        final epNumMatch = ep.episodeNumber.toString() == q || ep.episode.toLowerCase() == q;
-        final titleMatch = ep.displayTitleForLang(langCode).toLowerCase().contains(q) ||
-            (ep.originalTitle != null && ep.originalTitle!.toLowerCase().contains(q));
-        final descMatch = ep.synopsis != null && ep.synopsis!.toLowerCase().contains(q);
+        // Numeric search lists the typed episode and all following ones.
+        if (numericQuery != null) {
+          return ep.episodeNumber >= numericQuery;
+        }
+        final epNumMatch =
+            ep.episodeNumber.toString() == q || ep.episode.toLowerCase() == q;
+        final titleMatch =
+            ep.displayTitleForLang(langCode).toLowerCase().contains(q) ||
+                (ep.originalTitle != null &&
+                    ep.originalTitle!.toLowerCase().contains(q));
+        final descMatch =
+            ep.synopsis != null && ep.synopsis!.toLowerCase().contains(q);
         return epNumMatch || titleMatch || descMatch;
       }).toList();
     }
@@ -422,6 +447,8 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
               ),
               itemBuilder: (context, index) {
                 final ep = filteredEpisodes[index];
+                final backendEp = _backendEpisodeFor(ep.episodeNumber);
+                final aniZipTitle = ep.displayTitleForLang(langCode);
                 final isEpDownloaded = downloadedMap.containsKey(ep.episodeNumber);
                 final isEpDownloading = downloadingEpisodes.contains('${mediaId}_${ep.episodeNumber}');
                 final epDownloadProgress = downloadingEpisodes.getProgress(mediaId, ep.episodeNumber);
@@ -429,11 +456,13 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
                 return EpisodeGridItem(
                   mediaId: mediaId,
                   episodeNumber: ep.episodeNumber,
-                  title: ep.displayTitleForLang(langCode),
+                  title: _isGenericEpisodeTitle(aniZipTitle)
+                      ? (backendEp?.title ?? aniZipTitle)
+                      : aniZipTitle,
                   originalTitle: ep.originalTitle,
                   duration: ep.formattedDuration,
-                  synopsis: ep.synopsis,
-                  image: ep.image,
+                  synopsis: ep.synopsis ?? backendEp?.description,
+                  image: ep.image ?? backendEp?.image,
                   fallbackImage: fallbackImage,
                   airDate: ep.formattedAirDate,
                   rating: ep.rating,
@@ -487,6 +516,8 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
                       separatorBuilder: (context, index) => const SizedBox(height: 8),
                       itemBuilder: (context, index) {
                         final ep = pagedEpisodes[index];
+                        final backendEp = _backendEpisodeFor(ep.episodeNumber);
+                        final aniZipTitle = ep.displayTitleForLang(langCode);
                         final isEpDownloaded = downloadedMap.containsKey(ep.episodeNumber);
                         final isEpDownloading = downloadingEpisodes.contains('${mediaId}_${ep.episodeNumber}');
                         final epDownloadProgress = downloadingEpisodes.getProgress(mediaId, ep.episodeNumber);
@@ -494,11 +525,13 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
                         return EpisodeListItem(
                           mediaId: mediaId,
                           episodeNumber: ep.episodeNumber,
-                          title: ep.displayTitleForLang(langCode),
+                          title: _isGenericEpisodeTitle(aniZipTitle)
+                              ? (backendEp?.title ?? aniZipTitle)
+                              : aniZipTitle,
                           originalTitle: ep.originalTitle,
                           duration: ep.formattedDuration,
-                          synopsis: ep.synopsis,
-                          image: ep.image,
+                          synopsis: ep.synopsis ?? backendEp?.description,
+                          image: ep.image ?? backendEp?.image,
                           fallbackImage: fallbackImage,
                           airDate: ep.formattedAirDate,
                           rating: ep.rating,
@@ -572,7 +605,7 @@ class _AniZipEpisodeListViewState extends ConsumerState<AniZipEpisodeListView> {
       );
     }
 
-    // Fallback: Local Seanime episodes if available
+    // Fallback: Local Aniting episodes if available
     final filteredFallback = widget.fallbackEpisodes.where((ep) {
       if (downloadedMap.containsKey(ep.episodeNumber) || (widget.progress >= ep.episodeNumber && ep.episodeNumber > 0)) {
         return true;

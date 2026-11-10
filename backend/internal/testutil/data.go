@@ -128,7 +128,7 @@ func TestDataPath(name string) string {
 
 const (
 	SampleVideoPathEnv           = "TEST_SAMPLE_VIDEO_PATH"
-	RecordAnilistFixturesEnvName = "SEANIME_TEST_RECORD_ANILIST_FIXTURES"
+	RecordAnilistFixturesEnvName = "ANITING_TEST_RECORD_ANILIST_FIXTURES"
 )
 
 // InitTestProvider loads the test configuration and skips the test

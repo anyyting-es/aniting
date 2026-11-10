@@ -1,15 +1,15 @@
-package nakama
+﻿package nakama
 
 import (
 	"context"
 	"errors"
-	"seanime/internal/api/anilist"
-	debrid_client "seanime/internal/debrid/client"
-	"seanime/internal/events"
-	"seanime/internal/library/playbackmanager"
-	"seanime/internal/mediaplayers/mediaplayer"
-	"seanime/internal/player"
-	"seanime/internal/util"
+	"aniting/internal/api/anilist"
+	debrid_client "aniting/internal/debrid/client"
+	"aniting/internal/events"
+	"aniting/internal/library/playbackmanager"
+	"aniting/internal/mediaplayers/mediaplayer"
+	"aniting/internal/player"
+	"aniting/internal/util"
 	"strings"
 	"time"
 

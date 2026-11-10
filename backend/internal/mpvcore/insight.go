@@ -1,9 +1,9 @@
-package mpvcore
+﻿package mpvcore
 
 import (
 	"fmt"
-	"seanime/internal/util/limiter"
-	"seanime/internal/util/result"
+	"aniting/internal/util/limiter"
+	"aniting/internal/util/result"
 	"sync"
 	"time"
 

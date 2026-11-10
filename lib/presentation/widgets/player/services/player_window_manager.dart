@@ -1,11 +1,11 @@
-import 'dart:io' show Platform;
+﻿import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:window_manager/window_manager.dart';
-import 'package:seanime_app/core/theme/theme_provider.dart';
-import 'package:seanime_app/presentation/widgets/desktop_title_bar.dart';
-import 'package:seanime_app/presentation/widgets/player/services/player_playback_coordinator.dart';
+import 'package:aniting/core/theme/theme_provider.dart';
+import 'package:aniting/presentation/widgets/desktop_title_bar.dart';
+import 'package:aniting/presentation/widgets/player/services/player_playback_coordinator.dart';
 
 typedef PlayerWindowInit = ({int initialTop, int initialHeight, bool initialFullscreen});
 
@@ -34,6 +34,7 @@ class PlayerWindowManager {
   });
 
   Future<void> defaultEnterNativeFullscreen() async {
+    _setNativeFullscreenState(true);
     if (Platform.isWindows) {
       await windowManager.setFullScreen(true);
     } else if (isDesktop) {
@@ -46,6 +47,7 @@ class PlayerWindowManager {
   }
 
   Future<void> defaultExitNativeFullscreen() async {
+    _setNativeFullscreenState(false);
     if (Platform.isWindows) {
       await windowManager.setFullScreen(false);
     } else if (isDesktop) {
@@ -55,6 +57,20 @@ class PlayerWindowManager {
         _wasMaximized = false;
       }
     }
+  }
+
+  /// Keeps the UI in sync with the real native fullscreen state.
+  ///
+  /// On Windows the window_manager plugin can swallow the `leave-full-screen`
+  /// event when the window was maximized before entering fullscreen, leaving
+  /// listeners (titlebar caption buttons, window frame) stuck in fullscreen
+  /// forever. Updating the provider here makes the player state authoritative.
+  void _setNativeFullscreenState(bool fullscreen) {
+    try {
+      ref
+          .read(desktopNativeFullscreenProvider.notifier)
+          .setFullscreen(fullscreen);
+    } catch (_) {}
   }
 
   /// Calculates initial window state, orientations, and initial surface dimensions.
@@ -224,7 +240,12 @@ class PlayerWindowManager {
     if (isExiting) return;
 
     isExiting = true;
-    onUpdateUi();
+    // On desktop the route fades out using the current frame (snapshot), so
+    // rebuilding the whole player into a black curtain right before popping
+    // only adds a heavy frame to the exit path.
+    if (!isDesktop) {
+      onUpdateUi();
+    }
 
     if (isFullscreen && isDesktop) {
       try {
@@ -233,21 +254,26 @@ class PlayerWindowManager {
       } catch (_) {}
     }
 
+    // Freeze the video before starting the route's reverse transition. Closing
+    // over a still-playing video makes the fade compete with decoding and GPU
+    // texture updates; pausing first makes the exit feel as smooth as closing a
+    // paused player. The timeout keeps the back action responsive even if the
+    // native pause takes a moment.
+    try {
+      await coordinator
+          .pauseAsync()
+          .timeout(const Duration(milliseconds: 70));
+    } catch (_) {}
+
     // Instantly close the player route so the UI never stutters or waits for network/I/O
     if (context.mounted) {
       Navigator.of(context).pop();
     }
 
-    // Perform pause, session progress recording, and orientation restore asynchronously
+    // Perform session progress recording and orientation restore asynchronously.
+    // The progress write updates providers watched by the feed/cards, so it is
+    // delayed until the reverse transition has fully finished.
     Future.microtask(() async {
-      try {
-        await onSaveProgress();
-      } catch (_) {}
-
-      try {
-        coordinator.pause();
-      } catch (_) {}
-
       if (Platform.isAndroid || Platform.isIOS) {
         try {
           await SystemChrome.setPreferredOrientations([
@@ -256,6 +282,12 @@ class PlayerWindowManager {
           await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
         } catch (_) {}
       }
+    });
+
+    Future.delayed(const Duration(milliseconds: 200), () async {
+      try {
+        await onSaveProgress();
+      } catch (_) {}
     });
   }
 

@@ -138,5 +138,5 @@ func RunEchoServer(app *App, e *echo.Echo) {
 	}()
 
 	time.Sleep(100 * time.Millisecond)
-	app.Logger.Info().Msg("app: Seanime started at " + app.Config.GetServerURI())
+	app.Logger.Info().Msg("app: Aniting started at " + app.Config.GetServerURI())
 }

@@ -1,11 +1,11 @@
-package extension_repo
+﻿package extension_repo
 
 import (
 	"fmt"
 	"math/rand"
-	"seanime/internal/extension"
-	"seanime/internal/util"
-	"seanime/internal/util/filecache"
+	"aniting/internal/extension"
+	"aniting/internal/util"
+	"aniting/internal/util/filecache"
 )
 
 const (

@@ -1,4 +1,4 @@
-package qbittorrent
+﻿package qbittorrent
 
 import (
 	"bytes"
@@ -7,13 +7,13 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
-	qbittorrent_application "seanime/internal/torrent_clients/qbittorrent/application"
-	qbittorrent_log "seanime/internal/torrent_clients/qbittorrent/log"
-	qbittorrent_rss "seanime/internal/torrent_clients/qbittorrent/rss"
-	qbittorrent_search "seanime/internal/torrent_clients/qbittorrent/search"
-	qbittorrent_sync "seanime/internal/torrent_clients/qbittorrent/sync"
-	qbittorrent_torrent "seanime/internal/torrent_clients/qbittorrent/torrent"
-	qbittorrent_transfer "seanime/internal/torrent_clients/qbittorrent/transfer"
+	qbittorrent_application "aniting/internal/torrent_clients/qbittorrent/application"
+	qbittorrent_log "aniting/internal/torrent_clients/qbittorrent/log"
+	qbittorrent_rss "aniting/internal/torrent_clients/qbittorrent/rss"
+	qbittorrent_search "aniting/internal/torrent_clients/qbittorrent/search"
+	qbittorrent_sync "aniting/internal/torrent_clients/qbittorrent/sync"
+	qbittorrent_torrent "aniting/internal/torrent_clients/qbittorrent/torrent"
+	qbittorrent_transfer "aniting/internal/torrent_clients/qbittorrent/transfer"
 	"strings"
 	std_sync "sync"
 

@@ -1,11 +1,12 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/preferences/title_language_provider.dart';
-import 'package:seanime_app/data/models/anime_entry.dart';
-import 'package:seanime_app/data/models/anizip_data.dart';
-import 'package:seanime_app/data/models/manga_entry.dart';
-import 'package:seanime_app/data/services/custom_anime_assets_service.dart';
-import 'package:seanime_app/data/services/tmdb_service.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
+﻿import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:aniting/core/constants/feature_flags.dart';
+import 'package:aniting/core/preferences/title_language_provider.dart';
+import 'package:aniting/data/models/anime_entry.dart';
+import 'package:aniting/data/models/anizip_data.dart';
+import 'package:aniting/data/models/manga_entry.dart';
+import 'package:aniting/data/services/custom_anime_assets_service.dart';
+import 'package:aniting/data/services/tmdb_service.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
 
 /// Cached provider for AniZip data by AniList media ID.
 final exploreAniZipProvider =
@@ -21,6 +22,7 @@ final exploreAniZipProvider =
 final exploreTmdbAssetsProvider = FutureProvider.family<
     TmdbMediaAssets?,
     ({int tmdbId, bool isMovie})>((ref, arg) async {
+  if (!FeatureFlags.tmdb) return null;
   final tmdb = ref.watch(tmdbServiceProvider);
   final cached =
       TmdbService.getCachedAssets(arg.tmdbId, arg.isMovie);

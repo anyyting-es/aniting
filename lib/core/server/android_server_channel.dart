@@ -1,7 +1,7 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
-import 'package:seanime_app/core/constants/app_constants.dart';
+import 'package:aniting/core/constants/app_constants.dart';
 
 class AndroidServerChannel {
   static const MethodChannel _channel = MethodChannel('com.anyyting.aniting/server');

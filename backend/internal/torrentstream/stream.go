@@ -1,18 +1,18 @@
 package torrentstream
 
 import (
+	"aniting/internal/api/anilist"
+	"aniting/internal/api/metadata"
+	"aniting/internal/directstream"
+	"aniting/internal/events"
+	hibiketorrent "aniting/internal/extension/hibike/torrent"
+	"aniting/internal/hook"
+	"aniting/internal/library/playbackmanager"
+	"aniting/internal/player"
+	"aniting/internal/util"
 	"context"
 	"errors"
 	"fmt"
-	"seanime/internal/api/anilist"
-	"seanime/internal/api/metadata"
-	"seanime/internal/directstream"
-	"seanime/internal/events"
-	hibiketorrent "seanime/internal/extension/hibike/torrent"
-	"seanime/internal/hook"
-	"seanime/internal/library/playbackmanager"
-	"seanime/internal/player"
-	"seanime/internal/util"
 	"runtime"
 	"runtime/debug"
 	"sync"
@@ -450,6 +450,17 @@ func (r *Repository) sendStreamToExternalPlayer(
 	// Desktop player
 	//
 	case PlaybackTypeExternal:
+		if r.playbackManager == nil ||
+			r.mediaPlayerRepository == nil ||
+			r.mediaPlayerRepository.Default == "" {
+			// This build runs the player inside the Flutter client, so the
+			// external media-player integration may not be configured. Do not
+			// tear down the stream in that case: the client can keep using the
+			// HTTP stream URL it already has.
+			r.logger.Warn().Msg("torrentstream: External player requested but no media player is configured; keeping the HTTP stream active")
+			r.sendStateEvent(eventTorrentStartedPlaying)
+			return
+		}
 		r.logger.Debug().Msgf("torrentstream: Starting the media player %s", streamURL)
 		err = r.playbackManager.StartStreamingUsingMediaPlayer(windowTitle, &playbackmanager.StartPlayingOptions{
 			Payload:   streamURL,

@@ -1,9 +1,9 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:seanime_app/core/constants/app_constants.dart';
-import 'package:seanime_app/core/storage/app_storage_paths.dart';
+import 'package:aniting/core/constants/app_constants.dart';
+import 'package:aniting/core/storage/app_storage_paths.dart';
 
 class DesktopServer {
   Process? _process;
@@ -14,8 +14,8 @@ class DesktopServer {
   String? _findBinary(String? customPath) {
     final isWin = Platform.isWindows;
     final binaryNames = isWin
-        ? ['aniting.exe', 'aniting-server.exe', 'seanime.exe']
-        : ['aniting', 'aniting-server', 'seanime'];
+        ? ['aniting.exe', 'aniting-server.exe']
+        : ['aniting', 'aniting-server'];
     final exeDir = Platform.resolvedExecutable.replaceAll(RegExp(r'[^/\\]+$'), '');
 
     final candidatePaths = [
@@ -64,7 +64,7 @@ class DesktopServer {
 
     final resolvedBinary = _findBinary(executablePath);
     if (resolvedBinary == null) {
-      debugPrint('DesktopServer: Executable seanime not found in candidate paths');
+      debugPrint('DesktopServer: Executable aniting not found in candidate paths');
       return false;
     }
 
@@ -103,7 +103,7 @@ class DesktopServer {
       });
 
       _process!.exitCode.then((code) {
-        debugPrint('[Seanime Server] Process exited with code: $code');
+        debugPrint('[Aniting Server] Process exited with code: $code');
         _isRunning = false;
         _process = null;
       });

@@ -1,7 +1,7 @@
-package handlers
+﻿package handlers
 
 import (
-	"seanime/internal/continuity"
+	"aniting/internal/continuity"
 	"strconv"
 
 	"github.com/labstack/echo/v4"

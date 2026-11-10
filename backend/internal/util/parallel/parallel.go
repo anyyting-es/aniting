@@ -1,8 +1,8 @@
-package parallel
+﻿package parallel
 
 import (
 	"github.com/samber/lo"
-	"seanime/internal/util/limiter"
+	"aniting/internal/util/limiter"
 	"sync"
 )
 

@@ -1,13 +1,13 @@
-package manga
+﻿package manga
 
 import (
 	"context"
 	"errors"
-	"seanime/internal/api/anilist"
-	"seanime/internal/events"
-	"seanime/internal/extension"
-	manga_providers "seanime/internal/manga/providers"
-	"seanime/internal/util"
+	"aniting/internal/api/anilist"
+	"aniting/internal/events"
+	"aniting/internal/extension"
+	manga_providers "aniting/internal/manga/providers"
+	"aniting/internal/util"
 	"sort"
 	"sync"
 	"time"

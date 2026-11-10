@@ -1,11 +1,11 @@
-package plugin_ui
+﻿package plugin_ui
 
 import (
 	"context"
 	"fmt"
-	"seanime/internal/library/anime"
-	gojautil "seanime/internal/util/goja"
-	"seanime/internal/util/result"
+	"aniting/internal/library/anime"
+	gojautil "aniting/internal/util/goja"
+	"aniting/internal/util/result"
 
 	"github.com/dop251/goja"
 	"github.com/goccy/go-json"

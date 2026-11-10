@@ -3,19 +3,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/icons/app_icons.dart';
 import 'package:media_kit_video/media_kit_video.dart';
-import 'package:seanime_app/core/player/media_kit_player_service.dart';
-import 'package:seanime_app/core/preferences/player_gesture_provider.dart';
-import 'package:seanime_app/core/preferences/subtitle_style_preferences_provider.dart';
-import 'package:seanime_app/core/preferences/volume_boost_provider.dart';
-import 'package:seanime_app/presentation/widgets/player/controls/player_bottom_bar.dart';
-import 'package:seanime_app/presentation/widgets/player/controls/player_gesture_overlay.dart';
-import 'package:seanime_app/presentation/widgets/player/controls/player_top_bar.dart';
-import 'package:seanime_app/presentation/widgets/player/models/player_types.dart';
-import 'package:seanime_app/presentation/widgets/player/overlays/performance_stats_overlay.dart';
-import 'package:seanime_app/presentation/widgets/player/overlays/seek_feedback_toast.dart';
+import 'package:aniting/core/player/media_kit_player_service.dart';
+import 'package:aniting/core/preferences/player_gesture_provider.dart';
+import 'package:aniting/core/preferences/subtitle_style_preferences_provider.dart';
+import 'package:aniting/core/preferences/volume_boost_provider.dart';
+import 'package:aniting/presentation/widgets/player/controls/player_bottom_bar.dart';
+import 'package:aniting/presentation/widgets/player/controls/player_gesture_overlay.dart';
+import 'package:aniting/presentation/widgets/player/controls/player_top_bar.dart';
+import 'package:aniting/presentation/widgets/player/models/player_types.dart';
+import 'package:aniting/presentation/widgets/player/overlays/performance_stats_overlay.dart';
+import 'package:aniting/presentation/widgets/player/overlays/seek_feedback_toast.dart';
 
 /// The core visual viewport stack of the video player:
 /// renders video frames, gesture detection, toasts, stats overlay,
@@ -40,6 +40,15 @@ class PlayerViewport extends ConsumerWidget {
   final VoidCallback onToggleFullscreen;
   final bool isFullscreen;
   final bool isDesktop;
+
+  /// Mobile "chill mode": hides every control except the unlock button and
+  /// disables player gestures.
+  final bool isPlayerLocked;
+  final VoidCallback? onTogglePlayerLock;
+
+  /// Extra top inset used when the player chrome is flush with the window edge
+  /// (wide / cinema desktop), so controls never sit behind the custom titlebar.
+  final double topUiInset;
 
   // Volume & Brightness
   final double volume;
@@ -101,6 +110,7 @@ class PlayerViewport extends ConsumerWidget {
   final ValueListenable<bool> isPlaying;
   final bool hasNextEpisode;
   final VoidCallback? onNextEpisode;
+  final VoidCallback? onPreviousEpisode;
   final List<UiTrack> audioTracks;
   final List<UiTrack> subtitleTracks;
   final String? selectedAudioTrackId;
@@ -125,6 +135,9 @@ class PlayerViewport extends ConsumerWidget {
     required this.onToggleFullscreen,
     required this.isFullscreen,
     required this.isDesktop,
+    this.isPlayerLocked = false,
+    this.onTogglePlayerLock,
+    this.topUiInset = 0,
     required this.volume,
     required this.onVolumeChanged,
     this.onVolumeHoverChanged,
@@ -165,6 +178,7 @@ class PlayerViewport extends ConsumerWidget {
     required this.isPlaying,
     required this.hasNextEpisode,
     this.onNextEpisode,
+    this.onPreviousEpisode,
     this.audioTracks = const [],
     this.subtitleTracks = const [],
     this.selectedAudioTrackId,
@@ -182,6 +196,10 @@ class PlayerViewport extends ConsumerWidget {
     final subStyle = ref.watch(subtitleStylePreferencesProvider);
     final showLoadingArtwork =
         showLoadingOverlay && loadingBackgroundImage != null;
+    final showInVideoBack =
+        isTheaterMode ||
+        layoutMode == PlayerLayoutMode.wide ||
+        !(isDesktop && !isFullscreen);
 
     return ColoredBox(
       color: Colors.transparent,
@@ -228,18 +246,20 @@ class PlayerViewport extends ConsumerWidget {
                 title: loadingTitle,
                 message: loadingMessage,
                 showArtwork: showLoadingArtwork,
-                onBack: onBack,
+                onBack: showInVideoBack ? onBack : null,
+                topInset: topUiInset,
               ),
             ),
 
           // 2. Gesture Detection Overlay
-          if (!showLoadingOverlay)
+          if (!showLoadingOverlay && !isPlayerLocked)
             RepaintBoundary(
               child: ValueListenableBuilder<Duration>(
                 valueListenable: positionNotifier,
                 builder: (context, pos, _) {
                   return PlayerGestureOverlay(
-                    gesturesEnabled: ref.watch(playerGesturesProvider),
+                    gesturesEnabled:
+                        ref.watch(playerGesturesProvider) && !isPlayerLocked,
                     volumeBoostEnabled: ref.watch(volumeBoostProvider),
                     onToggleControls: onToggleControls,
                     onDoubleTapPlayPause: onPlayOrPause,
@@ -258,14 +278,16 @@ class PlayerViewport extends ConsumerWidget {
               ),
             ),
 
-          // 3. Center Buffering / Next Episode Loading Indicator (Material 3 Expressive Morphing Indicator)
-          if ((isBuffering || isLoadingNextEpisode) && !showLoadingOverlay)
-            Center(
-              child: M3ELoadingIndicator(
-                variant: M3ELoadingIndicatorVariant.contained,
-                size: 52,
-                color: theme.colorScheme.tertiary,
-              ),
+          // 3b. Mobile center controls: previous / play-pause / next
+          if (!isDesktop && !showLoadingOverlay && !isPlayerLocked)
+            _MobileCenterControls(
+              visible: areControlsVisible && !isTransitioningOrientation,
+              isPlaying: isPlaying,
+              onPlayOrPause: onPlayOrPause,
+              onPreviousEpisode: onPreviousEpisode,
+              onNextEpisode: onNextEpisode,
+              iconPack: iconPack,
+              l10n: l10n,
             ),
 
           // 4. Seek Feedback Toast (+10s / -10s)
@@ -445,10 +467,10 @@ class PlayerViewport extends ConsumerWidget {
           if (!showLoadingOverlay)
             RepaintBoundary(
               child: _ControlsOverlay(
-                areControlsVisible: areControlsVisible,
+                areControlsVisible: areControlsVisible && !isPlayerLocked,
                 isTransitioningOrientation: isTransitioningOrientation,
                 topBar: Positioned(
-                  top: 0,
+                  top: topUiInset,
                   left: 0,
                   right: 0,
                   child: RepaintBoundary(
@@ -461,15 +483,13 @@ class PlayerViewport extends ConsumerWidget {
                       onOpenSettings: onOpenSettings,
                       isFullscreen: isFullscreen,
                       onToggleTheaterMode: onToggleTheaterMode,
-                      isTheaterMode: isTheaterMode,
                       layoutMode: layoutMode,
                       onShowEpisodes: onShowEpisodes,
+                      onToggleFullscreen: onToggleFullscreen,
+                      onTogglePlayerLock: onTogglePlayerLock,
                       // Wide mode has no page header, so the overlay top bar
                       // takes over the back button and the title there.
-                      showBackButton:
-                          isTheaterMode ||
-                          layoutMode == PlayerLayoutMode.wide ||
-                          !(isDesktop && !isFullscreen),
+                      showBackButton: showInVideoBack,
                       showTitle:
                           isFullscreen || layoutMode == PlayerLayoutMode.wide,
                     ),
@@ -515,6 +535,44 @@ class PlayerViewport extends ConsumerWidget {
                 ),
               ),
             ),
+
+          // 10. Buffering / next-episode spinner, painted above the controls so
+          // it is never hidden behind the center play/pause buttons.
+          if ((isBuffering || isLoadingNextEpisode) && !showLoadingOverlay)
+            IgnorePointer(
+              child: Center(
+                child: M3ELoadingIndicator(
+                  variant: M3ELoadingIndicatorVariant.contained,
+                  size: 52,
+                  color: theme.colorScheme.tertiary,
+                ),
+              ),
+            ),
+
+          // 11. Mobile lock: only the unlock button stays interactive.
+          if (isPlayerLocked)
+            Positioned(
+              top: topUiInset + 10,
+              right: 14,
+              child: SafeArea(
+                top: true,
+                bottom: false,
+                left: false,
+                right: false,
+                child: IconButton(
+                  tooltip: l10n.unlockScreen,
+                  onPressed: onTogglePlayerLock,
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.black.withValues(alpha: 0.52),
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size(42, 42),
+                    padding: EdgeInsets.zero,
+                    shape: const CircleBorder(),
+                  ),
+                  icon: Icon(AppIcons.lock(iconPack), size: 19),
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -556,6 +614,7 @@ class _LoadingArtwork extends ConsumerStatefulWidget {
   final String message;
   final bool showArtwork;
   final VoidCallback? onBack;
+  final double topInset;
 
   const _LoadingArtwork({
     required this.backgroundImage,
@@ -564,6 +623,7 @@ class _LoadingArtwork extends ConsumerStatefulWidget {
     required this.message,
     required this.showArtwork,
     this.onBack,
+    this.topInset = 0,
   });
 
   @override
@@ -665,7 +725,7 @@ class _LoadingArtworkState extends ConsumerState<_LoadingArtwork>
           ),
           if (widget.onBack != null)
             Positioned(
-              top: 12,
+              top: 12 + widget.topInset,
               left: 12,
               child: SafeArea(
                 child: IconButton(
@@ -735,6 +795,109 @@ class _ControlsOverlayState extends State<_ControlsOverlay> {
             if (_controlsMounted) widget.topBar,
             if (_controlsMounted) widget.bottomBar,
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Large previous / play-pause / next controls shown in the middle of the
+/// mobile player. The bottom bar is reserved for the timeline only.
+class _MobileCenterControls extends StatelessWidget {
+  final bool visible;
+  final ValueListenable<bool> isPlaying;
+  final VoidCallback onPlayOrPause;
+  final VoidCallback? onPreviousEpisode;
+  final VoidCallback? onNextEpisode;
+  final AppIconPack iconPack;
+  final AppTranslations l10n;
+
+  const _MobileCenterControls({
+    required this.visible,
+    required this.isPlaying,
+    required this.onPlayOrPause,
+    required this.onPreviousEpisode,
+    required this.onNextEpisode,
+    required this.iconPack,
+    required this.l10n,
+  });
+
+  Widget _button({
+    required IconData icon,
+    required String tooltip,
+    required VoidCallback? onPressed,
+    required double size,
+    required double iconSize,
+    bool disabled = false,
+  }) {
+    return IconButton(
+      tooltip: tooltip,
+      onPressed: onPressed,
+      style: IconButton.styleFrom(
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        padding: EdgeInsets.zero,
+        minimumSize: Size(size, size),
+        backgroundColor: Colors.black.withValues(alpha: disabled ? 0.24 : 0.48),
+        hoverColor: Colors.white.withValues(alpha: 0.12),
+        highlightColor: Colors.white.withValues(alpha: 0.18),
+        disabledBackgroundColor: Colors.black.withValues(alpha: 0.24),
+        shape: const CircleBorder(),
+      ),
+      icon: Icon(
+        icon,
+        color: disabled ? Colors.white30 : Colors.white,
+        size: iconSize,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      ignoring: !visible,
+      child: AnimatedOpacity(
+        opacity: visible ? 1.0 : 0.0,
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOutCubic,
+        child: Center(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _button(
+                icon: AppIcons.skipPrevious(iconPack),
+                tooltip: l10n.previousEpisode,
+                onPressed: onPreviousEpisode,
+                size: 46,
+                iconSize: 24,
+                disabled: onPreviousEpisode == null,
+              ),
+              const SizedBox(width: 24),
+              ValueListenableBuilder<bool>(
+                valueListenable: isPlaying,
+                builder: (context, playing, _) {
+                  return _button(
+                    icon: playing
+                        ? AppIcons.pause(iconPack)
+                        : AppIcons.play(iconPack),
+                    tooltip: playing ? l10n.pause : l10n.play,
+                    onPressed: onPlayOrPause,
+                    size: 58,
+                    iconSize: 32,
+                  );
+                },
+              ),
+              if (onNextEpisode != null) ...[
+                const SizedBox(width: 24),
+                _button(
+                  icon: AppIcons.skipNext(iconPack),
+                  tooltip: l10n.nextEpisode,
+                  onPressed: onNextEpisode,
+                  size: 46,
+                  iconSize: 24,
+                ),
+              ],
+            ],
+          ),
         ),
       ),
     );

@@ -1,10 +1,10 @@
-package anilist
+﻿package anilist
 
 import (
 	"context"
 	"errors"
 	"github.com/rs/zerolog"
-	"seanime/internal/util/limiter"
+	"aniting/internal/util/limiter"
 	"sync"
 )
 

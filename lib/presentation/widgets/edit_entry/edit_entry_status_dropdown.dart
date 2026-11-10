@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:g1455/g1455.dart';
-import 'package:seanime_app/core/i18n/translations/translations.dart';
+import 'package:aniting/core/i18n/translations/translations.dart';
 
 class EditEntryStatusItem {
   final String key;

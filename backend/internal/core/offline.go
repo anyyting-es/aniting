@@ -1,9 +1,9 @@
-package core
+﻿package core
 
 import (
-	"seanime/internal/api/metadata_provider"
-	"seanime/internal/platforms/anilist_platform"
-	"seanime/internal/platforms/offline_platform"
+	"aniting/internal/api/metadata_provider"
+	"aniting/internal/platforms/anilist_platform"
+	"aniting/internal/platforms/offline_platform"
 
 	"github.com/spf13/viper"
 )

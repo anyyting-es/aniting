@@ -1,8 +1,8 @@
-import 'dart:math' as math;
+﻿import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
-import 'package:seanime_app/core/theme/app_dpad_navigator.dart';
+import 'package:aniting/core/theme/app_dpad_navigator.dart';
 
 import '../../settings_screen.dart';
 import '../settings_dpad_focus.dart';

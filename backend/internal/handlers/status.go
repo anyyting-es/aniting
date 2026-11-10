@@ -1,4 +1,4 @@
-package handlers
+﻿package handlers
 
 import (
 	"fmt"
@@ -7,13 +7,13 @@ import (
 	"path/filepath"
 	"runtime"
 	"runtime/pprof"
-	"seanime/internal/constants"
-	"seanime/internal/core"
-	"seanime/internal/database/models"
-	"seanime/internal/report"
-	"seanime/internal/user"
-	"seanime/internal/util"
-	"seanime/internal/util/result"
+	"aniting/internal/constants"
+	"aniting/internal/core"
+	"aniting/internal/database/models"
+	"aniting/internal/report"
+	"aniting/internal/user"
+	"aniting/internal/util"
+	"aniting/internal/util/result"
 	"slices"
 	"strconv"
 	"strings"
@@ -237,7 +237,7 @@ func (h *Handler) HandleGetLogFilenames(c echo.Context) error {
 			return strings.Compare(j, i)
 		})
 		for _, filename := range filenames {
-			if strings.HasPrefix(strings.ToLower(filename), "seanime-") {
+			if strings.HasPrefix(strings.ToLower(filename), "aniting-") {
 				newestLogFilename = filename
 				break
 			}
@@ -312,7 +312,7 @@ func (h *Handler) HandleDeleteLogs(c echo.Context) error {
 // HandleGetLatestLogContent
 //
 //	@summary returns the content of the latest server log file.
-//	@desc This returns the content of the most recent seanime- log file after flushing logs.
+//	@desc This returns the content of the most recent aniting- log file after flushing logs.
 //	@route /api/v1/logs/latest [GET]
 //	@returns string
 func (h *Handler) HandleGetLatestLogContent(c echo.Context) error {
@@ -343,7 +343,7 @@ func (h *Handler) HandleGetLatestLogContent(c echo.Context) error {
 			continue
 		}
 		name := entry.Name()
-		if filepath.Ext(name) != ".log" || !strings.HasPrefix(strings.ToLower(name), "seanime-") {
+		if filepath.Ext(name) != ".log" || !strings.HasPrefix(strings.ToLower(name), "aniting-") {
 			continue
 		}
 		logFiles = append(logFiles, filepath.Join(h.App.Config.Logs.Dir, name))
@@ -375,30 +375,6 @@ func (h *Handler) HandleGetLatestLogContent(c echo.Context) error {
 	})
 
 	return h.RespondWithData(c, content)
-}
-
-// HandleGetAnnouncements
-//
-//	@summary returns the server announcements.
-//	@desc This returns the announcements for the server.
-//	@route /api/v1/announcements [POST]
-//	@returns []updater.Announcement
-func (h *Handler) HandleGetAnnouncements(c echo.Context) error {
-	type body struct {
-		Platform string `json:"platform"`
-	}
-
-	var b body
-	if err := c.Bind(&b); err != nil {
-		return h.RespondWithError(c, err)
-	}
-
-	settings, _ := h.App.Database.GetSettings()
-
-	announcements := h.App.Updater.GetAnnouncements(h.App.Version, b.Platform, settings)
-
-	return h.RespondWithData(c, announcements)
-
 }
 
 type MemoryStatsResponse struct {
@@ -514,10 +490,10 @@ func (h *Handler) HandleGetMemoryProfile(c echo.Context) error {
 	var err error
 
 	if heap {
-		filename = fmt.Sprintf("seanime-heap-profile-%s.pprof", timestamp)
+		filename = fmt.Sprintf("aniting-heap-profile-%s.pprof", timestamp)
 		profile = pprof.Lookup("heap")
 	} else if allocs {
-		filename = fmt.Sprintf("seanime-allocs-profile-%s.pprof", timestamp)
+		filename = fmt.Sprintf("aniting-allocs-profile-%s.pprof", timestamp)
 		profile = pprof.Lookup("allocs")
 	}
 
@@ -553,7 +529,7 @@ func (h *Handler) HandleGetGoRoutineProfile(c echo.Context) error {
 	}
 
 	timestamp := time.Now().Format("2006-01-02_15-04-05")
-	filename := fmt.Sprintf("seanime-goroutine-profile-%s.pprof", timestamp)
+	filename := fmt.Sprintf("aniting-goroutine-profile-%s.pprof", timestamp)
 
 	profile := pprof.Lookup("goroutine")
 	if profile == nil {
@@ -594,7 +570,7 @@ func (h *Handler) HandleGetCPUProfile(c echo.Context) error {
 	}
 
 	timestamp := time.Now().Format("2006-01-02_15-04-05")
-	filename := fmt.Sprintf("seanime-cpu-profile-%s.pprof", timestamp)
+	filename := fmt.Sprintf("aniting-cpu-profile-%s.pprof", timestamp)
 
 	c.Response().Header().Set("Content-Type", "application/octet-stream")
 	c.Response().Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))

@@ -1,4 +1,4 @@
-package filesystem
+﻿package filesystem
 
 import (
 	"errors"
@@ -6,7 +6,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"seanime/internal/util"
+	"aniting/internal/util"
 	"sort"
 	"strings"
 )

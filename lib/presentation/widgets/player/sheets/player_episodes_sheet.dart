@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
-import 'package:seanime_app/data/models/anime_details.dart';
-import 'package:seanime_app/data/models/anizip_data.dart';
-import 'package:seanime_app/presentation/widgets/player/panels/watch/player_episodes_rail.dart';
+﻿import 'package:flutter/material.dart';
+import 'package:aniting/data/models/anime_details.dart';
+import 'package:aniting/data/models/anizip_data.dart';
+import 'package:aniting/presentation/widgets/player/panels/watch/player_episodes_rail.dart';
 
 /// Presents the episode list in a modal sheet. Used by the desktop watch page
 /// when the window is too narrow to host the side rail, reusing the same

@@ -1,9 +1,9 @@
-package player
+﻿package player
 
 import (
-	"seanime/internal/api/anilist"
-	"seanime/internal/library/anime"
-	"seanime/internal/mkvparser"
+	"aniting/internal/api/anilist"
+	"aniting/internal/library/anime"
+	"aniting/internal/mkvparser"
 
 	"github.com/samber/mo"
 )

@@ -1,8 +1,8 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:seanime_app/core/theme/app_palette.dart';
-import 'package:seanime_app/core/theme/custom_route_transitions.dart';
-import 'package:seanime_app/core/theme/theme_provider.dart';
+import 'package:aniting/core/theme/app_palette.dart';
+import 'package:aniting/core/theme/custom_route_transitions.dart';
+import 'package:aniting/core/theme/theme_provider.dart';
 
 void main() {
   group('Web-Style Page Transitions Tests', () {

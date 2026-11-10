@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:seanime_app/presentation/widgets/dpad_navigation_scope.dart';
+import 'package:aniting/presentation/widgets/dpad_navigation_scope.dart';
 
 void main() {
   testWidgets('DpadNavigationScope moves focus down from TextField on arrowDown', (tester) async {

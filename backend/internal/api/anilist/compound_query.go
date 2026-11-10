@@ -1,9 +1,9 @@
-package anilist
+﻿package anilist
 
 import (
 	"fmt"
 	"github.com/goccy/go-json"
-	"seanime/internal/util"
+	"aniting/internal/util"
 	"strconv"
 )
 

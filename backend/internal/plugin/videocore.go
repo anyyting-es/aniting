@@ -1,18 +1,18 @@
-package plugin
+﻿package plugin
 
 import (
 	"context"
 	"encoding/json"
 	"errors"
-	"seanime/internal/api/anilist"
-	"seanime/internal/database/db_bridge"
-	"seanime/internal/directstream"
-	"seanime/internal/extension"
-	"seanime/internal/mediacore"
-	"seanime/internal/mkvparser"
-	"seanime/internal/player"
-	gojautil "seanime/internal/util/goja"
-	"seanime/internal/util/result"
+	"aniting/internal/api/anilist"
+	"aniting/internal/database/db_bridge"
+	"aniting/internal/directstream"
+	"aniting/internal/extension"
+	"aniting/internal/mediacore"
+	"aniting/internal/mkvparser"
+	"aniting/internal/player"
+	gojautil "aniting/internal/util/goja"
+	"aniting/internal/util/result"
 	"sync"
 	"sync/atomic"
 

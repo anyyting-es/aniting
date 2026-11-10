@@ -1,10 +1,10 @@
-package cassette
+﻿package cassette
 
 import (
 	"bufio"
 	"path/filepath"
-	"seanime/internal/mediastream/videofile"
-	"seanime/internal/util"
+	"aniting/internal/mediastream/videofile"
+	"aniting/internal/util"
 	"strconv"
 	"strings"
 	"sync"

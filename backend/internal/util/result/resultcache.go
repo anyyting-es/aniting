@@ -1,8 +1,8 @@
-package result
+﻿package result
 
 import (
-	"seanime/internal/constants"
-	"seanime/internal/util"
+	"aniting/internal/constants"
+	"aniting/internal/util"
 	"time"
 )
 

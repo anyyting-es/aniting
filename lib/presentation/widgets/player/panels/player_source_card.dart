@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:g1455/g1455.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/data/models/onlinestream_models.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/widgets/player/models/player_types.dart';
-import 'package:seanime_app/presentation/widgets/player/services/player_source_controller.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/core/player/stream_server_label.dart';
+import 'package:aniting/data/models/onlinestream_models.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/widgets/player/models/player_types.dart';
+import 'package:aniting/presentation/widgets/player/services/player_source_controller.dart';
 
 /// Compact playback source card rendered in the player's watch content.
 /// Tapping it opens a small web-style dropdown (g1455 GlassMenuAnchor) listing
@@ -46,23 +47,11 @@ class PlayerSourceCard extends ConsumerWidget {
     this.onSelectProvider,
   });
 
-  String _serverLabel(OnlinestreamVideoSource src) {
-    var name = src.server;
-    const tags = [
-      '[Latino]', '(Latino)', '[Castellano]', '(Castellano)',
-      '[English Dub]', '(English Dub)', '[Dub]', '[DUB]', '(Dub)',
-      '[Sub (Multi)]', '[SUB]', '[Sub]', '(Sub)',
-    ];
-    for (final tag in tags) {
-      name = name.replaceAll(tag, '');
-    }
-    name = name.trim();
-    final label = name.isEmpty ? src.server : name;
-    final quality = (src.quality.isNotEmpty && src.quality != 'auto')
-        ? ' • ${src.quality}'
-        : '';
-    return '$label$quality';
-  }
+  String _serverLabel(OnlinestreamVideoSource src) => formatStreamServerLabel(
+    src.server,
+    quality: src.quality,
+    includeQuality: true,
+  );
 
   bool _isActive(OnlinestreamVideoSource src, OnlinestreamVideoSource? active) {
     if (active == null) return false;
@@ -96,76 +85,40 @@ class PlayerSourceCard extends ConsumerWidget {
 
     final providers = onSelectProvider == null
         ? const <OnlinestreamProvider>[]
-        : ref.watch(onlinestreamProvidersProvider).maybeWhen(
-              data: (p) => p,
-              orElse: () => const <OnlinestreamProvider>[],
-            );
+        : ref
+              .watch(onlinestreamProvidersProvider)
+              .maybeWhen(
+                data: (p) => p,
+                orElse: () => const <OnlinestreamProvider>[],
+              );
 
     if (sources.isEmpty && providers.length <= 1) {
       return _buildCardSurface(context, ref, onTap: onReloadSources);
     }
 
-    return MenuAnchor(
-      menuChildren: [
-        if (providers.length > 1) ...[
-          for (final p in providers)
-            MenuItemButton(
-              onPressed: () {
-                HapticFeedback.lightImpact();
-                final isSel = providerName != null &&
-                    (providerName!.toLowerCase() == p.id.toLowerCase() ||
-                        providerName!.toLowerCase() == p.name.toLowerCase());
-                if (!isSel) onSelectProvider!.call(p.id);
-              },
-              leadingIcon: Icon(
-                _isProviderSelected(p)
-                    ? AppIcons.check(iconPack)
-                    : AppIcons.stream(iconPack),
-                size: 18,
-              ),
-              child: Text(p.name.isNotEmpty ? p.name : p.id),
-            ),
-          const Divider(height: 1),
-        ],
+    return GlassMenuAnchor(
+      width: 300,
+      barrierLabel: l10n.selectServerQuality,
+      items: [
+        // This dropdown is intentionally server-only. Provider switching,
+        // reloading and the dub toggle have their own affordances in the card.
         for (final src in sources)
-          MenuItemButton(
-            onPressed: () {
-              HapticFeedback.lightImpact();
-              if (!_isActive(src, active)) onSelectSource?.call(src);
-            },
-            leadingIcon: Icon(
+          GlassMenuItem(
+            label: _serverLabel(src),
+            icon: Icon(
               _isActive(src, active)
                   ? AppIcons.check(iconPack)
                   : AppIcons.stream(iconPack),
               size: 18,
               color: _isActive(src, active) ? theme.colorScheme.primary : null,
             ),
-            child: Text(_serverLabel(src)),
-          ),
-        if (onReloadSources != null)
-          MenuItemButton(
             onPressed: () {
               HapticFeedback.lightImpact();
-              onReloadSources!.call();
+              if (!_isActive(src, active)) onSelectSource?.call(src);
             },
-            leadingIcon: Icon(AppIcons.refresh(iconPack), size: 18),
-            child: Text(l10n.reloadSourcesTooltip),
-          ),
-        if (onToggleDubbed != null)
-          MenuItemButton(
-            onPressed: () {
-              HapticFeedback.lightImpact();
-              onToggleDubbed!.call();
-            },
-            leadingIcon: Icon(AppIcons.audio(iconPack), size: 18),
-            child: Text(isDubbed ? l10n.audioDubbed : l10n.audioSubtitled),
           ),
       ],
-      builder: (ctx, menu, child) => _buildCardSurface(
-        ctx,
-        ref,
-        onTap: () => menu.isOpen ? menu.close() : menu.open(),
-      ),
+      builder: (ctx, menu) => _buildCardSurface(ctx, ref, onTap: menu.open),
     );
   }
 
@@ -185,27 +138,45 @@ class PlayerSourceCard extends ConsumerWidget {
     final iconPack = ref.watch(iconPackProvider);
 
     final isOnline = playbackOrigin.isSwitchable;
-    final currentIsResolving = isOnline && (controller?.isResolvingSources ?? isResolvingSources);
+    final currentIsResolving =
+        isOnline && (controller?.isResolvingSources ?? isResolvingSources);
     final currentSources = controller?.availableSources ?? availableSources;
     final currentActiveSource = controller?.activeSource ?? activeSource;
-    final currentError = controller?.sourceResolutionError ?? sourceResolutionError;
+    final currentError =
+        controller?.sourceResolutionError ?? sourceResolutionError;
 
-    final hasError = isOnline && currentError != null && currentError.isNotEmpty;
+    final hasError =
+        isOnline && currentError != null && currentError.isNotEmpty;
     final isPlayingActive = isOnline && currentActiveSource != null;
+
+    final providers = !isOnline || onSelectProvider == null
+        ? const <OnlinestreamProvider>[]
+        : ref
+              .watch(onlinestreamProvidersProvider)
+              .maybeWhen(
+                data: (p) => p,
+                orElse: () => const <OnlinestreamProvider>[],
+              );
+    final selectedProvider = providers.where(_isProviderSelected).firstOrNull;
+    final providerLabel = selectedProvider != null
+        ? (selectedProvider.name.isNotEmpty
+              ? selectedProvider.name
+              : selectedProvider.id)
+        : (providerName ?? '');
 
     // Non-online playback (local file / torrent stream) has nothing to select,
     // so it renders an informational, non-interactive card instead.
     final statusIcon = !isOnline
         ? (playbackOrigin == PlayerPlaybackOrigin.local
-            ? AppIcons.downloadOffline(iconPack)
-            : AppIcons.stream(iconPack))
+              ? AppIcons.downloadOffline(iconPack)
+              : AppIcons.stream(iconPack))
         : (hasError ? AppIcons.error(iconPack) : AppIcons.stream(iconPack));
 
     final borderColor = hasError
         ? theme.colorScheme.error.withValues(alpha: 0.5)
         : (currentIsResolving
-            ? theme.colorScheme.primary.withValues(alpha: 0.5)
-            : theme.colorScheme.outlineVariant.withValues(alpha: 0.28));
+              ? theme.colorScheme.primary.withValues(alpha: 0.5)
+              : theme.colorScheme.outlineVariant.withValues(alpha: 0.28));
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
@@ -217,10 +188,7 @@ class PlayerSourceCard extends ConsumerWidget {
           child: Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: borderColor,
-                width: 0.9,
-              ),
+              border: Border.all(color: borderColor, width: 0.9),
             ),
             child: Material(
               color: Colors.transparent,
@@ -228,24 +196,33 @@ class PlayerSourceCard extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(16),
                 onTap: onTap,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   child: Row(
                     children: [
                       // Status icon or loading indicator inside frosted capsule
                       Container(
-                        width: 34,
-                        height: 34,
+                        width: 38,
+                        height: 38,
                         decoration: BoxDecoration(
                           color: hasError
-                              ? theme.colorScheme.errorContainer.withValues(alpha: 0.45)
+                              ? theme.colorScheme.errorContainer.withValues(
+                                  alpha: 0.45,
+                                )
                               : (currentIsResolving
-                                  ? theme.colorScheme.primaryContainer.withValues(alpha: 0.35)
-                                  : theme.colorScheme.primaryContainer.withValues(alpha: 0.7)),
-                          borderRadius: BorderRadius.circular(10),
+                                    ? theme.colorScheme.primaryContainer
+                                          .withValues(alpha: 0.35)
+                                    : theme.colorScheme.primaryContainer
+                                          .withValues(alpha: 0.7)),
+                          borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color: hasError
                                 ? theme.colorScheme.error.withValues(alpha: 0.3)
-                                : theme.colorScheme.primary.withValues(alpha: 0.2),
+                                : theme.colorScheme.primary.withValues(
+                                    alpha: 0.2,
+                                  ),
                             width: 0.8,
                           ),
                         ),
@@ -261,7 +238,7 @@ class PlayerSourceCard extends ConsumerWidget {
                                 )
                               : Icon(
                                   statusIcon,
-                                  size: 19,
+                                  size: 21,
                                   color: hasError
                                       ? theme.colorScheme.error
                                       : theme.colorScheme.primary,
@@ -283,26 +260,25 @@ class PlayerSourceCard extends ConsumerWidget {
                                     currentIsResolving
                                         ? l10n.searchingSources
                                         : (isPlayingActive
-                                            ? () {
-                                                final srv = currentActiveSource.server;
-                                                if (srv.contains('[Latino]')) return '${srv.replaceAll(' [Latino]', '')} • LATINO';
-                                                if (srv.contains('[Castellano]')) return '${srv.replaceAll(' [Castellano]', '')} • CASTELLANO';
-                                                if (srv.contains('[English Dub]')) return '${srv.replaceAll(' [English Dub]', '')} • ENGLISH';
-                                                if (srv.contains('[SUB]')) return '${srv.replaceAll(' [SUB]', '')} • SUB (MULTI)';
-                                                if (srv.contains('[Sub]')) return '${srv.replaceAll(' [Sub]', '')} • SUB';
-                                                return srv.toUpperCase();
-                                              }()
-                                            : (hasError
-                                                ? l10n.noSourcesFoundForEpisode
-                                                : (isOnline
-                                                    ? l10n.playbackSources
-                                                    : playbackOrigin.localizedTitle(l10n)))),
+                                              ? formatStreamServerLabel(
+                                                  currentActiveSource.server,
+                                                ).toUpperCase()
+                                              : (hasError
+                                                    ? l10n.noSourcesFoundForEpisode
+                                                    : (isOnline
+                                                          ? l10n.playbackSources
+                                                          : playbackOrigin
+                                                                .localizedTitle(
+                                                                  l10n,
+                                                                )))),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
-                                      fontSize: 13.5,
-                                      color: hasError ? theme.colorScheme.error : theme.colorScheme.onSurface,
+                                      fontSize: 14.5,
+                                      color: hasError
+                                          ? theme.colorScheme.error
+                                          : theme.colorScheme.onSurface,
                                     ),
                                   ),
                                 ),
@@ -311,12 +287,17 @@ class PlayerSourceCard extends ConsumerWidget {
                                     currentActiveSource.quality != 'auto') ...[
                                   const SizedBox(width: 6),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 5.5, vertical: 1.5),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 5.5,
+                                      vertical: 1.5,
+                                    ),
                                     decoration: BoxDecoration(
-                                      color: theme.colorScheme.primary.withValues(alpha: 0.14),
+                                      color: theme.colorScheme.primary
+                                          .withValues(alpha: 0.14),
                                       borderRadius: BorderRadius.circular(5),
                                       border: Border.all(
-                                        color: theme.colorScheme.primary.withValues(alpha: 0.3),
+                                        color: theme.colorScheme.primary
+                                            .withValues(alpha: 0.3),
                                         width: 0.7,
                                       ),
                                     ),
@@ -330,35 +311,59 @@ class PlayerSourceCard extends ConsumerWidget {
                                     ),
                                   ),
                                 ],
-                                if (isOnline &&
-                                    providerName != null &&
-                                    providerName!.isNotEmpty) ...[
+                                if (isOnline && providerLabel.isNotEmpty) ...[
                                   const SizedBox(width: 6),
-                                  Text(
-                                    '• $providerName',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w500,
-                                      color: theme.colorScheme.onSurfaceVariant,
-                                    ),
+                                  _ProviderChip(
+                                    label: providerLabel,
+                                    providers: providers,
+                                    providerName: providerName,
+                                    onSelectProvider: onSelectProvider,
+                                    iconPack: iconPack,
+                                    tooltip: l10n.changeProvider,
                                   ),
                                 ],
                                 if (isOnline) ...[
                                   const SizedBox(width: 6),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                                    decoration: BoxDecoration(
-                                      color: isDubbed
-                                          ? theme.colorScheme.primary.withValues(alpha: 0.16)
-                                          : Colors.white.withValues(alpha: 0.08),
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: Text(
-                                      isDubbed ? l10n.dub.toUpperCase() : l10n.sub.toUpperCase(),
-                                      style: TextStyle(
-                                        fontSize: 9.5,
-                                        fontWeight: FontWeight.bold,
-                                        color: isDubbed ? theme.colorScheme.primary : Colors.white70,
+                                  Tooltip(
+                                    message: isDubbed
+                                        ? l10n.audioDubbed
+                                        : l10n.audioSubtitled,
+                                    child: GestureDetector(
+                                      behavior: HitTestBehavior.opaque,
+                                      onTap: onToggleDubbed == null
+                                          ? null
+                                          : () {
+                                              HapticFeedback.lightImpact();
+                                              onToggleDubbed!();
+                                            },
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 5,
+                                          vertical: 1,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: isDubbed
+                                              ? theme.colorScheme.primary
+                                                    .withValues(alpha: 0.16)
+                                              : Colors.white.withValues(
+                                                  alpha: 0.08,
+                                                ),
+                                          borderRadius: BorderRadius.circular(
+                                            4,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          isDubbed
+                                              ? l10n.dub.toUpperCase()
+                                              : l10n.sub.toUpperCase(),
+                                          style: TextStyle(
+                                            fontSize: 9.5,
+                                            fontWeight: FontWeight.bold,
+                                            color: isDubbed
+                                                ? theme.colorScheme.primary
+                                                : Colors.white70,
+                                          ),
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -370,12 +375,13 @@ class PlayerSourceCard extends ConsumerWidget {
                               currentIsResolving
                                   ? '${l10n.searchingSources} • ${l10n.tapToChangeProvider}'
                                   : (hasError
-                                      ? '${l10n.noSourcesFoundForEpisode} • ${l10n.tapToChangeProvider}'
-                                      : (!isOnline
-                                          ? playbackOrigin.localizedSubtitle(l10n)
-                                          : (currentSources.isNotEmpty
-                                              ? '${currentSources.length} ${l10n.availableSourcesCount} • ${l10n.tapToChangeSource}'
-                                              : l10n.tapToChangeProvider))),
+                                        ? '${l10n.noSourcesFoundForEpisode} • ${l10n.tapToChangeProvider}'
+                                        : (!isOnline
+                                              ? playbackOrigin
+                                                    .localizedSubtitle(l10n)
+                                              : (currentSources.isNotEmpty
+                                                    ? '${currentSources.length} ${l10n.availableSourcesCount} • ${l10n.tapToChangeSource}'
+                                                    : l10n.tapToChangeProvider))),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
@@ -413,13 +419,110 @@ class PlayerSourceCard extends ConsumerWidget {
                         Icon(
                           AppIcons.chevronDown(iconPack),
                           size: 20,
-                          color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                          color: theme.colorScheme.onSurfaceVariant.withValues(
+                            alpha: 0.7,
+                          ),
                         ),
                       ],
                     ],
                   ),
                 ),
               ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Small provider chip shown in the source card. Tapping it opens a menu with
+/// the installed providers, keeping provider switching out of the server list.
+class _ProviderChip extends StatelessWidget {
+  final String label;
+  final List<OnlinestreamProvider> providers;
+  final String? providerName;
+  final ValueChanged<String>? onSelectProvider;
+  final AppIconPack iconPack;
+  final String tooltip;
+
+  const _ProviderChip({
+    required this.label,
+    required this.providers,
+    required this.providerName,
+    required this.onSelectProvider,
+    required this.iconPack,
+    required this.tooltip,
+  });
+
+  bool _isSelected(OnlinestreamProvider provider) {
+    final current = providerName?.toLowerCase();
+    if (current == null) return false;
+    return current == provider.id.toLowerCase() ||
+        current == provider.name.toLowerCase();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    if (onSelectProvider == null || providers.isEmpty) {
+      return Text(
+        '• $label',
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w500,
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+      );
+    }
+
+    return GlassMenuAnchor(
+      width: 240,
+      barrierLabel: tooltip,
+      items: [
+        for (final provider in providers)
+          GlassMenuItem(
+            label: provider.name.isNotEmpty ? provider.name : provider.id,
+            icon: Icon(
+              _isSelected(provider)
+                  ? AppIcons.check(iconPack)
+                  : AppIcons.globe(iconPack),
+              size: 18,
+              color: _isSelected(provider) ? theme.colorScheme.primary : null,
+            ),
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              if (!_isSelected(provider)) {
+                onSelectProvider!.call(provider.id);
+              }
+            },
+          ),
+      ],
+      builder: (context, menu) => Tooltip(
+        message: tooltip,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: menu.open,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 1),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '• $label',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+                Icon(
+                  AppIcons.arrowDropDown(iconPack),
+                  size: 14,
+                  color: theme.colorScheme.primary.withValues(alpha: 0.8),
+                ),
+              ],
             ),
           ),
         ),

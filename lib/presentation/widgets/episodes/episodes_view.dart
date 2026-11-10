@@ -1,15 +1,15 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/core/preferences/playback_progress_preferences_provider.dart';
-import 'package:seanime_app/data/models/anime_details.dart';
-import 'package:seanime_app/data/models/anizip_data.dart';
-import 'package:seanime_app/data/models/episode_item.dart';
-import 'package:seanime_app/data/models/tmdb_models.dart';
-import 'package:seanime_app/presentation/providers/episodes_provider.dart';
-import 'package:seanime_app/presentation/widgets/episodes/episode_card.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/core/preferences/playback_progress_preferences_provider.dart';
+import 'package:aniting/data/models/anime_details.dart';
+import 'package:aniting/data/models/anizip_data.dart';
+import 'package:aniting/data/models/episode_item.dart';
+import 'package:aniting/data/models/tmdb_models.dart';
+import 'package:aniting/presentation/providers/episodes_provider.dart';
+import 'package:aniting/presentation/widgets/episodes/episode_card.dart';
 
 /// Universal Episodes View supporting Grid and List layouts,
 /// season filtering (for TMDB TV Series), source filters, and pagination.

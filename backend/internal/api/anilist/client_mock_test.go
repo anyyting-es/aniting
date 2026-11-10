@@ -4,7 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
-	"seanime/internal/testutil"
+	"aniting/internal/testutil"
 	"strconv"
 	"strings"
 	"testing"
@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const recordCompleteAnimeIDsEnvName = "SEANIME_TEST_RECORD_COMPLETE_ANIME_IDS"
+const recordCompleteAnimeIDsEnvName = "ANITING_TEST_RECORD_COMPLETE_ANIME_IDS"
 
 func TestMaybeWriteJSONFixtureCreatesDirectories(t *testing.T) {
 	t.Setenv(testutil.RecordAnilistFixturesEnvName, "true")

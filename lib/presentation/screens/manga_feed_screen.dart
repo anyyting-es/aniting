@@ -1,28 +1,28 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/data/models/manga_entry.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/screens/downloads_screen.dart';
-import 'package:seanime_app/presentation/screens/manga_detail_screen.dart';
-import 'package:seanime_app/presentation/widgets/compact_search_bar.dart';
-import 'package:seanime_app/presentation/widgets/continue_reading_card.dart';
-import 'package:seanime_app/presentation/widgets/feed_empty_state.dart';
-import 'package:seanime_app/presentation/widgets/manga_card.dart';
-import 'package:seanime_app/core/preferences/title_language_provider.dart';
-import 'package:seanime_app/presentation/widgets/anime_preview/show_preview_data.dart';
-import 'package:seanime_app/presentation/widgets/anime_preview/show_quick_view_detector.dart';
-import 'package:seanime_app/presentation/widgets/server_status_banner.dart';
-import 'package:seanime_app/presentation/widgets/feed/smooth_focus_carousel.dart';
-import 'package:seanime_app/presentation/widgets/snapping_scroll_physics.dart';
-import 'package:seanime_app/presentation/widgets/top_status_bar_glass.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/data/models/manga_entry.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/screens/downloads_screen.dart';
+import 'package:aniting/presentation/screens/manga_detail_screen.dart';
+import 'package:aniting/presentation/widgets/compact_search_bar.dart';
+import 'package:aniting/presentation/widgets/continue_reading_card.dart';
+import 'package:aniting/presentation/widgets/feed_empty_state.dart';
+import 'package:aniting/presentation/widgets/manga_card.dart';
+import 'package:aniting/core/preferences/title_language_provider.dart';
+import 'package:aniting/presentation/widgets/anime_preview/show_preview_data.dart';
+import 'package:aniting/presentation/widgets/anime_preview/show_quick_view_detector.dart';
+import 'package:aniting/presentation/widgets/server_status_banner.dart';
+import 'package:aniting/presentation/widgets/feed/smooth_focus_carousel.dart';
+import 'package:aniting/presentation/widgets/snapping_scroll_physics.dart';
+import 'package:aniting/presentation/widgets/top_status_bar_glass.dart';
 
-import 'package:seanime_app/core/theme/smooth_scroll_controller.dart';
-import 'package:seanime_app/core/server/server_manager.dart';
-import 'package:seanime_app/data/services/feed_cache_service.dart';
-import 'package:seanime_app/data/services/offline_library_service.dart';
+import 'package:aniting/core/theme/smooth_scroll_controller.dart';
+import 'package:aniting/core/server/server_manager.dart';
+import 'package:aniting/data/services/feed_cache_service.dart';
+import 'package:aniting/data/services/offline_library_service.dart';
 
 class MangaFeedScreen extends ConsumerStatefulWidget {
   final VoidCallback? onOpenSearch;
@@ -187,7 +187,7 @@ class _MangaFeedScreenState extends ConsumerState<MangaFeedScreen> {
 
     final isDesktop = MediaQuery.of(context).size.width >= 720;
     final mangaCardWidth = isDesktop ? 215.0 : 155.0;
-    final carouselHeight = isDesktop ? 375.0 : 290.0;
+    final carouselHeight = ((mangaCardWidth - 12.0) / 0.72) + (isDesktop ? 70.0 : 62.0);
     final carouselSpacing = isDesktop ? 14.0 : 10.0;
     final topPadding = MediaQuery.of(context).padding.top;
 
@@ -318,6 +318,7 @@ class _MangaFeedScreenState extends ConsumerState<MangaFeedScreen> {
                                         child: MangaCard(
                                           entry: item,
                                           heroTag: tag,
+                                          enableQuickPreview: false,
                                           onTap: () {
                                             MangaDetailScreen.navigate(
                                               context,
@@ -414,6 +415,7 @@ class _MangaFeedScreenState extends ConsumerState<MangaFeedScreen> {
                                             entry: item,
                                             width: mangaCardWidth,
                                             heroTag: tag,
+                                            enableQuickPreview: false,
                                             onTap: () {
                                               MangaDetailScreen.navigate(
                                                 context,
@@ -470,6 +472,7 @@ class _MangaFeedScreenState extends ConsumerState<MangaFeedScreen> {
                                             entry: item,
                                             width: mangaCardWidth,
                                             heroTag: tag,
+                                            enableQuickPreview: false,
                                           ),
                                         );
                                       },
@@ -511,6 +514,7 @@ class _MangaFeedScreenState extends ConsumerState<MangaFeedScreen> {
                                           entry: item,
                                           width: mangaCardWidth,
                                           heroTag: tag,
+                                          enableQuickPreview: false,
                                           onTap: () {
                                             MangaDetailScreen.navigate(
                                               context,
@@ -556,7 +560,7 @@ class _MangaFeedScreenState extends ConsumerState<MangaFeedScreen> {
     if (entries.isEmpty) return [];
 
     final cardWidth = isDesktop ? 215.0 : 155.0;
-    final listHeight = isDesktop ? 375.0 : 290.0;
+    final listHeight = ((cardWidth - 12.0) / 0.72) + (isDesktop ? 78.0 : 70.0);
     final spacing = isDesktop ? 14.0 : 10.0;
 
     return [

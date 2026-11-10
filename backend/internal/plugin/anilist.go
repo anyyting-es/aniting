@@ -3,12 +3,12 @@ package plugin
 import (
 	"context"
 	"errors"
-	"seanime/internal/api/anilist"
-	"seanime/internal/extension"
-	"seanime/internal/extension_repo/prompt"
-	"seanime/internal/goja/goja_bindings"
-	"seanime/internal/library/anime"
-	gojautil "seanime/internal/util/goja"
+	"aniting/internal/api/anilist"
+	"aniting/internal/extension"
+	"aniting/internal/extension_repo/prompt"
+	"aniting/internal/goja/goja_bindings"
+	"aniting/internal/library/anime"
+	gojautil "aniting/internal/util/goja"
 
 	"github.com/dop251/goja"
 	"github.com/rs/zerolog"
@@ -190,7 +190,7 @@ func customClientPromptOptions(ext *extension.Extension, config anilist.CustomCl
 		Kind:       "custom-client",
 		Action:     "switch AniList client to \"" + name + "\"",
 		Resource:   "AniList client",
-		Message:    "Allow \"" + ext.Name + "\" to switch Seanime's AniList client to \"" + name + "\"?",
+		Message:    "Allow \"" + ext.Name + "\" to switch Aniting's AniList client to \"" + name + "\"?",
 		Details:    details,
 		AllowLabel: "Switch",
 	}

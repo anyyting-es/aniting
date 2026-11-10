@@ -1,18 +1,18 @@
-package plugin
+﻿package plugin
 
 import (
 	"context"
 	"errors"
 	"path/filepath"
-	"seanime/internal/api/anilist"
-	"seanime/internal/api/metadata"
-	debrid_client "seanime/internal/debrid/client"
-	"seanime/internal/debrid/debrid"
-	"seanime/internal/extension"
-	hibiketorrent "seanime/internal/extension/hibike/torrent"
-	"seanime/internal/goja/goja_bindings"
-	"seanime/internal/torrentstream"
-	gojautil "seanime/internal/util/goja"
+	"aniting/internal/api/anilist"
+	"aniting/internal/api/metadata"
+	debrid_client "aniting/internal/debrid/client"
+	"aniting/internal/debrid/debrid"
+	"aniting/internal/extension"
+	hibiketorrent "aniting/internal/extension/hibike/torrent"
+	"aniting/internal/goja/goja_bindings"
+	"aniting/internal/torrentstream"
+	gojautil "aniting/internal/util/goja"
 
 	"github.com/dop251/goja"
 	"github.com/rs/zerolog"

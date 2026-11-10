@@ -1,15 +1,15 @@
-package plugin
+﻿package plugin
 
 import (
 	"errors"
-	"seanime/internal/database/db"
-	"seanime/internal/database/db_bridge"
-	"seanime/internal/database/models"
-	"seanime/internal/events"
-	"seanime/internal/extension"
-	"seanime/internal/library/anime"
-	"seanime/internal/user"
-	"seanime/internal/util"
+	"aniting/internal/database/db"
+	"aniting/internal/database/db_bridge"
+	"aniting/internal/database/models"
+	"aniting/internal/events"
+	"aniting/internal/extension"
+	"aniting/internal/library/anime"
+	"aniting/internal/user"
+	"aniting/internal/util"
 	"time"
 
 	"github.com/dop251/goja"

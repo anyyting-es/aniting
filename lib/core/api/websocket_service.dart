@@ -1,8 +1,8 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
-import 'package:seanime_app/core/constants/app_constants.dart';
+import 'package:aniting/core/constants/app_constants.dart';
 
 class WebSocketService {
   WebSocketChannel? _channel;

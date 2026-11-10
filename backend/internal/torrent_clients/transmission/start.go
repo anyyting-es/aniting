@@ -1,10 +1,10 @@
-package transmission
+﻿package transmission
 
 import (
 	"context"
 	"errors"
 	"runtime"
-	"seanime/internal/util"
+	"aniting/internal/util"
 	"time"
 )
 

@@ -1,11 +1,11 @@
-package torrentutil
+﻿package torrentutil
 
 import (
 	"context"
 	"fmt"
 	"io"
 	"os"
-	httputil "seanime/internal/util/http"
+	httputil "aniting/internal/util/http"
 	"sync"
 	"sync/atomic"
 	"time"

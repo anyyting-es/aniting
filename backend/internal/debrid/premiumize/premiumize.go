@@ -8,10 +8,10 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
-	"seanime/internal/constants"
-	"seanime/internal/debrid/debrid"
-	"seanime/internal/util"
-	"seanime/internal/util/result"
+	"aniting/internal/constants"
+	"aniting/internal/debrid/debrid"
+	"aniting/internal/util"
+	"aniting/internal/util/result"
 	"strconv"
 	"strings"
 	"time"
@@ -243,7 +243,7 @@ func (p *Premiumize) doQueryCtx(ctx context.Context, method, endpoint string, pa
 	}
 
 	req.Header.Set("Authorization", "Bearer "+apiKey)
-	req.Header.Set("User-Agent", "Seanime/"+constants.Version)
+	req.Header.Set("User-Agent", "Aniting/"+constants.Version)
 	if method != http.MethodGet {
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	}

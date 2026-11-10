@@ -1,10 +1,10 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/presentation/widgets/player/controls/player_bottom_bar.dart';
-import 'package:seanime_app/presentation/widgets/player/controls/player_top_bar.dart';
-import 'package:seanime_app/presentation/widgets/player/controls/timeline_slider.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/presentation/widgets/player/controls/player_bottom_bar.dart';
+import 'package:aniting/presentation/widgets/player/controls/player_top_bar.dart';
+import 'package:aniting/presentation/widgets/player/controls/timeline_slider.dart';
 
 class _MockMaterialIconPackNotifier extends IconPackNotifier {
   @override
@@ -147,6 +147,45 @@ void main() {
       expect(volumeFinder, findsOneWidget);
       final Icon volumeIcon = tester.widget(volumeFinder);
       expect(volumeIcon.size, equals(17.0));
+    });
+
+    testWidgets('mobile bottom bar only renders the timeline and time', (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            iconPackProvider.overrideWith(() => _MockMaterialIconPackNotifier()),
+          ],
+          child: MaterialApp(
+            home: Scaffold(
+              body: PlayerBottomBar(
+                positionNotifier: ValueNotifier(
+                  const Duration(minutes: 10, seconds: 0),
+                ),
+                duration: const Duration(minutes: 24, seconds: 0),
+                bufferNotifier: ValueNotifier(
+                  const Duration(minutes: 15, seconds: 0),
+                ),
+                isPlaying: true,
+                volume: 50.0,
+                onSeek: (_) {},
+                onPlayPause: () {},
+                onNextEpisode: () {},
+                onVolumeChanged: (_) {},
+                onToggleFullscreen: () {},
+                isDesktopOverride: false,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.byType(TimelineSlider), findsOneWidget);
+      expect(find.text('10:00'), findsOneWidget);
+      expect(find.text('24:00'), findsOneWidget);
+      expect(find.byIcon(Icons.play_arrow_rounded), findsNothing);
+      expect(find.byIcon(Icons.pause_rounded), findsNothing);
+      expect(find.byIcon(Icons.skip_next_rounded), findsNothing);
+      expect(find.byIcon(Icons.fullscreen_rounded), findsNothing);
     });
 
     testWidgets('TimelineSlider has 6dp track height and black background track', (tester) async {

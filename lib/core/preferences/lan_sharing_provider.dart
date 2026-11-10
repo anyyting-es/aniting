@@ -3,7 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// Manages the LAN server sharing toggle and server display name.
 ///
-/// When enabled, the local Seanime server binds to `0.0.0.0` (all interfaces)
+/// When enabled, the local Aniting server binds to `0.0.0.0` (all interfaces)
 /// and a UDP beacon is broadcast every 3 seconds so other devices on the same
 /// Wi-Fi can auto-discover and connect to this server.
 class LanSharingNotifier extends Notifier<bool> {

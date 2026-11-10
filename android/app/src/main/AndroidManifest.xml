@@ -48,7 +48,7 @@
         </activity>
 
         <service
-            android:name=".SeanimeServerService"
+            android:name=".AnitingServerService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="dataSync" />

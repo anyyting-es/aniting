@@ -1,19 +1,19 @@
-package local
+﻿package local
 
 import (
-	"seanime/internal/api/anilist"
-	"seanime/internal/api/metadata_provider"
-	"seanime/internal/database/db"
-	"seanime/internal/database/db_bridge"
-	"seanime/internal/database/models"
-	"seanime/internal/events"
-	"seanime/internal/extension"
-	"seanime/internal/library/anime"
-	"seanime/internal/manga"
-	"seanime/internal/platforms/anilist_platform"
-	"seanime/internal/platforms/platform"
-	"seanime/internal/testutil"
-	"seanime/internal/util"
+	"aniting/internal/api/anilist"
+	"aniting/internal/api/metadata_provider"
+	"aniting/internal/database/db"
+	"aniting/internal/database/db_bridge"
+	"aniting/internal/database/models"
+	"aniting/internal/events"
+	"aniting/internal/extension"
+	"aniting/internal/library/anime"
+	"aniting/internal/manga"
+	"aniting/internal/platforms/anilist_platform"
+	"aniting/internal/platforms/platform"
+	"aniting/internal/testutil"
+	"aniting/internal/util"
 	"testing"
 
 	"github.com/stretchr/testify/require"

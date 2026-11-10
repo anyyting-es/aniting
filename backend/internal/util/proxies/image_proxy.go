@@ -1,11 +1,11 @@
-package util
+﻿package util
 
 import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"seanime/internal/security"
-	"seanime/internal/util"
+	"aniting/internal/security"
+	"aniting/internal/util"
 
 	"github.com/imroc/req/v3"
 	"github.com/labstack/echo/v4"

@@ -1,5 +1,5 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'package:seanime_app/data/models/local_file_item.dart';
+﻿import 'package:flutter_test/flutter_test.dart';
+import 'package:aniting/data/models/local_file_item.dart';
 
 void main() {
   group('Local Library AniList Matching Tests', () {

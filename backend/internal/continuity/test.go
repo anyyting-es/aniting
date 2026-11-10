@@ -1,10 +1,10 @@
-package continuity
+﻿package continuity
 
 import (
 	"path/filepath"
-	"seanime/internal/database/db"
-	"seanime/internal/util"
-	"seanime/internal/util/filecache"
+	"aniting/internal/database/db"
+	"aniting/internal/util"
+	"aniting/internal/util/filecache"
 	"testing"
 
 	"github.com/stretchr/testify/require"

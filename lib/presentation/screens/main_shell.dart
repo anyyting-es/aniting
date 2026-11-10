@@ -1,34 +1,35 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/preferences/desktop_nav_style_provider.dart';
-import 'package:seanime_app/core/preferences/mobile_nav_style_provider.dart';
-import 'package:seanime_app/core/preferences/resume_bar_preferences_provider.dart';
-import 'package:seanime_app/core/preferences/section_visibility_provider.dart';
-import 'package:seanime_app/data/models/anime_entry.dart';
-import 'package:seanime_app/data/models/manga_entry.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/screens/airing_calendar_screen.dart';
-import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
-import 'package:seanime_app/presentation/screens/feed_screen.dart';
-import 'package:seanime_app/presentation/screens/library_screen.dart';
-import 'package:seanime_app/presentation/screens/manga_detail_screen.dart';
-import 'package:seanime_app/presentation/screens/manga_feed_screen.dart';
-import 'package:seanime_app/presentation/screens/search_screen.dart';
-import 'package:seanime_app/presentation/screens/settings_screen.dart';
-import 'package:seanime_app/presentation/widgets/desktop_sidebar.dart';
-import 'package:seanime_app/presentation/widgets/floating_resume_bar.dart';
-import 'package:seanime_app/presentation/widgets/mobile_floating_nav.dart';
-import 'package:seanime_app/presentation/providers/app_update_provider.dart';
-import 'package:seanime_app/presentation/widgets/quick_search/feed_quick_search.dart';
-import 'package:seanime_app/presentation/widgets/shell_animated_indexed_stack.dart';
-import 'package:seanime_app/presentation/widgets/update/app_update_dialog.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/preferences/desktop_nav_style_provider.dart';
+import 'package:aniting/core/preferences/mobile_nav_style_provider.dart';
+import 'package:aniting/core/preferences/resume_bar_preferences_provider.dart';
+import 'package:aniting/core/preferences/section_visibility_provider.dart';
+import 'package:aniting/data/models/anime_entry.dart';
+import 'package:aniting/data/models/manga_entry.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/screens/airing_calendar_screen.dart';
+import 'package:aniting/presentation/screens/anime_detail_screen.dart';
+import 'package:aniting/presentation/screens/feed_screen.dart';
+import 'package:aniting/presentation/screens/library_screen.dart';
+import 'package:aniting/presentation/screens/manga_detail_screen.dart';
+import 'package:aniting/presentation/screens/manga_feed_screen.dart';
+import 'package:aniting/presentation/screens/search_screen.dart';
+import 'package:aniting/presentation/screens/settings_screen.dart';
+import 'package:aniting/presentation/widgets/desktop_sidebar.dart';
+import 'package:aniting/presentation/widgets/floating_resume_bar.dart';
+import 'package:aniting/presentation/widgets/mobile_floating_nav.dart';
+import 'package:aniting/presentation/providers/app_update_provider.dart';
+import 'package:aniting/presentation/widgets/quick_search/feed_quick_search.dart';
+import 'package:aniting/presentation/widgets/shell_animated_indexed_stack.dart';
+import 'package:aniting/presentation/widgets/update/app_update_dialog.dart';
 
 enum ShellSection {
   anime,
@@ -48,7 +49,23 @@ class MainShell extends ConsumerStatefulWidget {
 class _MainShellState extends ConsumerState<MainShell> {
   ShellSection _activeSection = ShellSection.anime;
   final ValueNotifier<bool> _isResumeExpandedNotifier = ValueNotifier<bool>(true);
-  late final List<Widget> _pages;
+
+  /// Tabs whose page has actually been built at least once.
+  ///
+  /// An [IndexedStack] builds *every* child, so mounting the whole shell on the
+  /// first frame used to start all five screens — and all five families of
+  /// providers and image decodes — in the same frame the splash handed over.
+  /// That burst was the startup stutter. Inactive tabs now mount on demand (and
+  /// then stay mounted, so their scroll position and state are preserved).
+  final Set<ShellSection> _mountedSections = <ShellSection>{
+    ShellSection.anime,
+  };
+
+  /// One built widget per section, kept stable across rebuilds: an identical
+  /// widget instance makes the parent [Element] skip rebuilding that subtree.
+  final Map<ShellSection, Widget> _pageCache = <ShellSection, Widget>{};
+
+  final List<Timer> _deferredMountTimers = <Timer>[];
 
   /// Guards the command-palette shortcut while its dialog is on screen.
   bool _isQuickSearchOpen = false;
@@ -57,44 +74,93 @@ class _MainShellState extends ConsumerState<MainShell> {
   void initState() {
     super.initState();
     _activeSection = ShellSection.anime;
-    _pages = [
-      RepaintBoundary(
-        child: FeedScreen(
-          onOpenSearch: () {
-            ref.read(searchViewActiveProvider.notifier).state = true;
-            setState(() => _activeSection = ShellSection.explore);
-          },
-          onOpenSettings: _openSettings,
-        ),
-      ),
-      RepaintBoundary(
-        child: MangaFeedScreen(
-          onOpenSearch: () {
-            ref.read(searchViewActiveProvider.notifier).state = true;
-            setState(() => _activeSection = ShellSection.explore);
-          },
-          onOpenSettings: _openSettings,
-        ),
-      ),
-      const RepaintBoundary(child: SearchScreen()),
-      const RepaintBoundary(child: AiringCalendarScreen()),
-      RepaintBoundary(
-        child: LibraryScreen(
-          onOpenSettings: _openSettings,
-        ),
-      ),
-    ];
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkAutoUpdate();
     });
 
+    _scheduleDeferredTabMounts();
+
     HardwareKeyboard.instance.addHandler(_handleGlobalShortcut);
+  }
+
+  /// Mounts the remaining tabs one at a time, after the first paint.
+  ///
+  /// Switching to a tab for the first time then costs nothing visible, while the
+  /// startup burst is spread over seconds instead of landing on the handover
+  /// frame. Heaviest screens (Explore) go last.
+  void _scheduleDeferredTabMounts() {
+    // Widget tests have no real network/disk and pump large chunks of fake time
+    // in one go; waking up every tab there only spawns failing requests.
+    if (Platform.environment.containsKey('FLUTTER_TEST')) return;
+
+    const order = <ShellSection>[
+      ShellSection.manga,
+      ShellSection.calendar,
+      ShellSection.profile,
+      ShellSection.explore,
+    ];
+
+    for (var i = 0; i < order.length; i++) {
+      _deferredMountTimers.add(
+        Timer(Duration(milliseconds: 1200 + (i * 1200)), () {
+          final section = order[i];
+          if (!mounted || _mountedSections.contains(section)) return;
+          setState(() => _mountedSections.add(section));
+        }),
+      );
+    }
+  }
+
+  void _selectSection(ShellSection section) {
+    if (_activeSection == section && _mountedSections.contains(section)) {
+      return;
+    }
+    setState(() {
+      _activeSection = section;
+      _mountedSections.add(section);
+    });
+  }
+
+  Widget _pageFor(ShellSection section) {
+    return _pageCache.putIfAbsent(section, () {
+      switch (section) {
+        case ShellSection.anime:
+          return RepaintBoundary(
+            child: FeedScreen(
+              onOpenSearch: () {
+                ref.read(searchViewActiveProvider.notifier).state = true;
+                _selectSection(ShellSection.explore);
+              },
+              onOpenSettings: _openSettings,
+            ),
+          );
+        case ShellSection.manga:
+          return RepaintBoundary(
+            child: MangaFeedScreen(
+              onOpenSearch: () {
+                ref.read(searchViewActiveProvider.notifier).state = true;
+                _selectSection(ShellSection.explore);
+              },
+              onOpenSettings: _openSettings,
+            ),
+          );
+        case ShellSection.explore:
+          return const RepaintBoundary(child: SearchScreen());
+        case ShellSection.calendar:
+          return const RepaintBoundary(child: AiringCalendarScreen());
+        case ShellSection.profile:
+          return RepaintBoundary(
+            child: LibraryScreen(onOpenSettings: _openSettings),
+          );
+      }
+    });
   }
 
   static bool _hasCheckedForUpdatesOnStartup = false;
 
   Future<void> _checkAutoUpdate() async {
+    if (Platform.environment.containsKey('FLUTTER_TEST')) return;
     if (_hasCheckedForUpdatesOnStartup) return;
     _hasCheckedForUpdatesOnStartup = true;
 
@@ -114,6 +180,10 @@ class _MainShellState extends ConsumerState<MainShell> {
 
   @override
   void dispose() {
+    for (final timer in _deferredMountTimers) {
+      timer.cancel();
+    }
+    _deferredMountTimers.clear();
     HardwareKeyboard.instance.removeHandler(_handleGlobalShortcut);
     _isResumeExpandedNotifier.dispose();
     super.dispose();
@@ -242,6 +312,7 @@ class _MainShellState extends ConsumerState<MainShell> {
 
     if (!availableSections.contains(_activeSection)) {
       _activeSection = availableSections.first;
+      _mountedSections.add(_activeSection);
     }
 
     final activeIndex = availableSections.indexOf(_activeSection);
@@ -249,24 +320,9 @@ class _MainShellState extends ConsumerState<MainShell> {
     final isSidebarActive = isDesktop && desktopNavStyle == DesktopNavStyle.sidebar;
 
     final availablePages = availableSections.map<Widget>((s) {
-      final Widget page;
-      switch (s) {
-        case ShellSection.anime:
-          page = _pages[0];
-          break;
-        case ShellSection.manga:
-          page = _pages[1];
-          break;
-        case ShellSection.explore:
-          page = _pages[2];
-          break;
-        case ShellSection.calendar:
-          page = _pages[3];
-          break;
-        case ShellSection.profile:
-          page = _pages[4];
-          break;
-      }
+      final page = _mountedSections.contains(s)
+          ? _pageFor(s)
+          : const SizedBox.shrink();
       if (isSidebarActive && s != ShellSection.explore) {
         return Padding(
           padding: const EdgeInsets.only(left: 72),
@@ -400,12 +456,12 @@ class _MainShellState extends ConsumerState<MainShell> {
                         if (section == ShellSection.explore) {
                           ref.read(searchViewActiveProvider.notifier).state = false;
                         }
-                        setState(() => _activeSection = section);
+                        _selectSection(section);
                       }
                     },
                     onSearchPressed: () {
                       ref.read(searchViewActiveProvider.notifier).state = false;
-                      setState(() => _activeSection = ShellSection.explore);
+                      _selectSection(ShellSection.explore);
                     },
                     onSettingsPressed: _openSettings,
                     items: desktopSidebarItems,
@@ -443,7 +499,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                     selectedIndex: activeIndex,
                     onDestinationSelected: (idx) {
                       if (idx >= 0 && idx < availableSections.length) {
-                        setState(() => _activeSection = availableSections[idx]);
+                        _selectSection(availableSections[idx]);
                       }
                       _isResumeExpandedNotifier.value = true;
                     },
@@ -487,7 +543,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                   selectedIndex: activeIndex,
                   onDestinationSelected: (idx) {
                     if (idx >= 0 && idx < availableSections.length) {
-                      setState(() => _activeSection = availableSections[idx]);
+                      _selectSection(availableSections[idx]);
                     }
                     _isResumeExpandedNotifier.value = true;
                   },
@@ -522,7 +578,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                   selectedIndex: activeIndex,
                   onDestinationSelected: (idx) {
                     if (idx >= 0 && idx < availableSections.length) {
-                      setState(() => _activeSection = availableSections[idx]);
+                      _selectSection(availableSections[idx]);
                     }
                   },
                   backgroundColor: theme.colorScheme.surfaceContainer,

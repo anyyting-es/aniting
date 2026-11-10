@@ -1,13 +1,13 @@
-import 'package:cached_network_image/cached_network_image.dart';
+﻿import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/preferences/title_language_provider.dart';
-import 'package:seanime_app/core/theme/app_focus_coordinator.dart';
-import 'package:seanime_app/core/theme/app_theme_colors.dart';
-import 'package:seanime_app/core/theme/theme_provider.dart';
-import 'package:seanime_app/data/models/manga_entry.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/preferences/title_language_provider.dart';
+import 'package:aniting/core/theme/app_focus_coordinator.dart';
+import 'package:aniting/core/theme/app_theme_colors.dart';
+import 'package:aniting/core/theme/theme_provider.dart';
+import 'package:aniting/data/models/manga_entry.dart';
 
 class ContinueReadingCard extends ConsumerStatefulWidget {
   final MangaEntry entry;

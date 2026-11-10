@@ -1,23 +1,29 @@
-import 'package:flutter/material.dart';
-import 'package:seanime_app/core/i18n/translations/translations.dart';
 
-/// Selector de fecha con estética Liquid Glass para fechas de inicio y finalización.
+import 'package:flutter/material.dart';
+import 'package:aniting/core/i18n/translations/translations.dart';
+
+/// Campo de fecha compacto estilo web: hover con borde de acento,
+/// botón de limpiar que aparece al pasar el cursor y tipografía mono-espaciada
+/// mediante cifras tabulares para la fecha.
 class EditEntryDatePicker extends StatefulWidget {
   final String label;
-  final DateTime? date;
+  final String? dateLabel; // Fecha ya formateada (yyyy-MM-dd) o null
   final VoidCallback onPick;
   final VoidCallback onClear;
   final AppTranslations l10n;
-  final BorderRadius borderRadius;
+
+  /// Cuando es `true`, usa colores glass translúcidos (blancos alfa)
+  /// adaptados al fondo del preview inmersivo.
+  final bool glass;
 
   const EditEntryDatePicker({
     super.key,
     required this.label,
-    required this.date,
+    required this.dateLabel,
     required this.onPick,
     required this.onClear,
     required this.l10n,
-    this.borderRadius = const BorderRadius.all(Radius.circular(16)),
+    this.glass = false,
   });
 
   @override
@@ -27,28 +33,25 @@ class EditEntryDatePicker extends StatefulWidget {
 class _EditEntryDatePickerState extends State<EditEntryDatePicker> {
   bool _isHovered = false;
 
-  String _formatDate(DateTime d) {
-    return '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final hasDate = widget.date != null;
-    final displayStr = hasDate ? _formatDate(widget.date!) : widget.l10n.selectDate;
+    final hasDate = widget.dateLabel != null;
+    final glass = widget.glass;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(
-          height: 22,
+          height: 18,
           child: Row(
             children: [
               Icon(
                 Icons.calendar_today_rounded,
-                size: 15,
-                color: theme.colorScheme.onSurfaceVariant,
+                size: 12,
+                color: glass
+                    ? Colors.white.withValues(alpha: 0.62)
+                    : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
               ),
               const SizedBox(width: 5),
               Expanded(
@@ -57,17 +60,19 @@ class _EditEntryDatePickerState extends State<EditEntryDatePicker> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: theme.colorScheme.onSurfaceVariant,
-                    fontSize: 12.5,
+                    color: glass
+                        ? Colors.white.withValues(alpha: 0.62)
+                        : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.85),
+                    fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    letterSpacing: -0.1,
+                    letterSpacing: 0.1,
                   ),
                 ),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         MouseRegion(
           onEnter: (_) => setState(() => _isHovered = true),
           onExit: (_) => setState(() => _isHovered = false),
@@ -76,66 +81,73 @@ class _EditEntryDatePickerState extends State<EditEntryDatePicker> {
             behavior: HitTestBehavior.opaque,
             onTap: widget.onPick,
             child: AnimatedContainer(
-              duration: const Duration(milliseconds: 140),
-              height: 46,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
+              duration: const Duration(milliseconds: 150),
+              curve: Curves.easeOut,
+              height: 40,
+              padding: const EdgeInsets.symmetric(horizontal: 11),
               decoration: BoxDecoration(
-                color: isDark
-                    ? theme.colorScheme.surfaceContainerHighest.withValues(alpha: _isHovered ? 0.45 : 0.30)
-                    : (_isHovered ? Colors.white : Colors.white.withValues(alpha: 0.95)),
-                borderRadius: widget.borderRadius,
+                color: glass
+                    ? Colors.white
+                        .withValues(alpha: _isHovered ? 0.10 : 0.06)
+                    : theme.colorScheme.surfaceContainerHigh.withValues(
+                        alpha: theme.brightness == Brightness.dark ? 0.55 : 0.65,
+                      ),
+                borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: _isHovered ? 0.22 : 0.12)
-                      : (_isHovered ? theme.colorScheme.primary.withValues(alpha: 0.4) : Colors.black.withValues(alpha: 0.10)),
-                  width: 1.0,
+                  color: _isHovered && hasDate
+                      ? theme.colorScheme.primary.withValues(alpha: 0.6)
+                      : glass
+                          ? Colors.white.withValues(alpha: 0.16)
+                          : theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+                  width: _isHovered && hasDate ? 1.3 : 1,
                 ),
-                boxShadow: isDark
-                    ? null
-                    : [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.03),
-                          blurRadius: 4,
-                          offset: const Offset(0, 1),
-                        ),
-                      ],
               ),
               child: Row(
                 children: [
-                  Icon(
-                    Icons.calendar_today_rounded,
-                    size: 16,
-                    color: hasDate ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
-                  ),
-                  const SizedBox(width: 9),
                   Expanded(
                     child: Text(
-                      displayStr,
+                      widget.dateLabel ?? widget.l10n.selectDate,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: hasDate ? FontWeight.w600 : FontWeight.w400,
-                        color: hasDate ? theme.colorScheme.onSurface : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.65),
+                        fontSize: 12.5,
+                        fontWeight: hasDate ? FontWeight.w600 : FontWeight.w500,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                        color: hasDate
+                            ? (glass
+                                ? Colors.white.withValues(alpha: 0.95)
+                                : theme.colorScheme.onSurface)
+                            : (glass
+                                ? Colors.white.withValues(alpha: 0.55)
+                                : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6)),
                       ),
                     ),
                   ),
-                  if (hasDate)
-                    Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(10),
-                        onTap: widget.onClear,
-                        child: Padding(
-                          padding: const EdgeInsets.all(4),
-                          child: Icon(
-                            Icons.close_rounded,
-                            size: 16,
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
+                  // Botón de limpiar: solo visible con fecha y al hacer hover.
+                  AnimatedOpacity(
+                    duration: const Duration(milliseconds: 130),
+                    opacity: _isHovered && hasDate ? 1 : 0,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 130),
+                      width: hasDate ? 22 : 0,
+                      child: hasDate
+                          ? GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: _isHovered ? widget.onClear : null,
+                              child: MouseRegion(
+                                cursor: SystemMouseCursors.click,
+                                child: Icon(
+                                  Icons.close_rounded,
+                                  size: 14,
+                                  color: glass
+                                      ? Colors.white.withValues(alpha: 0.75)
+                                      : theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            )
+                          : null,
                     ),
+                  ),
                 ],
               ),
             ),

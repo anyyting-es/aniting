@@ -78,7 +78,7 @@ key.properties
 **/windows/flutter/ephemeral/
 
 # Backend compiled binaries
-backend/seanime
-backend/seanime.exe
-backend/seanime_darwin
-backend/test_seanime.aar
+backend/aniting
+backend/aniting.exe
+backend/aniting_darwin
+backend/test_aniting.aar

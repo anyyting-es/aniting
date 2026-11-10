@@ -1,6 +1,6 @@
-package mediacore
+﻿package mediacore
 
-import "seanime/internal/player"
+import "aniting/internal/player"
 
 type Backend interface {
 	Target() player.Target

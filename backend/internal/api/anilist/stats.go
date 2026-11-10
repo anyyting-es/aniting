@@ -1,8 +1,8 @@
-package anilist
+﻿package anilist
 
 import (
 	"context"
-	"seanime/internal/util"
+	"aniting/internal/util"
 )
 
 type (

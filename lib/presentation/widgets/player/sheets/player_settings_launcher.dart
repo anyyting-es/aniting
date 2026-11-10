@@ -1,7 +1,7 @@
-import 'dart:io' show Platform;
+﻿import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
-import 'package:seanime_app/presentation/widgets/player/models/player_types.dart';
-import 'package:seanime_app/presentation/widgets/player/sheets/player_settings_sheet.dart';
+import 'package:aniting/presentation/widgets/player/models/player_types.dart';
+import 'package:aniting/presentation/widgets/player/sheets/player_settings_sheet.dart';
 
 /// Helper launcher to open the unified PlayerSettingsSheet with responsive layout
 /// calculations (bottom sheet in mobile portrait, docked slide-in drawer on desktop/fullscreen).

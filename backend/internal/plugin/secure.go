@@ -1,10 +1,10 @@
-package plugin
+﻿package plugin
 
 import (
 	"fmt"
-	"seanime/internal/extension"
-	"seanime/internal/extension_repo/prompt"
-	"seanime/internal/util/result"
+	"aniting/internal/extension"
+	"aniting/internal/extension_repo/prompt"
+	"aniting/internal/util/result"
 	"strings"
 )
 

@@ -1,9 +1,9 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:seanime_app/core/theme/app_focus_coordinator.dart';
-import 'package:seanime_app/presentation/widgets/dpad_navigation_scope.dart';
-import 'package:seanime_app/presentation/widgets/feed/smooth_focus_carousel.dart';
+import 'package:aniting/core/theme/app_focus_coordinator.dart';
+import 'package:aniting/presentation/widgets/dpad_navigation_scope.dart';
+import 'package:aniting/presentation/widgets/feed/smooth_focus_carousel.dart';
 
 void main() {
   setUp(() {

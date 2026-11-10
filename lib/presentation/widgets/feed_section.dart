@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
-import 'package:seanime_app/data/models/anime_entry.dart';
-import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
-import 'package:seanime_app/presentation/widgets/anime_card.dart';
+﻿import 'package:flutter/material.dart';
+import 'package:aniting/data/models/anime_entry.dart';
+import 'package:aniting/presentation/screens/anime_detail_screen.dart';
+import 'package:aniting/presentation/widgets/anime_card.dart';
 
 class FeedSection extends StatelessWidget {
   final String title;

@@ -1,8 +1,8 @@
-package handlers
+﻿package handlers
 
 import (
 	"errors"
-	"seanime/internal/customsource"
+	"aniting/internal/customsource"
 
 	"github.com/labstack/echo/v4"
 )

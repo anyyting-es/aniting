@@ -1,16 +1,16 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:seanime_app/core/api/api_client.dart';
-import 'package:seanime_app/data/models/extension_item.dart';
-import 'package:seanime_app/data/repositories/seanime_repository.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/screens/extensions_marketplace_screen.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/api/api_client.dart';
+import 'package:aniting/data/models/extension_item.dart';
+import 'package:aniting/data/repositories/aniting_repository.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/screens/extensions_marketplace_screen.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
 
-class FakeSeanimeRepository extends SeanimeRepository {
-  FakeSeanimeRepository() : super(ApiClient());
+class FakeAnitingRepository extends AnitingRepository {
+  FakeAnitingRepository() : super(ApiClient());
 
   @override
   Future<List<ExtensionItem>> getAllExtensions({bool withUpdates = true}) async {
@@ -97,7 +97,7 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      final fakeRepo = FakeSeanimeRepository();
+      final fakeRepo = FakeAnitingRepository();
 
       await tester.pumpWidget(
         ProviderScope(
@@ -132,7 +132,8 @@ void main() {
       expect(find.text(l10n.animeTorrents), findsWidgets);
       expect(find.text(l10n.manga), findsWidgets);
       expect(find.text(l10n.onlineStreamingTab), findsWidgets);
-      expect(find.text(l10n.tmdbStreamingTab), findsWidgets);
+      // TMDB is compile-time disabled for the AniList-first release.
+      expect(find.text(l10n.tmdbStreamingTab), findsNothing);
 
       // Dynamic extensions rendered from repository (Plugin type extensions are filtered out)
       expect(find.text('AIOStreams'), findsNothing);
@@ -140,13 +141,7 @@ void main() {
       expect(find.text('ACG.RIP'), findsOneWidget);
       expect(find.text('mangadex-provider'), findsOneWidget);
       expect(find.text('EspAnime'), findsOneWidget);
-      expect(find.text('VidSrc TMDB'), findsOneWidget);
-
-      // TMDB-only providers have their own section
-      await tester.tap(find.widgetWithText(FilterChip, l10n.tmdbStreamingTab));
-      await tester.pumpAndSettle();
-      expect(find.text('VidSrc TMDB'), findsOneWidget);
-      expect(find.text('EspAnime'), findsNothing);
+      expect(find.text('VidSrc TMDB'), findsNothing);
 
       // Reset to All Types
       await tester.tap(find.widgetWithText(FilterChip, l10n.allTypes));

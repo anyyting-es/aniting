@@ -1,8 +1,8 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'package:seanime_app/core/media_servers/models/media_server_config.dart';
-import 'package:seanime_app/core/media_servers/models/media_server_item.dart';
-import 'package:seanime_app/core/media_servers/models/media_server_type.dart';
-import 'package:seanime_app/core/media_servers/services/media_server_playback_data.dart';
+﻿import 'package:flutter_test/flutter_test.dart';
+import 'package:aniting/core/media_servers/models/media_server_config.dart';
+import 'package:aniting/core/media_servers/models/media_server_item.dart';
+import 'package:aniting/core/media_servers/models/media_server_type.dart';
+import 'package:aniting/core/media_servers/services/media_server_playback_data.dart';
 
 MediaServerConfig _plex() => MediaServerConfig(
   id: 'server-1',

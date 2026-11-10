@@ -1,12 +1,12 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:g1455/g1455.dart';
 
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/i18n/translations/es.dart';
-import 'package:seanime_app/data/models/onlinestream_models.dart';
-import 'package:seanime_app/presentation/widgets/player/dialogs/player_source_picker.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/i18n/translations/es.dart';
+import 'package:aniting/data/models/onlinestream_models.dart';
+import 'package:aniting/presentation/widgets/player/dialogs/player_source_picker.dart';
 
 void main() {
   testWidgets('source picker loads provider sources and returns a selection',

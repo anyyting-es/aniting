@@ -1,9 +1,9 @@
-package autodownloader
+﻿package autodownloader
 
 import (
 	"regexp"
-	"seanime/internal/library/anime"
-	"seanime/internal/util"
+	"aniting/internal/library/anime"
+	"aniting/internal/util"
 	"strings"
 
 	"github.com/samber/lo"

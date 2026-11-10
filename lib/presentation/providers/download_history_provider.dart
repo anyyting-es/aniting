@@ -1,8 +1,8 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
 
 class DownloadHistoryItem {
   final String id;

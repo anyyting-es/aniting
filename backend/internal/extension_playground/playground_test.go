@@ -1,17 +1,17 @@
-package extension_playground
+﻿package extension_playground
 
 import (
 	"encoding/json"
 	"fmt"
-	metadataapi "seanime/internal/api/metadata"
-	"seanime/internal/api/metadata_provider"
-	"seanime/internal/extension"
-	hibikemanga "seanime/internal/extension/hibike/manga"
-	hibikeonlinestream "seanime/internal/extension/hibike/onlinestream"
-	hibiketorrent "seanime/internal/extension/hibike/torrent"
-	"seanime/internal/platforms/platform"
-	"seanime/internal/testmocks"
-	"seanime/internal/util"
+	metadataapi "aniting/internal/api/metadata"
+	"aniting/internal/api/metadata_provider"
+	"aniting/internal/extension"
+	hibikemanga "aniting/internal/extension/hibike/manga"
+	hibikeonlinestream "aniting/internal/extension/hibike/onlinestream"
+	hibiketorrent "aniting/internal/extension/hibike/torrent"
+	"aniting/internal/platforms/platform"
+	"aniting/internal/testmocks"
+	"aniting/internal/util"
 	"testing"
 
 	"github.com/stretchr/testify/require"

@@ -1,9 +1,9 @@
-package handlers
+﻿package handlers
 
 import (
 	"path/filepath"
-	"seanime/internal/database/db_bridge"
-	"seanime/internal/library/shows"
+	"aniting/internal/database/db_bridge"
+	"aniting/internal/library/shows"
 	"strings"
 
 	"github.com/labstack/echo/v4"

@@ -1,9 +1,9 @@
-package handlers
+﻿package handlers
 
 import (
 	"net/http"
 	"net/http/httptest"
-	"seanime/internal/core"
+	"aniting/internal/core"
 	"testing"
 
 	"github.com/stretchr/testify/assert"

@@ -1,11 +1,11 @@
-package availability
+﻿package availability
 
 import (
 	"context"
 	"errors"
-	"seanime/internal/api/anilist"
-	"seanime/internal/library/anime"
-	"seanime/internal/testmocks"
+	"aniting/internal/api/anilist"
+	"aniting/internal/library/anime"
+	"aniting/internal/testmocks"
 	"sync"
 	"testing"
 	"time"

@@ -1,5 +1,5 @@
-import 'package:seanime_app/core/preferences/title_language_provider.dart';
-import 'package:seanime_app/data/models/anizip_data.dart';
+﻿import 'package:aniting/core/preferences/title_language_provider.dart';
+import 'package:aniting/data/models/anizip_data.dart';
 
 class AnimeEpisode {
   final int episodeNumber;
@@ -18,12 +18,35 @@ class AnimeEpisode {
 
   factory AnimeEpisode.fromJson(Map<String, dynamic> json) {
     final epNum = json['episodeNumber'] as int? ?? json['progressNumber'] as int? ?? 1;
-    final displayTitle = json['displayTitle'] as String? ?? json['title'] as String? ?? 'Episodio $epNum';
+
+    // The backend (Animap) exposes the real episode title in `episodeTitle`
+    // while `displayTitle` is just "Episode N". Prefer the real title so the
+    // episode lists do not end up with generic names.
+    final episodeTitle = (json['episodeTitle'] as String?)?.trim();
+    final displayTitle = (json['displayTitle'] as String?)?.trim();
+    final title = (episodeTitle != null && episodeTitle.isNotEmpty)
+        ? episodeTitle
+        : (displayTitle != null && displayTitle.isNotEmpty)
+            ? displayTitle
+            : (json['title'] as String? ?? 'Episodio $epNum');
+
+    final rawMetadata = json['episodeMetadata'];
+    final episodeMetadata =
+        rawMetadata is Map<String, dynamic> ? rawMetadata : const <String, dynamic>{};
+
+    final metadataImage = (episodeMetadata['image'] as String?)?.trim();
+    final metadataDescription =
+        (episodeMetadata['overview'] as String?)?.trim().isNotEmpty == true
+            ? episodeMetadata['overview'] as String
+            : (episodeMetadata['summary'] as String?);
+
     return AnimeEpisode(
       episodeNumber: epNum,
-      title: displayTitle,
-      description: json['description'] as String?,
-      image: json['image'] as String?,
+      title: title,
+      description: (json['description'] as String?) ?? metadataDescription,
+      image: (metadataImage != null && metadataImage.isNotEmpty)
+          ? metadataImage
+          : json['image'] as String?,
       isDownloaded: json['isDownloaded'] as bool? ?? false,
     );
   }

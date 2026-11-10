@@ -1,7 +1,7 @@
-package anime
+﻿package anime
 
 import (
-	"seanime/internal/util"
+	"aniting/internal/util"
 )
 
 type (

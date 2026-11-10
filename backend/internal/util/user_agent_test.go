@@ -11,8 +11,8 @@ import (
 )
 
 func TestGetOnlineUserAgentsExternal(t *testing.T) {
-	if os.Getenv("SEANIME_RUN_EXTERNAL_TESTS") != "true" {
-		t.Skip("external network test; set SEANIME_RUN_EXTERNAL_TESTS=true to enable")
+	if os.Getenv("ANITING_RUN_EXTERNAL_TESTS") != "true" {
+		t.Skip("external network test; set ANITING_RUN_EXTERNAL_TESTS=true to enable")
 	}
 
 	userAgents, err := getOnlineUserAgents()

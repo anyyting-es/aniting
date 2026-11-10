@@ -1,16 +1,16 @@
-package mpvcore
+﻿package mpvcore
 
 import (
 	"encoding/json"
 	"errors"
-	"seanime/internal/api/metadata_provider"
-	"seanime/internal/continuity"
-	"seanime/internal/database/models"
-	discordrpc_presence "seanime/internal/discordrpc/presence"
-	"seanime/internal/events"
-	"seanime/internal/platforms/platform"
-	"seanime/internal/util"
-	"seanime/internal/util/result"
+	"aniting/internal/api/metadata_provider"
+	"aniting/internal/continuity"
+	"aniting/internal/database/models"
+	discordrpc_presence "aniting/internal/discordrpc/presence"
+	"aniting/internal/events"
+	"aniting/internal/platforms/platform"
+	"aniting/internal/util"
+	"aniting/internal/util/result"
 	"sync"
 	"sync/atomic"
 	"time"

@@ -1,15 +1,15 @@
-package extension_repo
+﻿package extension_repo
 
 import (
 	"context"
 	"fmt"
-	"seanime/internal/api/anilist"
-	"seanime/internal/api/metadata"
-	"seanime/internal/events"
-	"seanime/internal/extension"
-	hibikecustomsource "seanime/internal/extension/hibike/customsource"
-	"seanime/internal/goja/goja_runtime"
-	"seanime/internal/util"
+	"aniting/internal/api/anilist"
+	"aniting/internal/api/metadata"
+	"aniting/internal/events"
+	"aniting/internal/extension"
+	hibikecustomsource "aniting/internal/extension/hibike/customsource"
+	"aniting/internal/goja/goja_runtime"
+	"aniting/internal/util"
 
 	"github.com/rs/zerolog"
 )

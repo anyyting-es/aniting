@@ -6,12 +6,12 @@ import (
 	"errors"
 	"io"
 	"net/http"
-	"seanime/internal/api/anilist"
-	"seanime/internal/customsource"
-	"seanime/internal/database/db_bridge"
-	"seanime/internal/library/anime"
-	"seanime/internal/nakama"
-	"seanime/internal/util"
+	"aniting/internal/api/anilist"
+	"aniting/internal/customsource"
+	"aniting/internal/database/db_bridge"
+	"aniting/internal/library/anime"
+	"aniting/internal/nakama"
+	"aniting/internal/util"
 	"strconv"
 	"strings"
 	"time"
@@ -431,7 +431,7 @@ func (h *Handler) HandleNakamaProxyStream(c echo.Context) error {
 		}
 
 		// Add Nakama password for authentication
-		req.Header.Set("X-Seanime-Nakama-Token", h.App.Settings.GetNakama().RemoteServerPassword)
+		req.Header.Set("X-Aniting-Nakama-Token", h.App.Settings.GetNakama().RemoteServerPassword)
 
 		client := &http.Client{
 			Timeout: 30 * time.Second,
@@ -543,7 +543,7 @@ func (h *Handler) HandleNakamaProxyStream(c echo.Context) error {
 		}
 
 		// Add Nakama password for authentication
-		req.Header.Set("X-Seanime-Nakama-Token", h.App.Settings.GetNakama().RemoteServerPassword)
+		req.Header.Set("X-Aniting-Nakama-Token", h.App.Settings.GetNakama().RemoteServerPassword)
 
 		// Add User-Agent from original request
 		if userAgent := c.Request().Header.Get("User-Agent"); userAgent != "" {
@@ -598,7 +598,7 @@ func (h *Handler) HandleNakamaProxyStream(c echo.Context) error {
 	// req.Header.Set("Accept-Encoding", "identity") // Disable compression to avoid issues
 
 	// Add Nakama password for authentication
-	req.Header.Set("X-Seanime-Nakama-Token", h.App.Settings.GetNakama().RemoteServerPassword)
+	req.Header.Set("X-Aniting-Nakama-Token", h.App.Settings.GetNakama().RemoteServerPassword)
 
 	h.App.Logger.Debug().Str("url", requestUrl).Str("method", c.Request().Method).Msg("nakama: Proxying request")
 
@@ -720,8 +720,8 @@ func (h *Handler) HandleNakamaRoomsAvailable(c echo.Context) error {
 
 // HandleNakamaCreateAndJoinRoom
 //
-//	@summary creates a Seanime Room and connects to it as host.
-//	@desc This creates a room on the Seanime Rooms relay server and connects as the host. Peers can then join using the returned URL.
+//	@summary creates a Aniting Room and connects to it as host.
+//	@desc This creates a room on the Aniting Rooms relay server and connects as the host. Peers can then join using the returned URL.
 //	@route /api/v1/nakama/room/create [POST]
 //	@returns bool
 func (h *Handler) HandleNakamaCreateAndJoinRoom(c echo.Context) error {

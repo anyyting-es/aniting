@@ -1,12 +1,12 @@
-package library_explorer
+﻿package library_explorer
 
 import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"seanime/internal/database/db_bridge"
-	"seanime/internal/library/anime"
-	"seanime/internal/security"
+	"aniting/internal/database/db_bridge"
+	"aniting/internal/library/anime"
+	"aniting/internal/security"
 	"strings"
 	"sync"
 

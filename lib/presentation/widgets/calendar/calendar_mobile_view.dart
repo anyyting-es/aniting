@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/preferences/title_language_provider.dart';
-import 'package:seanime_app/data/models/airing_schedule.dart';
+﻿import 'package:flutter/material.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/preferences/title_language_provider.dart';
+import 'package:aniting/data/models/airing_schedule.dart';
 import 'calendar_day_tabs.dart';
 import 'calendar_episode_card.dart';
 import 'calendar_now_marker.dart';

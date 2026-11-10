@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
-import 'package:seanime_app/core/i18n/translations/translations.dart';
-import 'package:seanime_app/data/models/torrent_models.dart';
+﻿import 'package:flutter/material.dart';
+import 'package:aniting/core/i18n/translations/translations.dart';
+import 'package:aniting/data/models/torrent_models.dart';
 
 class TorrentStreamLaunchInfo {
   final int mediaId;

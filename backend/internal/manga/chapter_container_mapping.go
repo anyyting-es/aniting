@@ -1,12 +1,12 @@
-package manga
+﻿package manga
 
 import (
 	"errors"
-	"seanime/internal/extension"
-	hibikemanga "seanime/internal/extension/hibike/manga"
-	manga_providers "seanime/internal/manga/providers"
-	"seanime/internal/util"
-	"seanime/internal/util/result"
+	"aniting/internal/extension"
+	hibikemanga "aniting/internal/extension/hibike/manga"
+	manga_providers "aniting/internal/manga/providers"
+	"aniting/internal/util"
+	"aniting/internal/util/result"
 	"sort"
 	"strconv"
 	"strings"

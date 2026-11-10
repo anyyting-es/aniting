@@ -1,4 +1,4 @@
-package debrid_client
+﻿package debrid_client
 
 import (
 	"archive/zip"
@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"seanime/internal/testutil"
-	"seanime/internal/util"
+	"aniting/internal/testutil"
+	"aniting/internal/util"
 	"testing"
 
 	"github.com/stretchr/testify/require"

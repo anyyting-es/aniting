@@ -11,10 +11,10 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"seanime/internal/mkvparser"
-	"seanime/internal/player"
-	"seanime/internal/util"
-	"seanime/internal/util/result"
+	"aniting/internal/mkvparser"
+	"aniting/internal/player"
+	"aniting/internal/util"
+	"aniting/internal/util/result"
 
 	"github.com/samber/mo"
 	"github.com/stretchr/testify/require"
@@ -32,10 +32,10 @@ func newTestNakamaStream(manager *Manager, streamURL string, token string) *Naka
 		httpBaseStream: httpBaseStream{
 			streamUrl: streamURL,
 			requestHeaders: http.Header{
-				"X-Seanime-Nakama-Token": []string{token},
+				"X-Aniting-Nakama-Token": []string{token},
 			},
 			headResponseHeaders: http.Header{
-				"X-Seanime-Nakama-Token": []string{token},
+				"X-Aniting-Nakama-Token": []string{token},
 			},
 			BaseStream: BaseStream{
 				manager:               manager,
@@ -50,7 +50,7 @@ func newTestNakamaStream(manager *Manager, streamURL string, token string) *Naka
 func TestNakamaLoadContentTypeUsesSharedRequestHeaders(t *testing.T) {
 	const token = "nakama-secret"
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		require.Equal(t, token, r.Header.Get("X-Seanime-Nakama-Token"))
+		require.Equal(t, token, r.Header.Get("X-Aniting-Nakama-Token"))
 		require.Equal(t, http.MethodHead, r.Method)
 
 		w.Header().Set("Content-Type", "video/mp4")
@@ -69,7 +69,7 @@ func TestNakamaLoadContentTypeUsesSharedRequestHeaders(t *testing.T) {
 func TestNakamaGetStreamHandlerPreservesHeadResponseToken(t *testing.T) {
 	const token = "nakama-secret"
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		require.Equal(t, token, r.Header.Get("X-Seanime-Nakama-Token"))
+		require.Equal(t, token, r.Header.Get("X-Aniting-Nakama-Token"))
 		require.Equal(t, http.MethodHead, r.Method)
 
 		w.Header().Set("Content-Type", "video/mp4")
@@ -90,7 +90,7 @@ func TestNakamaGetStreamHandlerPreservesHeadResponseToken(t *testing.T) {
 	stream.GetStreamHandler().ServeHTTP(rec, req)
 
 	require.Equal(t, http.StatusOK, rec.Code)
-	require.Equal(t, token, rec.Header().Get("X-Seanime-Nakama-Token"))
+	require.Equal(t, token, rec.Header().Get("X-Aniting-Nakama-Token"))
 	require.Equal(t, "video/mp4", rec.Header().Get("Content-Type"))
 	require.Equal(t, "6", rec.Header().Get("Content-Length"))
 }
@@ -99,7 +99,7 @@ func TestNakamaGetStreamHandlerProxiesWithSharedRequestHeaders(t *testing.T) {
 	const token = "nakama-secret"
 	payload := []byte("abcdef")
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		require.Equal(t, token, r.Header.Get("X-Seanime-Nakama-Token"))
+		require.Equal(t, token, r.Header.Get("X-Aniting-Nakama-Token"))
 
 		switch r.Method {
 		case http.MethodHead:
@@ -142,7 +142,7 @@ func TestNakamaMetadataReaderCarriesHeadersAcrossRangeRequests(t *testing.T) {
 	requestCount := atomic.Int64{}
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requestCount.Add(1)
-		require.Equal(t, token, r.Header.Get("X-Seanime-Nakama-Token"))
+		require.Equal(t, token, r.Header.Get("X-Aniting-Nakama-Token"))
 
 		if r.Method == http.MethodHead {
 			w.Header().Set("Content-Length", strconv.Itoa(len(payload)))
@@ -196,7 +196,7 @@ func TestNakamaMetadataReaderStartsAtRequestedRange(t *testing.T) {
 	payload := []byte("abcdefgh")
 	ranges := make(chan string, 1)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		require.Equal(t, token, r.Header.Get("X-Seanime-Nakama-Token"))
+		require.Equal(t, token, r.Header.Get("X-Aniting-Nakama-Token"))
 		ranges <- r.Header.Get("Range")
 		w.Header().Set("Content-Range", "bytes 4-7/8")
 		w.WriteHeader(http.StatusPartialContent)

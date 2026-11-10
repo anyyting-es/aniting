@@ -1,16 +1,16 @@
-package mediacore
+﻿package mediacore
 
 import (
 	"context"
 	"fmt"
-	"seanime/internal/api/metadata_provider"
-	"seanime/internal/continuity"
-	"seanime/internal/database/models"
-	discordrpc_presence "seanime/internal/discordrpc/presence"
-	"seanime/internal/platforms/platform"
-	"seanime/internal/player"
-	"seanime/internal/util"
-	"seanime/internal/util/result"
+	"aniting/internal/api/metadata_provider"
+	"aniting/internal/continuity"
+	"aniting/internal/database/models"
+	discordrpc_presence "aniting/internal/discordrpc/presence"
+	"aniting/internal/platforms/platform"
+	"aniting/internal/player"
+	"aniting/internal/util"
+	"aniting/internal/util/result"
 	"sync"
 	"sync/atomic"
 	"time"

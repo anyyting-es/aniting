@@ -1,10 +1,10 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/theme/app_theme_colors.dart';
-import 'package:seanime_app/data/models/app_update_models.dart';
-import 'package:seanime_app/data/services/app_update_service.dart';
-import 'package:seanime_app/presentation/providers/app_update_provider.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/theme/app_theme_colors.dart';
+import 'package:aniting/data/models/app_update_models.dart';
+import 'package:aniting/data/services/app_update_service.dart';
+import 'package:aniting/presentation/providers/app_update_provider.dart';
 
 /// Modal dialog for showing release notes, downloading updates, and installing them.
 class AppUpdateDialog extends ConsumerWidget {

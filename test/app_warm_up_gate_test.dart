@@ -1,14 +1,16 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:g1455/g1455.dart';
-import 'package:seanime_app/core/server/server_manager.dart';
-import 'package:seanime_app/data/models/anime_entry.dart';
-import 'package:seanime_app/data/models/server_status.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/screens/main_shell.dart';
-import 'package:seanime_app/presentation/screens/startup/app_warm_up_gate.dart';
+import 'package:aniting/core/server/server_manager.dart';
+import 'package:aniting/data/models/anime_entry.dart';
+import 'package:aniting/data/models/server_status.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/screens/main_shell.dart';
+import 'package:aniting/presentation/screens/startup/app_warm_up_gate.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'support/fake_continue_watching_notifier.dart';
 
 class MockStoppedServerNotifier extends ServerNotifier {
   @override
@@ -36,7 +38,9 @@ void main() {
         ProviderScope(
           overrides: [
             serverNotifierProvider.overrideWith(MockStoppedServerNotifier.new),
-            continueWatchingProvider.overrideWith((ref) => Future.value([])),
+            continueWatchingProvider.overrideWith(
+              () => FakeContinueWatchingNotifier(const <AnimeEntry>[]),
+            ),
             downloadedAnimeProvider.overrideWith((ref) => Future.value([])),
             animeCollectionProvider.overrideWith((ref) => Future.value([])),
           ],
@@ -53,7 +57,10 @@ void main() {
       // Verify startup splash elements are present on the first frame
       expect(find.byKey(const ValueKey('app_warmup_splash')), findsOneWidget);
       expect(find.text('Aniting'), findsOneWidget);
-      expect(find.byType(LinearProgressIndicator), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('app_warmup_spinner')),
+        findsOneWidget,
+      );
       expect(find.byType(MainShell), findsNothing);
 
       // Drain warmup timer and any mounted MainShell timers
@@ -67,7 +74,9 @@ void main() {
         ProviderScope(
           overrides: [
             serverNotifierProvider.overrideWith(MockRunningWarmServerNotifier.new),
-            continueWatchingProvider.overrideWith((ref) => Future.value(<AnimeEntry>[])),
+            continueWatchingProvider.overrideWith(
+              () => FakeContinueWatchingNotifier(const <AnimeEntry>[]),
+            ),
             downloadedAnimeProvider.overrideWith((ref) => Future.value(<AnimeEntry>[])),
             animeCollectionProvider.overrideWith((ref) => Future.value(<AnimeEntry>[])),
           ],

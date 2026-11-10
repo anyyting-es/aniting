@@ -1,6 +1,6 @@
-import 'dart:io' show Platform;
+﻿import 'dart:io' show Platform;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/i18n/translations/translations.dart';
+import 'package:aniting/core/i18n/translations/translations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 enum PlayerEngine {

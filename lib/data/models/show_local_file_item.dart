@@ -1,4 +1,4 @@
-/// Local TV Show and Movie file indexed by the Seanime / TMDB hybrid scanner.
+/// Local TV Show and Movie file indexed by the Aniting / TMDB hybrid scanner.
 class ShowLocalFileItem {
   final String path;
   final String name;

@@ -1,4 +1,4 @@
-package transcoder
+﻿package transcoder
 
 import (
 	"context"
@@ -6,8 +6,8 @@ import (
 	"math"
 	"os"
 	"path/filepath"
-	"seanime/internal/mediastream/videofile"
-	"seanime/internal/util/result"
+	"aniting/internal/mediastream/videofile"
+	"aniting/internal/util/result"
 	"strings"
 	"sync"
 	"time"

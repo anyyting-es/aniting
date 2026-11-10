@@ -1,11 +1,11 @@
-package extension_repo
+﻿package extension_repo
 
 import (
 	"fmt"
 	"io"
-	"seanime/internal/constants"
-	"seanime/internal/extension"
-	"seanime/internal/util"
+	"aniting/internal/constants"
+	"aniting/internal/extension"
+	"aniting/internal/util"
 
 	"github.com/goccy/go-json"
 	"github.com/samber/lo"

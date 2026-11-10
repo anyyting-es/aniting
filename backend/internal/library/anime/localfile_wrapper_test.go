@@ -1,8 +1,8 @@
-package anime_test
+﻿package anime_test
 
 import (
 	"cmp"
-	"seanime/internal/library/anime"
+	"aniting/internal/library/anime"
 	"slices"
 	"testing"
 

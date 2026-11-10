@@ -1,9 +1,9 @@
-import 'cast/desktop_cast_models.dart';
+﻿import 'cast/desktop_cast_models.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/icons/app_icons.dart';
 
 class DesktopCharactersTab extends ConsumerWidget {
   final List characters;

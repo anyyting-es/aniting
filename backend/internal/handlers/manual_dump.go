@@ -1,9 +1,9 @@
-package handlers
+﻿package handlers
 
 import (
-	"seanime/internal/api/anilist"
-	"seanime/internal/library/scanner"
-	"seanime/internal/util/limiter"
+	"aniting/internal/api/anilist"
+	"aniting/internal/library/scanner"
+	"aniting/internal/util/limiter"
 
 	"github.com/labstack/echo/v4"
 )

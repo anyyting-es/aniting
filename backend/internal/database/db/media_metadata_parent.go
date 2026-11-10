@@ -1,7 +1,7 @@
-package db
+﻿package db
 
 import (
-	"seanime/internal/database/models"
+	"aniting/internal/database/models"
 )
 
 func (db *Database) GetMediaMetadataParent(mId int) (*models.MediaMetadataParent, error) {

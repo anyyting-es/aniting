@@ -1,8 +1,8 @@
-package videocore
+﻿package videocore
 
 import (
-	"seanime/internal/events"
-	"seanime/internal/mkvparser"
+	"aniting/internal/events"
+	"aniting/internal/mkvparser"
 )
 
 func (vc *VideoCore) setupEffects() {

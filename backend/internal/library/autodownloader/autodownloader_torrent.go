@@ -1,13 +1,13 @@
-package autodownloader
+﻿package autodownloader
 
 import (
 	"context"
 	"errors"
-	"seanime/internal/extension"
-	hibiketorrent "seanime/internal/extension/hibike/torrent"
-	"seanime/internal/library/anime"
-	"seanime/internal/util"
-	"seanime/internal/util/limiter"
+	"aniting/internal/extension"
+	hibiketorrent "aniting/internal/extension/hibike/torrent"
+	"aniting/internal/library/anime"
+	"aniting/internal/util"
+	"aniting/internal/util/limiter"
 	"sync"
 	"time"
 

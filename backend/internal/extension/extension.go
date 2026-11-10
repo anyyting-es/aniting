@@ -41,7 +41,7 @@ type Extension struct {
 	// Type is the area of the application the extension is targeting
 	Type        Type   `json:"type"`        // e.g. "anime-torrent-provider"
 	Description string `json:"description"` // e.g. "This extension provides torrents"
-	Author      string `json:"author"`      // e.g. "Seanime"
+	Author      string `json:"author"`      // e.g. "Aniting"
 	// Icon is the URL to the extension icon
 	Icon string `json:"icon"`
 	// Website is the URL to the extension website

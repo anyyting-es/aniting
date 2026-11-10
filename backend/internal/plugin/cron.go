@@ -1,4 +1,4 @@
-// Package cron implements a crontab-like service to execute and schedule
+﻿// Package cron implements a crontab-like service to execute and schedule
 // repeative tasks/jobs.
 //
 // Example:
@@ -12,8 +12,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"seanime/internal/extension"
-	gojautil "seanime/internal/util/goja"
+	"aniting/internal/extension"
+	gojautil "aniting/internal/util/goja"
 	"slices"
 	"strconv"
 	"strings"

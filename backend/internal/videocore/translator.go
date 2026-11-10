@@ -1,4 +1,4 @@
-package videocore
+﻿package videocore
 
 import (
 	"bytes"
@@ -12,8 +12,8 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
-	"seanime/internal/mkvparser"
-	"seanime/internal/util/result"
+	"aniting/internal/mkvparser"
+	"aniting/internal/util/result"
 	"strconv"
 	"strings"
 	"sync"

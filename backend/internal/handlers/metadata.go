@@ -1,9 +1,9 @@
-package handlers
+﻿package handlers
 
 import (
 	"errors"
-	"seanime/internal/database/models"
-	"seanime/internal/library/anime"
+	"aniting/internal/database/models"
+	"aniting/internal/library/anime"
 	"strconv"
 
 	"github.com/labstack/echo/v4"

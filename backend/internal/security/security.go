@@ -1,7 +1,7 @@
-package security
+﻿package security
 
 import (
-	"seanime/internal/util"
+	"aniting/internal/util"
 	"slices"
 	"strings"
 )

@@ -1,4 +1,4 @@
-# Seanime App - Agents & Core Architectural Guide
+# Aniting App - Agents & Core Architectural Guide
 
 > **MANDATORY INSTRUCTION FOR AGENTS**:
 > Keep this document clean, elemental, and modular. Do **NOT** bloat this file with hundreds of lines of historical change logs or individual bug fixes.
@@ -63,14 +63,14 @@
 ## 3. Directory Map
 
 ```
-seanime_app/
+aniting/
 ├── AGENTS.md                         # <--- THIS FILE (Elemental guide & component index)
 ├── docs/                             # Specialized deep documentation
 │   ├── ARCHITECTURE_SUBSYSTEMS.md    # In-depth subsystem specifications
 │   ├── TROUBLESHOOTING_BUGS.md       # Platform quirks, crash fixes, and hardware decoding
 │   └── CHANGELOG_HISTORY.md          # User-facing historical changelogs
 ├── pubspec.yaml                      # Dependencies & asset definitions
-├── backend/                          # Seanime Go backend source code
+├── backend/                          # Aniting Go backend source code
 │   └── internal/
 │       ├── handlers/                 # Echo REST handlers (/shows, /library, /torrentstream, etc.)
 │       ├── library/shows/            # Plex/Jellyfin TV & Movie parser and scanner

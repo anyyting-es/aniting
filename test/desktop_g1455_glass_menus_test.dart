@@ -1,21 +1,21 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:g1455/g1455.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/data/models/onlinestream_models.dart';
-import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
-import 'package:seanime_app/presentation/widgets/anime_detail/desktop/desktop_episodes_tab.dart';
-import 'package:seanime_app/presentation/widgets/anime_detail/desktop/desktop_episode_context_menu.dart';
-import 'package:seanime_app/core/i18n/translations/en.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/widgets/edit_entry/edit_entry_status_dropdown.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/data/models/onlinestream_models.dart';
+import 'package:aniting/presentation/screens/anime_detail_screen.dart';
+import 'package:aniting/presentation/widgets/anime_detail/desktop/desktop_episodes_tab.dart';
+import 'package:aniting/presentation/widgets/anime_detail/desktop/desktop_episode_context_menu.dart';
+import 'package:aniting/core/i18n/translations/en.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/widgets/edit_entry/edit_entry_status_dropdown.dart';
 
-import 'package:seanime_app/core/api/api_client.dart';
-import 'package:seanime_app/data/models/library_entry_details.dart';
-import 'package:seanime_app/data/repositories/seanime_repository.dart';
+import 'package:aniting/core/api/api_client.dart';
+import 'package:aniting/data/models/library_entry_details.dart';
+import 'package:aniting/data/repositories/aniting_repository.dart';
 
-class _FakeEpisodesRepo extends SeanimeRepository {
+class _FakeEpisodesRepo extends AnitingRepository {
   _FakeEpisodesRepo() : super(ApiClient());
 
   @override

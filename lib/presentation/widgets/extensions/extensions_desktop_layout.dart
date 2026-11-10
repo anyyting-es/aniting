@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/data/models/extension_item.dart';
-import 'package:seanime_app/presentation/widgets/extensions/installed_tab_view.dart';
-import 'package:seanime_app/presentation/widgets/extensions/marketplace_tab_view.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/data/models/extension_item.dart';
+import 'package:aniting/presentation/widgets/extensions/installed_tab_view.dart';
+import 'package:aniting/presentation/widgets/extensions/marketplace_tab_view.dart';
 
-/// Modern Seanime-style desktop layout for the Extensions Marketplace.
+/// Modern Aniting-style desktop layout for the Extensions Marketplace.
 ///
 /// Features:
 /// - Safe 42dp desktop top clearance below the custom titlebar.
 /// - Centered segmented pill switcher ([Installed] / [Marketplace]) with live badges.
 /// - Sleek desktop header with repo source, action buttons, category filters, and search.
-/// - Responsive 3-to-4 column desktop card grid matching the Seanime desktop interface.
+/// - Responsive 3-to-4 column desktop card grid matching the Aniting desktop interface.
 class ExtensionsDesktopLayout extends ConsumerStatefulWidget {
   final List<ExtensionItem> installedExtensions;
   final List<ExtensionItem> marketplaceExtensions;

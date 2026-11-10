@@ -1,7 +1,7 @@
-package anime
+﻿package anime
 
 import (
-	"seanime/internal/hook"
+	"aniting/internal/hook"
 	"strings"
 
 	"github.com/samber/lo"

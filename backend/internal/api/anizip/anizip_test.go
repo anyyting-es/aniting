@@ -1,7 +1,7 @@
-package anizip
+﻿package anizip
 
 import (
-	"seanime/internal/testutil"
+	"aniting/internal/testutil"
 	"testing"
 
 	"github.com/stretchr/testify/assert"

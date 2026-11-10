@@ -1,7 +1,7 @@
-package nativeplayer
+﻿package nativeplayer
 
 import (
-	"seanime/internal/mkvparser"
+	"aniting/internal/mkvparser"
 )
 
 type ServerEvent string

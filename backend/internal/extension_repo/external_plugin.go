@@ -1,14 +1,14 @@
-package extension_repo
+﻿package extension_repo
 
 import (
 	"fmt"
 	"path/filepath"
 	"slices"
 
-	"seanime/internal/extension"
-	plugin_ui "seanime/internal/plugin/ui"
-	"seanime/internal/util"
-	"seanime/internal/util/filecache"
+	"aniting/internal/extension"
+	plugin_ui "aniting/internal/plugin/ui"
+	"aniting/internal/util"
+	"aniting/internal/util/filecache"
 
 	"github.com/samber/lo"
 )

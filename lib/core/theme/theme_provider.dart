@@ -1,10 +1,10 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/theme/app_palette.dart';
-import 'package:seanime_app/core/theme/app_theme_colors.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/theme/app_palette.dart';
+import 'package:aniting/core/theme/app_theme_colors.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 enum AppThemeMode {
@@ -531,7 +531,11 @@ class AppThemeBuilder {
         ? fontOption.textStyleBuilder!().fontFamily
         : null;
 
-    final themeColors = AppThemeColors.fromPalette(effectivePalette, borderRadius: borderRadius);
+    final themeColors = AppThemeColors.fromPalette(
+      effectivePalette,
+      borderRadius: borderRadius,
+      isOled: isOled,
+    );
 
     return ThemeData(
       useMaterial3: true,

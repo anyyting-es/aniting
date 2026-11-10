@@ -1,20 +1,20 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:g1455/g1455.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/data/services/offline_sync_service.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/screens/download_manager_screen.dart';
-import 'package:seanime_app/presentation/screens/downloads_screen.dart';
-import 'package:seanime_app/presentation/screens/my_lists_screen.dart';
-import 'package:seanime_app/presentation/screens/settings/settings_screen.dart';
-import 'package:seanime_app/presentation/screens/settings/subpages/theme_settings_screen.dart';
-import 'package:seanime_app/presentation/screens/extensions_marketplace_screen.dart';
-import 'package:seanime_app/presentation/widgets/anilist_auth_sheet.dart';
-import 'package:seanime_app/presentation/widgets/top_status_bar_glass.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/data/services/offline_sync_service.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/screens/download_manager_screen.dart';
+import 'package:aniting/presentation/screens/downloads_screen.dart';
+import 'package:aniting/presentation/screens/my_lists_screen.dart';
+import 'package:aniting/presentation/screens/settings/settings_screen.dart';
+import 'package:aniting/presentation/screens/settings/subpages/theme_settings_screen.dart';
+import 'package:aniting/presentation/screens/extensions_marketplace_screen.dart';
+import 'package:aniting/presentation/widgets/anilist_auth_sheet.dart';
+import 'package:aniting/presentation/widgets/top_status_bar_glass.dart';
 
-import 'package:seanime_app/core/theme/smooth_scroll_controller.dart';
+import 'package:aniting/core/theme/smooth_scroll_controller.dart';
 
 class LibraryScreen extends ConsumerStatefulWidget {
   final VoidCallback? onOpenSettings;

@@ -1,5 +1,7 @@
-import 'package:flutter/material.dart';
-import 'package:seanime_app/presentation/widgets/player/models/player_types.dart';
+﻿import 'package:flutter/material.dart';
+import 'package:aniting/presentation/widgets/player/controls/seek_preview_bubble.dart';
+import 'package:aniting/presentation/widgets/player/models/player_types.dart';
+import 'package:aniting/presentation/widgets/player/services/seek_preview_service.dart';
 
 /// Modern styled timeline seek bar with buffer progress, chapter ticks, and theme-adaptive coloring.
 class TimelineSlider extends StatefulWidget {
@@ -34,6 +36,102 @@ class _TimelineSliderState extends State<TimelineSlider> {
   // to prevent visual bounce-back while the player catches up.
   double? _seekTarget;
 
+  // ─── Seek bar previews (trickplay) ───
+  final OverlayPortalController _previewPortal = OverlayPortalController();
+  final GlobalKey _trackKey = GlobalKey();
+  List<StoryboardCue>? _cues;
+  String? _cuesUrl;
+  double? _hoverFraction;
+
+  @override
+  void initState() {
+    super.initState();
+    seekThumbnailsUrl.addListener(_onThumbnailsChanged);
+    _onThumbnailsChanged();
+  }
+
+  @override
+  void dispose() {
+    seekThumbnailsUrl.removeListener(_onThumbnailsChanged);
+    super.dispose();
+  }
+
+  /// Loads the storyboard of the active source, if it offers one.
+  ///
+  /// A storyboard is ~35 KB of text per episode, so it is parsed once and shared
+  /// through [seekThumbnailsUrl]; the sprite sheet stays in Flutter's image cache.
+  void _onThumbnailsChanged() {
+    final url = seekThumbnailsUrl.value;
+    if (url == _cuesUrl) return;
+
+    _cuesUrl = url;
+    _cues = null;
+
+    if (url == null || url.isEmpty) {
+      if (_previewPortal.isShowing) _previewPortal.hide();
+      return;
+    }
+
+    loadStoryboard(url, headers: seekThumbnailsHeaders.value).then((cues) {
+      if (!mounted || _cuesUrl != url) return;
+      setState(() => _cues = cues);
+    });
+  }
+
+  bool get _canPreview =>
+      _cues != null && _cues!.isNotEmpty && widget.duration > Duration.zero;
+
+  void _updatePreview(double fraction) {
+    if (!_canPreview) return;
+    setState(() => _hoverFraction = fraction.clamp(0.0, 1.0));
+    if (!_previewPortal.isShowing) _previewPortal.show();
+  }
+
+  void _hidePreview() {
+    if (_hoverFraction == null) return;
+    setState(() => _hoverFraction = null);
+    if (_previewPortal.isShowing) _previewPortal.hide();
+  }
+
+  Widget _buildPreview(BuildContext context) {
+    final fraction = _hoverFraction;
+    final cues = _cues;
+    if (fraction == null || cues == null || cues.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final position = Duration(
+      milliseconds: (widget.duration.inMilliseconds * fraction).round(),
+    );
+    final cue = cueAt(cues, position);
+    if (cue == null) return const SizedBox.shrink();
+
+    final box = _trackKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) return const SizedBox.shrink();
+
+    const bubbleWidth = 168.0;
+    final media = MediaQuery.sizeOf(context);
+    final origin = box.localToGlobal(Offset.zero);
+
+    final left = (origin.dx + box.size.width * fraction - bubbleWidth / 2).clamp(
+      8.0,
+      (media.width - bubbleWidth - 8).clamp(8.0, double.infinity),
+    );
+    // The bubble grows upwards; 130 px covers the header plus the filter chip.
+    final top = (origin.dy - 140).clamp(8.0, media.height);
+
+    return Positioned(
+      left: left,
+      top: top,
+      width: bubbleWidth,
+      child: SeekPreviewBubble(
+        cue: cue,
+        position: position,
+        width: bubbleWidth,
+      ),
+    );
+  }
+
   @override
   void didUpdateWidget(covariant TimelineSlider oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -66,9 +164,21 @@ class _TimelineSliderState extends State<TimelineSlider> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        return Stack(
-          alignment: Alignment.center,
-          children: [
+        final trackWidth = constraints.maxWidth;
+        return MouseRegion(
+          onHover: (event) {
+            if (trackWidth <= 0) return;
+            _updatePreview(event.localPosition.dx / trackWidth);
+          },
+          onExit: (_) => _hidePreview(),
+          child: OverlayPortal(
+            controller: _previewPortal,
+            overlayChildBuilder: _buildPreview,
+            child: KeyedSubtree(
+              key: _trackKey,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
             // Base dark slate/graphite background track (not pitch black)
             Positioned.fill(
               child: Align(
@@ -128,16 +238,19 @@ class _TimelineSliderState extends State<TimelineSlider> {
                     _dragValue = val;
                     _seekTarget = null;
                   });
+                  _updatePreview(maxMs > 0 ? val / maxMs : 0);
                   widget.onSeekingStarted?.call();
                 },
                 onChanged: (val) {
                   setState(() => _dragValue = val);
+                  _updatePreview(maxMs > 0 ? val / maxMs : 0);
                 },
                 onChangeEnd: (val) {
                   setState(() {
                     _isDragging = false;
                     _seekTarget = val; // Hold this position until player catches up
                   });
+                  _hidePreview();
                   widget.onSeek(Duration(milliseconds: val.toInt()));
                   widget.onSeekingEnded?.call();
                 },
@@ -169,7 +282,10 @@ class _TimelineSliderState extends State<TimelineSlider> {
                   ],
                 ),
               ),
-          ],
+                ],
+              ),
+            ),
+          ),
         );
       },
     );

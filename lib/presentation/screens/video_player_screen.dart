@@ -7,56 +7,61 @@ import 'package:flutter/rendering.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/preferences/anime_playback_source_provider.dart';
-import 'package:seanime_app/core/preferences/live_playback_progress_provider.dart';
-import 'package:seanime_app/core/preferences/player_desktop_view_provider.dart';
-import 'package:seanime_app/core/preferences/player_engine_provider.dart';
-import 'package:seanime_app/core/preferences/player_gesture_provider.dart';
-import 'package:seanime_app/core/preferences/playback_progress_preferences_provider.dart';
-import 'package:seanime_app/core/preferences/resume_bar_preferences_provider.dart';
-import 'package:seanime_app/core/preferences/track_preferences_provider.dart';
-import 'package:seanime_app/core/preferences/tv_mode_provider.dart';
-import 'package:seanime_app/core/preferences/volume_boost_provider.dart';
-import 'package:seanime_app/core/preferences/online_stream_proxy_provider.dart';
-import 'package:seanime_app/core/preferences/streaming_preferences_provider.dart';
-import 'package:seanime_app/data/models/anime_details.dart';
-import 'package:seanime_app/data/models/anizip_data.dart';
-import 'package:seanime_app/data/models/onlinestream_models.dart';
-import 'package:seanime_app/data/repositories/seanime_repository.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/providers/torrent_stream_provider.dart';
-import 'package:seanime_app/presentation/widgets/anime_details_modal_sheet.dart';
-import 'package:seanime_app/presentation/widgets/player/controls/player_keyboard_handler.dart';
-import 'package:seanime_app/presentation/widgets/player/dialogs/player_source_picker.dart';
-import 'package:seanime_app/presentation/widgets/player/layouts/player_desktop_layout.dart';
-import 'package:seanime_app/presentation/widgets/player/layouts/player_mobile_layout.dart';
-import 'package:seanime_app/presentation/widgets/player/models/player_types.dart';
-import 'package:seanime_app/presentation/widgets/player/models/player_direct_episode.dart';
-import 'package:seanime_app/presentation/widgets/player/panels/player_info_panel.dart';
-import 'package:seanime_app/presentation/widgets/player/panels/watch/player_episodes_rail.dart';
-import 'package:seanime_app/presentation/widgets/player/panels/watch/player_header_controls.dart';
-import 'package:seanime_app/presentation/widgets/player/panels/watch/player_movie_rail.dart';
-import 'package:seanime_app/presentation/widgets/player/panels/watch/player_watch_content.dart';
-import 'package:seanime_app/presentation/widgets/player/panels/watch/player_episode_header.dart';
-import 'package:seanime_app/presentation/widgets/player/panels/watch/player_desktop_header.dart';
-import 'package:seanime_app/presentation/widgets/player/services/performance_stats_service.dart';
-import 'package:seanime_app/presentation/widgets/player/services/player_episode_resolver.dart';
-import 'package:seanime_app/presentation/widgets/player/services/player_playback_coordinator.dart';
-import 'package:seanime_app/presentation/widgets/player/services/player_progress_manager.dart';
-import 'package:seanime_app/presentation/widgets/player/services/player_shader_service.dart';
-import 'package:seanime_app/presentation/widgets/player/services/player_source_controller.dart';
-import 'package:seanime_app/presentation/widgets/player/services/player_track_matcher.dart';
-import 'package:seanime_app/presentation/widgets/player/services/player_window_manager.dart';
-import 'package:seanime_app/presentation/widgets/player/viewport/ambient_video_glow.dart';
-import 'package:seanime_app/presentation/widgets/player/viewport/player_viewport.dart';
-import 'package:seanime_app/presentation/widgets/player/sheets/player_episodes_sheet.dart';
-import 'package:seanime_app/presentation/widgets/player/sheets/player_settings_launcher.dart';
-import 'package:seanime_app/presentation/widgets/toast/app_toast.dart';
-import 'package:seanime_app/core/preferences/subtitle_style_preferences_provider.dart';
-import 'package:seanime_app/core/player/mpris_service.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/preferences/anime_playback_source_provider.dart';
+import 'package:aniting/core/preferences/live_playback_progress_provider.dart';
+import 'package:aniting/core/preferences/player_desktop_view_provider.dart';
+import 'package:aniting/core/preferences/player_ambient_glow_provider.dart';
+import 'package:aniting/presentation/widgets/anime_detail/anime_episode_target.dart';
+import 'package:aniting/core/preferences/player_engine_provider.dart';
+import 'package:aniting/core/preferences/player_smooth_motion_provider.dart';
+import 'package:aniting/core/player/native_video_surface_provider.dart';
+import 'package:aniting/core/preferences/player_gesture_provider.dart';
+import 'package:aniting/core/preferences/playback_progress_preferences_provider.dart';
+import 'package:aniting/core/preferences/resume_bar_preferences_provider.dart';
+import 'package:aniting/core/preferences/track_preferences_provider.dart';
+import 'package:aniting/core/preferences/tv_mode_provider.dart';
+import 'package:aniting/core/preferences/volume_boost_provider.dart';
+import 'package:aniting/core/preferences/online_stream_proxy_provider.dart';
+import 'package:aniting/core/preferences/streaming_preferences_provider.dart';
+import 'package:aniting/data/models/anime_details.dart';
+import 'package:aniting/data/models/anizip_data.dart';
+import 'package:aniting/data/models/onlinestream_models.dart';
+import 'package:aniting/data/repositories/aniting_repository.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/providers/torrent_stream_provider.dart';
+import 'package:aniting/presentation/widgets/anime_details_modal_sheet.dart';
+import 'package:aniting/presentation/widgets/player/controls/player_keyboard_handler.dart';
+import 'package:aniting/presentation/widgets/player/dialogs/player_source_picker.dart';
+import 'package:aniting/presentation/widgets/player/layouts/player_desktop_layout.dart';
+import 'package:aniting/presentation/widgets/player/layouts/player_mobile_layout.dart';
+import 'package:aniting/presentation/widgets/player/models/player_types.dart';
+import 'package:aniting/presentation/widgets/player/models/player_direct_episode.dart';
+import 'package:aniting/presentation/widgets/player/panels/player_info_panel.dart';
+import 'package:aniting/presentation/widgets/player/panels/watch/player_episodes_rail.dart';
+import 'package:aniting/presentation/widgets/player/panels/watch/player_header_controls.dart';
+import 'package:aniting/presentation/widgets/player/panels/watch/player_movie_rail.dart';
+import 'package:aniting/presentation/widgets/player/panels/watch/player_watch_content.dart';
+import 'package:aniting/presentation/widgets/player/panels/watch/player_episode_header.dart';
+import 'package:aniting/presentation/widgets/player/panels/watch/player_desktop_header.dart';
+import 'package:aniting/presentation/widgets/player/services/performance_stats_service.dart';
+import 'package:aniting/presentation/widgets/player/services/player_episode_resolver.dart';
+import 'package:aniting/presentation/widgets/player/services/player_playback_coordinator.dart';
+import 'package:aniting/presentation/widgets/player/services/player_progress_manager.dart';
+import 'package:aniting/presentation/widgets/player/services/player_shader_service.dart';
+import 'package:aniting/presentation/widgets/player/services/player_source_controller.dart';
+import 'package:aniting/presentation/widgets/player/services/player_track_matcher.dart';
+import 'package:aniting/presentation/widgets/player/services/player_window_manager.dart';
+import 'package:aniting/presentation/widgets/player/viewport/ambient_video_glow.dart';
+import 'package:aniting/presentation/widgets/player/viewport/player_viewport.dart';
+import 'package:aniting/presentation/widgets/desktop_title_bar.dart';
+import 'package:aniting/presentation/widgets/player/sheets/player_episodes_sheet.dart';
+import 'package:aniting/presentation/widgets/player/sheets/player_settings_launcher.dart';
+import 'package:aniting/presentation/widgets/toast/app_toast.dart';
+import 'package:aniting/core/preferences/subtitle_style_preferences_provider.dart';
+import 'package:aniting/core/player/mpris_service.dart';
 
-export 'package:seanime_app/presentation/widgets/player/models/player_types.dart'
+export 'package:aniting/presentation/widgets/player/models/player_types.dart'
     show UiTrack, ShaderPreset, PerformanceStats, PlayerFitMode;
 
 /// Main video playback screen featuring a modern, clean UI inspired by Plezy & YouTube.
@@ -181,8 +186,9 @@ class VideoPlayerScreen extends ConsumerStatefulWidget {
   }) {
     return PageRouteBuilder(
       opaque: true,
-      transitionDuration: Duration.zero,
-      reverseTransitionDuration: Duration.zero,
+      transitionDuration: const Duration(milliseconds: 200),
+      reverseTransitionDuration: const Duration(milliseconds: 160),
+      allowSnapshotting: false,
       pageBuilder: (context, animation, secondaryAnimation) =>
           VideoPlayerScreen(
             mediaId: mediaId,
@@ -215,6 +221,20 @@ class VideoPlayerScreen extends ConsumerStatefulWidget {
             tmdbYear: tmdbYear,
             onPlaybackStopped: onPlaybackStopped,
           ),
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        final curved = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutCubic,
+          reverseCurve: Curves.easeInCubic,
+        );
+        return FadeTransition(
+          opacity: curved,
+          child: ScaleTransition(
+            scale: Tween<double>(begin: 0.985, end: 1.0).animate(curved),
+            child: child,
+          ),
+        );
+      },
     );
   }
 
@@ -247,7 +267,10 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   final ValueNotifier<bool> _isPlayingNotifier = ValueNotifier<bool>(false);
   bool _isBuffering = false;
   bool _hasStartedPlayback = false;
+  bool _isPreparingEngine = true;
   bool _isSeeking = false;
+  Timer? _engineStartTimer;
+  Timer? _prepareTimeout;
   Timer? _seekLoadingTimer;
 
   /// Last position bucket (250 ms) pushed to [livePlaybackProgressProvider], so
@@ -293,7 +316,8 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
 
   // Captured up-front so that dispose() never touches `ref` (which is unsafe
   // once the widget is being unmounted).
-  late final SeanimeRepository _repository;
+  late final AnitingRepository _repository;
+  late final ProviderContainer _providerContainer;
   bool _hasActiveTorrentStream = false;
   bool _pauseTorrentStreamOnExit = true;
 
@@ -322,6 +346,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   bool _areControlsVisible = true;
   bool _isInteractingWithVolume = false;
   bool _isMenuOpen = false;
+  bool _isPlayerLocked = false;
   Timer? _hideTimer;
 
   // Seek feedback toast
@@ -542,26 +567,24 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
 
     List<OnlinestreamProvider> providers = const [];
     try {
-      providers = (await ref
-              .read(repositoryProvider)
-              .getOnlinestreamProviders(forceRefresh: true))
-          .where((p) => _isTmdbPlayback ? p.supportsTmdb : true)
-          .toList();
+      providers =
+          (await ref
+                  .read(repositoryProvider)
+                  .getOnlinestreamProviders(forceRefresh: true))
+              .where((p) => _isTmdbPlayback ? p.supportsTmdb : true)
+              .toList();
     } catch (_) {}
 
     if (!mounted) return;
     if (providers.isEmpty) {
-      AppToast.warning(
-        l10n.noOnlineExtensionsInstalled,
-        context: context,
-      );
+      AppToast.warning(l10n.noOnlineExtensionsInstalled, context: context);
       return;
     }
 
     final initialProviderId =
         providers.any((p) => p.id == _currentOnlineStreamProvider)
-            ? _currentOnlineStreamProvider
-            : providers.first.id;
+        ? _currentOnlineStreamProvider
+        : providers.first.id;
 
     await showPlayerSourcePicker(
       context,
@@ -604,9 +627,10 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     final lang = ref.read(appLanguageProvider) == AppLanguage.es
         ? 'es-ES'
         : 'en-US';
-    final mediaType =
-        (widget.tmdbMediaType ?? _animeDetails?.format ?? 'tv').toLowerCase();
-    final isMovie = mediaType == 'movie' ||
+    final mediaType = (widget.tmdbMediaType ?? _animeDetails?.format ?? 'tv')
+        .toLowerCase();
+    final isMovie =
+        mediaType == 'movie' ||
         (_animeDetails?.format?.toUpperCase() == 'MOVIE');
     final season = widget.tmdbSeason ?? 1;
 
@@ -760,6 +784,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   void _initPlayerState() {
     _torrentStreamNotifier = ref.read(torrentStreamStatusProvider.notifier);
     _repository = ref.read(repositoryProvider);
+    _providerContainer = ProviderScope.containerOf(context, listen: false);
     _isTorrentProgressVisible = ref.read(torrentProgressOverlayEnabledProvider);
 
     _currentVideoUrl = widget.videoUrl;
@@ -794,7 +819,9 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       isUsingExoPlayer: useExo,
       shaderService: _shaderService,
       l10n: ref.read(translationsProvider),
+      smoothMotion: ref.read(playerSmoothMotionProvider),
       onPosition: (pos) {
+        if (_isExiting) return;
         _position = pos;
         _positionNotifier.value = pos;
         _publishLiveProgress();
@@ -813,6 +840,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
         }
       },
       onDuration: (dur) {
+        if (_isExiting) return;
         if (_duration != dur && mounted) {
           setState(() => _duration = dur);
           _loadChapters();
@@ -830,6 +858,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
         }
       },
       onBuffer: (buf) {
+        if (_isExiting) return;
         final effectiveBuf = _playbackOrigin == PlayerPlaybackOrigin.local
             ? Duration.zero
             : buf;
@@ -844,13 +873,18 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
         if (playing) {
           _hasStartedPlayback = true;
           _isSeeking = false;
+          _isPreparingEngine = false;
+          _prepareTimeout?.cancel();
+          _prepareTimeout = null;
         }
         if (mounted && playing && (!wasStarted || wasSeeking)) {
           setState(() {});
         }
         if (!playing) {
-          _progressManager.scheduleSaveProgress();
-          _publishLiveProgress(force: true);
+          if (!_isExiting) {
+            _progressManager.scheduleSaveProgress();
+            _publishLiveProgress(force: true);
+          }
         }
         if (Platform.isLinux) {
           MprisService.instance.updatePlaybackState(
@@ -861,6 +895,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
         }
       },
       onBuffering: (buffering) {
+        if (_isExiting) return;
         if (mounted) {
           setState(() {
             _isBuffering = buffering;
@@ -873,7 +908,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
         _isPlayingNotifier.value = false;
       },
       onTracks: (audio, subs, selectedAudio, selectedSub) {
-        if (!mounted) return;
+        if (!mounted || _isExiting) return;
         setState(() {
           _audioTracks = audio;
           _subtitleTracks = subs;
@@ -888,12 +923,16 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
         }
       },
       onCues: (text) {
+        if (_isExiting) return;
         if (mounted && _currentSubtitleText != text) {
           setState(() => _currentSubtitleText = text);
         }
       },
       onFallbackToMediaKit: (reason, fallbackPos) {
-        if (!mounted) return;
+        if (!mounted || _isExiting) return;
+        // media_kit paints into a Flutter texture again, so the root background
+        // must come back to keep the route opaque.
+        ref.read(nativeVideoSurfaceActiveProvider.notifier).setActive(false);
         setState(() {
           _isBuffering = true;
           _fallbackNotice = ref
@@ -907,6 +946,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
         _initStatsService();
       },
       onChapters: (chs) {
+        if (_isExiting) return;
         if (mounted && chs.isNotEmpty) {
           setState(() => _chapters = chs);
         }
@@ -998,20 +1038,22 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
         return ep?.image ?? _effectiveCoverImage;
       },
       onLocalWatchRecorded: () {
-        if (mounted && !_isPlayerDisposed) {
-          try {
-            ref.invalidate(animeCollectionProvider);
-            ref.invalidate(continueWatchingProvider);
-            ref.invalidate(recommendationsProvider);
-          } catch (_) {}
-        }
+        // Period flicker intentionally avoided: this fires on every periodic
+        // progress write (and on exit). The local offline entry is already
+        // persisted by the progress manager, and the detail page reads its
+        // progress from it; the Continue Watching list is updated optimistically
+        // before the player closes and refreshed silently afterwards. Invalidating
+        // the whole library collection here reloaded the feed behind the detail
+        // page every ~20s and caused the post-exit lag spike.
       },
       onProgressSynced: () {
+        // Only the real AniList/library progress change needs a collection
+        // refresh (the latch in PlayerProgressManager guarantees this runs once
+        // per episode). Continue Watching is handled by the exit flow and
+        // recommendations do not depend on episode progress.
         if (mounted && !_isPlayerDisposed) {
           try {
             ref.invalidate(animeCollectionProvider);
-            ref.invalidate(continueWatchingProvider);
-            ref.invalidate(recommendationsProvider);
           } catch (_) {}
         }
       },
@@ -1078,66 +1120,12 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || _isPlayerDisposed) return;
       ref.read(isVideoPlayerActiveProvider.notifier).setActive(true);
-      _focusNode.requestFocus();
-
-      _coordinator.init(
-        videoUrl: _currentVideoUrl,
-        title: widget.title,
-        episodeTitle: _currentEpisodeTitle,
-        headers: _currentHeaders,
-        mimeType: _currentMimeType,
-        startPosition: resolvedStartPosition,
-        externalSubtitles: _currentExternalSubtitles,
-        fitMode: _fitMode,
-        activeShaderPreset: _activeShaderPreset,
-        isOnlineStream: isOnline,
-        initialSurfaceTop: winInit.initialTop,
-        initialSurfaceHeight: winInit.initialHeight,
-      );
-      _initialStartPosition = null;
-
-      _progressManager.startTracking(initialPosition: resolvedStartPosition);
-      if (widget.mediaId != null) {
-        final isLocal =
-            _isCurrentLocalFile ||
-            _currentVideoUrl.contains('/api/v1/mediastream');
-        final isTorrent =
-            _currentVideoUrl.contains('torrentstream') ||
-            (_currentVideoSource?.toLowerCase().contains('torrent') ?? false);
-        final sourceType = isLocal
-            ? 'local'
-            : (isTorrent ? 'torrent' : 'online');
-        ref
-            .read(animePlaybackSourceProvider.notifier)
-            .saveSource(
-              mediaId: widget.mediaId!,
-              sourceType: sourceType,
-              onlineStreamProvider: _currentOnlineStreamProvider,
-              onlineStreamDubbed: _currentOnlineStreamDubbed,
-              onlineStreamServer: _currentOnlineStreamServer,
-              videoSource: _currentVideoSource,
-              videoUrl: _currentVideoUrl,
-              headers: _currentHeaders,
-              mimeType: _currentMimeType,
-              episodeNumber: _currentEpisodeNumber,
-            );
+      if (Platform.isAndroid && _coordinator.isUsingExoPlayer) {
+        ref.read(nativeVideoSurfaceActiveProvider.notifier).setActive(true);
       }
-      _initStatsService();
+      _focusNode.requestFocus();
       _startHideTimer();
       _initBrightness();
-      _sourceController.schedulePrefetchNextEpisode();
-
-      if (_currentVideoUrl.isEmpty && _currentOnlineStreamProvider != null) {
-        if (_isTmdbPlayback) {
-          _openSourcePickerOnEnter();
-        } else {
-          _sourceController.resolveInitialSources();
-        }
-      } else if (_currentOnlineStreamProvider != null) {
-        _sourceController.fetchAvailableSourcesInBackground(
-          currentVideoUrl: _currentVideoUrl,
-        );
-      }
 
       if (Platform.isLinux) {
         MprisService.instance.onPlay = () => _coordinator.play();
@@ -1175,6 +1163,78 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
           duration: _duration,
         );
       }
+
+      // Creating media_kit's native player is the most expensive part of
+      // entering the screen. Let the route transition finish first (the
+      // loading artwork is already visible), so the opening fade stays smooth
+      // instead of being interrupted by native player creation.
+      _engineStartTimer?.cancel();
+      _engineStartTimer = Timer(const Duration(milliseconds: 220), () {
+        if (!mounted || _isPlayerDisposed) return;
+
+        _coordinator.init(
+          videoUrl: _currentVideoUrl,
+          title: widget.title,
+          episodeTitle: _currentEpisodeTitle,
+          headers: _currentHeaders,
+          mimeType: _currentMimeType,
+          startPosition: resolvedStartPosition,
+          externalSubtitles: _currentExternalSubtitles,
+          fitMode: _fitMode,
+          activeShaderPreset: _activeShaderPreset,
+          isOnlineStream: isOnline,
+          initialSurfaceTop: winInit.initialTop,
+          initialSurfaceHeight: winInit.initialHeight,
+        );
+        _initialStartPosition = null;
+
+        _prepareTimeout?.cancel();
+        _prepareTimeout = Timer(const Duration(seconds: 4), () {
+          if (!mounted || !_isPreparingEngine) return;
+          setState(() => _isPreparingEngine = false);
+        });
+
+        _progressManager.startTracking(initialPosition: resolvedStartPosition);
+        if (widget.mediaId != null) {
+          final isLocal =
+              _isCurrentLocalFile ||
+              _currentVideoUrl.contains('/api/v1/mediastream');
+          final isTorrent =
+              _currentVideoUrl.contains('torrentstream') ||
+              (_currentVideoSource?.toLowerCase().contains('torrent') ?? false);
+          final sourceType = isLocal
+              ? 'local'
+              : (isTorrent ? 'torrent' : 'online');
+          ref
+              .read(animePlaybackSourceProvider.notifier)
+              .saveSource(
+                mediaId: widget.mediaId!,
+                sourceType: sourceType,
+                onlineStreamProvider: _currentOnlineStreamProvider,
+                onlineStreamDubbed: _currentOnlineStreamDubbed,
+                onlineStreamServer: _currentOnlineStreamServer,
+                videoSource: _currentVideoSource,
+                videoUrl: _currentVideoUrl,
+                headers: _currentHeaders,
+                mimeType: _currentMimeType,
+                episodeNumber: _currentEpisodeNumber,
+              );
+        }
+        _initStatsService();
+        _sourceController.schedulePrefetchNextEpisode();
+
+        if (_currentVideoUrl.isEmpty && _currentOnlineStreamProvider != null) {
+          if (_isTmdbPlayback) {
+            _openSourcePickerOnEnter();
+          } else {
+            _sourceController.resolveInitialSources();
+          }
+        } else if (_currentOnlineStreamProvider != null) {
+          _sourceController.fetchAvailableSourcesInBackground(
+            currentVideoUrl: _currentVideoUrl,
+          );
+        }
+      });
     });
   }
 
@@ -1331,6 +1391,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     _isPlayerDisposed = true;
     try {
       ref.read(isVideoPlayerActiveProvider.notifier).setActive(false);
+      ref.read(nativeVideoSurfaceActiveProvider.notifier).setActive(false);
     } catch (_) {}
     _sourceController.dispose();
     _progressManager.dispose();
@@ -1342,6 +1403,8 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     _seekFeedbackTimer?.cancel();
     _fallbackNoticeTimer?.cancel();
     _seekLoadingTimer?.cancel();
+    _engineStartTimer?.cancel();
+    _prepareTimeout?.cancel();
 
     _statsSub?.cancel();
     _statsService?.dispose();
@@ -1377,27 +1440,77 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       MprisService.instance.reset();
     }
 
+    // The silent Continue Watching refresh is sequenced by _handleExit after
+    // the continuity PATCH, so the feed never shows a live jump on arrival.
+
     _isPlayingNotifier.dispose();
     _focusNode.dispose();
     super.dispose();
   }
 
   Future<void> _handleExit() async {
+    // Stop pending periodic writes and UI timers before the closing animation;
+    // the final flush is scheduled by the window manager after the route is
+    // gone.
+    _progressManager.cancelPendingWrites();
+    _hideTimer?.cancel();
+    _seekFeedbackTimer?.cancel();
+    _fallbackNoticeTimer?.cancel();
+    _seekLoadingTimer?.cancel();
+
+    // Pre-apply the new episode/position while the player still covers the
+    // feed. The feed rebuilds behind the closing transition, so it is already
+    // correct when revealed (no live "jump" on arrival).
+    _applyContinueWatchingOptimistic();
+    _progressManager.savePlaybackProgress(force: true);
+    try {
+      _providerContainer.read(episodeResumeAlignmentProvider.notifier).request();
+    } catch (_) {}
+
     await _windowManager.handleExit(
       context: context,
       onSaveProgress: () async {
         _progressManager.savePlaybackProgress();
-        // Schedule cache refresh in microtask after pop animation has unmounted
-        Future.microtask(() {
-          try {
-            ref.invalidate(continueWatchingProvider);
-          } catch (_) {}
-        });
       },
       onUpdateUi: () {
         if (mounted) setState(() {});
       },
     );
+    _refreshContinueWatchingAfterExit();
+  }
+
+  /// Updates the in-memory Continue Watching list before the route closes.
+  void _applyContinueWatchingOptimistic() {
+    final mediaId = widget.mediaId;
+    final episode = _currentEpisodeNumber;
+    if (mediaId == null || mediaId <= 0 || episode == null || episode < 1) {
+      return;
+    }
+    try {
+      final aniZipEp = _aniZipData?.getEpisode(episode);
+      _providerContainer
+          .read(continueWatchingProvider.notifier)
+          .applyLocalProgress(
+            mediaId: mediaId,
+            episodeNumber: episode,
+            progress: _animeDetails?.progress,
+            episodeTitle: _currentEpisodeTitle,
+            episodeThumbnail: aniZipEp?.image,
+            totalEpisodes: _animeDetails?.totalEpisodes,
+          );
+    } catch (_) {}
+  }
+
+  /// Waits for the continuity PATCH, then refreshes the feed silently.
+  Future<void> _refreshContinueWatchingAfterExit() async {
+    try {
+      await _progressManager.lastContinuityUpdate;
+    } catch (_) {}
+    try {
+      await _providerContainer
+          .read(continueWatchingProvider.notifier)
+          .refreshFromServer();
+    } catch (_) {}
   }
 
   void _startHideTimer() {
@@ -1411,15 +1524,29 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   }
 
   void _toggleControls() {
-    if (_isTransitioningOrientation) return;
+    if (_isTransitioningOrientation || _isPlayerLocked) return;
     setState(() => _areControlsVisible = !_areControlsVisible);
     if (_areControlsVisible) {
       _startHideTimer();
     }
   }
 
+  void _togglePlayerLock() {
+    HapticFeedback.mediumImpact();
+    setState(() {
+      _isPlayerLocked = !_isPlayerLocked;
+      if (_isPlayerLocked) {
+        _areControlsVisible = false;
+        _hideTimer?.cancel();
+      } else {
+        _areControlsVisible = true;
+        _startHideTimer();
+      }
+    });
+  }
+
   void _onMouseEnter() {
-    if (!mounted) return;
+    if (!mounted || _isPlayerLocked) return;
     _isMouseInside = true;
     if (!_focusNode.hasFocus) {
       _focusNode.requestFocus();
@@ -1431,7 +1558,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   }
 
   void _onMouseMove() {
-    if (!mounted) return;
+    if (!mounted || _isPlayerLocked) return;
     if (!_isMouseInside) return;
     if (!_areControlsVisible) {
       setState(() => _areControlsVisible = true);
@@ -1571,6 +1698,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   /// episode rail's cards follow the video smoothly. Throttled to ~4 Hz;
   /// [force] bypasses the throttle (pause, seek, episode change).
   void _publishLiveProgress({bool force = false}) {
+    if (_isExiting || _isPlayerDisposed) return;
     final mediaId = widget.mediaId;
     final episode = _currentEpisodeNumber;
     if (mediaId == null || mediaId <= 0 || episode == null || episode < 1) {
@@ -1713,7 +1841,6 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   /// reuse the exact same widget instance. Recreating it re-created the render
   /// layers every time, which made the glow flash for a frame on hover.
   Widget? _ambientHaloWidget;
-  Widget? _ambientBackdropWidget;
 
   /// Halo painted around the video in normal mode (soft edges).
   Widget? _buildAmbientHalo() {
@@ -1733,13 +1860,28 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     );
   }
 
-  /// Flat backdrop behind the video in wide mode (fills the letterbox bars).
+  /// Cached side-bar backdrop for fullscreen / wide / cinema.
+  Widget? _ambientBackdropWidget;
+  PlayerFitMode? _ambientBackdropFitMode;
+
   Widget? _buildAmbientBackdrop() {
     final service = _coordinator.mediaKitService;
     if (service == null || _coordinator.isUsingExoPlayer) return null;
-    return _ambientBackdropWidget ??= AmbientVideoGlow(
-      controller: service.videoController,
-    );
+    if (!_hasStartedPlayback || _isLoadingNextEpisode || _isExiting) {
+      return null;
+    }
+    if (_ambientBackdropWidget == null ||
+        _ambientBackdropFitMode != _fitMode) {
+      _ambientBackdropFitMode = _fitMode;
+      _ambientBackdropWidget = AmbientVideoSideGlow(
+        controller: service.videoController,
+        fitMode: _fitMode,
+        scrimOpacity: 0.35,
+        blurSigma: 55,
+        opacity: 0.9,
+      );
+    }
+    return _ambientBackdropWidget;
   }
 
   void _openEpisodesSheet() {
@@ -1880,15 +2022,33 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     required bool isFullscreen,
     required bool isDesktop,
   }) {
+    final layoutMode = ref.read(playerLayoutModeProvider);
+    final needsTitleBarInset =
+        isDesktop &&
+        !isFullscreen &&
+        (layoutMode == PlayerLayoutMode.wide ||
+            layoutMode == PlayerLayoutMode.cinema);
+    // In the normal desktop page the soft halo is painted by
+    // [PlayerDesktopLayout] around the video. Everywhere else (fullscreen,
+    // wide, cinema, mobile) the blurred frame sits behind the video so the
+    // letterbox bars take its colours.
+    final useAmbientBackdrop =
+        ref.read(playerAmbientGlowProvider) &&
+        (!isDesktop || isFullscreen || layoutMode != PlayerLayoutMode.normal);
+
     return PlayerViewport(
       isUsingExoPlayer: _coordinator.isUsingExoPlayer,
       mediaKitPlayerService: _coordinator.mediaKitService,
+      ambientBackdrop: useAmbientBackdrop ? _buildAmbientBackdrop() : null,
       fitMode: _fitMode,
       selectedSubtitleTrackId: _selectedSubtitleTrackId,
       currentSubtitleText: _currentSubtitleText,
       areControlsVisible: _areControlsVisible,
       isTransitioningOrientation: _isTransitioningOrientation,
       isExiting: _isExiting,
+      isPlayerLocked: _isPlayerLocked,
+      onTogglePlayerLock: _togglePlayerLock,
+      topUiInset: needsTitleBarInset ? DesktopTitleBar.height : 0,
       onToggleControls: _toggleControls,
       onPlayOrPause: _playOrPause,
       onSeekRelative: _seekRelative,
@@ -1940,19 +2100,23 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       showLoadingOverlay:
           !_hasStartedPlayback &&
           !_isSeeking &&
-          _playbackOrigin != PlayerPlaybackOrigin.local &&
-          (_isBuffering || _isLoadingNextEpisode || _isResolvingSources),
-      loadingMessage: switch (_playbackOrigin) {
-        PlayerPlaybackOrigin.online =>
-          _isBuffering
-              ? ref.read(translationsProvider).bufferingVideo
-              : ref.read(translationsProvider).loadingVideo,
-        PlayerPlaybackOrigin.torrent =>
-          ref.read(translationsProvider).downloadingMetadata,
-        PlayerPlaybackOrigin.mediaServer =>
-          ref.read(translationsProvider).bufferingVideo,
-        PlayerPlaybackOrigin.local => '',
-      },
+          (_isPreparingEngine ||
+              _isBuffering ||
+              _isLoadingNextEpisode ||
+              _isResolvingSources),
+      loadingMessage: _isPreparingEngine
+          ? ref.read(translationsProvider).loadingVideo
+          : switch (_playbackOrigin) {
+              PlayerPlaybackOrigin.online =>
+                _isBuffering
+                    ? ref.read(translationsProvider).bufferingVideo
+                    : ref.read(translationsProvider).loadingVideo,
+              PlayerPlaybackOrigin.torrent =>
+                ref.read(translationsProvider).downloadingMetadata,
+              PlayerPlaybackOrigin.mediaServer =>
+                ref.read(translationsProvider).bufferingVideo,
+              PlayerPlaybackOrigin.local => '',
+            },
       loadingTitle:
           _currentEpisodeTitle ??
           (_currentEpisodeNumber != null
@@ -1994,9 +2158,6 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                 .read(playerEpisodesRailVisibleProvider.notifier)
                 .setVisible(true)
           : null,
-      ambientBackdrop: !isFullscreen && _layoutMode == PlayerLayoutMode.wide
-          ? _buildAmbientBackdrop()
-          : null,
       captureKey: _videoCaptureKey,
       positionNotifier: _positionNotifier,
       bufferNotifier: _bufferNotifier,
@@ -2006,6 +2167,12 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       onNextEpisode: (_hasNextEpisode && !_isLoadingNextEpisode)
           ? () => _sourceController.playEpisode(
               targetEpNum: (_currentEpisodeNumber ?? 1) + 1,
+              onEpisodeTransitionStarted: _onEpisodeTransitionStarted,
+            )
+          : null,
+      onPreviousEpisode: (_hasPreviousEpisode && !_isLoadingNextEpisode)
+          ? () => _sourceController.playEpisode(
+              targetEpNum: (_currentEpisodeNumber ?? 1) - 1,
               onEpisodeTransitionStarted: _onEpisodeTransitionStarted,
             )
           : null,
@@ -2022,6 +2189,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     final isDesktop = !Platform.isAndroid && !Platform.isIOS;
     final isFullscreen = _isFullscreen || _isTvActive;
     final layoutMode = ref.watch(playerLayoutModeProvider);
+    final ambientGlowEnabled = ref.watch(playerAmbientGlowProvider);
     final showEpisodeRail = ref.watch(playerEpisodesRailVisibleProvider);
 
     // Keep dispose() safe: cache the values it needs while the widget is alive.
@@ -2057,8 +2225,15 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       });
     }
 
-    // media_kit renders into Flutter's texture, so the player route must stay opaque.
-    final scaffoldBg = theme.colorScheme.surface;
+    // media_kit renders into Flutter's texture, so the route must stay opaque.
+    // ExoPlayer instead renders to a native SurfaceView placed *behind* the
+    // Flutter window: an opaque route would cover the video completely, so the
+    // route must be transparent while the native engine is active.
+    final usesNativeVideoSurface =
+        Platform.isAndroid && _coordinator.isUsingExoPlayer;
+    final scaffoldBg = usesNativeVideoSurface
+        ? Colors.transparent
+        : theme.colorScheme.surface;
 
     final isThemeDark = theme.brightness == Brightness.dark;
     final statusBarIconBrightness = (effectiveFullscreen || isThemeDark)
@@ -2121,7 +2296,8 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                                   layoutMode: layoutMode,
                                   showEpisodeRail: showEpisodeRail,
                                   ambientHalo:
-                                      layoutMode == PlayerLayoutMode.normal
+                                      ambientGlowEnabled &&
+                                          layoutMode == PlayerLayoutMode.normal
                                       ? _buildAmbientHalo()
                                       : null,
                                   pageHeader: _buildDesktopPageHeader(context),
@@ -2157,6 +2333,12 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                                           _currentOnlineStreamProvider,
                                       isDubbed:
                                           _currentOnlineStreamDubbed ?? false,
+                                      isTorrentStream:
+                                          _hasActiveTorrentStream ||
+                                          (_activeSource?.isTorrent ?? false) ||
+                                          _currentVideoUrl.contains(
+                                            'torrentstream',
+                                          ),
                                       onToggleDubbed: _toggleOnlineStreamDubbed,
                                       onReloadSources: () => _sourceController
                                           .resolveInitialSources(
@@ -2180,6 +2362,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                                           currentEpisodeNumber:
                                               _currentEpisodeNumber,
                                           isMovie: _isMovie,
+                                          independentScroll: true,
                                           onHide: () => ref
                                               .read(
                                                 playerEpisodesRailVisibleProvider

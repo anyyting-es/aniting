@@ -1,5 +1,5 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/presentation/widgets/player/models/player_types.dart';
+﻿import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:aniting/presentation/widgets/player/models/player_types.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Desktop watch-page chrome preferences: the layout mode cycled by the cinema

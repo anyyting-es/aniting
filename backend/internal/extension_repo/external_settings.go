@@ -1,4 +1,4 @@
-package extension_repo
+﻿package extension_repo
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	"seanime/internal/util/filecache"
+	"aniting/internal/util/filecache"
 )
 
 const (

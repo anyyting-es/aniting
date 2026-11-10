@@ -1,4 +1,4 @@
-package chapter_downloader
+﻿package chapter_downloader
 
 import (
 	"bytes"
@@ -11,10 +11,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"seanime/internal/database/db"
-	"seanime/internal/events"
-	hibikemanga "seanime/internal/extension/hibike/manga"
-	"seanime/internal/testutil"
+	"aniting/internal/database/db"
+	"aniting/internal/events"
+	hibikemanga "aniting/internal/extension/hibike/manga"
+	"aniting/internal/testutil"
 
 	"github.com/goccy/go-json"
 	"github.com/stretchr/testify/require"

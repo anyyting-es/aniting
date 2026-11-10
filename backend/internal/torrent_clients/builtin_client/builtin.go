@@ -1,4 +1,4 @@
-package builtin_client
+﻿package builtin_client
 
 import (
 	"encoding/json"
@@ -8,9 +8,9 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"seanime/internal/database/db"
-	"seanime/internal/database/models"
-	"seanime/internal/util"
+	"aniting/internal/database/db"
+	"aniting/internal/database/models"
+	"aniting/internal/util"
 	"sort"
 	"strings"
 	"sync"

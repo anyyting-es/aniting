@@ -1,4 +1,4 @@
-package debrid_client
+﻿package debrid_client
 
 import (
 	"context"
@@ -10,11 +10,11 @@ import (
 	"testing"
 	"time"
 
-	"seanime/internal/debrid/debrid"
-	"seanime/internal/events"
-	"seanime/internal/hook"
-	"seanime/internal/util"
-	"seanime/internal/util/result"
+	"aniting/internal/debrid/debrid"
+	"aniting/internal/events"
+	"aniting/internal/hook"
+	"aniting/internal/util"
+	"aniting/internal/util/result"
 
 	"github.com/samber/mo"
 	"github.com/stretchr/testify/require"
@@ -77,7 +77,7 @@ func TestCreateDownloadTempDirUsesAppTempOnMobile(t *testing.T) {
 
 	require.Equal(t, tempRoot, filepath.Dir(tmpDir))
 	require.NotEqual(t, destination, filepath.Dir(tmpDir))
-	require.Contains(t, filepath.Base(tmpDir), "seanime-debrid-")
+	require.Contains(t, filepath.Base(tmpDir), "aniting-debrid-")
 }
 
 func TestCreateDownloadTempDirUsesDestinationOffMobile(t *testing.T) {

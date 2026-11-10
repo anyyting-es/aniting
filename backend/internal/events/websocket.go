@@ -1,9 +1,9 @@
-package events
+﻿package events
 
 import (
 	"os"
-	"seanime/internal/util"
-	"seanime/internal/util/result"
+	"aniting/internal/util"
+	"aniting/internal/util/result"
 	"sync"
 	"time"
 

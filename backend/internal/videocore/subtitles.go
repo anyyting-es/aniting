@@ -1,10 +1,10 @@
-package videocore
+﻿package videocore
 
 import (
 	"errors"
 	"fmt"
-	"seanime/internal/mkvparser"
-	"seanime/internal/util"
+	"aniting/internal/mkvparser"
+	"aniting/internal/util"
 	"strings"
 	"time"
 

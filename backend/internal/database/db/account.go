@@ -1,8 +1,8 @@
-package db
+﻿package db
 
 import (
 	"errors"
-	"seanime/internal/database/models"
+	"aniting/internal/database/models"
 
 	"gorm.io/gorm/clause"
 )

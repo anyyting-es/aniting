@@ -1,7 +1,7 @@
-package anilist
+﻿package anilist
 
 import (
-	"seanime/internal/testutil"
+	"aniting/internal/testutil"
 	"testing"
 )
 

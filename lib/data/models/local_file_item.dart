@@ -1,4 +1,4 @@
-/// Representación de un archivo multimedia local indexado por el backend de Seanime.
+/// Representación de un archivo multimedia local indexado por el backend de Aniting.
 class LocalFileItem {
   final String path;
   final String name;

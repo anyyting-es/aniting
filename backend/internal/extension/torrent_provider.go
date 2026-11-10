@@ -1,7 +1,7 @@
-package extension
+﻿package extension
 
 import (
-	hibiketorrent "seanime/internal/extension/hibike/torrent"
+	hibiketorrent "aniting/internal/extension/hibike/torrent"
 )
 
 type AnimeTorrentProviderExtension interface {

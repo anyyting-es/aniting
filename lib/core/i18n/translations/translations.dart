@@ -92,6 +92,7 @@ abstract class AppTranslations {
   String get statusWatching;
   String get statusCompleted;
   String get statusPlanning;
+  String get planToWatch;
   String get statusDropped;
   String get statusPaused;
   String get statusAll;
@@ -214,6 +215,10 @@ abstract class AppTranslations {
 
   // Player Settings
   String get audioAndGestures;
+  String get ambientGlow;
+  String get ambientGlowDesc;
+  String get smoothMotion;
+  String get smoothMotionDesc;
   String get volumeBoost;
   String get volumeBoostDesc;
   String get onlineStreamProxy;
@@ -335,6 +340,7 @@ abstract class AppTranslations {
   String get characterBirthday;
   String get characterBloodType;
   String get noVoiceActorInfo;
+  String get noCharacterDescriptionAvailable;
   String get streamingDisabledTitle;
   String get streamingDisabledDesc;
 
@@ -360,6 +366,20 @@ abstract class AppTranslations {
   String get unwatched;
   String get showAllEpisodes;
   String get hideWatchedEpisodes;
+
+  // ── GPU ──────────────────────────────────────────────────────────────
+  String get gpuSectionTitle;
+  String get gpuActive;
+  String get gpuDetected;
+  String get gpuPreferenceTitle;
+  String get gpuPreferenceDesc;
+  String get gpuPreferenceAuto;
+  String get gpuPreferenceHigh;
+  String get gpuPreferencePower;
+  String get gpuDedicated;
+  String get gpuIntegrated;
+  String get gpuNoneDetected;
+  String get gpuRestartRequired;
 
   // Online Stream & Torrent Selector
   String get onlineProvider;
@@ -478,6 +498,8 @@ abstract class AppTranslations {
   String get pause;
   String get fullScreen;
   String get exitFullScreen;
+  String get lockScreen;
+  String get unlockScreen;
   String get theaterMode;
   String get exitTheaterMode;
   String get reduceToModal;
@@ -638,6 +660,8 @@ abstract class AppTranslations {
   String get linkAnimeManually;
   String get reloadEpisodes;
   String get filterEpisodesHint;
+  String get searchEpisodes;
+  String get searchEpisodesShortcut;
   String get filterByTitle;
   String get selectServerQuality;
   String get quality;
@@ -916,13 +940,12 @@ abstract class AppTranslations {
   String get nativeClientSubtitle;
   String get developerAndCredits;
   String get developerSubtitle;
-  String get originalServerSubtitle;
   String get discordCommunity;
   String get discordSubtitle;
   String get systemAndUpdates;
   String get clientDevice;
   String get buildRelease;
-  String get seanimeCoreServer;
+  String get anitingCoreServer;
   String serverVersionConnected(String version);
   String get serverOfflineOrLocal;
   String get checkingUpdatesGithub;
@@ -1227,6 +1250,12 @@ abstract class AppTranslations {
   String get downloadEpisode;
   String get editDetails;
 
+  // Quick preview actions
+  String get addToLibrary;
+  String get addedToLibrary;
+  String get editStatus;
+  String get markAsRead;
+
   // Liquid Glass Effects Preference
   String get glassEffectSettingTitle;
   String get glassEffectSettingSubtitle;
@@ -1270,9 +1299,9 @@ abstract class AppTranslations {
   String get completionDate;
   String get selectDate;
   String get totalRewatches;
+  String get total;
   String get totalRereads;
   String get noScore;
-  String get saveChanges;
 
   // TMDB / Series & Seasons
   String get seasons;
@@ -1502,4 +1531,15 @@ abstract class AppTranslations {
   String get windowMaximize;
   String get windowRestore;
   String get windowClose;
+
+  // Manga Detail Desktop layout
+  String get refreshSource;
+  String get manualMatch;
+  String get scanlator;
+  String get showUnread;
+  String get showDownloaded;
+  String get chapterNumberCol;
+  String get chapterNameCol;
+  String get scanlatorCol;
+  String get charactersHeader;
 }

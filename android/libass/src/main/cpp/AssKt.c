@@ -145,26 +145,26 @@ static void sigsys_filter_handler(int sig, siginfo_t *info, void *ucontext) {
         handled = 1;
         break;
       default:
-        __android_log_print(ANDROID_LOG_WARN, "SeanimeSyscall", "Unhandled SIGSYS syscall %d, returning -ENOSYS for fallback", syscall_no);
+        __android_log_print(ANDROID_LOG_WARN, "AnitingSyscall", "Unhandled SIGSYS syscall %d, returning -ENOSYS for fallback", syscall_no);
         ret = -ENOSYS;
         break;
     }
 
     if (handled) {
-      __android_log_print(ANDROID_LOG_INFO, "SeanimeSyscall", "Emulated SIGSYS syscall %d -> %ld", syscall_no, ret);
+      __android_log_print(ANDROID_LOG_INFO, "AnitingSyscall", "Emulated SIGSYS syscall %d -> %ld", syscall_no, ret);
     }
     ctx->uc_mcontext.gregs[REG_RAX] = ret;
 
 #elif defined(__aarch64__)
-    __android_log_print(ANDROID_LOG_WARN, "SeanimeSyscall", "ARM64 SIGSYS syscall %d, returning -ENOSYS for fallback", syscall_no);
+    __android_log_print(ANDROID_LOG_WARN, "AnitingSyscall", "ARM64 SIGSYS syscall %d, returning -ENOSYS for fallback", syscall_no);
     ctx->uc_mcontext.regs[0] = -ENOSYS;
 
 #elif defined(__i386__)
-    __android_log_print(ANDROID_LOG_WARN, "SeanimeSyscall", "x86 SIGSYS syscall %d, returning -ENOSYS for fallback", syscall_no);
+    __android_log_print(ANDROID_LOG_WARN, "AnitingSyscall", "x86 SIGSYS syscall %d, returning -ENOSYS for fallback", syscall_no);
     ctx->uc_mcontext.gregs[REG_EAX] = -ENOSYS;
 
 #elif defined(__arm__)
-    __android_log_print(ANDROID_LOG_WARN, "SeanimeSyscall", "ARM32 SIGSYS syscall %d, returning -ENOSYS for fallback", syscall_no);
+    __android_log_print(ANDROID_LOG_WARN, "AnitingSyscall", "ARM32 SIGSYS syscall %d, returning -ENOSYS for fallback", syscall_no);
     ctx->uc_mcontext.arm_r0 = -ENOSYS;
 #endif
 
@@ -185,7 +185,7 @@ static void install_seccomp_sigsys_handler(void) {
   sa.sa_flags = SA_SIGINFO | SA_NODEFER;
   sigemptyset(&sa.sa_mask);
   sigaction(SIGSYS, &sa, &g_old_sigsys);
-  __android_log_print(ANDROID_LOG_INFO, "SeanimeSyscall", "Installed SECCOMP SIGSYS compatibility handler");
+  __android_log_print(ANDROID_LOG_INFO, "AnitingSyscall", "Installed SECCOMP SIGSYS compatibility handler");
 }
 
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {

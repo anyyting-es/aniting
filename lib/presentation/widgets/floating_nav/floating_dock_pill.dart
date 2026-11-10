@@ -1,13 +1,13 @@
-import 'dart:ui';
+﻿import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:g1455/g1455.dart';
-import 'package:seanime_app/core/preferences/glass_theme_provider.dart';
-import 'package:seanime_app/core/constants/feature_flags.dart';
-import 'package:seanime_app/core/preferences/wallpaper_preferences_provider.dart';
-import 'package:seanime_app/presentation/widgets/desktop_sidebar.dart';
+import 'package:aniting/core/preferences/glass_theme_provider.dart';
+import 'package:aniting/core/constants/feature_flags.dart';
+import 'package:aniting/core/preferences/wallpaper_preferences_provider.dart';
+import 'package:aniting/presentation/widgets/desktop_sidebar.dart';
 
 /// A Material Design 3 floating navigation dock with fluid animated pill expansion
 /// and enhanced Liquid Glass frosted refraction.

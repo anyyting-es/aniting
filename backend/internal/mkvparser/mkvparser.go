@@ -1,4 +1,4 @@
-package mkvparser
+﻿package mkvparser
 
 import (
 	"bytes"
@@ -9,9 +9,9 @@ import (
 	"image/png"
 	"io"
 	"path/filepath"
-	"seanime/internal/matroska"
-	"seanime/internal/pgs"
-	"seanime/internal/util"
+	"aniting/internal/matroska"
+	"aniting/internal/pgs"
+	"aniting/internal/util"
 	"strings"
 	"sync"
 

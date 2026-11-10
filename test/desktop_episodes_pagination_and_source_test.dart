@@ -1,16 +1,16 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:seanime_app/core/api/api_client.dart';
-import 'package:seanime_app/data/models/anizip_data.dart';
-import 'package:seanime_app/data/models/library_entry_details.dart';
-import 'package:seanime_app/data/models/onlinestream_models.dart';
-import 'package:seanime_app/data/repositories/seanime_repository.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
-import 'package:seanime_app/presentation/widgets/anime_detail/desktop/desktop_episodes_tab.dart';
+import 'package:aniting/core/api/api_client.dart';
+import 'package:aniting/data/models/anizip_data.dart';
+import 'package:aniting/data/models/library_entry_details.dart';
+import 'package:aniting/data/models/onlinestream_models.dart';
+import 'package:aniting/data/repositories/aniting_repository.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/screens/anime_detail_screen.dart';
+import 'package:aniting/presentation/widgets/anime_detail/desktop/desktop_episodes_tab.dart';
 
-class FakeEpisodesRepo extends SeanimeRepository {
+class FakeEpisodesRepo extends AnitingRepository {
   FakeEpisodesRepo() : super(ApiClient());
 
   @override
@@ -140,7 +140,7 @@ void main() {
       expect(find.textContaining('Online Stream Ep 10'), findsNothing);
     });
 
-    testWidgets('DesktopEpisodesTab always uses AniZip episodes list even in online tab', (tester) async {
+    testWidgets('uses the online provider list when it does not match AniList 1:1', (tester) async {
       final aniZipData = AniZipData.fromJson({
         'titles': {'en': 'Test Anime'},
         'episodes': {
@@ -199,8 +199,11 @@ void main() {
         ),
       );
 
-      // In Desktop, it should always display AniZip episodes
-      expect(find.textContaining('AniZip Ep 1'), findsOneWidget);
+      // The provider has an extra episode, so the source list is shown
+      // instead of the shorter AniList/AniZip list.
+      expect(find.textContaining('Special Provider Cut 1'), findsOneWidget);
+      expect(find.textContaining('Special Provider Cut 2'), findsOneWidget);
+      expect(find.textContaining('AniZip Ep 1'), findsNothing);
     });
 
     testWidgets('Pagination renders at most 20 episodes and navigates with Siguiente', (tester) async {

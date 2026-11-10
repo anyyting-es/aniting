@@ -1,9 +1,9 @@
-package simulated_platform
+﻿package simulated_platform
 
 import (
 	"context"
 	"errors"
-	"seanime/internal/api/anilist"
+	"aniting/internal/api/anilist"
 	"time"
 )
 

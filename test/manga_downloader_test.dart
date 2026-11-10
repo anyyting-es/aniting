@@ -1,9 +1,9 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:seanime_app/core/storage/app_storage_paths.dart';
-import 'package:seanime_app/data/models/manga_entry.dart';
-import 'package:seanime_app/data/services/manga_offline_service.dart';
+import 'package:aniting/core/storage/app_storage_paths.dart';
+import 'package:aniting/data/models/manga_entry.dart';
+import 'package:aniting/data/services/manga_offline_service.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -11,7 +11,7 @@ void main() {
   late Directory tempTestDir;
 
   setUp(() async {
-    tempTestDir = await Directory.systemTemp.createTemp('seanime_downloader_test_');
+    tempTestDir = await Directory.systemTemp.createTemp('aniting_downloader_test_');
   });
 
   tearDown(() async {

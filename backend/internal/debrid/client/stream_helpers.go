@@ -1,4 +1,4 @@
-package debrid_client
+﻿package debrid_client
 
 import (
 	"context"
@@ -6,9 +6,9 @@ import (
 	"io"
 	"net/http"
 	"path/filepath"
-	"seanime/internal/api/anilist"
-	"seanime/internal/api/metadata"
-	"seanime/internal/util"
+	"aniting/internal/api/anilist"
+	"aniting/internal/api/metadata"
+	"aniting/internal/util"
 	"strings"
 )
 

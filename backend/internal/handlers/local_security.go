@@ -7,8 +7,8 @@ import (
 	"net/url"
 	"path/filepath"
 	"runtime"
-	"seanime/internal/database/models"
-	"seanime/internal/security"
+	"aniting/internal/database/models"
+	"aniting/internal/security"
 	"strings"
 
 	"github.com/labstack/echo/v4"
@@ -454,7 +454,7 @@ func getContextClientId(c echo.Context) string {
 		return ""
 	}
 
-	if value := c.Get("Seanime-Client-Id"); value != nil {
+	if value := c.Get("Aniting-Client-Id"); value != nil {
 		if clientID, ok := value.(string); ok {
 			clientID = strings.TrimSpace(clientID)
 			if clientID != "" {

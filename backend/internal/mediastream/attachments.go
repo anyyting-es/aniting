@@ -1,11 +1,11 @@
-package mediastream
+﻿package mediastream
 
 import (
 	"errors"
 	"net/url"
 	"path/filepath"
-	"seanime/internal/events"
-	"seanime/internal/mediastream/videofile"
+	"aniting/internal/events"
+	"aniting/internal/mediastream/videofile"
 
 	"github.com/labstack/echo/v4"
 )

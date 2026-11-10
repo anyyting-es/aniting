@@ -1,9 +1,9 @@
-package filler_test
+﻿package filler_test
 
 import (
-	"seanime/internal/api/filler"
-	"seanime/internal/testutil"
-	"seanime/internal/util"
+	"aniting/internal/api/filler"
+	"aniting/internal/testutil"
+	"aniting/internal/util"
 	"testing"
 )
 

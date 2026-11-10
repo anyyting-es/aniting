@@ -1,7 +1,7 @@
-package result
+﻿package result
 
 import (
-	"seanime/internal/util"
+	"aniting/internal/util"
 )
 
 type Map[K interface{}, V any] struct {

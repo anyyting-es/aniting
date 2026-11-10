@@ -1,8 +1,8 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/presentation/widgets/player/models/player_types.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/presentation/widgets/player/models/player_types.dart';
 
 /// Real-time on-screen performance overlay displaying video/audio metrics.
 class PerformanceStatsOverlay extends ConsumerWidget {
@@ -121,19 +121,46 @@ class PerformanceStatsOverlay extends ConsumerWidget {
                 if (stats.fps != null)
                   _buildMetric(
                     'FPS',
-                    '${stats.fps!.toStringAsFixed(2)} fps${stats.containerFps != null && (stats.fps! - stats.containerFps!).abs() > 0.1 ? ' (orig: ${stats.containerFps!.toStringAsFixed(2)})' : ''}',
+                    '${stats.fps!.toStringAsFixed(3)} fps'
+                    '${stats.containerFps != null && (stats.fps! - stats.containerFps!).abs() > 0.01 ? ' (video: ${stats.containerFps!.toStringAsFixed(3)})' : ''}',
+                  ),
+                if (stats.displayFps != null)
+                  _buildMetric(
+                    'Display',
+                    '${stats.displayFps!.toStringAsFixed(2)} Hz'
+                    '${stats.vsyncRatio != null ? ' · ${stats.vsyncRatio!.toStringAsFixed(2)} vsync/frame' : ''}'
+                    '${stats.displaySyncActive == true ? ' · DS' : ''}',
+                    valueColor: stats.displaySyncActive == true
+                        ? null
+                        : Colors.orangeAccent,
                   ),
                 if (stats.droppedFrames != null)
                   _buildMetric(
                     l10n.droppedFrames,
-                    '${stats.droppedFrames} VO / ${stats.decoderDroppedFrames ?? 0} dec',
-                    valueColor: (stats.droppedFrames ?? 0) > 10 ? Colors.amber : null,
+                    '${stats.droppedFrames} VO / ${stats.decoderDroppedFrames ?? 0} dec'
+                    '${stats.mistimedFrames != null ? ' / ${stats.mistimedFrames} mist' : ''}'
+                    '${stats.delayedFrames != null ? ' / ${stats.delayedFrames} late' : ''}',
+                    valueColor:
+                        ((stats.droppedFrames ?? 0) > 0 ||
+                                (stats.decoderDroppedFrames ?? 0) > 0 ||
+                                (stats.mistimedFrames ?? 0) > 0)
+                            ? Colors.amber
+                            : null,
                   ),
                 if (stats.hwdec != null)
                   _buildMetric(
                     l10n.hwDecoder,
                     stats.hwdec!,
                     valueColor: stats.hwdec != 'no' ? Colors.greenAccent : Colors.orangeAccent,
+                  ),
+                if (stats.videoSync != null)
+                  _buildMetric(
+                    'Sync',
+                    '${stats.videoSync}'
+                    '${stats.interpolation == true ? ' · interpolación' : ''}',
+                    valueColor: stats.videoSync == 'display-resample'
+                        ? Colors.greenAccent
+                        : null,
                   ),
                 if (stats.bitrate != null && stats.bitrate! > 0)
                   _buildMetric(l10n.videoBitrate, '${(stats.bitrate! / 1000).round()} kbps'),
@@ -152,7 +179,8 @@ class PerformanceStatsOverlay extends ConsumerWidget {
                 if (stats.cacheDuration != null && stats.cacheDuration! > 0)
                   _buildMetric(
                     l10n.demuxerCache,
-                    '${stats.cacheDuration!.toStringAsFixed(1)} s',
+                    '${stats.cacheDuration!.toStringAsFixed(1)} s'
+                    '${stats.cacheBufferingState != null ? ' (buffer ${stats.cacheBufferingState}%)' : ''}',
                   ),
                 if (stats.subtitleFormat != null)
                   _buildMetric(l10n.subtitles, stats.subtitleFormat!),

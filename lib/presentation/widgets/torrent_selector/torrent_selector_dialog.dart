@@ -1,16 +1,16 @@
-import 'dart:math' as math;
+﻿import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:g1455/g1455.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/data/models/anime_details.dart';
-import 'package:seanime_app/data/models/torrent_models.dart';
-import 'package:seanime_app/presentation/providers/active_downloads_provider.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/widgets/torrent_batch_files_sheet.dart';
-import 'package:seanime_app/presentation/widgets/torrent_selector/mobile/torrent_selector_mobile_view.dart';
-import 'package:seanime_app/presentation/widgets/torrent_selector/models/torrent_selector_helpers.dart';
-import 'package:seanime_app/presentation/widgets/toast/app_toast.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/data/models/anime_details.dart';
+import 'package:aniting/data/models/torrent_models.dart';
+import 'package:aniting/presentation/providers/active_downloads_provider.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/widgets/torrent_batch_files_sheet.dart';
+import 'package:aniting/presentation/widgets/torrent_selector/mobile/torrent_selector_mobile_view.dart';
+import 'package:aniting/presentation/widgets/torrent_selector/models/torrent_selector_helpers.dart';
+import 'package:aniting/presentation/widgets/toast/app_toast.dart';
 
 class TorrentSelectorDialog extends ConsumerStatefulWidget {
   final int mediaId;

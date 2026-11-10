@@ -114,10 +114,15 @@ class AppThemePalette {
           surfaceDim: Colors.black,
           surfaceBright: const Color(0xFF181820),
           surfaceContainerLowest: Colors.black,
-          surfaceContainerLow: const Color(0xFF08080B),
-          surfaceContainer: const Color(0xFF101015),
-          surfaceContainerHigh: const Color(0xFF181820),
-          surfaceContainerHighest: const Color(0xFF22222C),
+          surfaceContainerLow: Colors.black,
+          // Near-black, not the purple-grey M3 generates from the seed: on an
+          // OLED panel any elevated tone reads as a muddy patch. Cards in
+          // settings draw no fill at all (see AppThemeColors.isOled); these
+          // values only survive where a widget genuinely needs separation, like
+          // a SegmentedButton track or a menu surface.
+          surfaceContainer: const Color(0xFF08080A),
+          surfaceContainerHigh: const Color(0xFF0A0A0C),
+          surfaceContainerHighest: const Color(0xFF101013),
         );
       }
       return baseScheme;

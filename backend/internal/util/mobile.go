@@ -34,7 +34,7 @@ func InitIOSDocumentsDir() (string, error) {
 		return "", err
 	}
 
-	initFile := filepath.Join(docsPath, ".seanime-keep")
+	initFile := filepath.Join(docsPath, ".aniting-keep")
 	if _, err := os.Stat(initFile); os.IsNotExist(err) {
 		file, err := os.Create(initFile)
 		if err != nil {
@@ -54,9 +54,6 @@ func ResolvePhysicalPath(path string) string {
 		return path
 	}
 	dataDir := os.Getenv("ANITING_DATA_DIR")
-	if dataDir == "" {
-		dataDir = os.Getenv("SEANIME_DATA_DIR")
-	}
 	if dataDir == "" {
 		homeDir, err := os.UserHomeDir()
 		if err == nil {
@@ -95,9 +92,6 @@ func ResolveVirtualPath(path string) string {
 		return path
 	}
 	dataDir := os.Getenv("ANITING_DATA_DIR")
-	if dataDir == "" {
-		dataDir = os.Getenv("SEANIME_DATA_DIR")
-	}
 	if dataDir == "" {
 		homeDir, err := os.UserHomeDir()
 		if err == nil {

@@ -1,8 +1,8 @@
-import 'package:flutter/foundation.dart';
+﻿import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:seanime_app/core/theme/app_scroll_behavior.dart';
+import 'package:aniting/core/theme/app_scroll_behavior.dart';
 
 void main() {
   group('AppScrollBehavior Tests', () {

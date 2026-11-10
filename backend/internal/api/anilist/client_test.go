@@ -1,11 +1,11 @@
-package anilist
+﻿package anilist
 
 import (
 	"bytes"
 	"context"
 	"io"
 	"net/http"
-	"seanime/internal/util"
+	"aniting/internal/util"
 	"strconv"
 	"testing"
 	"time"

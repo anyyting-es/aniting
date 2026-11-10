@@ -1,15 +1,15 @@
-package torrent_client_test
+﻿package torrent_client_test
 
 import (
-	"seanime/internal/api/anilist"
-	"seanime/internal/api/metadata_provider"
-	"seanime/internal/extension"
-	hibiketorrent "seanime/internal/extension/hibike/torrent"
-	"seanime/internal/platforms/platform"
-	"seanime/internal/testmocks"
-	"seanime/internal/torrent_clients/torrent_client"
-	"seanime/internal/torrents/torrent"
-	"seanime/internal/util"
+	"aniting/internal/api/anilist"
+	"aniting/internal/api/metadata_provider"
+	"aniting/internal/extension"
+	hibiketorrent "aniting/internal/extension/hibike/torrent"
+	"aniting/internal/platforms/platform"
+	"aniting/internal/testmocks"
+	"aniting/internal/torrent_clients/torrent_client"
+	"aniting/internal/torrents/torrent"
+	"aniting/internal/util"
 	"testing"
 
 	"github.com/rs/zerolog"

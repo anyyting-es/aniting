@@ -1,4 +1,4 @@
-import 'dart:ui';
+﻿import 'dart:ui';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -6,38 +6,38 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/core/preferences/banner_blur_provider.dart';
-import 'package:seanime_app/core/preferences/episode_view_mode_provider.dart';
-import 'package:seanime_app/core/preferences/playback_progress_preferences_provider.dart';
-import 'package:seanime_app/core/preferences/streaming_preferences_provider.dart';
-import 'package:seanime_app/core/preferences/title_language_provider.dart';
-import 'package:seanime_app/core/theme/app_theme_colors.dart';
-import 'package:seanime_app/data/models/anime_details.dart';
-import 'package:seanime_app/data/models/anime_entry.dart';
-import 'package:seanime_app/data/models/anizip_data.dart';
-import 'package:seanime_app/data/models/library_entry_details.dart';
-import 'package:seanime_app/data/models/onlinestream_models.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/providers/episode_selection_provider.dart';
-import 'package:seanime_app/presentation/providers/episodes_provider.dart';
-import 'package:seanime_app/presentation/screens/video_player_screen.dart';
-import 'package:seanime_app/presentation/widgets/anime_detail/anime_detail_back_button.dart';
-import 'package:seanime_app/presentation/widgets/anizip_episode_list.dart';
-import 'package:seanime_app/presentation/widgets/local_library_view.dart';
-import 'package:seanime_app/presentation/widgets/online_stream_view.dart';
-import 'package:seanime_app/presentation/widgets/trailer_player_dialog.dart';
-import 'package:seanime_app/core/preferences/anime_favorites_provider.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/core/preferences/banner_blur_provider.dart';
+import 'package:aniting/core/preferences/episode_view_mode_provider.dart';
+import 'package:aniting/core/preferences/playback_progress_preferences_provider.dart';
+import 'package:aniting/core/preferences/streaming_preferences_provider.dart';
+import 'package:aniting/core/preferences/title_language_provider.dart';
+import 'package:aniting/core/theme/app_theme_colors.dart';
+import 'package:aniting/data/models/anime_details.dart';
+import 'package:aniting/data/models/anime_entry.dart';
+import 'package:aniting/data/models/anizip_data.dart';
+import 'package:aniting/data/models/library_entry_details.dart';
+import 'package:aniting/data/models/onlinestream_models.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/providers/episode_selection_provider.dart';
+import 'package:aniting/presentation/providers/episodes_provider.dart';
+import 'package:aniting/presentation/screens/video_player_screen.dart';
+import 'package:aniting/presentation/widgets/anime_detail/anime_detail_back_button.dart';
+import 'package:aniting/presentation/widgets/anizip_episode_list.dart';
+import 'package:aniting/presentation/widgets/local_library_view.dart';
+import 'package:aniting/presentation/widgets/online_stream_view.dart';
+import 'package:aniting/presentation/widgets/trailer_player_dialog.dart';
+import 'package:aniting/core/preferences/anime_favorites_provider.dart';
 
 import 'package:g1455/g1455.dart';
-import 'package:seanime_app/presentation/widgets/online_stream_download_dialog.dart';
-import 'package:seanime_app/data/services/offline_library_service.dart';
+import 'package:aniting/presentation/widgets/online_stream_download_dialog.dart';
+import 'package:aniting/data/services/offline_library_service.dart';
 
 import 'mobile/anime_detail_advanced_sheet.dart';
 
-import 'package:seanime_app/presentation/widgets/episodes/episodes_view.dart';
-import 'package:seanime_app/presentation/widgets/episodes/episode_batch_action_bar.dart';
+import 'package:aniting/presentation/widgets/episodes/episodes_view.dart';
+import 'package:aniting/presentation/widgets/episodes/episode_batch_action_bar.dart';
 
 enum AnimeDetailTab { online, torrent }
 

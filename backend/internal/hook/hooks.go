@@ -1,8 +1,8 @@
-package hook
+﻿package hook
 
 import (
-	"seanime/internal/hook_resolver"
-	"seanime/internal/util"
+	"aniting/internal/hook_resolver"
+	"aniting/internal/util"
 
 	"github.com/rs/zerolog"
 )

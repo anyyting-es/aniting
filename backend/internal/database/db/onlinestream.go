@@ -1,9 +1,9 @@
-package db
+﻿package db
 
 import (
 	"fmt"
-	"seanime/internal/database/models"
-	"seanime/internal/util/result"
+	"aniting/internal/database/models"
+	"aniting/internal/util/result"
 )
 
 var onlinestreamMappingCache = result.NewMap[string, *models.OnlinestreamMapping]()

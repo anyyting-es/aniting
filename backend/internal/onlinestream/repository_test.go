@@ -1,11 +1,11 @@
-package onlinestream
+﻿package onlinestream
 
 import (
-	"seanime/internal/api/anilist"
-	"seanime/internal/extension"
-	hibikeonlinestream "seanime/internal/extension/hibike/onlinestream"
-	"seanime/internal/util"
-	"seanime/internal/util/filecache"
+	"aniting/internal/api/anilist"
+	"aniting/internal/extension"
+	hibikeonlinestream "aniting/internal/extension/hibike/onlinestream"
+	"aniting/internal/util"
+	"aniting/internal/util/filecache"
 	"testing"
 	"time"
 

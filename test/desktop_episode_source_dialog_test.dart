@@ -1,14 +1,14 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/data/models/onlinestream_models.dart';
-import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
-import 'package:seanime_app/presentation/widgets/anime_detail/desktop/desktop_action_bar.dart';
-import 'package:seanime_app/presentation/widgets/anime_detail/desktop/desktop_episode_models.dart';
-import 'package:seanime_app/presentation/widgets/anime_detail/desktop/desktop_episode_source_dialog.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/data/models/onlinestream_models.dart';
+import 'package:aniting/presentation/screens/anime_detail_screen.dart';
+import 'package:aniting/presentation/widgets/anime_detail/desktop/desktop_action_bar.dart';
+import 'package:aniting/presentation/widgets/anime_detail/desktop/desktop_episode_models.dart';
+import 'package:aniting/presentation/widgets/anime_detail/desktop/desktop_episode_source_dialog.dart';
 
 void main() {
   group('DesktopEpisodeSourceDialog Tests', () {

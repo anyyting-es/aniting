@@ -1,12 +1,12 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/presentation/widgets/edit_entry/edit_entry_date_picker.dart';
-import 'package:seanime_app/presentation/widgets/edit_entry/edit_entry_score_slider.dart';
-import 'package:seanime_app/presentation/widgets/edit_entry/edit_entry_status_dropdown.dart';
-import 'package:seanime_app/presentation/widgets/edit_entry/edit_entry_stepper.dart';
-import 'package:seanime_app/presentation/widgets/edit_entry_modal.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/presentation/widgets/edit_entry/edit_entry_date_picker.dart';
+import 'package:aniting/presentation/widgets/edit_entry/edit_entry_score_slider.dart';
+import 'package:aniting/presentation/widgets/edit_entry/edit_entry_status_dropdown.dart';
+import 'package:aniting/presentation/widgets/edit_entry/edit_entry_stepper.dart';
+import 'package:aniting/presentation/widgets/edit_entry_modal.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {

@@ -1,6 +1,6 @@
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/preferences/track_preferences_provider.dart';
-import 'package:seanime_app/presentation/widgets/player/models/player_types.dart';
+﻿import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/preferences/track_preferences_provider.dart';
+import 'package:aniting/presentation/widgets/player/models/player_types.dart';
 
 /// Helper utility for matching and auto-selecting saved and preferred audio/subtitle tracks.
 class PlayerTrackMatcher {

@@ -1,15 +1,15 @@
-import 'package:cached_network_image/cached_network_image.dart';
+﻿import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:seanime_app/core/preferences/continue_watching_sort_provider.dart';
-import 'package:seanime_app/data/models/anime_entry.dart';
-import 'package:seanime_app/presentation/widgets/continue_watching_card.dart';
+import 'package:aniting/core/preferences/continue_watching_sort_provider.dart';
+import 'package:aniting/data/models/anime_entry.dart';
+import 'package:aniting/presentation/widgets/continue_watching_card.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:seanime_app/core/preferences/playback_progress_preferences_provider.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/data/services/offline_library_service.dart';
+import 'package:aniting/core/preferences/playback_progress_preferences_provider.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/data/services/offline_library_service.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

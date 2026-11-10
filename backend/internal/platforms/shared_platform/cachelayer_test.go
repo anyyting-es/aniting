@@ -1,11 +1,11 @@
-package shared_platform
+﻿package shared_platform
 
 import (
 	"context"
 	"errors"
-	"seanime/internal/api/anilist"
-	"seanime/internal/events"
-	"seanime/internal/util"
+	"aniting/internal/api/anilist"
+	"aniting/internal/events"
+	"aniting/internal/util"
 	"strconv"
 	"testing"
 	"time"

@@ -1,10 +1,10 @@
-package goja_bindings
+﻿package goja_bindings
 
 import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	gojautil "seanime/internal/util/goja"
+	gojautil "aniting/internal/util/goja"
 	"sync"
 	"sync/atomic"
 	"testing"

@@ -1,16 +1,18 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/core/server/server_manager.dart';
-import 'package:seanime_app/core/theme/theme_provider.dart';
-import 'package:seanime_app/data/models/anime_entry.dart';
-import 'package:seanime_app/data/models/server_status.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/screens/feed_screen.dart';
-import 'package:seanime_app/presentation/screens/library_screen.dart';
-import 'package:seanime_app/presentation/screens/search_screen.dart';
-import 'package:seanime_app/presentation/widgets/top_status_bar_glass.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/core/server/server_manager.dart';
+import 'package:aniting/core/theme/theme_provider.dart';
+import 'package:aniting/data/models/anime_entry.dart';
+import 'package:aniting/data/models/server_status.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/screens/feed_screen.dart';
+import 'package:aniting/presentation/screens/library_screen.dart';
+import 'package:aniting/presentation/screens/search_screen.dart';
+
+import 'support/fake_continue_watching_notifier.dart';
+import 'package:aniting/presentation/widgets/top_status_bar_glass.dart';
 
 class MockServerNotifier extends ServerNotifier {
   @override
@@ -79,16 +81,18 @@ void main() {
         ProviderScope(
           overrides: [
             serverNotifierProvider.overrideWith(MockLoggedInServerNotifier.new),
-            continueWatchingProvider.overrideWith((ref) => Future.value([
-                  AnimeEntry(
-                    id: 1,
-                    mediaId: 1,
-                    title: 'Test Anime',
-                    progress: 1,
-                    status: 'CURRENT',
-                    episodeNumber: 1,
-                  ),
-                ])),
+            continueWatchingProvider.overrideWith(
+              () => FakeContinueWatchingNotifier([
+                AnimeEntry(
+                  id: 1,
+                  mediaId: 1,
+                  title: 'Test Anime',
+                  progress: 1,
+                  status: 'CURRENT',
+                  episodeNumber: 1,
+                ),
+              ]),
+            ),
             animeCollectionProvider.overrideWith((ref) => Future.value([])),
             missedSequelsProvider.overrideWith((ref) => Future.value([])),
             recommendationsProvider.overrideWith((ref) => Future.value([])),

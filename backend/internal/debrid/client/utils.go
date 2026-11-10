@@ -1,4 +1,4 @@
-package debrid_client
+﻿package debrid_client
 
 import (
 	"archive/zip"
@@ -6,7 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"seanime/internal/util"
+	"aniting/internal/util"
 
 	"github.com/nwaples/rardecode/v2"
 )

@@ -1,9 +1,9 @@
-package vlc
+﻿package vlc
 
 import (
 	"fmt"
 	"runtime"
-	"seanime/internal/util"
+	"aniting/internal/util"
 	"time"
 )
 

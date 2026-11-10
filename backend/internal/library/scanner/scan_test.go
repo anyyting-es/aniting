@@ -1,10 +1,10 @@
-package scanner
+﻿package scanner
 
 import (
-	"seanime/internal/events"
-	"seanime/internal/library/anime"
-	"seanime/internal/platforms/platform"
-	"seanime/internal/util"
+	"aniting/internal/events"
+	"aniting/internal/library/anime"
+	"aniting/internal/platforms/platform"
+	"aniting/internal/util"
 	"testing"
 )
 

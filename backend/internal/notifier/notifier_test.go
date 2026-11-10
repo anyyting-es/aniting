@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"seanime/internal/database/models"
-	"seanime/internal/testutil"
+	"aniting/internal/database/models"
+	"aniting/internal/testutil"
 
 	"github.com/stretchr/testify/require"
 )
@@ -50,7 +50,7 @@ func TestNotify(t *testing.T) {
 
 		called := make(chan struct{}, 1)
 		n.push = func(title, message, icon string) error {
-			require.Equal(t, "Seanime: Debrid", title)
+			require.Equal(t, "Aniting: Debrid", title)
 			require.Equal(t, "downloaded", message)
 			called <- struct{}{}
 			return nil

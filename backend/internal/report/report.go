@@ -131,7 +131,7 @@ func NewIssueReport(userAgent, appVersion, _os, arch string, logsDir string, isA
 	var scanLogFiles []os.FileInfo
 
 	for _, file := range entries {
-		if strings.HasPrefix(file.Name(), "seanime-") {
+		if strings.HasPrefix(file.Name(), "aniting-") {
 			info, err := file.Info()
 			if err != nil {
 				continue

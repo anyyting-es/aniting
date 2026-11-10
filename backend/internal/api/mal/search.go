@@ -1,4 +1,4 @@
-package mal
+﻿package mal
 
 import (
 	"errors"
@@ -10,8 +10,8 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
-	"seanime/internal/util/comparison"
-	"seanime/internal/util/result"
+	"aniting/internal/util/comparison"
+	"aniting/internal/util/result"
 	"sort"
 	"strings"
 )

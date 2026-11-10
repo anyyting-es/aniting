@@ -1,7 +1,7 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:seanime_app/presentation/widgets/player/models/player_types.dart';
+import 'package:aniting/presentation/widgets/player/models/player_types.dart';
 
 class ExoPlayerTrack {
   final String id;

@@ -2,21 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:g1455/g1455.dart';
 import 'package:material_3_expressive/material_3_expressive.dart';
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/icons/app_icons.dart';
-import 'package:seanime_app/core/preferences/section_visibility_provider.dart';
-import 'package:seanime_app/core/theme/smooth_scroll_controller.dart';
-import 'package:seanime_app/data/models/anime_entry.dart';
-import 'package:seanime_app/data/models/manga_entry.dart';
-import 'package:seanime_app/presentation/screens/anime_detail_screen.dart';
-import 'package:seanime_app/presentation/screens/manga_detail_screen.dart';
-import 'package:seanime_app/presentation/widgets/anime_card.dart';
-import 'package:seanime_app/presentation/widgets/anime_preview/anime_preview_popup.dart';
-import 'package:seanime_app/presentation/widgets/catalog_search/catalog_filter_sidebar.dart';
-import 'package:seanime_app/presentation/widgets/compact_search_bar.dart';
-import 'package:seanime_app/presentation/widgets/discover_filter_sheet.dart';
-import 'package:seanime_app/presentation/widgets/manga_card.dart';
-import 'package:seanime_app/presentation/widgets/media_type_toggle.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/icons/app_icons.dart';
+import 'package:aniting/core/preferences/section_visibility_provider.dart';
+import 'package:aniting/core/theme/smooth_scroll_controller.dart';
+import 'package:aniting/data/models/anime_entry.dart';
+import 'package:aniting/data/models/manga_entry.dart';
+import 'package:aniting/presentation/screens/anime_detail_screen.dart';
+import 'package:aniting/presentation/screens/manga_detail_screen.dart';
+import 'package:aniting/presentation/widgets/anime_card.dart';
+import 'package:aniting/presentation/widgets/catalog_search/catalog_filter_sidebar.dart';
+import 'package:aniting/presentation/widgets/compact_search_bar.dart';
+import 'package:aniting/presentation/widgets/discover_filter_sheet.dart';
+import 'package:aniting/presentation/widgets/manga_card.dart';
+import 'package:aniting/presentation/widgets/media_type_toggle.dart';
 
 /// Vista principal del catálogo y búsqueda avanzada.
 /// En pantallas anchas (Desktop/Tablet) presenta el diseño split-column con el botón
@@ -72,44 +71,6 @@ class CatalogSearchView extends ConsumerWidget {
       default:
         return l10n.discoverSeries;
     }
-  }
-
-  Future<void> _openAnimePreview(BuildContext context, AnimeEntry entry) {
-    final heroTag = 'search_anime_${entry.mediaId}';
-    final route = PageRouteBuilder<void>(
-      opaque: false,
-      barrierDismissible: true,
-      barrierColor: Colors.black.withValues(alpha: 0.55),
-      barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-      transitionDuration: const Duration(milliseconds: 360),
-      reverseTransitionDuration: const Duration(milliseconds: 260),
-      pageBuilder: (pageContext, animation, secondaryAnimation) {
-        return AnimePreviewPopup(
-          entry: entry,
-          heroTag: heroTag,
-          onOpenDetails: () {
-            Navigator.of(pageContext).pop();
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (!context.mounted) return;
-              AnimeDetailScreen.navigate(
-                context,
-                mediaId: entry.mediaId,
-                initialEntry: entry,
-              );
-            });
-          },
-        );
-      },
-      transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        final curved = CurvedAnimation(
-          parent: animation,
-          curve: Curves.easeOutCubic,
-          reverseCurve: Curves.easeInCubic,
-        );
-        return FadeTransition(opacity: curved, child: child);
-      },
-    );
-    return Navigator.of(context).push(route);
   }
 
   @override
@@ -209,14 +170,30 @@ class CatalogSearchView extends ConsumerWidget {
             ),
           ),
           Expanded(
-            child: _buildGridContent(
-              context: context,
-              theme: theme,
-              l10n: l10n,
-              iconPack: iconPack,
-              isDesktop: false,
-              isAnime: isAnime,
-              totalItems: totalItems,
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: _buildGridContent(
+                    context: context,
+                    theme: theme,
+                    l10n: l10n,
+                    iconPack: iconPack,
+                    isDesktop: false,
+                    isAnime: isAnime,
+                    totalItems: totalItems,
+                  ),
+                ),
+                Positioned(
+                  bottom: 16,
+                  right: 16,
+                  child: _buildFloatingSortPill(
+                    context: context,
+                    theme: theme,
+                    l10n: l10n,
+                    iconPack: iconPack,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -229,20 +206,24 @@ class CatalogSearchView extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 2. Header: Botón Explorar + Título
+          // 2. Header: Botón Regresar + Título
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              M3EButton(
-                onPressed: onBack,
-                style: M3EButtonStyle.tonal,
-                icon: Icon(AppIcons.explore(iconPack), size: 18),
-                label: Text(
-                  l10n.navExplore,
-                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5),
+              IconButton(
+                style: IconButton.styleFrom(
+                  padding: const EdgeInsets.all(8),
+                  hoverColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
                 ),
+                icon: Icon(
+                  Icons.arrow_back_rounded,
+                  size: 22,
+                  color: theme.colorScheme.onSurface,
+                ),
+                tooltip: l10n.back,
+                onPressed: onBack,
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   headerTitle,
@@ -261,7 +242,7 @@ class CatalogSearchView extends ConsumerWidget {
 
           const SizedBox(height: 18),
 
-          // 3. Layout de dos columnas: Filtros a la izquierda + Grid a la derecha
+          // 3. Layout de dos columnas: Filtros a la izquierda + Grid a la derecha con Sort flotante
           Expanded(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -283,16 +264,32 @@ class CatalogSearchView extends ConsumerWidget {
                   ),
                 ),
 
-                // Columna derecha: Grid de resultados con AnimeCard / MangaCard oficiales
+                // Columna derecha: Grid de resultados con AnimeCard / MangaCard oficiales y botón flotante de orden abajo
                 Expanded(
-                  child: _buildGridContent(
-                    context: context,
-                    theme: theme,
-                    l10n: l10n,
-                    iconPack: iconPack,
-                    isDesktop: true,
-                    isAnime: isAnime,
-                    totalItems: totalItems,
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: _buildGridContent(
+                          context: context,
+                          theme: theme,
+                          l10n: l10n,
+                          iconPack: iconPack,
+                          isDesktop: true,
+                          isAnime: isAnime,
+                          totalItems: totalItems,
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 24,
+                        right: 28,
+                        child: _buildFloatingSortPill(
+                          context: context,
+                          theme: theme,
+                          l10n: l10n,
+                          iconPack: iconPack,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -430,7 +427,6 @@ class CatalogSearchView extends ConsumerWidget {
                           showMetadata: true,
                           animateEntry: false,
                           heroTag: heroTag,
-                          onSecondaryTap: () => _openAnimePreview(context, anime),
                           onTap: () {
                             searchFocusNode.unfocus();
                             FocusScope.of(context).unfocus();
@@ -481,6 +477,151 @@ class CatalogSearchView extends ConsumerWidget {
           ),
         );
           },
+        );
+      },
+    );
+  }
+
+  String _getSortLabel(String sort, AppTranslations l10n) {
+    switch (sort) {
+      case 'SCORE_DESC':
+        return l10n.highestScore;
+      case 'POPULARITY_DESC':
+        return l10n.sortPopularity;
+      case 'TRENDING_DESC':
+        return l10n.sortTrending;
+      case 'START_DATE_DESC':
+        return l10n.sortStartDate;
+      default:
+        return l10n.highestScore;
+    }
+  }
+
+  Widget _buildFloatingSortPill({
+    required BuildContext context,
+    required ThemeData theme,
+    required AppTranslations l10n,
+    required AppIconPack iconPack,
+  }) {
+    final isDark = theme.brightness == Brightness.dark;
+    final currentSortLabel = _getSortLabel(filterState.sort, l10n);
+
+    return GlassMenuAnchor(
+      width: 220,
+      items: [
+        GlassMenuItem(
+          label: l10n.highestScore,
+          icon: Icon(
+            filterState.sort == 'SCORE_DESC'
+                ? Icons.check_circle_rounded
+                : Icons.radio_button_unchecked,
+            size: 16,
+            color: filterState.sort == 'SCORE_DESC'
+                ? theme.colorScheme.primary
+                : null,
+          ),
+          onPressed: () => onFilterChanged(
+            filterState.copyWith(sort: 'SCORE_DESC'),
+          ),
+        ),
+        GlassMenuItem(
+          label: l10n.sortPopularity,
+          icon: Icon(
+            filterState.sort == 'POPULARITY_DESC'
+                ? Icons.check_circle_rounded
+                : Icons.radio_button_unchecked,
+            size: 16,
+            color: filterState.sort == 'POPULARITY_DESC'
+                ? theme.colorScheme.primary
+                : null,
+          ),
+          onPressed: () => onFilterChanged(
+            filterState.copyWith(sort: 'POPULARITY_DESC'),
+          ),
+        ),
+        GlassMenuItem(
+          label: l10n.sortTrending,
+          icon: Icon(
+            filterState.sort == 'TRENDING_DESC'
+                ? Icons.check_circle_rounded
+                : Icons.radio_button_unchecked,
+            size: 16,
+            color: filterState.sort == 'TRENDING_DESC'
+                ? theme.colorScheme.primary
+                : null,
+          ),
+          onPressed: () => onFilterChanged(
+            filterState.copyWith(sort: 'TRENDING_DESC'),
+          ),
+        ),
+        GlassMenuItem(
+          label: l10n.sortStartDate,
+          icon: Icon(
+            filterState.sort == 'START_DATE_DESC'
+                ? Icons.check_circle_rounded
+                : Icons.radio_button_unchecked,
+            size: 16,
+            color: filterState.sort == 'START_DATE_DESC'
+                ? theme.colorScheme.primary
+                : null,
+          ),
+          onPressed: () => onFilterChanged(
+            filterState.copyWith(sort: 'START_DATE_DESC'),
+          ),
+        ),
+      ],
+      builder: (context, controller) {
+        return Material(
+          color: Colors.transparent,
+          elevation: 6,
+          shadowColor: Colors.black45,
+          borderRadius: BorderRadius.circular(24),
+          child: InkWell(
+            onTap: controller.open,
+            borderRadius: BorderRadius.circular(24),
+            child: Container(
+              height: 42,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: isDark
+                    ? const Color(0xFF1E222A)
+                    : theme.colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.16)
+                      : theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+                  width: 1.2,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.swap_vert_rounded,
+                    size: 19,
+                    color: theme.colorScheme.primary,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    currentSortLabel,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: theme.colorScheme.onSurface,
+                      letterSpacing: 0.2,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    size: 18,
+                    color: isDark ? Colors.white70 : theme.colorScheme.onSurfaceVariant,
+                  ),
+                ],
+              ),
+            ),
+          ),
         );
       },
     );

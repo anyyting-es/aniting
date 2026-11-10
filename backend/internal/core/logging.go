@@ -1,12 +1,12 @@
-package core
+﻿package core
 
 import (
 	"fmt"
 	golog "log"
 	"os"
 	"path/filepath"
-	"seanime/internal/util"
-	"seanime/internal/util/crashlog"
+	"aniting/internal/util"
+	"aniting/internal/util/crashlog"
 	"sort"
 	"strings"
 	"time"
@@ -26,7 +26,7 @@ func (a *App) InitLogging(updateMode bool) {
 	}
 
 	// Create log file
-	logFilePath := filepath.Join(a.Config.Logs.Dir, fmt.Sprintf("seanime-%s.log", time.Now().Format("2006-01-02_15-04-05")))
+	logFilePath := filepath.Join(a.Config.Logs.Dir, fmt.Sprintf("aniting-%s.log", time.Now().Format("2006-01-02_15-04-05")))
 
 	var perm os.FileMode = 0664
 	if util.IsMobile() {
@@ -105,7 +105,7 @@ func TrimLogEntries(dir string, logger *zerolog.Logger) {
 	var scanLogFiles []os.FileInfo
 
 	for _, file := range files {
-		if strings.HasPrefix(file.Name(), "seanime-") {
+		if strings.HasPrefix(file.Name(), "aniting-") {
 			serverLogFiles = append(serverLogFiles, file)
 		} else if strings.Contains(file.Name(), "-scan") {
 			scanLogFiles = append(scanLogFiles, file)

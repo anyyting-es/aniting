@@ -1,17 +1,16 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:g1455/g1455.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:seanime_app/core/i18n/i18n_provider.dart';
-import 'package:seanime_app/core/i18n/translations/es.dart';
-import 'package:seanime_app/core/preferences/section_visibility_provider.dart';
-import 'package:seanime_app/core/server/server_manager.dart';
-import 'package:seanime_app/data/models/anime_entry.dart';
-import 'package:seanime_app/data/services/tmdb_service.dart';
-import 'package:seanime_app/presentation/providers/app_providers.dart';
-import 'package:seanime_app/presentation/widgets/quick_search/feed_quick_search.dart';
+import 'package:aniting/core/i18n/i18n_provider.dart';
+import 'package:aniting/core/preferences/section_visibility_provider.dart';
+import 'package:aniting/core/server/server_manager.dart';
+import 'package:aniting/data/models/anime_entry.dart';
+import 'package:aniting/data/services/tmdb_service.dart';
+import 'package:aniting/presentation/providers/app_providers.dart';
+import 'package:aniting/presentation/widgets/quick_search/feed_quick_search.dart';
 
 class LoggedOutServerNotifier extends ServerNotifier {
   @override
@@ -26,12 +25,15 @@ class DisabledAnimeCatalog extends AnimeSectionEnabledNotifier {
 class FakeTmdbSearchService extends TmdbService {
   FakeTmdbSearchService() : super(apiKey: 'test');
 
+  int calls = 0;
+
   @override
   Future<List<AnimeEntry>> searchShows({
     required String query,
     String language = 'es-ES',
     int page = 1,
   }) async {
+    calls++;
     if (!query.toLowerCase().contains('frieren')) return const [];
     return [
       AnimeEntry(
@@ -53,14 +55,15 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  testWidgets('Ctrl+K quick search falls back to TMDB without AniList',
+  testWidgets('Ctrl+K quick search does not fall back to TMDB when disabled',
       (tester) async {
+    final tmdb = FakeTmdbSearchService();
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           serverNotifierProvider.overrideWith(LoggedOutServerNotifier.new),
           animeSectionEnabledProvider.overrideWith(DisabledAnimeCatalog.new),
-          tmdbServiceProvider.overrideWithValue(FakeTmdbSearchService()),
+          tmdbServiceProvider.overrideWithValue(tmdb),
           translationsProvider.overrideWithValue(const SpanishTranslations()),
         ],
         child: MaterialApp(
@@ -75,6 +78,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('Frieren'), findsWidgets);
+    expect(find.textContaining('Frieren'), findsNothing);
+    expect(tmdb.calls, 0);
   });
 }

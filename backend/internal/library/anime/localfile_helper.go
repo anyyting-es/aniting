@@ -1,12 +1,12 @@
-package anime
+﻿package anime
 
 import (
 	"bytes"
 	"cmp"
 	"fmt"
 	"path/filepath"
-	"seanime/internal/util"
-	"seanime/internal/util/comparison"
+	"aniting/internal/util"
+	"aniting/internal/util/comparison"
 	"slices"
 	"strconv"
 	"strings"

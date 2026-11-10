@@ -1,9 +1,9 @@
-package nakama
+﻿package nakama
 
 import (
-	"seanime/internal/database/models"
-	"seanime/internal/events"
-	"seanime/internal/util"
+	"aniting/internal/database/models"
+	"aniting/internal/events"
+	"aniting/internal/util"
 	"sync"
 	"testing"
 	"time"
